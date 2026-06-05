@@ -8,6 +8,7 @@ import '../../models/learning_progress.dart';
 import '../../models/waste_category.dart';
 import '../../providers/learning_progress_provider.dart';
 import 'elearning/guides_page.dart';
+import 'elearning/video_lessons_page.dart';
 
 const _background = Color(0xFFF8FAF9);
 const _primary = Color(0xFF00694C);
@@ -39,8 +40,7 @@ class ElearningTab extends ConsumerWidget {
                     onAllCategoriesTap: () =>
                         debugPrint('All learning categories selected'),
                     onGuidesTap: () => _openGuides(context),
-                    onVideoLessonsTap: () =>
-                        debugPrint('Video lessons selected'),
+                    onVideoLessonsTap: () => _openVideoLessons(context),
                     onQuizTap: () => debugPrint('Quiz selected'),
                   ),
                   const SizedBox(height: 28),
@@ -61,6 +61,12 @@ void _openGuides(BuildContext context) {
   Navigator.of(
     context,
   ).push(MaterialPageRoute<void>(builder: (_) => const GuidesPage()));
+}
+
+void _openVideoLessons(BuildContext context) {
+  Navigator.of(
+    context,
+  ).push(MaterialPageRoute<void>(builder: (_) => const VideoLessonsPage()));
 }
 
 class _LearningHeader extends StatelessWidget {
