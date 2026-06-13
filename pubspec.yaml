@@ -15,6 +15,7 @@ dependencies:
   firebase_core: ^4.7.0
   firebase_auth: ^6.4.0
   cloud_firestore: ^6.3.0
+  firebase_storage: 13.0.4
   google_sign_in: ^6.2.1
 
   # UI
@@ -27,6 +28,12 @@ dependencies:
   flutter_native_splash: ^2.3.2
   flutter_riverpod: ^2.4.0
   flutter_dotenv: ^5.2.1
+  tflite_flutter: 0.12.1
+  image: ^4.0.0
+  camera: 0.12.0+1
+  flutter_3d_controller: ^2.3.0
+  youtube_player_flutter: ^10.0.1
+  syncfusion_flutter_pdfviewer: ^33.2.12
 
 dev_dependencies:
   flutter_test:
@@ -43,8 +50,13 @@ flutter:
     - .env.dev
     - .env.prod
     - .env.example
+    - assets/guides/
     - assets/images/
+    - assets/images/guides/
+    - assets/images/quiz/
+    - assets/images/thumbnails/
     - assets/icon/
+    - assets/models/
 
 flutter_launcher_icons:
   android: "launcher_icon"
