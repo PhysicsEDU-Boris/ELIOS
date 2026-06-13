@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../models/elearning_module.dart';
 import '../../models/learning_progress.dart';
 import '../../models/waste_category.dart';
 import '../../providers/learning_progress_provider.dart';
+import '../../services/elearning_content_service.dart';
+import '../../widgets/elio_learning_app_bar.dart';
 import 'elearning/guides_page.dart';
 import 'elearning/quiz_page.dart';
 import 'elearning/video_lessons_page.dart';
@@ -17,63 +20,219 @@ const _ink = Color(0xFF191C1C);
 const _muted = Color(0xFF3D4943);
 const _border = Color(0xFFE6E9E8);
 
-class ElearningTab extends ConsumerWidget {
-  const ElearningTab({super.key});
+enum LearningSection { allCategories, guides, videoLessons, quiz }
+
+class ElearningTab extends ConsumerStatefulWidget {
+  final ValueChanged<bool>? onQuizActiveChanged;
+  final int quizResetGeneration;
+
+  const ElearningTab({
+    super.key,
+    this.onQuizActiveChanged,
+    this.quizResetGeneration = 0,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ElearningTab> createState() => _ElearningTabState();
+}
+
+class _ElearningTabState extends ConsumerState<ElearningTab> {
+  final ElearningContentService _service = ElearningContentService();
+  LearningSection _selectedSection = LearningSection.allCategories;
+  String? _selectedModuleId;
+  bool _quizInProgress = false;
+
+  void _selectSection(LearningSection section) {
+    setState(() {
+      _selectedSection = section;
+      if (section == LearningSection.allCategories && !_quizInProgress) {
+        _selectedModuleId = null;
+      }
+    });
+  }
+
+  void _clearModuleFilter() {
+    if (_selectedModuleId == null || _quizInProgress) return;
+    setState(() => _selectedModuleId = null);
+  }
+
+  Future<void> _showLearningPath(
+    ElearningModule module,
+    LearningProgress? progress,
+  ) async {
+    final moduleProgress =
+        progress?.categories[module.id]?.progressPercentage ?? 0;
+
+    setState(() => _selectedModuleId = module.id);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => _LearningPathSheet(
+        module: module,
+        progress: moduleProgress,
+        onSectionSelected: (section) {
+          Navigator.pop(sheetContext);
+          setState(() {
+            _selectedModuleId = module.id;
+            _selectedSection = section;
+          });
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final progress = ref.watch(learningProgressProvider).valueOrNull;
 
     return Scaffold(
       backgroundColor: _background,
+      appBar: ElioLearningAppBar(
+        title: 'ELIO',
+        action: IconButton(
+          onPressed: () => _showNotificationPlaceholder(context),
+          icon: const Icon(Icons.notifications_none_rounded),
+          color: _primary,
+          tooltip: 'Notifications',
+        ),
+      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 34, 20, 36),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 720),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const _LearningHeader(),
-                  const SizedBox(height: 30),
-                  _LearningFilterChips(
-                    onAllCategoriesTap: () =>
-                        debugPrint('All learning categories selected'),
-                    onGuidesTap: () => _openGuides(context),
-                    onVideoLessonsTap: () => _openVideoLessons(context),
-                    onQuizTap: () => _openQuiz(context),
+        top: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: _LearningFilterChips(
+                    selectedSection: _selectedSection,
+                    onSectionSelected: _selectSection,
                   ),
-                  const SizedBox(height: 28),
-                  _ProgressOverviewCard(progress: progress),
-                  const SizedBox(height: 32),
-                  _CourseModulesSection(progress: progress),
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Expanded(
+              child: IndexedStack(
+                index: _selectedSection.index,
+                children: [
+                  _AllCategoriesContent(
+                    service: _service,
+                    progress: progress,
+                    onModuleSelected: (module) =>
+                        _showLearningPath(module, progress),
+                  ),
+                  GuidesContent(
+                    selectedModuleId: _selectedModuleId,
+                    onClearFilter: _clearModuleFilter,
+                  ),
+                  VideoLessonsContent(
+                    selectedModuleId: _selectedModuleId,
+                    onClearFilter: _clearModuleFilter,
+                  ),
+                  QuizContent(
+                    key: ValueKey(widget.quizResetGeneration),
+                    selectedModuleId: _selectedModuleId,
+                    onClearFilter: _clearModuleFilter,
+                    onQuizActiveChanged: (active) {
+                      if (_quizInProgress == active) return;
+                      setState(() => _quizInProgress = active);
+                      widget.onQuizActiveChanged?.call(active);
+                    },
+                  ),
                 ],
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 }
 
-void _openGuides(BuildContext context) {
-  Navigator.of(
-    context,
-  ).push(MaterialPageRoute<void>(builder: (_) => const GuidesPage()));
+void _showNotificationPlaceholder(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.white,
+    showDragHandle: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (context) => SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Notifications',
+              style: GoogleFonts.inter(
+                color: _ink,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Learning updates and robot alerts will appear here.',
+              style: GoogleFonts.inter(
+                color: _muted,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
-void _openVideoLessons(BuildContext context) {
-  Navigator.of(
-    context,
-  ).push(MaterialPageRoute<void>(builder: (_) => const VideoLessonsPage()));
-}
+class _AllCategoriesContent extends StatelessWidget {
+  final ElearningContentService service;
+  final LearningProgress? progress;
+  final ValueChanged<ElearningModule> onModuleSelected;
 
-void _openQuiz(BuildContext context) {
-  Navigator.of(
-    context,
-  ).push(MaterialPageRoute<void>(builder: (_) => const QuizPage()));
+  const _AllCategoriesContent({
+    required this.service,
+    required this.progress,
+    required this.onModuleSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 720),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _LearningHeader(),
+              const SizedBox(height: 28),
+              _ProgressOverviewCard(progress: progress),
+              const SizedBox(height: 32),
+              _CourseModulesSection(
+                service: service,
+                progress: progress,
+                onModuleSelected: onModuleSelected,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _LearningHeader extends StatelessWidget {
@@ -88,10 +247,10 @@ class _LearningHeader extends StatelessWidget {
           'Learn Waste\nClassification',
           style: GoogleFonts.inter(
             color: _ink,
-            fontSize: 40,
+            fontSize: 36,
             height: 1.12,
             fontWeight: FontWeight.w800,
-            letterSpacing: -1.4,
+            letterSpacing: -1.1,
           ),
         ),
         const SizedBox(height: 16),
@@ -111,60 +270,203 @@ class _LearningHeader extends StatelessWidget {
   }
 }
 
-class _LearningFilterChips extends StatelessWidget {
-  final VoidCallback? onAllCategoriesTap;
-  final VoidCallback? onGuidesTap;
-  final VoidCallback? onVideoLessonsTap;
-  final VoidCallback? onQuizTap;
+class _LearningFilterChips extends StatefulWidget {
+  final LearningSection selectedSection;
+  final ValueChanged<LearningSection> onSectionSelected;
 
   const _LearningFilterChips({
-    this.onAllCategoriesTap,
-    this.onGuidesTap,
-    this.onVideoLessonsTap,
-    this.onQuizTap,
+    required this.selectedSection,
+    required this.onSectionSelected,
   });
 
-  static const _labels = ['All Categories', 'Guides', 'Video Lessons', 'Quiz'];
+  @override
+  State<_LearningFilterChips> createState() => _LearningFilterChipsState();
+}
+
+class _LearningFilterChipsState extends State<_LearningFilterChips> {
+  final _listKey = GlobalKey<AnimatedListState>();
+  final _scrollController = ScrollController();
+  late final List<LearningSection> _sections;
+  bool _isReordering = false;
+
+  static const _labels = {
+    LearningSection.allCategories: 'All Categories',
+    LearningSection.guides: 'Guides',
+    LearningSection.videoLessons: 'Video Lessons',
+    LearningSection.quiz: 'Quiz',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _sections = [
+      widget.selectedSection,
+      ...LearningSection.values.where(
+        (section) => section != widget.selectedSection,
+      ),
+    ];
+  }
+
+  @override
+  void didUpdateWidget(covariant _LearningFilterChips oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.selectedSection == widget.selectedSection) return;
+
+    final hasEverySection =
+        _sections.length == LearningSection.values.length &&
+        _sections.toSet().length == LearningSection.values.length;
+    final currentIndex = _sections.indexOf(widget.selectedSection);
+
+    if (!hasEverySection || currentIndex < 0) {
+      _sections
+        ..clear()
+        ..addAll([
+          widget.selectedSection,
+          ...LearningSection.values.where(
+            (section) => section != widget.selectedSection,
+          ),
+        ]);
+      _scrollToStart();
+      return;
+    }
+
+    if (currentIndex == 0) {
+      _scrollToStart();
+      return;
+    }
+
+    final movedSection = _sections.removeAt(currentIndex);
+    _sections.insert(0, movedSection);
+    _scrollToStart();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _selectSection(LearningSection section) {
+    if (section == widget.selectedSection) {
+      _scrollToStart();
+      return;
+    }
+
+    if (_isReordering) return;
+
+    final oldIndex = _sections.indexOf(section);
+    if (oldIndex <= 0) return;
+
+    _isReordering = true;
+    final removedSection = _sections.removeAt(oldIndex);
+    _listKey.currentState?.removeItem(
+      oldIndex,
+      (context, animation) => _buildAnimatedChip(
+        section: removedSection,
+        animation: animation,
+        selected: false,
+      ),
+      duration: const Duration(milliseconds: 320),
+    );
+
+    _sections.insert(0, removedSection);
+    widget.onSectionSelected(section);
+
+    Future.delayed(const Duration(milliseconds: 80), () {
+      if (!mounted) return;
+
+      _listKey.currentState?.insertItem(
+        0,
+        duration: const Duration(milliseconds: 380),
+      );
+      _isReordering = false;
+    });
+
+    _scrollToStart();
+  }
+
+  void _scrollToStart() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeInOutCubic,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final callbacks = [
-      onAllCategoriesTap,
-      onGuidesTap,
-      onVideoLessonsTap,
-      onQuizTap,
-    ];
-
     return SizedBox(
       height: 42,
-      child: ListView.separated(
+      child: AnimatedList(
+        key: _listKey,
+        controller: _scrollController,
         scrollDirection: Axis.horizontal,
-        itemCount: _labels.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final selected = index == 0;
-          return Material(
-            color: selected ? _primary : _border,
-            borderRadius: BorderRadius.circular(24),
-            child: InkWell(
-              onTap: callbacks[index],
+        initialItemCount: _sections.length,
+        itemBuilder: (context, index, animation) {
+          final section = _sections[index];
+          return _buildAnimatedChip(
+            section: section,
+            animation: animation,
+            selected: section == widget.selectedSection,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildAnimatedChip({
+    required LearningSection section,
+    required Animation<double> animation,
+    required bool selected,
+  }) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeInOutCubicEmphasized,
+    );
+
+    return FadeTransition(
+      opacity: curved,
+      child: SizeTransition(
+        axis: Axis.horizontal,
+        sizeFactor: curved,
+        child: Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeInOutCubic,
+            decoration: BoxDecoration(
+              color: selected ? _primary : _border,
               borderRadius: BorderRadius.circular(24),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                child: Center(
-                  child: Text(
-                    _labels[index],
-                    style: GoogleFonts.inter(
-                      color: selected ? Colors.white : _muted,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(24),
+              child: InkWell(
+                onTap: () => _selectSection(section),
+                borderRadius: BorderRadius.circular(24),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  child: Center(
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 350),
+                      curve: Curves.easeInOutCubic,
+                      style: GoogleFonts.inter(
+                        color: selected ? Colors.white : _muted,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      child: Text(_labels[section]!),
                     ),
                   ),
                 ),
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -285,9 +587,15 @@ class _ProgressOverviewCard extends StatelessWidget {
 }
 
 class _CourseModulesSection extends StatelessWidget {
+  final ElearningContentService service;
   final LearningProgress? progress;
+  final ValueChanged<ElearningModule> onModuleSelected;
 
-  const _CourseModulesSection({required this.progress});
+  const _CourseModulesSection({
+    required this.service,
+    required this.progress,
+    required this.onModuleSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -321,37 +629,88 @@ class _CourseModulesSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
-        ...wasteCategories.map((category) {
-          final metadata = _metadataFor(category.id);
-          final categoryProgress =
-              progress?.categories[category.id]?.progressPercentage ?? 0;
+        StreamBuilder<List<ElearningModule>>(
+          stream: service.watchModules(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const _ModulesMessage(
+                message: 'Learning modules could not be loaded.',
+              );
+            }
 
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 20),
-            child: _CourseModuleCard(
-              category: category,
-              metadata: metadata,
-              progress: categoryProgress,
-              onPressed: () => debugPrint(
-                '${categoryProgress > 0 ? 'Continue' : 'Start'} '
-                '${category.id} learning module',
-              ),
-            ),
-          );
-        }),
+            if (!snapshot.hasData) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 32),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            final modules = snapshot.data!;
+            if (modules.isEmpty) {
+              return const _ModulesMessage(
+                message: 'No learning modules available yet.',
+              );
+            }
+
+            return Column(
+              children: [
+                for (final module in modules)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: _CourseModuleCard(
+                      module: module,
+                      metadata: _metadataFor(module.id),
+                      progress:
+                          progress?.categories[module.id]?.progressPercentage ??
+                          0,
+                      onPressed: () => onModuleSelected(module),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ],
     );
   }
 }
 
+class _ModulesMessage extends StatelessWidget {
+  final String message;
+
+  const _ModulesMessage({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _border),
+      ),
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: GoogleFonts.inter(
+          color: _muted,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
 class _CourseModuleCard extends StatelessWidget {
-  final WasteCategory category;
+  final ElearningModule module;
   final _ModuleMetadata metadata;
   final double progress;
   final VoidCallback onPressed;
 
   const _CourseModuleCard({
-    required this.category,
+    required this.module,
     required this.metadata,
     required this.progress,
     required this.onPressed,
@@ -382,7 +741,7 @@ class _CourseModuleCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _ModuleArtwork(category: category, metadata: metadata),
+          _ModuleArtwork(moduleId: module.id, metadata: metadata),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
             child: Column(
@@ -393,19 +752,19 @@ class _CourseModuleCard extends StatelessWidget {
                   runSpacing: 8,
                   children: [
                     _LevelChip(
-                      label: metadata.level,
+                      label: module.level,
                       color: metadata.accent,
                       background: metadata.softColor,
                     ),
                     _InfoChip(
                       icon: Icons.schedule_rounded,
-                      label: metadata.duration,
+                      label: '${module.durationMinutes} min',
                     ),
                   ],
                 ),
                 const SizedBox(height: 15),
                 Text(
-                  metadata.title,
+                  module.title,
                   style: GoogleFonts.inter(
                     color: _ink,
                     fontSize: 20,
@@ -416,7 +775,7 @@ class _CourseModuleCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  metadata.description,
+                  module.description,
                   style: GoogleFonts.inter(
                     color: _muted,
                     fontSize: 13,
@@ -433,7 +792,7 @@ class _CourseModuleCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 7),
                     Text(
-                      '${metadata.lessonCount} lessons',
+                      '${module.lessonCount} lessons',
                       style: GoogleFonts.inter(
                         color: _muted,
                         fontSize: 12,
@@ -496,11 +855,139 @@ class _CourseModuleCard extends StatelessWidget {
   }
 }
 
+class _LearningPathSheet extends StatelessWidget {
+  final ElearningModule module;
+  final double progress;
+  final ValueChanged<LearningSection> onSectionSelected;
+
+  const _LearningPathSheet({
+    required this.module,
+    required this.progress,
+    required this.onSectionSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final percent = (progress.clamp(0.0, 1.0) * 100).round();
+
+    return SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              module.title,
+              style: GoogleFonts.inter(
+                color: _ink,
+                fontSize: 22,
+                height: 1.2,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              module.description,
+              style: GoogleFonts.inter(
+                color: _muted,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _InfoChip(icon: Icons.school_outlined, label: module.level),
+                _InfoChip(
+                  icon: Icons.schedule_rounded,
+                  label: '${module.durationMinutes} min',
+                ),
+                _InfoChip(
+                  icon: Icons.menu_book_rounded,
+                  label: '${module.lessonCount} lessons',
+                ),
+                _InfoChip(
+                  icon: Icons.insights_rounded,
+                  label: '$percent% complete',
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Recommended path: Guide → Video → Quiz',
+              style: GoogleFonts.inter(
+                color: _primary,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 18),
+            _LearningPathButton(
+              label: 'Open Guides',
+              icon: Icons.menu_book_outlined,
+              onPressed: () => onSectionSelected(LearningSection.guides),
+            ),
+            const SizedBox(height: 10),
+            _LearningPathButton(
+              label: 'Watch Video Lessons',
+              icon: Icons.play_circle_outline_rounded,
+              onPressed: () => onSectionSelected(LearningSection.videoLessons),
+            ),
+            const SizedBox(height: 10),
+            _LearningPathButton(
+              label: 'Take Quiz',
+              icon: Icons.quiz_outlined,
+              onPressed: () => onSectionSelected(LearningSection.quiz),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LearningPathButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _LearningPathButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: FilledButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 19),
+        label: Text(label),
+        style: FilledButton.styleFrom(
+          backgroundColor: _primary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700),
+        ),
+      ),
+    );
+  }
+}
+
 class _ModuleArtwork extends StatelessWidget {
-  final WasteCategory category;
+  final String moduleId;
   final _ModuleMetadata metadata;
 
-  const _ModuleArtwork({required this.category, required this.metadata});
+  const _ModuleArtwork({required this.moduleId, required this.metadata});
 
   @override
   Widget build(BuildContext context) {
@@ -568,7 +1055,10 @@ class _ModuleArtwork extends StatelessWidget {
               ],
             ),
             alignment: Alignment.center,
-            child: Text(category.emoji, style: const TextStyle(fontSize: 54)),
+            child: Text(
+              _moduleEmoji(moduleId),
+              style: const TextStyle(fontSize: 54),
+            ),
           ),
           Positioned(
             right: 32,
@@ -671,22 +1161,12 @@ class _InfoChip extends StatelessWidget {
 }
 
 class _ModuleMetadata {
-  final String title;
-  final String description;
-  final String level;
-  final String duration;
-  final int lessonCount;
   final Color accent;
   final Color softColor;
   final String secondaryEmoji;
   final String tertiaryEmoji;
 
   const _ModuleMetadata({
-    required this.title,
-    required this.description,
-    required this.level,
-    required this.duration,
-    required this.lessonCount,
     required this.accent,
     required this.softColor,
     required this.secondaryEmoji,
@@ -698,13 +1178,6 @@ _ModuleMetadata _metadataFor(String categoryId) {
   switch (categoryId) {
     case 'organic':
       return const _ModuleMetadata(
-        title: 'Organic Waste Management',
-        description:
-            'Learn how food scraps and natural materials decompose, then see '
-            'how ELIO identifies them for composting.',
-        level: 'Beginner Friendly',
-        duration: '20–25 min',
-        lessonCount: 6,
         accent: Color(0xFF059669),
         softColor: Color(0xFFECFDF5),
         secondaryEmoji: '🍃',
@@ -712,13 +1185,6 @@ _ModuleMetadata _metadataFor(String categoryId) {
       );
     case 'inorganic':
       return const _ModuleMetadata(
-        title: 'Inorganic / Recyclable Waste Management',
-        description:
-            'Understand plastics, glass, paper, and metals while exploring '
-            'the physical signals ELIO uses to sort recyclables.',
-        level: 'Intermediate',
-        duration: '20–25 min',
-        lessonCount: 7,
         accent: Color(0xFF2563EB),
         softColor: Color(0xFFDBEAFE),
         secondaryEmoji: '🥫',
@@ -726,13 +1192,6 @@ _ModuleMetadata _metadataFor(String categoryId) {
       );
     case 'hazardous':
       return const _ModuleMetadata(
-        title: 'Hazardous Waste (B3) Management',
-        description:
-            'Recognize batteries, electronics, and toxic materials, and learn '
-            'the safe handling rules used by ELIO.',
-        level: 'Advanced Level',
-        duration: '25–30 min',
-        lessonCount: 8,
         accent: Color(0xFFDC2626),
         softColor: Color(0xFFFEE2E2),
         secondaryEmoji: '🔋',
@@ -740,16 +1199,24 @@ _ModuleMetadata _metadataFor(String categoryId) {
       );
     default:
       return const _ModuleMetadata(
-        title: 'Waste Management',
-        description: 'Learn how ELIO identifies and sorts this waste category.',
-        level: 'Beginner Friendly',
-        duration: '20–25 min',
-        lessonCount: 6,
         accent: _primary,
         softColor: Color(0xFFECFDF5),
         secondaryEmoji: '♻️',
         tertiaryEmoji: '🌍',
       );
+  }
+}
+
+String _moduleEmoji(String moduleId) {
+  switch (moduleId) {
+    case 'organic':
+      return '🍃';
+    case 'inorganic':
+      return '♻️';
+    case 'hazardous':
+      return '🔋';
+    default:
+      return '🌍';
   }
 }
 

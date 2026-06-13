@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,10 +15,50 @@ void main() async {
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   const envName = String.fromEnvironment('ELIO_ENV', defaultValue: 'dev');
-  await dotenv.load(fileName: '.env.$envName');
 
-  await Firebase.initializeApp(options: createFirebaseOptionsByEnv());
-  runApp(const ElioApp());
+  try {
+    // Load platform-specific Firebase config from env files.
+    // Android falls back to the generic .env.dev/.env.prod files when the
+    // Android-specific file is not present.
+    if (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux) {
+      try {
+        await dotenv.load(fileName: '.env.android.$envName');
+      } catch (_) {
+        await dotenv.load(fileName: '.env.$envName');
+      }
+    } else if (kIsWeb) {
+      await dotenv.load(fileName: '.env.$envName');
+    }
+
+    // Initialize Firebase with platform-specific config
+    if (Firebase.apps.isEmpty) {
+      if (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS) {
+        // iOS/macOS: Use native GoogleService-Info.plist via Firebase.initializeApp()
+        await Firebase.initializeApp();
+      } else {
+        // Android/Web: Use env-based FirebaseOptions
+        await Firebase.initializeApp(options: createFirebaseOptionsByEnv());
+      }
+    }
+
+    runApp(const ElioApp());
+  } catch (error, stackTrace) {
+    debugPrint('Startup failed: $error');
+    debugPrintStack(stackTrace: stackTrace);
+
+    runApp(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(body: Center(child: Text('Startup failed: $error'))),
+      ),
+    );
+  } finally {
+    // Remove the splash even if env loading or Firebase initialization fails.
+    FlutterNativeSplash.remove();
+  }
 }
 
 class ElioApp extends StatelessWidget {
@@ -31,7 +72,7 @@ class ElioApp extends StatelessWidget {
         title: 'ELIO',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1D9E75)),
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0F6E56)),
           useMaterial3: true,
         ),
         home: _AuthGate(auth: auth ?? FirebaseAuth.instance),
@@ -51,11 +92,10 @@ class _AuthGate extends StatelessWidget {
       stream: auth.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          // Keep native splash visible until Firebase resolves auth state.
-          return const SizedBox();
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
-
-        FlutterNativeSplash.remove();
 
         if (snapshot.hasData) {
           return HomeShell(auth: auth);

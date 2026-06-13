@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/learning_progress.dart';
@@ -21,21 +22,27 @@ final learningProgressProvider =
       LearningProgressNotifier.new,
     );
 
+final progressSyncWarningProvider = Provider<bool>((ref) {
+  final progress = ref.watch(learningProgressProvider);
+  final service = ref.read(progressServiceProvider);
+  return progress.hasError || service.lastLoadUsedFallback;
+});
+
 // ---------------------------------------------------------------------------
 // Notifier
 // ---------------------------------------------------------------------------
 
-class LearningProgressNotifier
-    extends AsyncNotifier<LearningProgress> {
+class LearningProgressNotifier extends AsyncNotifier<LearningProgress> {
   ProgressService get _service => ref.read(progressServiceProvider);
 
   /// Auto-loads progress for the currently signed-in user.
   /// Re-runs whenever auth state changes.
   @override
   Future<LearningProgress> build() async {
-    final user = ref.watch(currentUserProvider);
-    if (user == null) return LearningProgress.empty('guest');
-    return _service.load(user.uid, isGuest: user.isAnonymous);
+    final user = await ref.watch(authStateProvider.future);
+    final isGuest = user == null || user.isAnonymous;
+    final userId = user?.uid ?? 'guest';
+    return _loadSafely(userId, isGuest: isGuest);
   }
 
   // ---------------------------------------------------------------------------
@@ -44,11 +51,11 @@ class LearningProgressNotifier
 
   /// Explicitly (re)load progress for [userId].
   Future<void> loadProgress(String userId) async {
-    final isGuest = ref.read(isGuestProvider);
+    final user = ref.read(currentUserProvider);
+    final isGuest = user == null || user.isAnonymous;
+    final effectiveUserId = isGuest ? (user?.uid ?? 'guest') : user.uid;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => _service.load(userId, isGuest: isGuest),
-    );
+    state = AsyncData(await _loadSafely(effectiveUserId, isGuest: isGuest));
   }
 
   /// Call when a user opens a category detail screen.
@@ -56,7 +63,8 @@ class LearningProgressNotifier
     final current = state.valueOrNull;
     if (current == null) return;
 
-    final existing = current.categories[categoryId] ??
+    final existing =
+        current.categories[categoryId] ??
         CategoryProgress(categoryId: categoryId);
 
     if (existing.lessonViewed) return; // already recorded — nothing to do
@@ -88,11 +96,13 @@ class LearningProgressNotifier
     final current = state.valueOrNull;
     if (current == null) return;
 
-    final existing = current.categories[categoryId] ??
+    final existing =
+        current.categories[categoryId] ??
         CategoryProgress(categoryId: categoryId);
 
-    final newBest =
-        score > existing.quizBestScore ? score : existing.quizBestScore;
+    final newBest = score > existing.quizBestScore
+        ? score
+        : existing.quizBestScore;
 
     final updated = current.copyWith(
       categories: {
@@ -127,17 +137,45 @@ class LearningProgressNotifier
   // ---------------------------------------------------------------------------
 
   Future<void> _persist(LearningProgress progress) async {
-    final isGuest = ref.read(isGuestProvider);
+    final user = ref.read(currentUserProvider);
+    final isGuest = user == null || user.isAnonymous;
+    final progressToSave = user != null && !user.isAnonymous
+        ? progress.copyWith(userId: user.uid)
+        : progress;
     try {
-      await _service.save(progress, isGuest: isGuest);
+      final synced = await _service.save(progressToSave, isGuest: isGuest);
+
+      if (!synced && !isGuest) {
+        _service.markLoadFallback();
+        ref.invalidate(progressSyncWarningProvider);
+      }
     } catch (e, st) {
-      // Persistence failure is non-fatal: progress is already updated in
-      // memory and will be retried on the next mutation.
-      assert(() {
-        // ignore: avoid_print
-        print('[LearningProgressNotifier] persist failed: $e\n$st');
-        return true;
-      }());
+      debugPrint(
+        '[LearningProgressNotifier] persist failed; keeping in-memory '
+        'progress: $e',
+      );
+      debugPrintStack(stackTrace: st);
+      if (!isGuest) {
+        _service.markLoadFallback();
+        ref.invalidate(progressSyncWarningProvider);
+      }
+    }
+  }
+
+  Future<LearningProgress> _loadSafely(
+    String userId, {
+    required bool isGuest,
+  }) async {
+    try {
+      final progress = await _service.load(userId, isGuest: isGuest);
+      return progress;
+    } catch (error, stackTrace) {
+      debugPrint(
+        '[LearningProgressNotifier] load failed, using empty progress: $error',
+      );
+      debugPrintStack(stackTrace: stackTrace);
+      if (!isGuest) _service.markLoadFallback();
+      return LearningProgress.empty(userId);
     }
   }
 }

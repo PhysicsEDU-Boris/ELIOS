@@ -1,6 +1,19 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+/// Firebase configuration loader for Android and Web platforms.
+///
+/// IMPORTANT: This function should ONLY be used for Android and Web platforms.
+/// iOS/macOS must use the native GoogleService-Info.plist via Firebase.initializeApp().
+///
+/// Do not pass Android Firebase config to iOS, as it will cause bundle ID mismatches
+/// and duplicate app initialization errors.
+///
+/// Config priority:
+/// 1. Android: Load from .env.android.{dev|prod} via createFirebaseOptionsByEnv()
+/// 2. Web: Load from .env.{dev|prod} via createFirebaseOptionsByEnv()
+/// 3. iOS/macOS: Use native GoogleService-Info.plist via Firebase.initializeApp()
+
 String _requiredEnv(String key) {
   final value = dotenv.env[key]?.trim();
   if (value == null || value.isEmpty) {
@@ -17,6 +30,9 @@ String? _optionalEnv(String key) {
   return value;
 }
 
+/// Creates Firebase options from environment variables.
+///
+/// Used only for Android and Web platforms. iOS/macOS use native config.
 FirebaseOptions createFirebaseOptionsByEnv() {
   return FirebaseOptions(
     apiKey: _requiredEnv('FIREBASE_API_KEY'),

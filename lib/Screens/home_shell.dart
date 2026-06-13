@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart'
+    show DeviceOrientation, SystemChrome, SystemUiMode;
+
 import 'login_screen.dart';
 import 'home_screen.dart';
 import 'tabs/elearning_tab.dart';
@@ -16,18 +19,109 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
-  int _currentIndex = 0;
+  static const int _controlIndex = 3;
 
-  late final List<Widget> _screens = [
-    HomeScreen(auth: widget.auth),
-    const ElearningTab(),
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  int _currentIndex = 0;
+  bool _quizInProgress = false;
+  int _quizResetGeneration = 0;
+
+  late final HomeScreen _homeScreen;
+
+  @override
+  void initState() {
+    super.initState();
+    _homeScreen = HomeScreen(
+      auth: widget.auth,
+      onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+    );
+  }
+
+  List<Widget> get _screens => [
+    _homeScreen,
+    ElearningTab(
+      quizResetGeneration: _quizResetGeneration,
+      onQuizActiveChanged: (active) {
+        if (_quizInProgress == active) return;
+        setState(() => _quizInProgress = active);
+      },
+    ),
     const ConfigScreen(),
-    const ControlScreen(),
+    const SizedBox.shrink(),
   ];
 
-  void _onDrawerTap(int index) {
+  Future<void> _openControlScreen() async {
+    await SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    if (!mounted) return;
+
+    try {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const ControlScreen(),
+          fullscreenDialog: true,
+        ),
+      );
+    } finally {
+      await SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.portraitUp,
+      ]);
+
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
+  }
+
+  Future<void> _onBottomNavigationTap(int index) async {
+    if (index == _currentIndex && index != _controlIndex) return;
+
+    if (_currentIndex == 1 && _quizInProgress) {
+      final shouldLeave = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Leave quiz?'),
+          content: const Text(
+            'You have an active quiz. If you leave now, your current quiz '
+            'progress will be lost.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Leave Quiz'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldLeave != true || !mounted) return;
+
+      setState(() {
+        _quizInProgress = false;
+        _quizResetGeneration++;
+      });
+    }
+
+    if (!mounted) return;
+
+    if (index == _controlIndex) {
+      await _openControlScreen();
+      return;
+    }
+
     setState(() => _currentIndex = index);
+  }
+
+  Future<void> _onDrawerTap(int index) async {
     Navigator.pop(context);
+    await _onBottomNavigationTap(index);
   }
 
   @override
@@ -35,12 +129,7 @@ class _HomeShellState extends State<HomeShell> {
     final user = widget.auth.currentUser;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('ELIO'),
-        backgroundColor: const Color(0xFF1D9E75),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+      key: _scaffoldKey,
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -168,8 +257,8 @@ class _HomeShellState extends State<HomeShell> {
               activeIcon: Icons.gamepad,
               title: 'Control',
               subtitle: 'Drive robot & Camera',
-              isActive: _currentIndex == 3,
-              onTap: () => _onDrawerTap(3),
+              isActive: false,
+              onTap: () => _onDrawerTap(_controlIndex),
             ),
             const Divider(height: 20, indent: 16, endIndent: 16),
             Padding(
@@ -216,7 +305,7 @@ class _HomeShellState extends State<HomeShell> {
       body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: _onBottomNavigationTap,
         selectedItemColor: const Color(0xFF1D9E75),
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,

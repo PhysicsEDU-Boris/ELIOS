@@ -98,17 +98,20 @@ class LearningProgress {
   /// Average progress across all tracked categories (0.0 – 1.0).
   double get overallProgress {
     if (categories.isEmpty) return 0.0;
-    final total = categories.values
-        .fold<double>(0.0, (sum, c) => sum + c.progressPercentage);
+    final total = categories.values.fold<double>(
+      0.0,
+      (sum, c) => sum + c.progressPercentage,
+    );
     return total / categories.length;
   }
 
   LearningProgress copyWith({
+    String? userId,
     Map<String, CategoryProgress>? categories,
     DateTime? lastUpdated,
   }) {
     return LearningProgress(
-      userId: userId,
+      userId: userId ?? this.userId,
       categories: categories ?? this.categories,
       lastUpdated: lastUpdated ?? this.lastUpdated,
     );
@@ -116,9 +119,7 @@ class LearningProgress {
 
   Map<String, dynamic> toMap() => {
     'userId': userId,
-    'categories': {
-      for (final e in categories.entries) e.key: e.value.toMap(),
-    },
+    'categories': {for (final e in categories.entries) e.key: e.value.toMap()},
     'lastUpdated': lastUpdated?.toIso8601String(),
   };
 
@@ -128,8 +129,9 @@ class LearningProgress {
     if (rawCats is Map) {
       for (final entry in rawCats.entries) {
         if (entry.value is Map<String, dynamic>) {
-          cats[entry.key as String] =
-              CategoryProgress.fromMap(entry.value as Map<String, dynamic>);
+          cats[entry.key as String] = CategoryProgress.fromMap(
+            entry.value as Map<String, dynamic>,
+          );
         }
       }
     }

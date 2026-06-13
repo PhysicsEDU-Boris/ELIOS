@@ -318,6 +318,46 @@ class _ConfigScreenState extends State<ConfigScreen> {
               SizedBox(
                 width: double.infinity,
                 height: 56,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ControlScreen(
+                          mode: ControlMode.localCameraTest,
+                        ),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: primaryColor,
+                    side: BorderSide(
+                      color: primaryColor.withValues(alpha: 0.25),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.videocam_outlined, size: 22),
+                      SizedBox(width: 12),
+                      Text(
+                        'CONTINUE WITH LOCAL CAMERA',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
                 child: ElevatedButton(
                   onPressed: _isConnecting ? null : _connect,
                   style: ElevatedButton.styleFrom(

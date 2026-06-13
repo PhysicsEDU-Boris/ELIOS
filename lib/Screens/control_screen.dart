@@ -1,12 +1,19 @@
+import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../providers/segmentation_provider.dart';
 import '../providers/robot_provider.dart';
 
+enum ControlMode { robotConnected, localCameraTest }
+
 class ControlScreen extends ConsumerStatefulWidget {
-  const ControlScreen({super.key});
+  const ControlScreen({super.key, this.mode = ControlMode.robotConnected});
+
+  final ControlMode mode;
 
   @override
   ConsumerState<ControlScreen> createState() => _ControlScreenState();
@@ -15,665 +22,885 @@ class ControlScreen extends ConsumerStatefulWidget {
 class _ControlScreenState extends ConsumerState<ControlScreen> {
   Uint8List? _currentFrame;
   ProviderSubscription<AsyncValue<Uint8List>>? _frameSubscription;
+  CameraController? _cameraController;
+  late final RobotControlNotifier _robotNotifier;
+  String? _localCameraError;
+  bool _isInitializingLocalCamera = false;
+  bool? _lastLoggedRobotControlsEnabled;
 
-  static const Color backgroundMain = Color(0xFFF5F7F6);
+  bool get _isLocalCameraMode => widget.mode == ControlMode.localCameraTest;
+
   static const Color textPrimary = Color(0xFF1C2833);
   static const Color textSecondary = Color(0xFF7F8C8D);
   static const Color primaryColor = Color(0xFF1D9E75);
+  static const Color blueAccent = Color(0xFF3498DB);
   static const Color orangeAccent = Color(0xFFE67E22);
   static const Color redAccent = Color(0xFFE74C3C);
-  static const Color cardBorder = Color(0xFFE8ECEB);
 
   @override
   void initState() {
     super.initState();
-    // Subscribe to camera frames outside of build to avoid re-registering
-    // the listener on every rebuild.
-    _frameSubscription = ref.listenManual(robotFrameProvider, (_, next) {
-      if (next.hasValue && mounted) {
-        setState(() => _currentFrame = next.value);
-      }
+    _robotNotifier = ref.read(robotControlProvider.notifier);
+    debugPrint('Selected control mode: ${widget.mode}');
+
+    if (_isLocalCameraMode) {
+      unawaited(_initializeLocalCamera());
+    } else {
+      // Subscribe to robot frames outside of build to avoid re-registering
+      // the listener on every rebuild.
+      _frameSubscription = ref.listenManual(robotFrameProvider, (_, next) {
+        if (next.hasValue && mounted) {
+          setState(() => _currentFrame = next.value);
+        }
+      });
+      // Connect to the robot when the control screen opens.
+      _robotNotifier.connect();
+      debugPrint(
+        'Robot controls enabled: true (awaiting WebSocket connection)',
+      );
+    }
+  }
+
+  Future<void> _initializeLocalCamera() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isInitializingLocalCamera = true;
+      _localCameraError = null;
     });
-    // Connect to the robot when the control screen opens.
-    ref.read(robotControlProvider.notifier).connect();
+
+    try {
+      final cameras = await availableCameras();
+      debugPrint(
+        'Detected local cameras: ${cameras.map((camera) => '${camera.name} (${camera.lensDirection.name})').join(', ')}',
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (cameras.isEmpty) {
+        setState(() {
+          _isInitializingLocalCamera = false;
+          _localCameraError = 'No local camera was detected.';
+        });
+        debugPrint('Selected camera source: none available');
+        return;
+      }
+
+      final selectedCamera = cameras.firstWhere(
+        (camera) => camera.lensDirection == CameraLensDirection.back,
+        orElse: () => cameras.first,
+      );
+      debugPrint(
+        'Selected camera source: ${selectedCamera.name} (${selectedCamera.lensDirection.name})',
+      );
+
+      final controller = CameraController(
+        selectedCamera,
+        ResolutionPreset.medium,
+        enableAudio: false,
+      );
+      await controller.initialize();
+
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+
+      final previousController = _cameraController;
+      setState(() {
+        _cameraController = controller;
+        _isInitializingLocalCamera = false;
+        _localCameraError = null;
+      });
+      await previousController?.dispose();
+      debugPrint('Robot controls enabled: false');
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isInitializingLocalCamera = false;
+        _localCameraError = 'Unable to open local camera test mode.';
+      });
+      debugPrint('Local camera initialization failed: $error');
+    }
   }
 
   @override
   void dispose() {
     _frameSubscription?.close();
-    // Disconnect when leaving the control screen.
-    ref.read(robotControlProvider.notifier).disconnect();
+    _cameraController?.dispose();
+    if (!_isLocalCameraMode) {
+      // Disconnect when leaving the control screen.
+      _robotNotifier.disconnect();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final robotState = ref.watch(robotControlProvider);
-    final status =
-        ref.watch(robotStatusProvider).value ?? 'Disconnected';
+    final status = _isLocalCameraMode
+        ? 'Camera test mode'
+        : ref.watch(robotStatusProvider).value ?? 'Disconnected';
+    final segmentationState = _isLocalCameraMode
+        ? const SegmentationState()
+        : ref.watch(segmentationProvider);
 
-    final isConnected = status == 'Connected';
-    final isReconnecting = status == 'Reconnecting...';
-    final isOperational = isConnected;
+    final isConnected = !_isLocalCameraMode && status == 'Connected';
+    final isReconnecting = !_isLocalCameraMode && status == 'Reconnecting...';
+    final isOperational = !_isLocalCameraMode && isConnected;
 
-    return Scaffold(
-      backgroundColor: backgroundMain,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(isConnected, isReconnecting),
-                const SizedBox(height: 16),
-                _buildStatusSummary(isConnected, isReconnecting),
-                const SizedBox(height: 16),
-                _buildCameraCard(),
-                const SizedBox(height: 16),
-                _buildDriveControls(robotState, isOperational),
-                const SizedBox(height: 16),
-                _buildArmControls(robotState, isOperational),
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+    if (_lastLoggedRobotControlsEnabled != isOperational) {
+      _lastLoggedRobotControlsEnabled = isOperational;
+      debugPrint('Robot controls ${isOperational ? 'enabled' : 'disabled'}');
+    }
 
-  Widget _buildHeader(bool isConnected, bool isReconnecting) {
-    Color statusColor = isConnected
-        ? primaryColor
-        : isReconnecting
-        ? orangeAccent
-        : redAccent;
-    String displayText = isConnected
+    final notifier = _robotNotifier;
+    final speed = robotState.pwmSpeed;
+    final statusLabel = _isLocalCameraMode
+        ? 'LOCAL'
+        : isConnected
         ? 'LIVE'
         : isReconnecting
-        ? 'RECONNECTING...'
+        ? 'RECONNECTING'
         : 'OFFLINE';
 
-    return Row(
-      children: [
-        _buildHeaderIconButton(Icons.menu, () {}),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'ELIO',
-                style: TextStyle(
-                  color: Color(0xFF1C2833),
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'Robot control dashboard',
-                style: TextStyle(
-                  color: Color(0xFF7F8C8D),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: statusColor.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: statusColor.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: statusColor,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                displayText,
-                style: TextStyle(
-                  color: statusColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeaderIconButton(IconData icon, VoidCallback onTap) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: cardBorder),
-          ),
-          child: Icon(icon, color: textPrimary, size: 22),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusSummary(bool isConnected, bool isReconnecting) {
-    Color statusColor = isConnected
-        ? primaryColor
-        : isReconnecting
-        ? orangeAccent
-        : redAccent;
-    IconData statusIcon = isConnected
-        ? Icons.smart_toy_outlined
-        : isReconnecting
-        ? Icons.autorenew
-        : Icons.warning_amber_rounded;
-    String statusMessage = isConnected
-        ? 'Connected and ready'
-        : isReconnecting
-        ? 'Reconnecting...'
-        : 'Not connected yet';
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cardBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Stack(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Center(
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child: SizedBox(
+                        width: 960,
+                        height: 380,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            _VerticalControlSlider(
+                              label: 'UP/DOWN',
+                              sublabel: 'ARM HEIGHT',
+                              value: (robotState.elbowAngle / 180).clamp(
+                                0.0,
+                                1.0,
+                              ),
+                              enabled: isOperational,
+                              labelOnLeft: true,
+                              onChanged: (value) =>
+                                  notifier.setElbowAngle(value * 180),
+                            ),
+                            const SizedBox(width: 12),
+                            _LandscapeDriveControls(
+                              speed: speed,
+                              enabled: isOperational,
+                              onForward: () => notifier.sendMotor(
+                                speed.toInt(),
+                                speed.toInt(),
+                              ),
+                              onBack: () => notifier.sendMotor(
+                                -speed.toInt(),
+                                -speed.toInt(),
+                              ),
+                              onLeft: () => notifier.sendMotor(
+                                -speed.toInt(),
+                                speed.toInt(),
+                              ),
+                              onRight: () => notifier.sendMotor(
+                                speed.toInt(),
+                                -speed.toInt(),
+                              ),
+                              onStop: () => notifier.sendMotor(0, 0),
+                            ),
+                            const SizedBox(width: 14),
+                            SizedBox(
+                              width: 400,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  _LandscapeCameraPanel(
+                                    isLocal: _isLocalCameraMode,
+                                    cameraController: _cameraController,
+                                    currentFrame: _currentFrame,
+                                    isInitializingLocalCamera:
+                                        _isInitializingLocalCamera,
+                                    localCameraError: _localCameraError,
+                                    isProcessing:
+                                        segmentationState.isProcessing,
+                                    statusLabel: statusLabel,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _LandscapeActionButtons(
+                                    enabled: isOperational,
+                                    onPickUp: notifier.pickUp,
+                                    onRelease: notifier.release,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            _LandscapeSpeedPanel(
+                              speed: speed,
+                              enabled: isOperational,
+                              onChanged: notifier.setPwmSpeed,
+                            ),
+                            const SizedBox(width: 12),
+                            _VerticalControlSlider(
+                              label: 'FORWARD/BACKWARD',
+                              sublabel: 'ARM REACH',
+                              value: (robotState.baseAngle / 180).clamp(
+                                0.0,
+                                1.0,
+                              ),
+                              enabled: isOperational,
+                              labelOnLeft: false,
+                              onChanged: (value) =>
+                                  notifier.setBaseAngle(value * 180),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-            child: Icon(statusIcon, color: statusColor, size: 26),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'ELIO Robot',
-                  style: TextStyle(
-                    color: Color(0xFF1C2833),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  statusMessage,
-                  style: const TextStyle(
-                    color: Color(0xFF7F8C8D),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
+          Positioned(
+            top: 12,
+            left: 12,
+            child: SafeArea(
+              child: _ExitControlButton(
+                onTap: () => Navigator.of(context).pop(),
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildCameraCard() {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cardBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (_currentFrame != null)
-                Image.memory(
-                  _currentFrame!,
-                  fit: BoxFit.cover,
-                  gaplessPlayback: true,
-                )
-              else
-                Container(
-                  color: const Color(0xFFF0F3F2),
-                  child: const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF1D9E75)),
-                  ),
-                ),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.12),
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.45),
-                    ],
-                    stops: const [0.0, 0.45, 1.0],
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 14,
-                right: 14,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: primaryColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    '98%',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 16,
-                right: 16,
-                bottom: 16,
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.88),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.6),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'DETECTION',
-                            style: TextStyle(
-                              color: Color(0xFF1D9E75),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          const Text(
-                            'Plastic Bottle',
-                            style: TextStyle(
-                              color: Color(0xFF1C2833),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: cardBorder),
-                        ),
-                        child: const Icon(
-                          Icons.lock_open,
-                          color: Color(0xFF7F8C8D),
-                          size: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+class _ExitControlButton extends StatelessWidget {
+  const _ExitControlButton({required this.onTap});
 
-  Widget _buildDriveControls(RobotState robotState, bool isOperational) {
-    final notifier = ref.read(robotControlProvider.notifier);
-    final speed = robotState.pwmSpeed;
-    return _buildSection(
-      title: 'DRIVE CONTROLS',
-      child: AbsorbPointer(
-        absorbing: !isOperational,
-        child: Opacity(
-          opacity: isOperational ? 1.0 : 0.3,
-          child: Column(
-            children: [
-              _buildSliderCard(
-                label: 'Speed (PWM)',
-                valueText: '${speed.toInt()}%',
-                value: speed,
-                min: 0,
-                max: 100,
-                onChanged: (val) => notifier.setPwmSpeed(val),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: 240,
-                height: 240,
-                child: GridView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  children: [
-                    const SizedBox(),
-                    _buildDpadButton(
-                      Icons.arrow_upward,
-                      () => notifier.sendMotor(speed.toInt(), speed.toInt()),
-                    ),
-                    const SizedBox(),
-                    _buildDpadButton(
-                      Icons.arrow_back,
-                      () => notifier.sendMotor(-speed.toInt(), speed.toInt()),
-                    ),
-                    GestureDetector(
-                      onTapDown: (_) => notifier.sendMotor(0, 0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: redAccent.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: redAccent.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.hexagon,
-                          color: redAccent,
-                          size: 36,
-                        ),
-                      ),
-                    ),
-                    _buildDpadButton(
-                      Icons.arrow_forward,
-                      () => notifier.sendMotor(speed.toInt(), -speed.toInt()),
-                    ),
-                    const SizedBox(),
-                    _buildDpadButton(
-                      Icons.arrow_downward,
-                      () => notifier.sendMotor(-speed.toInt(), -speed.toInt()),
-                    ),
-                    const SizedBox(),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  final VoidCallback onTap;
 
-  Widget _buildArmControls(RobotState robotState, bool isOperational) {
-    final notifier = ref.read(robotControlProvider.notifier);
-    return _buildSection(
-      title: 'ARM MANIPULATION',
-      child: AbsorbPointer(
-        absorbing: !isOperational,
-        child: Opacity(
-          opacity: isOperational ? 1.0 : 0.3,
-          child: Column(
-            children: [
-              _buildSliderCard(
-                label: 'Base',
-                valueText: '${robotState.baseAngle.toInt()}°',
-                value: robotState.baseAngle,
-                min: 0,
-                max: 180,
-                onChanged: notifier.setBaseAngle,
-              ),
-              const SizedBox(height: 18),
-              _buildSliderCard(
-                label: 'Elbow',
-                valueText: '${robotState.elbowAngle.toInt()}°',
-                value: robotState.elbowAngle,
-                min: 0,
-                max: 180,
-                onChanged: notifier.setElbowAngle,
-              ),
-              const SizedBox(height: 18),
-              _buildSliderCard(
-                label: 'Gripper',
-                valueText: robotState.gripperVal < 30 ? 'Open' : 'Closed',
-                value: robotState.gripperVal,
-                min: 0,
-                max: 100,
-                onChanged: notifier.setGripperVal,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: notifier.pickUp,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.pinch, size: 22),
-                            SizedBox(width: 8),
-                            Text(
-                              'PICK UP',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SizedBox(
-                      height: 56,
-                      child: OutlinedButton(
-                        onPressed: notifier.release,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: textPrimary,
-                          side: const BorderSide(color: cardBorder),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.back_hand, size: 22),
-                            SizedBox(width: 8),
-                            Text(
-                              'RELEASE',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSection({required String title, required Widget child}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Color(0xFF1C2833),
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 2,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.92),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: cardBorder),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFBEC9C2)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
-          child: child,
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.arrow_back_rounded,
+                size: 18,
+                color: _ControlScreenState.textPrimary,
+              ),
+              SizedBox(width: 6),
+              Text(
+                'Exit',
+                style: TextStyle(
+                  color: _ControlScreenState.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
+}
 
-  Widget _buildSliderCard({
-    required String label,
-    required String valueText,
-    required double value,
-    required double min,
-    required double max,
-    required ValueChanged<double> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+class _VerticalControlSlider extends StatelessWidget {
+  const _VerticalControlSlider({
+    required this.label,
+    required this.sublabel,
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+    this.labelOnLeft = false,
+  });
+
+  final String label;
+  final String sublabel;
+  final double value;
+  final bool enabled;
+  final ValueChanged<double> onChanged;
+  final bool labelOnLeft;
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = FittedBox(
+      fit: BoxFit.scaleDown,
+      child: RotatedBox(
+        quarterTurns: 3,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               label,
-              style: TextStyle(
-                color: textSecondary,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: _ControlScreenState.textPrimary,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
               ),
             ),
+            const SizedBox(height: 2),
             Text(
-              valueText,
-              style: TextStyle(
-                color: primaryColor,
-                fontSize: 14,
+              sublabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: _ControlScreenState.textSecondary,
+                fontSize: 8,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final slider = Container(
+      width: 58,
+      height: 260,
+      decoration: BoxDecoration(
+        color: _ControlScreenState.primaryColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFBEC9C2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: RotatedBox(
+        quarterTurns: 3,
+        child: SliderTheme(
+          data: SliderThemeData(
+            activeTrackColor: Colors.white,
+            inactiveTrackColor: Colors.white.withValues(alpha: 0.45),
+            trackHeight: 4,
+            thumbColor: _ControlScreenState.primaryColor,
+            overlayColor: Colors.white.withValues(alpha: 0.15),
+            thumbShape: const RoundSliderThumbShape(
+              enabledThumbRadius: 10,
+              elevation: 0,
+            ),
+          ),
+          child: Slider(value: value, onChanged: enabled ? onChanged : null),
+        ),
+      ),
+    );
+
+    return Opacity(
+      opacity: enabled ? 1 : 0.70,
+      child: SizedBox(
+        width: 90,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: labelOnLeft
+              ? [
+                  Expanded(child: Center(child: labels)),
+                  const SizedBox(width: 4),
+                  slider,
+                ]
+              : [
+                  slider,
+                  const SizedBox(width: 4),
+                  Expanded(child: Center(child: labels)),
+                ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LandscapeDriveControls extends StatelessWidget {
+  const _LandscapeDriveControls({
+    required this.speed,
+    required this.enabled,
+    required this.onForward,
+    required this.onBack,
+    required this.onLeft,
+    required this.onRight,
+    required this.onStop,
+  });
+
+  final double speed;
+  final bool enabled;
+  final VoidCallback onForward;
+  final VoidCallback onBack;
+  final VoidCallback onLeft;
+  final VoidCallback onRight;
+  final VoidCallback onStop;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: enabled ? 1 : 0.65,
+      child: AbsorbPointer(
+        absorbing: !enabled,
+        child: SizedBox(
+          width: 158,
+          height: 270,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'DRIVE CONTROLS',
+                style: TextStyle(
+                  color: Color(0xFF3F4943),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: 158,
+                height: 180,
+                child: Stack(
+                  children: [
+                    Align(
+                      alignment: Alignment.topCenter,
+                      child: _DpadButton(
+                        icon: Icons.arrow_upward,
+                        onPressed: onForward,
+                        onReleased: onStop,
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: _DpadButton(
+                        icon: Icons.arrow_back,
+                        onPressed: onLeft,
+                        onReleased: onStop,
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.center,
+                      child: _DpadButton(
+                        icon: Icons.hexagon_outlined,
+                        onPressed: onStop,
+                        onReleased: onStop,
+                        isStop: true,
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: _DpadButton(
+                        icon: Icons.arrow_forward,
+                        onPressed: onRight,
+                        onReleased: onStop,
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: _DpadButton(
+                        icon: Icons.arrow_downward,
+                        onPressed: onBack,
+                        onReleased: onStop,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${speed.toInt()}% PWM',
+                style: const TextStyle(
+                  color: _ControlScreenState.textSecondary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DpadButton extends StatelessWidget {
+  const _DpadButton({
+    required this.icon,
+    required this.onPressed,
+    required this.onReleased,
+    this.isStop = false,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+  final VoidCallback onReleased;
+  final bool isStop;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => onPressed(),
+      onTapUp: (_) => onReleased(),
+      onTapCancel: onReleased,
+      child: Container(
+        width: 52,
+        height: 56,
+        decoration: BoxDecoration(
+          color: isStop ? const Color(0xFFFEF2F2) : Colors.white,
+          borderRadius: BorderRadius.circular(isStop ? 26 : 12),
+          border: Border.all(
+            color: isStop ? const Color(0xFFFECACA) : const Color(0xFFBEC9C2),
+          ),
+        ),
+        child: Icon(
+          icon,
+          color: isStop
+              ? _ControlScreenState.redAccent
+              : _ControlScreenState.textPrimary,
+          size: isStop ? 30 : 28,
+        ),
+      ),
+    );
+  }
+}
+
+class _LandscapeCameraPanel extends StatelessWidget {
+  const _LandscapeCameraPanel({
+    required this.isLocal,
+    required this.cameraController,
+    required this.currentFrame,
+    required this.isInitializingLocalCamera,
+    required this.localCameraError,
+    required this.isProcessing,
+    required this.statusLabel,
+  });
+
+  final bool isLocal;
+  final CameraController? cameraController;
+  final Uint8List? currentFrame;
+  final bool isInitializingLocalCamera;
+  final String? localCameraError;
+  final bool isProcessing;
+  final String statusLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasCameraPreview =
+        cameraController != null && cameraController!.value.isInitialized;
+    final statusColor = isLocal
+        ? _ControlScreenState.blueAccent
+        : statusLabel == 'LIVE'
+        ? _ControlScreenState.primaryColor
+        : statusLabel == 'RECONNECTING'
+        ? _ControlScreenState.orangeAccent
+        : _ControlScreenState.redAccent;
+
+    return Container(
+      width: 400,
+      height: 230,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F3F2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFBEC9C2)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(11),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (isLocal && hasCameraPreview)
+              CameraPreview(cameraController!)
+            else if (isLocal)
+              _CameraFallback(
+                isLoading: isInitializingLocalCamera,
+                message: localCameraError ?? 'Opening local camera...',
+              )
+            else if (currentFrame != null)
+              Image.memory(
+                currentFrame!,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+              )
+            else
+              const _CameraFallback(
+                isLoading: true,
+                message: 'Waiting for ESP32-CAM stream...',
+              ),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0x33000000),
+                    Colors.transparent,
+                    Color(0x55000000),
+                  ],
+                  stops: [0, 0.55, 1],
+                ),
+              ),
+            ),
+            if (isProcessing && !isLocal)
+              const Center(child: CircularProgressIndicator(color: Colors.red)),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  statusLabel,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.7,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CameraFallback extends StatelessWidget {
+  const _CameraFallback({required this.isLoading, required this.message});
+
+  final bool isLoading;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: const Color(0xFFF0F3F2),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isLoading)
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: _ControlScreenState.primaryColor,
+                  strokeWidth: 3,
+                ),
+              )
+            else
+              const Icon(
+                Icons.videocam_off_outlined,
+                color: _ControlScreenState.textSecondary,
+                size: 28,
+              ),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: _ControlScreenState.textSecondary,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
-        SliderTheme(
-          data: SliderThemeData(
-            thumbColor: primaryColor,
-            activeTrackColor: primaryColor,
-            inactiveTrackColor: const Color(0xFFE1E7E5),
-            trackHeight: 4,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
-            overlayColor: primaryColor.withValues(alpha: 0.14),
-          ),
-          child: Slider(value: value, min: min, max: max, onChanged: onChanged),
-        ),
-      ],
+      ),
     );
   }
+}
 
-  Widget _buildDpadButton(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTapDown: (_) => onTap(),
-      onTapUp: (_) => ref.read(robotControlProvider.notifier).sendMotor(0, 0),
-      onTapCancel: () => ref.read(robotControlProvider.notifier).sendMotor(0, 0),
+class _LandscapeActionButtons extends StatelessWidget {
+  const _LandscapeActionButtons({
+    required this.enabled,
+    required this.onPickUp,
+    required this.onRelease,
+  });
+
+  final bool enabled;
+  final VoidCallback onPickUp;
+  final VoidCallback onRelease;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: enabled ? 1 : 0.65,
+      child: Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 56,
+              child: FilledButton.icon(
+                onPressed: enabled ? onPickUp : null,
+                icon: const Icon(Icons.pinch, size: 20),
+                label: const Text('PICK UP'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: _ControlScreenState.primaryColor,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: _ControlScreenState.primaryColor,
+                  disabledForegroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: SizedBox(
+              height: 56,
+              child: OutlinedButton.icon(
+                onPressed: enabled ? onRelease : null,
+                icon: const Icon(Icons.back_hand_outlined, size: 20),
+                label: const Text('RELEASE'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _ControlScreenState.textPrimary,
+                  disabledForegroundColor: _ControlScreenState.textPrimary,
+                  side: const BorderSide(color: Color(0xFFBEC9C2)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LandscapeSpeedPanel extends StatelessWidget {
+  const _LandscapeSpeedPanel({
+    required this.speed,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final double speed;
+  final bool enabled;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: enabled ? 1 : 0.70,
       child: Container(
+        width: 170,
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cardBorder),
+          border: Border.all(color: const Color(0xFFBEC9C2)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 5,
               offset: const Offset(0, 3),
             ),
           ],
         ),
-        child: Icon(icon, color: textPrimary, size: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Flexible(
+                  child: Text(
+                    'Speed (PWM)',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Color(0xFF3F4943),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${speed.toInt()}%',
+                  style: const TextStyle(
+                    color: _ControlScreenState.primaryColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            SliderTheme(
+              data: SliderThemeData(
+                activeTrackColor: _ControlScreenState.primaryColor,
+                inactiveTrackColor: const Color(0xFFE5E7EB),
+                trackHeight: 4,
+                thumbColor: _ControlScreenState.primaryColor,
+                overlayColor: _ControlScreenState.primaryColor.withValues(
+                  alpha: 0.12,
+                ),
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
+              ),
+              child: Slider(
+                value: speed.clamp(0, 100),
+                min: 0,
+                max: 100,
+                onChanged: enabled ? onChanged : null,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
