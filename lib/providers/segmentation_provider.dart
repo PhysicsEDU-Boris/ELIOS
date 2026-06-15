@@ -3,78 +3,58 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/segmentation_result.dart';
 import '../services/segmentation_service.dart';
 import '../services/websocket_service.dart';
 
 class SegmentationState {
   final bool isProcessing;
-  final List<Map<String, dynamic>> detections;
+  final SegmentationFrameResult? result;
 
-  const SegmentationState({
-    this.isProcessing = false,
-    this.detections = const [],
-  });
-
-  SegmentationState copyWith({
-    bool? isProcessing,
-    List<Map<String, dynamic>>? detections,
-  }) {
-    return SegmentationState(
-      isProcessing: isProcessing ?? this.isProcessing,
-      detections: detections ?? this.detections,
-    );
-  }
+  const SegmentationState({this.isProcessing = false, this.result});
 }
 
 class SegmentationNotifier extends StateNotifier<SegmentationState> {
   SegmentationNotifier() : super(const SegmentationState()) {
     unawaited(_service.init());
-    _frameSubscription = WebSocketService().frames.listen(_handleFrame);
+    _frameSub = WebSocketService().frames.listen(_onFrame);
   }
 
   final SegmentationService _service = SegmentationService();
-  late final StreamSubscription<Uint8List> _frameSubscription;
-  Uint8List? _pendingFrame;
-  bool _isProcessing = false;
+  late final StreamSubscription<Uint8List> _frameSub;
+  bool _busy = false;
+  DateTime _lastRun = DateTime.fromMillisecondsSinceEpoch(0);
 
-  void _handleFrame(Uint8List frame) {
-    _pendingFrame = frame;
-    if (_isProcessing) {
+  void _onFrame(Uint8List jpeg) {
+    final now = DateTime.now();
+    if (_busy || now.difference(_lastRun).inMilliseconds < 80) {
       return;
     }
 
-    unawaited(_drainFrames());
+    _busy = true;
+    _lastRun = now;
+    if (mounted) {
+      state = SegmentationState(isProcessing: true, result: state.result);
+    }
+
+    unawaited(_run(jpeg));
   }
 
-  Future<void> _drainFrames() async {
-    if (_isProcessing) {
-      return;
-    }
-
-    _isProcessing = true;
-    state = state.copyWith(isProcessing: true);
-
+  Future<void> _run(Uint8List jpeg) async {
     try {
-      while (_pendingFrame != null && mounted) {
-        final frame = _pendingFrame!;
-        _pendingFrame = null;
-        await _service.runInference(frame);
+      final result = await _service.runInference(jpeg);
+      if (mounted) {
+        state = SegmentationState(isProcessing: false, result: result);
       }
     } finally {
-      _isProcessing = false;
-      if (mounted) {
-        state = state.copyWith(isProcessing: false, detections: const []);
-      }
-
-      if (_pendingFrame != null && mounted) {
-        unawaited(_drainFrames());
-      }
+      _busy = false;
     }
   }
 
   @override
   void dispose() {
-    _frameSubscription.cancel();
+    _frameSub.cancel();
+    _service.dispose();
     super.dispose();
   }
 }
