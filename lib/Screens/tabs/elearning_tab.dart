@@ -5,9 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/elearning_module.dart';
+import '../../models/app_notification.dart';
 import '../../models/learning_progress.dart';
 import '../../models/waste_category.dart';
+import '../../providers/app_notification_provider.dart';
 import '../../providers/learning_progress_provider.dart';
+import '../../providers/navigation_provider.dart';
 import '../../services/elearning_content_service.dart';
 import '../../widgets/elio_learning_app_bar.dart';
 import 'elearning/guides_page.dart';
@@ -40,6 +43,8 @@ class _ElearningTabState extends ConsumerState<ElearningTab> {
   final ElearningContentService _service = ElearningContentService();
   LearningSection _selectedSection = LearningSection.allCategories;
   String? _selectedModuleId;
+  String? _pendingResumeVideoId;
+  String? _pendingResumeGuideId;
   bool _quizInProgress = false;
 
   void _selectSection(LearningSection section) {
@@ -54,6 +59,63 @@ class _ElearningTabState extends ConsumerState<ElearningTab> {
   void _clearModuleFilter() {
     if (_selectedModuleId == null || _quizInProgress) return;
     setState(() => _selectedModuleId = null);
+  }
+
+  void _handleLearningResumeIntent(LearningResumeIntent intent) {
+    if (!mounted) return;
+
+    setState(() {
+      switch (intent.type) {
+        case LearningResumeType.video:
+          _selectedSection = LearningSection.videoLessons;
+          _selectedModuleId = intent.moduleId;
+          _pendingResumeVideoId = intent.id;
+          _pendingResumeGuideId = null;
+          break;
+        case LearningResumeType.guide:
+          _selectedSection = LearningSection.guides;
+          _selectedModuleId = intent.moduleId;
+          _pendingResumeVideoId = null;
+          _pendingResumeGuideId = intent.id;
+          break;
+        case LearningResumeType.quiz:
+          _selectedSection = LearningSection.quiz;
+          _selectedModuleId = intent.moduleId ?? intent.id;
+          _pendingResumeVideoId = null;
+          _pendingResumeGuideId = null;
+          break;
+      }
+    });
+
+    _clearLearningResumeIntentLater(intent);
+  }
+
+  void _clearLearningResumeIntentLater(LearningResumeIntent handledIntent) {
+    Future<void>(() {
+      if (!mounted) return;
+
+      final current = ref.read(learningResumeIntentProvider);
+      if (current == null) return;
+
+      final isSameIntent =
+          current.type == handledIntent.type &&
+          current.id == handledIntent.id &&
+          current.moduleId == handledIntent.moduleId;
+
+      if (!isSameIntent) return;
+
+      ref.read(learningResumeIntentProvider.notifier).state = null;
+    });
+  }
+
+  void _clearPendingResumeVideo() {
+    if (!mounted || _pendingResumeVideoId == null) return;
+    setState(() => _pendingResumeVideoId = null);
+  }
+
+  void _clearPendingResumeGuide() {
+    if (!mounted || _pendingResumeGuideId == null) return;
+    setState(() => _pendingResumeGuideId = null);
   }
 
   Future<void> _showLearningPath(
@@ -89,17 +151,66 @@ class _ElearningTabState extends ConsumerState<ElearningTab> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<LearningResumeIntent?>(learningResumeIntentProvider, (
+      previous,
+      next,
+    ) {
+      if (next == null) return;
+      _handleLearningResumeIntent(next);
+    });
+
+    final pendingIntent = ref.read(learningResumeIntentProvider);
+    if (pendingIntent != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final intent = ref.read(learningResumeIntentProvider);
+        if (intent != null) _handleLearningResumeIntent(intent);
+      });
+    }
+
     final progress = ref.watch(learningProgressProvider).valueOrNull;
+    final unreadNotifications = ref.watch(unreadNotificationCountProvider);
 
     return Scaffold(
       backgroundColor: _background,
       appBar: ElioLearningAppBar(
         title: 'ELIO',
-        action: IconButton(
-          onPressed: () => _showNotificationPlaceholder(context),
-          icon: const Icon(Icons.notifications_none_rounded),
-          color: _primary,
-          tooltip: 'Notifications',
+        action: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              onPressed: () => _showLearningNotificationsTopPanel(context),
+              icon: const Icon(Icons.notifications_none_rounded),
+              color: _primary,
+              tooltip: 'Notifications',
+            ),
+            if (unreadNotifications > 0)
+              Positioned(
+                right: 2,
+                top: 2,
+                child: Container(
+                  constraints: const BoxConstraints(minWidth: 17),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFBA1A1A),
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(color: Colors.white, width: 1.4),
+                  ),
+                  child: Text(
+                    unreadNotifications > 9 ? '9+' : '$unreadNotifications',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
       body: SafeArea(
@@ -132,10 +243,14 @@ class _ElearningTabState extends ConsumerState<ElearningTab> {
                   GuidesContent(
                     selectedModuleId: _selectedModuleId,
                     onClearFilter: _clearModuleFilter,
+                    resumeGuideId: _pendingResumeGuideId,
+                    onResumeGuideHandled: _clearPendingResumeGuide,
                   ),
                   VideoLessonsContent(
                     selectedModuleId: _selectedModuleId,
                     onClearFilter: _clearModuleFilter,
+                    resumeVideoId: _pendingResumeVideoId,
+                    onResumeVideoHandled: _clearPendingResumeVideo,
                   ),
                   QuizContent(
                     key: ValueKey(widget.quizResetGeneration),
@@ -157,44 +272,348 @@ class _ElearningTabState extends ConsumerState<ElearningTab> {
   }
 }
 
-void _showNotificationPlaceholder(BuildContext context) {
-  showModalBottomSheet<void>(
+void _showLearningNotificationsTopPanel(BuildContext context) {
+  showGeneralDialog<void>(
     context: context,
-    backgroundColor: Colors.white,
-    showDragHandle: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-    ),
-    builder: (context) => SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Notifications',
-              style: GoogleFonts.inter(
-                color: _ink,
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
+    barrierDismissible: true,
+    barrierLabel: 'Dismiss notifications',
+    barrierColor: Colors.black.withValues(alpha: 0.18),
+    transitionDuration: const Duration(milliseconds: 260),
+    pageBuilder: (dialogContext, animation, secondaryAnimation) {
+      return const SizedBox.shrink();
+    },
+    transitionBuilder: (dialogContext, animation, secondaryAnimation, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+
+      return SafeArea(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, -1),
+              end: Offset.zero,
+            ).animate(curved),
+            child: FadeTransition(
+              opacity: curved,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Consumer(
+                    builder: (context, ref, _) {
+                      final items = ref.watch(appNotificationProvider);
+                      final notifier = ref.read(
+                        appNotificationProvider.notifier,
+                      );
+
+                      return Container(
+                        constraints: BoxConstraints(
+                          maxWidth: 720,
+                          maxHeight:
+                              MediaQuery.of(dialogContext).size.height * 0.78,
+                        ),
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.14),
+                              blurRadius: 24,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Container(
+                                width: 42,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFD8DEDB),
+                                  borderRadius: BorderRadius.circular(99),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Notifications',
+                                    style: GoogleFonts.inter(
+                                      color: _ink,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () =>
+                                      Navigator.of(dialogContext).pop(),
+                                  icon: const Icon(Icons.close_rounded),
+                                  tooltip: 'Close notifications',
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Learning updates and robot alerts from ELIO.',
+                              style: GoogleFonts.inter(
+                                color: _muted,
+                                fontSize: 13,
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Flexible(
+                              child: SingleChildScrollView(
+                                child: items.isEmpty
+                                    ? const _LearningNotificationsEmptyState()
+                                    : Column(
+                                        children: [
+                                          for (
+                                            var i = 0;
+                                            i < items.length;
+                                            i++
+                                          ) ...[
+                                            _LearningNotificationTile(
+                                              item: items[i],
+                                              onTap: () {
+                                                notifier.markRead(items[i].id);
+                                              },
+                                            ),
+                                            if (i != items.length - 1)
+                                              const Divider(
+                                                height: 1,
+                                                color: _border,
+                                              ),
+                                          ],
+                                        ],
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            if (items.isNotEmpty) ...[
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: notifier.markAllRead,
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: _primary,
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                      child: Text(
+                                        'Mark all read',
+                                        style: GoogleFonts.inter(
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: notifier.clearAll,
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: const Color(
+                                          0xFFBA1A1A,
+                                        ),
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                      child: Text(
+                                        'Clear all',
+                                        style: GoogleFonts.inter(
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                            ],
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                onPressed: () =>
+                                    Navigator.of(dialogContext).pop(),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: _primary,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                ),
+                                icon: const Icon(Icons.check_rounded, size: 18),
+                                label: Text(
+                                  'Done',
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              'Learning updates and robot alerts will appear here.',
-              style: GoogleFonts.inter(
-                color: _muted,
-                fontSize: 14,
-                height: 1.5,
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _LearningNotificationTile extends StatelessWidget {
+  final AppNotification item;
+  final VoidCallback? onTap;
+
+  const _LearningNotificationTile({required this.item, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _notificationColor(item.type);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 13),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(_notificationIcon(item.type), color: color, size: 21),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: GoogleFonts.inter(
+                      color: _ink,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.message,
+                    style: GoogleFonts.inter(
+                      color: _muted,
+                      fontSize: 11,
+                      height: 1.35,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
-    ),
-  );
+    );
+  }
+}
+
+class _LearningNotificationsEmptyState extends StatelessWidget {
+  const _LearningNotificationsEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4F7F5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _border),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.notifications_none_rounded, color: _muted, size: 30),
+          const SizedBox(height: 10),
+          Text(
+            'No notifications right now.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              color: _ink,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Learning updates and robot alerts will appear here.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              color: _muted,
+              fontSize: 11,
+              height: 1.4,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+IconData _notificationIcon(AppNotificationType type) {
+  switch (type) {
+    case AppNotificationType.success:
+      return Icons.check_circle_outline_rounded;
+    case AppNotificationType.warning:
+      return Icons.warning_amber_rounded;
+    case AppNotificationType.error:
+      return Icons.error_outline_rounded;
+    case AppNotificationType.robot:
+      return Icons.smart_toy_outlined;
+    case AppNotificationType.learning:
+      return Icons.menu_book_outlined;
+    case AppNotificationType.quiz:
+      return Icons.fact_check_outlined;
+    case AppNotificationType.info:
+      return Icons.info_outline_rounded;
+  }
+}
+
+Color _notificationColor(AppNotificationType type) {
+  switch (type) {
+    case AppNotificationType.success:
+    case AppNotificationType.robot:
+    case AppNotificationType.learning:
+      return _primary;
+    case AppNotificationType.warning:
+      return const Color(0xFFBA7517);
+    case AppNotificationType.error:
+      return const Color(0xFFBA1A1A);
+    case AppNotificationType.quiz:
+      return const Color(0xFF00647C);
+    case AppNotificationType.info:
+      return _primary;
+  }
 }
 
 class _AllCategoriesContent extends StatelessWidget {
