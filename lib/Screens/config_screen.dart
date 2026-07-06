@@ -1,32 +1,42 @@
+// Copyright (c) Boris Agung, Irham Fajar
+
 import 'package:elio/models/config_model.dart';
+import 'package:elio/providers/udp_discovery_provider.dart';
+import 'package:elio/providers/wifi_provisioning_provider.dart';
 import 'package:elio/services/config_service.dart';
 import 'package:elio/services/websocket_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import 'control_screen.dart';
 
-class ConfigScreen extends StatefulWidget {
+class ConfigScreen extends ConsumerStatefulWidget {
   const ConfigScreen({super.key});
 
   @override
-  State<ConfigScreen> createState() => _ConfigScreenState();
+  ConsumerState<ConfigScreen> createState() => _ConfigScreenState();
 }
 
-class _ConfigScreenState extends State<ConfigScreen> {
+class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   final TextEditingController _ip1 = TextEditingController(text: '192');
   final TextEditingController _ip2 = TextEditingController(text: '168');
   final TextEditingController _ip3 = TextEditingController(text: '1');
   final TextEditingController _ip4 = TextEditingController(text: '100');
-  final TextEditingController _port = TextEditingController(text: '81');
+  final TextEditingController _port = TextEditingController(text: '8080');
   final TextEditingController _settingsDefaultIp = TextEditingController(
     text: '192.168.1.100',
   );
   final TextEditingController _settingsPort = TextEditingController(
     text: '8080',
   );
+
+  // ── Provisioning Controllers ────────────────────────────────────
+  final TextEditingController _provSsid = TextEditingController();
+  final TextEditingController _provPass = TextEditingController();
 
   final ConfigService _configService = ConfigService();
 
@@ -53,6 +63,25 @@ class _ConfigScreenState extends State<ConfigScreen> {
   void initState() {
     super.initState();
     _loadSavedConfig();
+    _loadWifiSsid();
+
+    // Start the UDP auto-discovery listener after the first frame
+    // to ensure the Riverpod container is fully initialized.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(udpDiscoveryProvider.notifier).startListening();
+    });
+  }
+
+  /// Pre-fill the provisioning SSID field with the current Wi-Fi name.
+  void _loadWifiSsid() {
+    // Read the provider asynchronously; when it resolves, populate the field.
+    Future.microtask(() {
+      ref.read(wifiSsidProvider.future).then((ssid) {
+        if (ssid != null && mounted && _provSsid.text.isEmpty) {
+          _provSsid.text = ssid;
+        }
+      });
+    });
   }
 
   Future<void> _loadSavedConfig() async {
@@ -71,13 +100,11 @@ class _ConfigScreenState extends State<ConfigScreen> {
     setState(() {});
   }
 
-  Future<void> _openControlScreen({
-    ControlMode mode = ControlMode.robotConnected,
-  }) async {
+  Future<void> _openControlScreen() async {
     try {
       await Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => ControlScreen(mode: mode)),
+        MaterialPageRoute(builder: (_) => const ControlScreen()),
       );
     } finally {
       await Future<void>.delayed(const Duration(milliseconds: 300));
@@ -118,8 +145,29 @@ class _ConfigScreenState extends State<ConfigScreen> {
     });
 
     // 2. Configure and AWAIT the connection result
-    WebSocketService().configure(ip, port);
-    bool success = await WebSocketService().connect();
+    debugPrint('[Config] Connecting to ws://$ip:$port');
+    final ws = WebSocketService();
+    ws.resetConnectionState();
+    ws.configure(ip, port, autoReconnect: false);
+
+    bool success = false;
+
+    try {
+      success = await ws
+          .connect(autoReconnect: false)
+          .timeout(
+            const Duration(seconds: 12),
+            onTimeout: () {
+              debugPrint('[Config] Connect hard-timeout for ws://$ip:$port');
+              return false;
+            },
+          );
+    } catch (error) {
+      debugPrint('[Config] Connect exception for ws://$ip:$port -> $error');
+      success = false;
+    }
+
+    debugPrint('[Config] Connect result: $success');
 
     // 3. Stop loading state
     if (!mounted) return;
@@ -139,14 +187,16 @@ class _ConfigScreenState extends State<ConfigScreen> {
       setState(() => _connectionFailed = true);
       // Show error and STAY on Config Screen
       _showSnack(
-        'Connection failed. Is ELIO turned on and on the same WiFi?',
+        'Connection failed. Is MaixCAM2 turned on and on the same WiFi?',
         isError: true,
       );
     }
   }
 
   void _showSnack(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.removeCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: isError
@@ -224,6 +274,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
 
   @override
   void dispose() {
+    // Stop the UDP listener if still active when leaving the screen.
+    ref.read(udpDiscoveryProvider.notifier).stopListening();
     _ip1.dispose();
     _ip2.dispose();
     _ip3.dispose();
@@ -231,11 +283,187 @@ class _ConfigScreenState extends State<ConfigScreen> {
     _port.dispose();
     _settingsDefaultIp.dispose();
     _settingsPort.dispose();
+    _provSsid.dispose();
+    _provPass.dispose();
     super.dispose();
+  }
+
+  // ── QR Provisioning Dialog ──────────────────────────────────────
+  /// Validates the provisioning inputs, fetches the host device IP,
+  /// and displays a centered popup dialog containing the QrImageView.
+  Future<void> _showProvisioningQrDialog() async {
+    final ssid = _provSsid.text.trim();
+    final pass = _provPass.text.trim();
+
+    if (ssid.isEmpty || pass.isEmpty) {
+      _showSnack('Enter both SSID and Password to generate QR.', isError: true);
+      return;
+    }
+
+    // Fetch host device IP asynchronously (fallback to hotspot default).
+    // getBestLocalIp() filters out link-local (169.254.x.x) and USB
+    // interface addresses that NetworkInfo().getWifiIP() sometimes returns
+    // when the phone is connected to a Mac via USB cable.
+    String appIp = '192.168.43.1';
+    try {
+      appIp = await getBestLocalIp();
+      debugPrint('[Provision] Using app_ip: $appIp');
+    } catch (_) {
+      // Silently fall back to default hotspot gateway IP.
+    }
+
+    // Parse port from the existing text controller.
+    final portValue = int.tryParse(_port.text.trim()) ?? 8080;
+
+    if (!mounted) return;
+
+    // Serialize to expanded JSON:
+    // {"ssid":"...","pass":"...","app_ip":"...","port":<int>}
+    final payload = serializeProvisioningPayload(
+      ssid: ssid,
+      password: pass,
+      appIp: appIp,
+      port: portValue,
+    );
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── Title ──
+                  Text(
+                    'Scan to Provision',
+                    style: GoogleFonts.inter(
+                      color: textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Point ELIO\'s camera at this QR code to receive network credentials.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      color: textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── QR Code (white background for dark-mode safety) ──
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: cardBorder.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: QrImageView(
+                      data: payload,
+                      version: QrVersions.auto,
+                      size: 200,
+                      backgroundColor: Colors.white,
+                      eyeStyle: const QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
+                        color: Color(0xFF1C2833),
+                      ),
+                      dataModuleStyle: const QrDataModuleStyle(
+                        dataModuleShape: QrDataModuleShape.square,
+                        color: Color(0xFF1C2833),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // ── Payload preview (SSID + app_ip:port) ──
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF4F7F5),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'SSID: $ssid  ·  $appIp:$portValue',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        color: textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Close Button (brand green) ──
+                  SizedBox(
+                    width: double.infinity,
+                    height: 46,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1D9E75),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'CLOSE',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    // ── UDP Auto-Discovery Listener ──────────────────────────────
+    // When the UDP provider emits a discovered IP, auto-populate the
+    // four IP text controllers and notify the user.
+    ref.listen<String?>(udpDiscoveryProvider, (previous, next) {
+      if (next != null && previous == null) {
+        final parts = next.split('.');
+        if (parts.length == 4) {
+          _ip1.text = parts[0];
+          _ip2.text = parts[1];
+          _ip3.text = parts[2];
+          _ip4.text = parts[3];
+          _showSnack('ELIO Discovered at $next');
+        }
+      }
+    });
+
     final height = MediaQuery.of(context).size.height;
     final compact = height < 760;
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
@@ -248,175 +476,275 @@ class _ConfigScreenState extends State<ConfigScreen> {
       body: SafeArea(
         child: Semantics(
           liveRegion: _connectionFailed,
-          child: Stack(
-            children: [
-              SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  14,
-                  20,
-                  keyboardOpen ? 28 : 104,
-                ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 430),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          // ── Scrollable content area ──
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(20, 14, 20, keyboardOpen ? 28 : 28),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 430),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            _buildHeaderIconButton(
-                              child: Icon(
-                                Icons.arrow_back_rounded,
-                                color: textPrimary,
-                                size: 24,
-                              ),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            const Spacer(),
-                            Text(
-                              'Connect ELIO',
-                              style: GoogleFonts.inter(
-                                color: textPrimary,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.2,
-                              ),
-                            ),
-                            const Spacer(),
-                            _buildHeaderIconButton(
-                              child: Icon(
-                                Icons.settings_rounded,
-                                color: textPrimary,
-                                size: 24,
-                              ),
-                              onPressed: _showConfigSettingsPanel,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        _RobotConnectionPanel(
-                          primaryColor: primaryColor,
-                          borderColor: cardBorder,
-                          textPrimary: textPrimary,
-                          inputSurface: inputSurface,
-                          height: compact ? 240 : 260,
-                          modelSize: compact ? 150 : 168,
-                          batteryPercent: batteryPercent,
-                          isCharging: isCharging,
-                          signalStatus: signalStatus,
-                        ),
-                        const SizedBox(height: 12),
-                        _GlassCard(
-                          borderColor: cardBorder,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: BoxDecoration(
-                                      color: primaryColor.withValues(
-                                        alpha: 0.1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(
-                                      Icons.settings_input_antenna_rounded,
-                                      color: primaryColor,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Connection Settings',
-                                          style: GoogleFonts.inter(
-                                            color: textPrimary,
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'Configure ELIO WebSocket endpoint',
-                                          style: GoogleFonts.inter(
-                                            color: textSecondary,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              _FieldLabel('IP Address', color: textPrimary),
-                              const SizedBox(height: 7),
-                              Row(
-                                children: [
-                                  _buildIpField(_ip1),
-                                  const _DotSeparator(),
-                                  _buildIpField(_ip2),
-                                  const _DotSeparator(),
-                                  _buildIpField(_ip3),
-                                  const _DotSeparator(),
-                                  _buildIpField(_ip4),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              _FieldLabel('Port', color: textPrimary),
-                              const SizedBox(height: 7),
-                              _buildPortField(),
-                              const SizedBox(height: 14),
-                              Divider(
-                                height: 1,
-                                color: cardBorder.withValues(alpha: 0.34),
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      'Save as default config',
-                                      style: GoogleFonts.inter(
-                                        color: textSecondary,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                  Switch(
-                                    value: saveDefault,
-                                    onChanged: (val) =>
-                                        setState(() => saveDefault = val),
-                                    activeThumbColor: primaryColor,
-                                  ),
-                                ],
-                              ),
-                            ],
+                        const SizedBox(width: 44),
+                        const Spacer(),
+                        Text(
+                          'Connect ELIO',
+                          style: GoogleFonts.inter(
+                            color: textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
                           ),
+                        ),
+                        const Spacer(),
+                        _buildHeaderIconButton(
+                          child: Icon(
+                            Icons.settings_rounded,
+                            color: textPrimary,
+                            size: 22,
+                          ),
+                          onPressed: _showConfigSettingsPanel,
                         ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    _RobotConnectionPanel(
+                      primaryColor: primaryColor,
+                      borderColor: cardBorder,
+                      textPrimary: textPrimary,
+                      inputSurface: inputSurface,
+                      height: compact ? 200 : 220,
+                      modelSize: compact ? 130 : 148,
+                      batteryPercent: batteryPercent,
+                      isCharging: isCharging,
+                      signalStatus: signalStatus,
+                    ),
+                    const SizedBox(height: 10),
+                    _GlassCard(
+                      borderColor: cardBorder,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 30,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  color: primaryColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(9),
+                                ),
+                                child: Icon(
+                                  Icons.settings_input_antenna_rounded,
+                                  color: primaryColor,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Connection Settings',
+                                      style: GoogleFonts.inter(
+                                        color: textPrimary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 1),
+                                    Text(
+                                      'Configure ELIO WebSocket endpoint',
+                                      style: GoogleFonts.inter(
+                                        color: textSecondary,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          _FieldLabel('IP Address', color: textPrimary),
+                          const SizedBox(height: 5),
+                          Row(
+                            children: [
+                              _buildIpField(_ip1),
+                              const _DotSeparator(),
+                              _buildIpField(_ip2),
+                              const _DotSeparator(),
+                              _buildIpField(_ip3),
+                              const _DotSeparator(),
+                              _buildIpField(_ip4),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          _FieldLabel('Port', color: textPrimary),
+                          const SizedBox(height: 5),
+                          _buildPortField(),
+                          const SizedBox(height: 5),
+                          Text(
+                            'For MaixCAM2, check the IP on its LCD screen and use port 8080',
+                            style: GoogleFonts.inter(
+                              color: textSecondary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Divider(
+                            height: 1,
+                            color: cardBorder.withValues(alpha: 0.34),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Save as default config',
+                                  style: GoogleFonts.inter(
+                                    color: textSecondary,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              Switch(
+                                value: saveDefault,
+                                onChanged: (val) =>
+                                    setState(() => saveDefault = val),
+                                activeThumbColor: primaryColor,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // ── Wi-Fi Provisioning QR Section ────────
+                    const SizedBox(height: 10),
+                    _GlassCard(
+                      borderColor: cardBorder,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 30,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF1D9E75,
+                                  ).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(9),
+                                ),
+                                child: const Icon(
+                                  Icons.qr_code_2_rounded,
+                                  color: Color(0xFF1D9E75),
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Wi-Fi Provisioning',
+                                      style: GoogleFonts.inter(
+                                        color: textPrimary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 1),
+                                    Text(
+                                      'Share hotspot credentials via QR',
+                                      style: GoogleFonts.inter(
+                                        color: textSecondary,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          _FieldLabel(
+                            'SSID (Network Name)',
+                            color: textPrimary,
+                          ),
+                          const SizedBox(height: 5),
+                          _buildProvisioningTextField(
+                            controller: _provSsid,
+                            hint: 'e.g. iPhone-Hotspot',
+                            prefixIcon: Icons.wifi_rounded,
+                          ),
+                          const SizedBox(height: 10),
+                          _FieldLabel('Password', color: textPrimary),
+                          const SizedBox(height: 5),
+                          _buildProvisioningTextField(
+                            controller: _provPass,
+                            hint: 'Hotspot password',
+                            prefixIcon: Icons.lock_outline_rounded,
+                            obscure: true,
+                            suffixIcon: IconButton(
+                              icon: const Icon(
+                                Icons.qr_code_rounded,
+                                color: Color(0xFF1D9E75),
+                                size: 22,
+                              ),
+                              tooltip: 'Generate QR Code',
+                              onPressed: _showProvisioningQrDialog,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 42,
+                            child: ElevatedButton.icon(
+                              onPressed: _showProvisioningQrDialog,
+                              icon: const Icon(
+                                Icons.qr_code_2_rounded,
+                                size: 18,
+                              ),
+                              label: Text(
+                                'GENERATE QR',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1D9E75),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // ── Bottom action bar (inside the scroll view) ──
+                    const SizedBox(height: 12),
+                    _buildBottomActions(),
+                  ],
                 ),
               ),
-              if (!keyboardOpen)
-                Positioned(
-                  left: 20,
-                  right: 20,
-                  bottom: 12,
-                  child: SafeArea(top: false, child: _buildBottomActions()),
-                ),
-            ],
+            ),
           ),
         ),
       ),
@@ -429,15 +757,15 @@ class _ConfigScreenState extends State<ConfigScreen> {
   }) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         onTap: onPressed,
         child: Container(
-          width: 52,
-          height: 52,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: cardBorder.withValues(alpha: 0.7)),
           ),
           child: Center(child: child),
@@ -466,38 +794,6 @@ class _ConfigScreenState extends State<ConfigScreen> {
           ),
           child: Row(
             children: [
-              Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      await _openControlScreen(
-                        mode: ControlMode.localCameraTest,
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: primaryColor,
-                      side: BorderSide(
-                        color: primaryColor.withValues(alpha: 0.28),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      textStyle: GoogleFonts.inter(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    icon: const Icon(Icons.videocam_outlined, size: 19),
-                    label: const FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text('LOCAL CAMERA'),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
               Expanded(
                 child: SizedBox(
                   height: 52,
@@ -557,7 +853,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
   Widget _buildIpField(TextEditingController controller) {
     return Expanded(
       child: SizedBox(
-        height: 48,
+        height: 42,
         child: TextField(
           controller: controller,
           textAlign: TextAlign.center,
@@ -599,7 +895,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
 
   Widget _buildPortField() {
     return SizedBox(
-      height: 48,
+      height: 42,
       child: TextField(
         controller: _port,
         keyboardType: TextInputType.number,
@@ -618,6 +914,57 @@ class _ConfigScreenState extends State<ConfigScreen> {
             vertical: 14,
           ),
           suffixIcon: const Icon(Icons.lan, color: Color(0xFF7F8C8D)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: cardBorder),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: cardBorder),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: primaryColor, width: 2),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds a provisioning-specific text field that matches the card's design.
+  Widget _buildProvisioningTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData prefixIcon,
+    bool obscure = false,
+    Widget? suffixIcon,
+  }) {
+    return SizedBox(
+      height: 42,
+      child: TextField(
+        controller: controller,
+        obscureText: obscure,
+        style: TextStyle(
+          color: textPrimary,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: inputSurface,
+          isDense: true,
+          hintText: hint,
+          hintStyle: TextStyle(
+            color: textSecondary.withValues(alpha: 0.6),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 14,
+          ),
+          prefixIcon: Icon(prefixIcon, color: textSecondary, size: 20),
+          suffixIcon: suffixIcon,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
             borderSide: BorderSide(color: cardBorder),

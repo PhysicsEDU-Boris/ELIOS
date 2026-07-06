@@ -9,6 +9,8 @@ class GuideLesson {
   final String pdfPath;
   final String pdfAsset;
   final String coverAsset;
+  final int pageCount;
+  final int readTimeMinutes;
   final int order;
   final bool isPublished;
 
@@ -21,6 +23,8 @@ class GuideLesson {
     required this.pdfPath,
     required this.pdfAsset,
     required this.coverAsset,
+    this.pageCount = 0,
+    this.readTimeMinutes = 0,
     required this.order,
     required this.isPublished,
   });
@@ -44,6 +48,12 @@ class GuideLesson {
       pdfPath: map['pdfPath'] is String ? map['pdfPath'] as String : '',
       pdfAsset: map['pdfAsset'] as String? ?? '',
       coverAsset: map['coverAsset'] as String? ?? '',
+      pageCount: map['pageCount'] is num
+          ? (map['pageCount'] as num).toInt()
+          : 0,
+      readTimeMinutes: map['readTimeMinutes'] is num
+          ? (map['readTimeMinutes'] as num).toInt()
+          : 0,
       order: map['order'] is num ? (map['order'] as num).toInt() : 0,
       isPublished: map['isPublished'] is bool
           ? map['isPublished'] as bool
@@ -68,6 +78,8 @@ class GuideLesson {
       'pdfPath': pdfPath,
       'pdfAsset': pdfAsset,
       'coverAsset': coverAsset,
+      'pageCount': pageCount,
+      'readTimeMinutes': readTimeMinutes,
       'order': order,
       'isPublished': isPublished,
     };

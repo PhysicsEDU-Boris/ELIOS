@@ -1,19 +1,19 @@
+// Copyright (c) Boris Agung, Irham Fajar
+
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart'
+    show DeviceOrientation, SystemChrome, SystemUiMode;
 
-import '../providers/segmentation_provider.dart';
 import '../providers/robot_provider.dart';
-
-enum ControlMode { robotConnected, localCameraTest }
+import '../services/websocket_service.dart';
+import '../widgets/segmentation_overlay_painter.dart';
 
 class ControlScreen extends ConsumerStatefulWidget {
-  const ControlScreen({super.key, this.mode = ControlMode.robotConnected});
-
-  final ControlMode mode;
+  const ControlScreen({super.key});
 
   @override
   ConsumerState<ControlScreen> createState() => _ControlScreenState();
@@ -22,134 +22,140 @@ class ControlScreen extends ConsumerStatefulWidget {
 class _ControlScreenState extends ConsumerState<ControlScreen> {
   Uint8List? _currentFrame;
   ProviderSubscription<AsyncValue<Uint8List>>? _frameSubscription;
-  CameraController? _cameraController;
+  ProviderSubscription<AsyncValue<String>>? _statusSubscription;
+  StreamSubscription<List<Detection>>? _detectionsSubscription;
   late final RobotControlNotifier _robotNotifier;
-  String? _localCameraError;
-  bool _isInitializingLocalCamera = false;
   bool? _lastLoggedRobotControlsEnabled;
-
-  bool get _isLocalCameraMode => widget.mode == ControlMode.localCameraTest;
+  int _frameCount = 0;
+  int _fpsFrameCount = 0;
+  double _streamFps = 0;
+  DateTime _fpsWindowStart = DateTime.now();
+  DateTime? _lastFrameAt;
+  int _lastFrameBytes = 0;
+  bool _streamStartedForCurrentConnection = false;
+  List<Detection> _currentDetections = const [];
 
   static const Color textPrimary = Color(0xFF1C2833);
   static const Color textSecondary = Color(0xFF7F8C8D);
   static const Color primaryColor = Color(0xFF1D9E75);
-  static const Color blueAccent = Color(0xFF3498DB);
   static const Color orangeAccent = Color(0xFFE67E22);
   static const Color redAccent = Color(0xFFE74C3C);
 
   @override
   void initState() {
     super.initState();
+    _enterLandscapeFullscreen();
     _robotNotifier = ref.read(robotControlProvider.notifier);
-    debugPrint('Selected control mode: ${widget.mode}');
 
-    if (_isLocalCameraMode) {
-      unawaited(_initializeLocalCamera());
-    } else {
-      // Subscribe to robot frames outside of build to avoid re-registering
-      // the listener on every rebuild.
-      _frameSubscription = ref.listenManual(robotFrameProvider, (_, next) {
-        if (next.hasValue && mounted) {
-          setState(() => _currentFrame = next.value);
+    // Subscribe to robot frames outside of build to avoid re-registering
+    // the listener on every rebuild.
+    _frameSubscription = ref.listenManual(robotFrameProvider, (_, next) {
+      if (next.hasValue && mounted) {
+        final frame = next.value!;
+        final now = DateTime.now();
+
+        _frameCount++;
+        _fpsFrameCount++;
+        _lastFrameAt = now;
+        _lastFrameBytes = frame.length;
+
+        final elapsedMs = now.difference(_fpsWindowStart).inMilliseconds;
+        if (elapsedMs >= 1000) {
+          _streamFps = (_fpsFrameCount * 1000) / elapsedMs;
+          _fpsFrameCount = 0;
+          _fpsWindowStart = now;
         }
-      });
-      // Connect to the robot when the control screen opens.
-      _robotNotifier.connect();
-      debugPrint(
-        'Robot controls enabled: true (awaiting WebSocket connection)',
-      );
-    }
-  }
 
-  Future<void> _initializeLocalCamera() async {
-    if (!mounted) return;
+        setState(() => _currentFrame = frame);
+      }
+    });
+    _statusSubscription = ref.listenManual(robotStatusProvider, (_, next) {
+      final status = next.valueOrNull;
 
-    setState(() {
-      _isInitializingLocalCamera = true;
-      _localCameraError = null;
+      if (status == 'Connected') {
+        if (!_streamStartedForCurrentConnection) {
+          _streamStartedForCurrentConnection = true;
+          debugPrint('[Control] Connected status observed, starting stream');
+          _robotNotifier.startStream();
+        }
+        return;
+      }
+
+      if (status == 'Disconnected' ||
+          status == 'Reconnecting...' ||
+          status == 'Connecting...') {
+        _streamStartedForCurrentConnection = false;
+      }
+    }, fireImmediately: true);
+
+    // Subscribe to MaixCAM2 detections stream.
+    _detectionsSubscription = WebSocketService().detections.listen((
+      detections,
+    ) {
+      if (!mounted) return;
+      setState(() => _currentDetections = detections);
     });
 
-    try {
-      final cameras = await availableCameras();
-      debugPrint(
-        'Detected local cameras: ${cameras.map((camera) => '${camera.name} (${camera.lensDirection.name})').join(', ')}',
-      );
+    // Connect to the robot when the control screen opens.
+    unawaited(_connectAndStartStream());
+    debugPrint('Robot controls enabled: true (awaiting WebSocket connection)');
+  }
 
-      if (!mounted) {
-        return;
+  void _enterLandscapeFullscreen() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await SystemChrome.setPreferredOrientations(const [
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      } catch (error) {
+        debugPrint('Unable to enter landscape fullscreen: $error');
       }
+    });
+  }
 
-      if (cameras.isEmpty) {
-        setState(() {
-          _isInitializingLocalCamera = false;
-          _localCameraError = 'No local camera was detected.';
-        });
-        debugPrint('Selected camera source: none available');
-        return;
+  Future<void> _connectAndStartStream() async {
+    final connected = await _robotNotifier.connect(autoReconnect: true);
+
+    if (!mounted) return;
+
+    if (connected) {
+      debugPrint('[Control] WebSocket connected');
+
+      if (!_streamStartedForCurrentConnection) {
+        _streamStartedForCurrentConnection = true;
+        debugPrint('[Control] Starting stream after connect result');
+        _robotNotifier.startStream();
       }
-
-      final selectedCamera = cameras.firstWhere(
-        (camera) => camera.lensDirection == CameraLensDirection.back,
-        orElse: () => cameras.first,
-      );
-      debugPrint(
-        'Selected camera source: ${selectedCamera.name} (${selectedCamera.lensDirection.name})',
-      );
-
-      final controller = CameraController(
-        selectedCamera,
-        ResolutionPreset.medium,
-        enableAudio: false,
-      );
-      await controller.initialize();
-
-      if (!mounted) {
-        await controller.dispose();
-        return;
-      }
-
-      final previousController = _cameraController;
-      setState(() {
-        _cameraController = controller;
-        _isInitializingLocalCamera = false;
-        _localCameraError = null;
-      });
-      await previousController?.dispose();
-      debugPrint('Robot controls enabled: false');
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _isInitializingLocalCamera = false;
-        _localCameraError = 'Unable to open local camera test mode.';
-      });
-      debugPrint('Local camera initialization failed: $error');
+    } else {
+      debugPrint('[Control] WebSocket connect failed, stream not started');
     }
   }
 
   @override
   void dispose() {
     _frameSubscription?.close();
-    _cameraController?.dispose();
-    if (!_isLocalCameraMode) {
-      // Disconnect when leaving the control screen.
-      _robotNotifier.disconnect();
-    }
+    _statusSubscription?.close();
+    _detectionsSubscription?.cancel();
+
+    // Disconnect when leaving the control screen.
+    debugPrint('[Control] Stopping MaixCAM2 stream');
+    _robotNotifier.stopStream();
+
+    debugPrint('[Control] Leaving robot control, disconnecting WebSocket');
+    unawaited(_robotNotifier.disconnect());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final robotState = ref.watch(robotControlProvider);
-    final status = _isLocalCameraMode
-        ? 'Camera test mode'
-        : ref.watch(robotStatusProvider).value ?? 'Disconnected';
-    final segmentationState = _isLocalCameraMode
-        ? const SegmentationState()
-        : ref.watch(segmentationProvider);
+    final status = ref.watch(robotStatusProvider).value ?? 'Disconnected';
 
-    final isConnected = !_isLocalCameraMode && status == 'Connected';
-    final isReconnecting = !_isLocalCameraMode && status == 'Reconnecting...';
-    final isOperational = !_isLocalCameraMode && isConnected;
+    final isConnected = status == 'Connected';
+    final isReconnecting = status == 'Reconnecting...';
+    final isOperational = isConnected;
 
     if (_lastLoggedRobotControlsEnabled != isOperational) {
       _lastLoggedRobotControlsEnabled = isOperational;
@@ -158,9 +164,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
     final notifier = _robotNotifier;
     final speed = robotState.pwmSpeed;
-    final statusLabel = _isLocalCameraMode
-        ? 'LOCAL'
-        : isConnected
+    final statusLabel = isConnected
         ? 'LIVE'
         : isReconnecting
         ? 'RECONNECTING'
@@ -225,15 +229,17 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   _LandscapeCameraPanel(
-                                    isLocal: _isLocalCameraMode,
-                                    cameraController: _cameraController,
                                     currentFrame: _currentFrame,
-                                    isInitializingLocalCamera:
-                                        _isInitializingLocalCamera,
-                                    localCameraError: _localCameraError,
-                                    isProcessing:
-                                        segmentationState.isProcessing,
                                     statusLabel: statusLabel,
+                                    streamFps: _streamFps,
+                                    frameCount: _frameCount,
+                                    lastFrameAt: _lastFrameAt,
+                                    lastFrameBytes: _lastFrameBytes,
+                                    detections: _currentDetections,
+                                    detectionImageSize: Size(
+                                      WebSocketService().imageWidth,
+                                      WebSocketService().imageHeight,
+                                    ),
                                   ),
                                   const SizedBox(height: 12),
                                   _LandscapeActionButtons(
@@ -601,30 +607,28 @@ class _DpadButton extends StatelessWidget {
 
 class _LandscapeCameraPanel extends StatelessWidget {
   const _LandscapeCameraPanel({
-    required this.isLocal,
-    required this.cameraController,
     required this.currentFrame,
-    required this.isInitializingLocalCamera,
-    required this.localCameraError,
-    required this.isProcessing,
     required this.statusLabel,
+    required this.streamFps,
+    required this.frameCount,
+    required this.lastFrameAt,
+    required this.lastFrameBytes,
+    required this.detections,
+    required this.detectionImageSize,
   });
 
-  final bool isLocal;
-  final CameraController? cameraController;
   final Uint8List? currentFrame;
-  final bool isInitializingLocalCamera;
-  final String? localCameraError;
-  final bool isProcessing;
   final String statusLabel;
+  final double streamFps;
+  final int frameCount;
+  final DateTime? lastFrameAt;
+  final int lastFrameBytes;
+  final List<Detection> detections;
+  final Size detectionImageSize;
 
   @override
   Widget build(BuildContext context) {
-    final hasCameraPreview =
-        cameraController != null && cameraController!.value.isInitialized;
-    final statusColor = isLocal
-        ? _ControlScreenState.blueAccent
-        : statusLabel == 'LIVE'
+    final statusColor = statusLabel == 'LIVE'
         ? _ControlScreenState.primaryColor
         : statusLabel == 'RECONNECTING'
         ? _ControlScreenState.orangeAccent
@@ -643,23 +647,18 @@ class _LandscapeCameraPanel extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (isLocal && hasCameraPreview)
-              CameraPreview(cameraController!)
-            else if (isLocal)
-              _CameraFallback(
-                isLoading: isInitializingLocalCamera,
-                message: localCameraError ?? 'Opening local camera...',
-              )
-            else if (currentFrame != null)
+            if (currentFrame != null)
               Image.memory(
                 currentFrame!,
                 fit: BoxFit.cover,
                 gaplessPlayback: true,
               )
             else
-              const _CameraFallback(
+              _CameraFallback(
                 isLoading: true,
-                message: 'Waiting for ESP32-CAM stream...',
+                message: statusLabel == 'LIVE'
+                    ? 'Connected. Waiting for camera frames...'
+                    : 'Waiting for MaixCAM2 stream...',
               ),
             const DecoratedBox(
               decoration: BoxDecoration(
@@ -675,8 +674,25 @@ class _LandscapeCameraPanel extends StatelessWidget {
                 ),
               ),
             ),
-            if (isProcessing && !isLocal)
-              const Center(child: CircularProgressIndicator(color: Colors.red)),
+            if (detections.isNotEmpty &&
+                detectionImageSize.width > 0 &&
+                detectionImageSize.height > 0)
+              CustomPaint(
+                painter: SegmentationOverlayPainter(
+                  detections: detections,
+                  imageSize: detectionImageSize,
+                ),
+              ),
+            Positioned(
+              left: 10,
+              bottom: 10,
+              child: _CameraDiagnosticsBadge(
+                streamFps: streamFps,
+                frameCount: frameCount,
+                lastFrameAt: lastFrameAt,
+                lastFrameBytes: lastFrameBytes,
+              ),
+            ),
             Positioned(
               top: 10,
               right: 10,
@@ -699,6 +715,61 @@ class _LandscapeCameraPanel extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _CameraDiagnosticsBadge extends StatelessWidget {
+  final double streamFps;
+  final int frameCount;
+  final DateTime? lastFrameAt;
+  final int lastFrameBytes;
+
+  const _CameraDiagnosticsBadge({
+    required this.streamFps,
+    required this.frameCount,
+    required this.lastFrameAt,
+    required this.lastFrameBytes,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final frameAgeMs = lastFrameAt == null
+        ? null
+        : DateTime.now().difference(lastFrameAt!).inMilliseconds;
+    final sizeLabel = lastFrameBytes > 0
+        ? '${(lastFrameBytes / 1024).toStringAsFixed(1)} KB'
+        : 'No frame';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.58),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'FPS ${streamFps.toStringAsFixed(1)} • F $frameCount',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
+          ),
+          Text(
+            frameAgeMs == null ? sizeLabel : '$sizeLabel • ${frameAgeMs}ms',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.82),
+              fontSize: 8,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

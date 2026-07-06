@@ -7,6 +7,7 @@ class VideoLesson {
   final String title;
   final String description;
   final int durationMinutes;
+  final int durationSeconds;
   final String durationLabel;
   final String videoPath;
   final String thumbnailPath;
@@ -26,6 +27,7 @@ class VideoLesson {
     required this.title,
     required this.description,
     required this.durationMinutes,
+    this.durationSeconds = 0,
     required this.durationLabel,
     required this.videoPath,
     required this.thumbnailPath,
@@ -44,6 +46,12 @@ class VideoLesson {
     final parsedId = rawId is String && rawId.trim().isNotEmpty
         ? rawId
         : documentId;
+    final durationLabel = map['durationLabel'] is String
+        ? map['durationLabel'] as String
+        : '';
+    final durationMinutes = map['durationMinutes'] is num
+        ? (map['durationMinutes'] as num).toInt()
+        : 0;
 
     return VideoLesson(
       id: parsedId,
@@ -55,12 +63,11 @@ class VideoLesson {
       description: map['description'] is String
           ? map['description'] as String
           : '',
-      durationMinutes: map['durationMinutes'] is num
-          ? (map['durationMinutes'] as num).toInt()
-          : 0,
-      durationLabel: map['durationLabel'] is String
-          ? map['durationLabel'] as String
-          : '',
+      durationMinutes: durationMinutes,
+      durationSeconds: map['durationSeconds'] is num
+          ? (map['durationSeconds'] as num).toInt()
+          : _durationSecondsFromLabel(durationLabel) ?? durationMinutes * 60,
+      durationLabel: durationLabel,
       videoPath: map['videoPath'] is String ? map['videoPath'] as String : '',
       thumbnailPath: map['thumbnailPath'] is String
           ? map['thumbnailPath'] as String
@@ -95,6 +102,7 @@ class VideoLesson {
       'title': title,
       'description': description,
       'durationMinutes': durationMinutes,
+      'durationSeconds': durationSeconds,
       'durationLabel': durationLabel,
       'videoPath': videoPath,
       'thumbnailPath': thumbnailPath,
@@ -107,5 +115,18 @@ class VideoLesson {
       'order': order,
       'isPublished': isPublished,
     };
+  }
+
+  static int? _durationSecondsFromLabel(String label) {
+    final parts = label.trim().split(':');
+    if (parts.length < 2 || parts.length > 3) return null;
+
+    var total = 0;
+    for (final part in parts) {
+      final value = int.tryParse(part);
+      if (value == null || value < 0) return null;
+      total = total * 60 + value;
+    }
+    return total;
   }
 }

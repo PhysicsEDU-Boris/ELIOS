@@ -1,6 +1,6 @@
 name: elio
 description: "ELIO - Smart Waste Sorting Robot Controller App"
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -10,15 +10,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
+
   # Firebase
-  firebase_core: ^4.7.0
-  firebase_auth: ^6.4.0
-  cloud_firestore: ^6.3.0
-  firebase_storage: 13.0.4
+  firebase_core: ^4.10.0
+  firebase_auth: ^6.5.2
+  cloud_firestore: ^6.5.0
+  firebase_storage: ^13.4.2
   google_sign_in: ^6.2.1
 
-  # UI
+  # UI & State
   flutter_svg: ^2.0.10
   cupertino_icons: ^1.0.8
   web_socket_channel: ^2.4.0
@@ -28,12 +28,21 @@ dependencies:
   flutter_native_splash: ^2.3.2
   flutter_riverpod: ^2.4.0
   flutter_dotenv: ^5.2.1
-  tflite_flutter: 0.12.1
-  image: ^4.0.0
-  camera: 0.12.0+1
   flutter_3d_controller: ^2.3.0
   youtube_player_flutter: ^10.0.1
   syncfusion_flutter_pdfviewer: ^33.2.12
+
+  # Vision & Camera
+  tflite_flutter: 0.12.1
+  image: ^4.0.0
+  camera: 0.12.0+1
+
+  # Smart Provisioning (Added for Project ELIO Phase 1)
+  qr_flutter: ^4.1.0
+  network_info_plus: ^6.1.0
+  connectivity_plus: ^6.0.4
+  open_settings_plus: ^0.5.0
+  udp: ^5.0.3
 
 dev_dependencies:
   flutter_test:

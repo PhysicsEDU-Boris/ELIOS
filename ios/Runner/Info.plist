@@ -22,12 +22,31 @@
 		<string>$(FLUTTER_BUILD_NAME)</string>
 		<key>CFBundleSignature</key>
 		<string>????</string>
+		<key>GIDClientID</key>
+		<string>250721309748-q0mqs9dbs9r0b39onjs89mpkkf5up8rq.apps.googleusercontent.com</string>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.250721309748-q0mqs9dbs9r0b39onjs89mpkkf5up8rq</string>
+				</array>
+			</dict>
+		</array>
 		<key>CFBundleVersion</key>
 		<string>$(FLUTTER_BUILD_NUMBER)</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSCameraUsageDescription</key>
 		<string>ELIO needs camera access for local camera test mode and object detection preview.</string>
+		<key>NSLocalNetworkUsageDescription</key>
+		<string>ELIO needs local network access to connect to the ESP32-CAM robot over Wi-Fi.</string>
+		<key>NSBonjourServices</key>
+		<array>
+			<string>_http._tcp</string>
+		</array>
 		<key>UIApplicationSceneManifest</key>
 		<dict>
 			<key>UIApplicationSupportsMultipleScenes</key>

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart'
-    show DeviceOrientation, SystemChrome, SystemUiMode;
+    show DeviceOrientation, SystemChannels, SystemChrome, SystemUiMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/app_notification.dart';
@@ -35,12 +35,19 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   int _quizResetGeneration = 0;
   bool _syncingNavigationProvider = false;
   bool _controlScreenOpen = false;
+  final Set<int> _loggedTabBuilds = <int>{};
 
   late final HomeScreen _homeScreen;
 
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+    });
+
     final initialNavigationIndex = ref.read(navigationIndexProvider);
     if (initialNavigationIndex >= 0 && initialNavigationIndex < _controlIndex) {
       _currentIndex = initialNavigationIndex;
@@ -58,18 +65,30 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     );
   }
 
-  List<Widget> get _screens => [
-    _homeScreen,
-    ElearningTab(
-      quizResetGeneration: _quizResetGeneration,
-      onQuizActiveChanged: (active) {
-        if (_quizInProgress == active) return;
-        setState(() => _quizInProgress = active);
-      },
-    ),
-    const ConfigScreen(),
-    const SizedBox.shrink(),
-  ];
+  Widget _buildCurrentScreen() {
+    if (_loggedTabBuilds.add(_currentIndex)) {
+      final label = switch (_currentIndex) {
+        0 => 'Home/Dashboard',
+        1 => 'Learn',
+        2 => 'Config',
+        _ => 'Control placeholder',
+      };
+      debugPrint('[StartupDiag] building $label');
+    }
+
+    return switch (_currentIndex) {
+      0 => _homeScreen,
+      1 => ElearningTab(
+        quizResetGeneration: _quizResetGeneration,
+        onQuizActiveChanged: (active) {
+          if (_quizInProgress == active) return;
+          setState(() => _quizInProgress = active);
+        },
+      ),
+      2 => const ConfigScreen(),
+      _ => const SizedBox.shrink(),
+    };
+  }
 
   void _syncNavigationProvider(int index) {
     if (ref.read(navigationIndexProvider) == index) return;
@@ -89,11 +108,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   void _handleRobotStatusChange(String? previous, String next) {
     if (previous == null || previous == next) return;
+    if (_isRobotConnecting(next)) return;
 
     final wasConnected = _isRobotConnected(previous);
     final isConnected = _isRobotConnected(next);
     final isDisconnected = _isRobotDisconnected(next);
-    final wasConnecting = _isRobotConnecting(previous);
     final notifications = ref.read(appNotificationProvider.notifier);
 
     if (!wasConnected && isConnected) {
@@ -114,15 +133,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         routeHint: 'robot',
       );
       return;
-    }
-
-    if (wasConnecting && isDisconnected) {
-      notifications.push(
-        type: AppNotificationType.error,
-        title: 'Connection failed',
-        message: 'Could not connect to ELIO.',
-        routeHint: 'robot',
-      );
     }
   }
 
@@ -231,102 +241,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              DrawerHeader(
-                decoration: const BoxDecoration(color: Color(0xFF0F6E56)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    const Text(
-                      'ELIO',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 3,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 26,
-                          backgroundColor: Colors.white.withValues(alpha: 0.2),
-                          child: user?.photoURL != null
-                              ? ClipOval(
-                                  child: Image.network(
-                                    user!.photoURL!,
-                                    fit: BoxFit.cover,
-                                    width: 52,
-                                    height: 52,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            const Icon(
-                                              Icons.person,
-                                              size: 28,
-                                              color: Colors.white,
-                                            ),
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.person,
-                                  size: 28,
-                                  color: Colors.white,
-                                ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user?.displayName ?? 'Guest User',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                user?.email ?? 'Local session',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.6),
-                                  fontSize: 12,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (user?.isAnonymous == true) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'GUEST MODE',
-                          style: TextStyle(
-                            color: Colors.amber,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 10),
-                  ],
-                ),
-              ),
+              _buildDrawerHeader(context, user),
               _buildDrawerItem(
                 icon: Icons.home_outlined,
                 activeIcon: Icons.home,
@@ -400,7 +315,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             ],
           ),
         ),
-        body: _screens[_currentIndex],
+        body: _buildCurrentScreen(),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: _onBottomNavigationTap,
@@ -435,6 +350,116 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerHeader(BuildContext context, User? user) {
+    final isGuest = user?.isAnonymous == true;
+    final displayName = user?.displayName?.trim().isNotEmpty == true
+        ? user!.displayName!.trim()
+        : 'Guest User';
+    final emailLabel = user?.email?.trim().isNotEmpty == true
+        ? user!.email!.trim()
+        : 'Local session';
+
+    final safeTop = MediaQuery.of(context).padding.top;
+
+    return Container(
+      height: safeTop + (isGuest ? 176 : 152),
+      padding: EdgeInsets.fromLTRB(16, safeTop + 12, 16, 12),
+      decoration: const BoxDecoration(color: Color(0xFF0F6E56)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          const Text(
+            'ELIO',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 3,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                child: user?.photoURL != null
+                    ? ClipOval(
+                        child: Image.network(
+                          user!.photoURL!,
+                          fit: BoxFit.cover,
+                          width: 48,
+                          height: 48,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(
+                                Icons.person,
+                                size: 26,
+                                color: Colors.white,
+                              ),
+                        ),
+                      )
+                    : const Icon(Icons.person, size: 26, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      emailLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.65),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (isGuest) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'GUEST MODE',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

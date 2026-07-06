@@ -6,9 +6,11 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../models/quiz_question.dart';
 import '../../../models/quiz_set.dart';
+import '../../../models/learning_progress.dart';
 import '../../../providers/learning_progress_provider.dart';
 import '../../../services/elearning_content_service.dart';
 import '../../../widgets/elio_learning_app_bar.dart';
+import 'quiz_review_page.dart';
 
 const _background = Color(0xFFF7FAF6);
 const _primary = Color(0xFF004F38);
@@ -63,17 +65,53 @@ class _QuizContentState extends ConsumerState<QuizContent> {
   bool _isFinished = false;
   bool _isLoadingQuestions = false;
   Object? _questionLoadError;
+  final Map<String, int> _selectedAnswersByQuestionId = {};
+  QuizReview? _latestReview;
 
-  bool get _quizIsActive => _activeQuizSet != null;
+  bool get _quizIsActive => _activeQuizSet != null && !_isFinished;
+
+  bool _hasAttemptedQuiz(QuizSet quizSet) {
+    final progress = ref.read(learningProgressProvider).valueOrNull;
+    final attempts = progress?.categories[quizSet.moduleId]?.quizAttempts ?? 0;
+    return attempts > 0;
+  }
+
+  bool _hasCompletedQuiz(QuizSet quizSet) {
+    final progress = ref.read(learningProgressProvider).valueOrNull;
+    return progress?.completedQuizModules.contains(quizSet.moduleId) ?? false;
+  }
+
+  int? _quizScorePercent(QuizSet quizSet) {
+    final progress = ref.read(learningProgressProvider).valueOrNull;
+    return progress?.quizScores[quizSet.moduleId];
+  }
 
   Future<void> _startQuiz(QuizSet quizSet) async {
+    if (_hasAttemptedQuiz(quizSet)) {
+      final completed = _hasCompletedQuiz(quizSet);
+      final score = _quizScorePercent(quizSet);
+      final scoreText = score == null
+          ? ''
+          : completed
+          ? ' Completed with best score $score%.'
+          : ' Best score $score%.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'You have already used your one quiz attempt.$scoreText',
+          ),
+        ),
+      );
+      return;
+    }
+
     final shouldStart = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Start Quiz?'),
         content: const Text(
-          'Once you start, you cannot switch tabs until you finish or exit '
-          'the quiz. Make sure you have time to complete it.',
+          'This quiz can only be attempted once. Once you start, you must '
+          'finish it before leaving.',
         ),
         actions: [
           TextButton(
@@ -100,6 +138,8 @@ class _QuizContentState extends ConsumerState<QuizContent> {
       _isFinished = false;
       _isLoadingQuestions = true;
       _questionLoadError = null;
+      _selectedAnswersByQuestionId.clear();
+      _latestReview = null;
     });
     widget.onQuizActiveChanged?.call(true);
 
@@ -126,6 +166,7 @@ class _QuizContentState extends ConsumerState<QuizContent> {
     setState(() {
       _selectedOptionIndex = index;
       _answered = true;
+      _selectedAnswersByQuestionId[question.id] = index;
       if (index == question.correctIndex) _score++;
     });
   }
@@ -133,15 +174,29 @@ class _QuizContentState extends ConsumerState<QuizContent> {
   void _nextQuestion() {
     if (!_answered) return;
     if (_currentQuestionIndex >= _questions.length - 1) {
-      setState(() => _isFinished = true);
-      final moduleId = _activeQuizSet?.moduleId;
-      if (moduleId != null) {
-        unawaited(
-          ref
-              .read(learningProgressProvider.notifier)
-              .updateProgress(moduleId, _score, _questions.length),
-        );
-      }
+      final quizSet = _activeQuizSet;
+      if (quizSet == null) return;
+      final review = _buildQuizReview(
+        quizSet: quizSet,
+        questions: _questions,
+        score: _score,
+      );
+
+      setState(() {
+        _isFinished = true;
+        _latestReview = review;
+      });
+      widget.onQuizActiveChanged?.call(false);
+      unawaited(
+        ref
+            .read(learningProgressProvider.notifier)
+            .updateProgress(
+              quizSet.moduleId,
+              _score,
+              _questions.length,
+              quizReview: review,
+            ),
+      );
       return;
     }
 
@@ -149,16 +204,6 @@ class _QuizContentState extends ConsumerState<QuizContent> {
       _currentQuestionIndex++;
       _selectedOptionIndex = null;
       _answered = false;
-    });
-  }
-
-  void _retryQuiz() {
-    setState(() {
-      _currentQuestionIndex = 0;
-      _score = 0;
-      _selectedOptionIndex = null;
-      _answered = false;
-      _isFinished = false;
     });
   }
 
@@ -173,46 +218,80 @@ class _QuizContentState extends ConsumerState<QuizContent> {
       _isFinished = false;
       _isLoadingQuestions = false;
       _questionLoadError = null;
+      _selectedAnswersByQuestionId.clear();
+      _latestReview = null;
     });
     widget.onQuizActiveChanged?.call(false);
   }
 
-  Future<bool> _confirmLeaveQuiz() async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Leave quiz?'),
-            content: const Text(
-              'Your current quiz progress will be lost if you leave.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Leave Quiz'),
-              ),
-            ],
+  QuizReview _buildQuizReview({
+    required QuizSet quizSet,
+    required List<QuizQuestion> questions,
+    required int score,
+  }) {
+    final total = questions.length;
+    final percent = total <= 0 ? 0 : ((score / total) * 100).round();
+
+    return QuizReview(
+      moduleId: quizSet.moduleId,
+      quizTitle: quizSet.title,
+      score: score,
+      totalQuestions: total,
+      percent: percent,
+      passed: percent >= 70,
+      completedAt: DateTime.now(),
+      answers: [
+        for (final question in questions)
+          QuizReviewAnswer(
+            questionId: question.id,
+            question: question.question,
+            imagePath: question.imagePath,
+            imageAsset: question.imageAsset,
+            options: question.options,
+            correctIndex: question.correctIndex,
+            selectedIndex: _selectedAnswersByQuestionId[question.id],
+            explanation: question.explanation,
+            difficulty: question.difficulty,
+            order: question.order,
           ),
-        ) ??
-        false;
+      ],
+    );
+  }
+
+  void _openQuizReview(QuizReview review) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => QuizReviewPage(review: review),
+      ),
+    );
+  }
+
+  Future<void> _showFinishQuizRequiredDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Finish quiz first'),
+        content: const Text(
+          'This quiz has only one attempt. Please finish all questions before '
+          'leaving.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Continue Quiz'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _requestBackToQuizSets() async {
-    if (!await _confirmLeaveQuiz() || !mounted) return;
-    _backToQuizSets();
+    await _showFinishQuizRequiredDialog();
   }
 
   Future<void> _handlePopAttempt(bool didPop) async {
     if (didPop || !_quizIsActive) return;
-    if (!await _confirmLeaveQuiz() || !mounted) return;
-
-    _backToQuizSets();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) Navigator.of(context).maybePop();
-    });
+    await _showFinishQuizRequiredDialog();
   }
 
   @override
@@ -283,8 +362,9 @@ class _QuizContentState extends ConsumerState<QuizContent> {
         quizSet: quizSet,
         score: _score,
         total: _questions.length,
-        onTryAgain: _retryQuiz,
+        review: _latestReview,
         onBack: _backToQuizSets,
+        onReview: _openQuizReview,
       );
     }
 
@@ -303,6 +383,8 @@ class _QuizContentState extends ConsumerState<QuizContent> {
   }
 
   Widget _buildQuizSetList() {
+    final progress = ref.watch(learningProgressProvider).valueOrNull;
+
     return StreamBuilder<List<QuizSet>>(
       key: ValueKey('quiz-sets-${widget.selectedModuleId ?? 'all'}'),
       stream: _service.watchQuizSets(moduleId: widget.selectedModuleId),
@@ -351,7 +433,12 @@ class _QuizContentState extends ConsumerState<QuizContent> {
                 title: 'No published quizzes are available.',
               )
             else
-              _QuizSetGrid(quizSets: snapshot.data!, onStartQuiz: _startQuiz),
+              _QuizSetGrid(
+                quizSets: snapshot.data!,
+                progress: progress,
+                onStartQuiz: _startQuiz,
+                onReviewQuiz: _openQuizReview,
+              ),
           ],
         );
       },
@@ -406,9 +493,16 @@ class _FilterBanner extends StatelessWidget {
 
 class _QuizSetGrid extends StatelessWidget {
   final List<QuizSet> quizSets;
+  final LearningProgress? progress;
   final ValueChanged<QuizSet> onStartQuiz;
+  final ValueChanged<QuizReview> onReviewQuiz;
 
-  const _QuizSetGrid({required this.quizSets, required this.onStartQuiz});
+  const _QuizSetGrid({
+    required this.quizSets,
+    required this.progress,
+    required this.onStartQuiz,
+    required this.onReviewQuiz,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -425,9 +519,31 @@ class _QuizSetGrid extends StatelessWidget {
             for (final quizSet in quizSets)
               SizedBox(
                 width: itemWidth,
-                child: _QuizSetCard(
-                  quizSet: quizSet,
-                  onTap: () => onStartQuiz(quizSet),
+                child: Builder(
+                  builder: (context) {
+                    final categoryProgress =
+                        progress?.categories[quizSet.moduleId];
+                    final attempted = (categoryProgress?.quizAttempts ?? 0) > 0;
+                    final completed =
+                        progress?.completedQuizModules.contains(
+                          quizSet.moduleId,
+                        ) ??
+                        false;
+                    final scorePercent = progress?.quizScores[quizSet.moduleId];
+                    final review = progress?.quizReviews[quizSet.moduleId];
+
+                    return _QuizSetCard(
+                      quizSet: quizSet,
+                      attempted: attempted,
+                      completed: completed,
+                      scorePercent: scorePercent,
+                      review: review,
+                      onTap: attempted ? null : () => onStartQuiz(quizSet),
+                      onReview: review == null
+                          ? null
+                          : () => onReviewQuiz(review),
+                    );
+                  },
                 ),
               ),
           ],
@@ -439,13 +555,43 @@ class _QuizSetGrid extends StatelessWidget {
 
 class _QuizSetCard extends StatelessWidget {
   final QuizSet quizSet;
-  final VoidCallback onTap;
+  final bool attempted;
+  final bool completed;
+  final int? scorePercent;
+  final QuizReview? review;
+  final VoidCallback? onTap;
+  final VoidCallback? onReview;
 
-  const _QuizSetCard({required this.quizSet, required this.onTap});
+  const _QuizSetCard({
+    required this.quizSet,
+    required this.attempted,
+    required this.completed,
+    required this.scorePercent,
+    required this.review,
+    required this.onTap,
+    required this.onReview,
+  });
 
   @override
   Widget build(BuildContext context) {
     final accent = _moduleColor(quizSet.moduleId);
+    final hasReview = review != null;
+    final statusText = attempted
+        ? [
+            completed ? 'Completed' : 'Attempt used',
+            if (scorePercent != null) 'Best score $scorePercent%',
+            if (!hasReview) 'Review available for new attempts only',
+          ].join(' • ')
+        : 'One attempt only';
+    final buttonLabel = !attempted
+        ? 'Start Quiz'
+        : hasReview
+        ? 'Review Answers'
+        : completed
+        ? 'Review unavailable'
+        : 'Attempt Used';
+    final buttonAction = !attempted ? onTap : onReview;
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -493,12 +639,21 @@ class _QuizSetCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
+          Text(
+            statusText,
+            style: GoogleFonts.inter(
+              color: attempted ? accent : _muted,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: onTap,
+              onPressed: buttonAction,
               style: OutlinedButton.styleFrom(foregroundColor: _primary),
-              child: const Text('Start Quiz'),
+              child: Text(buttonLabel),
             ),
           ),
         ],
@@ -544,8 +699,8 @@ class _QuizQuestionView extends StatelessWidget {
       children: [
         TextButton.icon(
           onPressed: onBack,
-          icon: const Icon(Icons.arrow_back_rounded),
-          label: const Text('Quiz sets'),
+          icon: const Icon(Icons.lock_outline_rounded),
+          label: const Text('Finish quiz to exit'),
         ),
         const SizedBox(height: 14),
         Row(
@@ -773,16 +928,18 @@ class _QuizResult extends StatelessWidget {
   final QuizSet quizSet;
   final int score;
   final int total;
-  final VoidCallback onTryAgain;
+  final QuizReview? review;
   final VoidCallback onBack;
+  final ValueChanged<QuizReview> onReview;
 
   const _QuizResult({
     super.key,
     required this.quizSet,
     required this.score,
     required this.total,
-    required this.onTryAgain,
+    required this.review,
     required this.onBack,
+    required this.onReview,
   });
 
   @override
@@ -791,10 +948,10 @@ class _QuizResult extends StatelessWidget {
       icon: Icons.workspace_premium_outlined,
       title: quizSet.title,
       message: 'You scored $score out of $total.',
-      actionLabel: 'Try Again',
-      onAction: onTryAgain,
-      secondaryActionLabel: 'Back to Quizzes',
-      onSecondaryAction: onBack,
+      actionLabel: 'Back to Quizzes',
+      onAction: onBack,
+      secondaryActionLabel: 'Review Answers',
+      onSecondaryAction: review == null ? null : () => onReview(review!),
     );
   }
 }
@@ -884,11 +1041,15 @@ class _CenteredMessage extends StatelessWidget {
               child: Text(actionLabel!),
             ),
           ],
-          if (secondaryActionLabel != null && onSecondaryAction != null)
-            TextButton(
+          if (secondaryActionLabel != null) ...[
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
               onPressed: onSecondaryAction,
-              child: Text(secondaryActionLabel!),
+              style: OutlinedButton.styleFrom(foregroundColor: _primary),
+              icon: const Icon(Icons.fact_check_outlined),
+              label: Text(secondaryActionLabel!),
             ),
+          ],
         ],
       ),
     );

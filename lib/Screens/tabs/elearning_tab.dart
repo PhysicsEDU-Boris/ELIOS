@@ -46,10 +46,14 @@ class _ElearningTabState extends ConsumerState<ElearningTab> {
   String? _pendingResumeVideoId;
   String? _pendingResumeGuideId;
   bool _quizInProgress = false;
+  final Set<LearningSection> _visitedSections = <LearningSection>{
+    LearningSection.allCategories,
+  };
 
   void _selectSection(LearningSection section) {
     setState(() {
       _selectedSection = section;
+      _visitedSections.add(section);
       if (section == LearningSection.allCategories && !_quizInProgress) {
         _selectedModuleId = null;
       }
@@ -68,18 +72,21 @@ class _ElearningTabState extends ConsumerState<ElearningTab> {
       switch (intent.type) {
         case LearningResumeType.video:
           _selectedSection = LearningSection.videoLessons;
+          _visitedSections.add(LearningSection.videoLessons);
           _selectedModuleId = intent.moduleId;
           _pendingResumeVideoId = intent.id;
           _pendingResumeGuideId = null;
           break;
         case LearningResumeType.guide:
           _selectedSection = LearningSection.guides;
+          _visitedSections.add(LearningSection.guides);
           _selectedModuleId = intent.moduleId;
           _pendingResumeVideoId = null;
           _pendingResumeGuideId = intent.id;
           break;
         case LearningResumeType.quiz:
           _selectedSection = LearningSection.quiz;
+          _visitedSections.add(LearningSection.quiz);
           _selectedModuleId = intent.moduleId ?? intent.id;
           _pendingResumeVideoId = null;
           _pendingResumeGuideId = null;
@@ -143,10 +150,43 @@ class _ElearningTabState extends ConsumerState<ElearningTab> {
           setState(() {
             _selectedModuleId = module.id;
             _selectedSection = section;
+            _visitedSections.add(section);
           });
         },
       ),
     );
+  }
+
+  Widget _buildSection(LearningSection section, LearningProgress? progress) {
+    return switch (section) {
+      LearningSection.allCategories => _AllCategoriesContent(
+        service: _service,
+        progress: progress,
+        onModuleSelected: (module) => _showLearningPath(module, progress),
+      ),
+      LearningSection.guides => GuidesContent(
+        selectedModuleId: _selectedModuleId,
+        onClearFilter: _clearModuleFilter,
+        resumeGuideId: _pendingResumeGuideId,
+        onResumeGuideHandled: _clearPendingResumeGuide,
+      ),
+      LearningSection.videoLessons => VideoLessonsContent(
+        selectedModuleId: _selectedModuleId,
+        onClearFilter: _clearModuleFilter,
+        resumeVideoId: _pendingResumeVideoId,
+        onResumeVideoHandled: _clearPendingResumeVideo,
+      ),
+      LearningSection.quiz => QuizContent(
+        key: ValueKey(widget.quizResetGeneration),
+        selectedModuleId: _selectedModuleId,
+        onClearFilter: _clearModuleFilter,
+        onQuizActiveChanged: (active) {
+          if (_quizInProgress == active) return;
+          setState(() => _quizInProgress = active);
+          widget.onQuizActiveChanged?.call(active);
+        },
+      ),
+    };
   }
 
   @override
@@ -233,36 +273,15 @@ class _ElearningTabState extends ConsumerState<ElearningTab> {
             Expanded(
               child: IndexedStack(
                 index: _selectedSection.index,
-                children: [
-                  _AllCategoriesContent(
-                    service: _service,
-                    progress: progress,
-                    onModuleSelected: (module) =>
-                        _showLearningPath(module, progress),
-                  ),
-                  GuidesContent(
-                    selectedModuleId: _selectedModuleId,
-                    onClearFilter: _clearModuleFilter,
-                    resumeGuideId: _pendingResumeGuideId,
-                    onResumeGuideHandled: _clearPendingResumeGuide,
-                  ),
-                  VideoLessonsContent(
-                    selectedModuleId: _selectedModuleId,
-                    onClearFilter: _clearModuleFilter,
-                    resumeVideoId: _pendingResumeVideoId,
-                    onResumeVideoHandled: _clearPendingResumeVideo,
-                  ),
-                  QuizContent(
-                    key: ValueKey(widget.quizResetGeneration),
-                    selectedModuleId: _selectedModuleId,
-                    onClearFilter: _clearModuleFilter,
-                    onQuizActiveChanged: (active) {
-                      if (_quizInProgress == active) return;
-                      setState(() => _quizInProgress = active);
-                      widget.onQuizActiveChanged?.call(active);
-                    },
-                  ),
-                ],
+                children: LearningSection.values
+                    .map((section) {
+                      if (_visitedSections.contains(section) ||
+                          section == _selectedSection) {
+                        return _buildSection(section, progress);
+                      }
+                      return const SizedBox.shrink();
+                    })
+                    .toList(growable: false),
               ),
             ),
           ],

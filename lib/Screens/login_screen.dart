@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:elio/providers/auth_provider.dart';
@@ -51,7 +55,19 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ── Navigation helper ─────────────────────────────────────
+  void _dismissKeyboard() {
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    if (mounted) {
+      FocusScope.of(context).unfocus();
+    }
+
+    SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+  }
+
   void _goHome() {
+    _dismissKeyboard();
+
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
@@ -115,6 +131,16 @@ class _LoginScreenState extends State<LoginScreen> {
         return 'Too many attempts. Try again later.';
       case 'network-request-failed':
         return 'No internet connection.';
+      case 'missing-google-id-token':
+        return 'Google sign-in is not configured correctly. Check Android/iOS Firebase setup.';
+      case 'account-exists-with-different-credential':
+        return 'This email is already registered with another sign-in method.';
+      case 'credential-already-in-use':
+        return 'This Google account is already linked to another user.';
+      case 'invalid-credential':
+        return 'Google credential is invalid. Check Firebase configuration.';
+      case 'operation-not-allowed':
+        return 'Google sign-in is not enabled in Firebase Authentication.';
       default:
         return 'Something went wrong. Please try again.';
     }
@@ -139,6 +165,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // ── EMAIL SIGN IN ─────────────────────────────────────────
   Future<void> _handleEmailAuth() async {
+    _dismissKeyboard();
+
     if (!_formKey.currentState!.validate()) return;
     _setLoading(true);
     try {
@@ -157,6 +185,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // ── EMAIL SIGN UP ─────────────────────────────────────────
   Future<void> _signUpWithEmail() async {
+    _dismissKeyboard();
+
     if (!_formKey.currentState!.validate()) return;
     _setLoading(true);
     try {
@@ -176,31 +206,93 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // ── GOOGLE SIGN IN ────────────────────────────────────────
   Future<void> _signInWithGoogle() async {
+    _dismissKeyboard();
     _setLoading(true);
+
     try {
-      final googleUser = await GoogleSignIn().signIn();
+      debugPrint('[AuthDiag] Google sign-in started');
+
+      const iosGoogleClientId =
+          '250721309748-q0mqs9dbs9r0b39onjs89mpkkf5up8rq.apps.googleusercontent.com';
+
+      final googleSignIn = GoogleSignIn(
+        clientId: defaultTargetPlatform == TargetPlatform.iOS
+            ? iosGoogleClientId
+            : null,
+        serverClientId: '250721309748-la1mikrov7nhdno6d55389l0du6p457f.apps.googleusercontent.com',
+        scopes: const ['email', 'profile'],
+      );
+
+      await googleSignIn.signOut();
+
+      final googleUser = await googleSignIn.signIn();
+
       if (googleUser == null) {
-        // User cancelled
+        debugPrint('[AuthDiag] Google sign-in cancelled by user');
         _setLoading(false);
         return;
       }
+
+      debugPrint(
+        '[AuthDiag] Google user selected: '
+        'email=${googleUser.email}, id=${googleUser.id}',
+      );
+
       final googleAuth = await googleUser.authentication;
+
+      debugPrint(
+        '[AuthDiag] Google tokens: '
+        'accessToken=${googleAuth.accessToken != null}, '
+        'idToken=${googleAuth.idToken != null}',
+      );
+
+      if (googleAuth.idToken == null) {
+        throw FirebaseAuthException(
+          code: 'missing-google-id-token',
+          message:
+              'Google Sign-In returned no idToken. Check Firebase platform config.',
+        );
+      }
+
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      await widget.auth.signInWithCredential(credential);
+
+      final userCredential = await widget.auth.signInWithCredential(credential);
+
+      debugPrint(
+        '[AuthDiag] Firebase Google sign-in success: '
+        'uid=${userCredential.user?.uid}, '
+        'email=${userCredential.user?.email}',
+      );
+
       _showSnack('Welcome back!');
       _goHome();
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException catch (e, stackTrace) {
+      debugPrint(
+        '[AuthDiag] FirebaseAuthException: '
+        'code=${e.code}, message=${e.message}',
+      );
+      debugPrintStack(stackTrace: stackTrace);
       _setError(_mapError(e.code));
-    } catch (_) {
-      _setError('Google sign-in failed.');
+    } on PlatformException catch (e, stackTrace) {
+      debugPrint(
+        '[AuthDiag] PlatformException: '
+        'code=${e.code}, message=${e.message}, details=${e.details}',
+      );
+      debugPrintStack(stackTrace: stackTrace);
+      _setError('Google sign-in failed: ${e.code}');
+    } catch (e, stackTrace) {
+      debugPrint('[AuthDiag] Unknown Google sign-in error: $e');
+      debugPrintStack(stackTrace: stackTrace);
+      _setError('Google sign-in failed. Check debug logs.');
     }
   }
 
   // ── GUEST MODE ────────────────────────────────────────────
   Future<void> _signInAsGuest() async {
+    _dismissKeyboard();
     _setLoading(true);
     try {
       await widget.auth.signInAnonymously();
@@ -215,6 +307,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // ── FORGOT PASSWORD ───────────────────────────────────────
   Future<void> _resetPassword() async {
+    _dismissKeyboard();
+
     final email = _emailController.text.trim();
     if (email.isEmpty ||
         !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
@@ -643,6 +737,7 @@ class _LoginScreenState extends State<LoginScreen> {
       keyboardType: keyboardType,
       textInputAction: textInputAction ?? TextInputAction.next,
       onFieldSubmitted: onFieldSubmitted,
+      onTapOutside: (_) => _dismissKeyboard(),
       style: const TextStyle(fontSize: 15, color: _textDark),
       decoration: InputDecoration(
         filled: true,
@@ -703,13 +798,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 22,
                 child: CircularProgressIndicator(strokeWidth: 2.5),
               )
-            : const Text(
-                'Continue with Google',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: _textDark,
-                ),
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SvgPicture.asset(
+                    'assets/icon/google_icon.svg',
+                    width: 20,
+                    height: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Continue with Google',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: _textDark,
+                    ),
+                  ),
+                ],
               ),
       ),
     );

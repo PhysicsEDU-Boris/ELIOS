@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 import '../../../models/guide_lesson.dart';
+import '../../../providers/learning_progress_provider.dart';
 import '../../../services/elearning_content_service.dart';
 import '../../../widgets/elio_learning_app_bar.dart';
 
@@ -26,18 +30,60 @@ class GuidesPage extends StatelessWidget {
   }
 }
 
-class GuidesContent extends StatefulWidget {
+class GuidesContent extends ConsumerStatefulWidget {
   final String? selectedModuleId;
   final VoidCallback? onClearFilter;
+  final String? resumeGuideId;
+  final VoidCallback? onResumeGuideHandled;
 
-  const GuidesContent({super.key, this.selectedModuleId, this.onClearFilter});
+  const GuidesContent({
+    super.key,
+    this.selectedModuleId,
+    this.onClearFilter,
+    this.resumeGuideId,
+    this.onResumeGuideHandled,
+  });
 
   @override
-  State<GuidesContent> createState() => _GuidesContentState();
+  ConsumerState<GuidesContent> createState() => _GuidesContentState();
 }
 
-class _GuidesContentState extends State<GuidesContent> {
+class _GuidesContentState extends ConsumerState<GuidesContent> {
   final ElearningContentService _service = ElearningContentService();
+  String? _lastHandledResumeGuideId;
+
+  @override
+  void didUpdateWidget(covariant GuidesContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.resumeGuideId != widget.resumeGuideId) {
+      _lastHandledResumeGuideId = null;
+    }
+  }
+
+  void _maybeOpenResumeGuide(List<GuideLesson> guides) {
+    final resumeGuideId = widget.resumeGuideId;
+    if (resumeGuideId == null || resumeGuideId.trim().isEmpty) return;
+    if (_lastHandledResumeGuideId == resumeGuideId) return;
+
+    GuideLesson? target;
+    for (final guide in guides) {
+      if (guide.id == resumeGuideId) {
+        target = guide;
+        break;
+      }
+    }
+
+    if (target == null) return;
+
+    _lastHandledResumeGuideId = resumeGuideId;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.onResumeGuideHandled?.call();
+      _openGuideLesson(context: context, ref: ref, lesson: target!);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +92,9 @@ class _GuidesContentState extends State<GuidesContent> {
       child: StreamBuilder<List<GuideLesson>>(
         stream: _service.watchGuideLessons(moduleId: widget.selectedModuleId),
         builder: (context, snapshot) {
+          final guides = snapshot.data ?? const <GuideLesson>[];
+          if (snapshot.hasData) _maybeOpenResumeGuide(guides);
+
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
             child: Center(
@@ -81,7 +130,7 @@ class _GuidesContentState extends State<GuidesContent> {
                       )
                     else if (!snapshot.hasData)
                       const Center(child: CircularProgressIndicator())
-                    else if (snapshot.data!.isEmpty)
+                    else if (guides.isEmpty)
                       _GuideMessage(
                         icon: Icons.menu_book_outlined,
                         title: 'No guides available.',
@@ -90,12 +139,17 @@ class _GuidesContentState extends State<GuidesContent> {
                             : 'This module does not have a published guide yet.',
                       )
                     else
-                      ..._groupLessons(snapshot.data!).entries.map(
+                      ..._groupLessons(guides).entries.map(
                         (entry) => Padding(
                           padding: const EdgeInsets.only(bottom: 22),
                           child: _GuideModuleCard(
                             title: entry.key,
                             lessons: entry.value,
+                            onOpenGuide: (lesson) => _openGuideLesson(
+                              context: context,
+                              ref: ref,
+                              lesson: lesson,
+                            ),
                           ),
                         ),
                       ),
@@ -155,111 +209,162 @@ class _FilterBanner extends StatelessWidget {
   }
 }
 
+Future<void> _openGuideLesson({
+  required BuildContext context,
+  required WidgetRef ref,
+  required GuideLesson lesson,
+}) async {
+  debugPrint('[StartupDiag] opening WebView/PDF only after user action');
+
+  final pdfAsset = lesson.pdfAsset.trim();
+  if (pdfAsset.isEmpty) {
+    _showGuideUnavailableMessage(context);
+    return;
+  }
+
+  try {
+    await rootBundle.load(pdfAsset);
+  } on FlutterError {
+    if (context.mounted) {
+      _showGuideUnavailableMessage(context);
+    }
+    return;
+  }
+
+  if (!context.mounted) return;
+  final progress = ref.read(learningProgressProvider).valueOrNull;
+  final initialPage = progress?.guideReadProgress[lesson.id] ?? 0;
+  await Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (context) => _GuidePdfPage(
+        title: lesson.title,
+        pdfAsset: pdfAsset,
+        guideId: lesson.id,
+        moduleId: lesson.moduleId,
+        pageCount: lesson.pageCount,
+        readTimeMinutes: lesson.readTimeMinutes,
+        initialPage: initialPage,
+      ),
+    ),
+  );
+}
+
+void _showGuideUnavailableMessage(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Guide PDF is not available yet.')),
+  );
+}
+
 class _GuideModuleCard extends StatelessWidget {
   final String title;
   final List<GuideLesson> lessons;
+  final ValueChanged<GuideLesson> onOpenGuide;
 
-  const _GuideModuleCard({required this.title, required this.lessons});
+  const _GuideModuleCard({
+    required this.title,
+    required this.lessons,
+    required this.onOpenGuide,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
+      child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              color: _ink,
-              fontSize: 19,
-              fontWeight: FontWeight.w800,
-            ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: _border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.inter(
+                  color: _ink,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 16),
+              for (var index = 0; index < lessons.length; index++) ...[
+                _GuideLessonTile(
+                  lesson: lessons[index],
+                  onOpenGuide: onOpenGuide,
+                ),
+                if (index != lessons.length - 1) const Divider(height: 24),
+              ],
+            ],
           ),
-          const SizedBox(height: 16),
-          for (var index = 0; index < lessons.length; index++) ...[
-            _GuideLessonTile(lesson: lessons[index]),
-            if (index != lessons.length - 1) const Divider(height: 24),
-          ],
-        ],
+        ),
       ),
     );
   }
 }
 
-class _GuideLessonTile extends StatelessWidget {
+class _GuideLessonTile extends ConsumerWidget {
   final GuideLesson lesson;
+  final ValueChanged<GuideLesson> onOpenGuide;
 
-  const _GuideLessonTile({required this.lesson});
-
-  Future<void> _openGuide(BuildContext context) async {
-    final pdfAsset = lesson.pdfAsset.trim();
-    if (pdfAsset.isEmpty) {
-      _showUnavailableMessage(context);
-      return;
-    }
-
-    try {
-      await rootBundle.load(pdfAsset);
-    } on FlutterError {
-      if (context.mounted) {
-        _showUnavailableMessage(context);
-      }
-      return;
-    }
-
-    if (!context.mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) =>
-            _GuidePdfPage(title: lesson.title, pdfAsset: pdfAsset),
-      ),
-    );
-  }
-
-  void _showUnavailableMessage(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Guide PDF is not available yet.')),
-    );
-  }
+  const _GuideLessonTile({required this.lesson, required this.onOpenGuide});
 
   @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: _GuideCover(coverAsset: lesson.coverAsset),
-      minLeadingWidth: 52,
-      minVerticalPadding: 8,
-      visualDensity: VisualDensity.comfortable,
-      title: Text(
-        lesson.title,
-        style: GoogleFonts.inter(
-          color: _ink,
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      subtitle: lesson.description.isEmpty
-          ? null
-          : Padding(
-              padding: const EdgeInsets.only(top: 5),
-              child: Text(
-                lesson.description,
-                style: GoogleFonts.inter(
-                  color: _muted,
-                  fontSize: 12,
-                  height: 1.4,
-                ),
-              ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final progress = ref.watch(learningProgressProvider).valueOrNull;
+    final readPages = progress?.guideReadProgress[lesson.id] ?? 0;
+    final totalPages = lesson.pageCount > 0 ? lesson.pageCount : 1;
+    final percent = (readPages / totalPages).clamp(0.0, 1.0);
+    final completed = progress?.completedGuideIds.contains(lesson.id) ?? false;
+
+    return Column(
+      children: [
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: _GuideCover(coverAsset: lesson.coverAsset),
+          minLeadingWidth: 52,
+          minVerticalPadding: 8,
+          visualDensity: VisualDensity.comfortable,
+          title: Text(
+            lesson.title,
+            style: GoogleFonts.inter(
+              color: _ink,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
             ),
-      trailing: const Icon(Icons.chevron_right_rounded),
-      onTap: () => _openGuide(context),
+          ),
+          subtitle: lesson.description.isEmpty
+              ? null
+              : Padding(
+                  padding: const EdgeInsets.only(top: 5),
+                  child: Text(
+                    lesson.description,
+                    style: GoogleFonts.inter(
+                      color: _muted,
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+          trailing: completed
+              ? const Icon(Icons.check_circle_rounded, color: _primary)
+              : const Icon(Icons.chevron_right_rounded),
+          onTap: () => onOpenGuide(lesson),
+        ),
+        if (percent > 0 || completed) ...[
+          const SizedBox(height: 6),
+          LinearProgressIndicator(
+            value: completed ? 1 : percent,
+            minHeight: 4,
+            borderRadius: BorderRadius.circular(999),
+            backgroundColor: _border.withValues(alpha: 0.35),
+            valueColor: const AlwaysStoppedAnimation<Color>(_primary),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -297,21 +402,118 @@ class _GuideCover extends StatelessWidget {
   }
 }
 
-class _GuidePdfPage extends StatefulWidget {
+class _GuidePdfPage extends ConsumerStatefulWidget {
   final String title;
   final String pdfAsset;
+  final String guideId;
+  final String moduleId;
+  final int pageCount;
+  final int readTimeMinutes;
+  final int initialPage;
 
-  const _GuidePdfPage({required this.title, required this.pdfAsset});
+  const _GuidePdfPage({
+    required this.title,
+    required this.pdfAsset,
+    required this.guideId,
+    required this.moduleId,
+    required this.pageCount,
+    required this.readTimeMinutes,
+    required this.initialPage,
+  });
 
   @override
-  State<_GuidePdfPage> createState() => _GuidePdfPageState();
+  ConsumerState<_GuidePdfPage> createState() => _GuidePdfPageState();
 }
 
-class _GuidePdfPageState extends State<_GuidePdfPage> {
+class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
+  late final PdfViewerController _controller;
+  late final LearningProgressNotifier _progressNotifier;
   var _loadFailed = false;
+  var _effectivePageCount = 0;
+  var _latestPageReached = 0;
+  var _loggedPdfBuild = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _progressNotifier = ref.read(learningProgressProvider.notifier);
+    _controller = PdfViewerController();
+    _effectivePageCount = widget.pageCount < 0 ? 0 : widget.pageCount;
+    _latestPageReached = _initialPageNumber();
+  }
+
+  @override
+  void dispose() {
+    if (_latestPageReached > 0) {
+      _saveProgressAfterDispose(
+        _latestPageReached,
+        pageCount: _effectivePageCount,
+      );
+    }
+    super.dispose();
+  }
+
+  int _initialPageNumber() {
+    final initial = widget.initialPage <= 0 ? 1 : widget.initialPage;
+    if (_effectivePageCount <= 0) return initial;
+    return initial.clamp(1, _effectivePageCount).toInt();
+  }
+
+  void _saveProgressAfterDispose(int pageReached, {required int pageCount}) {
+    final notifier = _progressNotifier;
+    final guideId = widget.guideId;
+    final moduleId = widget.moduleId;
+    final readTimeMinutes = widget.readTimeMinutes;
+
+    Future<void>(() {
+      unawaited(
+        notifier.updateGuideReadProgress(
+          guideId,
+          moduleId: moduleId,
+          pageReached: pageReached,
+          pageCount: pageCount,
+          readMinutes: readTimeMinutes,
+        ),
+      );
+    });
+  }
+
+  void _saveProgress(int pageReached, {required int pageCount}) {
+    unawaited(
+      _progressNotifier.updateGuideReadProgress(
+        widget.guideId,
+        moduleId: widget.moduleId,
+        pageReached: pageReached,
+        pageCount: pageCount,
+        readMinutes: widget.readTimeMinutes,
+      ),
+    );
+  }
+
+  void _handleDocumentLoaded(PdfDocumentLoadedDetails details) {
+    _effectivePageCount = details.document.pages.count;
+    _latestPageReached = _initialPageNumber();
+    _saveProgress(_latestPageReached, pageCount: _effectivePageCount);
+  }
+
+  void _handlePageChanged(PdfPageChangedDetails details) {
+    final pageCount = _effectivePageCount > 0
+        ? _effectivePageCount
+        : details.isLastPage
+        ? details.newPageNumber
+        : widget.pageCount;
+    _effectivePageCount = pageCount;
+    _latestPageReached = details.newPageNumber;
+    _saveProgress(_latestPageReached, pageCount: pageCount);
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (!_loggedPdfBuild) {
+      _loggedPdfBuild = true;
+      debugPrint('[StartupDiag] building WebView/PDF screen');
+    }
+
     return Scaffold(
       backgroundColor: _background,
       appBar: AppBar(
@@ -331,6 +533,10 @@ class _GuidePdfPageState extends State<_GuidePdfPage> {
             )
           : SfPdfViewer.asset(
               widget.pdfAsset,
+              controller: _controller,
+              initialPageNumber: _initialPageNumber(),
+              onDocumentLoaded: _handleDocumentLoaded,
+              onPageChanged: _handlePageChanged,
               onDocumentLoadFailed: (_) {
                 if (mounted) {
                   setState(() => _loadFailed = true);

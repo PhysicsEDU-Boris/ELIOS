@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import '../../../models/video_lesson.dart';
+import '../../../providers/learning_progress_provider.dart';
 import '../../../services/elearning_content_service.dart';
 import '../../../widgets/elio_learning_app_bar.dart';
 
@@ -30,22 +34,61 @@ class VideoLessonsPage extends StatelessWidget {
   }
 }
 
-class VideoLessonsContent extends StatefulWidget {
+class VideoLessonsContent extends ConsumerStatefulWidget {
   final String? selectedModuleId;
   final VoidCallback? onClearFilter;
+  final String? resumeVideoId;
+  final VoidCallback? onResumeVideoHandled;
 
   const VideoLessonsContent({
     super.key,
     this.selectedModuleId,
     this.onClearFilter,
+    this.resumeVideoId,
+    this.onResumeVideoHandled,
   });
 
   @override
-  State<VideoLessonsContent> createState() => _VideoLessonsContentState();
+  ConsumerState<VideoLessonsContent> createState() =>
+      _VideoLessonsContentState();
 }
 
-class _VideoLessonsContentState extends State<VideoLessonsContent> {
+class _VideoLessonsContentState extends ConsumerState<VideoLessonsContent> {
   final ElearningContentService _service = ElearningContentService();
+  String? _lastHandledResumeVideoId;
+
+  @override
+  void didUpdateWidget(covariant VideoLessonsContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.resumeVideoId != widget.resumeVideoId) {
+      _lastHandledResumeVideoId = null;
+    }
+  }
+
+  void _maybeOpenResumeVideo(List<VideoLesson> lessons) {
+    final resumeVideoId = widget.resumeVideoId;
+    if (resumeVideoId == null || resumeVideoId.trim().isEmpty) return;
+    if (_lastHandledResumeVideoId == resumeVideoId) return;
+
+    VideoLesson? target;
+    for (final lesson in lessons) {
+      if (lesson.id == resumeVideoId) {
+        target = lesson;
+        break;
+      }
+    }
+
+    if (target == null) return;
+
+    _lastHandledResumeVideoId = resumeVideoId;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.onResumeVideoHandled?.call();
+      _openVideo(target!);
+    });
+  }
 
   void _openVideo(VideoLesson lesson) {
     final youtubeId = lesson.youtubeId.trim();
@@ -56,10 +99,25 @@ class _VideoLessonsContentState extends State<VideoLessonsContent> {
       return;
     }
 
+    final progress = ref.read(learningProgressProvider).valueOrNull;
+    final savedSeconds = progress?.videoWatchProgress[lesson.id] ?? 0;
+    final completed = progress?.completedVideoIds.contains(lesson.id) ?? false;
+    final durationSeconds = lesson.durationSeconds;
+    final nearEnd =
+        durationSeconds > 0 && savedSeconds >= (durationSeconds - 2);
+    final initialPositionSeconds = completed || nearEnd ? 0 : savedSeconds;
+
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (context) =>
-            _YoutubeVideoPage(title: lesson.title, youtubeId: youtubeId),
+        builder: (context) => _YoutubeVideoPage(
+          title: lesson.title,
+          youtubeId: youtubeId,
+          videoId: lesson.id,
+          moduleId: lesson.moduleId,
+          durationSeconds: durationSeconds,
+          initialPositionSeconds: initialPositionSeconds,
+          forceStartFromBeginning: completed || nearEnd,
+        ),
       ),
     );
   }
@@ -72,6 +130,8 @@ class _VideoLessonsContentState extends State<VideoLessonsContent> {
         stream: _service.watchVideoLessons(moduleId: widget.selectedModuleId),
         builder: (context, snapshot) {
           final lessons = snapshot.data ?? const <VideoLesson>[];
+          if (snapshot.hasData) _maybeOpenResumeVideo(lessons);
+
           final featured = lessons
               .where((lesson) => lesson.isFeatured)
               .firstOrNull;
@@ -224,14 +284,20 @@ class _FilterBanner extends StatelessWidget {
   }
 }
 
-class _FeaturedVideoCard extends StatelessWidget {
+class _FeaturedVideoCard extends ConsumerWidget {
   final VideoLesson lesson;
   final VoidCallback onTap;
 
   const _FeaturedVideoCard({required this.lesson, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final progress = ref.watch(learningProgressProvider).valueOrNull;
+    final watched = progress?.videoWatchProgress[lesson.id] ?? 0;
+    final total = lesson.durationSeconds > 0 ? lesson.durationSeconds : 1;
+    final percent = (watched / total).clamp(0.0, 1.0);
+    final completed = progress?.completedVideoIds.contains(lesson.id) ?? false;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -305,6 +371,35 @@ class _FeaturedVideoCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (percent > 0 || completed)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(16),
+                    ),
+                    child: LinearProgressIndicator(
+                      value: completed ? 1 : percent,
+                      minHeight: 5,
+                      backgroundColor: Colors.white.withValues(alpha: 0.25),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Color(0xFF6EE7B7),
+                      ),
+                    ),
+                  ),
+                ),
+              if (completed)
+                const Positioned(
+                  right: 14,
+                  top: 14,
+                  child: Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF6EE7B7),
+                    size: 24,
+                  ),
+                ),
             ],
           ),
         ),
@@ -313,14 +408,20 @@ class _FeaturedVideoCard extends StatelessWidget {
   }
 }
 
-class _VideoLessonCard extends StatelessWidget {
+class _VideoLessonCard extends ConsumerWidget {
   final VideoLesson lesson;
   final VoidCallback onTap;
 
   const _VideoLessonCard({required this.lesson, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final progress = ref.watch(learningProgressProvider).valueOrNull;
+    final watched = progress?.videoWatchProgress[lesson.id] ?? 0;
+    final total = lesson.durationSeconds > 0 ? lesson.durationSeconds : 1;
+    final percent = (watched / total).clamp(0.0, 1.0);
+    final completed = progress?.completedVideoIds.contains(lesson.id) ?? false;
+
     return SizedBox(
       width: 158,
       child: InkWell(
@@ -363,6 +464,36 @@ class _VideoLessonCard extends StatelessWidget {
                     bottom: 7,
                     child: _VideoBadge(label: lesson.durationLabel),
                   ),
+                  if (percent > 0 || completed)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          bottom: Radius.circular(12),
+                        ),
+                        child: LinearProgressIndicator(
+                          value: completed ? 1 : percent,
+                          minHeight: 4,
+                          backgroundColor: Colors.black.withValues(alpha: 0.18),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            _primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (completed)
+                    const Positioned(
+                      left: 7,
+                      top: 7,
+                      child: Icon(
+                        Icons.check_circle_rounded,
+                        color: Color(0xFF6EE7B7),
+                        size: 20,
+                        shadows: [Shadow(color: Colors.black45, blurRadius: 4)],
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -396,33 +527,130 @@ class _VideoLessonCard extends StatelessWidget {
   }
 }
 
-class _YoutubeVideoPage extends StatefulWidget {
+class _YoutubeVideoPage extends ConsumerStatefulWidget {
   final String title;
   final String youtubeId;
+  final String videoId;
+  final String moduleId;
+  final int durationSeconds;
+  final int initialPositionSeconds;
+  final bool forceStartFromBeginning;
 
-  const _YoutubeVideoPage({required this.title, required this.youtubeId});
+  const _YoutubeVideoPage({
+    required this.title,
+    required this.youtubeId,
+    required this.videoId,
+    required this.moduleId,
+    required this.durationSeconds,
+    required this.initialPositionSeconds,
+    required this.forceStartFromBeginning,
+  });
 
   @override
-  State<_YoutubeVideoPage> createState() => _YoutubeVideoPageState();
+  ConsumerState<_YoutubeVideoPage> createState() => _YoutubeVideoPageState();
 }
 
-class _YoutubeVideoPageState extends State<_YoutubeVideoPage> {
+class _YoutubeVideoPageState extends ConsumerState<_YoutubeVideoPage> {
   late final YoutubePlayerController _controller;
+  late final LearningProgressNotifier _progressNotifier;
+  StreamSubscription<YoutubeVideoState>? _videoStateSub;
+  bool _didSeekToInitialPosition = false;
+  int _lastSavedPositionSeconds = -1;
+  int _latestPositionSeconds = 0;
+  DateTime _lastSaveAt = DateTime.fromMillisecondsSinceEpoch(0);
+
+  bool get _isCompletedReplayFromStart =>
+      widget.forceStartFromBeginning && widget.initialPositionSeconds == 0;
 
   @override
   void initState() {
     super.initState();
+    _progressNotifier = ref.read(learningProgressProvider.notifier);
     _controller = YoutubePlayerController.fromVideoId(
       videoId: widget.youtubeId,
       autoPlay: true,
       params: const YoutubePlayerParams(mute: false, strictRelatedVideos: true),
     );
+    _videoStateSub = _controller.videoStateStream.listen(_handlePlayerUpdate);
   }
 
   @override
   void dispose() {
+    final shouldSkipTinyCompletedReplaySave =
+        _isCompletedReplayFromStart && _latestPositionSeconds < 2;
+    if (_latestPositionSeconds >= 0 && !shouldSkipTinyCompletedReplaySave) {
+      _saveProgressAfterDispose(_latestPositionSeconds);
+    }
+    unawaited(_videoStateSub?.cancel());
     _controller.close();
     super.dispose();
+  }
+
+  void _handlePlayerUpdate(YoutubeVideoState value) {
+    final positionSeconds = value.position.inSeconds;
+    _latestPositionSeconds = positionSeconds;
+
+    if (!_didSeekToInitialPosition) {
+      _didSeekToInitialPosition = true;
+
+      final targetSeconds = widget.forceStartFromBeginning
+          ? 0
+          : widget.initialPositionSeconds;
+      final shouldSeek =
+          targetSeconds > 2 ||
+          (widget.forceStartFromBeginning && positionSeconds > 1);
+
+      if (shouldSeek) {
+        _latestPositionSeconds = targetSeconds;
+        unawaited(
+          _controller.seekTo(
+            seconds: targetSeconds.toDouble(),
+            allowSeekAhead: true,
+          ),
+        );
+        return;
+      }
+    }
+
+    if (_isCompletedReplayFromStart && positionSeconds < 2) return;
+
+    final now = DateTime.now();
+    if (now.difference(_lastSaveAt).inSeconds < 10) return;
+    if ((positionSeconds - _lastSavedPositionSeconds).abs() < 2) return;
+
+    _saveProgress(positionSeconds);
+  }
+
+  void _saveProgressAfterDispose(int positionSeconds) {
+    final notifier = _progressNotifier;
+    final videoId = widget.videoId;
+    final moduleId = widget.moduleId;
+    final durationSeconds = widget.durationSeconds;
+
+    Future<void>(() {
+      unawaited(
+        notifier.updateVideoWatchProgress(
+          videoId,
+          moduleId: moduleId,
+          positionSeconds: positionSeconds,
+          durationSeconds: durationSeconds,
+        ),
+      );
+    });
+  }
+
+  void _saveProgress(int positionSeconds) {
+    _lastSaveAt = DateTime.now();
+    _lastSavedPositionSeconds = positionSeconds;
+
+    unawaited(
+      _progressNotifier.updateVideoWatchProgress(
+        widget.videoId,
+        moduleId: widget.moduleId,
+        positionSeconds: positionSeconds,
+        durationSeconds: widget.durationSeconds,
+      ),
+    );
   }
 
   @override

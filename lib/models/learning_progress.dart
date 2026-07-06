@@ -67,33 +67,184 @@ class CategoryProgress {
     'lastAccessed': lastAccessed?.toIso8601String(),
   };
 
-  factory CategoryProgress.fromMap(Map<String, dynamic> map) =>
-      CategoryProgress(
-        categoryId: (map['categoryId'] as String?) ?? '',
-        lessonViewed: (map['lessonViewed'] as bool?) ?? false,
-        quizBestScore: (map['quizBestScore'] as int?) ?? 0,
-        quizAttempts: (map['quizAttempts'] as int?) ?? 0,
-        totalQuestions: (map['totalQuestions'] as int?) ?? 0,
-        lastAccessed: map['lastAccessed'] != null
-            ? DateTime.tryParse(map['lastAccessed'] as String)
-            : null,
-      );
+  factory CategoryProgress.fromMap(Map<String, dynamic> map) {
+    final rawLastAccessed = map['lastAccessed'];
+    return CategoryProgress(
+      categoryId: (map['categoryId'] as String?) ?? '',
+      lessonViewed: (map['lessonViewed'] as bool?) ?? false,
+      quizBestScore: (map['quizBestScore'] as int?) ?? 0,
+      quizAttempts: (map['quizAttempts'] as int?) ?? 0,
+      totalQuestions: (map['totalQuestions'] as int?) ?? 0,
+      lastAccessed: rawLastAccessed is String
+          ? DateTime.tryParse(rawLastAccessed)
+          : null,
+    );
+  }
+}
+
+class QuizReviewAnswer {
+  final String questionId;
+  final String question;
+  final String? imagePath;
+  final String? imageAsset;
+  final List<String> options;
+  final int correctIndex;
+  final int? selectedIndex;
+  final String explanation;
+  final String difficulty;
+  final int order;
+
+  const QuizReviewAnswer({
+    required this.questionId,
+    required this.question,
+    required this.options,
+    required this.correctIndex,
+    required this.selectedIndex,
+    required this.explanation,
+    required this.difficulty,
+    required this.order,
+    this.imagePath,
+    this.imageAsset,
+  });
+
+  bool get isCorrect => selectedIndex != null && selectedIndex == correctIndex;
+
+  Map<String, dynamic> toMap() => {
+    'questionId': questionId,
+    'question': question,
+    'imagePath': imagePath,
+    'imageAsset': imageAsset,
+    'options': options,
+    'correctIndex': correctIndex,
+    'selectedIndex': selectedIndex,
+    'explanation': explanation,
+    'difficulty': difficulty,
+    'order': order,
+  };
+
+  factory QuizReviewAnswer.fromMap(Map<String, dynamic> map) {
+    return QuizReviewAnswer(
+      questionId: (map['questionId'] ?? '').toString(),
+      question: (map['question'] ?? '').toString(),
+      imagePath: map['imagePath']?.toString(),
+      imageAsset: map['imageAsset']?.toString(),
+      options: (map['options'] as List<dynamic>? ?? const [])
+          .map((option) => option.toString())
+          .toList(),
+      correctIndex: LearningProgress._intFromValue(map['correctIndex']),
+      selectedIndex: map['selectedIndex'] == null
+          ? null
+          : LearningProgress._intFromValue(map['selectedIndex']),
+      explanation: (map['explanation'] ?? '').toString(),
+      difficulty: (map['difficulty'] ?? '').toString(),
+      order: LearningProgress._intFromValue(map['order']),
+    );
+  }
+}
+
+class QuizReview {
+  final String moduleId;
+  final String quizTitle;
+  final int score;
+  final int totalQuestions;
+  final int percent;
+  final bool passed;
+  final DateTime completedAt;
+  final List<QuizReviewAnswer> answers;
+
+  const QuizReview({
+    required this.moduleId,
+    required this.quizTitle,
+    required this.score,
+    required this.totalQuestions,
+    required this.percent,
+    required this.passed,
+    required this.completedAt,
+    required this.answers,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'moduleId': moduleId,
+    'quizTitle': quizTitle,
+    'score': score,
+    'totalQuestions': totalQuestions,
+    'percent': percent,
+    'passed': passed,
+    'completedAt': completedAt.toIso8601String(),
+    'answers': answers.map((answer) => answer.toMap()).toList(),
+  };
+
+  factory QuizReview.fromMap(Map<String, dynamic> map) {
+    return QuizReview(
+      moduleId: (map['moduleId'] ?? '').toString(),
+      quizTitle: (map['quizTitle'] ?? '').toString(),
+      score: LearningProgress._intFromValue(map['score']),
+      totalQuestions: LearningProgress._intFromValue(map['totalQuestions']),
+      percent: LearningProgress._intFromValue(map['percent']),
+      passed: map['passed'] == true,
+      completedAt:
+          LearningProgress._parseDateTime(map['completedAt']) ?? DateTime.now(),
+      answers: (map['answers'] as List<dynamic>? ?? const [])
+          .whereType<Map>()
+          .map(
+            (answer) =>
+                QuizReviewAnswer.fromMap(Map<String, dynamic>.from(answer)),
+          )
+          .toList(),
+    );
+  }
 }
 
 /// Aggregated learning progress for one user.
 class LearningProgress {
+  static const int fallbackTotalVideoLessons = 10;
+  static const int fallbackTotalGuideLessons = 4;
+  static const int fallbackTotalQuizModules = 3;
+
   final String userId;
 
   /// Keyed by [WasteCategory.id].
   final Map<String, CategoryProgress> categories;
 
+  final Set<String> completedVideoIds;
+  final Set<String> completedGuideIds;
+  final Map<String, int> quizScores;
+  final Map<String, int> videoWatchProgress;
+  final Map<String, int> guideReadProgress;
+  final Map<String, DateTime> videoLastAccessed;
+  final Map<String, DateTime> guideLastAccessed;
+  final Map<String, DateTime> quizLastAccessed;
+  final Map<String, QuizReview> quizReviews;
+  final Set<String> completedQuizModules;
+  final int totalWatchSeconds;
+  final int totalReadMinutes;
   final DateTime? lastUpdated;
 
-  const LearningProgress({
+  LearningProgress({
     required this.userId,
     this.categories = const {},
+    this.completedVideoIds = const <String>{},
+    this.completedGuideIds = const <String>{},
+    this.quizScores = const <String, int>{},
+    this.videoWatchProgress = const <String, int>{},
+    this.guideReadProgress = const <String, int>{},
+    Map<String, DateTime>? videoLastAccessed,
+    Map<String, DateTime>? guideLastAccessed,
+    Map<String, DateTime>? quizLastAccessed,
+    this.quizReviews = const <String, QuizReview>{},
+    this.completedQuizModules = const <String>{},
+    this.totalWatchSeconds = 0,
+    this.totalReadMinutes = 0,
     this.lastUpdated,
-  });
+  }) : videoLastAccessed = Map.unmodifiable(
+         videoLastAccessed ?? const <String, DateTime>{},
+       ),
+       guideLastAccessed = Map.unmodifiable(
+         guideLastAccessed ?? const <String, DateTime>{},
+       ),
+       quizLastAccessed = Map.unmodifiable(
+         quizLastAccessed ?? const <String, DateTime>{},
+       );
 
   /// Average progress across all tracked categories (0.0 – 1.0).
   double get overallProgress {
@@ -105,14 +256,133 @@ class LearningProgress {
     return total / categories.length;
   }
 
+  double videoProgressFor({required int totalVideos}) {
+    return (completedVideoIds.length / _safeTotal(totalVideos)).clamp(0.0, 1.0);
+  }
+
+  double guideProgressFor({required int totalGuides}) {
+    return (completedGuideIds.length / _safeTotal(totalGuides)).clamp(0.0, 1.0);
+  }
+
+  double quizProgressFor({required int totalQuizModules}) {
+    return (completedQuizModules.length / _safeTotal(totalQuizModules)).clamp(
+      0.0,
+      1.0,
+    );
+  }
+
+  double weightedProgressFor({
+    required int totalVideos,
+    required int totalGuides,
+    required int totalQuizModules,
+  }) {
+    return (videoProgressFor(totalVideos: totalVideos) * 0.4 +
+            guideProgressFor(totalGuides: totalGuides) * 0.2 +
+            quizProgressFor(totalQuizModules: totalQuizModules) * 0.4)
+        .clamp(0.0, 1.0);
+  }
+
+  int weightedProgressPercentFor({
+    required int totalVideos,
+    required int totalGuides,
+    required int totalQuizModules,
+  }) {
+    return (weightedProgressFor(
+              totalVideos: totalVideos,
+              totalGuides: totalGuides,
+              totalQuizModules: totalQuizModules,
+            ) *
+            100)
+        .round();
+  }
+
+  double get videoProgress =>
+      videoProgressFor(totalVideos: fallbackTotalVideoLessons);
+
+  double get guideProgress =>
+      guideProgressFor(totalGuides: fallbackTotalGuideLessons);
+
+  double get quizProgress =>
+      quizProgressFor(totalQuizModules: fallbackTotalQuizModules);
+
+  double get weightedProgress => weightedProgressFor(
+    totalVideos: fallbackTotalVideoLessons,
+    totalGuides: fallbackTotalGuideLessons,
+    totalQuizModules: fallbackTotalQuizModules,
+  );
+
+  int get weightedProgressPercent => weightedProgressPercentFor(
+    totalVideos: fallbackTotalVideoLessons,
+    totalGuides: fallbackTotalGuideLessons,
+    totalQuizModules: fallbackTotalQuizModules,
+  );
+
+  int get completedLessonsCount =>
+      completedVideoIds.length + completedGuideIds.length;
+
+  int get totalLessonsCount =>
+      fallbackTotalVideoLessons + fallbackTotalGuideLessons;
+
+  int get completedModulesCount => completedQuizModules.length;
+
+  int get totalModulesCount => fallbackTotalQuizModules;
+
+  int get completedLearningItemsCount =>
+      completedLessonsCount + completedQuizModules.length;
+
+  int get totalLearningItemsCount =>
+      totalLessonsCount + fallbackTotalQuizModules;
+
+  int totalLessonsCountFor({
+    required int totalVideos,
+    required int totalGuides,
+  }) {
+    return totalVideos + totalGuides;
+  }
+
+  int totalLearningItemsCountFor({
+    required int totalVideos,
+    required int totalGuides,
+    required int totalQuizModules,
+  }) {
+    return totalVideos + totalGuides + totalQuizModules;
+  }
+
+  int get savedWatchSeconds =>
+      videoWatchProgress.values.fold(0, (sum, seconds) => sum + seconds);
+
   LearningProgress copyWith({
     String? userId,
     Map<String, CategoryProgress>? categories,
+    Set<String>? completedVideoIds,
+    Set<String>? completedGuideIds,
+    Map<String, int>? quizScores,
+    Map<String, int>? videoWatchProgress,
+    Map<String, int>? guideReadProgress,
+    Map<String, DateTime>? videoLastAccessed,
+    Map<String, DateTime>? guideLastAccessed,
+    Map<String, DateTime>? quizLastAccessed,
+    Map<String, QuizReview>? quizReviews,
+    Set<String>? completedQuizModules,
+    int? totalWatchSeconds,
+    int? totalReadMinutes,
     DateTime? lastUpdated,
   }) {
     return LearningProgress(
       userId: userId ?? this.userId,
       categories: categories ?? this.categories,
+      completedVideoIds: completedVideoIds ?? this.completedVideoIds,
+      completedGuideIds: completedGuideIds ?? this.completedGuideIds,
+      quizScores: quizScores ?? this.quizScores,
+      videoWatchProgress: videoWatchProgress ?? this.videoWatchProgress,
+      guideReadProgress: guideReadProgress ?? this.guideReadProgress,
+      videoLastAccessed: videoLastAccessed ?? this.videoLastAccessed,
+      guideLastAccessed: guideLastAccessed ?? this.guideLastAccessed,
+      quizLastAccessed: quizLastAccessed ?? this.quizLastAccessed,
+      quizReviews: quizReviews ?? this.quizReviews,
+      completedQuizModules: completedQuizModules ?? this.completedQuizModules,
+      totalWatchSeconds: totalWatchSeconds ?? this.totalWatchSeconds,
+      totalReadMinutes: totalReadMinutes ?? this.totalReadMinutes,
       lastUpdated: lastUpdated ?? this.lastUpdated,
     );
   }
@@ -120,6 +390,26 @@ class LearningProgress {
   Map<String, dynamic> toMap() => {
     'userId': userId,
     'categories': {for (final e in categories.entries) e.key: e.value.toMap()},
+    'completedVideoIds': completedVideoIds.toList(),
+    'completedGuideIds': completedGuideIds.toList(),
+    'quizScores': quizScores,
+    'videoWatchProgress': videoWatchProgress,
+    'guideReadProgress': guideReadProgress,
+    'videoLastAccessed': videoLastAccessed.map(
+      (key, value) => MapEntry(key, value.toIso8601String()),
+    ),
+    'guideLastAccessed': guideLastAccessed.map(
+      (key, value) => MapEntry(key, value.toIso8601String()),
+    ),
+    'quizLastAccessed': quizLastAccessed.map(
+      (key, value) => MapEntry(key, value.toIso8601String()),
+    ),
+    'quizReviews': quizReviews.map(
+      (key, value) => MapEntry(key, value.toMap()),
+    ),
+    'completedQuizModules': completedQuizModules.toList(),
+    'totalWatchSeconds': totalWatchSeconds,
+    'totalReadMinutes': totalReadMinutes,
     'lastUpdated': lastUpdated?.toIso8601String(),
   };
 
@@ -135,11 +425,49 @@ class LearningProgress {
         }
       }
     }
+
+    final rawQuizScores = map['quizScores'];
+    final quizScores = rawQuizScores is Map
+        ? _parseQuizScores(rawQuizScores)
+        : _deriveQuizScores(cats);
+
+    final rawCompletedQuizModules = map['completedQuizModules'];
+    final completedQuizModules = rawCompletedQuizModules is List
+        ? _stringSetFromList(rawCompletedQuizModules)
+        : _deriveCompletedQuizModules(cats);
+
+    final rawVideoWatchProgress = map['videoWatchProgress'];
+    final rawGuideReadProgress = map['guideReadProgress'];
+    final rawLastUpdated = map['lastUpdated'];
     return LearningProgress(
       userId: (map['userId'] as String?) ?? '',
       categories: cats,
-      lastUpdated: map['lastUpdated'] != null
-          ? DateTime.tryParse(map['lastUpdated'] as String)
+      completedVideoIds: map['completedVideoIds'] is List
+          ? _stringSetFromList(map['completedVideoIds'] as List)
+          : const <String>{},
+      completedGuideIds: map['completedGuideIds'] is List
+          ? _stringSetFromList(map['completedGuideIds'] as List)
+          : const <String>{},
+      quizScores: quizScores,
+      videoWatchProgress: rawVideoWatchProgress is Map
+          ? _parseStringIntMap(rawVideoWatchProgress)
+          : const <String, int>{},
+      guideReadProgress: rawGuideReadProgress is Map
+          ? _parseStringIntMap(rawGuideReadProgress)
+          : const <String, int>{},
+      videoLastAccessed: _parseDateTimeMap(map['videoLastAccessed']),
+      guideLastAccessed: _parseDateTimeMap(map['guideLastAccessed']),
+      quizLastAccessed: _parseDateTimeMap(map['quizLastAccessed']),
+      quizReviews: _quizReviewsFromValue(map['quizReviews']),
+      completedQuizModules: completedQuizModules,
+      totalWatchSeconds: map['totalWatchSeconds'] is num
+          ? (map['totalWatchSeconds'] as num).toInt()
+          : 0,
+      totalReadMinutes: map['totalReadMinutes'] is num
+          ? (map['totalReadMinutes'] as num).toInt()
+          : 0,
+      lastUpdated: rawLastUpdated is String
+          ? DateTime.tryParse(rawLastUpdated)
           : null,
     );
   }
@@ -153,4 +481,110 @@ class LearningProgress {
 
   factory LearningProgress.fromJson(String source) =>
       LearningProgress.fromMap(jsonDecode(source) as Map<String, dynamic>);
+
+  static int _safeTotal(int value) => value <= 0 ? 1 : value;
+
+  static Set<String> _stringSetFromList(List<dynamic> list) =>
+      list.whereType<String>().toSet();
+
+  static Map<String, int> _parseQuizScores(Map<dynamic, dynamic> map) {
+    final scores = <String, int>{};
+    for (final entry in map.entries) {
+      if (entry.key is String && entry.value is num) {
+        scores[entry.key as String] = (entry.value as num).toInt();
+      }
+    }
+    return scores;
+  }
+
+  static Map<String, int> _parseStringIntMap(Map<dynamic, dynamic> map) {
+    final values = <String, int>{};
+    for (final entry in map.entries) {
+      if (entry.key is String && entry.value is num) {
+        final value = (entry.value as num).toInt();
+        values[entry.key as String] = value < 0 ? 0 : value;
+      }
+    }
+    return values;
+  }
+
+  static Map<String, DateTime> _parseDateTimeMap(dynamic value) {
+    if (value is! Map) return const <String, DateTime>{};
+
+    final parsed = <String, DateTime>{};
+    for (final entry in value.entries) {
+      final key = entry.key;
+      if (key is! String || key.trim().isEmpty) continue;
+
+      final date = _parseDateTime(entry.value);
+      if (date == null) continue;
+
+      parsed[key] = date;
+    }
+    return parsed;
+  }
+
+  static int _intFromValue(dynamic value) {
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  static Map<String, QuizReview> _quizReviewsFromValue(dynamic value) {
+    if (value is! Map) return const <String, QuizReview>{};
+
+    final reviews = <String, QuizReview>{};
+    for (final entry in value.entries) {
+      final key = entry.key.toString();
+      final rawReview = entry.value;
+
+      if (key.trim().isEmpty || rawReview is! Map) continue;
+
+      reviews[key] = QuizReview.fromMap(Map<String, dynamic>.from(rawReview));
+    }
+    return reviews;
+  }
+
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+
+    try {
+      final converted = (value as dynamic).toDate();
+      if (converted is DateTime) return converted;
+    } catch (_) {
+      return null;
+    }
+
+    return null;
+  }
+
+  static Map<String, int> _deriveQuizScores(
+    Map<String, CategoryProgress> categories,
+  ) {
+    final scores = <String, int>{};
+    for (final entry in categories.entries) {
+      final category = entry.value;
+      if (category.totalQuestions > 0) {
+        scores[entry.key] =
+            (category.quizBestScore / category.totalQuestions * 100).round();
+      }
+    }
+    return scores;
+  }
+
+  static Set<String> _deriveCompletedQuizModules(
+    Map<String, CategoryProgress> categories,
+  ) {
+    const legacyQuizModuleIds = {'organic', 'inorganic', 'hazardous'};
+    return categories.entries
+        .where(
+          (entry) =>
+              legacyQuizModuleIds.contains(entry.key) &&
+              entry.value.totalQuestions > 0 &&
+              entry.value.quizBestScore / entry.value.totalQuestions >= 0.70,
+        )
+        .map((entry) => entry.key)
+        .toSet();
+  }
 }

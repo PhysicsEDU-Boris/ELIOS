@@ -71,12 +71,21 @@ class RobotControlNotifier extends Notifier<RobotState> {
 
   // Connection lifecycle ──────────────────────────────────────────────────────
 
-  void connect() => _ws.connect();
-  void disconnect() => _ws.disconnect();
+  Future<bool> connect({bool autoReconnect = false}) {
+    return _ws.connect(autoReconnect: autoReconnect);
+  }
+
+  Future<void> disconnect() => _ws.disconnect();
+
+  void resetConnectionState() => _ws.resetConnectionState();
 
   // Drive commands ────────────────────────────────────────────────────────────
 
   void sendMotor(int left, int right) => _ws.sendMotorCommand(left, right);
+
+  void startStream() => _ws.sendStartStreamCommand();
+
+  void stopStream() => _ws.sendStopStreamCommand();
 
   // Arm commands + local state update ────────────────────────────────────────
 
@@ -101,7 +110,6 @@ class RobotControlNotifier extends Notifier<RobotState> {
   void release() => _ws.sendServoCommand('gripper', 0);
 }
 
-final robotControlProvider =
-    NotifierProvider<RobotControlNotifier, RobotState>(
-      RobotControlNotifier.new,
-    );
+final robotControlProvider = NotifierProvider<RobotControlNotifier, RobotState>(
+  RobotControlNotifier.new,
+);
