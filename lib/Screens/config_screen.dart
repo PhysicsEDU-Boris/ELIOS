@@ -67,8 +67,11 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
 
     // Start the UDP auto-discovery listener after the first frame
     // to ensure the Riverpod container is fully initialized.
+    // resetAndListen() clears any previously discovered IP so a new QR
+    // session (e.g., switching from home WiFi to hotspot) always gets a
+    // fresh UDP socket bound on all interfaces.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(udpDiscoveryProvider.notifier).startListening();
+      ref.read(udpDiscoveryProvider.notifier).resetAndListen();
     });
   }
 

@@ -42,98 +42,98 @@ class UdpDiscoveryNotifier extends Notifier<String?> {
     return null;
   }
 
-  /// Starts listening for MaixCAM2 broadcast packets on port [_discoveryPort].
-  ///
-  /// This method is idempotent — calling it while already listening is a no-op.
-  Future<void> startListening() async {
-    // Guard: don't bind again if already listening or already discovered.
-    if (_udpSocket != null || state != null) return;
+  /// Start listening for MaixCAM2 discovery broadcasts.
+  /// No-op if already listening OR if a device was already discovered this
+  /// session AND [force] is false.
+  Future<void> startListening({bool force = false}) async {
+    if (_udpSocket != null) return; // already bound
+    if (state != null && !force) return; // already discovered, don't re-bind
 
+    await _bind();
+  }
+
+  /// Clear any previous discovery result and start listening fresh.
+  /// Call this every time the user opens the config screen or generates a
+  /// new QR code so the previous home-WiFi discovery doesn't block the
+  /// hotspot-scenario discovery.
+  Future<void> resetAndListen() async {
+    _cleanup();
+    state = null; // clear stale discovered IP
+    await _bind();
+  }
+
+  // ── Internal ───────────────────────────────────────────────────────────────
+
+  Future<void> _bind() async {
     try {
-      debugPrint('[UdpDiscovery] Binding UDP receiver on port $_discoveryPort');
+      debugPrint('[UdpDiscovery] Binding on port $_discoveryPort...');
 
-      // Bind to all network interfaces on the discovery port.
+      // Bind on ALL interfaces so we receive:
+      //   • Subnet broadcasts (255.255.255.255) — home WiFi scenario
+      //   • Direct unicast from MaixCAM2 to app_ip — hotspot scenario
+      //     (iOS does not reliably deliver hotspot-client broadcasts to
+      //      apps on the hotspot-creating phone, so MaixCAM2 also sends
+      //      a unicast directly to app_ip, which IS delivered).
       _udpSocket = await UDP.bind(
         Endpoint.any(port: const Port(_discoveryPort)),
       );
 
-      debugPrint('[UdpDiscovery] UDP socket bound, listening for datagrams...');
-
-      // Listen to the incoming datagram stream.
+      debugPrint('[UdpDiscovery] Bound. Waiting for MaixCAM2...');
       _subscription = _udpSocket!.asStream().listen(_handleDatagram);
-    } catch (e, stackTrace) {
-      debugPrint('[UdpDiscovery] Failed to bind UDP socket: $e');
-      debugPrintStack(stackTrace: stackTrace);
-      // Clean up any partial state on failure.
+    } catch (e, st) {
+      debugPrint('[UdpDiscovery] Bind failed: $e');
+      debugPrintStack(stackTrace: st);
       _cleanup();
     }
   }
 
-  /// Handles an incoming UDP datagram.
-  ///
-  /// Expected payload (UTF-8 JSON): {"ip": "192.168.x.x"}
   void _handleDatagram(Datagram? datagram) {
     if (datagram == null) return;
 
     try {
-      // Decode the raw bytes to a UTF-8 string.
-      final rawPayload = utf8.decode(datagram.data);
-      debugPrint('[UdpDiscovery] Received datagram: $rawPayload');
+      final raw = utf8.decode(datagram.data);
+      debugPrint('[UdpDiscovery] Received from ${datagram.address.address}: $raw');
 
-      // Parse the JSON payload.
-      final decoded = jsonDecode(rawPayload) as Map<String, dynamic>;
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
       final ip = decoded['ip'] as String?;
 
-      if (ip == null || ip.isEmpty) {
-        debugPrint('[UdpDiscovery] Payload missing "ip" field, ignoring.');
-        return;
-      }
+      if (ip == null || ip.isEmpty) return;
 
-      // Validate basic IPv4 format (4 octets, each 0–255).
+      // Basic IPv4 validation
       final parts = ip.split('.');
-      if (parts.length != 4) {
-        debugPrint('[UdpDiscovery] Invalid IP format: $ip');
-        return;
-      }
+      if (parts.length != 4) return;
 
       final valid = parts.every((octet) {
         final n = int.tryParse(octet);
         return n != null && n >= 0 && n <= 255;
       });
 
-      if (!valid) {
-        debugPrint('[UdpDiscovery] IP octets out of range: $ip');
+      if (!valid) return;
+
+      // Reject link-local and loopback — MaixCAM2 shouldn't send these
+      // but guard anyway.
+      if (ip.startsWith('169.254.') || ip.startsWith('127.')) {
+        debugPrint('[UdpDiscovery] Ignoring bad IP: $ip');
         return;
       }
 
-      debugPrint('[UdpDiscovery] Robot discovered at $ip');
-
-      // Emit the discovered IP address to all listeners.
+      debugPrint('[UdpDiscovery] MaixCAM2 discovered at $ip');
       state = ip;
-
-      // Immediately close the socket — discovery is complete.
-      _cleanup();
+      _cleanup(); // stop listening — discovery complete
     } on FormatException catch (e) {
-      debugPrint('[UdpDiscovery] Malformed JSON payload: $e');
+      debugPrint('[UdpDiscovery] Bad JSON: $e');
     } catch (e) {
-      debugPrint('[UdpDiscovery] Error processing datagram: $e');
+      debugPrint('[UdpDiscovery] Error: $e');
     }
   }
 
-  /// Stops listening and releases the UDP socket.
-  ///
-  /// This is called automatically by Riverpod's `ref.onDispose`,
-  /// and also invoked after a successful discovery.
-  void stopListening() {
-    _cleanup();
-  }
+  void stopListening() => _cleanup();
 
-  /// Internal cleanup: cancel the stream subscription and close the socket.
   void _cleanup() {
     _subscription?.cancel();
     _subscription = null;
     _udpSocket?.close();
     _udpSocket = null;
-    debugPrint('[UdpDiscovery] UDP socket closed and cleaned up.');
+    debugPrint('[UdpDiscovery] Socket closed.');
   }
 }
