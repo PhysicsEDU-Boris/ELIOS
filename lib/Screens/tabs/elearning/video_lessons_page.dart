@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -317,13 +318,16 @@ class _FeaturedVideoCard extends ConsumerWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (lesson.thumbnailAsset.trim().isNotEmpty)
+              if (lesson.thumbnailUrl.trim().isNotEmpty)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.asset(
-                    lesson.thumbnailAsset,
+                  child: CachedNetworkImage(
+                    imageUrl: lesson.thumbnailUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    width: double.infinity,
+                    height: double.infinity,
+                    placeholder: (_, _) => const SizedBox.shrink(),
+                    errorWidget: (_, _, _) => const SizedBox.shrink(),
                   ),
                 ),
               DecoratedBox(
@@ -440,15 +444,16 @@ class _VideoLessonCard extends ConsumerWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  if (lesson.thumbnailAsset.trim().isNotEmpty)
+                  if (lesson.thumbnailUrl.trim().isNotEmpty)
                     ClipRRect(
                       borderRadius: BorderRadius.circular(11),
-                      child: Image.asset(
-                        lesson.thumbnailAsset,
+                      child: CachedNetworkImage(
+                        imageUrl: lesson.thumbnailUrl,
                         width: double.infinity,
                         height: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                        placeholder: (_, _) => const ColoredBox(color: _surface),
+                        errorWidget: (_, _, _) => const SizedBox.shrink(),
                       ),
                     ),
                   const Center(

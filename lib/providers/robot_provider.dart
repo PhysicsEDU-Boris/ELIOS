@@ -1,3 +1,5 @@
+import 'dart:ui' show Size;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,7 +15,7 @@ final robotConnectionProvider = Provider<ValueNotifier<String>>((ref) {
   return WebSocketService().connectionStatus;
 });
 
-/// Live MJPEG frame stream from the ESP32 camera.
+/// Live MJPEG frame stream from the MaixCAM2 camera.
 final robotFrameProvider = StreamProvider<Uint8List>((ref) {
   return WebSocketService().frames;
 });
@@ -108,8 +110,20 @@ class RobotControlNotifier extends Notifier<RobotState> {
 
   void pickUp() => _ws.sendServoCommand('gripper', 100);
   void release() => _ws.sendServoCommand('gripper', 0);
+
+  // Resolution control ────────────────────────────────────────────────────────
+
+  void setResolution({String? preset, int? width, int? height}) =>
+      _ws.sendResolutionCommand(preset: preset, width: width, height: height);
 }
 
 final robotControlProvider = NotifierProvider<RobotControlNotifier, RobotState>(
   RobotControlNotifier.new,
 );
+
+/// The most recently acknowledged resolution from the device.
+/// The device may fall back to a different resolution than requested,
+/// so this reflects what is *actually* active.
+final resolutionAckProvider = StreamProvider<Size>((ref) {
+  return WebSocketService().resolutionAcks;
+});

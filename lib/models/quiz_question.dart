@@ -4,8 +4,7 @@ class QuizQuestion {
   final String id;
   final String moduleId;
   final String question;
-  final String imagePath;
-  final String imageAsset;
+  final String imageUrl;
   final List<String> options;
   final int correctIndex;
   final String explanation;
@@ -16,8 +15,7 @@ class QuizQuestion {
     required this.id,
     required this.moduleId,
     required this.question,
-    required this.imagePath,
-    required this.imageAsset,
+    required this.imageUrl,
     required this.options,
     required this.correctIndex,
     required this.explanation,
@@ -35,12 +33,13 @@ class QuizQuestion {
         ? List<String>.from(rawOptions.map((item) => item.toString()))
         : <String>[];
 
+    final imageUrl = _readString(map, 'imageUrl') ?? '';
+
     return QuizQuestion(
       id: parsedId,
       moduleId: map['moduleId'] is String ? map['moduleId'] as String : '',
       question: map['question'] is String ? map['question'] as String : '',
-      imagePath: map['imagePath'] is String ? map['imagePath'] as String : '',
-      imageAsset: map['imageAsset'] as String? ?? '',
+      imageUrl: imageUrl,
       options: options,
       correctIndex: map['correctIndex'] is num
           ? (map['correctIndex'] as num).toInt()
@@ -67,13 +66,19 @@ class QuizQuestion {
       'id': id,
       'moduleId': moduleId,
       'question': question,
-      'imagePath': imagePath,
-      'imageAsset': imageAsset,
+      'imageUrl': imageUrl,
       'options': options,
       'correctIndex': correctIndex,
       'explanation': explanation,
       'difficulty': difficulty,
       'order': order,
     };
+  }
+
+  /// Returns a non-empty String value for [key], or `null`.
+  static String? _readString(Map<String, dynamic> map, String key) {
+    final v = map[key];
+    if (v is String && v.isNotEmpty) return v;
+    return null;
   }
 }

@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart'
     show DeviceOrientation, SystemChrome, SystemUiMode;
 
+import '../models/config_model.dart';
+import '../providers/esp_config_provider.dart';
 import '../providers/robot_provider.dart';
 import '../services/websocket_service.dart';
 import '../widgets/segmentation_overlay_painter.dart';
@@ -77,6 +79,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           _streamStartedForCurrentConnection = true;
           debugPrint('[Control] Connected status observed, starting stream');
           _robotNotifier.startStream();
+
+          // Apply the user's chosen resolution preset on connect.
+          final preset =
+              ref.read(espConfigProvider).valueOrNull?.resolutionPreset ?? '480p';
+          ref.read(robotControlProvider.notifier).setResolution(preset: preset);
         }
         return;
       }
@@ -116,7 +123,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   }
 
   Future<void> _connectAndStartStream() async {
-    final connected = await _robotNotifier.connect(autoReconnect: true);
+    final autoReconnect =
+        ref.read(espConfigProvider).valueOrNull?.autoReconnect ?? true;
+    final connected = await _robotNotifier.connect(autoReconnect: autoReconnect);
 
     if (!mounted) return;
 
@@ -150,6 +159,15 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Resend resolution to the device whenever the user changes it mid-session.
+    ref.listen<AsyncValue<EspConfig>>(espConfigProvider, (previous, next) {
+      final prevPreset = previous?.valueOrNull?.resolutionPreset;
+      final nextPreset = next.valueOrNull?.resolutionPreset;
+      if (nextPreset != null && nextPreset != prevPreset) {
+        ref.read(robotControlProvider.notifier).setResolution(preset: nextPreset);
+      }
+    });
+
     final robotState = ref.watch(robotControlProvider);
     final status = ref.watch(robotStatusProvider).value ?? 'Disconnected';
 
@@ -720,7 +738,7 @@ class _LandscapeCameraPanel extends StatelessWidget {
   }
 }
 
-class _CameraDiagnosticsBadge extends StatelessWidget {
+class _CameraDiagnosticsBadge extends ConsumerWidget {
   final double streamFps;
   final int frameCount;
   final DateTime? lastFrameAt;
@@ -734,13 +752,18 @@ class _CameraDiagnosticsBadge extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final resolution = ref.watch(resolutionAckProvider).valueOrNull;
     final frameAgeMs = lastFrameAt == null
         ? null
         : DateTime.now().difference(lastFrameAt!).inMilliseconds;
     final sizeLabel = lastFrameBytes > 0
         ? '${(lastFrameBytes / 1024).toStringAsFixed(1)} KB'
         : 'No frame';
+
+    final resLabel = resolution != null
+        ? '${resolution.width.toInt()}x${resolution.height.toInt()}'
+        : 'Pending';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
@@ -753,7 +776,7 @@ class _CameraDiagnosticsBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'FPS ${streamFps.toStringAsFixed(1)} • F $frameCount',
+            'FPS ${streamFps.toStringAsFixed(1)} • F $frameCount • $resLabel',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 9,

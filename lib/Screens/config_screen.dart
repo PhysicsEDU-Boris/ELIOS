@@ -3,7 +3,6 @@
 import 'package:elio/models/config_model.dart';
 import 'package:elio/providers/udp_discovery_provider.dart';
 import 'package:elio/providers/wifi_provisioning_provider.dart';
-import 'package:elio/services/config_service.dart';
 import 'package:elio/services/websocket_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +11,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../providers/app_preferences_provider.dart';
+import '../providers/esp_config_provider.dart';
+import '../providers/robot_provider.dart';
+import '../utils/system_ui.dart';
 import 'control_screen.dart';
 
 class ConfigScreen extends ConsumerStatefulWidget {
@@ -22,35 +25,22 @@ class ConfigScreen extends ConsumerStatefulWidget {
 }
 
 class _ConfigScreenState extends ConsumerState<ConfigScreen> {
-  final TextEditingController _ip1 = TextEditingController(text: '192');
-  final TextEditingController _ip2 = TextEditingController(text: '168');
-  final TextEditingController _ip3 = TextEditingController(text: '1');
-  final TextEditingController _ip4 = TextEditingController(text: '100');
-  final TextEditingController _port = TextEditingController(text: '8080');
-  final TextEditingController _settingsDefaultIp = TextEditingController(
-    text: '192.168.1.100',
-  );
-  final TextEditingController _settingsPort = TextEditingController(
-    text: '8080',
-  );
+  final TextEditingController _ip1 = TextEditingController();
+  final TextEditingController _ip2 = TextEditingController();
+  final TextEditingController _ip3 = TextEditingController();
+  final TextEditingController _ip4 = TextEditingController();
+  final TextEditingController _port = TextEditingController();
 
   // ── Provisioning Controllers ────────────────────────────────────
   final TextEditingController _provSsid = TextEditingController();
   final TextEditingController _provPass = TextEditingController();
 
-  final ConfigService _configService = ConfigService();
-
   bool saveDefault = true;
   bool _isConnecting = false;
   bool _connectionFailed = false;
-  bool _settingsAutoReconnect = true;
-  String _settingsResolution = '1080p (FHD)';
-  bool _settingsShowFpsOverlay = false;
-  bool _settingsSoundEffects = true;
-  double _settingsMasterVolume = 0.75;
-  String _settingsQuizDifficulty = 'Medium';
-  String _settingsQuizTimer = '60s';
-  bool _settingsSkipAllowed = false;
+
+  /// Guards against stomping on user typing when espConfigProvider rebuilds.
+  bool _configPopulated = false;
 
   final Color backgroundMain = const Color(0xFFFAFCFA);
   final Color textPrimary = const Color(0xFF1C2833);
@@ -62,7 +52,6 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSavedConfig();
     _loadWifiSsid();
 
     // Start the UDP auto-discovery listener after the first frame
@@ -87,20 +76,24 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     });
   }
 
-  Future<void> _loadSavedConfig() async {
-    final config = await _configService.loadConfig();
-    final parts = config.esp32IpAddress.split('.');
+  /// Populate IP/port controllers from [EspConfig] once on first data arrival.
+  void _populateControllersFromConfig(EspConfig config) {
+    if (_configPopulated) return;
+    _configPopulated = true;
 
-    if (!mounted) return;
-
-    if (parts.length == 4) {
-      _ip1.text = parts[0];
-      _ip2.text = parts[1];
-      _ip3.text = parts[2];
-      _ip4.text = parts[3];
+    final ip = config.esp32IpAddress;
+    if (ip.isNotEmpty) {
+      final parts = ip.split('.');
+      if (parts.length == 4) {
+        _ip1.text = parts[0];
+        _ip2.text = parts[1];
+        _ip3.text = parts[2];
+        _ip4.text = parts[3];
+      }
     }
-    _port.text = config.port.toString();
-    setState(() {});
+    if (config.port > 0) {
+      _port.text = config.port.toString();
+    }
   }
 
   Future<void> _openControlScreen() async {
@@ -116,6 +109,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
           DeviceOrientation.portraitUp,
         ]);
         await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+        applyTransparentSystemBars();
       } catch (error) {
         debugPrint('Unable to restore portrait mode: $error');
       }
@@ -150,6 +144,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     // 2. Configure and AWAIT the connection result
     debugPrint('[Config] Connecting to ws://$ip:$port');
     final ws = WebSocketService();
+    await ws.disconnect(); // full teardown: cancels subscription, closes channel, resets all flags
     ws.resetConnectionState();
     ws.configure(ip, port, autoReconnect: false);
 
@@ -179,8 +174,8 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     // 4. Handle Result
     if (success) {
       if (saveDefault) {
-        await _configService.saveConfig(
-          EspConfig(esp32IpAddress: ip, port: port),
+        await ref.read(espConfigProvider.notifier).patch(
+          (c) => c.copyWith(esp32IpAddress: ip, port: port),
         );
       }
       // Only navigate if actually connected
@@ -194,6 +189,15 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
         isError: true,
       );
     }
+  }
+
+  Future<void> _disconnect() async {
+    await WebSocketService().disconnect();
+    if (!mounted) return;
+    setState(() {
+      _connectionFailed = false;
+    });
+    _showSnack('Disconnected. Choose a new network or reconnect.');
   }
 
   void _showSnack(String message, {bool isError = false}) {
@@ -216,60 +220,11 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return _ConfigSettingsSheet(
-              primaryColor: primaryColor,
-              textPrimary: textPrimary,
-              textSecondary: textSecondary,
-              cardBorder: cardBorder,
-              defaultIpController: _settingsDefaultIp,
-              portController: _settingsPort,
-              autoReconnect: _settingsAutoReconnect,
-              onAutoReconnectChanged: (value) {
-                setState(() => _settingsAutoReconnect = value);
-                setSheetState(() {});
-              },
-              resolution: _settingsResolution,
-              onResolutionChanged: (value) {
-                if (value == null) return;
-                setState(() => _settingsResolution = value);
-                setSheetState(() {});
-              },
-              showFpsOverlay: _settingsShowFpsOverlay,
-              onShowFpsOverlayChanged: (value) {
-                setState(() => _settingsShowFpsOverlay = value);
-                setSheetState(() {});
-              },
-              soundEffects: _settingsSoundEffects,
-              onSoundEffectsChanged: (value) {
-                setState(() => _settingsSoundEffects = value);
-                setSheetState(() {});
-              },
-              masterVolume: _settingsMasterVolume,
-              onMasterVolumeChanged: (value) {
-                setState(() => _settingsMasterVolume = value);
-                setSheetState(() {});
-              },
-              quizDifficulty: _settingsQuizDifficulty,
-              onQuizDifficultyChanged: (value) {
-                if (value == null) return;
-                setState(() => _settingsQuizDifficulty = value);
-                setSheetState(() {});
-              },
-              quizTimer: _settingsQuizTimer,
-              onQuizTimerChanged: (value) {
-                if (value == null) return;
-                setState(() => _settingsQuizTimer = value);
-                setSheetState(() {});
-              },
-              skipAllowed: _settingsSkipAllowed,
-              onSkipAllowedChanged: (value) {
-                setState(() => _settingsSkipAllowed = value);
-                setSheetState(() {});
-              },
-            );
-          },
+        return _ConfigSettingsSheet(
+          primaryColor: primaryColor,
+          textPrimary: textPrimary,
+          textSecondary: textSecondary,
+          cardBorder: cardBorder,
         );
       },
     );
@@ -284,8 +239,6 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     _ip3.dispose();
     _ip4.dispose();
     _port.dispose();
-    _settingsDefaultIp.dispose();
-    _settingsPort.dispose();
     _provSsid.dispose();
     _provPass.dispose();
     super.dispose();
@@ -303,16 +256,25 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
       return;
     }
 
-    // Fetch host device IP asynchronously (fallback to hotspot default).
+    // Fetch host device IP asynchronously.
     // getBestLocalIp() filters out link-local (169.254.x.x) and USB
     // interface addresses that NetworkInfo().getWifiIP() sometimes returns
     // when the phone is connected to a Mac via USB cable.
-    String appIp = '192.168.43.1';
+    String appIp;
     try {
       appIp = await getBestLocalIp();
       debugPrint('[Provision] Using app_ip: $appIp');
-    } catch (_) {
-      // Silently fall back to default hotspot gateway IP.
+    } catch (e) {
+      debugPrint('[Provision] getBestLocalIp() failed: $e');
+      if (!mounted) return;
+      _showSnack('Could not determine device IP. Check Wi-Fi.', isError: true);
+      return;
+    }
+
+    if (appIp == '0.0.0.0') {
+      if (!mounted) return;
+      _showSnack('No valid network IP found. Connect to Wi-Fi first.', isError: true);
+      return;
     }
 
     // Parse port from the existing text controller.
@@ -451,6 +413,10 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ── Populate IP/port from persisted config (once) ────────────
+    final espConfigAsync = ref.watch(espConfigProvider);
+    espConfigAsync.whenData(_populateControllersFromConfig);
+
     // ── UDP Auto-Discovery Listener ──────────────────────────────
     // When the UDP provider emits a discovered IP, auto-populate the
     // four IP text controllers and notify the user.
@@ -472,7 +438,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
     final batteryPercent = 62;
     final isCharging = false;
-    final signalStatus = 'None';
+    final robotStatus = ref.watch(robotStatusProvider).valueOrNull ?? 'Disconnected';
 
     return Scaffold(
       backgroundColor: backgroundMain,
@@ -522,7 +488,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                       modelSize: compact ? 130 : 148,
                       batteryPercent: batteryPercent,
                       isCharging: isCharging,
-                      signalStatus: signalStatus,
+                      linkStatus: robotStatus,
                     ),
                     const SizedBox(height: 10),
                     _GlassCard(
@@ -577,13 +543,13 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                           const SizedBox(height: 5),
                           Row(
                             children: [
-                              _buildIpField(_ip1),
+                              _buildIpField(_ip1, hintText: '192'),
                               const _DotSeparator(),
-                              _buildIpField(_ip2),
+                              _buildIpField(_ip2, hintText: '168'),
                               const _DotSeparator(),
-                              _buildIpField(_ip3),
+                              _buildIpField(_ip3, hintText: '1'),
                               const _DotSeparator(),
-                              _buildIpField(_ip4),
+                              _buildIpField(_ip4, hintText: 'x'),
                             ],
                           ),
                           const SizedBox(height: 10),
@@ -709,34 +675,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                               onPressed: _showProvisioningQrDialog,
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 42,
-                            child: ElevatedButton.icon(
-                              onPressed: _showProvisioningQrDialog,
-                              icon: const Icon(
-                                Icons.qr_code_2_rounded,
-                                size: 18,
-                              ),
-                              label: Text(
-                                'GENERATE QR',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.4,
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1D9E75),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
+
                         ],
                       ),
                     ),
@@ -798,6 +737,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
           child: Row(
             children: [
               Expanded(
+                flex: 2,
                 child: SizedBox(
                   height: 52,
                   child: ElevatedButton(
@@ -846,6 +786,24 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                   ),
                 ),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 1,
+                child: SizedBox(
+                  height: 52,
+                  child: OutlinedButton(
+                    onPressed: _isConnecting ? null : _disconnect,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFC62828),
+                      side: const BorderSide(color: Color(0xFFC62828)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Icon(Icons.link_off_rounded, size: 20),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -853,7 +811,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     );
   }
 
-  Widget _buildIpField(TextEditingController controller) {
+  Widget _buildIpField(TextEditingController controller, {String? hintText}) {
     return Expanded(
       child: SizedBox(
         height: 42,
@@ -874,6 +832,12 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
             filled: true,
             fillColor: inputSurface,
             isDense: true,
+            hintText: hintText,
+            hintStyle: TextStyle(
+              color: textSecondary.withValues(alpha: 0.4),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 0,
               vertical: 14,
@@ -1023,7 +987,7 @@ class _RobotConnectionPanel extends StatelessWidget {
   final double modelSize;
   final int batteryPercent;
   final bool isCharging;
-  final String signalStatus;
+  final String linkStatus;
 
   const _RobotConnectionPanel({
     required this.primaryColor,
@@ -1034,7 +998,7 @@ class _RobotConnectionPanel extends StatelessWidget {
     required this.modelSize,
     required this.batteryPercent,
     required this.isCharging,
-    required this.signalStatus,
+    required this.linkStatus,
   });
 
   @override
@@ -1096,12 +1060,28 @@ class _RobotConnectionPanel extends StatelessWidget {
                 ),
                 const Spacer(),
                 SizedBox(
-                  width: 108,
+                  width: 118,
                   child: _FloatingStatusChip(
-                    icon: Icons.signal_wifi_off_rounded,
-                    label: 'Signal',
-                    value: signalStatus,
-                    accent: const Color(0xFFE74C3C),
+                    icon: linkStatus == 'Connected'
+                        ? Icons.link_rounded
+                        : linkStatus == 'Reconnecting...' ||
+                                linkStatus == 'Connecting...'
+                            ? Icons.sync_rounded
+                            : Icons.link_off_rounded,
+                    label: 'Status',
+                    value: linkStatus == 'Connected'
+                        ? 'Connected'
+                        : linkStatus == 'Reconnecting...'
+                            ? 'Reconnecting'
+                            : linkStatus == 'Connecting...'
+                                ? 'Connecting'
+                                : 'Disconnected',
+                    accent: linkStatus == 'Connected'
+                        ? const Color(0xFF1D9E75)
+                        : linkStatus == 'Reconnecting...' ||
+                                linkStatus == 'Connecting...'
+                            ? const Color(0xFFE67E22)
+                            : const Color(0xFFE74C3C),
                     borderColor: borderColor,
                     surfaceColor: inputSurface,
                   ),
@@ -1362,57 +1342,25 @@ class _ElioConfigModelViewerState extends State<_ElioConfigModelViewer> {
   }
 }
 
-class _ConfigSettingsSheet extends StatelessWidget {
+class _ConfigSettingsSheet extends ConsumerWidget {
   final Color primaryColor;
   final Color textPrimary;
   final Color textSecondary;
   final Color cardBorder;
-  final TextEditingController defaultIpController;
-  final TextEditingController portController;
-  final bool autoReconnect;
-  final ValueChanged<bool> onAutoReconnectChanged;
-  final String resolution;
-  final ValueChanged<String?> onResolutionChanged;
-  final bool showFpsOverlay;
-  final ValueChanged<bool> onShowFpsOverlayChanged;
-  final bool soundEffects;
-  final ValueChanged<bool> onSoundEffectsChanged;
-  final double masterVolume;
-  final ValueChanged<double> onMasterVolumeChanged;
-  final String quizDifficulty;
-  final ValueChanged<String?> onQuizDifficultyChanged;
-  final String quizTimer;
-  final ValueChanged<String?> onQuizTimerChanged;
-  final bool skipAllowed;
-  final ValueChanged<bool> onSkipAllowedChanged;
 
   const _ConfigSettingsSheet({
     required this.primaryColor,
     required this.textPrimary,
     required this.textSecondary,
     required this.cardBorder,
-    required this.defaultIpController,
-    required this.portController,
-    required this.autoReconnect,
-    required this.onAutoReconnectChanged,
-    required this.resolution,
-    required this.onResolutionChanged,
-    required this.showFpsOverlay,
-    required this.onShowFpsOverlayChanged,
-    required this.soundEffects,
-    required this.onSoundEffectsChanged,
-    required this.masterVolume,
-    required this.onMasterVolumeChanged,
-    required this.quizDifficulty,
-    required this.onQuizDifficultyChanged,
-    required this.quizTimer,
-    required this.onQuizTimerChanged,
-    required this.skipAllowed,
-    required this.onSkipAllowedChanged,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final espConfig =
+        ref.watch(espConfigProvider).valueOrNull ?? const EspConfig();
+    final appPrefs = ref.watch(appPreferencesProvider);
+
     return SafeArea(
       top: false,
       child: DraggableScrollableSheet(
@@ -1486,34 +1434,21 @@ class _ConfigSettingsSheet extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 18),
+
+                  // ── Connection ──
                   _SettingsSectionCard(
                     title: 'Connection',
                     cardBorder: cardBorder,
                     children: [
-                      _SettingsTextField(
-                        label: 'Default IP',
-                        controller: defaultIpController,
-                        icon: Icons.wifi_rounded,
-                        textPrimary: textPrimary,
-                        textSecondary: textSecondary,
-                        cardBorder: cardBorder,
-                      ),
-                      _SettingsDivider(cardBorder: cardBorder),
-                      _SettingsTextField(
-                        label: 'Port',
-                        controller: portController,
-                        icon: Icons.router_rounded,
-                        textPrimary: textPrimary,
-                        textSecondary: textSecondary,
-                        cardBorder: cardBorder,
-                        keyboardType: TextInputType.number,
-                      ),
-                      _SettingsDivider(cardBorder: cardBorder),
                       _SettingsSwitchRow(
                         title: 'Auto-reconnect',
                         subtitle: 'Reconnect when ELIO is available again.',
-                        value: autoReconnect,
-                        onChanged: onAutoReconnectChanged,
+                        value: espConfig.autoReconnect,
+                        onChanged: (value) {
+                          ref.read(espConfigProvider.notifier).patch(
+                            (c) => c.copyWith(autoReconnect: value),
+                          );
+                        },
                         primaryColor: primaryColor,
                         textPrimary: textPrimary,
                         textSecondary: textSecondary,
@@ -1521,19 +1456,22 @@ class _ConfigSettingsSheet extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
+
+                  // ── Video ──
                   _SettingsSectionCard(
                     title: 'Video',
                     cardBorder: cardBorder,
                     children: [
                       _SettingsDropdownRow(
                         title: 'Resolution',
-                        value: resolution,
-                        options: const [
-                          '720p (HD)',
-                          '1080p (FHD)',
-                          '1440p (QHD)',
-                        ],
-                        onChanged: onResolutionChanged,
+                        value: espConfig.resolutionPreset,
+                        options: const ['480p', '720p'],
+                        onChanged: (value) {
+                          if (value == null) return;
+                          ref.read(espConfigProvider.notifier).patch(
+                            (c) => c.copyWith(resolutionPreset: value),
+                          );
+                        },
                         textPrimary: textPrimary,
                         textSecondary: textSecondary,
                       ),
@@ -1541,8 +1479,12 @@ class _ConfigSettingsSheet extends StatelessWidget {
                       _SettingsSwitchRow(
                         title: 'Show FPS Overlay',
                         subtitle: 'Display stream performance while viewing.',
-                        value: showFpsOverlay,
-                        onChanged: onShowFpsOverlayChanged,
+                        value: espConfig.showFpsOverlay,
+                        onChanged: (value) {
+                          ref.read(espConfigProvider.notifier).patch(
+                            (c) => c.copyWith(showFpsOverlay: value),
+                          );
+                        },
                         primaryColor: primaryColor,
                         textPrimary: textPrimary,
                         textSecondary: textSecondary,
@@ -1550,6 +1492,8 @@ class _ConfigSettingsSheet extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
+
+                  // ── Audio ──
                   _SettingsSectionCard(
                     title: 'Audio',
                     cardBorder: cardBorder,
@@ -1557,8 +1501,12 @@ class _ConfigSettingsSheet extends StatelessWidget {
                       _SettingsSwitchRow(
                         title: 'Sound Effects',
                         subtitle: 'Play UI and robot feedback sounds.',
-                        value: soundEffects,
-                        onChanged: onSoundEffectsChanged,
+                        value: appPrefs.soundEffects,
+                        onChanged: (value) {
+                          ref.read(appPreferencesProvider.notifier).update(
+                            (p) => p.copyWith(soundEffects: value),
+                          );
+                        },
                         primaryColor: primaryColor,
                         textPrimary: textPrimary,
                         textSecondary: textSecondary,
@@ -1566,8 +1514,12 @@ class _ConfigSettingsSheet extends StatelessWidget {
                       _SettingsDivider(cardBorder: cardBorder),
                       _SettingsSliderRow(
                         title: 'Master Volume',
-                        value: masterVolume,
-                        onChanged: onMasterVolumeChanged,
+                        value: appPrefs.masterVolume,
+                        onChanged: (value) {
+                          ref.read(appPreferencesProvider.notifier).update(
+                            (p) => p.copyWith(masterVolume: value),
+                          );
+                        },
                         primaryColor: primaryColor,
                         textPrimary: textPrimary,
                         textSecondary: textSecondary,
@@ -1575,24 +1527,36 @@ class _ConfigSettingsSheet extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
+
+                  // ── Quiz ──
                   _SettingsSectionCard(
                     title: 'Quiz',
                     cardBorder: cardBorder,
                     children: [
                       _SettingsDropdownRow(
                         title: 'Difficulty',
-                        value: quizDifficulty,
+                        value: appPrefs.quizDifficulty,
                         options: const ['Easy', 'Medium', 'Hard'],
-                        onChanged: onQuizDifficultyChanged,
+                        onChanged: (value) {
+                          if (value == null) return;
+                          ref.read(appPreferencesProvider.notifier).update(
+                            (p) => p.copyWith(quizDifficulty: value),
+                          );
+                        },
                         textPrimary: textPrimary,
                         textSecondary: textSecondary,
                       ),
                       _SettingsDivider(cardBorder: cardBorder),
                       _SettingsDropdownRow(
                         title: 'Timer',
-                        value: quizTimer,
+                        value: appPrefs.quizTimer,
                         options: const ['30s', '60s', '90s', '120s'],
-                        onChanged: onQuizTimerChanged,
+                        onChanged: (value) {
+                          if (value == null) return;
+                          ref.read(appPreferencesProvider.notifier).update(
+                            (p) => p.copyWith(quizTimer: value),
+                          );
+                        },
                         textPrimary: textPrimary,
                         textSecondary: textSecondary,
                       ),
@@ -1600,8 +1564,12 @@ class _ConfigSettingsSheet extends StatelessWidget {
                       _SettingsSwitchRow(
                         title: 'Skip Allowed',
                         subtitle: 'Let learners skip questions during quiz.',
-                        value: skipAllowed,
-                        onChanged: onSkipAllowedChanged,
+                        value: appPrefs.skipAllowed,
+                        onChanged: (value) {
+                          ref.read(appPreferencesProvider.notifier).update(
+                            (p) => p.copyWith(skipAllowed: value),
+                          );
+                        },
                         primaryColor: primaryColor,
                         textPrimary: textPrimary,
                         textSecondary: textSecondary,
@@ -1701,66 +1669,6 @@ class _SettingsDivider extends StatelessWidget {
   }
 }
 
-class _SettingsTextField extends StatelessWidget {
-  final String label;
-  final TextEditingController controller;
-  final IconData icon;
-  final Color textPrimary;
-  final Color textSecondary;
-  final Color cardBorder;
-  final TextInputType? keyboardType;
-
-  const _SettingsTextField({
-    required this.label,
-    required this.controller,
-    required this.icon,
-    required this.textPrimary,
-    required this.textSecondary,
-    required this.cardBorder,
-    this.keyboardType,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      style: GoogleFonts.inter(
-        color: textPrimary,
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-      ),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: GoogleFonts.inter(
-          color: textSecondary,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
-        prefixIcon: Icon(icon, color: textSecondary, size: 20),
-        filled: true,
-        fillColor: const Color(0xFFF7FAF6),
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 14,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: cardBorder.withValues(alpha: 0.3)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: cardBorder.withValues(alpha: 0.3)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF004F38), width: 1.5),
-        ),
-      ),
-    );
-  }
-}
 
 class _SettingsSwitchRow extends StatelessWidget {
   final String title;

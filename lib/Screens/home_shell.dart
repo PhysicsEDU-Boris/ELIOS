@@ -6,6 +6,8 @@ import 'package:flutter/services.dart'
     show DeviceOrientation, SystemChannels, SystemChrome, SystemUiMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../utils/system_ui.dart';
+
 import '../models/app_notification.dart';
 import '../providers/app_notification_provider.dart';
 import '../providers/navigation_provider.dart';
@@ -154,6 +156,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           DeviceOrientation.portraitUp,
         ]);
         await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+        applyTransparentSystemBars();
       } catch (error) {
         debugPrint('Unable to restore portrait mode: $error');
       }

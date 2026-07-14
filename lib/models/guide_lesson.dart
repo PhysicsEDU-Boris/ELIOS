@@ -6,9 +6,8 @@ class GuideLesson {
   final String moduleTitle;
   final String title;
   final String description;
-  final String pdfPath;
-  final String pdfAsset;
-  final String coverAsset;
+  final String pdfUrl;
+  final String coverUrl;
   final int pageCount;
   final int readTimeMinutes;
   final int order;
@@ -20,9 +19,8 @@ class GuideLesson {
     required this.moduleTitle,
     required this.title,
     required this.description,
-    required this.pdfPath,
-    required this.pdfAsset,
-    required this.coverAsset,
+    required this.pdfUrl,
+    required this.coverUrl,
     this.pageCount = 0,
     this.readTimeMinutes = 0,
     required this.order,
@@ -35,6 +33,9 @@ class GuideLesson {
         ? rawId
         : documentId;
 
+    final pdfUrl = _readString(map, 'pdfUrl') ?? '';
+    final coverUrl = _readString(map, 'coverUrl') ?? '';
+
     return GuideLesson(
       id: parsedId,
       moduleId: map['moduleId'] is String ? map['moduleId'] as String : '',
@@ -45,9 +46,8 @@ class GuideLesson {
       description: map['description'] is String
           ? map['description'] as String
           : '',
-      pdfPath: map['pdfPath'] is String ? map['pdfPath'] as String : '',
-      pdfAsset: map['pdfAsset'] as String? ?? '',
-      coverAsset: map['coverAsset'] as String? ?? '',
+      pdfUrl: pdfUrl,
+      coverUrl: coverUrl,
       pageCount: map['pageCount'] is num
           ? (map['pageCount'] as num).toInt()
           : 0,
@@ -75,13 +75,19 @@ class GuideLesson {
       'moduleTitle': moduleTitle,
       'title': title,
       'description': description,
-      'pdfPath': pdfPath,
-      'pdfAsset': pdfAsset,
-      'coverAsset': coverAsset,
+      'pdfUrl': pdfUrl,
+      'coverUrl': coverUrl,
       'pageCount': pageCount,
       'readTimeMinutes': readTimeMinutes,
       'order': order,
       'isPublished': isPublished,
     };
+  }
+
+  /// Returns a non-empty String value for [key], or `null`.
+  static String? _readString(Map<String, dynamic> map, String key) {
+    final v = map[key];
+    if (v is String && v.isNotEmpty) return v;
+    return null;
   }
 }

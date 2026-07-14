@@ -85,8 +85,7 @@ class CategoryProgress {
 class QuizReviewAnswer {
   final String questionId;
   final String question;
-  final String? imagePath;
-  final String? imageAsset;
+  final String? imageUrl;
   final List<String> options;
   final int correctIndex;
   final int? selectedIndex;
@@ -103,8 +102,7 @@ class QuizReviewAnswer {
     required this.explanation,
     required this.difficulty,
     required this.order,
-    this.imagePath,
-    this.imageAsset,
+    this.imageUrl,
   });
 
   bool get isCorrect => selectedIndex != null && selectedIndex == correctIndex;
@@ -112,8 +110,7 @@ class QuizReviewAnswer {
   Map<String, dynamic> toMap() => {
     'questionId': questionId,
     'question': question,
-    'imagePath': imagePath,
-    'imageAsset': imageAsset,
+    'imageUrl': imageUrl,
     'options': options,
     'correctIndex': correctIndex,
     'selectedIndex': selectedIndex,
@@ -126,8 +123,8 @@ class QuizReviewAnswer {
     return QuizReviewAnswer(
       questionId: (map['questionId'] ?? '').toString(),
       question: (map['question'] ?? '').toString(),
-      imagePath: map['imagePath']?.toString(),
-      imageAsset: map['imageAsset']?.toString(),
+      imageUrl: (map['imageUrl'] ?? map['imagePath'] ?? map['imageAsset'])
+          ?.toString(),
       options: (map['options'] as List<dynamic>? ?? const [])
           .map((option) => option.toString())
           .toList(),

@@ -4,9 +4,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'firebase_options_loader.dart';
+import 'utils/system_ui.dart';
 import 'Screens/home_shell.dart';
 import 'Screens/login_screen.dart';
 
@@ -43,6 +45,9 @@ void main() async {
         await Firebase.initializeApp(options: createFirebaseOptionsByEnv());
       }
     }
+
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    applyTransparentSystemBars();
 
     runApp(const ElioApp());
   } catch (error, stackTrace) {

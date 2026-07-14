@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
@@ -1448,8 +1449,8 @@ class _UnfinishedLearningTile extends StatelessWidget {
     ];
     final hasThumbnail =
         item.type == _LearningActivityType.video &&
-        item.thumbnailAsset != null &&
-        item.thumbnailAsset!.trim().isNotEmpty;
+        item.thumbnailUrl != null &&
+        item.thumbnailUrl!.trim().isNotEmpty;
     final progress = item.progress?.clamp(0.0, 1.0);
     final showProgress =
         progress != null &&
@@ -1480,12 +1481,13 @@ class _UnfinishedLearningTile extends StatelessWidget {
               if (hasThumbnail)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    item.thumbnailAsset!,
+                  child: CachedNetworkImage(
+                    imageUrl: item.thumbnailUrl!,
                     width: 74,
                     height: 48,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => iconBox(),
+                    placeholder: (_, _) => iconBox(),
+                    errorWidget: (_, _, _) => iconBox(),
                   ),
                 )
               else
@@ -1561,7 +1563,7 @@ class _CompletedLearningTile extends StatelessWidget {
         ? Icons.picture_as_pdf_rounded
         : Icons.quiz_rounded;
     final hasPreview =
-        item.previewAsset != null && item.previewAsset!.trim().isNotEmpty;
+        item.previewUrl != null && item.previewUrl!.trim().isNotEmpty;
     final previewWidth = isVideo
         ? 74.0
         : isGuide
@@ -1591,12 +1593,13 @@ class _CompletedLearningTile extends StatelessWidget {
     final preview = hasPreview
         ? ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.asset(
-              item.previewAsset!,
+            child: CachedNetworkImage(
+              imageUrl: item.previewUrl!,
               width: previewWidth,
               height: previewHeight,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => fallbackPreview(),
+              placeholder: (_, _) => fallbackPreview(),
+              errorWidget: (_, _, _) => fallbackPreview(),
             ),
           )
         : fallbackPreview();
@@ -2485,7 +2488,7 @@ class _DashboardData {
           title: video.title,
           subtitle: 'Video completed',
           timestamp: timestamp,
-          previewAsset: video.thumbnailAsset,
+          previewUrl: video.thumbnailUrl,
         ),
       );
     }
@@ -2502,7 +2505,7 @@ class _DashboardData {
           title: guide.title,
           subtitle: 'Guide completed',
           timestamp: timestamp,
-          previewAsset: guide.coverAsset,
+          previewUrl: guide.coverUrl,
         ),
       );
     }
@@ -2520,7 +2523,7 @@ class _DashboardData {
               ? 'Quiz completed'
               : 'Quiz completed • Best score $score%',
           timestamp: timestamp,
-          previewAsset: null,
+          previewUrl: null,
         ),
       );
     }
@@ -2562,7 +2565,7 @@ class _DashboardData {
           timestamp: entry.value,
           isCompleted: false,
           moduleId: video.moduleId,
-          thumbnailAsset: video.thumbnailAsset,
+          thumbnailUrl: video.thumbnailUrl,
         ),
       );
     }
@@ -2661,7 +2664,7 @@ class _ContinueLearningItem {
   final DateTime? timestamp;
   final bool isCompleted;
   final String? moduleId;
-  final String? thumbnailAsset;
+  final String? thumbnailUrl;
 
   const _ContinueLearningItem({
     required this.type,
@@ -2672,7 +2675,7 @@ class _ContinueLearningItem {
     required this.timestamp,
     required this.isCompleted,
     this.moduleId,
-    this.thumbnailAsset,
+    this.thumbnailUrl,
   });
 }
 
@@ -2682,7 +2685,7 @@ class _CompletedLearningItem {
   final String title;
   final String subtitle;
   final DateTime? timestamp;
-  final String? previewAsset;
+  final String? previewUrl;
 
   const _CompletedLearningItem({
     required this.type,
@@ -2690,7 +2693,7 @@ class _CompletedLearningItem {
     required this.title,
     required this.subtitle,
     required this.timestamp,
-    this.previewAsset,
+    this.previewUrl,
   });
 }
 

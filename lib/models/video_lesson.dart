@@ -9,10 +9,9 @@ class VideoLesson {
   final int durationMinutes;
   final int durationSeconds;
   final String durationLabel;
-  final String videoPath;
-  final String thumbnailPath;
+  final String videoUrl;
+  final String thumbnailUrl;
   final String youtubeId;
-  final String thumbnailAsset;
   final String level;
   final String moduleLabel;
   final String status;
@@ -29,10 +28,9 @@ class VideoLesson {
     required this.durationMinutes,
     this.durationSeconds = 0,
     required this.durationLabel,
-    required this.videoPath,
-    required this.thumbnailPath,
+    required this.videoUrl,
+    required this.thumbnailUrl,
     required this.youtubeId,
-    required this.thumbnailAsset,
     required this.level,
     required this.moduleLabel,
     required this.status,
@@ -53,6 +51,9 @@ class VideoLesson {
         ? (map['durationMinutes'] as num).toInt()
         : 0;
 
+    final videoUrl = _readString(map, 'videoUrl') ?? '';
+    final thumbnailUrl = _readString(map, 'thumbnailUrl') ?? '';
+
     return VideoLesson(
       id: parsedId,
       moduleId: map['moduleId'] is String ? map['moduleId'] as String : '',
@@ -68,12 +69,9 @@ class VideoLesson {
           ? (map['durationSeconds'] as num).toInt()
           : _durationSecondsFromLabel(durationLabel) ?? durationMinutes * 60,
       durationLabel: durationLabel,
-      videoPath: map['videoPath'] is String ? map['videoPath'] as String : '',
-      thumbnailPath: map['thumbnailPath'] is String
-          ? map['thumbnailPath'] as String
-          : '',
+      videoUrl: videoUrl,
+      thumbnailUrl: thumbnailUrl,
       youtubeId: map['youtubeId'] as String? ?? '',
-      thumbnailAsset: map['thumbnailAsset'] as String? ?? '',
       level: map['level'] is String ? map['level'] as String : '',
       moduleLabel: map['moduleLabel'] is String
           ? map['moduleLabel'] as String
@@ -104,10 +102,9 @@ class VideoLesson {
       'durationMinutes': durationMinutes,
       'durationSeconds': durationSeconds,
       'durationLabel': durationLabel,
-      'videoPath': videoPath,
-      'thumbnailPath': thumbnailPath,
+      'videoUrl': videoUrl,
+      'thumbnailUrl': thumbnailUrl,
       'youtubeId': youtubeId,
-      'thumbnailAsset': thumbnailAsset,
       'level': level,
       'moduleLabel': moduleLabel,
       'status': status,
@@ -115,6 +112,13 @@ class VideoLesson {
       'order': order,
       'isPublished': isPublished,
     };
+  }
+
+  /// Returns a non-empty String value for [key], or `null`.
+  static String? _readString(Map<String, dynamic> map, String key) {
+    final v = map[key];
+    if (v is String && v.isNotEmpty) return v;
+    return null;
   }
 
   static int? _durationSecondsFromLabel(String label) {

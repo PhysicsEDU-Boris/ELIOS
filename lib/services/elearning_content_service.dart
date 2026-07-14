@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
 import '../models/elearning_module.dart';
 import '../models/guide_lesson.dart';
@@ -11,13 +10,10 @@ class ElearningContentService {
   static const _validModuleIds = {'organic', 'inorganic', 'hazardous'};
 
   final FirebaseFirestore _firestore;
-  final FirebaseStorage _storage;
 
   ElearningContentService({
     FirebaseFirestore? firestore,
-    FirebaseStorage? storage,
-  }) : _firestore = firestore ?? FirebaseFirestore.instance,
-       _storage = storage ?? FirebaseStorage.instance;
+  }) : _firestore = firestore ?? FirebaseFirestore.instance;
 
   Stream<List<ElearningModule>> watchModules() {
     return _firestore
@@ -111,18 +107,6 @@ class ElearningContentService {
     return snapshot.docs
         .map(QuizQuestion.fromFirestore)
         .toList(growable: false);
-  }
-
-  Future<String> getDownloadUrl(String storagePath) async {
-    if (storagePath.trim().isEmpty) {
-      throw ArgumentError.value(
-        storagePath,
-        'storagePath',
-        'Must not be empty.',
-      );
-    }
-
-    return _storage.ref(storagePath).getDownloadURL();
   }
 
   String? _validatedModuleId(String? moduleId) {

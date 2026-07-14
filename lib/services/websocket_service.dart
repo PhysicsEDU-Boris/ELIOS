@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show Size;
 
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -16,6 +17,8 @@ class WebSocketService {
       StreamController<Uint8List>.broadcast();
   final StreamController<List<Detection>> _detectionsController =
       StreamController<List<Detection>>.broadcast();
+  final StreamController<Size> _resolutionAckController =
+      StreamController<Size>.broadcast();
   final ValueNotifier<String> connectionStatus = ValueNotifier('Disconnected');
 
   WebSocketChannel? _channel;
@@ -23,8 +26,8 @@ class WebSocketService {
   StreamSubscription<dynamic>? _channelSubscription;
   bool _isConnected = false;
   bool _isConnecting = false;
-  String _ip = '192.168.4.1';
-  int _port = 81;
+  String _ip = '';
+  int _port = 0;
   bool _isIntentionallyClosed = false;
   bool _autoReconnectEnabled = false;
   String _lastEmittedStatus = 'Disconnected';
@@ -51,6 +54,7 @@ class WebSocketService {
   Stream<List<Detection>> get detections => _detectionsController.stream;
   double get imageWidth => _imageWidth;
   double get imageHeight => _imageHeight;
+  Stream<Size> get resolutionAcks => _resolutionAckController.stream;
 
   void _emitStatus(String status) {
     if (_lastEmittedStatus == status) return;
@@ -331,20 +335,6 @@ class WebSocketService {
   void _handleIncoming(dynamic message) {
     _lastIncomingAt = DateTime.now();
 
-    // Legacy: raw binary frames (ESP32-CAM backward compatibility).
-    if (message is Uint8List) {
-      _recordFrame(message);
-      _framesController.add(message);
-      return;
-    }
-
-    if (message is List<int>) {
-      final frame = Uint8List.fromList(message);
-      _recordFrame(frame);
-      _framesController.add(frame);
-      return;
-    }
-
     if (message is! String) return;
 
     try {
@@ -353,6 +343,16 @@ class WebSocketService {
 
       if (decoded['event'] == 'pong') {
         debugPrint('[WS] Received pong');
+      }
+
+      // --- Resolution acknowledgement from device ---
+      if (decoded['event'] == 'resolution_ack') {
+        final w = (decoded['width'] as num?)?.toDouble();
+        final h = (decoded['height'] as num?)?.toDouble();
+        if (w != null && h != null) {
+          debugPrint('[WS] Resolution ack: ${w.toInt()}x${h.toInt()}');
+          _resolutionAckController.add(Size(w, h));
+        }
       }
 
       // --- Frame extraction (MaixCAM2 'image' or legacy 'frame') ---
@@ -448,12 +448,33 @@ class WebSocketService {
     _channel!.sink.add(jsonEncode({'cmd': 'stop_stream'}));
   }
 
+  void sendResolutionCommand({String? preset, int? width, int? height}) {
+    if (!_isConnected || _channel == null) return;
+    final cmd = <String, dynamic>{'cmd': 'set_resolution'};
+    if (width != null && height != null) {
+      cmd['width'] = width;
+      cmd['height'] = height;
+    } else if (preset != null) {
+      cmd['preset'] = preset;
+    } else {
+      return;
+    }
+    debugPrint('[WS] Sending set_resolution: $cmd');
+    _channel!.sink.add(jsonEncode(cmd));
+  }
+
   Future<void> disconnect() async {
     _isIntentionallyClosed = true;
     _autoReconnectEnabled = false;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _stopWatchdog();
+
+    // Best-effort orderly disconnect handshake — device can clean up its
+    // side immediately rather than waiting to notice the TCP drop.
+    try {
+      _channel?.sink.add(jsonEncode({'cmd': 'disconnect'}));
+    } catch (_) {}
 
     await _channelSubscription?.cancel();
     _channelSubscription = null;

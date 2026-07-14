@@ -31,6 +31,8 @@ dependencies:
   flutter_3d_controller: ^2.3.0
   youtube_player_flutter: ^10.0.1
   syncfusion_flutter_pdfviewer: ^33.2.12
+  flutter_cache_manager: ^3.4.1
+  cached_network_image: ^3.4.1
 
   # Vision & Camera
   tflite_flutter: 0.12.1
@@ -59,11 +61,6 @@ flutter:
     - .env.dev
     - .env.prod
     - .env.example
-    - assets/guides/
-    - assets/images/
-    - assets/images/guides/
-    - assets/images/quiz/
-    - assets/images/thumbnails/
     - assets/icon/
     - assets/models/
 

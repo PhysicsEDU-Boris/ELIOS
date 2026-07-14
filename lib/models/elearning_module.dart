@@ -8,8 +8,8 @@ class ElearningModule {
   final String level;
   final int durationMinutes;
   final int lessonCount;
-  final String thumbnailPath;
-  final String guidePath;
+  final String thumbnailUrl;
+  final String guideUrl;
   final int order;
   final bool isPublished;
 
@@ -21,8 +21,8 @@ class ElearningModule {
     required this.level,
     required this.durationMinutes,
     required this.lessonCount,
-    required this.thumbnailPath,
-    required this.guidePath,
+    required this.thumbnailUrl,
+    required this.guideUrl,
     required this.order,
     required this.isPublished,
   });
@@ -32,6 +32,9 @@ class ElearningModule {
     final parsedId = rawId is String && rawId.trim().isNotEmpty
         ? rawId
         : documentId;
+
+    final thumbnailUrl = _readString(map, 'thumbnailUrl') ?? '';
+    final guideUrl = _readString(map, 'guideUrl') ?? '';
 
     return ElearningModule(
       id: parsedId,
@@ -47,10 +50,8 @@ class ElearningModule {
       lessonCount: map['lessonCount'] is num
           ? (map['lessonCount'] as num).toInt()
           : 0,
-      thumbnailPath: map['thumbnailPath'] is String
-          ? map['thumbnailPath'] as String
-          : '',
-      guidePath: map['guidePath'] is String ? map['guidePath'] as String : '',
+      thumbnailUrl: thumbnailUrl,
+      guideUrl: guideUrl,
       order: map['order'] is num ? (map['order'] as num).toInt() : 0,
       isPublished: map['isPublished'] is bool
           ? map['isPublished'] as bool
@@ -74,10 +75,17 @@ class ElearningModule {
       'level': level,
       'durationMinutes': durationMinutes,
       'lessonCount': lessonCount,
-      'thumbnailPath': thumbnailPath,
-      'guidePath': guidePath,
+      'thumbnailUrl': thumbnailUrl,
+      'guideUrl': guideUrl,
       'order': order,
       'isPublished': isPublished,
     };
+  }
+
+  /// Returns a non-empty String value for [key], or `null`.
+  static String? _readString(Map<String, dynamic> map, String key) {
+    final v = map[key];
+    if (v is String && v.isNotEmpty) return v;
+    return null;
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -245,8 +246,7 @@ class _QuizContentState extends ConsumerState<QuizContent> {
           QuizReviewAnswer(
             questionId: question.id,
             question: question.question,
-            imagePath: question.imagePath,
-            imageAsset: question.imageAsset,
+            imageUrl: question.imageUrl,
             options: question.options,
             correctIndex: question.correctIndex,
             selectedIndex: _selectedAnswersByQuestionId[question.id],
@@ -741,8 +741,8 @@ class _QuizQuestionView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (question.imageAsset.trim().isNotEmpty) ...[
-                _QuizQuestionImage(imageAsset: question.imageAsset),
+              if (question.imageUrl.trim().isNotEmpty) ...[
+                _QuizQuestionImage(imageUrl: question.imageUrl),
                 const SizedBox(height: 22),
               ],
               Text(
@@ -801,20 +801,20 @@ class _QuizQuestionView extends StatelessWidget {
 }
 
 class _QuizQuestionImage extends StatelessWidget {
-  final String imageAsset;
+  final String imageUrl;
 
-  const _QuizQuestionImage({required this.imageAsset});
+  const _QuizQuestionImage({required this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
     return _QuizImageFrame(
-      child: Image.asset(
-        imageAsset,
+      child: CachedNetworkImage(
+        imageUrl: imageUrl,
         width: double.infinity,
         height: double.infinity,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) =>
-            const _QuizImageUnavailable(),
+        placeholder: (_, _) => const ColoredBox(color: _surface),
+        errorWidget: (_, _, _) => const _QuizImageUnavailable(),
       ),
     );
   }

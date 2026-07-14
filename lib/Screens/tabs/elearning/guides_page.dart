@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
@@ -216,18 +218,9 @@ Future<void> _openGuideLesson({
 }) async {
   debugPrint('[StartupDiag] opening WebView/PDF only after user action');
 
-  final pdfAsset = lesson.pdfAsset.trim();
-  if (pdfAsset.isEmpty) {
+  final pdfUrl = lesson.pdfUrl.trim();
+  if (pdfUrl.isEmpty) {
     _showGuideUnavailableMessage(context);
-    return;
-  }
-
-  try {
-    await rootBundle.load(pdfAsset);
-  } on FlutterError {
-    if (context.mounted) {
-      _showGuideUnavailableMessage(context);
-    }
     return;
   }
 
@@ -238,7 +231,7 @@ Future<void> _openGuideLesson({
     MaterialPageRoute<void>(
       builder: (context) => _GuidePdfPage(
         title: lesson.title,
-        pdfAsset: pdfAsset,
+        pdfUrl: pdfUrl,
         guideId: lesson.id,
         moduleId: lesson.moduleId,
         pageCount: lesson.pageCount,
@@ -324,7 +317,7 @@ class _GuideLessonTile extends ConsumerWidget {
       children: [
         ListTile(
           contentPadding: EdgeInsets.zero,
-          leading: _GuideCover(coverAsset: lesson.coverAsset),
+          leading: _GuideCover(coverUrl: lesson.coverUrl),
           minLeadingWidth: 52,
           minVerticalPadding: 8,
           visualDensity: VisualDensity.comfortable,
@@ -370,9 +363,9 @@ class _GuideLessonTile extends ConsumerWidget {
 }
 
 class _GuideCover extends StatelessWidget {
-  final String coverAsset;
+  final String coverUrl;
 
-  const _GuideCover({required this.coverAsset});
+  const _GuideCover({required this.coverUrl});
 
   @override
   Widget build(BuildContext context) {
@@ -387,16 +380,17 @@ class _GuideCover extends StatelessWidget {
       child: const Icon(Icons.menu_book_outlined, color: _primary),
     );
 
-    if (coverAsset.trim().isEmpty) return placeholder;
+    if (coverUrl.trim().isEmpty) return placeholder;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: Image.asset(
-        coverAsset,
+      child: CachedNetworkImage(
+        imageUrl: coverUrl,
         width: 52,
         height: 64,
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => placeholder,
+        placeholder: (_, _) => placeholder,
+        errorWidget: (_, _, _) => placeholder,
       ),
     );
   }
@@ -404,7 +398,7 @@ class _GuideCover extends StatelessWidget {
 
 class _GuidePdfPage extends ConsumerStatefulWidget {
   final String title;
-  final String pdfAsset;
+  final String pdfUrl;
   final String guideId;
   final String moduleId;
   final int pageCount;
@@ -413,7 +407,7 @@ class _GuidePdfPage extends ConsumerStatefulWidget {
 
   const _GuidePdfPage({
     required this.title,
-    required this.pdfAsset,
+    required this.pdfUrl,
     required this.guideId,
     required this.moduleId,
     required this.pageCount,
@@ -428,6 +422,8 @@ class _GuidePdfPage extends ConsumerStatefulWidget {
 class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
   late final PdfViewerController _controller;
   late final LearningProgressNotifier _progressNotifier;
+  File? _cachedFile;
+  var _isDownloading = true;
   var _loadFailed = false;
   var _effectivePageCount = 0;
   var _latestPageReached = 0;
@@ -440,6 +436,25 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
     _controller = PdfViewerController();
     _effectivePageCount = widget.pageCount < 0 ? 0 : widget.pageCount;
     _latestPageReached = _initialPageNumber();
+    _loadPdf();
+  }
+
+  Future<void> _loadPdf() async {
+    try {
+      final file =
+          await DefaultCacheManager().getSingleFile(widget.pdfUrl);
+      if (!mounted) return;
+      setState(() {
+        _cachedFile = file;
+        _isDownloading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadFailed = true;
+        _isDownloading = false;
+      });
+    }
   }
 
   @override
@@ -514,6 +529,34 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
       debugPrint('[StartupDiag] building WebView/PDF screen');
     }
 
+    final Widget body;
+    if (_isDownloading) {
+      body = const Center(child: CircularProgressIndicator());
+    } else if (_loadFailed || _cachedFile == null) {
+      body = const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'Guide PDF is not available yet.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    } else {
+      body = SfPdfViewer.file(
+        _cachedFile!,
+        controller: _controller,
+        initialPageNumber: _initialPageNumber(),
+        onDocumentLoaded: _handleDocumentLoaded,
+        onPageChanged: _handlePageChanged,
+        onDocumentLoadFailed: (_) {
+          if (mounted) {
+            setState(() => _loadFailed = true);
+          }
+        },
+      );
+    }
+
     return Scaffold(
       backgroundColor: _background,
       appBar: AppBar(
@@ -521,28 +564,7 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
         foregroundColor: _primary,
         title: Text(widget.title),
       ),
-      body: _loadFailed
-          ? const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Guide PDF is not available yet.',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            )
-          : SfPdfViewer.asset(
-              widget.pdfAsset,
-              controller: _controller,
-              initialPageNumber: _initialPageNumber(),
-              onDocumentLoaded: _handleDocumentLoaded,
-              onPageChanged: _handlePageChanged,
-              onDocumentLoadFailed: (_) {
-                if (mounted) {
-                  setState(() => _loadFailed = true);
-                }
-              },
-            ),
+      body: body,
     );
   }
 }
