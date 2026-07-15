@@ -3,15 +3,18 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/learning_progress.dart';
+import '../models/physics_progress.dart';
 
 /// Handles persistence of [LearningProgress]:
 ///   • Firestore for authenticated users
 ///   • SharedPreferences for anonymous/guest users
 class ProgressService {
   static const _prefKey = 'elio_learning_progress';
+  static const _physicsPrefKey = 'elio_physics_progress';
   static const _usersCollection = 'users';
   static const _progressSubcollection = 'learning_progress';
   static const _learningDocId = 'main';
+  static const _physicsDocId = 'physics';
 
   final FirebaseFirestore _firestore;
   bool _lastLoadUsedFallback = false;
@@ -83,6 +86,52 @@ class ProgressService {
         .collection(_progressSubcollection)
         .doc(_learningDocId)
         .delete();
+        
+    await _firestore
+        .collection(_usersCollection)
+        .doc(userId)
+        .collection(_progressSubcollection)
+        .doc(_physicsDocId)
+        .delete();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Physics Progress (Firestore)
+  // ---------------------------------------------------------------------------
+
+  Future<PhysicsProgress> loadPhysicsFromFirestore(String userId) async {
+    try {
+      final doc = await _firestore
+          .collection(_usersCollection)
+          .doc(userId)
+          .collection(_progressSubcollection)
+          .doc(_physicsDocId)
+          .get();
+
+      if (!doc.exists || doc.data() == null) {
+        return loadPhysicsFromLocal(userId);
+      }
+
+      final progress = PhysicsProgress.fromMap(doc.data()!);
+      try {
+        await savePhysicsToLocal(userId, progress);
+      } catch (_) {}
+      return progress;
+    } on FirebaseException catch (_) {
+      return loadPhysicsFromLocal(userId);
+    }
+  }
+
+  Future<void> savePhysicsToFirestore(String userId, PhysicsProgress progress) async {
+    await _firestore
+        .collection(_usersCollection)
+        .doc(userId)
+        .collection(_progressSubcollection)
+        .doc(_physicsDocId)
+        .set({
+          ...progress.toMap(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
   }
 
   // ---------------------------------------------------------------------------
@@ -115,6 +164,27 @@ class ProgressService {
   Future<void> clearLocal(String userId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefKeyFor(userId));
+    await prefs.remove(_physicsPrefKeyFor(userId));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Physics Progress (SharedPreferences)
+  // ---------------------------------------------------------------------------
+
+  Future<PhysicsProgress> loadPhysicsFromLocal(String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_physicsPrefKeyFor(userId)) ?? prefs.getString(_physicsPrefKey);
+      if (raw == null) return PhysicsProgress.empty();
+      return PhysicsProgress.fromJson(raw);
+    } catch (_) {
+      return PhysicsProgress.empty();
+    }
+  }
+
+  Future<void> savePhysicsToLocal(String userId, PhysicsProgress progress) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_physicsPrefKeyFor(userId), progress.toJson());
   }
 
   // ---------------------------------------------------------------------------
@@ -177,5 +247,35 @@ class ProgressService {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Physics Progress (Unified API)
+  // ---------------------------------------------------------------------------
+
+  Future<PhysicsProgress> loadPhysics(String userId, {required bool isGuest}) async {
+    if (isGuest) {
+      return loadPhysicsFromLocal(userId);
+    }
+    return loadPhysicsFromFirestore(userId);
+  }
+
+  Future<bool> savePhysics(String userId, PhysicsProgress progress, {required bool isGuest}) async {
+    if (isGuest) {
+      await savePhysicsToLocal(userId, progress);
+      return true;
+    }
+
+    try {
+      await savePhysicsToLocal(userId, progress);
+    } catch (_) {}
+
+    try {
+      await savePhysicsToFirestore(userId, progress);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   String _prefKeyFor(String userId) => '${_prefKey}_$userId';
+  String _physicsPrefKeyFor(String userId) => '${_physicsPrefKey}_$userId';
 }

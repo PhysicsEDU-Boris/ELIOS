@@ -16,6 +16,7 @@ import '../../widgets/elio_learning_app_bar.dart';
 import 'elearning/guides_page.dart';
 import 'elearning/quiz_page.dart';
 import 'elearning/video_lessons_page.dart';
+import 'elearning/simulations/simulations_page.dart';
 
 const _background = Color(0xFFF8FAF9);
 const _primary = Color(0xFF00694C);
@@ -23,7 +24,7 @@ const _ink = Color(0xFF191C1C);
 const _muted = Color(0xFF3D4943);
 const _border = Color(0xFFE6E9E8);
 
-enum LearningSection { allCategories, guides, videoLessons, quiz }
+enum LearningSection { allCategories, guides, videoLessons, quiz, simulations }
 
 class ElearningTab extends ConsumerStatefulWidget {
   final ValueChanged<bool>? onQuizActiveChanged;
@@ -183,9 +184,10 @@ class _ElearningTabState extends ConsumerState<ElearningTab> {
         onQuizActiveChanged: (active) {
           if (_quizInProgress == active) return;
           setState(() => _quizInProgress = active);
-          widget.onQuizActiveChanged?.call(active);
+        widget.onQuizActiveChanged?.call(active);
         },
       ),
+      LearningSection.simulations => const SimulationsContent(),
     };
   }
 
@@ -732,6 +734,7 @@ class _LearningFilterChipsState extends State<_LearningFilterChips> {
     LearningSection.guides: 'Guides',
     LearningSection.videoLessons: 'Video Lessons',
     LearningSection.quiz: 'Quiz',
+    LearningSection.simulations: 'Simulations',
   };
 
   @override

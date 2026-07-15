@@ -441,8 +441,7 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
 
   Future<void> _loadPdf() async {
     try {
-      final file =
-          await DefaultCacheManager().getSingleFile(widget.pdfUrl);
+      final file = await DefaultCacheManager().getSingleFile(widget.pdfUrl);
       if (!mounted) return;
       setState(() {
         _cachedFile = file;
