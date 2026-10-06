@@ -165,6 +165,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     debugPrint('[Control] Stopping MaixCAM2 stream');
     _robotNotifier.stopStream();
 
+    // Dismiss quiz if it was left open so it doesn't block future scans.
+    ref.read(wasteQuizProvider.notifier).dismiss();
+
     debugPrint('[Control] Leaving robot control, disconnecting WebSocket');
     unawaited(_robotNotifier.disconnect());
     unawaited(GemmaQuizService.instance.dispose());
