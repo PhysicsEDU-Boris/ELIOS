@@ -154,6 +154,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
     _lastLabel = label;
     _lastShownAt = now;
+    GemmaQuizService.instance.cancel();
     _startSession(ScannedWaste.fromLabel(label));
   }
 
@@ -164,6 +165,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _lastShownAt = DateTime.now();
     _askedQuestions.clear();
     final generation = ++_generation;
+    GemmaQuizService.instance.cancel();
     state = _freshSession(phase: WasteQuizPhase.identifying);
     unawaited(_identifyThenQuiz(imageBytes, generation));
   }
@@ -171,6 +173,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   Future<void> _identifyThenQuiz(Uint8List imageBytes, int generation) async {
     final result = await GemmaQuizService.instance.identifyItem(imageBytes);
     if (generation != _generation) return;
+    if (result.failure == 'busy') {
+      state = state.copyWith(phase: WasteQuizPhase.idle);
+      return;
+    }
     final item = result.item;
     if (item == null) {
       final reason = result.failure ?? 'Benda di foto belum dikenali.';
@@ -192,6 +198,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (state.phase != WasteQuizPhase.idle) return;
     _lastLabel = label;
     _lastShownAt = DateTime.now();
+    GemmaQuizService.instance.cancel();
     _startSession(ScannedWaste.fromLabel(label));
   }
 
@@ -404,6 +411,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   void dismiss() {
     _generation++;
+    GemmaQuizService.instance.cancel();
     unawaited(QuizTtsService.instance.stop());
     state = WasteQuizUiState(voiceOn: state.voiceOn);
   }

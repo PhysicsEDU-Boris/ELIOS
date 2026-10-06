@@ -125,7 +125,14 @@ class GemmaQuizService {
   bool _prepared = false;
   Future<bool>? _prepareFuture;
   Future<bool>? _readyFuture;
-  Future<void> _queue = Future.value();
+
+  bool _activeIsUser = false;
+  Completer<String?>? _activeCompleter;
+  Completer<String?>? _pendingCompleter;
+  Future<String?> Function()? _pendingTask;
+
+  @visibleForTesting
+  Future<String?> Function(String prompt, {Uint8List? imageBytes, bool fresh, bool isUser, void Function(String)? onToken})? mockSendExecute;
 
   bool get isReady => _chat != null;
   bool get isPrepared => _prepared;
@@ -308,44 +315,128 @@ class GemmaQuizService {
     }
   }
 
-  /// Serializes all chat turns — one native conversation can't run two
-  /// generations at once.
-  Future<T> _serial<T>(Future<T> Function() task) {
-    final result = _queue.then((_) => task());
-    _queue = result.then((_) {}, onError: (_) {});
-    return result;
-  }
+  Future<String?> _executeSend(String prompt, {Uint8List? imageBytes, bool fresh = false, bool isUser = false, void Function(String)? onToken}) async {
+    _activeIsUser = isUser;
+    final completer = Completer<String?>();
+    _activeCompleter = completer;
 
-  Future<String?> _send(String prompt, {Uint8List? imageBytes, bool fresh = false}) {
-    return _serial(() async {
-      if (!await ensureReady(vision: imageBytes != null)) return null;
-      final chat = _chat;
-      if (chat == null) return null;
-      // Never silently drop a photo: a text-only model asked about an image
-      // just guesses (it kept answering "plastic bottle").
-      if (imageBytes != null && !_loadedWithVision) {
-        _log('photo request but the image encoder is not available');
-        return null;
-      }
-      final image = imageBytes;
+    Future<void> run() async {
       try {
+        if (mockSendExecute != null) {
+           final res = await mockSendExecute!(prompt, imageBytes: imageBytes, fresh: fresh, isUser: isUser, onToken: onToken);
+           if (!completer.isCompleted) completer.complete(res);
+           return;
+        }
+        if (!await ensureReady(vision: imageBytes != null)) {
+          if (!completer.isCompleted) completer.complete(null);
+          return;
+        }
+        final chat = _chat;
+        if (chat == null) {
+          if (!completer.isCompleted) completer.complete(null);
+          return;
+        }
+        if (imageBytes != null && !_loadedWithVision) {
+          _log('photo request but the image encoder is not available');
+          if (!completer.isCompleted) completer.complete(null);
+          return;
+        }
         if (fresh) await chat.clearHistory();
         final sw = Stopwatch()..start();
-        await chat.addQueryChunk(image == null
+        await chat.addQueryChunk(imageBytes == null
             ? Message.text(text: prompt, isUser: true)
-            : Message.withImage(text: prompt, imageBytes: image, isUser: true));
-        final response = await chat.generateChatResponse().timeout(_generationTimeout);
-        final reply = switch (response) {
-          TextResponse(:final token) => token,
-          _ => response.toString(),
-        }.trim();
-        _log('generated ${reply.length} chars in ${sw.elapsed.inMilliseconds}ms');
-        return reply.isEmpty ? null : reply;
+            : Message.withImage(text: prompt, imageBytes: imageBytes, isUser: true));
+            
+        final stream = chat.generateChatResponseAsync();
+        String fullText = '';
+        int? firstTokenMs;
+        
+        stream.listen((response) {
+           final token = switch (response) {
+             TextResponse(:final token) => token,
+             _ => response.toString(),
+           };
+           firstTokenMs ??= sw.elapsedMilliseconds;
+           fullText += token;
+           onToken?.call(token);
+        }, onError: (e) {
+           if (!completer.isCompleted) completer.completeError(e);
+        }, onDone: () {
+           final total = sw.elapsedMilliseconds;
+           _log('generated ${fullText.length} chars (first token: ${firstTokenMs ?? 0}ms, total: ${total}ms)');
+           if (!completer.isCompleted) completer.complete(fullText.isEmpty ? null : fullText.trim());
+        });
       } catch (e) {
         _log('generation failed: $e');
+        if (!completer.isCompleted) completer.complete(null);
+      }
+    }
+    
+    run();
+    
+    try {
+      return await completer.future.timeout(_generationTimeout);
+    } catch (e) {
+      if (e is TimeoutException) {
+        _log('generation timeout');
+        try { _chat?.stopGeneration(); } catch (_) {}
+      }
+      return null;
+    } finally {
+      if (_activeCompleter == completer) {
+        _activeCompleter = null;
+        if (_pendingCompleter != null) {
+           final nextTask = _pendingTask;
+           final nextCompleter = _pendingCompleter;
+           _pendingCompleter = null;
+           _pendingTask = null;
+           nextTask!().then((v) => nextCompleter!.complete(v)).catchError((e) => nextCompleter!.completeError(e));
+        }
+      }
+    }
+  }
+
+  Future<String?> _send(String prompt, {Uint8List? imageBytes, bool fresh = false, bool isUser = false, void Function(String)? onToken}) async {
+    if (_activeCompleter != null) {
+      if (!isUser) {
+        _log('slot busy, rejecting scan request');
+        return 'BUSY';
+      }
+      
+      if (!_activeIsUser) {
+        _log('canceling active scan request to yield to user request');
+        try { _chat?.stopGeneration(); } catch (_) {}
+        if (!_activeCompleter!.isCompleted) {
+           _activeCompleter!.complete(null);
+        }
+      }
+      
+      _pendingCompleter?.complete(null);
+      final completer = Completer<String?>();
+      _pendingCompleter = completer;
+      _pendingTask = () => _executeSend(prompt, imageBytes: imageBytes, fresh: fresh, isUser: true, onToken: onToken);
+      
+      try {
+        return await completer.future;
+      } catch (e) {
         return null;
       }
-    });
+    }
+    
+    return _executeSend(prompt, imageBytes: imageBytes, fresh: fresh, isUser: isUser, onToken: onToken);
+  }
+
+  void cancel() {
+    _pendingCompleter?.complete(null);
+    _pendingCompleter = null;
+    _pendingTask = null;
+    if (_activeCompleter != null) {
+      _log('canceling active request');
+      try { _chat?.stopGeneration(); } catch (_) {}
+      if (!_activeCompleter!.isCompleted) {
+        _activeCompleter!.complete(null);
+      }
+    }
   }
 
   /// Step 1 of a photo scan: name the object, with nothing else in the
@@ -357,7 +448,8 @@ class GemmaQuizService {
         '"kulit pisang", "baterai", atau "kertas". Jika foto tidak jelas, tulis "tidak jelas". '
         'Balas HANYA JSON: {"item": "nama benda singkat", "material": "bahan utama", '
         '"category": "organik" atau "anorganik" atau "B3" atau "residu"}.';
-    final raw = await _send(prompt, imageBytes: imageBytes, fresh: true);
+    final raw = await _send(prompt, imageBytes: imageBytes, fresh: true, isUser: false);
+    if (raw == 'BUSY') return const PhotoIdentification.failed('busy');
     if (raw == null) {
       return PhotoIdentification.failed(_chat != null && !_loadedWithVision
           ? 'AI di perangkat ini tidak bisa membaca foto (model gambar gagal dimuat). '
@@ -407,7 +499,8 @@ class GemmaQuizService {
     final prompt = '$context $shape$avoidText';
 
     for (var attempt = 0; attempt < 2; attempt++) {
-      final raw = await _send(prompt, fresh: true);
+      final raw = await _send(prompt, fresh: true, isUser: false);
+      if (raw == 'BUSY') return null;
       if (raw == null) return null;
       final parsed = _parse(raw, type);
       if (parsed != null) return parsed;
@@ -429,8 +522,8 @@ class GemmaQuizService {
         '${transcript.isEmpty ? '' : 'Percakapan sebelumnya:\n$transcript\n'}'
         'Pertanyaan mahasiswa sekarang: "$message"\n'
         'Jawab dalam Bahasa Indonesia dengan 2-5 kalimat teks biasa. Jangan pakai JSON, kode, atau markdown.';
-    final raw = await _send(prompt, fresh: true);
-    return raw == null ? null : toPlainText(raw);
+    final raw = await _send(prompt, fresh: true, isUser: true);
+    return raw == null || raw == 'BUSY' ? null : toPlainText(raw);
   }
 
   /// Grades an essay answer against the question and its expected points.
@@ -444,8 +537,8 @@ class GemmaQuizService {
         'Jawaban mahasiswa: "$answer"\n'
         'Mulai dengan "Benar", "Sebagian benar", atau "Kurang tepat", lalu jelaskan koreksinya '
         'dalam 2-4 kalimat teks biasa. Jangan pakai JSON, kode, atau markdown.';
-    final raw = await _send(prompt, fresh: true);
-    return raw == null ? null : toPlainText(raw);
+    final raw = await _send(prompt, fresh: true, isUser: true);
+    return raw == null || raw == 'BUSY' ? null : toPlainText(raw);
   }
 
   /// Turns a reply that came back as JSON or markdown into readable text.
@@ -516,9 +609,9 @@ class GemmaQuizService {
   /// Frees the model's memory (the prepared file stays on disk). Waits for
   /// any in-flight load or generation.
   Future<void> dispose() async {
+    cancel();
     try {
       await _readyFuture;
-      await _queue;
     } catch (_) {}
     await _closeModel();
     progress.value = GemmaProgress(_prepared ? GemmaStatus.idle : progress.value.status);

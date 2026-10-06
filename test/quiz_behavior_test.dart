@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
@@ -95,5 +98,76 @@ void main() {
     on.read(wasteQuizProvider.notifier).skipQuestion();
     expect(on.read(wasteQuizProvider).phase, WasteQuizPhase.finished);
     expect(on.read(wasteQuizProvider).skippedCount, 1);
+  });
+
+  group('GemmaQuizService single flight slot logic', () {
+    late GemmaQuizService service;
+    
+    setUp(() {
+      service = GemmaQuizService.instance;
+      service.cancel();
+    });
+
+    test('scan request rejected while busy', () async {
+      final completer1 = Completer<String?>();
+      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => completer1.future;
+
+      final f1 = service.identifyItem(Uint8List(0));
+      
+      final res2 = await service.identifyItem(Uint8List(0));
+      expect(res2.failure, 'busy');
+      
+      completer1.complete('{"item": "botol", "material": "plastik", "category": "anorganik"}');
+      final res1 = await f1;
+      expect(res1.item, 'botol');
+    });
+
+    test('user request cancels a running scan request', () async {
+      final completer1 = Completer<String?>();
+      final completer2 = Completer<String?>();
+      var call = 0;
+      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) {
+        call++;
+        return call == 1 ? completer1.future : completer2.future;
+      };
+
+      final f1 = service.identifyItem(Uint8List(0));
+      final f2 = service.discuss(quizContext: 'ctx', history: [], message: 'hi');
+      
+      final res1 = await f1;
+      expect(res1.item, isNull);
+      
+      completer2.complete('reply');
+      final res2 = await f2;
+      expect(res2, 'reply');
+    });
+
+    test('stale result discarded after dismiss', () async {
+      final completer = Completer<String?>();
+      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => completer.future;
+
+      final f1 = service.identifyItem(Uint8List(0));
+      service.cancel();
+      
+      completer.complete('{"item": "botol"}');
+      
+      final res1 = await f1;
+      expect(res1.item, isNull);
+    });
+    
+    test('slot released after cancel/timeout/exception', () async {
+      final completer1 = Completer<String?>();
+      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => completer1.future;
+      final f1 = service.identifyItem(Uint8List(0));
+      service.cancel();
+      await f1;
+      
+      final completer2 = Completer<String?>();
+      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => completer2.future;
+      final f2 = service.identifyItem(Uint8List(0));
+      completer2.complete('{"item": "kertas", "material": "kertas", "category": "organik"}');
+      final res2 = await f2;
+      expect(res2.item, 'kertas');
+    });
   });
 }
