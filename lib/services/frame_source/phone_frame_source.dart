@@ -16,11 +16,13 @@ class PhoneFrameSource extends FrameSource {
   int _cameraIndex = 0;
   
   String? _errorMsg;
+  bool _initialized = false;
+  bool _macPaused = false;
   
   final StreamController<CapturedFrame> _frameController = StreamController<CapturedFrame>.broadcast();
   
   @override
-  bool get isInitialized => _useMacCamera ? _macController != null : _controller != null;
+  bool get isInitialized => _useMacCamera ? _initialized : _controller != null;
   
   @override
   String? get error => _errorMsg;
@@ -32,7 +34,9 @@ class PhoneFrameSource extends FrameSource {
   Future<void> initialize() async {
     if (_useMacCamera) {
       // camera_macos is initialized via its view callback.
-      // We just notify listeners for now so the UI can show the view.
+      // We just mark it as initialized for now so the UI can show the view.
+      _initialized = true;
+      _macPaused = false;
       notifyListeners();
       return;
     }
@@ -118,6 +122,7 @@ class PhoneFrameSource extends FrameSource {
     if (_useMacCamera) {
       final mac = _macController;
       _macController = null;
+      _macPaused = true;
       await mac?.destroy();
       notifyListeners();
     } else {
@@ -130,7 +135,7 @@ class PhoneFrameSource extends FrameSource {
   @override
   Future<void> resumePreview() async {
     if (_useMacCamera) {
-      // The view will rebuild and re-initialize the mac camera.
+      _macPaused = false;
       notifyListeners();
     } else {
       if (_controller != null && _controller!.value.isInitialized) {
@@ -150,6 +155,9 @@ class PhoneFrameSource extends FrameSource {
   @override
   Widget buildPreview({BoxFit fit = BoxFit.cover}) {
     if (_useMacCamera) {
+      if (_macPaused) {
+        return const ColoredBox(color: Color(0xFF121413));
+      }
       return CameraMacOSView(
         key: const ValueKey('elios-mac-camera'),
         fit: fit,
