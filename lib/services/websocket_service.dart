@@ -333,6 +333,18 @@ class WebSocketService {
   }
 
   void _handleIncoming(dynamic message) {
+    // TODO: TEMP DEBUG STAGE 3 - remove after capturing sample
+    try {
+      if (message is String) {
+        final debugData = jsonDecode(message);
+        if (debugData is Map && debugData.containsKey('detections')) {
+          debugPrint('RAW DETECTION PAYLOAD: ${debugData['detections']}');
+        }
+      }
+    } catch (_) {
+      // Ignore parse errors in temp debug logging.
+    }
+
     _lastIncomingAt = DateTime.now();
 
     if (message is! String) return;

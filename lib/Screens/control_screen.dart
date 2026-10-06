@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart'
@@ -11,8 +12,13 @@ import 'package:flutter/services.dart'
 import '../models/config_model.dart';
 import '../providers/esp_config_provider.dart';
 import '../providers/robot_provider.dart';
+import '../providers/waste_quiz_provider.dart';
+import '../services/gemma_quiz_service.dart';
 import '../services/websocket_service.dart';
+import '../widgets/debug_phone_camera_sheet.dart';
+import '../widgets/desktop_viewport.dart';
 import '../widgets/segmentation_overlay_painter.dart';
+import '../widgets/waste_quiz_popup.dart';
 
 class ControlScreen extends ConsumerStatefulWidget {
   const ControlScreen({super.key});
@@ -48,6 +54,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     super.initState();
     _enterLandscapeFullscreen();
     _robotNotifier = ref.read(robotControlProvider.notifier);
+
+    setDesktopLandscape(true);
 
     // Subscribe to robot frames outside of build to avoid re-registering
     // the listener on every rebuild.
@@ -101,6 +109,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     ) {
       if (!mounted) return;
       setState(() => _currentDetections = detections);
+      // Auto-generated waste quiz: only fed by the real MaixCAM2 stream, the
+      // debug phone-camera path triggers it manually instead.
+      if (ref.read(debugQuizSourceProvider) == WasteQuizSource.maixCam2) {
+        ref.read(wasteQuizProvider.notifier).onDetections(detections);
+      }
     });
 
     // Connect to the robot when the control screen opens.
@@ -154,11 +167,27 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
     debugPrint('[Control] Leaving robot control, disconnecting WebSocket');
     unawaited(_robotNotifier.disconnect());
+    unawaited(GemmaQuizService.instance.dispose());
+    setDesktopLandscape(false);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Pause the MaixCAM2 video while the quiz popup covers it (frees CPU and
+    // Wi-Fi for Gemma) and resume when it's closed or minimized. Driving and
+    // arm controls are unaffected.
+    ref.listen<WasteQuizUiState>(wasteQuizProvider, (prev, next) {
+      final was = prev != null && prev.phase != WasteQuizPhase.idle && !prev.minimized;
+      final now = next.phase != WasteQuizPhase.idle && !next.minimized;
+      if (was == now) return;
+      if (now) {
+        _robotNotifier.stopStream();
+      } else if (ref.read(robotStatusProvider).valueOrNull == 'Connected') {
+        _robotNotifier.startStream();
+      }
+    });
+
     // Resend resolution to the device whenever the user changes it mid-session.
     ref.listen<AsyncValue<EspConfig>>(espConfigProvider, (previous, next) {
       final prevPreset = previous?.valueOrNull?.resolutionPreset;
@@ -305,7 +334,81 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
               ),
             ),
           ),
+          if (kDebugMode)
+            Positioned(
+              top: 12,
+              right: 12,
+              child: SafeArea(
+                child: _DebugQuizSourceToggle(
+                  onScanWithPhone: () => showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.white,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                    ),
+                    builder: (_) => const DebugPhoneCameraSheet(),
+                  ),
+                ),
+              ),
+            ),
+          const WasteQuizPopup(),
         ],
+      ),
+    );
+  }
+}
+
+/// Debug-only control for testing the auto-generated waste quiz without the
+/// physical MaixCAM2 hardware connected — opens the phone's own camera and
+/// feeds a captured photo straight to Gemma.
+class _DebugQuizSourceToggle extends StatelessWidget {
+  const _DebugQuizSourceToggle({required this.onScanWithPhone});
+
+  final VoidCallback onScanWithPhone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.92),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onScanWithPhone,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFBEC9C2)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.camera_alt_outlined,
+                size: 18,
+                color: _ControlScreenState.textPrimary,
+              ),
+              SizedBox(width: 6),
+              Text(
+                'Debug Scan',
+                style: TextStyle(
+                  color: _ControlScreenState.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,8 +8,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_gemma/flutter_gemma.dart';
+import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
 
 import 'firebase_options_loader.dart';
+import 'services/gemma_quiz_service.dart';
+import 'widgets/desktop_viewport.dart';
 import 'utils/system_ui.dart';
 import 'Screens/home_shell.dart';
 import 'Screens/login_screen.dart';
@@ -49,6 +55,18 @@ void main() async {
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     applyTransparentSystemBars();
 
+    // flutter_gemma registers no inference engine by default — without this
+    // every Gemma call throws and the quiz silently falls back to offline
+    // questions. Isolated so a Gemma problem can never block app startup.
+    try {
+      await FlutterGemma.initialize(inferenceEngines: const [LiteRtLmEngine()]);
+      // One-time, offline copy of the bundled model, in the background at
+      // launch so it is done before the user drives the robot or scans.
+      unawaited(GemmaQuizService.instance.prepare());
+    } catch (error) {
+      debugPrint('FlutterGemma.initialize failed: $error');
+    }
+
     runApp(const ElioApp());
   } catch (error, stackTrace) {
     debugPrint('Startup failed: $error');
@@ -74,12 +92,13 @@ class ElioApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ProviderScope(
       child: MaterialApp(
-        title: 'ELIO',
+        title: 'ELIOS',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0F6E56)),
           useMaterial3: true,
         ),
+        builder: (context, child) => DesktopViewport(child: child!),
         home: _AuthGate(auth: auth ?? FirebaseAuth.instance),
       ),
     );

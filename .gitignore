@@ -58,8 +58,14 @@ firestore-seed/node_modules/
 
 # Firebase secrets
 ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
 android/app/google-services.json
 lib/firebase_options*.dart
 .env*
 firestore-seed/
 references/
+
+# On-device Gemma model (~2.4GB) — bundled locally as a Flutter asset so the
+# AI quiz works fully offline, but far too large for a normal git repo.
+# Each dev/build machine must place the .litertlm file here manually.
+assets/models/*.litertlm

@@ -1,21 +1,20 @@
 // Copyright (c) Boris Agung, Irham Fajar
 
 import 'package:elio/models/config_model.dart';
-import 'package:elio/providers/udp_discovery_provider.dart';
-import 'package:elio/providers/wifi_provisioning_provider.dart';
 import 'package:elio/services/websocket_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../providers/app_preferences_provider.dart';
 import '../providers/esp_config_provider.dart';
 import '../providers/robot_provider.dart';
+import '../services/gemma_quiz_service.dart';
 import '../utils/system_ui.dart';
 import 'control_screen.dart';
+import 'device_scan_screen.dart';
 
 class ConfigScreen extends ConsumerStatefulWidget {
   const ConfigScreen({super.key});
@@ -31,10 +30,6 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   final TextEditingController _ip4 = TextEditingController();
   final TextEditingController _port = TextEditingController();
 
-  // ── Provisioning Controllers ────────────────────────────────────
-  final TextEditingController _provSsid = TextEditingController();
-  final TextEditingController _provPass = TextEditingController();
-
   bool saveDefault = true;
   bool _isConnecting = false;
   bool _connectionFailed = false;
@@ -48,33 +43,6 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   final Color primaryColor = const Color(0xFF004F38);
   final Color cardBorder = const Color(0xFFBEC9C2);
   final Color inputSurface = Colors.white;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadWifiSsid();
-
-    // Start the UDP auto-discovery listener after the first frame
-    // to ensure the Riverpod container is fully initialized.
-    // resetAndListen() clears any previously discovered IP so a new QR
-    // session (e.g., switching from home WiFi to hotspot) always gets a
-    // fresh UDP socket bound on all interfaces.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(udpDiscoveryProvider.notifier).resetAndListen();
-    });
-  }
-
-  /// Pre-fill the provisioning SSID field with the current Wi-Fi name.
-  void _loadWifiSsid() {
-    // Read the provider asynchronously; when it resolves, populate the field.
-    Future.microtask(() {
-      ref.read(wifiSsidProvider.future).then((ssid) {
-        if (ssid != null && mounted && _provSsid.text.isEmpty) {
-          _provSsid.text = ssid;
-        }
-      });
-    });
-  }
 
   /// Populate IP/port controllers from [EspConfig] once on first data arrival.
   void _populateControllersFromConfig(EspConfig config) {
@@ -96,11 +64,15 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     }
   }
 
-  Future<void> _openControlScreen() async {
+  Future<void> _openControlScreen() => _openLandscapeScreen(const ControlScreen());
+
+  Future<void> _openDeviceScan() => _openLandscapeScreen(const DeviceScanScreen());
+
+  Future<void> _openLandscapeScreen(Widget screen) async {
     try {
       await Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const ControlScreen()),
+        MaterialPageRoute(builder: (_) => screen),
       );
     } finally {
       await Future<void>.delayed(const Duration(milliseconds: 300));
@@ -144,7 +116,8 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     // 2. Configure and AWAIT the connection result
     debugPrint('[Config] Connecting to ws://$ip:$port');
     final ws = WebSocketService();
-    await ws.disconnect(); // full teardown: cancels subscription, closes channel, resets all flags
+    await ws
+        .disconnect(); // full teardown: cancels subscription, closes channel, resets all flags
     ws.resetConnectionState();
     ws.configure(ip, port, autoReconnect: false);
 
@@ -174,9 +147,9 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     // 4. Handle Result
     if (success) {
       if (saveDefault) {
-        await ref.read(espConfigProvider.notifier).patch(
-          (c) => c.copyWith(esp32IpAddress: ip, port: port),
-        );
+        await ref
+            .read(espConfigProvider.notifier)
+            .patch((c) => c.copyWith(esp32IpAddress: ip, port: port));
       }
       // Only navigate if actually connected
       if (!mounted) return;
@@ -185,7 +158,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
       setState(() => _connectionFailed = true);
       // Show error and STAY on Config Screen
       _showSnack(
-        'Connection failed. Is MaixCAM2 turned on and on the same WiFi?',
+        'Make sure your phone is connected to the ELIOS Wi-Fi network in Settings',
         isError: true,
       );
     }
@@ -232,183 +205,12 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
 
   @override
   void dispose() {
-    // Stop the UDP listener if still active when leaving the screen.
-    ref.read(udpDiscoveryProvider.notifier).stopListening();
     _ip1.dispose();
     _ip2.dispose();
     _ip3.dispose();
     _ip4.dispose();
     _port.dispose();
-    _provSsid.dispose();
-    _provPass.dispose();
     super.dispose();
-  }
-
-  // ── QR Provisioning Dialog ──────────────────────────────────────
-  /// Validates the provisioning inputs, fetches the host device IP,
-  /// and displays a centered popup dialog containing the QrImageView.
-  Future<void> _showProvisioningQrDialog() async {
-    final ssid = _provSsid.text.trim();
-    final pass = _provPass.text.trim();
-
-    if (ssid.isEmpty || pass.isEmpty) {
-      _showSnack('Enter both SSID and Password to generate QR.', isError: true);
-      return;
-    }
-
-    // Fetch host device IP asynchronously.
-    // getBestLocalIp() filters out link-local (169.254.x.x) and USB
-    // interface addresses that NetworkInfo().getWifiIP() sometimes returns
-    // when the phone is connected to a Mac via USB cable.
-    String appIp;
-    try {
-      appIp = await getBestLocalIp();
-      debugPrint('[Provision] Using app_ip: $appIp');
-    } catch (e) {
-      debugPrint('[Provision] getBestLocalIp() failed: $e');
-      if (!mounted) return;
-      _showSnack('Could not determine device IP. Check Wi-Fi.', isError: true);
-      return;
-    }
-
-    if (appIp == '0.0.0.0') {
-      if (!mounted) return;
-      _showSnack('No valid network IP found. Connect to Wi-Fi first.', isError: true);
-      return;
-    }
-
-    // Parse port from the existing text controller.
-    final portValue = int.tryParse(_port.text.trim()) ?? 8080;
-
-    if (!mounted) return;
-
-    // Serialize to expanded JSON:
-    // {"ssid":"...","pass":"...","app_ip":"...","port":<int>}
-    final payload = serializeProvisioningPayload(
-      ssid: ssid,
-      password: pass,
-      appIp: appIp,
-      port: portValue,
-    );
-
-    showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) {
-        return Dialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // ── Title ──
-                  Text(
-                    'Scan to Provision',
-                    style: GoogleFonts.inter(
-                      color: textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Point ELIO\'s camera at this QR code to receive network credentials.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      color: textSecondary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // ── QR Code (white background for dark-mode safety) ──
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: cardBorder.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: QrImageView(
-                      data: payload,
-                      version: QrVersions.auto,
-                      size: 200,
-                      backgroundColor: Colors.white,
-                      eyeStyle: const QrEyeStyle(
-                        eyeShape: QrEyeShape.square,
-                        color: Color(0xFF1C2833),
-                      ),
-                      dataModuleStyle: const QrDataModuleStyle(
-                        dataModuleShape: QrDataModuleShape.square,
-                        color: Color(0xFF1C2833),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // ── Payload preview (SSID + app_ip:port) ──
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF4F7F5),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'SSID: $ssid  ·  $appIp:$portValue',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        color: textSecondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // ── Close Button (brand green) ──
-                  SizedBox(
-                    width: double.infinity,
-                    height: 46,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1D9E75),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'CLOSE',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -416,29 +218,16 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     // ── Populate IP/port from persisted config (once) ────────────
     final espConfigAsync = ref.watch(espConfigProvider);
     espConfigAsync.whenData(_populateControllersFromConfig);
-
-    // ── UDP Auto-Discovery Listener ──────────────────────────────
-    // When the UDP provider emits a discovered IP, auto-populate the
-    // four IP text controllers and notify the user.
-    ref.listen<String?>(udpDiscoveryProvider, (previous, next) {
-      if (next != null && previous == null) {
-        final parts = next.split('.');
-        if (parts.length == 4) {
-          _ip1.text = parts[0];
-          _ip2.text = parts[1];
-          _ip3.text = parts[2];
-          _ip4.text = parts[3];
-          _showSnack('ELIO Discovered at $next');
-        }
-      }
-    });
+    final cameraSource = espConfigAsync.valueOrNull?.cameraSource ?? CameraSource.maixCam2;
+    final deviceMode = cameraSource == CameraSource.device;
 
     final height = MediaQuery.of(context).size.height;
     final compact = height < 760;
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
     final batteryPercent = 62;
     final isCharging = false;
-    final robotStatus = ref.watch(robotStatusProvider).valueOrNull ?? 'Disconnected';
+    final robotStatus =
+        ref.watch(robotStatusProvider).valueOrNull ?? 'Disconnected';
 
     return Scaffold(
       backgroundColor: backgroundMain,
@@ -491,6 +280,25 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                       linkStatus: robotStatus,
                     ),
                     const SizedBox(height: 10),
+                    _CameraSourceCard(
+                      selected: cameraSource,
+                      onChanged: (source) => ref
+                          .read(espConfigProvider.notifier)
+                          .patch((c) => c.copyWith(cameraSource: source)),
+                      primaryColor: primaryColor,
+                      borderColor: cardBorder,
+                      textPrimary: textPrimary,
+                      textSecondary: textSecondary,
+                    ),
+                    const SizedBox(height: 10),
+                    _OfflineAiCard(
+                      primaryColor: primaryColor,
+                      borderColor: cardBorder,
+                      textPrimary: textPrimary,
+                      textSecondary: textSecondary,
+                    ),
+                    const SizedBox(height: 10),
+                    if (!deviceMode)
                     _GlassCard(
                       borderColor: cardBorder,
                       child: Column(
@@ -558,7 +366,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                           _buildPortField(),
                           const SizedBox(height: 5),
                           Text(
-                            'For MaixCAM2, check the IP on its LCD screen and use port 8080',
+                            "Connect your phone to the robot's ELIOS Wi-Fi network first, then tap Connect",
                             style: GoogleFonts.inter(
                               color: textSecondary,
                               fontSize: 11,
@@ -595,94 +403,9 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                       ),
                     ),
 
-                    // ── Wi-Fi Provisioning QR Section ────────
-                    const SizedBox(height: 10),
-                    _GlassCard(
-                      borderColor: cardBorder,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 30,
-                                height: 30,
-                                decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF1D9E75,
-                                  ).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(9),
-                                ),
-                                child: const Icon(
-                                  Icons.qr_code_2_rounded,
-                                  color: Color(0xFF1D9E75),
-                                  size: 18,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Wi-Fi Provisioning',
-                                      style: GoogleFonts.inter(
-                                        color: textPrimary,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 1),
-                                    Text(
-                                      'Share hotspot credentials via QR',
-                                      style: GoogleFonts.inter(
-                                        color: textSecondary,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          _FieldLabel(
-                            'SSID (Network Name)',
-                            color: textPrimary,
-                          ),
-                          const SizedBox(height: 5),
-                          _buildProvisioningTextField(
-                            controller: _provSsid,
-                            hint: 'e.g. iPhone-Hotspot',
-                            prefixIcon: Icons.wifi_rounded,
-                          ),
-                          const SizedBox(height: 10),
-                          _FieldLabel('Password', color: textPrimary),
-                          const SizedBox(height: 5),
-                          _buildProvisioningTextField(
-                            controller: _provPass,
-                            hint: 'Hotspot password',
-                            prefixIcon: Icons.lock_outline_rounded,
-                            obscure: true,
-                            suffixIcon: IconButton(
-                              icon: const Icon(
-                                Icons.qr_code_rounded,
-                                color: Color(0xFF1D9E75),
-                                size: 22,
-                              ),
-                              tooltip: 'Generate QR Code',
-                              onPressed: _showProvisioningQrDialog,
-                            ),
-                          ),
-
-                        ],
-                      ),
-                    ),
-
                     // ── Bottom action bar (inside the scroll view) ──
                     const SizedBox(height: 12),
-                    _buildBottomActions(),
+                    deviceMode ? _buildScanAction() : _buildBottomActions(),
                   ],
                 ),
               ),
@@ -711,6 +434,33 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
             border: Border.all(color: cardBorder.withValues(alpha: 0.7)),
           ),
           child: Center(child: child),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScanAction() {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: cardBorder.withValues(alpha: 0.34)),
+      ),
+      child: SizedBox(
+        height: 52,
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: _openDeviceScan,
+          icon: const Icon(Icons.photo_camera_rounded, size: 20),
+          label: const Text('MULAI SCAN'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            textStyle: GoogleFonts.inter(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.4),
+          ),
         ),
       ),
     );
@@ -897,57 +647,6 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
       ),
     );
   }
-
-  /// Builds a provisioning-specific text field that matches the card's design.
-  Widget _buildProvisioningTextField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData prefixIcon,
-    bool obscure = false,
-    Widget? suffixIcon,
-  }) {
-    return SizedBox(
-      height: 42,
-      child: TextField(
-        controller: controller,
-        obscureText: obscure,
-        style: TextStyle(
-          color: textPrimary,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: inputSurface,
-          isDense: true,
-          hintText: hint,
-          hintStyle: TextStyle(
-            color: textSecondary.withValues(alpha: 0.6),
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 14,
-          ),
-          prefixIcon: Icon(prefixIcon, color: textSecondary, size: 20),
-          suffixIcon: suffixIcon,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: cardBorder),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: cardBorder),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: primaryColor, width: 2),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _GlassCard extends StatelessWidget {
@@ -1065,23 +764,23 @@ class _RobotConnectionPanel extends StatelessWidget {
                     icon: linkStatus == 'Connected'
                         ? Icons.link_rounded
                         : linkStatus == 'Reconnecting...' ||
-                                linkStatus == 'Connecting...'
-                            ? Icons.sync_rounded
-                            : Icons.link_off_rounded,
+                              linkStatus == 'Connecting...'
+                        ? Icons.sync_rounded
+                        : Icons.link_off_rounded,
                     label: 'Status',
                     value: linkStatus == 'Connected'
                         ? 'Connected'
                         : linkStatus == 'Reconnecting...'
-                            ? 'Reconnecting'
-                            : linkStatus == 'Connecting...'
-                                ? 'Connecting'
-                                : 'Disconnected',
+                        ? 'Reconnecting'
+                        : linkStatus == 'Connecting...'
+                        ? 'Connecting'
+                        : 'Disconnected',
                     accent: linkStatus == 'Connected'
                         ? const Color(0xFF1D9E75)
                         : linkStatus == 'Reconnecting...' ||
-                                linkStatus == 'Connecting...'
-                            ? const Color(0xFFE67E22)
-                            : const Color(0xFFE74C3C),
+                              linkStatus == 'Connecting...'
+                        ? const Color(0xFFE67E22)
+                        : const Color(0xFFE74C3C),
                     borderColor: borderColor,
                     surfaceColor: inputSurface,
                   ),
@@ -1445,9 +1144,9 @@ class _ConfigSettingsSheet extends ConsumerWidget {
                         subtitle: 'Reconnect when ELIO is available again.',
                         value: espConfig.autoReconnect,
                         onChanged: (value) {
-                          ref.read(espConfigProvider.notifier).patch(
-                            (c) => c.copyWith(autoReconnect: value),
-                          );
+                          ref
+                              .read(espConfigProvider.notifier)
+                              .patch((c) => c.copyWith(autoReconnect: value));
                         },
                         primaryColor: primaryColor,
                         textPrimary: textPrimary,
@@ -1468,9 +1167,11 @@ class _ConfigSettingsSheet extends ConsumerWidget {
                         options: const ['480p', '720p'],
                         onChanged: (value) {
                           if (value == null) return;
-                          ref.read(espConfigProvider.notifier).patch(
-                            (c) => c.copyWith(resolutionPreset: value),
-                          );
+                          ref
+                              .read(espConfigProvider.notifier)
+                              .patch(
+                                (c) => c.copyWith(resolutionPreset: value),
+                              );
                         },
                         textPrimary: textPrimary,
                         textSecondary: textSecondary,
@@ -1481,9 +1182,9 @@ class _ConfigSettingsSheet extends ConsumerWidget {
                         subtitle: 'Display stream performance while viewing.',
                         value: espConfig.showFpsOverlay,
                         onChanged: (value) {
-                          ref.read(espConfigProvider.notifier).patch(
-                            (c) => c.copyWith(showFpsOverlay: value),
-                          );
+                          ref
+                              .read(espConfigProvider.notifier)
+                              .patch((c) => c.copyWith(showFpsOverlay: value));
                         },
                         primaryColor: primaryColor,
                         textPrimary: textPrimary,
@@ -1503,9 +1204,9 @@ class _ConfigSettingsSheet extends ConsumerWidget {
                         subtitle: 'Play UI and robot feedback sounds.',
                         value: appPrefs.soundEffects,
                         onChanged: (value) {
-                          ref.read(appPreferencesProvider.notifier).update(
-                            (p) => p.copyWith(soundEffects: value),
-                          );
+                          ref
+                              .read(appPreferencesProvider.notifier)
+                              .update((p) => p.copyWith(soundEffects: value));
                         },
                         primaryColor: primaryColor,
                         textPrimary: textPrimary,
@@ -1516,9 +1217,9 @@ class _ConfigSettingsSheet extends ConsumerWidget {
                         title: 'Master Volume',
                         value: appPrefs.masterVolume,
                         onChanged: (value) {
-                          ref.read(appPreferencesProvider.notifier).update(
-                            (p) => p.copyWith(masterVolume: value),
-                          );
+                          ref
+                              .read(appPreferencesProvider.notifier)
+                              .update((p) => p.copyWith(masterVolume: value));
                         },
                         primaryColor: primaryColor,
                         textPrimary: textPrimary,
@@ -1539,9 +1240,9 @@ class _ConfigSettingsSheet extends ConsumerWidget {
                         options: const ['Easy', 'Medium', 'Hard'],
                         onChanged: (value) {
                           if (value == null) return;
-                          ref.read(appPreferencesProvider.notifier).update(
-                            (p) => p.copyWith(quizDifficulty: value),
-                          );
+                          ref
+                              .read(appPreferencesProvider.notifier)
+                              .update((p) => p.copyWith(quizDifficulty: value));
                         },
                         textPrimary: textPrimary,
                         textSecondary: textSecondary,
@@ -1553,9 +1254,9 @@ class _ConfigSettingsSheet extends ConsumerWidget {
                         options: const ['30s', '60s', '90s', '120s'],
                         onChanged: (value) {
                           if (value == null) return;
-                          ref.read(appPreferencesProvider.notifier).update(
-                            (p) => p.copyWith(quizTimer: value),
-                          );
+                          ref
+                              .read(appPreferencesProvider.notifier)
+                              .update((p) => p.copyWith(quizTimer: value));
                         },
                         textPrimary: textPrimary,
                         textSecondary: textSecondary,
@@ -1566,9 +1267,9 @@ class _ConfigSettingsSheet extends ConsumerWidget {
                         subtitle: 'Let learners skip questions during quiz.',
                         value: appPrefs.skipAllowed,
                         onChanged: (value) {
-                          ref.read(appPreferencesProvider.notifier).update(
-                            (p) => p.copyWith(skipAllowed: value),
-                          );
+                          ref
+                              .read(appPreferencesProvider.notifier)
+                              .update((p) => p.copyWith(skipAllowed: value));
                         },
                         primaryColor: primaryColor,
                         textPrimary: textPrimary,
@@ -1668,7 +1369,6 @@ class _SettingsDivider extends StatelessWidget {
     );
   }
 }
-
 
 class _SettingsSwitchRow extends StatelessWidget {
   final String title;
@@ -1858,6 +1558,304 @@ class _FieldLabel extends StatelessWidget {
         fontWeight: FontWeight.w900,
         letterSpacing: 0.8,
       ),
+    );
+  }
+}
+
+/// "Sumber Kamera" card: pick the robot's MaixCAM2 or this device's camera.
+class _CameraSourceCard extends StatelessWidget {
+  const _CameraSourceCard({
+    required this.selected,
+    required this.onChanged,
+    required this.primaryColor,
+    required this.borderColor,
+    required this.textPrimary,
+    required this.textSecondary,
+  });
+
+  final CameraSource selected;
+  final ValueChanged<CameraSource> onChanged;
+  final Color primaryColor;
+  final Color borderColor;
+  final Color textPrimary;
+  final Color textSecondary;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      borderColor: borderColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _CardHeader(
+            icon: Icons.photo_camera_rounded,
+            title: 'Sumber Kamera',
+            subtitle: 'Pilih kamera untuk scan sampah',
+            primaryColor: primaryColor,
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+          ),
+          const SizedBox(height: 12),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _SourceOption(
+                    icon: Icons.videocam_rounded,
+                    title: 'MaixCAM2',
+                    description: 'Kamera robot lewat Wi-Fi ELIOS',
+                    selected: selected == CameraSource.maixCam2,
+                    onTap: () => onChanged(CameraSource.maixCam2),
+                    primaryColor: primaryColor,
+                    borderColor: borderColor,
+                    textPrimary: textPrimary,
+                    textSecondary: textSecondary,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _SourceOption(
+                    icon: Icons.smartphone_rounded,
+                    title: 'Kamera perangkat',
+                    description: 'Scan pakai kamera HP/laptop, tanpa robot',
+                    selected: selected == CameraSource.device,
+                    onTap: () => onChanged(CameraSource.device),
+                    primaryColor: primaryColor,
+                    borderColor: borderColor,
+                    textPrimary: textPrimary,
+                    textSecondary: textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SourceOption extends StatelessWidget {
+  const _SourceOption({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.selected,
+    required this.onTap,
+    required this.primaryColor,
+    required this.borderColor,
+    required this.textPrimary,
+    required this.textSecondary,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color primaryColor;
+  final Color borderColor;
+  final Color textPrimary;
+  final Color textSecondary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: Material(
+        color: selected ? primaryColor.withValues(alpha: 0.07) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: selected ? primaryColor : borderColor, width: selected ? 2 : 1),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, size: 22, color: selected ? primaryColor : textSecondary),
+                    const Spacer(),
+                    Icon(
+                      selected ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
+                      size: 20,
+                      color: selected ? primaryColor : textSecondary,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(title, style: GoogleFonts.inter(color: textPrimary, fontSize: 13, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 2),
+                Text(
+                  description,
+                  style: GoogleFonts.inter(color: textSecondary, fontSize: 11, height: 1.35, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shows whether the offline Gemma model is ready (device-camera mode).
+class _OfflineAiCard extends StatelessWidget {
+  const _OfflineAiCard({
+    required this.primaryColor,
+    required this.borderColor,
+    required this.textPrimary,
+    required this.textSecondary,
+  });
+
+  final Color primaryColor;
+  final Color borderColor;
+  final Color textPrimary;
+  final Color textSecondary;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      borderColor: borderColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _CardHeader(
+            icon: Icons.smart_toy_rounded,
+            title: 'AI Offline (Gemma 4 E2B)',
+            subtitle: 'Berjalan di perangkat · tidak butuh internet',
+            primaryColor: primaryColor,
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+          ),
+          const SizedBox(height: 12),
+          ValueListenableBuilder<GemmaProgress>(
+            valueListenable: GemmaQuizService.instance.progress,
+            builder: (context, p, _) {
+              final service = GemmaQuizService.instance;
+              const amber = Color(0xFFE67E22);
+              const red = Color(0xFFC62828);
+              final busy = p.status == GemmaStatus.installing || p.status == GemmaStatus.loading;
+              final (text, color) = switch (p.status) {
+                GemmaStatus.installing => ('Menyiapkan AI (sekali saja)… ${p.installPercent}%', amber),
+                GemmaStatus.loading => ('Memuat AI ke memori…', amber),
+                GemmaStatus.ready => ('Siap — AI sedang aktif', primaryColor),
+                GemmaStatus.error => (p.error ?? 'AI gagal disiapkan', red),
+                GemmaStatus.idle when service.isPrepared => ('Siap dipakai — tidak butuh internet', primaryColor),
+                GemmaStatus.idle => ('Belum disiapkan', textSecondary),
+              };
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(text, style: GoogleFonts.inter(color: textPrimary, fontSize: 12, fontWeight: FontWeight.w700)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (p.status == GemmaStatus.installing) ...[
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(99),
+                      child: LinearProgressIndicator(
+                        value: p.installPercent / 100,
+                        minHeight: 6,
+                        color: primaryColor,
+                        backgroundColor: primaryColor.withValues(alpha: 0.12),
+                      ),
+                    ),
+                  ],
+                  if (!busy && (!service.isPrepared || p.status == GemmaStatus.error)) ...[
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 44,
+                      child: OutlinedButton.icon(
+                        onPressed: () => service.prepare(),
+                        icon: Icon(p.status == GemmaStatus.error ? Icons.refresh_rounded : Icons.download_for_offline_rounded, size: 18),
+                        label: Text(p.status == GemmaStatus.error ? 'Coba lagi' : 'Siapkan AI offline'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: primaryColor,
+                          side: BorderSide(color: primaryColor),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          textStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Model AI sudah ikut terpasang bersama aplikasi. Di Android, persiapan pertama '
+            'menyalinnya ke penyimpanan (±2,4 GB, 1–3 menit, sekali saja). Tidak butuh internet.',
+            style: GoogleFonts.inter(color: textSecondary, fontSize: 11, height: 1.35, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardHeader extends StatelessWidget {
+  const _CardHeader({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.primaryColor,
+    required this.textPrimary,
+    required this.textSecondary,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color primaryColor;
+  final Color textPrimary;
+  final Color textSecondary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: primaryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Icon(icon, color: primaryColor, size: 18),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: GoogleFonts.inter(color: textPrimary, fontSize: 14, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 1),
+              Text(subtitle, style: GoogleFonts.inter(color: textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

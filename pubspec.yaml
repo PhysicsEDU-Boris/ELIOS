@@ -38,16 +38,25 @@ dependencies:
   tflite_flutter: 0.12.1
   image: ^4.0.0
   camera: 0.12.0+1
+  # The `camera` plugin has no macOS implementation; this provides the Mac
+  # webcam for the device-camera scan screen.
+  camera_macos: ^0.1.1
+  # Locates the copied Gemma model on Android to report copy progress.
+  path_provider: ^2.1.6
 
-  # Smart Provisioning (Added for Project ELIO Phase 1)
-  qr_flutter: ^4.1.0
-  network_info_plus: ^6.1.0
-  connectivity_plus: ^6.0.4
-  open_settings_plus: ^0.5.0
-  udp: ^5.0.3
+  # On-device Gemma inference for the auto-generated waste-sorting quiz
+  # (same API/model as the ELIO-SANDBOX prototype's GemmaService).
+  flutter_gemma: ^1.9.0
+  flutter_gemma_litertlm: ^1.8.2
+
+  # Voice playback for the quiz's AI Correction Assistant messages (same as
+  # the ELIO-SANDBOX prototype's TtsService).
+  flutter_tts: ^4.2.5
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
   firebase_auth_mocks: ^0.15.1
   fake_cloud_firestore: ^4.1.0+1
