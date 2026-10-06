@@ -5,6 +5,8 @@ import 'dart:ui' show Size;
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import 'frame_source/frame_source.dart' show CapturedFrame;
+
 class WebSocketService {
   factory WebSocketService() => _instance;
   WebSocketService._internal();
@@ -19,6 +21,8 @@ class WebSocketService {
       StreamController<List<Detection>>.broadcast();
   final StreamController<Size> _resolutionAckController =
       StreamController<Size>.broadcast();
+  final StreamController<CapturedFrame> _capturedFramesController =
+      StreamController<CapturedFrame>.broadcast();
   final ValueNotifier<String> connectionStatus = ValueNotifier('Disconnected');
 
   WebSocketChannel? _channel;
@@ -55,6 +59,7 @@ class WebSocketService {
   double get imageWidth => _imageWidth;
   double get imageHeight => _imageHeight;
   Stream<Size> get resolutionAcks => _resolutionAckController.stream;
+  Stream<CapturedFrame> get capturedFrames => _capturedFramesController.stream;
 
   void _emitStatus(String status) {
     if (_lastEmittedStatus == status) return;
@@ -355,24 +360,22 @@ class WebSocketService {
         }
       }
 
-      // --- Frame extraction (MaixCAM2 'image' or legacy 'frame') ---
-      if (decoded['image'] is String) {
-        final frame = base64Decode(decoded['image'] as String);
-        _recordFrame(frame);
-        _framesController.add(frame);
-      } else if (decoded['frame'] is String) {
-        final frame = base64Decode(decoded['frame'] as String);
-        _recordFrame(frame);
-        _framesController.add(frame);
+      // --- Image dimensions (if provided by MaixCAM2) ---
+      if (decoded['img_w'] is num) {
+        _imageWidth = (decoded['img_w'] as num).toDouble();
+      }
+      if (decoded['img_h'] is num) {
+        _imageHeight = (decoded['img_h'] as num).toDouble();
       }
 
       // --- MaixCAM2 detection coordinates ---
+      List<Detection>? currentDetections;
       if (decoded['detections'] is List) {
         final raw = decoded['detections'] as List;
-        final detections = <Detection>[];
+        currentDetections = <Detection>[];
         for (final item in raw) {
           if (item is! Map<String, dynamic>) continue;
-          detections.add(Detection(
+          currentDetections.add(Detection(
             x: (item['x'] as num?)?.toDouble() ?? 0.0,
             y: (item['y'] as num?)?.toDouble() ?? 0.0,
             w: (item['w'] as num?)?.toDouble() ?? 0.0,
@@ -381,15 +384,27 @@ class WebSocketService {
             score: (item['score'] as num?)?.toDouble() ?? 0.0,
           ));
         }
-        _detectionsController.add(detections);
+        _detectionsController.add(currentDetections);
       }
 
-      // --- Image dimensions (if provided by MaixCAM2) ---
-      if (decoded['img_w'] is num) {
-        _imageWidth = (decoded['img_w'] as num).toDouble();
+      // --- Frame extraction (MaixCAM2 'image' or legacy 'frame') ---
+      Uint8List? frameData;
+      if (decoded['image'] is String) {
+        frameData = base64Decode(decoded['image'] as String);
+      } else if (decoded['frame'] is String) {
+        frameData = base64Decode(decoded['frame'] as String);
       }
-      if (decoded['img_h'] is num) {
-        _imageHeight = (decoded['img_h'] as num).toDouble();
+      
+      if (frameData != null) {
+        _recordFrame(frameData);
+        _framesController.add(frameData);
+        _capturedFramesController.add(CapturedFrame(
+          bytes: frameData,
+          width: _imageWidth.toInt(),
+          height: _imageHeight.toInt(),
+          timestamp: DateTime.now(),
+          detections: currentDetections,
+        ));
       }
 
       // --- Connection status ---

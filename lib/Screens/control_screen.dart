@@ -19,6 +19,8 @@ import '../widgets/debug_phone_camera_sheet.dart';
 import '../widgets/desktop_viewport.dart';
 import '../widgets/segmentation_overlay_painter.dart';
 import '../widgets/waste_quiz_popup.dart';
+import '../services/frame_source/maix_cam_source.dart';
+import '../services/frame_source/frame_source.dart';
 
 class ControlScreen extends ConsumerStatefulWidget {
   const ControlScreen({super.key});
@@ -28,10 +30,10 @@ class ControlScreen extends ConsumerStatefulWidget {
 }
 
 class _ControlScreenState extends ConsumerState<ControlScreen> {
-  Uint8List? _currentFrame;
-  ProviderSubscription<AsyncValue<Uint8List>>? _frameSubscription;
+  final MaixCamSource _source = MaixCamSource();
+  CapturedFrame? _latestFrame;
+  StreamSubscription<CapturedFrame>? _frameSubscription;
   ProviderSubscription<AsyncValue<String>>? _statusSubscription;
-  StreamSubscription<List<Detection>>? _detectionsSubscription;
   late final RobotControlNotifier _robotNotifier;
   bool? _lastLoggedRobotControlsEnabled;
   int _frameCount = 0;
@@ -41,7 +43,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   DateTime? _lastFrameAt;
   int _lastFrameBytes = 0;
   bool _streamStartedForCurrentConnection = false;
-  List<Detection> _currentDetections = const [];
 
   static const Color textPrimary = Color(0xFF1C2833);
   static const Color textSecondary = Color(0xFF7F8C8D);
@@ -59,24 +60,29 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
     // Subscribe to robot frames outside of build to avoid re-registering
     // the listener on every rebuild.
-    _frameSubscription = ref.listenManual(robotFrameProvider, (_, next) {
-      if (next.hasValue && mounted) {
-        final frame = next.value!;
-        final now = DateTime.now();
+    _source.initialize();
+    _frameSubscription = _source.frames.listen((frame) {
+      if (!mounted) return;
+      final now = DateTime.now();
 
-        _frameCount++;
-        _fpsFrameCount++;
-        _lastFrameAt = now;
-        _lastFrameBytes = frame.length;
+      _frameCount++;
+      _fpsFrameCount++;
+      _lastFrameAt = now;
+      _lastFrameBytes = frame.bytes.length;
 
-        final elapsedMs = now.difference(_fpsWindowStart).inMilliseconds;
-        if (elapsedMs >= 1000) {
-          _streamFps = (_fpsFrameCount * 1000) / elapsedMs;
-          _fpsFrameCount = 0;
-          _fpsWindowStart = now;
-        }
+      final elapsedMs = now.difference(_fpsWindowStart).inMilliseconds;
+      if (elapsedMs >= 1000) {
+        _streamFps = (_fpsFrameCount * 1000) / elapsedMs;
+        _fpsFrameCount = 0;
+        _fpsWindowStart = now;
+      }
 
-        setState(() => _currentFrame = frame);
+      setState(() => _latestFrame = frame);
+      
+      // Auto-generated waste quiz: only fed by the real MaixCAM2 stream, the
+      // debug phone-camera path triggers it manually instead.
+      if (frame.detections != null && ref.read(debugQuizSourceProvider) == WasteQuizSource.maixCam2) {
+        ref.read(wasteQuizProvider.notifier).onDetections(frame.detections!);
       }
     });
     _statusSubscription = ref.listenManual(robotStatusProvider, (_, next) {
@@ -102,19 +108,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
         _streamStartedForCurrentConnection = false;
       }
     }, fireImmediately: true);
-
-    // Subscribe to MaixCAM2 detections stream.
-    _detectionsSubscription = WebSocketService().detections.listen((
-      detections,
-    ) {
-      if (!mounted) return;
-      setState(() => _currentDetections = detections);
-      // Auto-generated waste quiz: only fed by the real MaixCAM2 stream, the
-      // debug phone-camera path triggers it manually instead.
-      if (ref.read(debugQuizSourceProvider) == WasteQuizSource.maixCam2) {
-        ref.read(wasteQuizProvider.notifier).onDetections(detections);
-      }
-    });
 
     // Connect to the robot when the control screen opens.
     unawaited(_connectAndStartStream());
@@ -157,9 +150,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
   @override
   void dispose() {
-    _frameSubscription?.close();
+    _frameSubscription?.cancel();
     _statusSubscription?.close();
-    _detectionsSubscription?.cancel();
 
     // Disconnect when leaving the control screen.
     debugPrint('[Control] Stopping MaixCAM2 stream');
@@ -279,16 +271,16 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   _LandscapeCameraPanel(
-                                    currentFrame: _currentFrame,
+                                    currentFrame: _latestFrame?.bytes,
                                     statusLabel: statusLabel,
                                     streamFps: _streamFps,
                                     frameCount: _frameCount,
                                     lastFrameAt: _lastFrameAt,
                                     lastFrameBytes: _lastFrameBytes,
-                                    detections: _currentDetections,
+                                    detections: _latestFrame?.detections ?? const [],
                                     detectionImageSize: Size(
-                                      WebSocketService().imageWidth,
-                                      WebSocketService().imageHeight,
+                                      _latestFrame?.width.toDouble() ?? 0,
+                                      _latestFrame?.height.toDouble() ?? 0,
                                     ),
                                   ),
                                   const SizedBox(height: 12),

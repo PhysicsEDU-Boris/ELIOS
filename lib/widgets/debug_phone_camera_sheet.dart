@@ -1,9 +1,9 @@
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../providers/waste_quiz_provider.dart';
+import '../services/frame_source/phone_frame_source.dart';
 
 /// Debug-only stand-in for the MaixCAM2 camera: captures a still photo with
 /// the phone's own camera and feeds it straight to Gemma, so the popup-quiz
@@ -17,53 +17,32 @@ class DebugPhoneCameraSheet extends ConsumerStatefulWidget {
 }
 
 class _DebugPhoneCameraSheetState extends ConsumerState<DebugPhoneCameraSheet> {
-  CameraController? _controller;
-  String? _error;
+  final PhoneFrameSource _source = PhoneFrameSource();
   bool _capturing = false;
 
   @override
   void initState() {
     super.initState();
-    _init();
+    _source.addListener(_onSourceChanged);
+    _source.initialize();
   }
 
-  Future<void> _init() async {
-    try {
-      final cameras = await availableCameras();
-      if (cameras.isEmpty) {
-        if (mounted) setState(() => _error = 'No camera available on this device.');
-        return;
-      }
-      final controller = CameraController(
-        cameras.first,
-        ResolutionPreset.medium,
-        enableAudio: false,
-      );
-      await controller.initialize();
-      if (!mounted) {
-        await controller.dispose();
-        return;
-      }
-      setState(() => _controller = controller);
-    } catch (e) {
-      if (mounted) setState(() => _error = 'Camera unavailable: $e');
-    }
+  void _onSourceChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _capture() async {
-    final controller = _controller;
-    if (controller == null || _capturing) return;
+    if (!_source.isInitialized || _capturing) return;
     setState(() => _capturing = true);
     try {
-      final file = await controller.takePicture();
-      final bytes = await file.readAsBytes();
+      final frame = await _source.capture();
       if (!mounted) return;
-      ref
-          .read(wasteQuizProvider.notifier)
-          .onPhotoCaptured(bytes);
-      Navigator.of(context).pop();
+      if (frame != null) {
+        ref.read(wasteQuizProvider.notifier).onPhotoCaptured(frame.bytes);
+        Navigator.of(context).pop();
+      }
     } catch (e) {
-      if (mounted) setState(() => _error = 'Capture failed: $e');
+      // Error is handled/shown by the source itself if possible, or just ignored
     } finally {
       if (mounted) setState(() => _capturing = false);
     }
@@ -71,7 +50,8 @@ class _DebugPhoneCameraSheetState extends ConsumerState<DebugPhoneCameraSheet> {
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _source.removeListener(_onSourceChanged);
+    _source.dispose();
     super.dispose();
   }
 
@@ -109,29 +89,29 @@ class _DebugPhoneCameraSheetState extends ConsumerState<DebugPhoneCameraSheet> {
               aspectRatio: 4 / 3,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(14),
-                child: _error != null
+                child: _source.error != null
                     ? ColoredBox(
                         color: Colors.black12,
                         child: Center(
                           child: Padding(
                             padding: const EdgeInsets.all(16),
-                            child: Text(_error!, textAlign: TextAlign.center),
+                            child: Text(_source.error!, textAlign: TextAlign.center),
                           ),
                         ),
                       )
-                    : (_controller == null || !_controller!.value.isInitialized)
+                    : !_source.isInitialized
                         ? const ColoredBox(
                             color: Colors.black12,
                             child: Center(child: CircularProgressIndicator()),
                           )
-                        : CameraPreview(_controller!),
+                        : _source.buildPreview(),
               ),
             ),
             const SizedBox(height: 14),
             SizedBox(
               height: 52,
               child: FilledButton.icon(
-                onPressed: _controller == null || _capturing ? null : _capture,
+                onPressed: !_source.isInitialized || _capturing ? null : _capture,
                 icon: _capturing
                     ? const SizedBox(
                         width: 16,

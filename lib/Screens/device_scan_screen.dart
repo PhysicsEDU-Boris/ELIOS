@@ -1,14 +1,12 @@
 import 'dart:async';
 
-import 'package:camera/camera.dart';
-import 'package:camera_macos/camera_macos.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../providers/waste_quiz_provider.dart';
+import '../services/frame_source/phone_frame_source.dart';
 import '../services/gemma_quiz_service.dart';
 import '../theme/elio_learning_colors.dart';
 import '../widgets/desktop_viewport.dart';
@@ -26,15 +24,7 @@ class DeviceScanScreen extends ConsumerStatefulWidget {
 class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
   static const _sampleLabels = ['Botol plastik', 'Kulit pisang', 'Kaleng minuman', 'Baterai bekas'];
 
-  // The `camera` plugin has no macOS implementation, so the Mac webcam goes
-  // through camera_macos instead.
-  final bool _useMacCamera = !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
-  CameraMacOSController? _macController;
-
-  CameraController? _controller;
-  List<CameraDescription> _cameras = const [];
-  int _cameraIndex = 0;
-  String? _cameraError;
+  final PhoneFrameSource _source = PhoneFrameSource();
   bool _capturing = false;
   late final WasteQuizNotifier _quiz;
 
@@ -42,6 +32,8 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
   void initState() {
     super.initState();
     _quiz = ref.read(wasteQuizProvider.notifier);
+    _source.addListener(_onSourceChanged);
+    
     setDesktopLandscape(true);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
@@ -55,62 +47,20 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
     // No robot video here, so it's safe to load the model (with the image
     // encoder, since scans are photos) while the user frames the shot.
     GemmaQuizService.instance.warmUp(vision: true);
-    if (!_useMacCamera) _initCamera();
+    _source.initialize();
   }
 
-  bool get _cameraReady => _useMacCamera ? _macController != null : _controller != null;
-
-  Future<void> _initCamera() async {
-    try {
-      final cameras = await availableCameras();
-      if (cameras.isEmpty) throw CameraException('none', 'No camera found');
-      final back = cameras.indexWhere((c) => c.lensDirection == CameraLensDirection.back);
-      _cameras = cameras;
-      await _openCamera(back >= 0 ? back : 0);
-    } catch (e) {
-      if (mounted) {
-        setState(() => _cameraError = 'Kamera tidak tersedia di perangkat ini. '
-            'Gunakan "Uji tanpa kamera" untuk mencoba kuis AI.');
-      }
-    }
-  }
-
-  Future<void> _openCamera(int index) async {
-    final old = _controller;
-    setState(() {
-      _controller = null;
-      _cameraIndex = index;
-    });
-    await old?.dispose();
-    final controller = CameraController(_cameras[index], ResolutionPreset.medium, enableAudio: false);
-    try {
-      await controller.initialize();
-      if (!mounted) {
-        await controller.dispose();
-        return;
-      }
-      setState(() {
-        _controller = controller;
-        _cameraError = null;
-      });
-    } catch (e) {
-      await controller.dispose();
-      if (mounted) setState(() => _cameraError = 'Gagal membuka kamera: $e');
-    }
+  void _onSourceChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _capture() async {
-    if (!_cameraReady || _capturing) return;
+    if (!_source.isInitialized || _capturing) return;
     setState(() => _capturing = true);
     try {
-      final Uint8List? bytes;
-      if (_useMacCamera) {
-        bytes = (await _macController!.takePicture())?.bytes;
-      } else {
-        bytes = await (await _controller!.takePicture()).readAsBytes();
-      }
-      if (bytes == null) throw StateError('kamera tidak mengembalikan foto');
-      _quiz.onPhotoCaptured(bytes);
+      final frame = await _source.capture();
+      if (frame == null) throw StateError('kamera tidak mengembalikan foto');
+      _quiz.onPhotoCaptured(frame.bytes);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memotret: $e')));
@@ -122,8 +72,8 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
 
   @override
   void dispose() {
-    _controller?.dispose();
-    unawaited(_macController?.destroy());
+    _source.removeListener(_onSourceChanged);
+    _source.dispose();
     Future.microtask(_quiz.dismiss);
     unawaited(GemmaQuizService.instance.dispose());
     setDesktopLandscape(false);
@@ -136,30 +86,20 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
   /// and battery for Gemma) and comes back when the popup is closed or
   /// minimized.
   void _onQuizCoverChanged(bool covered) {
-    if (_useMacCamera) {
-      if (covered) {
-        final mac = _macController;
-        _macController = null;
-        unawaited(mac?.destroy());
-      }
-      return; // the view is rebuilt (and re-opened) when uncovered
+    if (covered) {
+      _source.pausePreview();
+    } else {
+      _source.resumePreview();
     }
-    final controller = _controller;
-    if (controller == null || !controller.value.isInitialized) return;
-    unawaited((covered ? controller.pausePreview() : controller.resumePreview())
-        .catchError((Object e) => debugPrint('camera pause/resume failed: $e')));
   }
 
   @override
   Widget build(BuildContext context) {
-    final quiz = ref.watch(wasteQuizProvider);
-    final quizCoversCamera = quiz.phase != WasteQuizPhase.idle && !quiz.minimized;
     ref.listen<WasteQuizUiState>(wasteQuizProvider, (prev, next) {
       final was = prev != null && prev.phase != WasteQuizPhase.idle && !prev.minimized;
       final now = next.phase != WasteQuizPhase.idle && !next.minimized;
       if (was != now) _onQuizCoverChanged(now);
     });
-    final controller = _controller;
     return Scaffold(
       backgroundColor: const Color(0xFF121413),
       body: Stack(
@@ -171,46 +111,8 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    if (_useMacCamera && quizCoversCamera)
-                      const ColoredBox(color: Color(0xFF121413))
-                    else if (_useMacCamera)
-                      CameraMacOSView(
-                        key: const ValueKey('elios-mac-camera'),
-                        fit: BoxFit.cover,
-                        cameraMode: CameraMacOSMode.photo,
-                        enableAudio: false,
-                        // camera_macos only maps "jpg" to JPEG; anything else
-                        // falls back to TIFF, which LiteRT-LM can't decode.
-                        pictureFormat: PictureFormat.jpg,
-                        resolution: PictureResolution.medium,
-                        onCameraInizialized: (c) {
-                          if (mounted) setState(() => _macController = c);
-                        },
-                        onCameraLoading: (error) => Center(
-                          child: error == null
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : Padding(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Text(
-                                    'Kamera Mac tidak bisa dibuka ($error). Izinkan akses kamera di '
-                                    'System Settings → Privacy & Security → Camera, atau pakai "Uji tanpa kamera".',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                        ),
-                      )
-                    else if (controller != null && controller.value.isInitialized)
-                      ClipRect(
-                        child: FittedBox(
-                          fit: BoxFit.cover,
-                          child: SizedBox(
-                            width: controller.value.previewSize?.height ?? 640,
-                            height: controller.value.previewSize?.width ?? 480,
-                            child: CameraPreview(controller),
-                          ),
-                        ),
-                      )
+                    if (_source.isInitialized && _source.error == null)
+                      _source.buildPreview()
                     else
                       const DecoratedBox(
                         decoration: BoxDecoration(
@@ -222,19 +124,17 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
                         ),
                       ),
                     Center(
-                      child: _cameraError != null
+                      child: _source.error != null
                           ? Padding(
                               padding: const EdgeInsets.all(24),
                               child: Text(
-                                _cameraError!,
+                                _source.error!,
                                 textAlign: TextAlign.center,
                                 style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
                               ),
                             )
-                          : !_cameraReady
-                              ? (_useMacCamera
-                                  ? const SizedBox.shrink() // camera_macos shows its own loading/error
-                                  : const CircularProgressIndicator(color: Colors.white))
+                          : !_source.isInitialized
+                              ? const CircularProgressIndicator(color: Colors.white)
                               : const IgnorePointer(
                                   child: SizedBox(width: 260, height: 200, child: CustomPaint(painter: _ViewfinderPainter())),
                                 ),
@@ -257,7 +157,7 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
                         ),
                       ),
                     ),
-                    if (_cameraError == null && _cameraReady)
+                    if (_source.error == null && _source.isInitialized)
                       Positioned(
                         left: 0,
                         right: 0,
@@ -289,24 +189,23 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
                             ),
                             const SizedBox(height: 14),
                             _ShutterButton(
-                              enabled: _cameraReady && !_capturing,
+                              enabled: _source.isInitialized && !_capturing,
                               busy: _capturing,
                               onTap: _capture,
                             ),
                             const SizedBox(height: 8),
                             Text('Scan & Buat Kuis', style: GoogleFonts.inter(color: elioPrimary, fontSize: 12, fontWeight: FontWeight.w800)),
                             const SizedBox(height: 12),
-                            if (_cameras.length > 1)
-                              OutlinedButton.icon(
-                                onPressed: controller == null ? null : () => _openCamera((_cameraIndex + 1) % _cameras.length),
-                                icon: const Icon(Icons.cameraswitch_rounded, size: 16),
-                                label: const Text('Ganti kamera'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: elioMuted,
-                                  visualDensity: VisualDensity.compact,
-                                  side: const BorderSide(color: elioOutlineVariant),
-                                ),
+                            OutlinedButton.icon(
+                              onPressed: !_source.isInitialized ? null : _source.switchCamera,
+                              icon: const Icon(Icons.cameraswitch_rounded, size: 16),
+                              label: const Text('Ganti kamera'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: elioMuted,
+                                visualDensity: VisualDensity.compact,
+                                side: const BorderSide(color: elioOutlineVariant),
                               ),
+                            ),
                             PopupMenuButton<String>(
                               tooltip: 'Uji kuis AI tanpa kamera',
                               onSelected: _quiz.startForLabel,
