@@ -26,7 +26,9 @@ folder. The keys are already on the old remote.
 
 ## Consequences
 
-- Every commit hash changes in the pushed history. The old-to-new map is kept
-  outside the repo and used to update `CHANGELOG.md` and the Notion plan.
+- Every commit hash changed when the history was rewritten (hashes updated
+  after the history rewrite on 2026-10-08). The old-to-new map is kept
+  outside the repo and was used to update `CHANGELOG.md` and this record;
+  it still needs to be applied to the Notion plan.
 - Each clone needs the real Firebase files from the Firebase console
   (README "Firebase setup") and `git config core.hooksPath .githooks`.
