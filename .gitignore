@@ -80,8 +80,6 @@ key.properties
 /models/
 assets/models/*.litertlm
 assets/models/*.tflite
-robot-elio.glb
-assets/models/robot-elio.glb
 
 # Local agent and tooling state
 .claude/
