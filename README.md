@@ -1,81 +1,69 @@
-<div align="center">
+# ELIOS
 
-# 🤖 ELIO
-### Smart Waste Sorting Robot — Mobile Controller App
+ELIOS is a waste-sorting robot app for physics and environmental education.
+The Flutter app reads a camera (the phone camera or a MaixCAM2 camera robot,
+with an ESP32 for motion), finds the waste item, asks Gemma once on-device
+through LiteRT-LM, and shows a quiz about it while the camera keeps running.
 
-![Flutter](https://img.shields.io/badge/Flutter-3.41.7-02569B?style=flat&logo=flutter)
-![Firebase](https://img.shields.io/badge/Firebase-Connected-FFCA28?style=flat&logo=firebase)
-![Android](https://img.shields.io/badge/Android-API%2036-3DDC84?style=flat&logo=android)
-![Dart](https://img.shields.io/badge/Dart-3.11.5-0175C2?style=flat&logo=dart)
-![Status](https://img.shields.io/badge/Status-In%20Development-orange?style=flat)
+Waste categories: organik, anorganik, B3 (hazardous) and residu.
 
-*A Flutter mobile app to control and monitor the ELIO waste sorting robot via WiFi and MQTT*
+## Plan and design
 
-</div>
+- Plan and milestones (M0 to M7): [Notion: ELIOS](https://app.notion.com/p/ELIOS-3f29675ed4f3800abef3fbb7daefe405)
+- Architecture, ERD and pipeline charts 1 to 7: [Figma board, node 74:130](https://www.figma.com/design/J2jSbARJSyJCStNFeWkWDj/?node-id=74-130)
+- How the charts map to milestones: [`docs/pipeline/README.md`](docs/pipeline/README.md)
+- Decisions: [`docs/decisions/`](docs/decisions/)
+- Changes: [`CHANGELOG.md`](CHANGELOG.md)
 
----
+## Gemma model
 
-## 📱 About ELIO
+The model is about 2.59 GB and is **never committed** (`*.litertlm` is in
+`.gitignore`). The app loads it from:
 
-ELIO is an AI-powered waste sorting robot that uses **YOLOv object segmentation** to classify waste into three categories:
-
-| Category | Description |
-|---|---|
-| 🌿 Organic | Food waste, plant material |
-| ♻️ Inorganic | Plastic, metal, glass, paper |
-| ⚠️ Hazardous | Batteries, chemicals, medical waste |
-
-This mobile app serves as the **remote controller and monitoring interface** for the ELIO robot, connecting via WiFi and MQTT protocol to an **ESP32-CAM** module.
-
----
-
-## ✨ Features
-
-- 🔐 **Authentication** — Google Sign-In, Email/Password, Guest mode
-- 📚 **E-Learning** — Waste type education and management guides
-- 🤖 **Robot Control** — D-pad controls via MQTT
-- 📷 **Live Camera** — Real-time MJPEG stream from ESP32-CAM
-- 🧠 **AI Detection** — YOLOv segmentation overlay on camera feed
-- ⚙️ **ESP32 Config** — WiFi and MQTT broker configuration
-
----
-
-## 🗺️ Development Roadmap
-Phase 1 — Splash Screen          ✅ Complete
-Phase 2 — Authentication         🔄 In Progress
-Phase 3 — Home + Navigation      ⬜ Todo
-Phase 4 — E-Learning Screen      ⬜ Todo
-Phase 5 — ESP32-CAM Config       ⬜ Todo
-Phase 6 — D-Pad + Camera         ⬜ Todo
-
----
-
-## Firebase Environment Configuration
-
-Firebase initialization is environment-variable driven to avoid storing hardcoded config values in source files.
-
-### Files
-
-- `.env.example` (committed template)
-- `.env.dev` (local development values)
-- `.env.prod` (local/CI production values)
-
-### Setup
-
-1. Copy `.env.example` to `.env.dev` and/or `.env.prod`.
-2. Fill in Firebase values.
-3. Run the app with an environment selector:
-
-```bash
-# Default (dev)
-flutter run
-
-# Explicit prod
-flutter run --dart-define=ELIO_ENV=prod
+```
+assets/models/gemma-4-E2B-it.litertlm
 ```
 
-### Notes
+(see `GemmaQuizService.modelFileName` in `lib/services/gemma_quiz_service.dart`).
+Copy your local copy of the model to that path before building, for example:
 
-- `.env` files are ignored by git except `.env.example`.
-- Firebase is initialized from `lib/firebase_options_loader.dart`.
-- Missing required Firebase keys fail fast at startup with a clear error.
+```bash
+cp /path/to/gemma-4-E2B-it.litertlm assets/models/
+```
+
+## Run on macOS
+
+Requirements: Flutter stable with macOS desktop enabled, Xcode, the Gemma model
+(above) and the Firebase files (below, at least `.env.dev` and
+`macos/Runner/GoogleService-Info.plist`).
+
+```bash
+git config core.hooksPath .githooks   # once per clone, enables the secret check
+flutter pub get
+flutter run -d macos
+
+# Tests
+flutter test                                                   # unit and widget tests
+flutter test integration_test/gemma_offline_test.dart -d macos # real Gemma, needs the model
+flutter analyze
+```
+
+## Firebase setup
+
+Real Firebase config files hold API keys and are **never committed**. They are
+listed in `.gitignore`. Each developer downloads their own copies.
+
+| File | Used by | How to get it |
+|---|---|---|
+| `.env.dev`, `.env.prod` | Web, Android fallback | Copy `.env.example` and fill in the values from Firebase console → Project settings → Your apps → Web app → SDK setup and configuration |
+| `.env.android.dev`, `.env.android.prod` | Android | Same as above, using the Android app values |
+| `android/app/google-services.json` | Android Gradle plugin | Firebase console → Project settings → Your apps → Android app (`com.boris.elio`) → download `google-services.json`. Template: `android/app/google-services.json.example` |
+| `ios/Runner/GoogleService-Info.plist` | iOS | Firebase console → Your apps → iOS app (`com.boris.elio`) → download `GoogleService-Info.plist` |
+| `macos/Runner/GoogleService-Info.plist` | macOS | Same file as iOS, copied into `macos/Runner/` |
+| `lib/firebase_options.dart` | Not used today | Only if you run `flutterfire configure`. Template: `lib/firebase_options.dart.example` |
+
+The app picks the environment with `--dart-define=ELIO_ENV=dev|prod` (default
+`dev`). Missing required keys fail fast at startup with a clear error.
+
+Before pushing, the pre-push hook runs `scripts/check-secrets.sh`. Enable it once
+per clone with `git config core.hooksPath .githooks`.
