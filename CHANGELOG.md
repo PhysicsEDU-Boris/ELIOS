@@ -12,8 +12,17 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- M0: stage 2 proven on the real model (macOS, Debug build), on
+  `feature/live-scan` through PR #2. Includes a real timing table.
+  `stopGeneration` stops decoding 2–38 ms after a cancel over 72 trials;
+  a cancel during prefill takes effect only when prefill ends (known
+  limit); an earlier 15-minute stall was the Mac sleeping (test
+  environment). See decision 0003. The BUSY and user-request slot rules
+  hold. Full `flutter test` passes except the 2 known stale widget tests.
+  The stage 2 commit is documented, not split (0004); M0 findings are in
+  0005.
 - Stage 2: single Gemma slot, streaming and cancellation (`5289c8b`).
-  Tested with a mock only. Real proof is milestone M0.
+  Tested with a mock only at the time. Real proof is milestone M0 (above).
 - Stage 1: `FrameSource` interface with `PhoneFrameSource` and
   `MaixCamSource` (`46eb5cc`). Analyze is clean and the macOS build works.
   Not run on a phone or a real robot yet.
