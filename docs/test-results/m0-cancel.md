@@ -102,7 +102,82 @@ cancel landed**:
 
 The cause is that identify's first-token time drifts by 0.2–1.5 s from
 one request to the next, while there is only a ~0.6 s window to cancel in.
-The limit was not loosened. How to make M0.3 reliable is an open decision.
+The limit was not loosened. The retry method below was added in answer.
+
+### M0.3 with retry (version 4, 2026-10-09, 01:29–01:58 WIB)
+
+**Method.** One run makes at most 3 cancel attempts. Each attempt starts an
+identify, cancels it 100 ms after the expected first token, then runs one
+uncancelled identify (the slot-free check). The expected first token and
+the full reply length come from the most recent uncancelled warm identify:
+the control for attempt 1, then each attempt's follow-up identify. Each
+attempt is classified from the service's own log, in this order:
+
+1. No token before the cancel → **inconclusive** (landed before the first token).
+2. The stream had closed at or before the cancel → **inconclusive** (the reply had finished).
+3. The stream was open at the cancel but closed more than 150 ms after it →
+   **fail at once, no retry** (landed mid-reply and did not stop).
+4. Closed within 150 ms, but the reply already had full length →
+   **inconclusive** (nothing was left to cut; run 2 above).
+5. Otherwise **conclusive**, and the remaining checks run unchanged: no item
+   returned, fewer characters than a full reply, next identify not busy and
+   a phone.
+
+If all 3 attempts are inconclusive, the run fails as inconclusive. The
+150 ms limit and the other checks are unchanged.
+
+**Results, 5 runs of the whole file in a row:**
+
+| Run | M0.3 attempts (cancel landed, chars, stream closed after cancel) | Inconclusive used | M0.3 | M0.4 | M0.5a | M0.5b |
+|---|---|---|---|---|---|---|
+| 1 | 1: 103 ms after first token, 16/76, 13 ms, mid-reply | 0 | **passed** | passed (2–20 ms) | passed | passed |
+| 2 | 1: 754 ms after first token, reply had finished 179 ms before the cancel → inconclusive. 2: 230 ms after, 35/86, 21 ms, mid-reply | 1 | **passed** | **failed: native stall** (see below) | failed (after the stall) | failed (after the stall) |
+| 3 | 1: 213 ms after, 37/79, 20 ms, mid-reply | 0 | **passed** | passed (2–27 ms) | passed | passed |
+| 4 | 1: 267 ms after, 37/79, 6 ms, mid-reply | 0 | **passed** | passed (10–16 ms) | passed | passed |
+| 5 | 1: before the first token → inconclusive. 2: 526 ms after, 77/76, 25 ms, full length → inconclusive. 3: before the first token → inconclusive | 3 | **failed: inconclusive** | passed (2–24 ms) | passed | passed |
+
+- **No cancel that landed mid-reply ever failed to stop.** The 4 mid-reply
+  M0.3 cancels closed the stream 6–21 ms after the cancel. Every M0.4 trial
+  in this batch closed within 2–27 ms, and every M0.5b scan within 17–27 ms.
+- **The 100 ms offset landed mid-reply in 4 of 8 attempts (50%).** The
+  earlier 250 ms offset landed mid-reply in 10 of 12 (83%), counted the same
+  way over versions 2, final, slot and the 150 ms re-runs. The drift in
+  first-token time (actual landing ranged from before the first token to
+  754 ms after it) is bigger than the offset. 100 ms mostly trades "reply
+  already finished" misses for "before the first token" misses.
+
+### Two new observations from this batch (no change made)
+
+1. **A native stall after a cancel (run 2).** M0.4 trial 2's cancel itself
+   worked (164 chars, stream closed 17 ms after cancel). But the very next,
+   uncancelled request then decoded at about 0.1 chunks per second. The
+   plugin logged `prefill 282ms + decode 900407ms over 48 chunks`, so about
+   **15 minutes** passed before that stream closed (normal is about 30–43
+   chunks per second). The service's own 120 s timeout, its
+   `stopGeneration` call and the test's 5-minute timeout were all logged
+   together just before the stream ended. So the Dart side may have been
+   blocked too; the log has no timestamps to tell. M0.5a and M0.5b in that
+   run then failed only because they started on top of the leftover work.
+   - **Context:** the Mac had rebooted about 28 minutes earlier, and Spotlight
+     was re-indexing at about 97% CPU (load average about 11 on 8 cores).
+     The same Spotlight load continued through run 3, which had no stall
+     (slowest decode 41 chunks per second).
+   - **Count:** 1 stall in 57 M0.4 trials so far, the first one seen. The
+     same run also showed slow episodes before the stall: a follow-up
+     identify had its first token at 11.8 s, and M0.4's control was slow.
+   - **Cause:** unknown, either the cancel or the system load.
+2. **A cancel during prefill only takes effect when prefill ends (run 5).**
+   Prefill is the model reading the prompt, and for identify it includes
+   encoding the photo. Twice the cancel fired before the first token. Both
+   times the plugin reported `generation total: 3738ms (no chunks emitted)`
+   and `9522ms (no chunks emitted)`, so the stream closed **379 ms** and
+   **6057 ms** after the cancel, at the end of prefill. The service
+   released the slot within 2–4 ms anyway. The plugin then made the next
+   request wait for the stopped one, so it started 376 ms and 6073 ms after
+   release. The 6 s case was during a slow episode: the next identify's
+   prefill took 13.5 s. In short: cancelling a request that is still
+   decoding is fast, but cancelling one still in prefill frees the slot at
+   once while the engine stays busy until prefill ends.
 
 ## M0.4: delay between cancel and the model being idle
 
@@ -185,6 +260,11 @@ case is 38 ms.
 
 Outside the repo, in `~/GITHUB/ELIO/elios-m0-logs/`:
 
-- `cancel-final-{1,2,3}.log`: the committed test version (the results above)
+- `retry-{1,2,3,4,5}.log` and `retry-load-samples.log`: version 4, the
+  committed test with retry (the "M0.3 with retry" section and the two
+  new observations)
+- `fix1-{1,2,3}.log`: the 150 ms re-runs
+- `slot-{1,2,3}.log`: the M0.5 runs (with M0.3 and M0.4 repeated)
+- `cancel-final-{1,2,3}.log`: the tables in the M0.3 and M0.4 sections above
 - `cancel-v2-{1,2,3}.log`: version 2 (M0.3 passed 3/3, M0.4 failed once on 5 options)
 - `cancel-v1-{1,2,3}.log`: version 1 (M0.3 inconclusive because of timing)
