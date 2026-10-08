@@ -116,7 +116,10 @@ void main() {
       expect(cut.at, greaterThan(cancelAt), reason: 'inconclusive: identify had already finished before cancel, re-run');
       expect(cancelled.item, isNull, reason: 'a cancelled identify must not return an item');
       expect(cut.chars, lessThan(full.chars), reason: 'tokens did not stop: cancelled stream reached full length');
-      expect(cut.at - cancelAt, lessThanOrEqualTo(1000), reason: 'stream still open 1s after cancel');
+      // An identify only streams ~0.6s after its first token, so a cancel that
+      // did nothing would still end ~300ms later; 150ms tells the two apart
+      // (observed 6-25ms when the cancel works).
+      expect(cut.at - cancelAt, lessThanOrEqualTo(150), reason: 'stream still open 150ms after cancel');
       expect(next.failure, isNot('busy'), reason: 'slot still busy after cancel');
       expect(_isPhone(next.item), isTrue, reason: 'next identify: ${next.item} / ${next.failure}');
     } finally {
@@ -139,11 +142,17 @@ void main() {
 
       // Control: one full, uncancelled generation, for its timing and length
       // only (first attempt, in case it retries). Whether it parses is a
-      // content question, not a cancel one, so it is not asserted.
+      // content question, not a cancel one, so it is not asserted; that the
+      // first attempt produced real text is: either it parsed (a question
+      // can't be empty) or the service logged its trimmed text as unparseable.
+      const rejectedPrefix = 'unparseable question (attempt 1): ';
       final c0 = _closed.length;
-      await ask();
+      final l0 = _serviceLines.length;
+      final parsed = await ask();
       final full = (await _waitClosed(c0, 1)).first;
-      expect(full.chars, greaterThan(0), reason: 'control generation produced no text');
+      final rejected = _serviceLines.skip(l0).map((l) => l.text).where((t) => t.contains(rejectedPrefix));
+      final firstText = rejected.isNotEmpty ? rejected.first.split(rejectedPrefix).last : parsed?.question ?? '';
+      expect(firstText.trim(), isNotEmpty, reason: 'control generation produced no text (empty or whitespace only)');
       debugPrint('[cancel-test] M0.4 control: ${full.chars} chars, first token ${full.firstTokenMs}ms, '
           'total ${full.totalMs}ms');
 
