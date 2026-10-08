@@ -82,46 +82,73 @@ void main() {
       expect(await service.ensureReady(vision: true), isTrue, reason: '${service.progress.value.error}');
 
       // Control: the first identify after load is ~0.8s slower (cold), so time
-      // the cancel from a second, warm one. Identify streams for only ~0.6s
-      // after its first token; 250ms in lands mid-stream.
+      // the cancel from a second, warm one.
       final c0 = _closed.length;
       await service.identifyItem(photo);
       final control = await service.identifyItem(photo);
-      final full = (await _waitClosed(c0, 2)).last;
+      var ref = (await _waitClosed(c0, 2)).last; // latest uncancelled warm identify
       expect(_isPhone(control.item), isTrue, reason: 'control identify: ${control.item} / ${control.failure}');
+      debugPrint('[cancel-test] M0.3 control: ${ref.chars} chars, first token ${ref.firstTokenMs}ms, '
+          'total ${ref.totalMs}ms');
 
-      final c1 = _closed.length;
-      final pending = service.identifyItem(photo);
-      await Future<void>.delayed(Duration(milliseconds: full.firstTokenMs + 250));
-      final cancelAt = _clock.elapsedMilliseconds;
-      service.cancel();
-      final cancelled = await pending;
-      final releasedAt = _clock.elapsedMilliseconds;
+      // Identify streams for only ~0.6s after its first token, and its first
+      // token drifts 0.2-1.5s between requests, so a cancel can land outside
+      // the reply. Those attempts prove nothing either way and are retried
+      // (at most 3 attempts); a cancel that lands mid-reply is judged at once.
+      const attempts = 3;
+      var inconclusive = 0;
+      for (var attempt = 1; attempt <= attempts; attempt++) {
+        final c1 = _closed.length;
+        final pending = service.identifyItem(photo);
+        await Future<void>.delayed(Duration(milliseconds: ref.firstTokenMs + 100));
+        final cancelAt = _clock.elapsedMilliseconds;
+        service.cancel();
+        final cancelled = await pending;
+        final releasedAt = _clock.elapsedMilliseconds;
 
-      // Slot must be free right away: a new scan request is not rejected as busy.
-      final next = await service.identifyItem(photo);
-      final closed = await _waitClosed(c1, 2);
-      final cut = closed[0], after = closed[1];
+        // Slot must be free right away: a new scan request is not rejected as busy.
+        final next = await service.identifyItem(photo);
+        final closed = await _waitClosed(c1, 2);
+        final cut = closed[0], after = closed[1];
 
-      debugPrint('[cancel-test] M0.3 control: ${full.chars} chars, first token ${full.firstTokenMs}ms, '
-          'total ${full.totalMs}ms');
-      debugPrint('[cancel-test] M0.3 cancelled: ${cut.chars} chars, first token at '
-          '${cut.firstTokenAt == null ? 'none' : '${cut.firstTokenAt! - cancelAt}ms vs cancel'}, '
-          'stream closed ${cut.at - cancelAt}ms after cancel, caller released ${releasedAt - cancelAt}ms after cancel');
-      debugPrint('[cancel-test] M0.3 next identify: item=${next.item} failure=${next.failure}, '
-          'first token ${after.firstTokenMs}ms, started ${after.startedAt - releasedAt}ms after release');
+        final String? outside;
+        if (cut.firstTokenAt == null || cut.firstTokenAt! >= cancelAt) {
+          outside = 'before the first token';
+        } else if (cut.at <= cancelAt) {
+          outside = 'after the reply had finished';
+        } else {
+          // Landed mid-reply: judged now, no retry.
+          // An identify only streams ~0.6s after its first token, so a cancel that
+          // did nothing would still end ~300ms later; 150ms tells the two apart
+          // (observed 6-25ms when the cancel works).
+          expect(cut.at - cancelAt, lessThanOrEqualTo(150),
+              reason: 'attempt $attempt: cancel landed mid-reply and the stream was still open 150ms later');
+          outside = cut.chars >= ref.chars ? 'after the reply was complete (full length, nothing left to cut)' : null;
+        }
 
-      expect(cut.firstTokenAt, isNotNull, reason: 'inconclusive: no token before cancel, re-run');
-      expect(cut.firstTokenAt! < cancelAt, isTrue, reason: 'inconclusive: cancel landed before the first token, re-run');
-      expect(cut.at, greaterThan(cancelAt), reason: 'inconclusive: identify had already finished before cancel, re-run');
-      expect(cancelled.item, isNull, reason: 'a cancelled identify must not return an item');
-      expect(cut.chars, lessThan(full.chars), reason: 'tokens did not stop: cancelled stream reached full length');
-      // An identify only streams ~0.6s after its first token, so a cancel that
-      // did nothing would still end ~300ms later; 150ms tells the two apart
-      // (observed 6-25ms when the cancel works).
-      expect(cut.at - cancelAt, lessThanOrEqualTo(150), reason: 'stream still open 150ms after cancel');
-      expect(next.failure, isNot('busy'), reason: 'slot still busy after cancel');
-      expect(_isPhone(next.item), isTrue, reason: 'next identify: ${next.item} / ${next.failure}');
+        debugPrint('[cancel-test] M0.3 attempt $attempt/$attempts: cancel '
+            '${cut.firstTokenAt == null ? 'with no token yet' : '${cancelAt - cut.firstTokenAt!}ms after the first token'}, '
+            '${cut.chars}/${ref.chars} chars, stream closed ${cut.at - cancelAt}ms after cancel, '
+            'caller released ${releasedAt - cancelAt}ms after cancel; '
+            '${outside == null ? 'landed mid-reply' : 'inconclusive: landed $outside'}');
+        debugPrint('[cancel-test] M0.3 next identify: item=${next.item} failure=${next.failure}, '
+            'first token ${after.firstTokenMs}ms, started ${after.startedAt - releasedAt}ms after release');
+
+        if (outside != null) {
+          inconclusive++;
+          ref = after; // time the next attempt from the newest warm identify
+          continue;
+        }
+
+        debugPrint('[cancel-test] M0.3 result: conclusive on attempt $attempt, inconclusive attempts used: $inconclusive');
+        expect(cancelled.item, isNull, reason: 'a cancelled identify must not return an item');
+        expect(cut.chars, lessThan(ref.chars), reason: 'tokens did not stop: cancelled stream reached full length');
+        expect(next.failure, isNot('busy'), reason: 'slot still busy after cancel');
+        expect(_isPhone(next.item), isTrue, reason: 'next identify: ${next.item} / ${next.failure}');
+        return;
+      }
+      debugPrint('[cancel-test] M0.3 result: inconclusive, all $attempts attempts landed outside the reply');
+      fail('inconclusive: all $attempts cancels landed outside the reply');
     } finally {
       restore();
       await service.dispose();
