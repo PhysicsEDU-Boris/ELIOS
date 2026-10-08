@@ -1,4 +1,5 @@
-// Real (no mock) cancel tests for the single Gemma slot: M0.3 and M0.4.
+// Real (no mock) cancel and slot-rule tests for the single Gemma slot:
+// M0.3, M0.4 (cancel) and M0.5 (BUSY, user request cancels a scan).
 // Run on a dev machine:
 //   flutter test integration_test/gemma_cancel_test.dart -d macos
 //
@@ -22,6 +23,7 @@ import 'fixtures/phone_jpeg.dart';
 
 final _clock = Stopwatch()..start();
 final _closed = <_Closed>[];
+final _serviceLines = <({int at, String text})>[];
 final _closedLine =
     RegExp(r'\[GemmaQuizService\] generated (\d+) chars \(first token: (\d+)ms, total: (\d+)ms\)');
 
@@ -39,6 +41,9 @@ class _Closed {
 VoidCallback _captureLogs() {
   final original = debugPrint;
   debugPrint = (String? message, {int? wrapWidth}) {
+    if (message != null && message.startsWith('[GemmaQuizService]')) {
+      _serviceLines.add((at: _clock.elapsedMilliseconds, text: message));
+    }
     final m = message == null ? null : _closedLine.firstMatch(message);
     if (m != null) {
       _closed.add(_Closed(_clock.elapsedMilliseconds, int.parse(m[1]!), int.parse(m[2]!), int.parse(m[3]!)));
@@ -138,7 +143,7 @@ void main() {
       final c0 = _closed.length;
       await ask();
       final full = (await _waitClosed(c0, 1)).first;
-      expect(full.chars, greaterThan(0), reason: 'control generation produced no tokens');
+      expect(full.chars, greaterThan(0), reason: 'control generation produced no text');
       debugPrint('[cancel-test] M0.4 control: ${full.chars} chars, first token ${full.firstTokenMs}ms, '
           'total ${full.totalMs}ms');
 
@@ -171,8 +176,106 @@ void main() {
       for (final (i, r) in rows.indexed) {
         expect(r.cut.chars, lessThan(full.chars), reason: 'trial ${i + 1}: cancelled stream reached full length');
         expect(r.cut.at - r.cancelAt, lessThanOrEqualTo(1000), reason: 'trial ${i + 1}: stream still open 1s after cancel');
-        expect(r.probe.chars, greaterThan(0), reason: 'trial ${i + 1}: request after cancel produced no tokens');
+        expect(r.probe.chars, greaterThan(0), reason: 'trial ${i + 1}: request after cancel produced no text');
       }
+    } finally {
+      restore();
+      await service.dispose();
+    }
+  }, timeout: const Timeout(Duration(minutes: 5)));
+
+  testWidgets('M0.5a: a scan request while busy gets BUSY at once and is not queued', (tester) async {
+    final restore = _captureLogs();
+    final service = GemmaQuizService.instance;
+    try {
+      final photo = base64Decode(phoneJpegBase64);
+      expect(await service.ensureReady(vision: true), isTrue, reason: '${service.progress.value.error}');
+      final kardus = ScannedWaste.fromLabel('kardus', material: 'kertas karton');
+
+      final c0 = _closed.length;
+      final running = service.identifyItem(photo);
+      await Future<void>.delayed(const Duration(milliseconds: 1500)); // mid-request
+
+      // Both scan entry points, while the first identify is still generating.
+      var t = _clock.elapsedMilliseconds;
+      final busyIdentify = await service.identifyItem(photo);
+      final identifyRejectMs = _clock.elapsedMilliseconds - t;
+      t = _clock.elapsedMilliseconds;
+      final busyQuestion = await service.generateQuestion(
+        waste: kardus,
+        type: QuizQuestionType.multipleChoice,
+        difficulty: QuizDifficulty.hard,
+      );
+      final questionRejectMs = _clock.elapsedMilliseconds - t;
+
+      final first = await running;
+      // Not queued: give a queued request time to start, then count generations.
+      await Future<void>.delayed(const Duration(seconds: 3));
+      final generations = _closed.length - c0;
+
+      debugPrint('[cancel-test] M0.5a busy identify: failure=${busyIdentify.failure} in ${identifyRejectMs}ms; '
+          'busy question: ${busyQuestion == null ? 'null' : 'a question'} in ${questionRejectMs}ms; '
+          'running identify: item=${first.item}; generations since start: $generations (1 means nothing was queued)');
+
+      expect(busyIdentify.failure, 'busy');
+      expect(identifyRejectMs, lessThan(100), reason: 'BUSY must come back at once, not after waiting');
+      expect(busyQuestion, isNull);
+      expect(questionRejectMs, lessThan(100), reason: 'BUSY must come back at once, not after waiting');
+      expect(_isPhone(first.item), isTrue, reason: 'the running identify was disturbed: ${first.item} / ${first.failure}');
+      expect(generations, 1, reason: 'a rejected scan request was queued and ran later');
+    } finally {
+      restore();
+      await service.dispose();
+    }
+  }, timeout: const Timeout(Duration(minutes: 5)));
+
+  testWidgets('M0.5b: a user request (discuss) cancels a running scan request', (tester) async {
+    final restore = _captureLogs();
+    final service = GemmaQuizService.instance;
+    try {
+      expect(await service.ensureReady(vision: true), isTrue, reason: '${service.progress.value.error}');
+      final kardus = ScannedWaste.fromLabel('kardus', material: 'kertas karton');
+
+      final c0 = _closed.length;
+      final l0 = _serviceLines.length;
+      final scan = service.generateQuestion(
+        waste: kardus,
+        type: QuizQuestionType.multipleChoice,
+        difficulty: QuizDifficulty.hard,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 1500)); // scan is mid-generation
+
+      final userAt = _clock.elapsedMilliseconds;
+      final reply = service.discuss(
+        quizContext: 'Konteks kuis tentang "kardus".\nSoal: Ke mana kardus bekas sebaiknya dibuang?',
+        history: const [],
+        message: 'Kenapa kardus bisa didaur ulang?',
+      );
+      final scanResult = await scan;
+      final scanReturnedMs = _clock.elapsedMilliseconds - userAt;
+      final replyText = await reply;
+
+      final closed = await _waitClosed(c0, 2);
+      final cut = closed[0], answer = closed[1];
+      final yielded = _serviceLines
+          .skip(l0)
+          .where((l) => l.text.contains('canceling active scan request to yield to user request'))
+          .toList();
+
+      debugPrint('[cancel-test] M0.5b scan returned ${scanResult == null ? 'null' : 'a question'} '
+          '${scanReturnedMs}ms after the user request; yield log lines: ${yielded.length}; '
+          'scan stream closed ${cut.at - userAt}ms after the user request with ${cut.chars} chars; '
+          'discuss started ${answer.startedAt - userAt}ms after the user request, first token '
+          '${answer.startedAt + answer.firstTokenMs - userAt}ms after it; reply ${replyText?.length ?? 0} chars');
+
+      expect(yielded, hasLength(1), reason: 'the service did not take the yield-to-user path');
+      expect(scanResult, isNull, reason: 'the cancelled scan must not return a question');
+      expect(scanReturnedMs, lessThan(100), reason: 'the scan caller must be released at once');
+      expect(cut.chars, greaterThan(0), reason: 'the scan had not started generating; inconclusive, re-run');
+      expect(cut.at - userAt, lessThanOrEqualTo(1000), reason: 'scan stream still open 1s after the user request');
+      expect(replyText, isNotNull, reason: 'discuss returned no reply');
+      expect(replyText!.trim(), isNotEmpty);
+      expect(replyText.contains('{'), isFalse, reason: 'discuss reply leaked JSON');
     } finally {
       restore();
       await service.dispose();
