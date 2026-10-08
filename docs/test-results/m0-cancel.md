@@ -106,6 +106,8 @@ The limit was not loosened. The retry method below was added in answer.
 
 ### M0.3 with retry (version 4, 2026-10-09, 01:29–01:58 WIB)
 
+(Version 5 below sets the offset back to 250 ms; the rules here are unchanged.)
+
 **Method.** One run makes at most 3 cancel attempts. Each attempt starts an
 identify, cancels it 100 ms after the expected first token, then runs one
 uncancelled identify (the slot-free check). The expected first token and
@@ -131,7 +133,7 @@ If all 3 attempts are inconclusive, the run fails as inconclusive. The
 | Run | M0.3 attempts (cancel landed, chars, stream closed after cancel) | Inconclusive used | M0.3 | M0.4 | M0.5a | M0.5b |
 |---|---|---|---|---|---|---|
 | 1 | 1: 103 ms after first token, 16/76, 13 ms, mid-reply | 0 | **passed** | passed (2–20 ms) | passed | passed |
-| 2 | 1: 754 ms after first token, reply had finished 179 ms before the cancel → inconclusive. 2: 230 ms after, 35/86, 21 ms, mid-reply | 1 | **passed** | **failed: native stall** (see below) | failed (after the stall) | failed (after the stall) |
+| 2 | 1: 754 ms after first token, reply had finished 179 ms before the cancel → inconclusive. 2: 230 ms after, 35/86, 21 ms, mid-reply | 1 | **passed** | **failed: the Mac slept** (see below) | failed (after the sleep) | failed (after the sleep) |
 | 3 | 1: 213 ms after, 37/79, 20 ms, mid-reply | 0 | **passed** | passed (2–27 ms) | passed | passed |
 | 4 | 1: 267 ms after, 37/79, 6 ms, mid-reply | 0 | **passed** | passed (10–16 ms) | passed | passed |
 | 5 | 1: before the first token → inconclusive. 2: 526 ms after, 77/76, 25 ms, full length → inconclusive. 3: before the first token → inconclusive | 3 | **failed: inconclusive** | passed (2–24 ms) | passed | passed |
@@ -146,26 +148,40 @@ If all 3 attempts are inconclusive, the run fails as inconclusive. The
   754 ms after it) is bigger than the offset. 100 ms mostly trades "reply
   already finished" misses for "before the first token" misses.
 
-### Two new observations from this batch (no change made)
+### Two observations from this batch (no change made)
 
-1. **A native stall after a cancel (run 2).** M0.4 trial 2's cancel itself
-   worked (164 chars, stream closed 17 ms after cancel). But the very next,
-   uncancelled request then decoded at about 0.1 chunks per second. The
-   plugin logged `prefill 282ms + decode 900407ms over 48 chunks`, so about
-   **15 minutes** passed before that stream closed (normal is about 30–43
-   chunks per second). The service's own 120 s timeout, its
-   `stopGeneration` call and the test's 5-minute timeout were all logged
-   together just before the stream ended. So the Dart side may have been
-   blocked too; the log has no timestamps to tell. M0.5a and M0.5b in that
-   run then failed only because they started on top of the leftover work.
-   - **Context:** the Mac had rebooted about 28 minutes earlier, and Spotlight
-     was re-indexing at about 97% CPU (load average about 11 on 8 cores).
-     The same Spotlight load continued through run 3, which had no stall
-     (slowest decode 41 chunks per second).
-   - **Count:** 1 stall in 57 M0.4 trials so far, the first one seen. The
-     same run also showed slow episodes before the stall: a follow-up
-     identify had its first token at 11.8 s, and M0.4's control was slow.
-   - **Cause:** unknown, either the cancel or the system load.
+1. **Test environment: the Mac slept during run 2.** It was first recorded
+   as an unexplained native stall; the macOS power log (`pmset -g log`)
+   explains it.
+   - **What the test saw:** M0.4 trial 2's cancel itself worked (164 chars,
+     stream closed 17 ms after cancel). The very next, uncancelled request
+     then took about 15 minutes: the plugin logged `prefill 282ms + decode
+     900407ms over 48 chunks`, about 0.1 chunks per second (normal is about
+     30–43). The service's 120 s timeout, its `stopGeneration` call and the
+     test's 5-minute timeout were all logged together just before the
+     stream ended. M0.5a and M0.5b in that run failed only because they
+     started on top of the leftover work.
+   - **What the power log shows (WIB, 2026-10-09):**
+
+     | Time | Event |
+     |---|---|
+     | 01:31:44 | run 2 starts |
+     | 01:32:50 | display turned off |
+     | 01:33:13 | DarkWake (a low-power state) due to Idle Sleep |
+     | 01:34:25 | Sleep, then a 10 s DarkWake |
+     | **01:34:35** | **Sleep due to Idle Sleep, 899 s** |
+     | **01:49:34** | **Wake (trackpad/keyboard), display on** |
+     | 01:49:39 | run 2 exits, 5 s after the wake |
+
+   - **Why it matches:** the 899 s sleep matches the 900,407 ms decode, and
+     the timers that fired together had been frozen during sleep.
+   - **Likely related:** the slow follow-up identify earlier in the same run
+     (first token at 11.8 s) falls in the display-off and DarkWake window
+     (01:32:50–01:33:13). That's likely related, not proven.
+   - **Not related:** the Spotlight re-indexing (about 97% CPU) also running
+     then was not the cause. Run 3 ran under the same load with no stall.
+   - **Fix for later runs:** run under `caffeinate -dimsu`, so the Mac can't
+     sleep.
 2. **A cancel during prefill only takes effect when prefill ends (run 5).**
    Prefill is the model reading the prompt, and for identify it includes
    encoding the photo. Twice the cancel fired before the first token. Both
@@ -177,7 +193,38 @@ If all 3 attempts are inconclusive, the run fails as inconclusive. The
    release. The 6 s case was during a slow episode: the next identify's
    prefill took 13.5 s. In short: cancelling a request that is still
    decoding is fast, but cancelling one still in prefill frees the slot at
-   once while the engine stays busy until prefill ends.
+   once while the engine stays busy until prefill ends. **Accepted as a
+   known limit in decision 0003** (no change).
+
+### M0.3 with retry at 250 ms, Mac kept awake (version 5, 2026-10-09, 02:12–02:25 WIB)
+
+The same retry rules as version 4, with the offset set back to **250 ms**
+after the expected first token. The 5 runs were done in a row under
+`caffeinate -dimsu`, so the Mac could not sleep. They started only once no
+Chrome media (audio or video) was playing, and no other Flutter or Gemma
+process was running.
+
+| Run | M0.3 attempt (cancel landed, chars, stream closed after cancel) | Inconclusive used | M0.3 | M0.4 (stream closed after cancel) | M0.5a | M0.5b | Stall |
+|---|---|---|---|---|---|---|---|
+| 1 | 186 ms after first token, 35/79, 29 ms, mid-reply | 0 | **passed** | passed (8–22 ms) | passed | passed | none |
+| 2 | 375 ms after, 59/83, 20 ms, mid-reply | 0 | **passed** | passed (3–6 ms) | passed | passed | none |
+| 3 | 152 ms after, 18/79, 9 ms, mid-reply | 0 | **passed** | passed (6–28 ms) | passed | passed | none |
+| 4 | 348 ms after, 53/79, 19 ms, mid-reply | 0 | **passed** | passed (16–21 ms) | passed | passed | none |
+| 5 | 328 ms after, 47/76, 12 ms, mid-reply | 0 | **passed** | passed (12–17 ms) | passed | passed | none |
+
+- **M0.3 was conclusive on the first attempt in all 5 runs**, and every
+  cancel stopped the stream within 9–29 ms. No retry was needed.
+- **Over all batches, the 250 ms offset landed mid-reply in 15 of 17
+  attempts**, against 4 of 8 at 100 ms.
+- **Stall and environment checks:**
+  - no stall: the slowest decode in the batch was 28.8 chunks per second
+  - 0 `generation timeout` lines
+  - the macOS power log shows no sleep or wake events from 02:12 to 02:25
+  - per-minute samples showed no Chrome media and a load average of 2.1–4.2
+- **M0.4 over all batches:** 72 trials, and the stream closed 2–38 ms after
+  every cancel.
+- **M0.5b in this batch:** the scan's stream closed 11–38 ms after the
+  user request, and discuss's first token came 320–460 ms after it.
 
 ## M0.4: delay between cancel and the model being idle
 
@@ -260,9 +307,10 @@ case is 38 ms.
 
 Outside the repo, in `~/GITHUB/ELIO/elios-m0-logs/`:
 
-- `retry-{1,2,3,4,5}.log` and `retry-load-samples.log`: version 4, the
-  committed test with retry (the "M0.3 with retry" section and the two
-  new observations)
+- `c250-{1,2,3,4,5}.log` and `c250-samples.log`: version 5, the committed
+  test (retry at 250 ms, under `caffeinate -dimsu`)
+- `retry-{1,2,3,4,5}.log` and `retry-load-samples.log`: version 4 (retry
+  at 100 ms; the run 2 sleep and the prefill observation)
 - `fix1-{1,2,3}.log`: the 150 ms re-runs
 - `slot-{1,2,3}.log`: the M0.5 runs (with M0.3 and M0.4 repeated)
 - `cancel-final-{1,2,3}.log`: the tables in the M0.3 and M0.4 sections above

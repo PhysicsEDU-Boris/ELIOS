@@ -1,7 +1,7 @@
 # 0003: `stopGeneration` really stops LiteRT-LM, so no fallback
 
-- Status: Accepted for cancels during decoding. Two observations from
-  2026-10-09 (below, "Open for review") are for the owner to judge.
+- Status: Accepted. A cancel during prefill only takes effect when prefill
+  ends; that is kept as a known limit (below).
 - Date: 2026-10-09
 - Milestone: M0 (plan 1.1, items 2 and 3)
 - Evidence: [`docs/test-results/m0-cancel.md`](../test-results/m0-cancel.md),
@@ -31,10 +31,10 @@ versions):
 The next request's first-token time (229–326 ms) is normal, so a stopped
 generation leaves no hidden wait.
 
-**Update, 2026-10-09 (retry batch).** Over all 57 M0.4 trials so far, the
-stream closed 2–38 ms after the cancel. No cancel that landed mid-reply ever
-failed to stop: across M0.3, M0.4 and M0.5b in the 5-run batch, every one
-closed within 27 ms. Each cancel is confirmed on the native
+**Update, 2026-10-09.** Over all 72 M0.4 trials, the stream closed **2–38 ms**
+after the cancel (median 14 ms). No cancel that landed mid-reply ever failed
+to stop, in M0.3, M0.4 or M0.5b. In the last 5-run batch (Mac kept awake),
+every test passed in every run. Each cancel is confirmed on the native
 side: the plugin logs `[LiteRtLmFfi] Generation cancelled`, and its decode
 counter stops partway.
 
@@ -46,7 +46,7 @@ counter stops partway.
   test).
 - **M0.3 infers the cancel point from timing, and retries misses.**
   `identifyItem` has no per-token callback, and adding one would change
-  production code. So the test cancels 100 ms after the expected first
+  production code. So the test cancels **250 ms** after the expected first
   token, taken from the most recent uncancelled warm identify. It then
   classifies the attempt from the service's own stream-closed log line.
   - A cancel that landed **before the first token**, **after the reply
@@ -57,10 +57,11 @@ counter stops partway.
     **150 ms**, or the test fails at once, with no retry. An identify reply
     that finishes on its own ends about 300 ms or more after the cancel
     point, so a cancel that did nothing cannot pass.
-  - In 5 runs: 4 were conclusive (3 on the first attempt, 1 on the
-    second), and 1 was inconclusive with all 3 attempts missing. The offset
-    landed mid-reply in 4 of 8 attempts; the earlier 250 ms offset did in
-    10 of 12 (see `m0-cancel.md`).
+  - Final batch (250 ms, Mac kept awake with `caffeinate -dimsu`): 5 of 5
+    runs conclusive on the first attempt, with no retry needed. Over all
+    batches the 250 ms offset landed mid-reply in 15 of 17 attempts. A
+    100 ms offset was tried and landed mid-reply in only 4 of 8, so it was
+    dropped.
 - **The M0.4 control check was relaxed to "non-empty generated text".** The
   control and the probe used to have to return a parsed question. Gemma
   sometimes writes 5 answer options, which the parser rejects, so the test
@@ -76,41 +77,43 @@ counter stops partway.
   request. Every observed control was 564–734 characters. Whether the
   question parsed is still recorded in each trial's output.
 
-## Open for review (observed 2026-10-09, no change made)
+## Known limit: a cancel during prefill takes effect when prefill ends
 
-1. **A cancel during prefill takes effect only when prefill ends.** Prefill
-   is the model reading the prompt; for identify, it includes encoding the
-   photo.
-   - Twice the cancel fired before the first token. The plugin reported
-     `no chunks emitted`, and the stream closed **379 ms** and **6057 ms**
-     after the cancel.
-   - The service released the slot within 4 ms, but the plugin made the next
-     request wait for the stopped one, so it started 376 ms and 6073 ms
-     later.
-   - So for this window, "the slot is free" and "the engine is free" are not
-     the same thing. Requests don't overlap; the next one is only delayed.
-   - The decision above holds for cancels during decoding. Whether a cancel
-     during prefill needs handling, for example keeping the slot busy until
-     the stream closes (the original fallback, for prefill only), is the
-     owner's call.
-2. **One native stall after a cancel.** In one of 5 runs, the request right
-   after an M0.4 cancel decoded 48 chunks in about 15 minutes, instead of
-   finishing in a few seconds.
-   - The service's 120 s timeout and its `stopGeneration` call did not end it
-     in time.
-   - The Mac had rebooted about 28 minutes earlier and Spotlight was
-     re-indexing at about 97% CPU. The same load did not cause a stall in the
-     next run.
-   - It is the first stall in 57 trials, and the cause is unknown. If it
-     recurs on a quiet machine, it would weaken this decision. It matters for
-     M5 (Android) and for the 120 s timeout path, which this stall shows
-     cannot always stop the model.
+Prefill is the model reading the prompt; for identify, it includes encoding
+the photo.
+
+- Twice a cancel fired before the first token. The plugin reported
+  `no chunks emitted`, and the stream closed **379 ms** and **6057 ms**
+  after the cancel. The 6 s case happened during a slow period, when the
+  next identify's prefill took 13.5 s.
+- The service releases the slot at once (within 4 ms). The plugin then makes
+  the next request wait for the stopped one, so it started 376 ms and
+  6073 ms later.
+- Requests never overlap. The next one is only delayed, at most until the
+  stopped prefill ends.
+- Accepted as a known limit: no change. If that delay ever matters for the
+  user (for example, a user request right after a scan is dismissed during
+  identify), the option is to keep the slot busy until the stream closes,
+  for prefill cancels only.
+
+## Test environment note: the 15-minute "stall" was the Mac sleeping
+
+In one run, the request right after a (successful) cancel took about
+15 minutes (`decode 900407ms over 48 chunks`).
+
+- The macOS power log shows the Mac in idle sleep for **899 s, from 01:34:35
+  to 01:49:34 WIB**, inside that run (01:31:44–01:49:39). The run exited
+  5 s after the wake.
+- So it was the test environment, not the plugin or the cancel.
+- Later runs use `caffeinate -dimsu`, and the following 5 runs had no stall
+  and no sleep or wake events.
+- The raw numbers are kept in `m0-cancel.md`.
 
 ## Consequences
 
 - No production change for cancel in M0.
 - Re-check on Android in M5, with the same test file.
-- Re-run the test file on a quiet machine (no indexing) to see whether the
-  stall recurs.
+- Run the real-model tests under `caffeinate -dimsu`, with no media
+  playing, so sleep and GPU contention don't distort the timings.
 - If `flutter_gemma` or `flutter_gemma_litertlm` is upgraded, re-run
   `integration_test/gemma_cancel_test.dart` before trusting this record.
