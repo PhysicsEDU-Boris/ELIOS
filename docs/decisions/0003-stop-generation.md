@@ -44,18 +44,24 @@ counter stops partway.
   checks, from the service's own stream-closed log line, that the first
   token came before the cancel and that the stream was still open when the
   cancel fired. If either check fails, the test fails as "inconclusive"
-  instead of passing.
+  instead of passing. The stream must close within **150 ms** of the cancel.
+  An identify reply that finishes on its own ends about 300 ms after this
+  cancel point, so with the earlier 1000 ms limit, a cancel that did
+  nothing would have passed (see `m0-cancel.md`).
 - **The M0.4 control check was relaxed to "non-empty generated text".** The
   control and the probe used to have to return a parsed question. Gemma
   sometimes writes 5 answer options, which the parser rejects, so the test
   failed on question content that has nothing to do with cancel (2 of 6
-  runs of the earlier versions). The check now is `chars > 0`, where `chars`
-  is the length of the untrimmed generated text from the service's
-  `generated N chars` line (`gemma_quiz_service.dart:366`). That means at
-  least one character of text was produced, which is stronger than "a token
-  arrived" (an empty token adds no characters). It does not reject
-  whitespace-only text. Every observed control was 586–734 characters.
-  Whether the question parsed is still recorded in each trial's output.
+  runs of the earlier versions). The control now has to produce text that
+  is **non-empty after trimming**, so whitespace-only text fails. The test
+  takes that text from the parsed question (which `_parse` never accepts
+  empty), or from the service's `unparseable question (attempt 1): <text>`
+  log line, which holds the reply already trimmed by the service
+  (`fullText.trim()`, `gemma_quiz_service.dart:367`). The probe still only
+  has to stream (`chars > 0`, the untrimmed length from the `generated N
+  chars` line), because its job is to show the engine served the next
+  request. Every observed control was 564–734 characters. Whether the
+  question parsed is still recorded in each trial's output.
 
 ## Consequences
 

@@ -55,12 +55,54 @@ item.
 | 3 | 79 chars, first token 3076 ms | 112 ms after first token | 16 / 79 | 7 ms | 1 ms | ponsel pintar | 8 ms |
 
 - **Tokens stop:** each cancelled stream closed 6–25 ms after cancel, with
-  16–38 of 79 characters.
+  16–38 of 79 characters. The test now fails if the stream is still open
+  **150 ms** after cancel (it was 1000 ms, see below).
+
+**Why the limit is 150 ms.** An identify reply is short: after its first
+token it streams for only about 0.6 s, and its full length varies between
+runs (66–86 characters). With a 1000 ms limit, a cancel that did nothing
+would still pass. The reply would just finish on its own about 300 ms
+later, inside the limit, and it could even be a few characters shorter
+than the control. The other M0.3 checks (no item returned, slot free) also
+pass in that case, because the service releases the caller itself. A
+150 ms limit sits well above the 6–25 ms seen when the cancel works, and
+well below the roughly 300 ms of a reply that finishes on its own. So M0.3
+now catches a cancel that doesn't stop. M0.4, with long replies, remains
+the main proof of the stop timing.
 - **Slot free:** the cancelled call returned within 1 ms. The next scan request
   was not rejected as `BUSY` and started generating 6–24 ms later.
 - **Next identify is right:** a phone every time (`ponsel` or `ponsel pintar`).
 - **The cancelled call returned no item:** `identifyItem` returned a
   failure, not a half-parsed result.
+
+### Re-run with the 150 ms limit (2026-10-09, 00:40–00:48 WIB)
+
+The same file, run 3 times in a row with nothing else running:
+
+| Run | Control identify | Cancel fired | Chars when cancelled | Stream closed after cancel | M0.3 | M0.4, M0.5a, M0.5b |
+|---|---|---|---|---|---|---|
+| 1 | 79 chars, first token **4749 ms** | **after the identify had finished** (893 ms after it closed) | 76 / 79 | – | **failed: inconclusive** | passed (stream closed 17–37 ms after cancel) |
+| 2 | 79 chars, first token 3602 ms | 476 ms after first token | **79 / 79** | 40 ms | **failed: reached full length** | passed (10–28 ms) |
+| 3 | 76 chars, first token 3021 ms | 282 ms after first token | 46 / 76 | 26 ms | passed | passed (8–20 ms) |
+
+**The 150 ms limit never failed.** Where it could be measured, the stream
+closed 26 and 40 ms after cancel. Both M0.3 failures come from **where the
+cancel landed**:
+
+- **Run 1:** the warm control identify was unusually slow (first token at
+  4749 ms, against 3021–3258 ms in every other run). So the cancel fired
+  after the identify being tested had already finished. The test caught
+  this as "inconclusive", as designed.
+- **Run 2:** the identify being tested was about 226 ms faster than the
+  control, so the cancel landed 476 ms into a reply that only streams for
+  about 586 ms after its first token. It had already produced all 79
+  characters. At that point a working cancel and a reply finishing on its
+  own look the same, and the "fewer characters than the control" check
+  failed.
+
+The cause is that identify's first-token time drifts by 0.2–1.5 s from
+one request to the next, while there is only a ~0.6 s window to cancel in.
+The limit was not loosened. How to make M0.3 reliable is an open decision.
 
 ## M0.4: delay between cancel and the model being idle
 
@@ -108,8 +150,16 @@ case is 38 ms.
 - **Version 1 and 2, M0.4 failed twice on content, not cancel.** Gemma
   sometimes returns 5 answer options, which `_parse` rejects, and the test
   wrongly required the question to parse. Fixed: the control only has to
-  produce tokens, and the probe only has to stream. Whether the question
-  parsed is now recorded, not asserted.
+  produce non-empty text (trimmed, so whitespace-only fails), and the probe
+  only has to stream. Whether the question parsed is now recorded, not
+  asserted.
+- **Version 3 (after the M0 review), M0.3 limit too loose.** As explained
+  above, the 1000 ms "stream still open" limit could not catch a cancel that
+  doesn't stop. It is now 150 ms. Same change: the M0.4 control check went
+  from "at least one character" to "non-empty after trimming". The test
+  takes that text from the parsed question, or from the service's
+  `unparseable question (attempt 1): <text>` line, which logs the reply
+  already trimmed.
 
 ## Other findings (no change made, for your decision)
 
