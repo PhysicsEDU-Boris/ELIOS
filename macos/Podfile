@@ -1,0 +1,81 @@
+platform :osx, '10.15'
+
+# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+project 'Runner', {
+  'Debug' => :debug,
+  'Profile' => :release,
+  'Release' => :release,
+}
+
+def flutter_root
+  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'ephemeral', 'Flutter-Generated.xcconfig'), __FILE__)
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure \"flutter pub get\" is executed first"
+  end
+
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
+  end
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Flutter-Generated.xcconfig, then run \"flutter pub get\""
+end
+
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+flutter_macos_podfile_setup
+
+target 'Runner' do
+  use_frameworks!
+
+  flutter_install_all_macos_pods File.dirname(File.realpath(__FILE__))
+  target 'RunnerTests' do
+    inherit! :search_paths
+  end
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_macos_build_settings(target)
+  end
+
+  # flutter_gemma: LiteRT-LM's companion dylibs are kept out of Native Assets
+  # on macOS, so this phase stages them into the built .app. Without it the
+  # build succeeds but the Gemma model fails to load at runtime. The staging
+  # script itself ships with flutter_gemma_litertlm (see its platform setup).
+  installer.aggregate_targets.each do |aggregate_target|
+    aggregate_target.user_targets.each do |user_target|
+      phase_name = '[flutter_gemma] Setup LiteRT-LM macOS'
+
+      # Only the app target embeds Frameworks/; a copy on RunnerTests causes
+      # a "Cycle inside Flutter Assemble" error.
+      unless user_target.name == 'Runner'
+        user_target.build_phases
+          .select { |p| p.respond_to?(:name) && p.name == phase_name }
+          .each { |p| user_target.build_phases.delete(p) }
+        next
+      end
+
+      existing = user_target.shell_script_build_phases.find { |p| p.name == phase_name }
+      phase = existing || user_target.new_shell_script_build_phase(phase_name)
+      phase.input_paths = [
+        '$(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Frameworks/LiteRtLm.framework/Versions/A/LiteRtLm',
+      ]
+      phase.output_paths = ['$(DERIVED_FILE_DIR)/flutter_gemma_litertlm_macos.stamp']
+      phase.shell_script = <<~SHELL
+        set -e
+        STAGER="${HOME}/Library/Caches/flutter_gemma/native/macos_arm64/stage_macos_companions.sh"
+        if [ ! -f "${STAGER}" ]; then
+          echo "[flutter_gemma] ERROR: ${STAGER} not found." >&2
+          echo "  flutter_gemma_litertlm 1.6.2+ installs it there from its build hook." >&2
+          echo "  Upgrade the package, then: flutter clean && flutter pub get" >&2
+          exit 1
+        fi
+        sh "${STAGER}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/Contents/Frameworks"
+        mkdir -p "$(dirname "${SCRIPT_OUTPUT_FILE_0}")"
+        touch "${SCRIPT_OUTPUT_FILE_0}"
+      SHELL
+    end
+  end
+end

@@ -1,0 +1,29 @@
+// Template only. All values are fake.
+//
+// ELIOS does not need this file today: Android and web read Firebase
+// options from .env files (see lib/firebase_options_loader.dart), and
+// iOS/macOS use the native GoogleService-Info.plist.
+//
+// If you generate options with `flutterfire configure`, the real output is
+// written to lib/firebase_options.dart, which is gitignored. Never commit it.
+
+import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+
+class DefaultFirebaseOptions {
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'YOUR_ANDROID_API_KEY',
+    appId: '1:000000000000:android:0000000000000000000000',
+    messagingSenderId: '000000000000',
+    projectId: 'your-firebase-project-id',
+    storageBucket: 'your-firebase-project-id.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'YOUR_IOS_API_KEY',
+    appId: '1:000000000000:ios:0000000000000000000000',
+    messagingSenderId: '000000000000',
+    projectId: 'your-firebase-project-id',
+    storageBucket: 'your-firebase-project-id.firebasestorage.app',
+    iosBundleId: 'com.boris.elio',
+  );
+}

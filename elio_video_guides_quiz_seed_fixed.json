@@ -1,0 +1,786 @@
+{
+  "video_lessons": {
+    "featured_waste_management": {
+      "id": "featured_waste_management",
+      "moduleId": "organic",
+      "sectionTitle": "Featured",
+      "title": "Introduction to Waste Management",
+      "description": "Explore the foundation of waste management concepts and ELIO robot demonstrations.",
+      "durationSeconds": 199,
+      "durationMinutes": 4,
+      "durationLabel": "3:19",
+      "videoPath": "elio-elearning/videos/introduction_waste_management.mp4",
+      "thumbnailPath": "elio-elearning/thumbnails/introduction_waste_management.jpg",
+      "youtubeId": "KkxsX8lr-V4",
+      "thumbnailAsset": "assets/images/thumbnails/introduction_waste_management.png",
+      "level": "Foundation Module",
+      "moduleLabel": "Foundation Module",
+      "status": "watch",
+      "isFeatured": true,
+      "order": 0,
+      "isPublished": true
+    },
+    "organic_intro": {
+      "id": "organic_intro",
+      "moduleId": "organic",
+      "sectionTitle": "Organic Waste",
+      "title": "Introduction to Organic Waste",
+      "description": "Learn the basic concept, sources, and examples of organic waste.",
+      "durationSeconds": 219,
+      "durationMinutes": 4,
+      "durationLabel": "3:39",
+      "videoPath": "elio-elearning/videos/organic_intro.mp4",
+      "thumbnailPath": "elio-elearning/thumbnails/organic_intro.jpg",
+      "youtubeId": "g1ClFl4LJag",
+      "thumbnailAsset": "assets/images/thumbnails/organic_intro.png",
+      "level": "Basics",
+      "moduleLabel": "Mod 1 • Basics",
+      "status": "watch",
+      "isFeatured": false,
+      "order": 1,
+      "isPublished": true
+    },
+    "composting_fundamentals": {
+      "id": "composting_fundamentals",
+      "moduleId": "organic",
+      "sectionTitle": "Organic Waste",
+      "title": "Composting Fundamentals",
+      "description": "Learn how composting works and why it is useful for organic waste management.",
+      "durationSeconds": 442,
+      "durationMinutes": 8,
+      "durationLabel": "7:22",
+      "videoPath": "elio-elearning/videos/composting_fundamentals.mp4",
+      "thumbnailPath": "elio-elearning/thumbnails/composting_fundamentals.jpg",
+      "youtubeId": "odBKowp0Z2g",
+      "thumbnailAsset": "assets/images/thumbnails/composting_fundamentals.png",
+      "level": "Science",
+      "moduleLabel": "Mod 1 • Science",
+      "status": "watch",
+      "isFeatured": false,
+      "order": 2,
+      "isPublished": true
+    },
+    "composting_biogas": {
+      "id": "composting_biogas",
+      "moduleId": "organic",
+      "sectionTitle": "Organic Waste",
+      "title": "Composting Into Biogas",
+      "description": "Learn how organic waste can be processed into biogas through decomposition.",
+      "durationSeconds": 70,
+      "durationMinutes": 2,
+      "durationLabel": "1:10",
+      "videoPath": "elio-elearning/videos/composting_biogas.mp4",
+      "thumbnailPath": "elio-elearning/thumbnails/composting_biogas.jpg",
+      "youtubeId": "YobgFN98FI8",
+      "thumbnailAsset": "assets/images/thumbnails/composting_biogas.png",
+      "level": "Practical",
+      "moduleLabel": "Mod 1 • Practical",
+      "status": "watch",
+      "isFeatured": false,
+      "order": 3,
+      "isPublished": true
+    },
+    "recyclable_waste": {
+      "id": "recyclable_waste",
+      "moduleId": "inorganic",
+      "sectionTitle": "Recyclables & 3R",
+      "title": "Understanding Recyclable Waste",
+      "description": "Learn the characteristics of recyclable waste and examples of recyclable materials.",
+      "durationSeconds": 79,
+      "durationMinutes": 2,
+      "durationLabel": "1:19",
+      "videoPath": "elio-elearning/videos/recyclable_waste.mp4",
+      "thumbnailPath": "elio-elearning/thumbnails/recyclable_waste.jpg",
+      "youtubeId": "exErAt4gGhk",
+      "thumbnailAsset": "assets/images/thumbnails/recyclable_waste.png",
+      "level": "Basics",
+      "moduleLabel": "Mod 2 • Basics",
+      "status": "watch",
+      "isFeatured": false,
+      "order": 4,
+      "isPublished": true
+    },
+    "reduce_impact": {
+      "id": "reduce_impact",
+      "moduleId": "inorganic",
+      "sectionTitle": "Recyclables & 3R",
+      "title": "Reduce: Minimizing Impact",
+      "description": "Learn how reducing consumption can minimize waste and environmental impact.",
+      "durationSeconds": 79,
+      "durationMinutes": 2,
+      "durationLabel": "1:19",
+      "videoPath": "elio-elearning/videos/reduce_impact.mp4",
+      "thumbnailPath": "elio-elearning/thumbnails/reduce_impact.jpg",
+      "youtubeId": "ewWlrlZsGKw",
+      "thumbnailAsset": "assets/images/thumbnails/reduce_impact.png",
+      "level": "The 3Rs",
+      "moduleLabel": "Mod 2 • The 3Rs",
+      "status": "watch",
+      "isFeatured": false,
+      "order": 5,
+      "isPublished": true
+    },
+    "reuse_creative_solutions": {
+      "id": "reuse_creative_solutions",
+      "moduleId": "inorganic",
+      "sectionTitle": "Recyclables & 3R",
+      "title": "Reuse: Creative Solutions",
+      "description": "Learn creative ways to reuse materials before they become waste.",
+      "durationSeconds": 36,
+      "durationMinutes": 1,
+      "durationLabel": "0:36",
+      "videoPath": "elio-elearning/videos/reuse_creative_solutions.mp4",
+      "thumbnailPath": "elio-elearning/thumbnails/reuse_creative_solutions.jpg",
+      "youtubeId": "D7S_t3D-0fY",
+      "thumbnailAsset": "assets/images/thumbnails/reuse_creative_solutions.png",
+      "level": "The 3Rs",
+      "moduleLabel": "Mod 2 • The 3Rs",
+      "status": "watch",
+      "isFeatured": false,
+      "order": 6,
+      "isPublished": true
+    },
+    "hazardous_intro": {
+      "id": "hazardous_intro",
+      "moduleId": "hazardous",
+      "sectionTitle": "Hazardous Waste",
+      "title": "Introduction to B3 Waste",
+      "description": "Learn the basic concept and examples of hazardous B3 waste.",
+      "durationSeconds": 675,
+      "durationMinutes": 12,
+      "durationLabel": "11:15",
+      "videoPath": "elio-elearning/videos/hazardous_intro.mp4",
+      "thumbnailPath": "elio-elearning/thumbnails/hazardous_intro.jpg",
+      "youtubeId": "-LGGDj_BjVM",
+      "thumbnailAsset": "assets/images/thumbnails/hazardous_intro.png",
+      "level": "Basics",
+      "moduleLabel": "Mod 3 • Basics",
+      "status": "watch",
+      "isFeatured": false,
+      "order": 7,
+      "isPublished": true
+    },
+    "hazardous_characteristics": {
+      "id": "hazardous_characteristics",
+      "moduleId": "hazardous",
+      "sectionTitle": "Hazardous Waste",
+      "title": "Characteristics of Hazardous",
+      "description": "Understand toxic, corrosive, flammable, and reactive characteristics of B3 waste.",
+      "durationSeconds": 439,
+      "durationMinutes": 8,
+      "durationLabel": "7:19",
+      "videoPath": "elio-elearning/videos/hazardous_characteristics.mp4",
+      "thumbnailPath": "elio-elearning/thumbnails/hazardous_characteristics.jpg",
+      "youtubeId": "CEV06oyOjtI",
+      "thumbnailAsset": "assets/images/thumbnails/hazardous_characteristics.png",
+      "level": "Analysis",
+      "moduleLabel": "Mod 3 • Analysis",
+      "status": "watch",
+      "isFeatured": false,
+      "order": 8,
+      "isPublished": true
+    },
+    "hazardous_safe_handling": {
+      "id": "hazardous_safe_handling",
+      "moduleId": "hazardous",
+      "sectionTitle": "Hazardous Waste",
+      "title": "Safe Handling Procedures",
+      "description": "Learn basic safety procedures for handling hazardous B3 waste.",
+      "durationSeconds": 545,
+      "durationMinutes": 10,
+      "durationLabel": "9:05",
+      "videoPath": "elio-elearning/videos/hazardous_safe_handling.mp4",
+      "thumbnailPath": "elio-elearning/thumbnails/hazardous_safe_handling.jpg",
+      "youtubeId": "Cmu9ZsAJzD0",
+      "thumbnailAsset": "assets/images/thumbnails/hazardous_safe_handling.png",
+      "level": "Protocol",
+      "moduleLabel": "Mod 3 • Protocol",
+      "status": "watch",
+      "isFeatured": false,
+      "order": 9,
+      "isPublished": true
+    }
+  },
+  "guide_lessons": {
+    "module1_intro_definition": {
+      "id": "module1_intro_definition",
+      "moduleId": "organic",
+      "moduleTitle": "Module 1: Waste Classification & Identification",
+      "title": "Introduction & Definitions of Waste",
+      "description": "Foundational principles of physical waste streams and sorting logic.",
+      "pdfPath": "elio-elearning/guides/Module1_Introduction_Definition_of_Waste.pdf",
+      "pdfAsset": "assets/guides/Module1_Introduction_Definition_of_Waste.pdf",
+      "coverAsset": "assets/images/guides/Module1_Introduction_Definition_of_Waste.png",
+      "pageCount": 2,
+      "readTimeMinutes": 1,
+      "order": 1,
+      "isPublished": true
+    },
+    "module2_organic_categories": {
+      "id": "module2_organic_categories",
+      "moduleId": "organic",
+      "moduleTitle": "Module 1: Waste Classification & Identification",
+      "title": "Categories of Organic Waste",
+      "description": "Learn the types and characteristics of organic waste.",
+      "pdfPath": "elio-elearning/guides/Module2_Categories_of_Organic_Waste.pdf",
+      "pdfAsset": "assets/guides/Module2_Categories_of_Organic_Waste.pdf",
+      "coverAsset": "assets/images/guides/Module2_Categories_of_Organic_Waste.png",
+      "pageCount": 2,
+      "readTimeMinutes": 1,
+      "order": 2,
+      "isPublished": true
+    },
+    "module3_inorganic_categories": {
+      "id": "module3_inorganic_categories",
+      "moduleId": "inorganic",
+      "moduleTitle": "Module 2: Inorganic / Recyclable Waste",
+      "title": "Categories of Inorganic Waste",
+      "description": "Learn the types and characteristics of inorganic waste.",
+      "pdfPath": "elio-elearning/guides/Module3_Categories_of_Inorganic_Waste.pdf",
+      "pdfAsset": "assets/guides/Module3_Categories_of_Inorganic_Waste.pdf",
+      "coverAsset": "assets/images/guides/Module3_Categories_of_Inorganic_Waste.png",
+      "pageCount": 2,
+      "readTimeMinutes": 1,
+      "order": 3,
+      "isPublished": true
+    },
+    "module4_biodegradable": {
+      "id": "module4_biodegradable",
+      "moduleId": "organic",
+      "moduleTitle": "Module 1: Waste Classification & Identification",
+      "title": "Biodegradable vs. Non-Biodegradable Properties",
+      "description": "Compare biodegradable and non-biodegradable waste properties.",
+      "pdfPath": "elio-elearning/guides/Module4_Biodegradable_vs_NonBiodegradable.pdf",
+      "pdfAsset": "assets/guides/Module4_Biodegradable_vs_NonBiodegradable.pdf",
+      "coverAsset": "assets/images/guides/Module4_Biodegradable_vs_NonBiodegradable.png",
+      "pageCount": 3,
+      "readTimeMinutes": 2,
+      "order": 4,
+      "isPublished": true
+    }
+  },
+  "quizzes": {
+    "organic": {
+      "questions": {
+        "q1": {
+          "id": "q1",
+          "moduleId": "organic",
+          "question": "A student places banana peels, dry leaves, and a small plastic wrapper into the same compost bin. What is the main problem with this mixture?",
+          "options": [
+            "The plastic wrapper contaminates the composting process because it is not biodegradable",
+            "Dry leaves stop all microbial activity",
+            "Banana peels cannot decompose naturally",
+            "The mixture becomes hazardous B3 waste immediately"
+          ],
+          "correctIndex": 0,
+          "explanation": "Plastic contamination reduces compost quality because it does not biodegrade like organic material.",
+          "difficulty": "hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 1
+        },
+        "q2": {
+          "id": "q2",
+          "moduleId": "organic",
+          "question": "In composting, why is moisture important but excessive water harmful?",
+          "options": [
+            "Microbes need moisture, but excess water reduces oxygen and can create anaerobic conditions",
+            "Water prevents all decomposition",
+            "Excess water increases plastic recycling efficiency",
+            "Moisture turns organic waste into inorganic waste"
+          ],
+          "correctIndex": 0,
+          "explanation": "Composting requires a balance of moisture and oxygen. Too much water fills air spaces and limits aerobic decomposition.",
+          "difficulty": "hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 2
+        },
+        "q3": {
+          "id": "q3",
+          "moduleId": "organic",
+          "question": "Look at the image of mixed food scraps and packaging. Which item should ELIO reject from the organic category?",
+          "options": [
+            "Plastic food wrapper",
+            "Vegetable peel",
+            "Rice leftovers",
+            "Dry leaf"
+          ],
+          "correctIndex": 0,
+          "explanation": "A plastic wrapper is not organic waste and should be separated from compostable materials.",
+          "difficulty": "hard",
+          "imagePath": "elio-elearning/quiz-images/organic_mixed_food_wrapper.jpg",
+          "imageAsset": "assets/images/quiz/organic_mixed_food_wrapper.png",
+          "order": 3
+        },
+        "q4": {
+          "id": "q4",
+          "moduleId": "organic",
+          "question": "Which condition most directly improves aerobic composting efficiency?",
+          "options": [
+            "Balanced carbon-nitrogen ratio, sufficient oxygen, and suitable moisture",
+            "Keeping the pile fully sealed without air",
+            "Adding batteries to increase chemical reaction",
+            "Mixing compost with clean plastic bottles"
+          ],
+          "correctIndex": 0,
+          "explanation": "Efficient composting depends on carbon-nitrogen balance, oxygen availability, and moisture control.",
+          "difficulty": "hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 4
+        },
+        "q5": {
+          "id": "q5",
+          "moduleId": "organic",
+          "question": "Why can meat or oily food waste be problematic in a simple classroom composting activity?",
+          "options": [
+            "It may attract pests, produce odor, and slow controlled composting",
+            "It always becomes recyclable plastic",
+            "It cannot contain carbon",
+            "It makes composting completely impossible in every system"
+          ],
+          "correctIndex": 0,
+          "explanation": "Meat and oily foods can create odor and pest issues, especially in simple unmanaged composting systems.",
+          "difficulty": "medium-hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 5
+        },
+        "q6": {
+          "id": "q6",
+          "moduleId": "organic",
+          "question": "Based on the compost pile image, which observation indicates the pile may be too dry?",
+          "options": [
+            "Materials look dusty, brittle, and decomposition appears slow",
+            "The pile has a balanced earthy smell",
+            "The pile is warm and slightly moist",
+            "Small decomposed particles are visible"
+          ],
+          "correctIndex": 0,
+          "explanation": "Very dry compost limits microbial activity and slows decomposition.",
+          "difficulty": "hard",
+          "imagePath": "elio-elearning/quiz-images/organic_dry_compost_pile.jpg",
+          "imageAsset": "assets/images/quiz/organic_dry_compost_pile.png",
+          "order": 6
+        },
+        "q7": {
+          "id": "q7",
+          "moduleId": "organic",
+          "question": "ELIO detects a brown paper napkin with food residue. Why might it still be classified as organic/compostable in some contexts?",
+          "options": [
+            "Because paper made from plant fibers can biodegrade if it is not coated with plastic or harmful chemicals",
+            "Because all paper is hazardous waste",
+            "Because food residue turns every object into metal",
+            "Because paper cannot ever be recycled or composted"
+          ],
+          "correctIndex": 0,
+          "explanation": "Uncoated plant-fiber paper with food residue can often be composted, depending on local rules.",
+          "difficulty": "hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 7
+        },
+        "q8": {
+          "id": "q8",
+          "moduleId": "organic",
+          "question": "Which decision is best when ELIO detects an organic item covered with leaked battery fluid?",
+          "options": [
+            "Classify it as contaminated hazardous waste instead of normal organic waste",
+            "Put it into compost because the base material is organic",
+            "Classify it as recyclable plastic",
+            "Ignore contamination because AI detection only uses shape"
+          ],
+          "correctIndex": 0,
+          "explanation": "Hazardous contamination changes the handling priority. Safety overrides the original material category.",
+          "difficulty": "very hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 8
+        },
+        "q9": {
+          "id": "q9",
+          "moduleId": "organic",
+          "question": "In the image, ELIO sees a wet leaf and a green plastic sachet. Which feature is most useful to distinguish them visually?",
+          "options": [
+            "Natural irregular texture and vein pattern versus manufactured sealed edges",
+            "Both are green, so they must be the same category",
+            "Wetness alone proves both are organic",
+            "Size alone always determines the waste type"
+          ],
+          "correctIndex": 0,
+          "explanation": "Visual classification should consider texture, shape, edges, and material patterns, not color alone.",
+          "difficulty": "very hard",
+          "imagePath": "elio-elearning/quiz-images/organic_leaf_vs_green_sachet.jpg",
+          "imageAsset": "assets/images/quiz/organic_leaf_vs_green_sachet.png",
+          "order": 9
+        },
+        "q10": {
+          "id": "q10",
+          "moduleId": "organic",
+          "question": "Which explanation best connects organic waste management to environmental physics?",
+          "options": [
+            "Decomposition involves energy transfer, temperature change, gas production, and material transformation",
+            "Organic waste management has no physical process",
+            "Only electrical circuits are part of environmental physics",
+            "Composting works by eliminating all matter from the system"
+          ],
+          "correctIndex": 0,
+          "explanation": "Composting can be connected to heat, gas exchange, matter transformation, and environmental systems.",
+          "difficulty": "hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 10
+        }
+      }
+    },
+    "inorganic": {
+      "questions": {
+        "q1": {
+          "id": "q1",
+          "moduleId": "inorganic",
+          "question": "A plastic bottle still contains sugary liquid. Why should it not immediately be placed with clean recyclables?",
+          "options": [
+            "Residue can contaminate other recyclables and reduce recycling quality",
+            "Liquid makes plastic become organic waste",
+            "Plastic bottles are always hazardous B3 waste",
+            "Sugar turns plastic into metal"
+          ],
+          "correctIndex": 0,
+          "explanation": "Food or liquid residue can contaminate recyclable materials and reduce processing efficiency.",
+          "difficulty": "hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 1
+        },
+        "q2": {
+          "id": "q2",
+          "moduleId": "inorganic",
+          "question": "Which example best represents the 'Reduce' principle in 3R?",
+          "options": [
+            "Using a refillable bottle instead of buying single-use plastic bottles",
+            "Throwing all bottles into one bin",
+            "Burning plastic waste to remove it quickly",
+            "Buying more packaged products because they are recyclable"
+          ],
+          "correctIndex": 0,
+          "explanation": "Reduce means preventing waste generation before it happens.",
+          "difficulty": "medium-hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 2
+        },
+        "q3": {
+          "id": "q3",
+          "moduleId": "inorganic",
+          "question": "Look at the image of plastic, metal, and food residue. Which item is most likely recyclable after cleaning?",
+          "options": [
+            "Aluminum can",
+            "Banana peel",
+            "Used tissue with oil",
+            "Leaking battery"
+          ],
+          "correctIndex": 0,
+          "explanation": "Aluminum cans are commonly recyclable when separated and cleaned properly.",
+          "difficulty": "hard",
+          "imagePath": "elio-elearning/quiz-images/inorganic_aluminum_can_mixed_waste.jpg",
+          "imageAsset": "assets/images/quiz/inorganic_aluminum_can_mixed_waste.png",
+          "order": 3
+        },
+        "q4": {
+          "id": "q4",
+          "moduleId": "inorganic",
+          "question": "Why is black plastic often harder for some automated sorting systems to detect?",
+          "options": [
+            "Some optical systems may struggle because black plastic absorbs light and reduces sensor contrast",
+            "Black plastic is always organic",
+            "Black plastic always contains batteries",
+            "Color has no possible effect on visual detection"
+          ],
+          "correctIndex": 0,
+          "explanation": "In automated sorting, material color and reflectance can influence detection accuracy.",
+          "difficulty": "very hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 4
+        },
+        "q5": {
+          "id": "q5",
+          "moduleId": "inorganic",
+          "question": "Which factor is most important when deciding whether paper waste belongs in recycling or composting?",
+          "options": [
+            "Whether it is clean/recyclable or contaminated with food and suitable for composting",
+            "Whether it is heavier than plastic",
+            "Whether it has any printed text",
+            "Whether it is placed near metal"
+          ],
+          "correctIndex": 0,
+          "explanation": "Clean paper can often be recycled, while food-contaminated uncoated paper may be composted depending on local rules.",
+          "difficulty": "hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 5
+        },
+        "q6": {
+          "id": "q6",
+          "moduleId": "inorganic",
+          "question": "In the image, ELIO sees a transparent PET bottle and a glass bottle. Which feature helps distinguish them?",
+          "options": [
+            "Shape details, surface reflection, thickness, and material appearance",
+            "Both are transparent, so they must be identical",
+            "Only color determines material",
+            "All transparent objects are hazardous"
+          ],
+          "correctIndex": 0,
+          "explanation": "Visual sorting should use multiple features such as shape, reflection, thickness, and material patterns.",
+          "difficulty": "very hard",
+          "imagePath": "elio-elearning/quiz-images/inorganic_pet_vs_glass_bottle.jpg",
+          "imageAsset": "assets/images/quiz/inorganic_pet_vs_glass_bottle.png",
+          "order": 6
+        },
+        "q7": {
+          "id": "q7",
+          "moduleId": "inorganic",
+          "question": "Why is source separation important for recyclable waste?",
+          "options": [
+            "It reduces contamination and improves the quality of recovered materials",
+            "It makes every waste item biodegradable",
+            "It eliminates the need for any recycling facility",
+            "It changes hazardous waste into safe waste"
+          ],
+          "correctIndex": 0,
+          "explanation": "Separation at the source makes recycling more effective and reduces processing problems.",
+          "difficulty": "hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 7
+        },
+        "q8": {
+          "id": "q8",
+          "moduleId": "inorganic",
+          "question": "Which item should not be treated as normal recyclable inorganic waste?",
+          "options": [
+            "Broken compact fluorescent lamp",
+            "Clean plastic bottle",
+            "Empty aluminum can",
+            "Dry cardboard"
+          ],
+          "correctIndex": 0,
+          "explanation": "Compact fluorescent lamps can contain hazardous substances and require special handling.",
+          "difficulty": "very hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 8
+        },
+        "q9": {
+          "id": "q9",
+          "moduleId": "inorganic",
+          "question": "From the image, which sorting mistake would most reduce recycling quality?",
+          "options": [
+            "Mixing oily food packaging with clean paper and plastic recyclables",
+            "Separating aluminum from plastic",
+            "Removing leftover liquid from a bottle",
+            "Flattening a clean cardboard box"
+          ],
+          "correctIndex": 0,
+          "explanation": "Oil and food residue can contaminate otherwise recyclable materials.",
+          "difficulty": "hard",
+          "imagePath": "elio-elearning/quiz-images/inorganic_oily_packaging_contamination.jpg",
+          "imageAsset": "assets/images/quiz/inorganic_oily_packaging_contamination.png",
+          "order": 9
+        },
+        "q10": {
+          "id": "q10",
+          "moduleId": "inorganic",
+          "question": "Why is 'recyclable' not the same as 'automatically recycled'?",
+          "options": [
+            "A material may be recyclable, but it still needs proper sorting, collection, cleaning, and processing",
+            "Recyclable materials disappear naturally",
+            "Recyclable means hazardous",
+            "Recyclable objects do not need human or system decisions"
+          ],
+          "correctIndex": 0,
+          "explanation": "Recycling depends on material condition, local facilities, sorting quality, and processing systems.",
+          "difficulty": "hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 10
+        }
+      }
+    },
+    "hazardous": {
+      "questions": {
+        "q1": {
+          "id": "q1",
+          "moduleId": "hazardous",
+          "question": "Which property makes a waste item classified as hazardous B3?",
+          "options": [
+            "It may be toxic, corrosive, flammable, reactive, or infectious",
+            "It is always green in color",
+            "It is always made of food material",
+            "It is always recyclable after washing"
+          ],
+          "correctIndex": 0,
+          "explanation": "Hazardous B3 waste is defined by danger properties such as toxicity, corrosivity, flammability, reactivity, or infection risk.",
+          "difficulty": "hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 1
+        },
+        "q2": {
+          "id": "q2",
+          "moduleId": "hazardous",
+          "question": "A used battery is small and dry. Why should ELIO still separate it as hazardous?",
+          "options": [
+            "It can contain chemicals and heavy metals that require special handling",
+            "Small objects are always organic",
+            "Dry objects cannot be hazardous",
+            "Batteries are safe if mixed with compost"
+          ],
+          "correctIndex": 0,
+          "explanation": "Batteries may contain harmful substances even when they look dry or small.",
+          "difficulty": "hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 2
+        },
+        "q3": {
+          "id": "q3",
+          "moduleId": "hazardous",
+          "question": "Look at the image of mixed waste. Which item should be prioritized for hazardous separation?",
+          "options": [
+            "Leaking battery",
+            "Clean paper",
+            "Banana peel",
+            "Empty plastic bottle"
+          ],
+          "correctIndex": 0,
+          "explanation": "A leaking battery poses chemical risk and should be handled separately as hazardous waste.",
+          "difficulty": "very hard",
+          "imagePath": "elio-elearning/quiz-images/hazardous_leaking_battery_mixed_waste.jpg",
+          "imageAsset": "assets/images/quiz/hazardous_leaking_battery_mixed_waste.png",
+          "order": 3
+        },
+        "q4": {
+          "id": "q4",
+          "moduleId": "hazardous",
+          "question": "Why should hazardous waste not be mixed with recyclable waste?",
+          "options": [
+            "It can contaminate materials and create safety risks for handlers and recycling systems",
+            "It improves recycling quality",
+            "It makes plastic easier to compost",
+            "It removes all toxic properties"
+          ],
+          "correctIndex": 0,
+          "explanation": "Hazardous contamination can endanger people and damage recycling processes.",
+          "difficulty": "hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 4
+        },
+        "q5": {
+          "id": "q5",
+          "moduleId": "hazardous",
+          "question": "A container has a faded warning label but no visible liquid. What is the safest classification decision?",
+          "options": [
+            "Treat it as potentially hazardous until verified",
+            "Automatically classify it as organic",
+            "Mix it with clean paper",
+            "Ignore the label because it is faded"
+          ],
+          "correctIndex": 0,
+          "explanation": "When hazard information is uncertain, precaution is safer than mixing it with normal waste.",
+          "difficulty": "very hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 5
+        },
+        "q6": {
+          "id": "q6",
+          "moduleId": "hazardous",
+          "question": "In the image, which visual cue most strongly suggests hazardous handling is needed?",
+          "options": [
+            "Warning symbol on the container",
+            "Round shape of the object",
+            "The object is placed on a table",
+            "The object is smaller than the others"
+          ],
+          "correctIndex": 0,
+          "explanation": "Hazard symbols communicate safety risks and should influence sorting decisions.",
+          "difficulty": "hard",
+          "imagePath": "elio-elearning/quiz-images/hazardous_warning_label_container.jpg",
+          "imageAsset": "assets/images/quiz/hazardous_warning_label_container.png",
+          "order": 6
+        },
+        "q7": {
+          "id": "q7",
+          "moduleId": "hazardous",
+          "question": "Why is e-waste often treated differently from regular inorganic waste?",
+          "options": [
+            "It may contain valuable recoverable materials and hazardous components",
+            "It is always compostable",
+            "It has no environmental impact",
+            "It can always be burned safely"
+          ],
+          "correctIndex": 0,
+          "explanation": "Electronic waste may contain both recyclable metals and hazardous substances, so it needs special management.",
+          "difficulty": "hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 7
+        },
+        "q8": {
+          "id": "q8",
+          "moduleId": "hazardous",
+          "question": "What should ELIO prioritize if an object has both recyclable material and hazardous contamination?",
+          "options": [
+            "Hazardous handling priority",
+            "Normal recyclable route",
+            "Organic composting route",
+            "Random sorting because categories overlap"
+          ],
+          "correctIndex": 0,
+          "explanation": "Safety comes first. Hazardous contamination should override ordinary recycling classification.",
+          "difficulty": "very hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 8
+        },
+        "q9": {
+          "id": "q9",
+          "moduleId": "hazardous",
+          "question": "From the image, which item should not be handled directly without protection?",
+          "options": [
+            "Broken glass chemical container",
+            "Clean cardboard",
+            "Dry leaf",
+            "Empty water bottle"
+          ],
+          "correctIndex": 0,
+          "explanation": "A broken chemical container may cause both physical injury and chemical exposure.",
+          "difficulty": "very hard",
+          "imagePath": "elio-elearning/quiz-images/hazardous_broken_chemical_container.jpg",
+          "imageAsset": "assets/images/quiz/hazardous_broken_chemical_container.png",
+          "order": 9
+        },
+        "q10": {
+          "id": "q10",
+          "moduleId": "hazardous",
+          "question": "Which explanation best connects hazardous waste management with environmental physics?",
+          "options": [
+            "It involves material properties, chemical energy, diffusion risk, containment, and exposure pathways",
+            "It only involves memorizing labels",
+            "It has no relation to physical systems",
+            "It only depends on object color"
+          ],
+          "correctIndex": 0,
+          "explanation": "Hazardous waste management connects to material behavior, transport, containment, energy, and environmental exposure.",
+          "difficulty": "hard",
+          "imagePath": "",
+          "imageAsset": "",
+          "order": 10
+        }
+      }
+    }
+  }
+}

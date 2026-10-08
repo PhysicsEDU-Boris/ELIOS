@@ -1,0 +1,92 @@
+name: elio
+description: "ELIO - Smart Waste Sorting Robot Controller App"
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^4.10.0
+  firebase_auth: ^6.5.2
+  cloud_firestore: ^6.5.0
+  firebase_storage: ^13.4.2
+  google_sign_in: ^6.2.1
+
+  # UI & State
+  flutter_svg: ^2.0.10
+  cupertino_icons: ^1.0.8
+  web_socket_channel: ^2.4.0
+  google_fonts: ^6.1.0
+  shared_preferences: ^2.5.5
+  flutter_secure_storage: ^9.2.2
+  flutter_native_splash: ^2.3.2
+  flutter_riverpod: ^2.4.0
+  flutter_dotenv: ^5.2.1
+  flutter_3d_controller: ^2.3.0
+  youtube_player_flutter: ^10.0.1
+  syncfusion_flutter_pdfviewer: ^33.2.12
+  flutter_cache_manager: ^3.4.1
+  cached_network_image: ^3.4.1
+
+  # Vision & Camera
+  tflite_flutter: 0.12.1
+  image: ^4.0.0
+  camera: 0.12.0+1
+  # The `camera` plugin has no macOS implementation; this provides the Mac
+  # webcam for the device-camera scan screen.
+  camera_macos: ^0.1.1
+  # Locates the copied Gemma model on Android to report copy progress.
+  path_provider: ^2.1.6
+
+  # On-device Gemma inference for the auto-generated waste-sorting quiz
+  # (same API/model as the ELIO-SANDBOX prototype's GemmaService).
+  flutter_gemma: ^1.9.0
+  flutter_gemma_litertlm: ^1.8.2
+
+  # Voice playback for the quiz's AI Correction Assistant messages (same as
+  # the ELIO-SANDBOX prototype's TtsService).
+  flutter_tts: ^4.2.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  firebase_auth_mocks: ^0.15.1
+  fake_cloud_firestore: ^4.1.0+1
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - .env.dev
+    - .env.prod
+    - .env.example
+    - assets/icon/
+    - assets/models/
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/ELIO_ICON.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#1D9E75"
+  adaptive_icon_foreground: "assets/icon/ELIO_ICON.png"
+
+flutter_native_splash:
+  color: "#1D9E75"
+  image: "assets/icon/ELIO_ICON.png"
+  android_12:
+    color: "#1D9E75"
+    image: "assets/icon/ELIO_ICON.png"
+    branding_mode: "contain"
+  ios: true
+  web: false
