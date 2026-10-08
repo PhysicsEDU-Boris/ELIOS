@@ -54,18 +54,35 @@ lib/firebase_options.dart
 
 # Firestore seed local files
 firestore-seed/serviceAccountKey.json
-firestore-seed/node_modules/
-
-# Firebase secrets
-ios/Runner/GoogleService-Info.plist
-macos/Runner/GoogleService-Info.plist
-android/app/google-services.json
-lib/firebase_options*.dart
-.env*
 firestore-seed/
 references/
+node_modules/
 
-# On-device Gemma model (~2.4GB) — bundled locally as a Flutter asset so the
-# AI quiz works fully offline, but far too large for a normal git repo.
-# Each dev/build machine must place the .litertlm file here manually.
+# Environment files (only the placeholder template is tracked)
+.env*
+!.env.example
+
+# Firebase config with real keys: never commit. Use the *.example templates.
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
+
+# Signing material
+key.properties
+**/android/key.properties
+*.jks
+*.keystore
+
+# On-device Gemma model (~2.59 GB). Each machine places it manually,
+# see README "Gemma model". Never commit it.
+*.litertlm
+/models/
 assets/models/*.litertlm
+assets/models/*.tflite
+robot-elio.glb
+assets/models/robot-elio.glb
+
+# Local agent and tooling state
+.claude/
+.codegraph/
