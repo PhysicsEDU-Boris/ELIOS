@@ -1,54 +1,52 @@
-<div align="center">
+# ELIOS
 
-# 🤖 ELIO
-### Smart Waste Sorting Robot — Mobile Controller App
+ELIOS is a waste-sorting robot app for physics and environmental education.
+The Flutter app reads a camera (the phone camera or a MaixCAM2 camera robot,
+with an ESP32 for motion), finds the waste item, asks Gemma once on-device
+through LiteRT-LM, and shows a quiz about it while the camera keeps running.
 
-![Flutter](https://img.shields.io/badge/Flutter-3.41.7-02569B?style=flat&logo=flutter)
-![Firebase](https://img.shields.io/badge/Firebase-Connected-FFCA28?style=flat&logo=firebase)
-![Android](https://img.shields.io/badge/Android-API%2036-3DDC84?style=flat&logo=android)
-![Dart](https://img.shields.io/badge/Dart-3.11.5-0175C2?style=flat&logo=dart)
-![Status](https://img.shields.io/badge/Status-In%20Development-orange?style=flat)
+Waste categories: organik, anorganik, B3 (hazardous) and residu.
 
-*A Flutter mobile app to control and monitor the ELIO waste sorting robot via WiFi and MQTT*
+## Plan and design
 
-</div>
+- Plan and milestones (M0 to M7): [Notion: ELIOS](https://app.notion.com/p/ELIOS-3f29675ed4f3800abef3fbb7daefe405)
+- Architecture, ERD and pipeline charts 1 to 7: [Figma board, node 74:130](https://www.figma.com/design/J2jSbARJSyJCStNFeWkWDj/?node-id=74-130)
+- How the charts map to milestones: [`docs/pipeline/README.md`](docs/pipeline/README.md)
+- Decisions: [`docs/decisions/`](docs/decisions/)
+- Changes: [`CHANGELOG.md`](CHANGELOG.md)
 
----
+## Gemma model
 
-## 📱 About ELIO
+The model is about 2.59 GB and is **never committed** (`*.litertlm` is in
+`.gitignore`). The app loads it from:
 
-ELIO is an AI-powered waste sorting robot that uses **YOLOv object segmentation** to classify waste into three categories:
+```
+assets/models/gemma-4-E2B-it.litertlm
+```
 
-| Category | Description |
-|---|---|
-| 🌿 Organic | Food waste, plant material |
-| ♻️ Inorganic | Plastic, metal, glass, paper |
-| ⚠️ Hazardous | Batteries, chemicals, medical waste |
+(see `GemmaQuizService.modelFileName` in `lib/services/gemma_quiz_service.dart`).
+Copy your local copy of the model to that path before building, for example:
 
-This mobile app serves as the **remote controller and monitoring interface** for the ELIO robot, connecting via WiFi and MQTT protocol to an **ESP32-CAM** module.
+```bash
+cp /path/to/gemma-4-E2B-it.litertlm assets/models/
+```
 
----
+## Run on macOS
 
-## ✨ Features
+Requirements: Flutter stable with macOS desktop enabled, Xcode, the Gemma model
+(above) and the Firebase files (below, at least `.env.dev` and
+`macos/Runner/GoogleService-Info.plist`).
 
-- 🔐 **Authentication** — Google Sign-In, Email/Password, Guest mode
-- 📚 **E-Learning** — Waste type education and management guides
-- 🤖 **Robot Control** — D-pad controls via MQTT
-- 📷 **Live Camera** — Real-time MJPEG stream from ESP32-CAM
-- 🧠 **AI Detection** — YOLOv segmentation overlay on camera feed
-- ⚙️ **ESP32 Config** — WiFi and MQTT broker configuration
+```bash
+git config core.hooksPath .githooks   # once per clone, enables the secret check
+flutter pub get
+flutter run -d macos
 
----
-
-## 🗺️ Development Roadmap
-Phase 1 — Splash Screen          ✅ Complete
-Phase 2 — Authentication         🔄 In Progress
-Phase 3 — Home + Navigation      ⬜ Todo
-Phase 4 — E-Learning Screen      ⬜ Todo
-Phase 5 — ESP32-CAM Config       ⬜ Todo
-Phase 6 — D-Pad + Camera         ⬜ Todo
-
----
+# Tests
+flutter test                                                   # unit and widget tests
+flutter test integration_test/gemma_offline_test.dart -d macos # real Gemma, needs the model
+flutter analyze
+```
 
 ## Firebase setup
 
