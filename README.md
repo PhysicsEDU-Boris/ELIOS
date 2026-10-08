@@ -50,32 +50,22 @@ Phase 6 — D-Pad + Camera         ⬜ Todo
 
 ---
 
-## Firebase Environment Configuration
+## Firebase setup
 
-Firebase initialization is environment-variable driven to avoid storing hardcoded config values in source files.
+Real Firebase config files hold API keys and are **never committed**. They are
+listed in `.gitignore`. Each developer downloads their own copies.
 
-### Files
+| File | Used by | How to get it |
+|---|---|---|
+| `.env.dev`, `.env.prod` | Web, Android fallback | Copy `.env.example` and fill in the values from Firebase console → Project settings → Your apps → Web app → SDK setup and configuration |
+| `.env.android.dev`, `.env.android.prod` | Android | Same as above, using the Android app values |
+| `android/app/google-services.json` | Android Gradle plugin | Firebase console → Project settings → Your apps → Android app (`com.boris.elio`) → download `google-services.json`. Template: `android/app/google-services.json.example` |
+| `ios/Runner/GoogleService-Info.plist` | iOS | Firebase console → Your apps → iOS app (`com.boris.elio`) → download `GoogleService-Info.plist` |
+| `macos/Runner/GoogleService-Info.plist` | macOS | Same file as iOS, copied into `macos/Runner/` |
+| `lib/firebase_options.dart` | Not used today | Only if you run `flutterfire configure`. Template: `lib/firebase_options.dart.example` |
 
-- `.env.example` (committed template)
-- `.env.dev` (local development values)
-- `.env.prod` (local/CI production values)
+The app picks the environment with `--dart-define=ELIO_ENV=dev|prod` (default
+`dev`). Missing required keys fail fast at startup with a clear error.
 
-### Setup
-
-1. Copy `.env.example` to `.env.dev` and/or `.env.prod`.
-2. Fill in Firebase values.
-3. Run the app with an environment selector:
-
-```bash
-# Default (dev)
-flutter run
-
-# Explicit prod
-flutter run --dart-define=ELIO_ENV=prod
-```
-
-### Notes
-
-- `.env` files are ignored by git except `.env.example`.
-- Firebase is initialized from `lib/firebase_options_loader.dart`.
-- Missing required Firebase keys fail fast at startup with a clear error.
+Before pushing, the pre-push hook runs `scripts/check-secrets.sh`. Enable it once
+per clone with `git config core.hooksPath .githooks`.
