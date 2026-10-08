@@ -13,26 +13,41 @@ All 3 runs: **All tests passed!** (the test's own assertions — phone correctly
 
 ## Time to first token (ms)
 
-| Request | Run 1 | Run 2 | Run 3 | Average |
-|---|---|---|---|---|
-| identify | 3989 | 3878 | 3827 | **3898** |
-| question | 464 | 563 | 470 | **499** |
-| discuss | 371 | 299 | 288 | **319** |
-| essay | 377 | 395 | 300 | **357** |
-| review | 375 | 287 | 368 | **343** |
+| Request | Run 1 | Run 2 | Run 3 | Average | Range (min–max) |
+|---|---|---|---|---|---|
+| identify | 3989 | 3878 | 3827 | **3898** | 3827–3989 (162) |
+| question | 464 | 563 | 470 | **499** | 464–563 (99) |
+| discuss | 371 | 299 | 288 | **319** | 288–371 (83) |
+| essay | 377 | 395 | 300 | **357** | 300–395 (95) |
+| review | 375 | 287 | 368 | **343** | 287–375 (88) |
 
 ## Total generation time (s), with the stage 0 baseline
 
-| Request | Run 1 | Run 2 | Run 3 | Average | Stage 0 baseline | Δ |
-|---|---|---|---|---|---|---|
-| identify | 4.57 | 4.41 | 4.43 | **4.47** | 5.38 | −0.91 |
-| question | 4.41 | 4.46 | 3.61 | **4.16** | 5.14 | −0.98 |
-| discuss | 2.69 | 2.88 | 2.10 | **2.56** | 2.41 | +0.15 |
-| essay | 3.59 | 2.72 | 3.34 | **3.21** | 3.45 | −0.24 |
-| review | 2.35 | 2.83 | 2.50 | **2.56** | 2.98 | −0.42 |
+| Request | Run 1 | Run 2 | Run 3 | Average | Range (min–max) | Stage 0 baseline | Δ (avg) |
+|---|---|---|---|---|---|---|---|
+| identify | 4.57 | 4.41 | 4.43 | **4.47** | 4.41–4.57 (0.16) | 5.38 | −0.91 |
+| question | 4.41 | 4.46 | 3.61 | **4.16** | 3.61–4.46 (0.85) | 5.14 | −0.98 |
+| discuss | 2.69 | 2.88 | 2.10 | **2.56** | 2.10–2.88 (0.78) | 2.41 | +0.15 |
+| essay | 3.59 | 2.72 | 3.34 | **3.21** | 2.72–3.59 (0.87) | 3.45 | −0.24 |
+| review | 2.35 | 2.83 | 2.50 | **2.56** | 2.35–2.83 (0.48) | 2.98 | −0.42 |
+
+The baseline for discuss (2.41 s) sits inside this run's range (2.10–2.88 s),
+so the +0.15 s average difference is not a real regression.
 
 Stage 0 baseline had no first-token figures to compare against — only total
 generation time was recorded then, which is why that comparison uses totals.
+
+## Identify: correct item per run
+
+Test photo: `integration_test/fixtures/phone_jpeg.dart` (a phone). Correct
+means the test's own check passed: the item names a phone and is not a
+bottle.
+
+| Run | Item | Material | Category | Correct |
+|---|---|---|---|---|
+| 1 | ponsel | logam, plastik, kaca | anorganik | yes |
+| 2 | ponsel | logam dan plastik | anorganik | yes |
+| 3 | ponsel pintar | logam, plastik, kaca | anorganik | yes |
 
 ## Other timings (not part of the per-request table above)
 
