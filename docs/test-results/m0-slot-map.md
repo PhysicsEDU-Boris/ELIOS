@@ -76,10 +76,10 @@ and completes it with `null`.
 | `WasteQuizNotifier.dismiss` | `waste_quiz_provider.dart:414` | the quiz popup is closed |
 | `quiz_behavior_test.dart` | lines 108, 150, 162 | unit tests exercise cancellation directly |
 
-`dispose()` (line 611) also calls `cancel()` as its first step, but nothing
-in `lib/` calls `dispose()` on the Gemma slot today (`control_screen.dart` and
-`device_scan_screen.dart` call `GemmaQuizService.instance.dispose()`, which is
-the same method — confirmed above under "entry points").
+`dispose()` (line 611) also calls `cancel()` as its first step. It is called
+when leaving the control screen (`control_screen.dart:165`) and the device
+scan screen (`device_scan_screen.dart:78`), so leaving either screen also
+cancels any running or waiting request.
 
 ## Entry points (who calls identify / discuss, and from where)
 
