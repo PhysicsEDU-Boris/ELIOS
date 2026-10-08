@@ -100,7 +100,7 @@ void main() {
       for (var attempt = 1; attempt <= attempts; attempt++) {
         final c1 = _closed.length;
         final pending = service.identifyItem(photo);
-        await Future<void>.delayed(Duration(milliseconds: ref.firstTokenMs + 100));
+        await Future<void>.delayed(Duration(milliseconds: ref.firstTokenMs + 250));
         final cancelAt = _clock.elapsedMilliseconds;
         service.cancel();
         final cancelled = await pending;
