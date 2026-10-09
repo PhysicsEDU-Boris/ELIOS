@@ -130,6 +130,43 @@ void main() {
     });
   });
 
+  group('pauses (maxFrameGap)', () {
+    test('a 20 s pause after 0.5 s of candidate time does not lock on the next frame', () {
+      final r = _Rig();
+      r.hold(0, 500, [_plastic]);
+      expect(r.at(20500, [_plastic]), isNull); // timer dropped: new candidate from here
+      r.hold(20600, 21400, [_plastic]);
+      expect(r.locks, isEmpty);
+      r.at(21500, [_plastic]);
+      expect(r.locks, [21500]);
+    });
+
+    test('a frame gap of exactly 1.5 s keeps the candidate; 1501 ms drops it', () {
+      final keep = _Rig();
+      keep.hold(0, 500, [_plastic]);
+      expect(keep.at(2000, [_plastic]), isNotNull);
+
+      final drop = _Rig();
+      drop.hold(0, 500, [_plastic]);
+      expect(drop.at(2001, [_plastic]), isNull);
+    });
+
+    test('a locked object stays locked across a 20 s pause', () {
+      final r = _Rig();
+      r.hold(0, 1000, [_plastic]); // locks at 1000
+      r.hold(21000, 30000, [_plastic]);
+      expect(r.locks, [1000]);
+    });
+
+    test('a locked object missing just before a pause is not re-armed by the pause', () {
+      final r = _Rig();
+      r.hold(0, 1000, [_plastic]); // locks at 1000
+      r.at(1100, []); // missing from 1100
+      r.hold(21100, 30000, [_plastic]); // 20 s with no frames is not absence
+      expect(r.locks, [1000]);
+    });
+  });
+
   group('overlap and label', () {
     // Two 100x100 boxes shifted by dx along x have IoU (100 - dx) / (100 + dx).
     final justAbove = _box('Plastic', x: 71); // dx 21: IoU 0.6529

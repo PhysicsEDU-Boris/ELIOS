@@ -63,6 +63,7 @@ class DetectionStabilizer {
     this.iouThreshold = 0.65,
     this.dropoutTolerance = const Duration(milliseconds: 600),
     this.rearmAfter = const Duration(milliseconds: 1500),
+    this.maxFrameGap = const Duration(milliseconds: 1500),
     this.ignoredLabels = const {},
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now;
@@ -84,6 +85,11 @@ class DetectionStabilizer {
   /// [dropoutTolerance]). A new label on it locks only after holding for
   /// [lockTime], which then replaces the lock.
   final Duration rearmAfter;
+
+  /// If no frame arrives for longer than this (for example analysis was
+  /// paused), the unlocked candidate and its timer are dropped. A locked
+  /// object stays locked, and the pause doesn't count as its absence.
+  final Duration maxFrameGap;
 
   /// Labels removed before tracking (compared after trimming, exact match),
   /// e.g. the hand holding the item. They can never be tracked or locked.
@@ -113,6 +119,10 @@ class DetectionStabilizer {
     final now = _clock();
     final last = _lastFrameAt;
     if (last != null && now.isBefore(last)) return null;
+    if (last != null && now.difference(last) > maxFrameGap) {
+      _candidate = null;
+      _lockedMissingSince = null;
+    }
     _lastFrameAt = now;
 
     final seen = [
