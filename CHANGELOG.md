@@ -14,11 +14,13 @@ kept outside the repo.
 ### Added
 - M1: detection stabilizer (`lib/services/detection_stabilizer.dart`, decision
   0007). It gives one lock per object: the same object held for 1.0 s (track id,
-  or same label with box overlap of at least 0.65). Absences up to 300 ms keep
-  the timer; a locked object re-arms after 1.5 s missing or a label change.
-  It takes configurable ignored labels. Pure logic with 26 unit tests. Not
-  wired into the app yet (M2); the parameters are provisional until tuned on
-  a device.
+  or same label with box overlap of at least 0.65). Absences up to 600 ms keep
+  the timer (one missed frame at 2 fps). A locked object re-arms after 1.5 s
+  missing; a new label must hold 1.0 s before it replaces the lock, so a
+  one-frame label flicker doesn't lock twice. A frame gap over 1.5 s drops an
+  unlocked candidate but keeps a lock. It takes configurable ignored labels.
+  Pure logic with 36 unit tests. Not wired into the app yet (M2); the
+  parameters are provisional until tuned on a device.
 - M0: stage 2 proven on the real model (macOS, Debug build), on
   `feature/live-scan` through PR #2. Includes a real timing table.
   `stopGeneration` stops decoding 2–38 ms after a cancel over 72 trials;
