@@ -61,7 +61,7 @@ class DetectionStabilizer {
   DetectionStabilizer({
     this.lockTime = const Duration(milliseconds: 1000),
     this.iouThreshold = 0.65,
-    this.dropoutTolerance = const Duration(milliseconds: 300),
+    this.dropoutTolerance = const Duration(milliseconds: 600),
     this.rearmAfter = const Duration(milliseconds: 1500),
     this.ignoredLabels = const {},
     DateTime Function()? clock,

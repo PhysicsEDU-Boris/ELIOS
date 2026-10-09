@@ -55,25 +55,64 @@ void main() {
 
   group('dropout', () {
     // Absence is timed from the first frame that arrives without the object.
-    test('a 299 ms dropout keeps the timer', () {
+    test('a 599 ms dropout keeps the timer', () {
       final r = _Rig();
       r.hold(0, 400, [_plastic]);
-      r.hold(500, 700, []); // missing from 500
-      expect(r.at(799, [_plastic]), isNull); // back after 299 ms
+      r.hold(500, 1000, []); // missing from 500
+      expect(r.at(1099, [_plastic]), isNotNull); // back after 599 ms: the timer kept running
+      expect(r.locks, [1099]);
+    });
+
+    test('a 601 ms dropout resets the timer', () {
+      final r = _Rig();
+      r.hold(0, 400, [_plastic]);
+      r.hold(500, 1000, []);
+      r.at(1101, [_plastic]); // back after 601 ms: new candidate from here
+      r.at(2100, [_plastic]);
+      expect(r.locks, isEmpty);
+      expect(r.at(2101, [_plastic]), isNotNull);
+      expect(r.locks, [2101]);
+    });
+
+    // A frame is "missed" when it arrives without the object.
+    test('2 fps: one missed frame keeps the timer', () {
+      final r = _Rig();
+      r.at(0, [_plastic]);
+      r.at(500, []);
       expect(r.at(1000, [_plastic]), isNotNull);
+    });
+
+    test('2 fps: two missed frames reset the timer', () {
+      final r = _Rig();
+      r.at(0, [_plastic]);
+      r.at(500, []);
+      r.at(1000, []);
+      r.hold(1500, 2500, [_plastic], step: 500); // new candidate from 1500
+      expect(r.locks, [2500]);
+    });
+
+    test('4 fps: one missed frame keeps the timer', () {
+      final r = _Rig();
+      r.hold(0, 250, [_plastic], step: 250);
+      r.at(500, []);
+      r.hold(750, 1000, [_plastic], step: 250);
       expect(r.locks, [1000]);
     });
 
-    test('a 301 ms dropout resets the timer', () {
-      final r = _Rig();
-      r.hold(0, 400, [_plastic]);
-      r.hold(500, 700, []);
-      r.at(801, [_plastic]); // back after 301 ms: new candidate from here
-      r.at(1000, [_plastic]);
-      r.at(1800, [_plastic]);
-      expect(r.locks, isEmpty);
-      expect(r.at(1801, [_plastic]), isNotNull);
-      expect(r.locks, [1801]);
+    test('4 fps: two missed frames (500 ms) still keep the timer; three (750 ms) reset it', () {
+      // With a time tolerance this can't be otherwise: two misses at 4 fps last
+      // as long as one miss at 2 fps (500 ms). See decision 0007.
+      final two = _Rig();
+      two.hold(0, 250, [_plastic], step: 250);
+      two.hold(500, 750, [], step: 250);
+      two.at(1000, [_plastic]);
+      expect(two.locks, [1000]);
+
+      final three = _Rig();
+      three.hold(0, 250, [_plastic], step: 250);
+      three.hold(500, 1000, [], step: 250);
+      three.hold(1250, 2250, [_plastic], step: 250); // new candidate from 1250
+      expect(three.locks, [2250]);
     });
 
     test('a 2 fps stream (frames 500 ms apart, none missing) still locks', () {
@@ -294,12 +333,12 @@ void main() {
     test('a frame with only the ignored label counts as empty for the dropout', () {
       final r = _Rig(ignoredLabels: {'Human_Hand'});
       r.hold(0, 400, [plastic]);
-      r.hold(500, 700, [hand]); // Plastic missing from 500
-      r.at(801, [plastic]); // 301 ms: timer resets
-      r.at(1000, [plastic]);
+      r.hold(500, 1000, [hand]); // Plastic missing from 500
+      r.at(1101, [plastic]); // 601 ms: timer resets
+      r.at(2100, [plastic]);
       expect(r.locks, isEmpty);
-      r.at(1801, [plastic]);
-      expect(r.locks, [1801]);
+      r.at(2101, [plastic]);
+      expect(r.locks, [2101]);
     });
 
     test('a frame with only the ignored label counts as empty for the re-arm', () {
