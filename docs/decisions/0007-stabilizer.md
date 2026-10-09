@@ -128,6 +128,16 @@ The stabilizer follows **one object at a time** (single target):
 - **largest has a known problem:** the largest box is often the hand or the
   background, though `ignoredLabels` covers the hand.
 
+### Read-only state (added in M2a)
+
+`hasCandidate` (an object is being timed) and `isLocked` (an object is
+locked and can't lock again until it re-arms) are read-only getters. The
+live-scan state machine (decision 0008) uses them to show LOCKING and to
+know when the stabilizer has re-armed. There is deliberately no way to
+release a lock from outside: after a failed ask, the object stays blocked
+until it has been absent for `rearmAfter`, so a failure can't cause a
+retry loop.
+
 ## Out of scope for M1
 
 - **Wiring into the app (M2):** the state machine

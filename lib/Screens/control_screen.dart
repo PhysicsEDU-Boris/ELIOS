@@ -14,9 +14,11 @@ import '../providers/esp_config_provider.dart';
 import '../providers/robot_provider.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../services/gemma_quiz_service.dart';
+import '../services/live_scan_controller.dart';
 import '../services/websocket_service.dart';
 import '../widgets/debug_phone_camera_sheet.dart';
 import '../widgets/desktop_viewport.dart';
+import '../widgets/live_scan_debug_overlay.dart';
 import '../widgets/segmentation_overlay_painter.dart';
 import '../widgets/waste_quiz_popup.dart';
 import '../services/frame_source/maix_cam_source.dart';
@@ -44,6 +46,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   int _lastFrameBytes = 0;
   bool _streamStartedForCurrentConnection = false;
 
+  /// Set only when built with --dart-define=LIVE_SCAN=true (M2a).
+  LiveScanController? _liveScan;
+
   static const Color textPrimary = Color(0xFF1C2833);
   static const Color textSecondary = Color(0xFF7F8C8D);
   static const Color primaryColor = Color(0xFF1D9E75);
@@ -57,6 +62,17 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     _robotNotifier = ref.read(robotControlProvider.notifier);
 
     setDesktopLandscape(true);
+
+    if (liveScanEnabled) {
+      _liveScan = LiveScanController(
+        startQuiz: (label) {
+          if (ref.read(wasteQuizProvider).phase != WasteQuizPhase.idle) return false;
+          ref.read(wasteQuizProvider.notifier).startForLabel(label);
+          return true;
+        },
+        firstTokenMs: () => GemmaQuizService.instance.lastFirstTokenMs.value,
+      );
+    }
 
     // Subscribe to robot frames outside of build to avoid re-registering
     // the listener on every rebuild.
@@ -82,7 +98,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
       // Auto-generated waste quiz: only fed by the real MaixCAM2 stream, the
       // debug phone-camera path triggers it manually instead.
       if (frame.detections != null && ref.read(debugQuizSourceProvider) == WasteQuizSource.maixCam2) {
-        ref.read(wasteQuizProvider.notifier).onDetections(frame.detections!);
+        final liveScan = _liveScan;
+        if (liveScan != null) {
+          liveScan.onDetections(frame.detections!);
+        } else {
+          ref.read(wasteQuizProvider.notifier).onDetections(frame.detections!);
+        }
       }
     });
     _statusSubscription = ref.listenManual(robotStatusProvider, (_, next) {
@@ -164,6 +185,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     unawaited(_robotNotifier.disconnect());
     unawaited(GemmaQuizService.instance.dispose());
     setDesktopLandscape(false);
+    _liveScan?.dispose(); // last: dismiss() above can still report a phase change
     super.dispose();
   }
 
@@ -173,6 +195,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     // Wi-Fi for Gemma) and resume when it's closed or minimized. Driving and
     // arm controls are unaffected.
     ref.listen<WasteQuizUiState>(wasteQuizProvider, (prev, next) {
+      if (prev?.phase != next.phase) _liveScan?.onQuizPhase(next.phase);
       final was = prev != null && prev.phase != WasteQuizPhase.idle && !prev.minimized;
       final now = next.phase != WasteQuizPhase.idle && !next.minimized;
       if (was == now) return;
@@ -348,6 +371,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
               ),
             ),
           const WasteQuizPopup(),
+          if (kDebugMode && _liveScan != null)
+            Positioned(
+              left: 12,
+              bottom: 12,
+              child: SafeArea(child: LiveScanDebugOverlay(controller: _liveScan!)),
+            ),
         ],
       ),
     );

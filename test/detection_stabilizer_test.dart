@@ -130,6 +130,30 @@ void main() {
     });
   });
 
+  group('read-only state (hasCandidate, isLocked)', () {
+    test('follow a candidate, its lock, and the re-arm', () {
+      final r = _Rig();
+      expect((r.s.hasCandidate, r.s.isLocked), (false, false));
+      r.at(0, [_plastic]);
+      expect((r.s.hasCandidate, r.s.isLocked), (true, false));
+      r.hold(100, 1000, [_plastic]); // locks at 1000
+      expect((r.s.hasCandidate, r.s.isLocked), (false, true));
+      r.hold(1100, 2400, []); // missing from 1100
+      expect(r.s.isLocked, isTrue);
+      r.at(2600, []); // missing 1500 ms: re-armed
+      expect((r.s.hasCandidate, r.s.isLocked), (false, false));
+    });
+
+    test('a candidate that drops out clears hasCandidate', () {
+      final r = _Rig();
+      r.at(0, [_plastic]);
+      r.hold(100, 700, []); // missing from 100: dropped once over 600 ms
+      expect(r.s.hasCandidate, isTrue);
+      r.at(701, []);
+      expect(r.s.hasCandidate, isFalse);
+    });
+  });
+
   group('pauses (maxFrameGap)', () {
     test('a 20 s pause after 0.5 s of candidate time does not lock on the next frame', () {
       final r = _Rig();

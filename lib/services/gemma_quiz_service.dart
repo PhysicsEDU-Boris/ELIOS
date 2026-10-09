@@ -117,6 +117,10 @@ class GemmaQuizService {
 
   final ValueNotifier<GemmaProgress> progress =
       ValueNotifier(const GemmaProgress(GemmaStatus.idle));
+
+  /// First-token time (ms) of the last finished generation, or null if it
+  /// produced no token. Read-only, for the live-scan debug overlay.
+  final ValueNotifier<int?> lastFirstTokenMs = ValueNotifier(null);
   final _random = Random();
 
   InferenceModel? _model;
@@ -364,6 +368,7 @@ class GemmaQuizService {
         }, onDone: () {
            final total = sw.elapsedMilliseconds;
            _log('generated ${fullText.length} chars (first token: ${firstTokenMs ?? 0}ms, total: ${total}ms)');
+           lastFirstTokenMs.value = firstTokenMs;
            if (!completer.isCompleted) completer.complete(fullText.isEmpty ? null : fullText.trim());
         });
       } catch (e) {

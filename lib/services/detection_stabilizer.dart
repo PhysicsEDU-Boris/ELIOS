@@ -106,6 +106,12 @@ class DetectionStabilizer {
   TrackedDetection? _locked;
   DateTime? _lockedMissingSince;
 
+  /// An object is being timed but hasn't locked yet.
+  bool get hasCandidate => _candidate != null;
+
+  /// An object is locked: it can't lock again until it re-arms.
+  bool get isLocked => _locked != null;
+
   /// Feeds one frame's detections, timed by the injected clock. Returns a
   /// lock when the tracked object has just been held for [lockTime],
   /// otherwise null.
