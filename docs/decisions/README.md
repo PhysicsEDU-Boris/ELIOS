@@ -12,3 +12,4 @@ their status changed.
 | [0003](0003-stop-generation.md) | `stopGeneration` really stops LiteRT-LM, so no fallback | Accepted |
 | [0004](0004-stage-2-commit.md) | The stage 2 commit is documented, not split | Accepted |
 | [0005](0005-m0-findings.md) | Findings from M0, recorded, not fixed in M0 | Accepted |
+| [0006](0006-macos-release-entitlements.md) | macOS release builds may run a local server (for the 3D viewer) | Accepted |

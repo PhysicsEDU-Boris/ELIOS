@@ -45,3 +45,6 @@ kept outside the repo.
   time: `ControlScreen` dispose now dismisses the quiz popup (`008efae`).
 - The macOS camera view swaps to a black box again when the quiz pauses it
   (`83c3bb8`).
+- The 3D robot viewer loads in macOS release builds: `Release.entitlements`
+  now has `com.apple.security.network.server`, needed for the viewer's local
+  server on 127.0.0.1 (`d48d9ab`, decision 0006).
