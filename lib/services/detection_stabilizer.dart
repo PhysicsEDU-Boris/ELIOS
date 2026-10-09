@@ -81,7 +81,8 @@ class DetectionStabilizer {
   final Duration dropoutTolerance;
 
   /// A locked object re-arms after being missing this long (measured like
-  /// [dropoutTolerance]), or when its label changes.
+  /// [dropoutTolerance]). A new label on it locks only after holding for
+  /// [lockTime], which then replaces the lock.
   final Duration rearmAfter;
 
   /// Labels removed before tracking (compared after trimming, exact match),
@@ -149,10 +150,13 @@ class DetectionStabilizer {
     final target = _pick(seen);
     if (target == null) return null;
 
+    // The locked object with its locked label: still blocked. A new label on
+    // it must hold for lockTime like any candidate, so a flicker back to the
+    // locked label drops that candidate instead of re-arming.
     final stillLocked = _locked;
-    if (stillLocked != null && _sameObject(stillLocked, target)) {
-      if (target.label == stillLocked.label) return null;
-      _locked = null; // label change re-arms
+    if (stillLocked != null && _sameObject(stillLocked, target) && target.label == stillLocked.label) {
+      _candidate = null;
+      return null;
     }
 
     final current = _candidate;

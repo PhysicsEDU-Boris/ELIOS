@@ -148,10 +148,21 @@ void main() {
       expect(r.locks, [1000, 3600]);
     });
 
-    test('a label change re-arms the locked object', () {
+    test('a one-frame label flicker (Plastic, Paper, Plastic) locks once', () {
+      final r = _Rig();
+      r.hold(0, 1000, [_plastic]); // locks at 1000
+      r.at(1100, [_box('Paper')]);
+      r.hold(1200, 2200, [_plastic]);
+      r.at(2300, [_box('Paper')]); // a second flicker must not finish an old Paper timer
+      r.hold(2400, 6000, [_plastic]);
+      expect(r.locks, [1000]);
+      expect(r.lockedLabels, ['Plastic']);
+    });
+
+    test('a label that really changes and holds for the lock time locks once more', () {
       final r = _Rig();
       r.hold(0, 1000, [_plastic]);
-      r.hold(1100, 2100, [_box('Metal')]);
+      r.hold(1100, 5000, [_box('Metal')]);
       expect(r.locks, [1000, 2100]);
       expect(r.lockedLabels, ['Plastic', 'Metal']);
     });
