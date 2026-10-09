@@ -14,3 +14,4 @@ their status changed.
 | [0005](0005-m0-findings.md) | Findings from M0, recorded, not fixed in M0 | Accepted |
 | [0006](0006-macos-release-entitlements.md) | macOS release builds may run a local server (for the 3D viewer) | Accepted |
 | [0007](0007-stabilizer.md) | Detection stabilizer (stage 3a) | Accepted (parameters provisional) |
+| [0008](0008-live-scan-state-machine.md) | Live-scan state machine for the robot path (behind a switch) | Accepted |

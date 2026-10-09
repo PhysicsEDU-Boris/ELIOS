@@ -12,6 +12,15 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- M2a: live scan for the robot path, behind `--dart-define=LIVE_SCAN=true`
+  (off by default; without it nothing changes). The detection stabilizer
+  and a state machine (SEARCHING, LOCKING, ASKING, QUIZ, COOLDOWN) start
+  one quiz per object. Locks during ASKING and QUIZ are dropped. A failed,
+  busy or cancelled ask goes back to searching without a retry loop. It
+  keeps the 0.55 score filter, ignores `Human_Hand`, and uses a monotonic
+  clock. Debug overlay with state, fps, identify calls and first-token
+  time. Decision 0008. Robot frames still don't reach Gemma's identify
+  (planned for M2c).
 - M1: detection stabilizer (`lib/services/detection_stabilizer.dart`, decision
   0007). It gives one lock per object: the same object held for 1.0 s (track id,
   or same label with box overlap of at least 0.65). Absences up to 600 ms keep
@@ -43,6 +52,8 @@ kept outside the repo.
   pipeline map; decision records; secret check with a pre-push hook.
 
 ### Changed
+- `GemmaQuizService` exposes a read-only `lastFirstTokenMs` (for the M2a debug
+  overlay); no behaviour change.
 - `android/app/google-services.json` is no longer tracked. Use the template
   and the README "Firebase setup" section.
 
