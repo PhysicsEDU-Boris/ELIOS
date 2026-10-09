@@ -134,11 +134,13 @@ class DetectionStabilizer {
     }
 
     // The candidate: a short absence keeps its timer, a longer one drops it.
+    // In view means the same object, whatever its label (a new label is
+    // handled below as a new candidate).
     final cand = _candidate;
     if (cand != null) {
-      final match = _find(seen, cand);
+      final inView = seen.any((d) => _sameObject(cand, d));
       final missing = _candidateMissingSince;
-      if (match == null) {
+      if (!inView) {
         if (now.difference(_candidateMissingSince ??= now) > dropoutTolerance) _candidate = null;
       } else if (missing != null && now.difference(missing) > dropoutTolerance) {
         _candidate = null;
@@ -146,6 +148,8 @@ class DetectionStabilizer {
         _candidateMissingSince = null;
       }
     }
+    // Missing but still inside the dropout window: wait for it, don't switch.
+    if (_candidate != null && _candidateMissingSince != null) return null;
 
     final target = _pick(seen);
     if (target == null) return null;

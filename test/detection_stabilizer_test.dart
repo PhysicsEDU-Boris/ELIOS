@@ -18,6 +18,7 @@ class _Rig {
   late final DetectionStabilizer s;
   final locks = <int>[];
   final lockedLabels = <String>[];
+  final lockedTrackIds = <int?>[];
 
   StabilizerLock? at(int ms, List<TrackedDetection> frame) {
     _now = ms;
@@ -25,6 +26,7 @@ class _Rig {
     if (lock != null) {
       locks.add(lock.at.difference(_t0).inMilliseconds);
       lockedLabels.add(lock.detection.label);
+      lockedTrackIds.add(lock.detection.trackId);
     }
     return lock;
   }
@@ -103,14 +105,15 @@ void main() {
       expect(r.locks, [1000]);
     });
 
-    test('IoU just below the threshold starts a new candidate', () {
+    test('IoU just below the threshold is another object: the old timer does not carry over', () {
       expect(intersectionOverUnion(_plastic, justBelow), lessThan(0.65));
       final r = _Rig();
       r.at(0, [_plastic]);
-      r.at(500, [justBelow]); // new candidate from here
-      expect(r.at(1000, [justBelow]), isNull);
-      expect(r.at(1500, [justBelow]), isNotNull);
-      expect(r.locks, [1500]);
+      r.hold(500, 1000, [justBelow]);
+      expect(r.locks, isEmpty); // the same object would have locked at 1000
+      r.hold(1100, 4000, [justBelow]); // after the old candidate's grace, it locks
+      expect(r.locks, hasLength(1));
+      expect(r.locks.single, greaterThan(1500));
     });
 
     test('a label change on the same box starts a new candidate', () {
@@ -180,9 +183,10 @@ void main() {
     test('track_id: a new id over the same box is a new object', () {
       final r = _Rig();
       r.at(0, [_box('Plastic', id: 7)]);
-      r.at(500, [_box('Plastic', id: 8)]);
-      expect(r.at(1000, [_box('Plastic', id: 8)]), isNull);
-      expect(r.at(1500, [_box('Plastic', id: 8)])!.detection.trackId, 8);
+      r.hold(500, 1000, [_box('Plastic', id: 8)]);
+      expect(r.locks, isEmpty); // id 7 would have locked at 1000
+      r.hold(1100, 4000, [_box('Plastic', id: 8)]);
+      expect(r.lockedTrackIds, [8]);
     });
 
     test('no track_id (old firmware): overlap decides, also when only one side has an id', () {
@@ -252,6 +256,15 @@ void main() {
       final r = _Rig();
       r.hold(0, 1000, [_box('Plastic', score: 0.8), _box('Metal', x: 400, w: 200, h: 200, score: 0.8)]);
       expect(r.lockedLabels, ['Metal']);
+    });
+
+    test('the candidate missing for one frame while another object is visible keeps its grace', () {
+      final r = _Rig();
+      r.hold(0, 400, [a]);
+      r.at(500, [_box('Metal', x: 400, score: 0.99)]); // a missed, b visible and more confident
+      r.hold(600, 1000, [a]);
+      expect(r.locks, [1000]);
+      expect(r.lockedLabels, ['Plastic']);
     });
 
     test('a second object waits while the locked one is in view, then locks', () {
