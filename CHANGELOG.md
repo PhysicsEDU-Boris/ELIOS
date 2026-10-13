@@ -61,12 +61,20 @@ kept outside the repo.
 - Temporary debug double-decoding block in `websocket_service` (`eb08ab3`).
 
 ### Fixed
+fix/detection-overlay
 - Robot camera boxes: the app's detection overlay read the MaixCAM2 box
   centre as its top-left corner, so its box sat half a box down and right
   of the object. It now reads the centre. The MaixCAM2 already draws its
   box, mask and label into the video, so the app's overlay is no longer
   drawn over robot frames by default; it shows only in debug builds with
   `--dart-define=LIVE_SCAN=true`, next to the live-scan debug overlay.
+- macOS builds with Xcode 27: the deployment target is 12.0 (was 10.15) for
+  Runner, Flutter Assemble and every pod (Podfile `post_install`). Xcode 27
+  rejects targets below 12.0.
+- The robot connection uses the MaixCAM2 port 8765 by default (was 8080,
+  where nothing listens). Saved settings with the old 8080 move to 8765; any
+  other saved port is kept.
+feature/live-scan
 - A quiz left open on the robot screen no longer blocks detections the next
   time: `ControlScreen` dispose now dismisses the quiz popup (`008efae`).
 - The macOS camera view swaps to a black box again when the quiz pauses it
