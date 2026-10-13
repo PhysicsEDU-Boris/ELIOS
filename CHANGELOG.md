@@ -61,6 +61,9 @@ kept outside the repo.
 - Temporary debug double-decoding block in `websocket_service` (`eb08ab3`).
 
 ### Fixed
+- macOS builds with Xcode 27: the deployment target is 12.0 (was 10.15) for
+  Runner, Flutter Assemble and every pod (Podfile `post_install`). Xcode 27
+  rejects targets below 12.0.
 - A quiz left open on the robot screen no longer blocks detections the next
   time: `ControlScreen` dispose now dismisses the quiz popup (`008efae`).
 - The macOS camera view swaps to a black box again when the quiz pauses it
