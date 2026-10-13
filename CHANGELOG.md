@@ -61,6 +61,12 @@ kept outside the repo.
 - Temporary debug double-decoding block in `websocket_service` (`eb08ab3`).
 
 ### Fixed
+- Live scan's "don't re-ask the same object" wait could be lost mid-quiz:
+  the debug overlay reading the wait on every rebuild silently expired it
+  once a quiz ran longer than 30 s (the camera pauses during a quiz, so the
+  label's last-seen time never refreshed). Reading the wait is now a pure
+  read; a wait only ever expires between quizzes, never while one is open,
+  however long it runs.
 - Live scan no longer re-asks the same object: a label that had a quiz waits
   until it has been out of the scene for 30 s (was 30 s from the quiz
   close). Any box of 0.50 or more (not a hand, not over 0.6 of the frame)

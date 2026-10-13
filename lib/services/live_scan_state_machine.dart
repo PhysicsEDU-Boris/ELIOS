@@ -52,12 +52,21 @@ class LiveScanStateMachine {
   bool get lastAskFailed => _lastAskFailed;
 
   /// Labels that had a quiz and how long until each may be asked again. A
-  /// label still in the scene stays at the full [sameLabelWait].
+  /// **pure read**: only [onFrame] ever expires a wait, and never while a
+  /// quiz is open, so reading this can't itself lose track of a label —
+  /// unlike the version this replaces, where the overlay calling this on
+  /// every rebuild could silently drop a label mid-quiz (see decision 0008).
+  /// While a quiz is open (ASKING or QUIZ) every waiting label shows the
+  /// full [sameLabelWait]: nothing can be asked until it closes anyway, and
+  /// presence can't be judged mid-quiz before M2b removes the camera pause.
   Map<String, Duration> get labelWaits {
+    if (_state == LiveScanState.asking || _state == LiveScanState.quiz) {
+      return {for (final label in _quizzedLabels) label: sameLabelWait};
+    }
     final now = _clock();
     return {
-      for (final label in _quizzedLabels.toList())
-        if (_waitLeft(label, now) case final left? when left > Duration.zero) label: left,
+      for (final label in _quizzedLabels)
+        if (_remaining(label, now) case final left when left > Duration.zero) label: left,
     };
   }
 
@@ -75,13 +84,25 @@ class LiveScanStateMachine {
     final now = _clock();
     final seen = present?.toSet() ??
         {for (final d in detections) if (!stabilizer.ignoredLabels.contains(d.label.trim())) d.label.trim()};
+
+    final frozen = _state == LiveScanState.asking || _state == LiveScanState.quiz;
+    if (!frozen) {
+      // Checked against last frame's _lastSeen, before it's refreshed below:
+      // a label back after its wait matured during the absence unblocks on
+      // this very frame. The only place a wait expires, and never while a
+      // quiz is open, so an open quiz can't lose track of a label it already
+      // quizzed, however long it runs (even once M2b lets frames keep
+      // arriving during it).
+      for (final label in _quizzedLabels.toList()) {
+        _expireIfDue(label, now);
+      }
+    }
     for (final label in seen) {
-      _waitLeft(label, now); // back after a long enough absence: the wait ends before it's refreshed
-      _lastSeen[label] = now; // also while a quiz is open
+      _lastSeen[label] = now; // tracked even while a quiz is open (owner's Q3)
     }
 
     final lock = stabilizer.update(detections);
-    if (_state == LiveScanState.asking || _state == LiveScanState.quiz) return null;
+    if (frozen) return null;
 
     if (_state == LiveScanState.cooldown) {
       _emptySince = seen.isEmpty ? (_emptySince ?? now) : null;
@@ -94,7 +115,7 @@ class LiveScanStateMachine {
 
     if (lock != null) {
       final label = lock.detection.label;
-      if (_waitLeft(label, now) == null) {
+      if (!_quizzedLabels.contains(label)) {
         _state = LiveScanState.asking;
         _askCount++;
         _lastAskFailed = false;
@@ -157,13 +178,16 @@ class LiveScanStateMachine {
     _askedLabel = null;
   }
 
-  /// Time left before [label] may be asked again, or null when it may be.
-  Duration? _waitLeft(String label, DateTime now) {
-    if (!_quizzedLabels.contains(label)) return null;
-    final seen = _lastSeen[label];
-    final left = seen == null ? Duration.zero : sameLabelWait - now.difference(seen);
-    if (left > Duration.zero) return left;
-    _quizzedLabels.remove(label);
-    return null;
+  /// Time left before [label] may be asked again (may be zero or negative),
+  /// assuming it's still quizzed. Pure: never mutates.
+  Duration _remaining(String label, DateTime now) {
+    final seenAt = _lastSeen[label];
+    return seenAt == null ? Duration.zero : sameLabelWait - now.difference(seenAt);
+  }
+
+  /// Removes [label] from the waiting set once its wait is over. The only
+  /// place a wait actually expires.
+  void _expireIfDue(String label, DateTime now) {
+    if (_remaining(label, now) <= Duration.zero) _quizzedLabels.remove(label);
   }
 }

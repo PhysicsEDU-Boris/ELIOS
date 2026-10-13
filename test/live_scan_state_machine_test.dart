@@ -299,4 +299,93 @@ void main() {
       expect(r.m.state, LiveScanState.cooldown);
     });
   });
+
+  group('wait freeze during a quiz (the robot recording bug: a quiz over 30 s lost its wait)', () {
+    test('(a) a quiz open 45 s with no frames: labelWaits stays at 30 s the whole time, then '
+        'no quiz with the box in view, none within 2 s of leaving, one once absent 30 s', () {
+      final r = _Rig();
+      r.hold(0, 1000, [_a]); // asks at 1000
+      r.m.onAskOutcome(AskOutcome.questionReady);
+
+      // 45 s quiz, stream paused: no onFrame calls, only labelWaits reads
+      // (what the debug overlay does on every rebuild).
+      for (var t = 1100; t <= 46000; t += 1000) {
+        r._now = t;
+        expect(r.m.labelWaits['Plastic'], sameLabelWait, reason: 'frozen at t=$t');
+      }
+
+      r._now = 46000;
+      r.m.onQuizClosed(); // closed at 46000, with the box still in view
+      r.hold(46100, 70000, [_a]); // stays well past the 15 s cooldown
+      expect(r.m.state, LiveScanState.cooldown);
+      expect(r.asked, ['Plastic']);
+
+      r.hold(70100, 72000, []); // removed 1.9 s
+      r.hold(72100, 90000, [_a]); // back within 2 s: no quiz, cooldown holds
+      expect(r.m.state, LiveScanState.cooldown);
+      expect(r.asked, ['Plastic']);
+
+      r.hold(90100, 120000, []); // absent 30 s (last seen at 90000)
+      r.hold(120100, 121100, [_a]); // back after 30 s away: asked again
+      expect(r.asked, ['Plastic', 'Plastic']);
+    });
+
+    test('(b) same as (a), but frames with Plastic keep arriving during the quiz (M2b): same result', () {
+      final r = _Rig();
+      r.hold(0, 1000, [_a]);
+      r.m.onAskOutcome(AskOutcome.questionReady);
+
+      for (var t = 1100; t <= 46000; t += 1000) {
+        r.at(t, [_a]); // onFrame called with the object still present
+        expect(r.m.labelWaits['Plastic'], sameLabelWait, reason: 'frozen at t=$t');
+      }
+
+      r._now = 46000;
+      r.m.onQuizClosed();
+      r.hold(46100, 70000, [_a]);
+      expect(r.m.state, LiveScanState.cooldown);
+      expect(r.asked, ['Plastic']);
+
+      r.hold(70100, 72000, []);
+      r.hold(72100, 90000, [_a]);
+      expect(r.m.state, LiveScanState.cooldown);
+      expect(r.asked, ['Plastic']);
+
+      r.hold(90100, 120000, []);
+      r.hold(120100, 121100, [_a]);
+      expect(r.asked, ['Plastic', 'Plastic']);
+    });
+
+    test('(c) reading labelWaits 100 times during an open quiz changes nothing', () {
+      final r = _Rig();
+      r.hold(0, 1000, [_a]);
+      r.m.onAskOutcome(AskOutcome.questionReady);
+
+      r._now = 40000; // 39 s into the quiz, no frames
+      for (var i = 0; i < 100; i++) {
+        r.m.labelWaits;
+      }
+      expect(r.m.state, LiveScanState.quiz);
+      expect(r.m.labelWaits['Plastic'], sameLabelWait);
+
+      r.m.onQuizClosed(); // closed at 40000, box still in view
+      r.at(40100, [_a]);
+      expect(r.m.state, LiveScanState.cooldown);
+      expect(r.asked, ['Plastic']); // not re-asked: the 100 reads didn't expire it
+    });
+
+    test('a label back exactly when its wait ends can be asked (checked against the previous frame)', () {
+      final r = _Rig();
+      r.hold(0, 1000, [_a]);
+      r.m.onAskOutcome(AskOutcome.questionReady);
+      r.at(2000, [_a]);
+      r.m.onQuizClosed(); // closed at 2000; Plastic last seen at 2000
+      r.hold(2100, 17000, []); // cooldown clears (empty since ~2100)
+      expect(r.m.state, LiveScanState.searching);
+      // Back exactly 30 s after it was last seen (2000 + 30000 = 32000); a
+      // further 1 s hold to lock.
+      r.hold(32000, 33000, [_a]);
+      expect(r.asked, ['Plastic', 'Plastic']);
+    });
+  });
 }
