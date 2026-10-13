@@ -61,6 +61,12 @@ kept outside the repo.
 - Temporary debug double-decoding block in `websocket_service` (`eb08ab3`).
 
 ### Fixed
+- Robot camera boxes: the app's detection overlay read the MaixCAM2 box
+  centre as its top-left corner, so its box sat half a box down and right
+  of the object. It now reads the centre. The MaixCAM2 already draws its
+  box, mask and label into the video, so the app's overlay is no longer
+  drawn over robot frames by default; it shows only in debug builds with
+  `--dart-define=LIVE_SCAN=true`, next to the live-scan debug overlay.
 - A quiz left open on the robot screen no longer blocks detections the next
   time: `ControlScreen` dispose now dismisses the quiz popup (`008efae`).
 - The macOS camera view swaps to a black box again when the quiz pauses it

@@ -24,6 +24,10 @@ import '../widgets/waste_quiz_popup.dart';
 import '../services/frame_source/maix_cam_source.dart';
 import '../services/frame_source/frame_source.dart';
 
+/// The MaixCAM2 already draws its box, mask and label into the video, so the
+/// app's own box is a debug aid, shown with the live-scan debug overlay only.
+const _showAppDetectionBoxes = kDebugMode && liveScanEnabled;
+
 class ControlScreen extends ConsumerStatefulWidget {
   const ControlScreen({super.key});
 
@@ -819,7 +823,8 @@ class _LandscapeCameraPanel extends StatelessWidget {
                 ),
               ),
             ),
-            if (detections.isNotEmpty &&
+            if (_showAppDetectionBoxes &&
+                detections.isNotEmpty &&
                 detectionImageSize.width > 0 &&
                 detectionImageSize.height > 0)
               CustomPaint(
