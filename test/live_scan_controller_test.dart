@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show Size;
 
 import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
@@ -6,14 +7,17 @@ import 'package:elio/services/gemma_quiz_service.dart';
 import 'package:elio/services/live_scan_controller.dart';
 import 'package:elio/services/live_scan_state_machine.dart';
 import 'package:elio/services/websocket_service.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 final _t0 = DateTime(2026, 1, 1);
 
-Detection _det(String label, {double x = 320, double score = 0.9}) =>
-    Detection(x: x, y: 240, w: 120, h: 160, label: label, score: score);
+Detection _det(String label, {double x = 320, double score = 0.9, double w = 120, double h = 160}) =>
+    Detection(x: x, y: 240, w: w, h: h, label: label, score: score);
+
+const _frame = Size(640, 480); // MaixCAM2 frame; 0.6 of it is 184320 px²
 
 final _plastic = _det('Plastic');
 final _metal = _det('Metal', x: 600);
@@ -45,7 +49,7 @@ class _Rig {
 
   void at(int ms, List<Detection> frame) {
     now = ms;
-    c.onDetections(frame);
+    c.onDetections(frame, frameSize: _frame);
   }
 
   /// Frames every [step] ms; the fake quiz shows its question [askMs] after
@@ -82,19 +86,28 @@ void main() {
     test('object removed, a different one shown: a new lock and one new identify', () {
       final r = _Rig();
       r.run(0, 10000, [_plastic], closeAt: 8000);
-      r.run(10250, 12000, []); // removed
-      r.run(12250, 22000, [_metal], closeAt: 20000);
+      r.run(10250, 25000, []); // removed: empty scene, and the 15 s cooldown ends at 23000
+      r.run(25250, 35000, [_metal], closeAt: 33000);
       expect(r.starts, ['Plastic', 'Metal']);
       expect(r.c.machine.askCount, 2);
     });
   });
 
   group('filters', () {
-    test('keeps the existing 0.55 score filter', () {
-      final low = _Rig()..run(0, 5000, [_det('Plastic', score: 0.54)]);
+    test('a box scoring under 0.70 never locks', () {
+      final low = _Rig()..run(0, 5000, [_det('Plastic', score: 0.69)]);
       expect(low.starts, isEmpty);
-      final ok = _Rig()..run(0, 5000, [_det('Plastic', score: 0.55)]);
+      expect(low.c.machine.state, LiveScanState.searching);
+      final ok = _Rig()..run(0, 5000, [_det('Plastic', score: 0.70)]);
       expect(ok.starts, ['Plastic']);
+    });
+
+    test('a box covering more than 0.6 of the frame never locks', () {
+      final big = _Rig()..run(0, 5000, [_det('E_Waste', w: 500, h: 400)]); // 200000 px², 0.65 of the frame
+      expect(big.starts, isEmpty);
+      expect(big.c.machine.state, LiveScanState.searching);
+      final ok = _Rig()..run(0, 5000, [_det('E_Waste', w: 480, h: 384)]); // exactly 0.6
+      expect(ok.starts, ['E_Waste']);
     });
 
     test('Human_Hand (exact firmware spelling) is never tracked, even as the biggest, most confident box', () {
@@ -122,7 +135,8 @@ void main() {
   group('recovery', () {
     test('BUSY (a quiz already open): back to searching, ASK FAILED, no retry loop', () {
       final r = _Rig(busy: true)..run(0, 5000, [_plastic]);
-      expect(r.c.machine.askCount, 1);
+      expect(r.c.machine.askCount, 0, reason: 'a busy ask is not an identify');
+      expect(r.c.machine.busyCount, 1);
       expect(r.c.machine.state, LiveScanState.searching);
       expect(r.c.machine.lastAskFailed, isTrue);
     });
@@ -133,6 +147,18 @@ void main() {
       r.c.onQuizPhase(WasteQuizPhase.idle);
       expect(r.c.machine.state, LiveScanState.searching);
       expect(r.c.machine.lastAskFailed, isTrue);
+    });
+
+    test('a quiz already open (not started by the live scan, maybe minimized) shows QUIZ; nothing is asked or counted', () {
+      final r = _Rig();
+      r.c.onQuizPhase(WasteQuizPhase.active); // the control screen feeds the current phase at start
+      r.run(0, 10000, [_plastic]);
+      expect(r.c.machine.state, LiveScanState.quiz);
+      expect(r.starts, isEmpty);
+      expect(r.c.machine.askCount, 0);
+      expect(r.c.machine.busyCount, 0);
+      r.c.onQuizPhase(WasteQuizPhase.idle);
+      expect(r.c.machine.state, LiveScanState.cooldown);
     });
 
     test('fps counts analysed frames in the last second', () {
