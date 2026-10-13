@@ -61,6 +61,13 @@ kept outside the repo.
 - Temporary debug double-decoding block in `websocket_service` (`eb08ab3`).
 
 ### Fixed
+- Live scan no longer opens quiz after quiz: after a quiz closes, nothing is
+  asked for 15 s and until the scene has had no lockable detection for 2 s,
+  and the same label isn't asked again within 30 s. Any open quiz (also a
+  minimized one, or one the live scan didn't start) shows QUIZ and blocks
+  asks. Asks need a score of at least 0.70 (was 0.55), and boxes covering
+  more than 0.6 of the frame are ignored. The debug overlay shows busy asks
+  separately from identify calls. Decision 0008.
 fix/detection-overlay
 - Robot camera boxes: the app's detection overlay read the MaixCAM2 box
   centre as its top-left corner, so its box sat half a box down and right

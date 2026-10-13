@@ -55,18 +55,42 @@ until the manual checklist has passed on the device.
 | SEARCHING / LOCKING | stabilizer lock | **ASKING**: exactly one quiz start for the locked label |
 | ASKING | the quiz's first question is shown (phase `active`, also a fallback question) | QUIZ |
 | ASKING | ask fails, is BUSY (a quiz is already open) or is cancelled (dismissed before the question) | SEARCHING (or LOCKING), with **ASK FAILED** in the overlay |
+| any state but ASKING | a quiz is open that the machine didn't start (also a minimized one) | QUIZ |
 | QUIZ | quiz closed (phase back to `idle`) | COOLDOWN |
-| COOLDOWN | the stabilizer re-arms: the quizzed object's lock ends (absent 1.5 s) | SEARCHING |
-| COOLDOWN | a *different* object locks (that also means the old lock was replaced) | ASKING for the new object |
+| COOLDOWN | 15 s since the close **and** no lockable detection for 2 s | SEARCHING |
 
 - **Locks during ASKING and QUIZ are dropped, not queued.** A dropped lock
   still counts as locked in the stabilizer, so that object isn't asked
   later either.
-- **The stabilizer is the only judge of "same object".** It can't lock the
-  same object twice before re-arming. A lock arriving in COOLDOWN is
-  therefore always a new object or a held new label, which is why it is
-  asked. This is what makes the acceptance row "object removed, a
-  different one shown: a new lock and one new identify" work.
+- **COOLDOWN asks nothing**, not even a different object (changed after
+  the robot test, see "Cooldown" below).
+
+### Cooldown (added 2026-10-14, after the robot test)
+
+The robot recording showed a second Paperboard quiz about 2 s after the
+first one closed. The stabilizer alone couldn't stop it: when the camera
+moves, the same object lands in a different place (box overlap below 0.65)
+and counts as new, and an object that leaves re-arms after only 1.5 s.
+Three rules now apply, as named constants in `live_scan_state_machine.dart`:
+
+| Constant | Value | Rule |
+|---|---|---|
+| `quizCooldown` | 15 s | No ask for this long after any quiz closes. |
+| `emptySceneToRearm` | 2 s | COOLDOWN also needs a scene with no lockable detection (ignored labels such as `Human_Hand` don't count) for this long, still true when the 15 s are over. A lock dropped during COOLDOWN is therefore re-armed in the stabilizer (absent ≥ 1.5 s) before the machine searches again. |
+| `sameLabelWait` | 30 s | A label isn't asked again within this time of its last ask or of its quiz closing. The lock is dropped; the stabilizer keeps that object locked until it leaves. |
+
+- **Any open quiz is QUIZ.** The machine is told about every quiz phase,
+  including the current one when the control screen opens, so a quiz it
+  didn't start (or a minimized one) shows QUIZ and nothing is asked. Its
+  close starts the same cooldown.
+- **BUSY is counted separately.** An ask refused because a quiz was open
+  never reached Gemma: it adds to `busyCount`, not to the identify count,
+  and doesn't start the label wait.
+- **Ask condition** (in `LiveScanController`): score at least **0.70**
+  (`minScore`, was 0.55), and a box covering more than **0.6** of the frame
+  (`maxBoxAreaFraction`) is ignored. The robot sends near-full-frame boxes
+  that are rarely one real object.
+- All values are first guesses from one recording; tune them on the robot.
 
 ### On each failure
 
@@ -87,8 +111,9 @@ until the manual checklist has passed on the device.
 
 ### Inputs
 
-- **Score filter:** the existing 0.55 minimum is kept and applied before
-  the stabilizer.
+- **Score filter:** 0.70 minimum (was 0.55, the old path's value), and boxes
+  over 0.6 of the frame are dropped, both before the stabilizer (see
+  "Cooldown").
 - **Ignored labels:** `{'Human_Hand'}`, spelled exactly as the MaixCAM2
   firmware sends it (`LABELS` in `elio_maixcam2.py`, which is in the
   sandbox folder, not this repo).
@@ -107,7 +132,7 @@ Shown only in debug builds with the switch on. It shows:
 
 - the state, or ASK FAILED
 - frames analysed in the last second (fps)
-- the number of identify calls (quiz starts)
+- the number of identify calls (quiz starts) and of asks refused as busy
 - the first-token time of the last quiz start's question
 
 That time comes from the new read-only

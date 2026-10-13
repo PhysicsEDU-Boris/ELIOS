@@ -42,6 +42,6 @@ void main() {
   testWidgets('shows ASK FAILED after a busy ask while that object is still blocked', (tester) async {
     await pump(tester, busy: true);
     expect(find.textContaining('LIVE SCAN  ASK FAILED'), findsOneWidget);
-    expect(find.textContaining('identify 1'), findsOneWidget);
+    expect(find.textContaining('identify 0   busy 1'), findsOneWidget);
   });
 }

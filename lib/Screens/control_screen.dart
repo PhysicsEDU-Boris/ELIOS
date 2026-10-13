@@ -75,7 +75,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           return true;
         },
         firstTokenMs: () => GemmaQuizService.instance.lastFirstTokenMs.value,
-      );
+      )..onQuizPhase(ref.read(wasteQuizProvider).phase); // a quiz may already be open (minimized)
     }
 
     // Subscribe to robot frames outside of build to avoid re-registering
@@ -104,7 +104,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
       if (frame.detections != null && ref.read(debugQuizSourceProvider) == WasteQuizSource.maixCam2) {
         final liveScan = _liveScan;
         if (liveScan != null) {
-          liveScan.onDetections(frame.detections!);
+          liveScan.onDetections(
+            frame.detections!,
+            frameSize: Size(frame.width.toDouble(), frame.height.toDouble()),
+          );
         } else {
           ref.read(wasteQuizProvider.notifier).onDetections(frame.detections!);
         }

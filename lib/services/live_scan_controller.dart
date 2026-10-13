@@ -4,6 +4,8 @@
 /// docs/decisions/0008-live-scan-state-machine.md.
 library;
 
+import 'dart:ui' show Size;
+
 import 'package:flutter/foundation.dart';
 
 import '../models/scanned_waste.dart';
@@ -23,11 +25,15 @@ class LiveScanController extends ChangeNotifier {
     DateTime Function()? clock,
   })  : _firstTokenMs = firstTokenMs,
         _clock = clock ?? _monotonicClock() {
-    machine = LiveScanStateMachine(DetectionStabilizer(ignoredLabels: ignoredLabels, clock: _clock));
+    machine = LiveScanStateMachine(DetectionStabilizer(ignoredLabels: ignoredLabels, clock: _clock), clock: _clock);
   }
 
-  /// Same minimum score as WasteQuizNotifier.onDetections.
-  static const minScore = 0.55;
+  /// Minimum detector score for a box to be tracked and asked about.
+  static const minScore = 0.70;
+
+  /// A box covering more than this fraction of the frame is ignored (the
+  /// detector's near-full-frame boxes are rarely one real object).
+  static const maxBoxAreaFraction = 0.6;
 
   /// Detector classes never tracked, spelled exactly as the MaixCAM2
   /// firmware sends them (`LABELS` in elio_maixcam2.py).
@@ -49,15 +55,18 @@ class LiveScanController extends ChangeNotifier {
   int? get lastFirstTokenMs => _lastFirstTokenMs;
   int? _lastFirstTokenMs;
 
-  void onDetections(List<Detection> detections) {
+  /// [frameSize] is the frame the boxes are in; without it the box-size
+  /// filter is skipped.
+  void onDetections(List<Detection> detections, {Size? frameSize}) {
     final now = _clock();
     _recentFrames
       ..add(now)
       ..removeWhere((t) => now.difference(t) >= const Duration(seconds: 1));
 
+    final maxArea = frameSize == null ? double.infinity : frameSize.width * frameSize.height * maxBoxAreaFraction;
     final tracked = [
       for (final d in detections)
-        if (d.score >= minScore && d.label.trim().isNotEmpty)
+        if (d.score >= minScore && d.label.trim().isNotEmpty && d.w * d.h <= maxArea)
           TrackedDetection(label: d.label.trim(), x: d.x, y: d.y, w: d.w, h: d.h, score: d.score),
     ];
     if (kDebugMode) _logUnknownLabels(tracked);
@@ -67,7 +76,8 @@ class LiveScanController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Feed every quiz phase change (from WasteQuizNotifier).
+  /// Feed every quiz phase change (from WasteQuizNotifier), and the current
+  /// phase once at start: a quiz may already be open (for example minimized).
   void onQuizPhase(WasteQuizPhase phase) {
     switch (machine.state) {
       case LiveScanState.asking:
@@ -80,7 +90,8 @@ class LiveScanController extends ChangeNotifier {
       case LiveScanState.quiz:
         if (phase == WasteQuizPhase.idle) machine.onQuizClosed();
       default:
-        return;
+        if (phase == WasteQuizPhase.idle) return;
+        machine.onQuizOpen(); // a quiz the live scan didn't start
     }
     notifyListeners();
   }

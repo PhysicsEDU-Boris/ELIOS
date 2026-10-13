@@ -4,7 +4,8 @@ import '../services/live_scan_controller.dart';
 import '../services/live_scan_state_machine.dart';
 
 /// Debug-only readout for the robot live scan (M2a): state, analysed fps,
-/// quiz starts ("identify calls") and the last question's first-token time.
+/// quiz starts ("identify calls"), asks refused as busy and the last
+/// question's first-token time.
 class LiveScanDebugOverlay extends StatelessWidget {
   const LiveScanDebugOverlay({super.key, required this.controller});
 
@@ -29,7 +30,7 @@ class LiveScanDebugOverlay extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               child: Text(
                 'LIVE SCAN  $state\n'
-                'fps ${controller.fps}   identify ${m.askCount}\n'
+                'fps ${controller.fps}   identify ${m.askCount}   busy ${m.busyCount}\n'
                 'first token ${firstToken == null ? '-' : '$firstToken ms'}',
                 style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.35, fontFamily: 'monospace'),
               ),
