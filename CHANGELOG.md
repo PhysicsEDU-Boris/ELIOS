@@ -61,6 +61,9 @@ kept outside the repo.
 - Temporary debug double-decoding block in `websocket_service` (`eb08ab3`).
 
 ### Fixed
+- macOS builds with Xcode 27: the deployment target is 12.0 (was 10.15) for
+  Runner, Flutter Assemble and every pod (Podfile `post_install`). Xcode 27
+  rejects targets below 12.0.
 - The robot connection uses the MaixCAM2 port 8765 by default (was 8080,
   where nothing listens). Saved settings with the old 8080 move to 8765; any
   other saved port is kept.
