@@ -61,6 +61,9 @@ kept outside the repo.
 - Temporary debug double-decoding block in `websocket_service` (`eb08ab3`).
 
 ### Fixed
+- The robot connection uses the MaixCAM2 port 8765 by default (was 8080,
+  where nothing listens). Saved settings with the old 8080 move to 8765; any
+  other saved port is kept.
 - A quiz left open on the robot screen no longer blocks detections the next
   time: `ControlScreen` dispose now dismisses the quiz popup (`008efae`).
 - The macOS camera view swaps to a black box again when the quiz pauses it
