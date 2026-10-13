@@ -28,12 +28,12 @@ class SegmentationOverlayPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     for (final detection in detections) {
-      // MaixCAM2 sends top-left (x, y) with width/height.
-      final imageRect = Rect.fromLTWH(
-        detection.x,
-        detection.y,
-        detection.w,
-        detection.h,
+      // MaixCAM2 sends the box centre (x, y) with width/height
+      // (elio_maixcam2.py converts top-left to centre for the wire).
+      final imageRect = Rect.fromCenter(
+        center: Offset(detection.x, detection.y),
+        width: detection.w,
+        height: detection.h,
       );
       final box = transform.mapRect(imageRect);
       canvas.drawRect(box, boxPaint);
