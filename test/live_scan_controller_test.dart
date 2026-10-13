@@ -132,6 +132,66 @@ void main() {
     });
   });
 
+  group('presence and hysteresis', () {
+    test('(a) a held object dipping to 0.60 for 2 s after a quiz gets no second quiz', () {
+      final r = _Rig();
+      r.run(0, 20000, [_plastic], closeAt: 8000); // quiz closes at 8000, object stays
+      r.run(20250, 22250, [_det('Plastic', score: 0.60)]); // dip: below lock, still present
+      r.run(22500, 60000, [_plastic]);
+      expect(r.starts, ['Plastic']);
+      expect(r.c.machine.state, LiveScanState.cooldown);
+    });
+
+    test('(c) a hand alone is an empty scene', () {
+      final r = _Rig();
+      r.run(0, 10000, [_plastic], closeAt: 8000);
+      r.run(10250, 30000, [_hand]); // cooldown over at 23000, hand only
+      expect(r.c.machine.state, LiveScanState.searching);
+    });
+
+    test('(c) a low-score object (0.55) is not an empty scene', () {
+      final r = _Rig();
+      r.run(0, 10000, [_plastic], closeAt: 8000);
+      r.run(10250, 60000, [_det('Metal', x: 600, score: 0.55)]);
+      expect(r.c.machine.state, LiveScanState.cooldown);
+    });
+
+    test('(c) a box under presenceScore (0.49) or over 0.6 of the frame does not count as present', () {
+      final r = _Rig();
+      r.run(0, 10000, [_plastic], closeAt: 8000);
+      r.run(10250, 30000, [_det('Metal', x: 600, score: 0.49), _det('E_Waste', w: 500, h: 400, score: 0.9)]);
+      expect(r.c.machine.state, LiveScanState.searching);
+    });
+
+    test('(d) a label hovering 0.60-0.80 locks within 1.25 s', () {
+      const scores = [0.80, 0.62, 0.66, 0.60, 0.75, 0.64, 0.69, 0.61];
+      final r = _Rig();
+      for (var i = 0, t = 0; t <= 1250; i++, t += 250) {
+        r.at(t, [_det('Plastic', score: scores[i % scores.length])]);
+      }
+      expect(r.starts, ['Plastic']);
+    });
+
+    test('(d) seen once at 0.80, then 0.60-0.69 for over a second: still locks at 1 s', () {
+      final r = _Rig()..at(0, [_det('Plastic', score: 0.80)]);
+      r.run(250, 1000, [_det('Plastic', score: 0.65)]);
+      expect(r.starts, ['Plastic']);
+    });
+
+    test('hysteresis never starts a lock: 0.69 forever stays unlocked', () {
+      final r = _Rig()..run(0, 10000, [_det('Plastic', score: 0.69)]);
+      expect(r.starts, isEmpty);
+      expect(r.c.machine.state, LiveScanState.searching);
+    });
+
+    test('hysteresis ends when the label drops under 0.55 for longer than the dropout (600 ms)', () {
+      final r = _Rig()..at(0, [_det('Plastic', score: 0.80)]);
+      r.run(250, 1000, [_det('Plastic', score: 0.40)]);
+      r.run(1250, 10000, [_det('Plastic', score: 0.65)]);
+      expect(r.starts, isEmpty);
+    });
+  });
+
   group('recovery', () {
     test('BUSY (a quiz already open): back to searching, ASK FAILED, no retry loop', () {
       final r = _Rig(busy: true)..run(0, 5000, [_plastic]);

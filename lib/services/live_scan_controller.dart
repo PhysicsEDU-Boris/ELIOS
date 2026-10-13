@@ -28,8 +28,16 @@ class LiveScanController extends ChangeNotifier {
     machine = LiveScanStateMachine(DetectionStabilizer(ignoredLabels: ignoredLabels, clock: _clock), clock: _clock);
   }
 
-  /// Minimum detector score for a box to be tracked and asked about.
+  /// Minimum detector score for a box to start a lock.
   static const minScore = 0.70;
+
+  /// Once a label reached [minScore], its boxes keep counting for the lock
+  /// down to this score (hysteresis), so a hovering score can finish the lock.
+  static const keepLockScore = 0.55;
+
+  /// A box at this score or more counts as "something is in the scene" for
+  /// the empty-scene and same-label rules (not for locking).
+  static const presenceScore = 0.50;
 
   /// A box covering more than this fraction of the frame is ignored (the
   /// detector's near-full-frame boxes are rarely one real object).
@@ -46,6 +54,7 @@ class LiveScanController extends ChangeNotifier {
   late final LiveScanStateMachine machine;
 
   final _unknownLogged = <String>{};
+  final _keptAt = <String, DateTime>{};
   final _recentFrames = <DateTime>[];
 
   /// Analysed frames in the last second.
@@ -64,14 +73,36 @@ class LiveScanController extends ChangeNotifier {
       ..removeWhere((t) => now.difference(t) >= const Duration(seconds: 1));
 
     final maxArea = frameSize == null ? double.infinity : frameSize.width * frameSize.height * maxBoxAreaFraction;
-    final tracked = [
+    final boxes = [
       for (final d in detections)
-        if (d.score >= minScore && d.label.trim().isNotEmpty && d.w * d.h <= maxArea)
+        if (d.label.trim().isNotEmpty && d.w * d.h <= maxArea)
           TrackedDetection(label: d.label.trim(), x: d.x, y: d.y, w: d.w, h: d.h, score: d.score),
+    ];
+    final present = {
+      for (final d in boxes)
+        if (d.score >= presenceScore && !ignoredLabels.contains(d.label)) d.label,
+    };
+
+    // Hysteresis: a label seen at minScore stays lockable down to keepLockScore,
+    // as long as it doesn't drop below that for longer than the stabilizer's dropout.
+    final kept = {
+      for (final d in boxes)
+        if (d.score >= minScore ||
+            (d.score >= keepLockScore &&
+                _keptAt[d.label] != null &&
+                now.difference(_keptAt[d.label]!) <= machine.stabilizer.dropoutTolerance))
+          d.label,
+    };
+    for (final label in kept) {
+      _keptAt[label] = now;
+    }
+    final tracked = [
+      for (final d in boxes)
+        if (d.score >= minScore || (d.score >= keepLockScore && kept.contains(d.label))) d,
     ];
     if (kDebugMode) _logUnknownLabels(tracked);
 
-    final lock = machine.onFrame(tracked);
+    final lock = machine.onFrame(tracked, present: present);
     if (lock != null && !startQuiz(lock.detection.label)) machine.onAskOutcome(AskOutcome.busy);
     notifyListeners();
   }
