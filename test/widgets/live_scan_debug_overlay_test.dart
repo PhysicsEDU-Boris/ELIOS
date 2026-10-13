@@ -37,6 +37,11 @@ void main() {
     await tester.pump();
     expect(find.textContaining('LIVE SCAN  QUIZ'), findsOneWidget);
     expect(find.textContaining('first token 412 ms'), findsOneWidget);
+    expect(find.textContaining('wait Plastic 30s'), findsOneWidget); // blocked from the ask on
+    c.onQuizPhase(WasteQuizPhase.idle); // closed with the object still in view
+    c.onDetections([plastic]);
+    await tester.pump();
+    expect(find.textContaining('wait Plastic 30s'), findsOneWidget);
   });
 
   testWidgets('shows ASK FAILED after a busy ask while that object is still blocked', (tester) async {

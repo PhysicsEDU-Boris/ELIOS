@@ -76,8 +76,8 @@ Three rules now apply, as named constants in `live_scan_state_machine.dart`:
 | Constant | Value | Rule |
 |---|---|---|
 | `quizCooldown` | 15 s | No ask for this long after any quiz closes. |
-| `emptySceneToRearm` | 2 s | COOLDOWN also needs a scene with no lockable detection (ignored labels such as `Human_Hand` don't count) for this long, still true when the 15 s are over. A lock dropped during COOLDOWN is therefore re-armed in the stabilizer (absent ≥ 1.5 s) before the machine searches again. |
-| `sameLabelWait` | 30 s | A label isn't asked again within this time of its last ask or of its quiz closing. The lock is dropped; the stabilizer keeps that object locked until it leaves. |
+| `emptySceneToRearm` | 2 s | COOLDOWN also needs an empty scene (nothing *present*, see "Presence" below) for this long, still true when the 15 s are over. A lock dropped during COOLDOWN is therefore re-armed in the stabilizer (absent ≥ 1.5 s) before the machine searches again. |
+| `sameLabelWait` | 30 s | A label that had a quiz isn't asked again until it has been **absent from the scene for 30 s** (changed 2026-10-14, see "Presence"; it was 30 s from the ask or quiz close). While the label is present the wait keeps restarting. The lock is dropped; the stabilizer keeps that object locked until it leaves. |
 
 - **Any open quiz is QUIZ.** The machine is told about every quiz phase,
   including the current one when the control screen opens, so a quiz it
@@ -91,6 +91,40 @@ Three rules now apply, as named constants in `live_scan_state_machine.dart`:
   (`maxBoxAreaFraction`) is ignored. The robot sends near-full-frame boxes
   that are rarely one real object.
 - All values are first guesses from one recording; tune them on the robot.
+
+### Presence, label wait and hysteresis (added 2026-10-14, second robot test)
+
+A 9-minute robot recording with the rules above showed the same object
+asked again (a box 3 times, a battery twice), each time allowed by the
+rules: the 30 s counted from the quiz close, and a held battery whose
+score dipped under 0.70 for about 2 s counted as an empty scene. Items
+whose score hovers at 0.55–0.69 (a clear bottle, a red mouse) took 30–55 s
+to lock. Owner's decisions:
+
+| Constant | Value | Rule |
+|---|---|---|
+| `minScore` | 0.70 | Unchanged: the score needed to **start** a lock. |
+| `presenceScore` | 0.50 | A box at this score or more, at most 0.6 of the frame, and not `Human_Hand`, means "something is in the scene". Only a scene with none of those is empty. Presence never starts or continues a lock. |
+| `keepLockScore` | 0.55 | Hysteresis: once a label was seen at `minScore`, its boxes keep counting for the lock down to 0.55, as long as the label doesn't stay under 0.55 longer than the stabilizer's dropout tolerance (600 ms). Never starts a lock. |
+
+- **Same label = same object, for quizzes only (owner's Q1, Q2).** The wait
+  is per label, with no box-overlap check: two Plastic bottles count as one
+  object. Per-object identity comes later from the robot's tracking ids
+  (plan 2.4/2.5). **This anti-spam is for quizzes only: future robot
+  sorting must not be gated by it.**
+- **Absence** means no box of that label at `presenceScore` or more (box at
+  most 0.6 of the frame). Each present label's last-seen time is updated on
+  every frame, **also while a quiz is open** (QUIZ, including a minimized
+  quiz, owner's Q3). Nothing is locked or asked during QUIZ.
+- **A swap during an open quiz** (bottle A out, bottle B in) is just the
+  label still present (Q4). After the close, the label still needs 30 s of
+  absence before it can be asked.
+- **The camera pauses while the quiz covers it**, so absence can't be
+  measured then: on close, every label seen since the quiz started counts as
+  seen at the close.
+- **Overlay:** the labels still waiting and the seconds left, for example
+  `wait Plastic 12s` (stays at 30 s while the label is in view).
+- The stabilizer's lock, overlap and dropout rules are unchanged.
 
 ### On each failure
 
@@ -111,9 +145,10 @@ Three rules now apply, as named constants in `live_scan_state_machine.dart`:
 
 ### Inputs
 
-- **Score filter:** 0.70 minimum (was 0.55, the old path's value), and boxes
-  over 0.6 of the frame are dropped, both before the stabilizer (see
-  "Cooldown").
+- **Score filter:** 0.70 to start a lock (was 0.55, the old path's value),
+  0.55 to keep one (hysteresis), 0.50 to count as present; boxes over 0.6 of
+  the frame are dropped. All before the stabilizer (see "Cooldown" and
+  "Presence").
 - **Ignored labels:** `{'Human_Hand'}`, spelled exactly as the MaixCAM2
   firmware sends it (`LABELS` in `elio_maixcam2.py`, which is in the
   sandbox folder, not this repo).
@@ -134,6 +169,7 @@ Shown only in debug builds with the switch on. It shows:
 - frames analysed in the last second (fps)
 - the number of identify calls (quiz starts) and of asks refused as busy
 - the first-token time of the last quiz start's question
+- the labels waiting for `sameLabelWait`, with the seconds left
 
 That time comes from the new read-only
 `GemmaQuizService.lastFirstTokenMs`, set on the existing log line (owner's

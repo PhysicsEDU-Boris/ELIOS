@@ -21,16 +21,16 @@ class _Rig {
   late final LiveScanStateMachine m;
   final asked = <String>[];
 
-  StabilizerLock? at(int ms, List<TrackedDetection> frame) {
+  StabilizerLock? at(int ms, List<TrackedDetection> frame, {Set<String>? present}) {
     _now = ms;
-    final lock = m.onFrame(frame);
+    final lock = m.onFrame(frame, present: present);
     if (lock != null) asked.add(lock.detection.label);
     return lock;
   }
 
-  void hold(int from, int to, List<TrackedDetection> frame, {int step = 100}) {
+  void hold(int from, int to, List<TrackedDetection> frame, {int step = 100, Set<String>? present}) {
     for (var t = from; t <= to; t += step) {
-      at(t, frame);
+      at(t, frame, present: present);
     }
   }
 }
@@ -131,7 +131,7 @@ void main() {
         r.hold(5100, 6500, []);
         r.at(6600, []); // re-armed
         expect(r.m.lastAskFailed, isFalse);
-        r.hold(31100, 32100, [_a]); // back after the 30 s label wait, held 1 s: asked again
+        r.hold(35100, 36100, [_a]); // back after 30 s of absence (last seen at 5000), held 1 s: asked again
         expect(r.m.askCount, asks + 1);
         expect(r.m.state, LiveScanState.asking);
       });
@@ -174,7 +174,10 @@ void main() {
       expect(r.m.state, LiveScanState.cooldown);
       r.at(42100, []); // empty 2 s: re-armed
       expect(r.m.state, LiveScanState.searching);
-      r.hold(42200, 43200, [_a]);
+      r.hold(42200, 43200, [_a]); // back after only 2.1 s away: Plastic still waits
+      expect(r.asked, ['Plastic']);
+      r.hold(43300, 73200, []); // away 30 s (last seen at 43200)
+      r.hold(73300, 74300, [_a]);
       expect(r.asked, ['Plastic', 'Plastic']);
     });
 
@@ -192,15 +195,96 @@ void main() {
       expect(r.m.state, LiveScanState.asking);
     });
 
-    test('the same label within 30 s of its quiz closing is blocked, and asked after', () {
+    test('the same label is blocked until it has been absent 30 s, counted from when it left', () {
       final r = closedAt2000();
-      r.hold(2100, 17000, []); // cooldown over
-      r.hold(17100, 20000, [_a]); // locks at 18100: within 30 s of the close at 2000
+      r.hold(2100, 17000, []); // cooldown over; Plastic last seen at 2000
+      r.hold(17100, 20000, [_a]); // back after 15 s away: locks at 18100, blocked
       expect(r.asked, ['Plastic']);
       expect(r.m.state, isNot(LiveScanState.asking));
-      r.hold(20100, 21700, []); // leaves: the stabilizer re-arms it
-      r.hold(32100, 33100, [_a]); // locks at 33100, 31.1 s after the close
+      r.hold(20100, 49900, []); // left at 20000: 29.9 s away
+      r.hold(50000, 51000, [_a]); // 30 s after it left: asked
       expect(r.asked, ['Plastic', 'Plastic']);
+    });
+
+    test('a held object only seen as present (not lockable) keeps the cooldown and its label wait', () {
+      final r = closedAt2000();
+      r.hold(2100, 60000, [], present: {'Plastic'}); // e.g. a 0.60 bottle: present, never empty
+      expect(r.m.state, LiveScanState.cooldown);
+      r.hold(60100, 62100, []); // empty 2 s: re-armed
+      expect(r.m.state, LiveScanState.searching);
+      r.hold(62200, 63200, [_a]); // but Plastic left only 2 s ago
+      expect(r.asked, ['Plastic']);
+      expect(r.m.labelWaits.keys, ['Plastic']);
+    });
+
+    test('removed 6 s and back within 30 s of leaving: no quiz; back after 30 s away: quiz', () {
+      final r = closedAt2000();
+      r.hold(2100, 20000, [_a]); // stays after the close
+      r.hold(20100, 26000, []); // removed 6 s (re-arms at 22100: cooldown over, empty 2 s)
+      expect(r.m.state, LiveScanState.searching);
+      r.hold(26100, 30000, [_a]); // back after 6 s: locks at 27100, blocked
+      expect(r.asked, ['Plastic']);
+      r.hold(30100, 60000, []); // removed again; last seen at 30000
+      r.hold(60100, 61100, [_a]); // back after 30.1 s away: locks at 61100, asked
+      expect(r.asked, ['Plastic', 'Plastic']);
+    });
+
+    test('Plastic quiz open, bottle A swapped for bottle B with a 1 s gap: no quiz after close until B is gone 30 s', () {
+      final r = _Rig();
+      r.hold(0, 1000, [_a]); // bottle A asked
+      r.m.onAskOutcome(AskOutcome.questionReady);
+      r.hold(1100, 5000, [_a]); // quiz open (minimized: frames still arrive)
+      r.hold(5100, 6000, []); // swap gap
+      final bottleB = _box('Plastic', x: 300);
+      r.hold(6100, 10000, [bottleB]);
+      r.m.onQuizClosed(); // closes with B in view
+      r.hold(10100, 40000, [bottleB]);
+      expect(r.asked, ['Plastic']);
+      expect(r.m.state, LiveScanState.cooldown);
+      r.hold(40100, 70000, []); // B removed 30 s (last seen at 40000)
+      expect(r.m.state, LiveScanState.searching);
+      r.hold(70100, 71100, [_a]); // the next Plastic
+      expect(r.asked, ['Plastic', 'Plastic']);
+    });
+
+    test('no frames while the quiz covers the camera: that time is not counted as absence', () {
+      final r = _Rig();
+      r.hold(0, 1000, [_a]); // asked at 1000
+      r.m.onAskOutcome(AskOutcome.questionReady);
+      r._now = 21000; // 20 s quiz, stream paused: no frames
+      r.m.onQuizClosed();
+      r.hold(21100, 40000, []); // object gone after the close
+      r.hold(40100, 41100, [_a]); // 19 s after the close, 39 s after the last frame
+      expect(r.asked, ['Plastic']);
+      r.hold(41200, 71100, []);
+      r.hold(71200, 72200, [_a]); // 30 s after it left
+      expect(r.asked, ['Plastic', 'Plastic']);
+    });
+
+    test('a quizzed label seen during a later quiz (minimized) has its wait reset by that sighting', () {
+      final r = _Rig();
+      r.hold(0, 1000, [_b]); // Metal asked
+      r.m.onAskOutcome(AskOutcome.questionReady);
+      r.at(2000, [_b]);
+      r.m.onQuizClosed();
+      r.hold(2100, 17000, []); // Metal last seen at 2000
+      r.hold(17100, 18100, [_a]); // Plastic asked
+      r.m.onAskOutcome(AskOutcome.questionReady);
+      r.hold(18200, 40000, [_a, _b]); // Plastic quiz open (minimized): Metal in view too
+      r.m.onQuizClosed();
+      r.hold(40100, 60000, []); // both gone; Metal left at 40000, not 2000
+      r.hold(60100, 61100, [_b]);
+      expect(r.asked, ['Metal', 'Plastic']);
+    });
+
+        test('labelWaits: full wait while present, counts down once the label leaves', () {
+      final r = closedAt2000();
+      r.hold(2100, 5000, [_a]);
+      expect(r.m.labelWaits['Plastic'], sameLabelWait);
+      r.hold(5100, 17000, []); // left at 5000, now 17000
+      expect(r.m.labelWaits['Plastic'], const Duration(seconds: 18));
+      r.hold(17100, 35000, []);
+      expect(r.m.labelWaits, isEmpty);
     });
 
     test('an open quiz the machine did not start shows QUIZ and asks nothing', () {

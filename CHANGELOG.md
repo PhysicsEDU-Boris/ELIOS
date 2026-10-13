@@ -61,6 +61,14 @@ kept outside the repo.
 - Temporary debug double-decoding block in `websocket_service` (`eb08ab3`).
 
 ### Fixed
+- Live scan no longer re-asks the same object: a label that had a quiz waits
+  until it has been out of the scene for 30 s (was 30 s from the quiz
+  close). Any box of 0.50 or more (not a hand, not over 0.6 of the frame)
+  now counts as "something in the scene", so a held item whose score dips
+  under 0.70 no longer looks like an empty scene. A label that reached 0.70
+  keeps its lock going down to 0.55, so items hovering at 0.55-0.69 lock in
+  about a second. The debug overlay shows the waiting labels ("wait Plastic
+  12s"). Decision 0008.
 - Live scan no longer opens quiz after quiz: after a quiz closes, nothing is
   asked for 15 s and until the scene has had no lockable detection for 2 s,
   and the same label isn't asked again within 30 s. Any open quiz (also a
