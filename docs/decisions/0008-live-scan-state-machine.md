@@ -213,7 +213,8 @@ Known limits:
 
 ## Out of scope
 
-- Camera pause during the quiz, and hazard handling (M2b).
+- Camera pause during the quiz (fixed by decision 0009), and hazard handling
+  (M2b, still open).
 - Identify on the robot crop (M2c).
 - The phone capture-first path.
 - `track_id` parsing (plan 2.4).

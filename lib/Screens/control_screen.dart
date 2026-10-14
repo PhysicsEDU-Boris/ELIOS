@@ -76,6 +76,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
         },
         firstTokenMs: () => GemmaQuizService.instance.lastFirstTokenMs.value,
       )..onQuizPhase(ref.read(wasteQuizProvider).phase); // a quiz may already be open (minimized)
+
+      // M2b: preload Gemma now, so the first quiz is fast instead of showing
+      // "Memuat model Gemma ke memori...". Fire-and-forget: ensureReady is
+      // single-flight and returns at once if already loading or loaded, and
+      // a failed preload just leaves the model to load as today, on the
+      // first quiz (see GemmaQuizService.warmUp/ensureReady).
+      GemmaQuizService.instance.warmUp();
     }
 
     // Subscribe to robot frames outside of build to avoid re-registering
@@ -181,7 +188,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     _frameSubscription?.cancel();
     _statusSubscription?.close();
 
-    // Disconnect when leaving the control screen.
+    // Disconnect when leaving the control screen (not a quiz pause: the
+    // stream stays up for the whole visit, M2b).
     debugPrint('[Control] Stopping MaixCAM2 stream');
     _robotNotifier.stopStream();
 
@@ -198,19 +206,15 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Pause the MaixCAM2 video while the quiz popup covers it (frees CPU and
-    // Wi-Fi for Gemma) and resume when it's closed or minimized. Driving and
-    // arm controls are unaffected.
+    // M2b: the MaixCAM2 video and the live-scan machine both keep running
+    // while the quiz popup is open (previously the stream was stopped and
+    // restarted for every quiz, which is what caused the camera badge's
+    // ~3 s drop to 0.2-0.4 fps after every close while it reconnected). The
+    // state machine itself already refuses to lock or ask during ASKING/QUIZ
+    // (decision 0008), so nothing new can be asked; this only keeps presence
+    // tracking and the preview current.
     ref.listen<WasteQuizUiState>(wasteQuizProvider, (prev, next) {
       if (prev?.phase != next.phase) _liveScan?.onQuizPhase(next.phase);
-      final was = prev != null && prev.phase != WasteQuizPhase.idle && !prev.minimized;
-      final now = next.phase != WasteQuizPhase.idle && !next.minimized;
-      if (was == now) return;
-      if (now) {
-        _robotNotifier.stopStream();
-      } else if (ref.read(robotStatusProvider).valueOrNull == 'Connected') {
-        _robotNotifier.startStream();
-      }
     });
 
     // Resend resolution to the device whenever the user changes it mid-session.

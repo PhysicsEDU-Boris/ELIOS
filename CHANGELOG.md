@@ -12,6 +12,17 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- M2b part 1: the MaixCAM2 video stream no longer stops when a quiz opens
+  (it used to send `stop_stream`/`start_stream` around every quiz, which
+  showed as the camera badge dropping to 0.2-0.4 fps for about 3 s after
+  each close while it reconnected). The live-scan state machine already
+  refuses to lock or ask during ASKING/QUIZ, so nothing new can be asked;
+  only presence tracking and the preview keep running. Gemma now preloads
+  when the live-scan control screen opens (`GemmaQuizService.warmUp()`), so
+  the first quiz usually skips the "Memuat model Gemma ke memori..." wait;
+  a failed preload falls back to loading on the first quiz, as before. The
+  debug overlay adds the ASKING-to-question time next to first token.
+  Decision 0009.
 - M2a: live scan for the robot path, behind `--dart-define=LIVE_SCAN=true`
   (off by default; without it nothing changes). The detection stabilizer
   and a state machine (SEARCHING, LOCKING, ASKING, QUIZ, COOLDOWN) start
