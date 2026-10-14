@@ -295,6 +295,66 @@ void main() {
       container.read(wasteQuizProvider.notifier).dismiss();
       expect(stopCalled, 1);
     });
+
+    test('"Soal berikutnya" stops speech immediately, before the new question shows', () async {
+      var stopCalled = 0;
+      QuizTtsService.instance.mockStop = () async => stopCalled++;
+      final container = ProviderContainer(overrides: [
+        appPreferencesProvider.overrideWith(() => _SeededPrefs(const AppPreferences(skipAllowed: false))),
+        wasteQuizProvider.overrideWith(() => _SeededQuiz(WasteQuizUiState(
+              phase: WasteQuizPhase.active,
+              scan: ScannedWaste.fromLabel('botol plastik'),
+              difficulty: QuizDifficulty.medium, // 3 questions: not the last one yet
+              questionIndex: 0,
+              question: _mc,
+              selectedOption: _mc.correctIndex, // answered
+              voiceOn: false,
+            ))),
+      ]);
+      addTearDown(container.dispose);
+
+      container.read(wasteQuizProvider.notifier).nextQuestion();
+      await pumpEventQueue();
+
+      expect(stopCalled, greaterThanOrEqualTo(1),
+          reason: 'the previous question\'s voice must not keep playing over the new question');
+      expect(container.read(wasteQuizProvider).questionIndex, 1, reason: 'the stop call must not block advancing');
+    });
+
+    test('skipping a question stops speech immediately', () async {
+      var stopCalled = 0;
+      QuizTtsService.instance.mockStop = () async => stopCalled++;
+      final container = ProviderContainer(overrides: [
+        appPreferencesProvider.overrideWith(() => _SeededPrefs(const AppPreferences(skipAllowed: true))),
+        wasteQuizProvider.overrideWith(() => _SeededQuiz(WasteQuizUiState(
+              phase: WasteQuizPhase.active,
+              scan: ScannedWaste.fromLabel('botol plastik'),
+              difficulty: QuizDifficulty.medium,
+              questionIndex: 0,
+              question: _mc,
+              voiceOn: false,
+            ))),
+      ]);
+      addTearDown(container.dispose);
+
+      container.read(wasteQuizProvider.notifier).skipQuestion();
+      await pumpEventQueue();
+
+      expect(stopCalled, greaterThanOrEqualTo(1));
+      expect(container.read(wasteQuizProvider).questionIndex, 1);
+    });
+
+    test('a stop call when nothing is speaking changes nothing else', () async {
+      var stopCalled = 0;
+      QuizTtsService.instance.mockStop = () async => stopCalled++;
+      final container = _container(skipAllowed: false, questionIndex: 0);
+
+      container.read(wasteQuizProvider.notifier).dismiss(); // nothing was ever spoken in this test
+      await pumpEventQueue();
+
+      expect(stopCalled, 1, reason: 'stop() is still called, but safely -- no speak() ever happened');
+      expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.idle);
+    });
   });
 
   group('M2b part 3: background quiz prefetch (decision 0011)', () {

@@ -236,6 +236,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// wait, owner's M2b part 3 decision). Later questions go through
   /// [_consumeQuestion], served from the background prefetch started below.
   Future<void> _loadQuestion(int index) async {
+    // The question is changing: any voice still reading out the previous
+    // question's verdict/chat/essay-grading reply must not play over it.
+    unawaited(QuizTtsService.instance.stop());
     final generation = ++_generation;
     final scan = state.scan!;
     final type = questionTypeFor(index);
@@ -337,6 +340,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// waits for the one background generation already in flight for it --
   /// never starts a second, redundant generation for the same index.
   Future<void> _consumeQuestion(int index) async {
+    // Same reason as _loadQuestion: "Soal berikutnya" or skip must cut off
+    // whatever voice was still reading the previous question's reply.
+    unawaited(QuizTtsService.instance.stop());
     final generation = ++_generation;
     final scan = state.scan!;
     final type = questionTypeFor(index);

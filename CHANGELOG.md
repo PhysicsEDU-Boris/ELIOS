@@ -12,6 +12,11 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Fixed
+- M2b part 3 (PR #16 robot-test follow-up): tapping "Soal berikutnya" or
+  skip no longer lets a still-playing voice (an answer verdict, essay
+  grading, or chat reply) keep talking over the next question — both now
+  stop TTS first, the same way closing the quiz already did. Found by
+  analysing the PR #16 robot recording. Decision 0010 updated.
 - M2b part 2 (PR #15 review): `GemmaQuizService.cancel()` and the
   "user request cancels an active scan" path now release the cancelled
   caller *before* awaiting the native stop, not after — a cancel during
