@@ -132,6 +132,20 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   // again should hear it again.
   String? _lastAutoSpokenText;
 
+  // Background prefetch (decision 0011, M2b part 3): questions 2..N are
+  // generated through the single Gemma slot as soon as question 1 shows, one
+  // at a time, into these completers (keyed by index) -- "Soal berikutnya"
+  // just awaits the one it needs, instant if it's already done.
+  final _prefetchCompleters = <int, Completer<GeneratedQuestion?>>{};
+  int _prefetchSessionGen = 0;
+  static const _prefetchRetryDelay = Duration(milliseconds: 300);
+  int? _lastNextWaitMs;
+
+  /// Time the last "Soal berikutnya" tap waited for its question (0 when it
+  /// came straight from the prefetch buffer), for the live-scan debug
+  /// overlay (decision 0011).
+  int? get lastNextWaitMs => _lastNextWaitMs;
+
   @override
   WasteQuizUiState build() => const WasteQuizUiState();
 
@@ -172,6 +186,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (state.phase != WasteQuizPhase.idle) return;
     _lastShownAt = DateTime.now();
     _askedQuestions.clear();
+    _cancelPrefetch();
     final generation = ++_generation;
     GemmaQuizService.instance.cancel();
     state = _freshSession(phase: WasteQuizPhase.identifying);
@@ -212,10 +227,14 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   void _startSession(ScannedWaste scan) {
     _askedQuestions.clear();
+    _cancelPrefetch();
     state = _freshSession(scan: scan, phase: WasteQuizPhase.loadingQuestion);
     _loadQuestion(0);
   }
 
+  /// Loads question 1 only (the only question allowed to make the student
+  /// wait, owner's M2b part 3 decision). Later questions go through
+  /// [_consumeQuestion], served from the background prefetch started below.
   Future<void> _loadQuestion(int index) async {
     final generation = ++_generation;
     final scan = state.scan!;
@@ -245,6 +264,102 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
           'fallback=${generated == null}');
     }
     if (generation != _generation) return; // dismissed or superseded
+
+    final question = generated ?? _fallbackQuestion(scan, type);
+    _askedQuestions.add(question.question);
+    final intro = generated == null
+        ? 'Ini soal cadangan karena AI belum bisa membuat soal. ${_aiUnavailableReason()}'
+        : type == QuizQuestionType.multipleChoice
+            ? 'Pilih satu jawaban dulu. Setelah itu kamu bisa bertanya apa saja tentang soal ini.'
+            : 'Tulis jawabanmu lalu kirim. Setelah dikoreksi, kamu bisa bertanya lebih lanjut.';
+    state = state.copyWith(
+      phase: WasteQuizPhase.active,
+      question: question,
+      isFallback: generated == null,
+      messages: [...state.messages, ChatMessage(isUser: false, text: intro)],
+    );
+    if (index == 0) _startPrefetch();
+  }
+
+  /// Starts filling questions 2..N in the background through the single
+  /// Gemma slot, one at a time, the instant question 1 shows.
+  void _startPrefetch() {
+    final total = state.totalQuestions;
+    if (total <= 1) return;
+    final scan = state.scan!;
+    final gen = _prefetchSessionGen;
+    for (var i = 1; i < total; i++) {
+      _prefetchCompleters[i] = Completer<GeneratedQuestion?>();
+    }
+    unawaited(_runPrefetch(scan, total, gen));
+  }
+
+  Future<void> _runPrefetch(ScannedWaste scan, int total, int gen) async {
+    for (var i = 1; i < total; i++) {
+      if (gen != _prefetchSessionGen) return; // closed or superseded
+      final q = await _generateForBuffer(scan, i, gen);
+      if (gen != _prefetchSessionGen) return;
+      if (q != null) _askedQuestions.add(q.question); // so index i+1 avoids it too
+      _prefetchCompleters[i]?.complete(q);
+    }
+  }
+
+  /// Keeps retrying while the slot is only busy or cancelled by a
+  /// higher-priority request (a chat message or essay grading, decision
+  /// 0003) -- never surfacing that as a failure -- and stops once this
+  /// session is closed or superseded.
+  Future<GeneratedQuestion?> _generateForBuffer(ScannedWaste scan, int index, int gen) async {
+    final type = questionTypeFor(index);
+    while (gen == _prefetchSessionGen) {
+      final result = await GemmaQuizService.instance.generateQuestionBackground(
+        waste: scan,
+        type: type,
+        difficulty: state.difficulty,
+        avoid: List.of(_askedQuestions),
+      );
+      if (!result.retry) return result.question; // success, or a real failure
+      await Future<void>.delayed(_prefetchRetryDelay);
+    }
+    return null;
+  }
+
+  /// Closing the quiz (or starting a new one) cancels any in-flight or
+  /// still-queued prefetch and clears the buffer.
+  void _cancelPrefetch() {
+    _prefetchSessionGen++;
+    for (final c in _prefetchCompleters.values) {
+      if (!c.isCompleted) c.complete(null);
+    }
+    _prefetchCompleters.clear();
+  }
+
+  /// Shows question [index] (>=1): instant if already prefetched, otherwise
+  /// waits for the one background generation already in flight for it --
+  /// never starts a second, redundant generation for the same index.
+  Future<void> _consumeQuestion(int index) async {
+    final generation = ++_generation;
+    final scan = state.scan!;
+    final type = questionTypeFor(index);
+    final total = state.totalQuestions;
+    state = state.copyWith(
+      phase: WasteQuizPhase.loadingQuestion,
+      questionIndex: index,
+      clearSelection: true,
+      essaySubmitted: false,
+      sendingChat: false,
+    );
+
+    final sw = Stopwatch()..start();
+    final generated = await _prefetchCompleters[index]?.future;
+    final waitedMs = sw.elapsedMilliseconds;
+    _lastNextWaitMs = waitedMs;
+    if (kDebugMode) {
+      debugPrint('[WasteQuiz] ${scan.displayName}: question ${index + 1}/$total '
+          '(${type.name}) waited ${waitedMs}ms, first token '
+          '${GemmaQuizService.instance.lastFirstTokenMs.value ?? '-'}ms, '
+          'fallback=${generated == null}');
+    }
+    if (generation != _generation) return; // dismissed or superseded while waiting
 
     final question = generated ?? _fallbackQuestion(scan, type);
     _askedQuestions.add(question.question);
@@ -408,7 +523,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
           '${state.correctCount} dari ${state.mcAnswered}.$skipped Scan sampah lain untuk soal baru.');
       return;
     }
-    _loadQuestion(state.questionIndex + 1);
+    _consumeQuestion(state.questionIndex + 1);
   }
 
   void _appendAiReply(String text) {
@@ -432,6 +547,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   void dismiss() {
     _generation++;
+    _cancelPrefetch();
     GemmaQuizService.instance.cancel();
     unawaited(QuizTtsService.instance.stop());
     state = WasteQuizUiState(voiceOn: state.voiceOn);

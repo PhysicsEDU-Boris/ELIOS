@@ -369,6 +369,9 @@ class _QuestionCard extends StatelessWidget {
                       : 'Menyiapkan AI offline (hanya sekali)…',
                   GemmaStatus.loading => 'Memuat model Gemma ke memori…',
                   _ when state.phase == WasteQuizPhase.identifying => 'Gemma sedang mengenali benda di foto…',
+                  // Questions 2+ are prefetched in the background (decision
+                  // 0011): this only shows while this one isn't ready yet.
+                  _ when state.questionIndex > 0 => 'Menyiapkan soal berikutnya…',
                   _ => 'Gemma sedang membuat soal tentang "${state.scan?.displayName ?? ''}"…',
                 };
                 return Row(

@@ -23,9 +23,11 @@ class LiveScanController extends ChangeNotifier {
     required this.startQuiz,
     int? Function()? firstTokenMs,
     int Function()? ttsCount,
+    int? Function()? nextWaitMs,
     DateTime Function()? clock,
   })  : _firstTokenMs = firstTokenMs,
         _ttsCount = ttsCount,
+        _nextWaitMs = nextWaitMs,
         _clock = clock ?? monotonicClock() {
     machine = LiveScanStateMachine(DetectionStabilizer(ignoredLabels: ignoredLabels, clock: _clock), clock: _clock);
   }
@@ -53,6 +55,7 @@ class LiveScanController extends ChangeNotifier {
   final bool Function(String label) startQuiz;
   final int? Function()? _firstTokenMs;
   final int Function()? _ttsCount;
+  final int? Function()? _nextWaitMs;
   final DateTime Function() _clock;
   late final LiveScanStateMachine machine;
 
@@ -66,6 +69,11 @@ class LiveScanController extends ChangeNotifier {
   /// Utterances started so far (decision 0009), for the debug overlay. 0
   /// when no [ttsCount] source was given.
   int get ttsCount => _ttsCount?.call() ?? 0;
+
+  /// Time the last "Soal berikutnya" tap waited for its question (decision
+  /// 0011, M2b part 3), 0 when served straight from the prefetch buffer.
+  /// Null when no [nextWaitMs] source was given, or nothing tapped yet.
+  int? get nextWaitMs => _nextWaitMs?.call();
 
   /// First-token time of the last quiz start's question, once it arrived.
   int? get lastFirstTokenMs => _lastFirstTokenMs;

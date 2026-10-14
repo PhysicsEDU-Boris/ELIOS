@@ -23,6 +23,20 @@ kept outside the repo.
   updated.
 
 ### Added
+- M2b part 3: questions 2-N of a quiz session are now prefetched in the
+  background, one at a time through the single Gemma slot, as soon as
+  question 1 shows — "Soal berikutnya" takes the next one instantly instead
+  of generating on tap. A user chat message or essay grading still takes
+  priority (decision 0003): it pauses the prefetch, which resumes after and
+  retries indefinitely rather than ever falling back — closing a bug where
+  chatting during a quiz could turn questions 2-4 into "SOAL CADANGAN (AI
+  ON-DEVICE BELUM SIAP)" even though the model was fully loaded and simply
+  busy with the chat. A near-duplicate of an earlier question in the same
+  session is rejected and retried; an unparseable background reply is
+  retried too (both bounded, same 2-attempt budget `generateQuestion`
+  always had). Closing the quiz cancels any in-flight prefetch and clears
+  the buffer. Debug builds log the wait per "Soal berikutnya" tap (0 when
+  served from the buffer); the overlay adds `next N ms`. Decision 0011.
 - M2b part 2: the quiz now speaks the same auto-reply at most once per
   object (two chat messages sent before answering, for example, used to
   both trigger the identical reply and speak it twice); the manual

@@ -77,6 +77,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
         },
         firstTokenMs: () => GemmaQuizService.instance.lastFirstTokenMs.value,
         ttsCount: () => QuizTtsService.instance.startedCount,
+        nextWaitMs: () => ref.read(wasteQuizProvider.notifier).lastNextWaitMs,
       )..onQuizPhase(ref.read(wasteQuizProvider).phase); // a quiz may already be open (minimized)
 
       // M2b: preload Gemma now, so the first quiz is fast instead of showing
