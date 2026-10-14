@@ -126,6 +126,36 @@ to lock. Owner's decisions:
   `wait Plastic 12s` (stays at 30 s while the label is in view).
 - The stabilizer's lock, overlap and dropout rules are unchanged.
 
+### Wait freeze during a quiz (fixed 2026-10-14, third robot test)
+
+A third recording, on the build above, still showed the box re-asked —
+twice more, four times in one 9-minute run. Cause: `labelWaits` (read by
+the debug overlay on every rebuild, including during a quiz, since
+`onQuizPhase` calls `notifyListeners()` on each phase change) called the
+same mutating check `onFrame` used to expire a wait. The camera pauses
+during a quiz, so a label's last-seen time never refreshes then; once the
+overlay's own reads pushed the elapsed time past `sameLabelWait`, the
+label was silently dropped from the waiting set **before the quiz closed**
+— confirmed in the recording: the `wait Cardboard …s` line vanished mid-quiz
+whenever a quiz ran longer than 30 s. After that, the box could be
+re-asked as soon as the ordinary cooldown and empty-scene rules allowed,
+defeating `sameLabelWait` entirely for any quiz over 30 s.
+
+Fix, in `live_scan_state_machine.dart`:
+
+- **`labelWaits` is now a pure read.** It never removes a label from the
+  waiting set; only `onFrame` does that. While the machine is in ASKING or
+  QUIZ, every waiting label reads the full `sameLabelWait`, since nothing
+  can be asked until the quiz closes anyway.
+- **Expiry is a sweep over every waiting label**, not just the ones in the
+  current frame, run once per `onFrame` call, and skipped entirely while
+  ASKING or QUIZ — so an open quiz can never lose a label's wait, however
+  long it runs, including once M2b lets frames keep arriving during a quiz.
+- **The sweep checks a label's previous last-seen time before this frame's
+  own presence is recorded**, so a label reappearing exactly when its wait
+  matures still unblocks on that same frame (unchanged from before this
+  fix).
+
 ### On each failure
 
 - **Failed, BUSY or cancelled ask (owner's decision 4a).** The machine goes
