@@ -410,4 +410,32 @@ void main() {
       expect(r.locks, [1000, 3600]);
     });
   });
+
+  group('monotonic clock (decision 0009): the default, not wall-clock DateTime.now', () {
+    test('monotonicClock() tracks elapsed real time, not a fresh DateTime.now() read each call', () async {
+      final clock = monotonicClock();
+      final t1 = clock();
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      final t2 = clock();
+      expect(t2.isAfter(t1), isTrue);
+      // A fresh DateTime.now() each call would also pass this loose bound,
+      // but a clock stuck at the same instant (e.g. a broken default) would
+      // not -- this is the simplest thing a unit test can actually check;
+      // immunity to a system clock *change* needs a real clock change.
+      expect(t2.difference(t1).inMilliseconds, greaterThanOrEqualTo(20));
+    });
+
+    test('two calls with no real delay between them never go backward', () {
+      final clock = monotonicClock();
+      final a = clock();
+      final b = clock();
+      expect(b.isBefore(a), isFalse);
+    });
+
+    test('DetectionStabilizer with no clock: argument still works (uses the monotonic default)', () {
+      final s = DetectionStabilizer();
+      expect(s.update([_plastic]), isNull); // first sighting: candidate, not locked yet
+      expect(s.hasCandidate, isTrue);
+    });
+  });
 }

@@ -109,6 +109,52 @@ In one run, the request right after a (successful) cancel took about
   and no sleep or wake events.
 - The raw numbers are kept in `m0-cancel.md`.
 
+## Update, 2026-10-14 (M2b part 2): `cancel()` now awaits `stopGeneration()`
+
+`stopGeneration()` returns a `Future<void>`. The 3 call sites in
+`gemma_quiz_service.dart` (`cancel()`, the timeout handler, and `_send`'s
+"user request cancels a scan" branch) used to fire it without awaiting:
+`try { _chat?.stopGeneration(); } catch (_) {}`. That `try/catch` only
+catches a *synchronous* throw; an async rejection from the native call
+could escape as an unhandled `Future` error. All 3 now go through one
+`Future<void> _stopGeneration()` helper that awaits it and logs (not
+throws) on failure. `cancel()` itself changed from `void` to
+`Future<void> cancel() async`; none of its 4 call sites (all in
+`waste_quiz_provider.dart`) needed to change, since none awaited it before
+either.
+
+**Behaviour change, within the measured range above:** the slot now
+releases after `stopGeneration()` settles (2–38 ms, median 14–19 ms per
+this record) instead of firing it and releasing immediately. Decision 0003
+already established that range as small; this doesn't invalidate the
+timing evidence above, which measured the native stop itself, not when the
+Dart-side slot was released.
+
+**Single-slot rules unchanged:** BUSY (a non-user request is rejected
+outright while a request is active) and a user request cancelling an
+active scan both still work exactly as before — only the cancel mechanics
+changed, not when a cancel happens.
+
+**Cut-off reply in chat history: left as is, by design, not a bug.**
+`InferenceChat` (the `flutter_gemma` package) already drops a cancelled
+*empty* response from history (its own fix for issue #325) but keeps a
+*non-empty* one that was cut off mid-stream — plausible on the ~88% of
+cancels that land mid-reply (per the table above). Checked whether this
+can leak into the app: every real caller in `gemma_quiz_service.dart`
+(`identifyItem`, `generateQuestion`, `discuss`, `reviewEssay`) calls
+`_send(..., fresh: true, ...)`, which clears history (`clearHistory()`)
+*before* adding its own prompt — so a cut-off reply is always wiped before
+anything could read it. `fullHistory` (the package's only read API for it)
+is never read anywhere in this app. The package's own way to selectively
+drop one message (`clearHistory(replayHistory: ...)`) closes the session
+and replays every remaining turn through the model — real cost, for a
+state that's already provably unreachable here. No code change.
+
+Tests: `test/quiz_behavior_test.dart`, group "GemmaQuizService single
+flight slot logic" — `cancel()` awaits a mocked `stopGeneration` and a
+throwing one doesn't escape (`mockStopGeneration`, a new
+`@visibleForTesting` seam alongside the existing `mockSendExecute`).
+
 ## Consequences
 
 - No production change for cancel in M0.
@@ -117,3 +163,6 @@ In one run, the request right after a (successful) cancel took about
   playing, so sleep and GPU contention don't distort the timings.
 - If `flutter_gemma` or `flutter_gemma_litertlm` is upgraded, re-run
   `integration_test/gemma_cancel_test.dart` before trusting this record.
+- M2b part 2 (2026-10-14): `cancel()` awaits `stopGeneration()`; see the
+  update above. Re-run the cancel integration test if this changes the
+  measured stop/next-request timing meaningfully.

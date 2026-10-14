@@ -138,6 +138,11 @@ class GemmaQuizService {
   @visibleForTesting
   Future<String?> Function(String prompt, {Uint8List? imageBytes, bool fresh, bool isUser, void Function(String)? onToken})? mockSendExecute;
 
+  /// Replaces `_chat?.stopGeneration()` in tests, so a throwing/slow stop can
+  /// be simulated without a real `_chat` (decision 0003 update).
+  @visibleForTesting
+  Future<void> Function()? mockStopGeneration;
+
   bool get isReady => _chat != null;
   bool get isPrepared => _prepared;
 
@@ -321,6 +326,11 @@ class GemmaQuizService {
 
   Future<String?> _executeSend(String prompt, {Uint8List? imageBytes, bool fresh = false, bool isUser = false, void Function(String)? onToken}) async {
     _activeIsUser = isUser;
+    // Reset now, before this attempt even starts generating: a caller that
+    // returns early (not ready, BUSY, no image encoder) or falls back never
+    // reaches the onDone below, and should read as "no token for this ask"
+    // rather than keep the previous ask's value on screen (decision 0009).
+    lastFirstTokenMs.value = null;
     final completer = Completer<String?>();
     _activeCompleter = completer;
 
@@ -384,7 +394,7 @@ class GemmaQuizService {
     } catch (e) {
       if (e is TimeoutException) {
         _log('generation timeout');
-        try { _chat?.stopGeneration(); } catch (_) {}
+        await _stopGeneration();
       }
       return null;
     } finally {
@@ -410,7 +420,7 @@ class GemmaQuizService {
       
       if (!_activeIsUser) {
         _log('canceling active scan request to yield to user request');
-        try { _chat?.stopGeneration(); } catch (_) {}
+        await _stopGeneration();
         if (!_activeCompleter!.isCompleted) {
            _activeCompleter!.complete(null);
         }
@@ -431,13 +441,30 @@ class GemmaQuizService {
     return _executeSend(prompt, imageBytes: imageBytes, fresh: fresh, isUser: isUser, onToken: onToken);
   }
 
-  void cancel() {
+  /// Stops generation and waits for it, logging (not throwing) on failure.
+  /// stopGeneration() returns a Future; the 3 call sites below used to fire
+  /// it without awaiting, so a native-side error could escape as an
+  /// unhandled Future rejection. Awaiting adds at most the stop time itself
+  /// (2-38 ms measured, decision 0003) before the slot is released.
+  Future<void> _stopGeneration() async {
+    try {
+      if (mockStopGeneration != null) {
+        await mockStopGeneration!();
+      } else {
+        await _chat?.stopGeneration();
+      }
+    } catch (e) {
+      _log('stopGeneration failed: $e');
+    }
+  }
+
+  Future<void> cancel() async {
     _pendingCompleter?.complete(null);
     _pendingCompleter = null;
     _pendingTask = null;
     if (_activeCompleter != null) {
       _log('canceling active request');
-      try { _chat?.stopGeneration(); } catch (_) {}
+      await _stopGeneration();
       if (!_activeCompleter!.isCompleted) {
         _activeCompleter!.complete(null);
       }

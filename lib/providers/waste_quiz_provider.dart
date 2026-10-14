@@ -125,6 +125,13 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   int _generation = 0;
   final _askedQuestions = <String>[];
 
+  // The text last spoken automatically (decision 0009: "one TTS slot, keyed
+  // by object"), so the same quiz text isn't re-spoken if the message that
+  // triggered it is appended again or the popup rebuilds. The manual
+  // "Listen" button (listen(), below) is unaffected: a user pressing it
+  // again should hear it again.
+  String? _lastAutoSpokenText;
+
   @override
   WasteQuizUiState build() => const WasteQuizUiState();
 
@@ -132,6 +139,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// scan session, so a change applies to the next scan.
   WasteQuizUiState _freshSession({ScannedWaste? scan, required WasteQuizPhase phase}) {
     final difficulty = QuizDifficulty.fromSetting(ref.read(appPreferencesProvider).quizDifficulty);
+    _lastAutoSpokenText = null; // a new object/quiz: nothing spoken for it yet
     return WasteQuizUiState(phase: phase, scan: scan, difficulty: difficulty, voiceOn: state.voiceOn);
   }
 
@@ -212,6 +220,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final generation = ++_generation;
     final scan = state.scan!;
     final type = questionTypeFor(index);
+    final total = state.totalQuestions;
     state = state.copyWith(
       phase: WasteQuizPhase.loadingQuestion,
       questionIndex: index,
@@ -220,12 +229,21 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       sendingChat: false,
     );
 
+    final sw = kDebugMode ? (Stopwatch()..start()) : null;
     final generated = await GemmaQuizService.instance.generateQuestion(
       waste: scan,
       type: type,
       difficulty: state.difficulty,
       avoid: List.of(_askedQuestions),
     );
+    if (sw != null) {
+      // One line per question load, so a slow session (decision 0009) shows
+      // exactly which question was slow and whether it fell back.
+      debugPrint('[WasteQuiz] ${scan.displayName}: question ${index + 1}/$total '
+          '(${type.name}) in ${sw.elapsedMilliseconds}ms, first token '
+          '${GemmaQuizService.instance.lastFirstTokenMs.value ?? '-'}ms, '
+          'fallback=${generated == null}');
+    }
     if (generation != _generation) return; // dismissed or superseded
 
     final question = generated ?? _fallbackQuestion(scan, type);
@@ -398,7 +416,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       messages: [...state.messages, ChatMessage(isUser: false, text: text)],
       sendingChat: false,
     );
-    if (state.voiceOn) unawaited(QuizTtsService.instance.speak(text));
+    if (state.voiceOn && text != _lastAutoSpokenText) {
+      _lastAutoSpokenText = text;
+      unawaited(QuizTtsService.instance.speak(text));
+    }
   }
 
   void listen(String text) => unawaited(QuizTtsService.instance.speak(text));

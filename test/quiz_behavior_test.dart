@@ -169,5 +169,98 @@ void main() {
       final res2 = await f2;
       expect(res2.item, 'kertas');
     });
+
+    test('cancel() awaits stopGeneration, and a throwing one does not escape', () async {
+      final stopCompleter = Completer<void>();
+      var stopCalled = 0;
+      service.mockStopGeneration = () {
+        stopCalled++;
+        return stopCompleter.future;
+      };
+      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => Completer<String?>().future;
+      final f1 = service.identifyItem(Uint8List(0));
+
+      var cancelDone = false;
+      final cancelFuture = service.cancel().then((_) => cancelDone = true);
+      await Future<void>.delayed(Duration.zero); // let the mock get called
+      expect(stopCalled, 1);
+      expect(cancelDone, isFalse, reason: 'cancel() should still be awaiting stopGeneration');
+
+      stopCompleter.completeError(StateError('native stop failed')); // the throwing case
+      await cancelFuture; // must not throw despite the error
+      expect(cancelDone, isTrue);
+
+      final res1 = await f1;
+      expect(res1.item, isNull);
+      service.mockStopGeneration = null;
+    });
+
+  });
+
+  group('TTS: one slot, no repeat for the same text, closing stops it', () {
+    setUp(() {
+      QuizTtsService.instance.mockSpeak = null;
+      QuizTtsService.instance.mockStop = null;
+    });
+    tearDown(() {
+      QuizTtsService.instance.mockSpeak = null;
+      QuizTtsService.instance.mockStop = null;
+    });
+
+    test('a new utterance stops the old one first (not queued)', () async {
+      final spoken = <String>[];
+      final stopCalls = <int>[];
+      QuizTtsService.instance.mockStop = () async => stopCalls.add(spoken.length);
+      QuizTtsService.instance.mockSpeak = (text) async => spoken.add(text);
+
+      final before = QuizTtsService.instance.startedCount;
+      await QuizTtsService.instance.speak('pertama');
+      await QuizTtsService.instance.speak('kedua');
+
+      expect(spoken, ['pertama', 'kedua']); // both went through, not queued behind each other
+      expect(stopCalls.length, 2); // stop() ran before each speak
+      expect(QuizTtsService.instance.startedCount, before + 2);
+    });
+
+    test('the same auto-spoken text is not repeated within a quiz (rebuild-safe)', () async {
+      final spoken = <String>[];
+      QuizTtsService.instance.mockSpeak = (text) async => spoken.add(text);
+
+      final container = _container(skipAllowed: false);
+      final notifier = container.read(wasteQuizProvider.notifier);
+      // Need voiceOn: true to exercise auto-speak; _container seeds it off.
+      container.read(wasteQuizProvider.notifier).toggleVoice();
+
+      // Before the question is answered, every chat message gets the exact
+      // same "answer first" reply — the scenario the popup rebuilding (or
+      // minimizing/restoring) could otherwise cause to speak twice.
+      await notifier.sendChatMessage('apa ini?');
+      await pumpEventQueue(); // _appendAiReply's speak() is unawaited
+      await notifier.sendChatMessage('tolong jelaskan');
+      await pumpEventQueue();
+
+      expect(spoken, hasLength(1), reason: 'identical text spoken only once per quiz');
+      expect(spoken.single, startsWith('Jawab soalnya dulu'));
+    });
+
+    test('a genuinely different reply is still spoken', () async {
+      final spoken = <String>[];
+      QuizTtsService.instance.mockSpeak = (text) async => spoken.add(text);
+      final container = _container(skipAllowed: true, questionIndex: 0);
+      container.read(wasteQuizProvider.notifier).toggleVoice();
+      container.read(wasteQuizProvider.notifier).skipQuestion(); // finishes (Easy = 1 question): a different message
+      await pumpEventQueue(); // _appendAiReply's speak() is unawaited
+
+      expect(spoken, hasLength(1));
+      expect(spoken.single, contains('Sesi selesai'));
+    });
+
+    test('closing the quiz stops speech', () async {
+      var stopCalled = 0;
+      QuizTtsService.instance.mockStop = () async => stopCalled++;
+      final container = _container(skipAllowed: false);
+      container.read(wasteQuizProvider.notifier).dismiss();
+      expect(stopCalled, 1);
+    });
   });
 }

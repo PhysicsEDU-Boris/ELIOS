@@ -22,7 +22,7 @@ const emptySceneToRearm = Duration(seconds: 2);
 const sameLabelWait = Duration(seconds: 30);
 
 class LiveScanStateMachine {
-  LiveScanStateMachine(this.stabilizer, {DateTime Function()? clock}) : _clock = clock ?? DateTime.now;
+  LiveScanStateMachine(this.stabilizer, {DateTime Function()? clock}) : _clock = clock ?? monotonicClock();
 
   final DetectionStabilizer stabilizer;
   final DateTime Function() _clock;

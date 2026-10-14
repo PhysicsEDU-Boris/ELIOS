@@ -15,3 +15,5 @@ their status changed.
 | [0006](0006-macos-release-entitlements.md) | macOS release builds may run a local server (for the 3D viewer) | Accepted |
 | [0007](0007-stabilizer.md) | Detection stabilizer (stage 3a) | Accepted (parameters provisional) |
 | [0008](0008-live-scan-state-machine.md) | Live-scan state machine for the robot path (behind a switch) | Accepted |
+| [0009](0009-camera-stays-alive.md) | The camera stays alive during a quiz; Gemma preloads (M2b part 1) | Accepted |
+| [0010](0010-tts-single-slot-and-overlay-staleness.md) | One TTS slot, no stale overlay numbers, a monotonic default clock (M2b part 2) | Accepted |

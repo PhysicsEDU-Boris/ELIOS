@@ -22,9 +22,11 @@ class LiveScanController extends ChangeNotifier {
   LiveScanController({
     required this.startQuiz,
     int? Function()? firstTokenMs,
+    int Function()? ttsCount,
     DateTime Function()? clock,
   })  : _firstTokenMs = firstTokenMs,
-        _clock = clock ?? _monotonicClock() {
+        _ttsCount = ttsCount,
+        _clock = clock ?? monotonicClock() {
     machine = LiveScanStateMachine(DetectionStabilizer(ignoredLabels: ignoredLabels, clock: _clock), clock: _clock);
   }
 
@@ -50,6 +52,7 @@ class LiveScanController extends ChangeNotifier {
   /// Starts a quiz for [label]; false if one is already open.
   final bool Function(String label) startQuiz;
   final int? Function()? _firstTokenMs;
+  final int Function()? _ttsCount;
   final DateTime Function() _clock;
   late final LiveScanStateMachine machine;
 
@@ -60,14 +63,19 @@ class LiveScanController extends ChangeNotifier {
   /// Analysed frames in the last second.
   int get fps => _recentFrames.length;
 
+  /// Utterances started so far (decision 0009), for the debug overlay. 0
+  /// when no [ttsCount] source was given.
+  int get ttsCount => _ttsCount?.call() ?? 0;
+
   /// First-token time of the last quiz start's question, once it arrived.
   int? get lastFirstTokenMs => _lastFirstTokenMs;
   int? _lastFirstTokenMs;
 
   /// Time from the lock (ASKING) to the question being shown, for the last
-  /// quiz start, once it arrived. Like [lastFirstTokenMs], only updates when
-  /// a question actually shows, so it can be stale after a fallback question
-  /// with no token (see decision 0008).
+  /// quiz start, once it arrived. Both this and [lastFirstTokenMs] reset to
+  /// null the moment a new ask starts, so a fallback question or a failed
+  /// generation can't leave the previous quiz's numbers on screen; they stay
+  /// null until this ask's question genuinely shows (decision 0009).
   int? get lastAskToQuestionMs => _lastAskToQuestionMs;
   int? _lastAskToQuestionMs;
   DateTime? _askedAt;
@@ -114,6 +122,10 @@ class LiveScanController extends ChangeNotifier {
     if (lock != null) {
       if (startQuiz(lock.detection.label)) {
         _askedAt = now;
+        // A new ask starts clean: don't show the previous quiz's numbers
+        // while this one is still loading, or if it falls back / fails.
+        _lastFirstTokenMs = null;
+        _lastAskToQuestionMs = null;
       } else {
         machine.onAskOutcome(AskOutcome.busy);
       }
@@ -154,9 +166,4 @@ class LiveScanController extends ChangeNotifier {
     }
   }
 
-  static DateTime Function() _monotonicClock() {
-    final base = DateTime.now();
-    final sw = Stopwatch()..start();
-    return () => base.add(sw.elapsed);
-  }
 }

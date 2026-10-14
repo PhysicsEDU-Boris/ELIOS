@@ -15,6 +15,7 @@ import '../providers/robot_provider.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../services/gemma_quiz_service.dart';
 import '../services/live_scan_controller.dart';
+import '../services/quiz_tts_service.dart';
 import '../services/websocket_service.dart';
 import '../widgets/debug_phone_camera_sheet.dart';
 import '../widgets/desktop_viewport.dart';
@@ -75,6 +76,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           return true;
         },
         firstTokenMs: () => GemmaQuizService.instance.lastFirstTokenMs.value,
+        ttsCount: () => QuizTtsService.instance.startedCount,
       )..onQuizPhase(ref.read(wasteQuizProvider).phase); // a quiz may already be open (minimized)
 
       // M2b: preload Gemma now, so the first quiz is fast instead of showing
