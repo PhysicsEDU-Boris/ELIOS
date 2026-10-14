@@ -295,5 +295,287 @@ void main() {
       container.read(wasteQuizProvider.notifier).dismiss();
       expect(stopCalled, 1);
     });
+
+    test('"Soal berikutnya" stops speech immediately, before the new question shows', () async {
+      var stopCalled = 0;
+      QuizTtsService.instance.mockStop = () async => stopCalled++;
+      final container = ProviderContainer(overrides: [
+        appPreferencesProvider.overrideWith(() => _SeededPrefs(const AppPreferences(skipAllowed: false))),
+        wasteQuizProvider.overrideWith(() => _SeededQuiz(WasteQuizUiState(
+              phase: WasteQuizPhase.active,
+              scan: ScannedWaste.fromLabel('botol plastik'),
+              difficulty: QuizDifficulty.medium, // 3 questions: not the last one yet
+              questionIndex: 0,
+              question: _mc,
+              selectedOption: _mc.correctIndex, // answered
+              voiceOn: false,
+            ))),
+      ]);
+      addTearDown(container.dispose);
+
+      container.read(wasteQuizProvider.notifier).nextQuestion();
+      await pumpEventQueue();
+
+      expect(stopCalled, greaterThanOrEqualTo(1),
+          reason: 'the previous question\'s voice must not keep playing over the new question');
+      expect(container.read(wasteQuizProvider).questionIndex, 1, reason: 'the stop call must not block advancing');
+    });
+
+    test('skipping a question stops speech immediately', () async {
+      var stopCalled = 0;
+      QuizTtsService.instance.mockStop = () async => stopCalled++;
+      final container = ProviderContainer(overrides: [
+        appPreferencesProvider.overrideWith(() => _SeededPrefs(const AppPreferences(skipAllowed: true))),
+        wasteQuizProvider.overrideWith(() => _SeededQuiz(WasteQuizUiState(
+              phase: WasteQuizPhase.active,
+              scan: ScannedWaste.fromLabel('botol plastik'),
+              difficulty: QuizDifficulty.medium,
+              questionIndex: 0,
+              question: _mc,
+              voiceOn: false,
+            ))),
+      ]);
+      addTearDown(container.dispose);
+
+      container.read(wasteQuizProvider.notifier).skipQuestion();
+      await pumpEventQueue();
+
+      expect(stopCalled, greaterThanOrEqualTo(1));
+      expect(container.read(wasteQuizProvider).questionIndex, 1);
+    });
+
+    test('a stop call when nothing is speaking changes nothing else', () async {
+      var stopCalled = 0;
+      QuizTtsService.instance.mockStop = () async => stopCalled++;
+      final container = _container(skipAllowed: false, questionIndex: 0);
+
+      container.read(wasteQuizProvider.notifier).dismiss(); // nothing was ever spoken in this test
+      await pumpEventQueue();
+
+      expect(stopCalled, 1, reason: 'stop() is still called, but safely -- no speak() ever happened');
+      expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.idle);
+    });
+  });
+
+  group('M2b part 3: background quiz prefetch (decision 0011)', () {
+    setUp(() async {
+      // GemmaQuizService.instance is a process-wide singleton: flush any
+      // leftover active/pending request from a previous test before this
+      // one starts, so it never sees the slot as busy.
+      await GemmaQuizService.instance.cancel();
+      GemmaQuizService.instance.mockSendExecute = null;
+      await pumpEventQueue();
+    });
+    tearDown(() {
+      GemmaQuizService.instance.mockSendExecute = null;
+    });
+
+    const mcJson = '{"question": "Soal ke-1?", "options": ["A","B","C","D"], '
+        '"correctIndex": 0, "explanation": "e"}';
+
+    String fakeResponse(int n, String prompt) => prompt.contains('pilihan ganda')
+        ? '{"question": "Soal ke-$n?", "options": ["A","B","C","D"], "correctIndex": 0, "explanation": "e"}'
+        : '{"question": "Soal ke-$n?", "explanation": "e"}';
+
+    ProviderContainer mediumContainer() {
+      final c = ProviderContainer(overrides: [
+        appPreferencesProvider
+            .overrideWith(() => _SeededPrefs(const AppPreferences(quizDifficulty: 'Medium'))),
+      ]);
+      addTearDown(c.dispose);
+      return c;
+    }
+
+    test('background prefetch fills questions 2 and 3 in order after question 1 shows', () async {
+      var calls = 0;
+      final prompts = <String>[];
+      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+        calls++;
+        prompts.add(prompt);
+        return fakeResponse(calls, prompt);
+      };
+
+      final container = mediumContainer();
+      container.read(wasteQuizProvider.notifier).startForLabel('botol plastik');
+      await pumpEventQueue();
+
+      expect(container.read(wasteQuizProvider).question?.question, 'Soal ke-1?');
+      expect(calls, 3, reason: 'question 1 (foreground) + questions 2, 3 (background) all generated');
+      expect(prompts[1], contains('Soal ke-1?'), reason: 'question 2 avoids question 1 (sequential, not parallel)');
+      expect(prompts[2], contains('Soal ke-2?'), reason: 'question 3 avoids question 2 too');
+    });
+
+    test('"Soal berikutnya" takes an already-buffered question instantly, no new generation', () async {
+      var calls = 0;
+      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+        calls++;
+        return fakeResponse(calls, prompt);
+      };
+
+      final container = mediumContainer();
+      final notifier = container.read(wasteQuizProvider.notifier);
+      notifier.startForLabel('botol plastik');
+      await pumpEventQueue(); // question 1 shown, questions 2 and 3 prefetched
+
+      final callsBeforeTap = calls;
+      notifier.selectOption(0); // answers question 1 (multiple choice)
+      notifier.nextQuestion();
+      await pumpEventQueue();
+
+      expect(container.read(wasteQuizProvider).questionIndex, 1);
+      expect(container.read(wasteQuizProvider).question?.question, 'Soal ke-2?');
+      expect(calls, callsBeforeTap, reason: 'served straight from the buffer, no new generation call');
+      expect(notifier.lastNextWaitMs, lessThan(20), reason: 'instant from the buffer');
+    });
+
+    test('a tap before the buffer is ready waits, then shows the question (never a fallback)', () async {
+      var calls = 0;
+      final pending = Completer<String?>();
+      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+        calls++;
+        if (calls == 1) return mcJson; // question 1 resolves right away
+        return pending.future; // question 2's background generation hangs
+      };
+
+      final container = mediumContainer();
+      final notifier = container.read(wasteQuizProvider.notifier);
+      notifier.startForLabel('botol plastik');
+      await pumpEventQueue();
+      expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.active);
+
+      notifier.selectOption(0);
+      notifier.nextQuestion();
+      await pumpEventQueue();
+      expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.loadingQuestion,
+          reason: 'not ready yet: show the waiting state, not a fallback');
+      expect(container.read(wasteQuizProvider).questionIndex, 1);
+
+      pending.complete('{"question": "Soal ke-2?", "explanation": "e"}');
+      await pumpEventQueue();
+
+      expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.active);
+      expect(container.read(wasteQuizProvider).question?.question, 'Soal ke-2?');
+      expect(container.read(wasteQuizProvider).isFallback, isFalse);
+    });
+
+    test('a chat message pauses prefetch, which resumes after -- never a fallback', () {
+      fakeAsync((async) {
+        var calls = 0;
+        final completers = <Completer<String?>>[];
+        GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) {
+          calls++;
+          final c = Completer<String?>();
+          completers.add(c);
+          return c.future;
+        };
+
+        final container = mediumContainer();
+        final notifier = container.read(wasteQuizProvider.notifier)..toggleVoice(); // no TTS
+
+        notifier.startForLabel('botol plastik'); // call 1: question 1
+        async.flushMicrotasks();
+        expect(calls, 1);
+        completers[0].complete(mcJson);
+        async.flushMicrotasks();
+        expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.active);
+        expect(calls, 2, reason: 'prefetch for question 2 (essay) starts right away');
+
+        notifier.selectOption(0); // answers question 1, synchronous
+        notifier.sendChatMessage('apa ini?'); // call 3 (isUser) cancels call 2 (prefetch)
+        async.flushMicrotasks();
+        expect(calls, 3, reason: 'the chat request pre-empted and ran despite the prefetch being active');
+
+        completers[2].complete('balasan obrolan'); // the chat's own reply
+        async.flushMicrotasks();
+        expect(container.read(wasteQuizProvider).messages.last.text, 'balasan obrolan');
+
+        async.elapse(const Duration(milliseconds: 300)); // the prefetch retry delay
+        expect(calls, 4, reason: 'prefetch retried question 2 once the slot was free again');
+        completers[3].complete('{"question": "Soal ke-2?", "explanation": "e"}');
+        async.flushMicrotasks();
+
+        notifier.nextQuestion();
+        async.flushMicrotasks();
+        expect(container.read(wasteQuizProvider).question?.question, 'Soal ke-2?');
+        expect(container.read(wasteQuizProvider).isFallback, isFalse,
+            reason: 'a chat message must never turn a question into a fallback');
+
+        // Medium has a 3rd question: resolving question 2 just above kicks
+        // off its own background prefetch (call 5, never scripted here).
+        // Settle it so the singleton GemmaQuizService isn't left mid-request
+        // for the next test.
+        notifier.dismiss();
+        async.flushMicrotasks();
+      });
+    });
+
+    test('closing the quiz cancels prefetch and clears the buffer', () {
+      fakeAsync((async) {
+        var calls = 0;
+        final completers = <Completer<String?>>[];
+        GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) {
+          calls++;
+          final c = Completer<String?>();
+          completers.add(c);
+          return c.future;
+        };
+
+        final container = mediumContainer();
+        final notifier = container.read(wasteQuizProvider.notifier);
+        notifier.startForLabel('botol plastik');
+        async.flushMicrotasks();
+        completers[0].complete(mcJson);
+        async.flushMicrotasks();
+        expect(calls, 2, reason: 'prefetch for question 2 started');
+
+        notifier.dismiss();
+        completers[1].complete('{"question": "Soal ke-2?", "explanation": "e"}'); // the cancelled call resolves late
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 1));
+
+        expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.idle,
+            reason: 'dismiss must stick even if the stale prefetch resolves late');
+        expect(calls, 2, reason: 'no retry after close: the buffer is cancelled, not kept alive');
+      });
+    });
+
+    test('a near-identical question is rejected and retried', () async {
+      var calls = 0;
+      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+        calls++;
+        return calls == 1
+            ? '{"question": "Apa dampak plastik?", "explanation": "e"}' // near-duplicate of avoid[0]
+            : '{"question": "Bagaimana proses daur ulang logam?", "explanation": "e"}';
+      };
+
+      final result = await GemmaQuizService.instance.generateQuestionBackground(
+        waste: ScannedWaste.fromLabel('botol plastik'),
+        type: QuizQuestionType.essay,
+        difficulty: QuizDifficulty.easy,
+        avoid: const ['apa dampak plastik?'],
+      );
+
+      expect(calls, 2, reason: 'the near-duplicate on attempt 1 is rejected; attempt 2 is accepted');
+      expect(result.retry, isFalse);
+      expect(result.question?.question, 'Bagaimana proses daur ulang logam?');
+    });
+
+    test('an unparseable response is retried once in the background', () async {
+      var calls = 0;
+      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+        calls++;
+        return calls == 1 ? 'not json at all' : '{"question": "Soal valid?", "explanation": "e"}';
+      };
+
+      final result = await GemmaQuizService.instance.generateQuestionBackground(
+        waste: ScannedWaste.fromLabel('kardus'),
+        type: QuizQuestionType.essay,
+        difficulty: QuizDifficulty.easy,
+      );
+
+      expect(calls, 2);
+      expect(result.retry, isFalse);
+      expect(result.question?.question, 'Soal valid?');
+    });
   });
 }

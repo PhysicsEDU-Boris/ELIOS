@@ -144,3 +144,40 @@ the 11.3 s one) is pinpointed by its own index, not averaged away.
   widget/UI layout changed.
 - `cancel()`'s own timing change is recorded in decision 0003's update
   (2026-10-14), not duplicated here.
+
+## Update, 2026-10-15 (PR #16 robot-test follow-up): "Soal berikutnya"/skip now stop TTS too
+
+Found while analysing the PR #16 (decision 0011) robot recording: the
+"one slot, new stops old" rule above only ever fires when something new is
+*spoken* (`QuizTtsService.speak()` stops first). Showing a *question* was
+never itself a `speak()` call (only an answer verdict, essay-grading reply,
+or chat reply is, via `_appendAiReply`), so nothing stopped a still-playing
+reply when the question changed underneath it. Checked every path that
+changes the question:
+
+- `WasteQuizNotifier._loadQuestion` (question 1): no stop call.
+- `WasteQuizNotifier._consumeQuestion` (questions 2+, reached from both
+  `nextQuestion()` and `skipQuestion()` via `_advance()`): no stop call.
+- `dismiss()`: already called `QuizTtsService.instance.stop()` — unaffected.
+
+So tapping "Soal berikutnya" or skip while a verdict/chat/essay-grading
+reply was still being read aloud left that voice playing over the new
+question, with nothing to cut it off. Fixed: both `_loadQuestion` and
+`_consumeQuestion` now call `unawaited(QuizTtsService.instance.stop())`
+first thing, unconditionally (not gated by `voiceOn` — same as `dismiss()`'s
+existing call). `QuizTtsService.stop()` is already safe to call when
+nothing is playing (`try`/`catch` around `_tts.stop()`).
+
+**Test-only side effect:** this made `QuizTtsService.instance` (a lazily
+constructed singleton wrapping `FlutterTts()`) get touched from
+`test/live_scan_controller_test.dart`, which never called
+`TestWidgetsFlutterBinding.ensureInitialized()` — `FlutterTts()`'s
+`setMethodCallHandler` asserts the binding exists. Added that call,
+matching every other test file. No other file needed it.
+
+Tests: `test/quiz_behavior_test.dart`, "TTS: one slot…" group — `mockStop`
+asserts a stop call on both `nextQuestion()` and `skipQuestion()`, and that
+a stop call when nothing was ever spoken changes nothing else (the quiz
+still advances). Break-checked: removing either new call made its matching
+test fail (`Expected: a value greater than or equal to <1>`, `Actual: <0>`),
+then both were restored and re-verified green.

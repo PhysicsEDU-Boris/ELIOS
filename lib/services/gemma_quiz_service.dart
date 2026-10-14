@@ -443,8 +443,14 @@ class GemmaQuizService {
         // much. _stopGeneration() still runs (and is awaited here so this
         // function's own completion reflects it), it just isn't awaited
         // before the caller is freed.
+        //
+        // Completed with the 'CANCELLED' sentinel (not null): background
+        // prefetch (generateQuestionBackground, decision 0011) needs to tell
+        // "pre-empted by a higher-priority request -- retry" apart from a
+        // real failure. Every other caller (identifyItem/discuss/reviewEssay)
+        // already treats it exactly like null.
         if (!_activeCompleter!.isCompleted) {
-           _activeCompleter!.complete(null);
+           _activeCompleter!.complete('CANCELLED');
         }
         await _stopGeneration();
       }
@@ -504,8 +510,9 @@ class GemmaQuizService {
       // Release this caller first (see the matching comment in _send):
       // awaiting the stop before this would hold it up by as much as a
       // prefill-time cancel can take to land (0.4-6 s, decision 0003).
+      // 'CANCELLED' sentinel: see the matching comment in _send.
       if (!_activeCompleter!.isCompleted) {
-        _activeCompleter!.complete(null);
+        _activeCompleter!.complete('CANCELLED');
       }
       await _stopGeneration();
     }
@@ -522,7 +529,7 @@ class GemmaQuizService {
         '"category": "organik" atau "anorganik" atau "B3" atau "residu"}.';
     final raw = await _send(prompt, imageBytes: imageBytes, fresh: true, isUser: false);
     if (raw == 'BUSY') return const PhotoIdentification.failed('busy');
-    if (raw == null) {
+    if (raw == null || raw == 'CANCELLED') {
       return PhotoIdentification.failed(_chat != null && !_loadedWithVision
           ? 'AI di perangkat ini tidak bisa membaca foto (model gambar gagal dimuat). '
               'Pakai "Uji tanpa kamera" atau mode MaixCAM2.'
@@ -543,8 +550,16 @@ class GemmaQuizService {
     );
   }
 
-  /// One university-level question about the scanned item (text only).
-  Future<GeneratedQuestion?> generateQuestion({
+  /// Builds a question prompt and tries the model, up to 2 attempts on an
+  /// unparseable reply or a near-duplicate of one already in [avoid] (the
+  /// prompt's own "don't repeat these" instruction isn't always obeyed).
+  /// `retry` tells the caller the attempt was only busy or cancelled by a
+  /// higher-priority request (decision 0003) -- not a real failure, safe to
+  /// retry once the slot is free -- as opposed to a genuine failure (model
+  /// not ready, timeout, or parse/duplicate exhausted both attempts), which
+  /// background prefetch (decision 0011) needs to tell apart from "wait and
+  /// try again" so a chat message can never turn a question into a fallback.
+  Future<({bool retry, GeneratedQuestion? question})> _tryGenerateQuestion({
     required ScannedWaste waste,
     required QuizQuestionType type,
     required QuizDifficulty difficulty,
@@ -572,14 +587,49 @@ class GemmaQuizService {
 
     for (var attempt = 0; attempt < 2; attempt++) {
       final raw = await _send(prompt, fresh: true, isUser: false);
-      if (raw == 'BUSY') return null;
-      if (raw == null) return null;
+      if (raw == 'BUSY' || raw == 'CANCELLED') return (retry: true, question: null);
+      if (raw == null) return (retry: false, question: null);
       final parsed = _parse(raw, type);
-      if (parsed != null) return parsed;
-      _log('unparseable question (attempt ${attempt + 1}): $raw');
+      if (parsed == null) {
+        _log('unparseable question (attempt ${attempt + 1}): $raw');
+        continue;
+      }
+      if (avoid.any((a) => _normalizeForDuplicateCheck(a) == _normalizeForDuplicateCheck(parsed.question))) {
+        _log('duplicate question rejected (attempt ${attempt + 1}): ${parsed.question}');
+        continue;
+      }
+      return (retry: false, question: parsed);
     }
-    return null;
+    return (retry: false, question: null);
   }
+
+  // ponytail: catches only case/punctuation-level repeats, not paraphrases --
+  // the prompt's own avoid-list instruction is the first line of defence.
+  static String _normalizeForDuplicateCheck(String s) =>
+      s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9 ]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+
+  /// One university-level question about the scanned item (text only).
+  Future<GeneratedQuestion?> generateQuestion({
+    required ScannedWaste waste,
+    required QuizQuestionType type,
+    required QuizDifficulty difficulty,
+    List<String> avoid = const [],
+  }) async {
+    final result = await _tryGenerateQuestion(waste: waste, type: type, difficulty: difficulty, avoid: avoid);
+    return result.question;
+  }
+
+  /// Background-prefetch variant of [generateQuestion] (decision 0011): same
+  /// prompt and retries, but also reports when the attempt was only busy or
+  /// cancelled rather than folding that into a plain null, so a background
+  /// loop can wait and retry instead of ever treating it as a real failure.
+  Future<({bool retry, GeneratedQuestion? question})> generateQuestionBackground({
+    required ScannedWaste waste,
+    required QuizQuestionType type,
+    required QuizDifficulty difficulty,
+    List<String> avoid = const [],
+  }) =>
+      _tryGenerateQuestion(waste: waste, type: type, difficulty: difficulty, avoid: avoid);
 
   /// Answers a student's follow-up after they answered: each turn carries
   /// the question, the key and their answer, so replies stay on topic.
@@ -595,7 +645,7 @@ class GemmaQuizService {
         'Pertanyaan mahasiswa sekarang: "$message"\n'
         'Jawab dalam Bahasa Indonesia dengan 2-5 kalimat teks biasa. Jangan pakai JSON, kode, atau markdown.';
     final raw = await _send(prompt, fresh: true, isUser: true);
-    return raw == null || raw == 'BUSY' ? null : toPlainText(raw);
+    return raw == null || raw == 'BUSY' || raw == 'CANCELLED' ? null : toPlainText(raw);
   }
 
   /// Grades an essay answer against the question and its expected points.
@@ -610,7 +660,7 @@ class GemmaQuizService {
         'Mulai dengan "Benar", "Sebagian benar", atau "Kurang tepat", lalu jelaskan koreksinya '
         'dalam 2-4 kalimat teks biasa. Jangan pakai JSON, kode, atau markdown.';
     final raw = await _send(prompt, fresh: true, isUser: true);
-    return raw == null || raw == 'BUSY' ? null : toPlainText(raw);
+    return raw == null || raw == 'BUSY' || raw == 'CANCELLED' ? null : toPlainText(raw);
   }
 
   /// Turns a reply that came back as JSON or markdown into readable text.

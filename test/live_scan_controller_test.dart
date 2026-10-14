@@ -74,6 +74,11 @@ class _SeededPrefs extends AppPreferencesNotifier {
 }
 
 void main() {
+  // WasteQuizNotifier now touches QuizTtsService.instance unconditionally
+  // (stop() on every question change, decision 0011's TTS fix) -- its lazy
+  // FlutterTts() construction needs the binding ready, even with voice off.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('acceptance (scripted frames, fake identify)', () {
     test('same object held 60 s: exactly 1 identify', () {
       final r = _Rig();
