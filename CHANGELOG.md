@@ -11,6 +11,17 @@ kept outside the repo.
 
 ## [Unreleased]
 
+### Fixed
+- M2b part 2 (PR #15 review): `GemmaQuizService.cancel()` and the
+  "user request cancels an active scan" path now release the cancelled
+  caller *before* awaiting the native stop, not after — a cancel during
+  prefill can otherwise take up to 6 s to land (decision 0003), holding the
+  caller up by that much. `_stopGeneration()` is now capped at 2 s so a
+  hung native stop can't hang this either; a new `_stopInFlight` keeps the
+  slot from starting a new generation until the old stop settles or times
+  out, without holding up the cancelled caller itself. Decision 0003
+  updated.
+
 ### Added
 - M2b part 2: the quiz now speaks the same auto-reply at most once per
   object (two chat messages sent before answering, for example, used to

@@ -123,17 +123,44 @@ throws) on failure. `cancel()` itself changed from `void` to
 `waste_quiz_provider.dart`) needed to change, since none awaited it before
 either.
 
-**Behaviour change, within the measured range above:** the slot now
-releases after `stopGeneration()` settles (2–38 ms, median 14–19 ms per
-this record) instead of firing it and releasing immediately. Decision 0003
-already established that range as small; this doesn't invalidate the
-timing evidence above, which measured the native stop itself, not when the
-Dart-side slot was released.
-
 **Single-slot rules unchanged:** BUSY (a non-user request is rejected
 outright while a request is active) and a user request cancelling an
 active scan both still work exactly as before — only the cancel mechanics
 changed, not when a cancel happens.
+
+### Fix, 2026-10-14 (PR #15 review): release the caller *before* awaiting the stop
+
+The first pass above (`cancel()` awaits `_stopGeneration()`) had its own
+bug: it completed `_activeCompleter` *after* the await, so a cancel during
+prefill held the cancelled caller up for however long prefill cancel takes
+to land — 0.4–6 s measured above, not the 2–38 ms native-stop number.
+A hung native `stopGeneration()` call would also hang whatever was
+waiting on the cancel.
+
+Fixed in `cancel()` and in `_send`'s "user request cancels a scan" branch:
+both now complete the cancelled caller's completer *first*, then await
+`_stopGeneration()` — so the caller is freed at once regardless of how
+long the native stop takes.
+
+Two things had to change alongside the reorder so this stays safe:
+
+- **`_stopGeneration()` is capped at 2 s** (`.timeout(const
+  Duration(seconds: 2))`, `try`/`catch` kept around it), logging instead of
+  throwing on timeout or failure. Without the cap, a hung native stop would
+  never resolve, and `_stopInFlight` below would block every later request
+  forever.
+- **`_stopInFlight`** holds the in-flight stop future. `_executeSend` awaits
+  it before starting a new generation, so a new request can't run on the
+  same chat session while the previous stop is still settling natively —
+  even though the slot already looks free to the (released) cancelled
+  caller.
+
+Tests: `test/quiz_behavior_test.dart`, same group — a `fakeAsync` test with
+a mocked 5 s native stop asserts `cancel()` releases the active caller
+within 50 ms and that `cancel()` itself settles at the 2 s cap, not the
+full 5 s. Break-checked: reverting the reorder (await stop, then complete
+the caller) makes that test fail with "the active caller must not be held
+up by the 5 s stop".
 
 **Cut-off reply in chat history: left as is, by design, not a bug.**
 `InferenceChat` (the `flutter_gemma` package) already drops a cancelled

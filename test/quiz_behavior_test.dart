@@ -6,6 +6,7 @@ import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/gemma_quiz_service.dart';
 import 'package:elio/services/quiz_tts_service.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -193,6 +194,38 @@ void main() {
       final res1 = await f1;
       expect(res1.item, isNull);
       service.mockStopGeneration = null;
+    });
+
+    test('cancel() releases the active caller well before a slow native stop settles, '
+        'and _stopGeneration itself is capped at 2 s', () {
+      fakeAsync((async) {
+        final genCompleter = Completer<String?>();
+        service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => genCompleter.future;
+        var stopCalled = 0;
+        service.mockStopGeneration = () {
+          stopCalled++;
+          return Future<void>.delayed(const Duration(seconds: 5)); // "native" never returns quickly
+        };
+
+        PhotoIdentification? result;
+        service.identifyItem(Uint8List(0)).then((r) => result = r);
+        async.flushMicrotasks();
+        expect(result, isNull, reason: 'still generating');
+
+        var cancelSettled = false;
+        service.cancel().then((_) => cancelSettled = true);
+
+        async.elapse(const Duration(milliseconds: 50)); // well under 100 ms, on the fake clock
+        expect(stopCalled, 1);
+        expect(result, isNotNull, reason: 'the active caller must not be held up by the 5 s stop');
+        expect(result!.item, isNull);
+        expect(cancelSettled, isFalse, reason: 'cancel() itself is still awaiting the capped stop');
+
+        async.elapse(const Duration(seconds: 2)); // the cap in _stopGeneration
+        expect(cancelSettled, isTrue, reason: '_stopGeneration must give up at 2 s, not wait the full 5 s');
+
+        service.mockStopGeneration = null;
+      });
     });
 
   });
