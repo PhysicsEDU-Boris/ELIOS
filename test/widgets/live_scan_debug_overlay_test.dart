@@ -36,7 +36,8 @@ void main() {
     c.onQuizPhase(WasteQuizPhase.active);
     await tester.pump();
     expect(find.textContaining('LIVE SCAN  QUIZ'), findsOneWidget);
-    expect(find.textContaining('first token 412 ms'), findsOneWidget);
+    // ASKING fired at t=1000 (the lock); now is 1250 here (the loop's last increment).
+    expect(find.textContaining('first token 412 ms   question 250 ms'), findsOneWidget);
     expect(find.textContaining('wait Plastic 30s'), findsOneWidget); // blocked from the ask on
     c.onQuizPhase(WasteQuizPhase.idle); // closed with the object still in view
     c.onDetections([plastic]);
@@ -48,5 +49,6 @@ void main() {
     await pump(tester, busy: true);
     expect(find.textContaining('LIVE SCAN  ASK FAILED'), findsOneWidget);
     expect(find.textContaining('identify 0   busy 1'), findsOneWidget);
+    expect(find.textContaining('first token -   question -'), findsOneWidget); // busy: no quiz opened
   });
 }

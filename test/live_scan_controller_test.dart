@@ -81,15 +81,19 @@ void main() {
       expect(r.c.machine.askCount, 1);
       expect(r.c.machine.state, LiveScanState.cooldown);
       expect(r.c.lastFirstTokenMs, 321);
+      expect(r.c.lastAskToQuestionMs, 4000); // ASKING at 0, question shown at the default askMs
     });
 
     test('object removed, a different one shown: a new lock and one new identify', () {
       final r = _Rig();
+      expect(r.c.lastAskToQuestionMs, isNull, reason: 'nothing asked yet');
       r.run(0, 10000, [_plastic], closeAt: 8000);
+      expect(r.c.lastAskToQuestionMs, 4000);
       r.run(10250, 25000, []); // removed: empty scene, and the 15 s cooldown ends at 23000
-      r.run(25250, 35000, [_metal], closeAt: 33000);
+      r.run(25250, 35000, [_metal], askMs: 1500, closeAt: 33000);
       expect(r.starts, ['Plastic', 'Metal']);
       expect(r.c.machine.askCount, 2);
+      expect(r.c.lastAskToQuestionMs, 1500); // updated for the second (Metal) ask
     });
   });
 

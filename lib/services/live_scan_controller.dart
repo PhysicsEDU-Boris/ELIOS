@@ -64,6 +64,14 @@ class LiveScanController extends ChangeNotifier {
   int? get lastFirstTokenMs => _lastFirstTokenMs;
   int? _lastFirstTokenMs;
 
+  /// Time from the lock (ASKING) to the question being shown, for the last
+  /// quiz start, once it arrived. Like [lastFirstTokenMs], only updates when
+  /// a question actually shows, so it can be stale after a fallback question
+  /// with no token (see decision 0008).
+  int? get lastAskToQuestionMs => _lastAskToQuestionMs;
+  int? _lastAskToQuestionMs;
+  DateTime? _askedAt;
+
   /// [frameSize] is the frame the boxes are in; without it the box-size
   /// filter is skipped.
   void onDetections(List<Detection> detections, {Size? frameSize}) {
@@ -103,7 +111,13 @@ class LiveScanController extends ChangeNotifier {
     if (kDebugMode) _logUnknownLabels(tracked);
 
     final lock = machine.onFrame(tracked, present: present);
-    if (lock != null && !startQuiz(lock.detection.label)) machine.onAskOutcome(AskOutcome.busy);
+    if (lock != null) {
+      if (startQuiz(lock.detection.label)) {
+        _askedAt = now;
+      } else {
+        machine.onAskOutcome(AskOutcome.busy);
+      }
+    }
     notifyListeners();
   }
 
@@ -114,6 +128,8 @@ class LiveScanController extends ChangeNotifier {
       case LiveScanState.asking:
         if (phase == WasteQuizPhase.active || phase == WasteQuizPhase.finished) {
           _lastFirstTokenMs = _firstTokenMs?.call();
+          final askedAt = _askedAt;
+          _lastAskToQuestionMs = askedAt == null ? null : _clock().difference(askedAt).inMilliseconds;
           machine.onAskOutcome(AskOutcome.questionReady);
         } else if (phase == WasteQuizPhase.idle) {
           machine.onAskOutcome(AskOutcome.cancelled); // dismissed before the question arrived
