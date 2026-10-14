@@ -11,7 +11,36 @@ kept outside the repo.
 
 ## [Unreleased]
 
+### Fixed
+- M2b part 2 (PR #15 review): `GemmaQuizService.cancel()` and the
+  "user request cancels an active scan" path now release the cancelled
+  caller *before* awaiting the native stop, not after — a cancel during
+  prefill can otherwise take up to 6 s to land (decision 0003), holding the
+  caller up by that much. `_stopGeneration()` is now capped at 2 s so a
+  hung native stop can't hang this either; a new `_stopInFlight` keeps the
+  slot from starting a new generation until the old stop settles or times
+  out, without holding up the cancelled caller itself. Decision 0003
+  updated.
+
 ### Added
+- M2b part 2: the quiz now speaks the same auto-reply at most once per
+  object (two chat messages sent before answering, for example, used to
+  both trigger the identical reply and speak it twice); the manual
+  "Listen" button is unaffected. The debug overlay adds `tts N`
+  (utterances started), so a silent recording still shows TTS activity.
+  The overlay's `first token`/`question` times no longer show the
+  *previous* quiz's numbers while a new one is asking, or after a fallback
+  question / failed generation that never streamed a token — both reset to
+  "-" the instant a new ask starts. `GemmaQuizService.cancel()` now awaits
+  `stopGeneration()` and logs (not throws) on failure, instead of firing it
+  without awaiting. The stabilizer, state machine and controller default to
+  a monotonic clock instead of wall-clock `DateTime.now`, closing a gap
+  where only the production wiring (not the defaults themselves) was
+  protected from a system clock change. Debug builds log one line per
+  question load (label, index/total, type, load time, first token,
+  fallback) so a slow question like the 11.3 s one in an earlier robot
+  recording shows up without needing the overlay on screen. Decision 0010;
+  decision 0003 updated for the `cancel()` change.
 - M2b part 1: the MaixCAM2 video stream no longer stops when a quiz opens
   (it used to send `stop_stream`/`start_stream` around every quiz, which
   showed as the camera badge dropping to 0.2-0.4 fps for about 3 s after

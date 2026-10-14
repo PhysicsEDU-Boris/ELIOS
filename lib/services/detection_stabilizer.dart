@@ -5,6 +5,16 @@
 /// docs/decisions/0007-stabilizer.md.
 library;
 
+/// A monotonic clock (`Stopwatch`-based): the default for every live-scan
+/// clock below, so a system clock change (or DST, NTP sync, the user
+/// changing the time) can't break a lock or a wait. Tests inject a fake
+/// clock instead (see decision 0009, "Monotonic clock").
+DateTime Function() monotonicClock() {
+  final base = DateTime.now();
+  final sw = Stopwatch()..start();
+  return () => base.add(sw.elapsed);
+}
+
 /// One detection, as the stabilizer sees it. [x], [y] are the box centre and
 /// [w], [h] its size, in image pixels (the same layout as `Detection` in
 /// websocket_service.dart).
@@ -66,7 +76,7 @@ class DetectionStabilizer {
     this.maxFrameGap = const Duration(milliseconds: 1500),
     this.ignoredLabels = const {},
     DateTime Function()? clock,
-  }) : _clock = clock ?? DateTime.now;
+  }) : _clock = clock ?? monotonicClock();
 
   /// How long the same object must be seen before it locks.
   final Duration lockTime;

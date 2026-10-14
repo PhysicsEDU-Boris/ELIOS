@@ -92,14 +92,30 @@ class QuizTtsService {
     }
   }
 
-  /// Speaks [text]. Never throws — a missing/broken TTS engine on a device
-  /// just means voice playback silently does nothing.
+  /// Utterances started (passed the empty-text check below), so a silent
+  /// recording's debug overlay can still show that TTS ran.
+  int get startedCount => _started;
+  int _started = 0;
+
+  /// Replaces the real engine in tests: called instead of `_tts.speak`, with
+  /// the real `await stop()` (one slot) still enforced first.
+  @visibleForTesting
+  Future<void> Function(String text)? mockSpeak;
+
+  /// Speaks [text]. Always stops whatever was playing first (one slot: the
+  /// new utterance replaces the old one). Never throws — a missing/broken
+  /// TTS engine on a device just means voice playback silently does nothing.
   Future<void> speak(String text) async {
     final trimmed = speakableText(text);
     if (trimmed.isEmpty) return;
+    _started++;
     try {
-      await _ensureConfigured();
       await stop();
+      if (mockSpeak != null) {
+        await mockSpeak!(trimmed);
+        return;
+      }
+      await _ensureConfigured();
       final language = detectLanguage(trimmed);
       if (language != _currentLanguage) {
         await _useLanguage(language);
@@ -112,7 +128,15 @@ class QuizTtsService {
     }
   }
 
+  /// Replaces the real engine in tests, same as [mockSpeak].
+  @visibleForTesting
+  Future<void> Function()? mockStop;
+
   Future<void> stop() async {
+    if (mockStop != null) {
+      await mockStop!();
+      return;
+    }
     try {
       await _tts.stop();
     } catch (_) {

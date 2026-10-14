@@ -388,4 +388,11 @@ void main() {
       expect(r.asked, ['Plastic', 'Plastic']);
     });
   });
+
+  test('LiveScanStateMachine with no clock: argument still works (uses the monotonic default, decision 0009)', () {
+    final m = LiveScanStateMachine(DetectionStabilizer());
+    expect(m.state, LiveScanState.searching);
+    expect(m.onFrame([_a]), isNull); // first sighting: candidate only, no clock crash
+    expect(m.state, LiveScanState.locking);
+  });
 }

@@ -36,7 +36,7 @@ class _Rig {
         c.onQuizPhase(WasteQuizPhase.loadingQuestion);
         return true;
       },
-      firstTokenMs: () => 321,
+      firstTokenMs: () => firstToken,
       clock: () => _t0.add(Duration(milliseconds: now)),
     );
   }
@@ -44,6 +44,7 @@ class _Rig {
   final bool busy;
   int now = 0;
   int? startedAt;
+  int? firstToken = 321; // mutable: a test can simulate a fallback (null)
   late final LiveScanController c;
   final starts = <String>[];
 
@@ -94,6 +95,37 @@ void main() {
       expect(r.starts, ['Plastic', 'Metal']);
       expect(r.c.machine.askCount, 2);
       expect(r.c.lastAskToQuestionMs, 1500); // updated for the second (Metal) ask
+    });
+
+    test('lastFirstTokenMs/lastAskToQuestionMs reset the instant a new ask starts, '
+        'not just once its question shows', () {
+      final r = _Rig();
+      r.run(0, 10000, [_plastic], closeAt: 8000);
+      expect(r.c.lastFirstTokenMs, 321);
+      expect(r.c.lastAskToQuestionMs, 4000);
+
+      r.run(10250, 25000, []); // removed: cooldown + empty scene clear by 25000
+      // Metal locks at 25250 + 1000 = 26250: the ask fires on that very
+      // frame, before any onQuizPhase call for it, so the reset must
+      // already have happened here -- not after its question shows.
+      r.run(25250, 26250, [_metal]);
+      expect(r.starts, ['Plastic', 'Metal']);
+      expect(r.c.lastFirstTokenMs, isNull, reason: 'Plastic\'s old value must not linger during Metal\'s ASKING');
+      expect(r.c.lastAskToQuestionMs, isNull);
+    });
+
+    test('a fallback question (no real token) does not keep the previous quiz\'s first-token time', () {
+      final r = _Rig();
+      r.run(0, 10000, [_plastic], closeAt: 8000); // real token: 321
+      expect(r.c.lastFirstTokenMs, 321);
+
+      r.run(10250, 25000, []); // removed
+      r.firstToken = null; // this ask falls back / fails: no real token
+      r.run(25250, 35000, [_metal], askMs: 1500, closeAt: 33000);
+
+      expect(r.starts, ['Plastic', 'Metal']);
+      expect(r.c.lastFirstTokenMs, isNull, reason: 'a fallback question must show "-", not Plastic\'s 321ms');
+      expect(r.c.lastAskToQuestionMs, 1500, reason: 'the ask-to-question time is still real even without a token');
     });
   });
 
@@ -269,5 +301,12 @@ void main() {
     await pumpEventQueue();
     expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.active);
     expect(c.machine.state, LiveScanState.quiz);
+  });
+
+  test('LiveScanController with no clock: argument still works (uses the monotonic default, decision 0009)', () {
+    final c = LiveScanController(startQuiz: (_) => true);
+    expect(c.machine.state, LiveScanState.searching);
+    c.onDetections([_plastic]);
+    expect(c.machine.state, LiveScanState.locking);
   });
 }

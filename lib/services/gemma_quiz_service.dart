@@ -138,6 +138,11 @@ class GemmaQuizService {
   @visibleForTesting
   Future<String?> Function(String prompt, {Uint8List? imageBytes, bool fresh, bool isUser, void Function(String)? onToken})? mockSendExecute;
 
+  /// Replaces `_chat?.stopGeneration()` in tests, so a throwing/slow stop can
+  /// be simulated without a real `_chat` (decision 0003 update).
+  @visibleForTesting
+  Future<void> Function()? mockStopGeneration;
+
   bool get isReady => _chat != null;
   bool get isPrepared => _prepared;
 
@@ -320,7 +325,19 @@ class GemmaQuizService {
   }
 
   Future<String?> _executeSend(String prompt, {Uint8List? imageBytes, bool fresh = false, bool isUser = false, void Function(String)? onToken}) async {
+    // A cancelled request's own caller is released immediately (see
+    // cancel() and _send below), but the actual native stop can still be
+    // settling -- wait for it so two generations never overlap on the same
+    // chat session, even though the slot already looks free to callers.
+    final stopping = _stopInFlight;
+    if (stopping != null) await stopping;
+
     _activeIsUser = isUser;
+    // Reset now, before this attempt even starts generating: a caller that
+    // returns early (not ready, BUSY, no image encoder) or falls back never
+    // reaches the onDone below, and should read as "no token for this ask"
+    // rather than keep the previous ask's value on screen (decision 0009).
+    lastFirstTokenMs.value = null;
     final completer = Completer<String?>();
     _activeCompleter = completer;
 
@@ -384,7 +401,7 @@ class GemmaQuizService {
     } catch (e) {
       if (e is TimeoutException) {
         _log('generation timeout');
-        try { _chat?.stopGeneration(); } catch (_) {}
+        await _stopGeneration();
       }
       return null;
     } finally {
@@ -408,19 +425,30 @@ class GemmaQuizService {
         return 'BUSY';
       }
       
-      if (!_activeIsUser) {
-        _log('canceling active scan request to yield to user request');
-        try { _chat?.stopGeneration(); } catch (_) {}
-        if (!_activeCompleter!.isCompleted) {
-           _activeCompleter!.complete(null);
-        }
-      }
-      
+      // Arm the pending task before releasing the active one below: completing
+      // _activeCompleter schedules the cancelled _executeSend's own finally
+      // block (which promotes _pendingTask) as a microtask, and that can run
+      // before any code placed *after* an intervening await -- so _pendingTask
+      // must already be set, synchronously, in the same stretch as completing it.
       _pendingCompleter?.complete(null);
       final completer = Completer<String?>();
       _pendingCompleter = completer;
       _pendingTask = () => _executeSend(prompt, imageBytes: imageBytes, fresh: fresh, isUser: true, onToken: onToken);
-      
+
+      if (!_activeIsUser) {
+        _log('canceling active scan request to yield to user request');
+        // Release the cancelled scan's own caller first -- a cancel during
+        // prefill only lands once prefill ends (0.4-6 s, decision 0003), so
+        // awaiting the stop before this would hold that caller up by as
+        // much. _stopGeneration() still runs (and is awaited here so this
+        // function's own completion reflects it), it just isn't awaited
+        // before the caller is freed.
+        if (!_activeCompleter!.isCompleted) {
+           _activeCompleter!.complete(null);
+        }
+        await _stopGeneration();
+      }
+
       try {
         return await completer.future;
       } catch (e) {
@@ -431,16 +459,55 @@ class GemmaQuizService {
     return _executeSend(prompt, imageBytes: imageBytes, fresh: fresh, isUser: isUser, onToken: onToken);
   }
 
-  void cancel() {
+  /// The in-flight stop, if any, so a new generation can't start on the
+  /// same chat session while the previous one is still being stopped
+  /// natively (checked at the top of [_executeSend]). Never used to hold up
+  /// the *cancelled caller's own* completer -- that's released first, at
+  /// each of the 3 call sites below, before this is even started.
+  Future<void>? _stopInFlight;
+
+  /// Stops generation, capped at 2 s, logging (not throwing) on failure or
+  /// timeout. A cancel during prefill only takes effect once prefill ends
+  /// -- 0.4-6 s measured (decision 0003) -- so this must never be awaited
+  /// before releasing the cancelled caller's completer, or that caller
+  /// would be held up by as much as the cap (previously: released at
+  /// once, this update's own bug before the 2026-10-14 fix below).
+  Future<void> _stopGeneration() {
+    Future<void> run() async {
+      try {
+        if (mockStopGeneration != null) {
+          await mockStopGeneration!().timeout(const Duration(seconds: 2));
+        } else if (_chat != null) {
+          await _chat!.stopGeneration().timeout(const Duration(seconds: 2));
+        }
+      } on TimeoutException {
+        _log('stopGeneration timed out after 2s; continuing');
+      } catch (e) {
+        _log('stopGeneration failed: $e');
+      }
+    }
+
+    final future = run();
+    _stopInFlight = future;
+    unawaited(future.whenComplete(() {
+      if (identical(_stopInFlight, future)) _stopInFlight = null;
+    }));
+    return future;
+  }
+
+  Future<void> cancel() async {
     _pendingCompleter?.complete(null);
     _pendingCompleter = null;
     _pendingTask = null;
     if (_activeCompleter != null) {
       _log('canceling active request');
-      try { _chat?.stopGeneration(); } catch (_) {}
+      // Release this caller first (see the matching comment in _send):
+      // awaiting the stop before this would hold it up by as much as a
+      // prefill-time cancel can take to land (0.4-6 s, decision 0003).
       if (!_activeCompleter!.isCompleted) {
         _activeCompleter!.complete(null);
       }
+      await _stopGeneration();
     }
   }
 
