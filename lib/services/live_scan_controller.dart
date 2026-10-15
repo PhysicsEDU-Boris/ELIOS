@@ -51,8 +51,8 @@ class LiveScanController extends ChangeNotifier {
   /// firmware sends them (`LABELS` in elio_maixcam2.py).
   static const ignoredLabels = {'Human_Hand'};
 
-  /// Starts a quiz for [label]; false if one is already open.
-  final bool Function(String label) startQuiz;
+  /// Starts identification for the locked box; false if a quiz is open.
+  final bool Function(TrackedDetection detection) startQuiz;
   final int? Function()? _firstTokenMs;
   final int Function()? _ttsCount;
   final int? Function()? _nextWaitMs;
@@ -128,7 +128,7 @@ class LiveScanController extends ChangeNotifier {
 
     final lock = machine.onFrame(tracked, present: present);
     if (lock != null) {
-      if (startQuiz(lock.detection.label)) {
+      if (startQuiz(lock.detection)) {
         _askedAt = now;
         // A new ask starts clean: don't show the previous quiz's numbers
         // while this one is still loading, or if it falls back / fails.
@@ -146,11 +146,13 @@ class LiveScanController extends ChangeNotifier {
   void onQuizPhase(WasteQuizPhase phase) {
     switch (machine.state) {
       case LiveScanState.asking:
-        if (phase == WasteQuizPhase.active || phase == WasteQuizPhase.finished) {
+        if (phase == WasteQuizPhase.active) {
           _lastFirstTokenMs = _firstTokenMs?.call();
           final askedAt = _askedAt;
           _lastAskToQuestionMs = askedAt == null ? null : _clock().difference(askedAt).inMilliseconds;
           machine.onAskOutcome(AskOutcome.questionReady);
+        } else if (phase == WasteQuizPhase.finished) {
+          machine.onAskOutcome(AskOutcome.failed);
         } else if (phase == WasteQuizPhase.idle) {
           machine.onAskOutcome(AskOutcome.cancelled); // dismissed before the question arrived
         }

@@ -53,6 +53,8 @@ const _essayQuestion = GeneratedQuestion(
 );
 
 final _states = <String, WasteQuizUiState>{
+  'identifying': const WasteQuizUiState(phase: WasteQuizPhase.identifying),
+  'hazard': WasteQuizUiState(phase: WasteQuizPhase.confirmingHazard, scan: ScannedWaste.fromLabel('E_Waste')),
   'loading': WasteQuizUiState(phase: WasteQuizPhase.loadingQuestion, scan: _scan),
   'mc-unanswered': WasteQuizUiState(
     phase: WasteQuizPhase.active,
@@ -124,6 +126,21 @@ Future<void> _pump(WidgetTester tester, Size size, WasteQuizUiState state, {doub
 
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
+
+  testWidgets('identification shows Looking and no quiz answers', (tester) async {
+    await _pump(tester, const Size(760, 360), _states['identifying']!);
+    expect(find.text('Looking…'), findsOneWidget);
+    expect(find.text('Lanjut kuis'), findsNothing);
+  });
+
+  testWidgets('hazard can be rejected before quiz generation', (tester) async {
+    await _pump(tester, const Size(760, 360), _states['hazard']!);
+    expect(find.textContaining('Kemungkinan limbah B3'), findsOneWidget);
+    expect(find.text('Lanjut kuis'), findsOneWidget);
+    await tester.tap(find.text('Scan ulang'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Lanjut kuis'), findsNothing);
+  });
 
   for (final screen in _screens.entries) {
     for (final st in _states.entries) {

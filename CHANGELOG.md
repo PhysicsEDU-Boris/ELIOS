@@ -11,6 +11,16 @@ kept outside the repo.
 
 ## [Unreleased]
 
+### Added
+- M2c: live robot locks send their same-frame bounding-box crop to Gemma
+  identification before generating a quiz. The popup shows “Looking…” while
+  identifying; hazardous items require “Lanjut kuis” or “Scan ulang”. A B3
+  classification from either detector or Gemma is preserved. All ten
+  MaixCAM2 classes have explicit Indonesian names and categories (the hand
+  stays ignored). Invalid crops/unrecognized images stop without a
+  detector-label quiz; dismissed results cannot reopen a session. Live scan
+  now preloads the image encoder. Decision 0012.
+
 ### Fixed
 - M2b part 3 (PR #16 robot-test follow-up): tapping "Soal berikutnya" or
   skip no longer lets a still-playing voice (an answer verdict, essay

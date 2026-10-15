@@ -305,6 +305,24 @@ class _QuestionPanel extends ConsumerWidget {
           const SizedBox(height: 8),
           if (state.phase == WasteQuizPhase.finished)
             _SummaryCard(state: state, onClose: notifier.dismiss)
+          else if (state.phase == WasteQuizPhase.confirmingHazard)
+            _CardBox(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Kemungkinan limbah B3: ${state.scan?.displayName ?? ""}',
+                      style: GoogleFonts.sora(color: elioInk, fontSize: 16, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  const Text('Jangan bongkar atau masukkan ke tempat sampah biasa. '
+                      'Minta bantuan petugas untuk penanganannya. Lanjutkan kuis tentang benda ini?'),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 8, children: [
+                    FilledButton(onPressed: notifier.confirmHazard, child: const Text('Lanjut kuis')),
+                    TextButton(onPressed: notifier.dismiss, child: const Text('Scan ulang')),
+                  ]),
+                ],
+              ),
+            )
           else
             _QuestionCard(state: state),
           if (showAnswers) ...[
@@ -364,11 +382,11 @@ class _QuestionCard extends StatelessWidget {
               valueListenable: GemmaQuizService.instance.progress,
               builder: (context, p, _) {
                 final text = switch (p.status) {
+                  _ when state.phase == WasteQuizPhase.identifying => 'Looking…',
                   GemmaStatus.installing => p.installPercent > 0
                       ? 'Menyiapkan AI offline (hanya sekali)… ${p.installPercent}%'
                       : 'Menyiapkan AI offline (hanya sekali)…',
                   GemmaStatus.loading => 'Memuat model Gemma ke memori…',
-                  _ when state.phase == WasteQuizPhase.identifying => 'Gemma sedang mengenali benda di foto…',
                   // Questions 2+ are prefetched in the background (decision
                   // 0011): this only shows while this one isn't ready yet.
                   _ when state.questionIndex > 0 => 'Menyiapkan soal berikutnya…',

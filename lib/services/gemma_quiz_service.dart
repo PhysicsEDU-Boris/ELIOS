@@ -254,8 +254,8 @@ class GemmaQuizService {
   }
 
   /// Single-flight load. [vision] loads the image encoder too — only the
-  /// device-camera scan needs it; the MaixCAM2 flow sends text only, which
-  /// keeps memory use (and the risk of being killed on a phone) much lower.
+  /// device-camera and live MaixCAM2 crop scans need it. Label-only quizzes
+  /// use text only to keep memory use lower.
   /// Switching to vision when a text-only model is loaded triggers a reload.
   Future<bool> ensureReady({bool vision = false}) async {
     if (_chat != null && (_loadedWithVision || !vision)) return true;
@@ -536,7 +536,7 @@ class GemmaQuizService {
           : 'AI belum siap untuk membaca foto. Coba lagi sebentar lagi.');
     }
     final map = _jsonObject(raw);
-    final item = (map?['item'] as String?)?.trim() ?? '';
+    final item = map?['item'] is String ? (map!['item'] as String).trim() : '';
     if (item.isEmpty || item.toLowerCase().contains('tidak jelas')) {
       return const PhotoIdentification.failed(
         'Benda di foto belum dikenali. Dekatkan kamera, pastikan terang, lalu scan lagi.',
@@ -545,8 +545,8 @@ class GemmaQuizService {
     _log('photo identified as "$item"');
     return PhotoIdentification(
       item: item,
-      material: (map?['material'] as String?)?.trim(),
-      category: (map?['category'] as String?)?.trim(),
+      material: map?['material'] is String ? (map!['material'] as String).trim() : null,
+      category: map?['category'] is String ? (map!['category'] as String).trim() : null,
     );
   }
 

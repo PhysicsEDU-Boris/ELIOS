@@ -5,12 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/chat_message.dart';
 import '../models/scanned_waste.dart';
+import '../services/detection_crop.dart';
+import '../services/detection_stabilizer.dart';
+import '../services/frame_source/frame_source.dart';
 import '../services/gemma_quiz_service.dart';
 import '../services/quiz_tts_service.dart';
 import '../services/websocket_service.dart';
 import 'app_preferences_provider.dart';
 
-enum WasteQuizPhase { idle, identifying, loadingQuestion, active, finished }
+enum WasteQuizPhase { idle, identifying, confirmingHazard, loadingQuestion, active, finished }
 
 /// Where the waste-detection label driving the popup quiz comes from.
 /// MaixCAM2 is the real hardware path; phone camera is a debug-only
@@ -193,7 +196,31 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     unawaited(_identifyThenQuiz(imageBytes, generation));
   }
 
-  Future<void> _identifyThenQuiz(Uint8List imageBytes, int generation) async {
+  /// The live lock's box and JPEG belong to the same stream frame.
+  void onRobotLocked(CapturedFrame frame, TrackedDetection detection) {
+    if (state.phase != WasteQuizPhase.idle) return;
+    _lastLabel = detection.label;
+    _lastShownAt = DateTime.now();
+    _askedQuestions.clear();
+    _cancelPrefetch();
+    final generation = ++_generation;
+    GemmaQuizService.instance.cancel();
+    state = _freshSession(phase: WasteQuizPhase.identifying);
+    unawaited(_cropThenIdentify(frame, detection, generation));
+  }
+
+  Future<void> _cropThenIdentify(CapturedFrame frame, TrackedDetection detection, int generation) async {
+    final bytes = await compute(cropDetection, (frame, detection));
+    if (generation != _generation) return;
+    if (bytes == null) {
+      state = state.copyWith(phase: WasteQuizPhase.finished,
+          notice: 'Benda belum bisa dipotong dari foto. Coba scan lagi.');
+      return;
+    }
+    await _identifyThenQuiz(bytes, generation, detectorLabel: detection.label);
+  }
+
+  Future<void> _identifyThenQuiz(Uint8List imageBytes, int generation, {String? detectorLabel}) async {
     final result = await GemmaQuizService.instance.identifyItem(imageBytes);
     if (generation != _generation) return;
     if (result.failure == 'busy') {
@@ -210,9 +237,20 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       );
       return;
     }
-    state = state.copyWith(
-      scan: ScannedWaste.fromLabel(item, material: result.material, categoryHint: result.category),
-    );
+    final detectorHazard = detectorLabel != null &&
+        ScannedWaste.fromLabel(detectorLabel).category?.id == 'hazardous';
+    final scan = ScannedWaste.fromLabel(item, material: result.material,
+        categoryHint: detectorHazard ? 'B3' : result.category);
+    state = state.copyWith(scan: scan);
+    if (scan.category?.id == 'hazardous') {
+      state = state.copyWith(phase: WasteQuizPhase.confirmingHazard);
+      return;
+    }
+    _loadQuestion(0);
+  }
+
+  void confirmHazard() {
+    if (state.phase != WasteQuizPhase.confirmingHazard) return;
     _loadQuestion(0);
   }
 
@@ -228,6 +266,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   void _startSession(ScannedWaste scan) {
     _askedQuestions.clear();
     _cancelPrefetch();
+    if (scan.category?.id == 'hazardous') {
+      state = _freshSession(scan: scan, phase: WasteQuizPhase.confirmingHazard);
+      return;
+    }
     state = _freshSession(scan: scan, phase: WasteQuizPhase.loadingQuestion);
     _loadQuestion(0);
   }

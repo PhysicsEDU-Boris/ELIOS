@@ -70,9 +70,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
     if (liveScanEnabled) {
       _liveScan = LiveScanController(
-        startQuiz: (label) {
+        startQuiz: (detection) {
           if (ref.read(wasteQuizProvider).phase != WasteQuizPhase.idle) return false;
-          ref.read(wasteQuizProvider.notifier).startForLabel(label);
+          final frame = _latestFrame;
+          if (frame == null) return false;
+          ref.read(wasteQuizProvider.notifier).onRobotLocked(frame, detection);
           return true;
         },
         firstTokenMs: () => GemmaQuizService.instance.lastFirstTokenMs.value,
@@ -85,7 +87,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
       // single-flight and returns at once if already loading or loaded, and
       // a failed preload just leaves the model to load as today, on the
       // first quiz (see GemmaQuizService.warmUp/ensureReady).
-      GemmaQuizService.instance.warmUp();
+      GemmaQuizService.instance.warmUp(vision: true);
     }
 
     // Subscribe to robot frames outside of build to avoid re-registering

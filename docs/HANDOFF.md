@@ -1,70 +1,47 @@
 # Handoff
 
-- Branch: `feat/quiz-prefetch`
-- Latest commit: see `git log -1`
-- PR: #16 into `feature/live-scan`
+- Branch: `feat/m2c-crop-identify` (continues the M2b prefetch handoff).
+- Latest commit: see `git log -1`.
 
-## Done (this task)
+## Done — M2c
 
-- M2b part 3 (background quiz prefetch): questions 2-N of a session are now
-  generated through the single Gemma slot in the background, one at a time,
-  starting the instant question 1 shows. "Soal berikutnya" shows instantly
-  when the buffer already has the question, or "Menyiapkan soal
-  berikutnya…" while it's still generating.
-- `GemmaQuizService`: extracted `_tryGenerateQuestion` (shared by
-  `generateQuestion` and the new `generateQuestionBackground`), added a
-  `'CANCELLED'` sentinel (alongside the existing `'BUSY'`) so a background
-  caller can tell "pre-empted by a higher-priority request — retry" apart
-  from a real failure; added near-duplicate rejection against the existing
-  avoid-list.
-- `WasteQuizNotifier`: `_startPrefetch`/`_runPrefetch`/`_generateForBuffer`/
-  `_cancelPrefetch`/`_consumeQuestion`. A chat message or essay grading
-  (decision 0003) pauses prefetch and it resumes after — never falls back
-  because of a chat message. Closing the quiz or starting a new session
-  cancels prefetch and clears the buffer.
-- Debug overlay/log: `_consumeQuestion` logs the wait per "Soal berikutnya"
-  tap (0 from the buffer); overlay adds `next N ms`
-  (`LiveScanController.nextWaitMs`, wired in `control_screen.dart`).
-- Decision doc [0011](decisions/0011-quiz-prefetch.md); `CHANGELOG.md`
-  updated.
+- LIVE_SCAN locks now pass the full detection and its same stream frame to
+  the quiz provider. Crop runs off the UI isolate via `compute`; center
+  coordinates scale to decoded image size and clamp to image edges.
+- Gemma identifies only the crop, then questions use its item/material.
+  Popup shows “Looking…” during identification. Live preload includes
+  vision. Invalid crops or unknown images stop without a label-only quiz.
+- B3 from either detector or Gemma is preserved. Hazard confirmation offers
+  “Lanjut kuis” / “Scan ulang” before any question generation, including
+  photo and label-only sessions. Dismissed/late results cannot reopen it.
+- All 10 firmware classes mapped explicitly; Human_Hand remains ignored.
+- Decision [0012](decisions/0012-crop-identification-and-hazards.md) and
+  CHANGELOG updated. Existing user Xcode scheme and Maixcam.txt excluded.
 
 ## Tests
 
-- `flutter analyze`: clean.
-- `flutter test test/quiz_behavior_test.dart`: 23/23 passed (new group:
-  "M2b part 3: background quiz prefetch").
-- `flutter test` (full suite): 189 passed, 2 known-stale
-  (`test/widget_test.dart` splash tests, pre-existing).
-- `scripts/check-secrets.sh`: clean.
-- Break-checked 3 of the new tests against the pre-fix code, each failed,
-  then restored and re-verified green:
-  - "instant from buffer" — reverted `_advance()` to call `_loadQuestion`
-    again instead of consuming the buffer.
-  - "close cancels" — removed the `_cancelPrefetch()` call from `dismiss()`.
-  - "chat doesn't cause fallback" — made a cancelled background attempt
-    report `retry: false` (the old behaviour).
+- `flutter analyze --no-pub`: clean.
+- Full `flutter test --no-pub`: 219 passed; only the 2 documented stale
+  splash tests in test/widget_test.dart failed.
+- Five behavior break-checks failed as expected, then fixes restored:
+  full-frame instead of crop; keyword-only mapping; immediate quiz without
+  hazard confirmation; old identifying text; old JSON string cast.
+- Focused tests after restoration: 89/89 passed.
+- `bash scripts/check-secrets.sh`: clean.
 
 ## Robot test needed
 
-Nothing in PR #16 tried on the robot yet. Build:
-`flutter build macos --debug --dart-define=LIVE_SCAN=true`, launch with
-`open` (not `flutter run`, breaks Local Network permission). Run a
-medium/hard-difficulty session, chat with the assistant *before* tapping
-"Soal berikutnya" a few times, and confirm:
-- questions 2+ appear with no visible wait when the buffer had time to fill;
-- a question is never shown as "SOAL CADANGAN" just because you were
-  chatting when it was due;
-- the overlay's `next N ms` reads near-0 when prefetched, and a real number
-  (not "-") on the rare case it had to wait;
-- closing the quiz mid-session and starting a new scan doesn't leak a
-  question from the old object into the new one.
+Build `flutter build macos --debug --dart-define=LIVE_SCAN=true`, then
+`open build/macos/Build/Products/Debug/*.app` (not IDE flutter run).
 
-## Decisions
+1. Hold a plastic bottle/cardboard still: “Looking…” then a quiz naming the
+   actual item. Hold 60 s: only one identification. Preview stays live.
+2. Show e-waste/battery: B3 warning before any question. “Lanjut kuis” starts
+   it; repeat later with “Scan ulang” and verify no quiz opens afterward.
+3. Close during “Looking…”; the late result must not reopen the popup.
+4. Try an edge-of-frame item, unclear image, Paperboard and Tetra_Pak.
+   Unknown images should request a rescan; a hand alone never triggers.
+5. Check existing cooldown/empty-scene re-arm and same-label suppression.
 
-- [0003](decisions/0003-stop-generation.md) — stopGeneration; single-slot
-  busy/cancel rules this task's background prefetch builds on.
-- [0009](decisions/0009-camera-stays-alive.md) — camera stays alive during a
-  quiz; Gemma preloads.
-- [0010](decisions/0010-tts-single-slot-and-overlay-staleness.md) — TTS,
-  clock, staleness, timing log this task's "waited ms" log line matches.
-- [0011](decisions/0011-quiz-prefetch.md) — this task.
+Not validated on robot hardware. Watch image-encoder memory/latency and
+recognition quality; firmware currently burns overlays into the JPEG.

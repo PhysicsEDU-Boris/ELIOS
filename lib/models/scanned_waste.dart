@@ -12,6 +12,20 @@ class ScannedWaste {
 
   const ScannedWaste._(this.rawLabel, this.displayName, this.category, [this.material]);
 
+  /// All ten MaixCAM2 classes; the hand is deliberately not waste.
+  static const detectorLabels = <String, (String, String?)>{
+    'Cardboard': ('Kardus', 'inorganic'),
+    'E_Waste': ('Sampah elektronik', 'hazardous'),
+    'Glass': ('Kaca', 'inorganic'),
+    'Human_Hand': ('Tangan', null),
+    'Metal': ('Logam', 'inorganic'),
+    'Organic': ('Sampah organik', 'organic'),
+    'Paper': ('Kertas', 'inorganic'),
+    'Paperboard': ('Karton', 'inorganic'),
+    'Plastic': ('Plastik', 'inorganic'),
+    'Tetra_Pak': ('Karton minuman berlapis', 'inorganic'),
+  };
+
   // Keyword → category id. Labels arrive in Indonesian or English, often
   // hyphenated (e.g. "botol-plastik"), so match on normalized words.
   static const _keywords = <String, List<String>>{
@@ -62,6 +76,11 @@ class ScannedWaste {
   }
 
   factory ScannedWaste._fromKeywords(String label) {
+    final detector = detectorLabels[label.trim()];
+    if (detector != null) {
+      return ScannedWaste._(label, detector.$1,
+          wasteCategories.where((c) => c.id == detector.$2).firstOrNull);
+    }
     final words = label
         .toLowerCase()
         .replaceAll(RegExp(r'[_\-./]+'), ' ')
