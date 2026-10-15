@@ -1,58 +1,59 @@
 # Handoff
 
-- Branch: `feat/m2c-crop-identify`; diagnosing robot recording of `606be86`.
-- Latest commit: `git log -1`. M2c acceptance is NOT complete; no push/merge.
+- Branch `feat/m2c-crop-identify`; investigation based on local `383e448`.
+- M2c NOT complete; documentation only; no reset, push, merge or code fix.
 
-## Verified by code inspection
-- Current message's JPEG/detection reach the lock synchronously; compute
-  retains that frame across later arrivals. Center XYWH scales to decoded
-  pixels, floors/ceils edges and clips. Crop bytes reach Message.withImage.
-- Receipt timestamp is not capture time; source detection time/ID unknown.
-  Metadata dimensions can be cached. Local firmware reference reuses boxes
-  between inference cycles and burns masks/boxes into JPEGs; deployed version
-  unverified. JPEG decoder honors EXIF; boxes have no rotation transform.
-- No demonstrated app crop/vision bug; no recognition/threshold guess-fix.
-- Overlay 12.417 s measures lock-to-question, including identify and any B3
-  human wait. Overlay first-token time belongs to the question, not identify.
+## Evidence — 2026-10-16
 
-## Recording evidence (owner supplied)
-- Bottle → Looking → Botol minuman → relevant quiz; 12.417 s total.
-- Phone: E_Waste detector, Barang plastik merah identification; B3 retained.
-  Exact historical crop unavailable: model versus input-quality cause unknown.
-- Rescan: no late quiz for ~18 s. Same bottle: no repeat for 30 s, not 60 s.
-- Object changes during COOLDOWN did not show a qualifying empty interval.
-- Separate follow-ups: contradictory PET/anorganik premise; Q5 waited 7.048 s
-  then fallback. Causes unknown; no quiz-generation rewrite in this change.
+- Exact Gemma input JPEG/JSONL NOT FOUND in accessible app-support/container
+  locations or repo, including an escalated search. Some unrelated macOS
+  directories deny access. `com.boris.elio` support/container paths are absent.
+- Missing: `m2c-diagnostics/scan-<id>-identify.jpg` and matching `.jsonl`.
+  Request ID, raw item/category, input overlays and receipt age cannot yet
+  be correlated. Owner must supply pair or full `[M2c]` path from test device;
+  confirm diagnostic build 383e448 was rebuilt/launched for that test.
+- Recording: `/Users/macbookairm12020/Desktop/Screen Recording 2026-10-16 at 00.31.53.mov`.
+  /watch local/no audio: `/private/tmp/watch-ej7u61xg/frames/` (8), `/private/tmp/watch-vbxwsyzs/frames/` (4 cues).
+- 00:04 red-covered upright object, E_Waste 44%; 00:05 Cardboard 76% while
+  Looking opens; 00:16 Wadah kemasan merah, generating; 00:23 quiz describes
+  plastik anorganik, overlay total 16940 ms / question first token 284 ms.
+  00:39 Cardboard 80%; 00:47 E_Waste 83% after moving/flipping the object.
+- Owner identifies object as phone; video shows changing detector labels.
+  Preview pixels cannot establish model-input pixels or raw JSON category.
+  No B3-veto failure established: visible lock is Cardboard, not E_Waste.
 
-## Diagnostics / checks
+## Provenance / hypothesis
 
-- Debug robot sessions: app-support `m2c-diagnostics/scan-<id>-identify.jpg`
-  (exact supplied bytes) and matching `.jsonl`; `[M2c]` prints full path.
-  Contains receipt age, dimensions/box/crop, raw JSON, resolved category/B3,
-  request/session IDs, crop/identify first-token/completion/question/total
-  timings and cancellation/stale markers. Writes do not await inference.
-- Local only, gitignored; delete directory after inspection. No artifacts or
-  keys committed. User Xcode scheme and Maixcam.txt remain excluded.
-- `flutter analyze --no-pub`: clean. `flutter test --no-pub`: 221 passed;
-  only the 2 documented stale splash tests in `test/widget_test.dart` failed.
-- Exact-byte/timing and failure-isolation tests pass; deliberately corrupting
-  saved bytes failed the new test, then restored. Secret scan: clean.
-- Decision 0012 updated; decisions 0011 and 0012 now indexed.
+- Local untracked Maixcam.txt: capture (589) → inference/decode (601–603) →
+  draw_seg_mask (655), draw_rect (656), draw_string (657) mutate same frame →
+  JPEG encode (668) → base64 JSON image/detections (672–677). No clean image.
+  Source proves annotated transport in this reference; deployed version unknown.
+- Flutter decodes transport bytes, retains same-message frame at lock, scales
+  center XYWH to decoded pixels, clips/re-encodes crop, passes Message.withImage.
+  Flutter CustomPaint boxes/labels/gradient/badges are display-only; no capture
+  of the widget enters Gemma. Firmware-drawn content would survive cropping.
+- Freshness: firmware reuses detections between cycles and briefly holds misses;
+  receipt time is not capture/detection time; no source frame ID.
+  JPEG decoder honors EXIF; boxes are not rotated. Neither explains this run yet.
+- Contamination of this request and causal effect on recognition remain unproven.
 
-## Owner-run robot acceptance (still pending)
+## Proposed upstream path — not implemented
 
-Build `flutter build macos --debug --dart-define=LIVE_SCAN=true`, then
-`open build/macos/Build/Products/Debug/*.app` (not IDE flutter run).
+- If saved input confirms overlays: encode clean original pixels BEFORE drawing;
+  keep existing annotated image for preview; add clean_image with same dimensions
+  and frame ID in the same message. Crop clean_image with corresponding detection
+  geometry; never recolor/remove red or substitute annotated pixels as fallback.
+- Preserve detection-frame identity/freshness explicitly; compare paired crops
+  from one original capture and identical geometry. Verify actual firmware first.
+- Run 3 clean + 3 annotated trials per phone/bottle, same model/prompt/settings;
+  record item/category, request IDs and latency. No paired originals available
+  yet, so this comparison and isolated-phone/bottle retests are NOT TESTED.
 
-A. Isolate a stationary phone; compare saved JPEG with phone and returned JSON.
-   If clearly the phone but named wrong, repeat with controlled light/angle;
-   if masks obscure it, next compare clean versus overlay input.
-B. B3: explicitly click Lanjut kuis and wait until the quiz appears.
-C. Close during Looking; wait for completion/no late popup, then finish a scan.
-D. After quiz close wait 15 s, keep detector scene empty >=2 s, introduce item.
-E. Hold one item visibly for 60 s: one identification and no repeated quiz.
-F. Expose preview and move an object during identify, B3 confirmation and quiz.
+## Checks / remaining owner tests
 
-Record IDs/timestamps for A–F. TTS requires owner audio testing separately.
-Full hardware class/edge-crop coverage and native vision behavior remain
-unverified; mock tests cannot establish recognition, preview liveness or memory.
+- Analyze clean; full tests 221 pass, only 2 known stale splash failures.
+  Secret scan clean; no code changes or new break-check. PET/Q5 stay separate.
+- Rebuild debug LIVE_SCAN, launch with open, then provide saved JPEG/JSONL pair.
+- Pending: E_Waste disagreement still B3; Continue → quiz; close Looking → no
+  late popup + later scan; wait 15 s then >=2 s empty re-arm; 60 s one-item hold;
+  expose/move preview during identify/confirmation/quiz; TTS separately by owner.
