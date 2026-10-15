@@ -12,6 +12,10 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- M2c debug diagnostics: locally saved exact vision input and correlated JSONL
+  traces for frame/box/crop geometry, identification JSON, resolved hazard,
+  crop/identify/question timings and lock-to-question latency. Artifacts stay
+  in app support and are gitignored; release builds do not write them.
 - M2c: live robot locks send their same-frame bounding-box crop to Gemma
   identification before generating a quiz. The popup shows “Looking…” while
   identifying; hazardous items require “Lanjut kuis” or “Scan ulang”. A B3

@@ -67,3 +67,61 @@ adapts to the detection callback but remains label-only, not robot validation.
 
 Robot validation remains required: vision memory/latency, crop accuracy and
 model recognition cannot be established by the mock-driven unit tests.
+
+## Diagnostic follow-up — 2026-10-16
+
+Inspection of 606be86: WebSocketService pairs image/detections from one JSON
+message. ControlScreen updates `_latestFrame` then invokes the stabilizer
+synchronously; its lock uses the current target, and compute retains that
+CapturedFrame even as later frames arrive. Coordinates are center XYWH in
+metadata pixels, independently scaled on X/Y to decoded dimensions; floor
+left/top, ceil right/bottom, clamp to bounds. No preview/widget coordinates
+enter the crop. Message.withImage receives those JPEG bytes unchanged.
+
+This does not prove camera-time alignment. Timestamp is local receipt time;
+no capture/detection timestamp or source frame ID is supplied. Dimensions
+are cached when omitted by firmware. The untracked local firmware reference
+(not verified as the deployed version) sends cached detections between
+inference cycles, retains missed detections briefly, and burns masks/boxes
+into the JPEG before sending it. These are input-quality/freshness risks.
+The image package applies JPEG EXIF orientation while decoding; the crop
+adds no box rotation. Rotated metadata axes remain an unverified risk.
+No app crop/vision-path bug was established; geometry, prompt, cancellation,
+B3 gating, preview, single-slot scheduling and cooldown thresholds stay intact.
+
+Debug robot sessions now save `scan-<id>-identify.jpg` at the actual
+Message.withImage call boundary, plus `scan-<id>.jsonl`, under
+`getApplicationSupportDirectory()/m2c-diagnostics/`. The full image path is
+printed with `[M2c]`. No upload occurs. Writes are queued without awaiting
+inference; write/encoding failures cannot stop a scan. Artifacts persist
+until the owner deletes that directory and are ignored if copied into git.
+Mock tests emit `vision_mock`, not `vision_submit`; saved pixels prove app
+request input, not native encoder tensors. Abrupt exit may lose queued writes.
+
+Logs correlate session/request IDs, receipt age, unknown source timestamps,
+label/confidence, metadata/decoded sizes, original center box, scale/clipped
+crop bounds and size, raw identification JSON, resolved category/hazard,
+dismissal and stale results. Crop timing includes compute overhead. Identify
+request/first-token/completion timing includes readiness/stop waits;
+`vision_submit` distinguishes actual submission from request start. Question
+and prefetch timings include parsing/retries, with retry/fallback markers.
+Total lock-to-question includes identification and any B3 human wait. The
+existing overlay's 12.417 s is that total, not identify time; its first-token
+number refers to question generation. Provider timing starts at lock handling
+and ends when question state is published, not when pixels finish painting.
+
+Recording evidence supplied by owner: bottle identified as Botol minuman,
+relevant quiz in 12.417 s; phone detector E_Waste but item Barang plastik merah,
+with B3 preserved; Rescan stayed dismissed ~18 s; bottle suppressed for 30 s.
+Exact crop was not saved then, so model recognition versus contaminated or
+misaligned input remains unresolved. Next: isolated stationary phone, compare
+saved crop to physical phone and JSON; if crop clearly contains the phone,
+repeat with orientation/lighting controlled. A clean-versus-overlay image
+comparison is the next experiment if overlays obscure the object.
+
+Pending owner acceptance: Continue actually opens quiz; close during Looking
+has no late popup and a later scan works; 15 s cooldown then >=2 s empty scene
+re-arms; 60 s hold has only one identification/quiz; visibly moving preview
+during identify, confirmation and quiz. TTS requires a separate audio check.
+PET/anorganik contradictory premise and Q5's 7.048 s wait/fallback are separate
+quiz follow-ups; neither cause was established and neither is rewritten here.

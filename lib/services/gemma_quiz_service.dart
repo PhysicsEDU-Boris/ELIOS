@@ -8,6 +8,7 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/scanned_waste.dart';
+import 'scan_diagnostics.dart';
 
 enum GemmaStatus { idle, installing, loading, ready, error }
 
@@ -324,7 +325,7 @@ class GemmaQuizService {
     }
   }
 
-  Future<String?> _executeSend(String prompt, {Uint8List? imageBytes, bool fresh = false, bool isUser = false, void Function(String)? onToken}) async {
+  Future<String?> _executeSend(String prompt, {Uint8List? imageBytes, bool fresh = false, bool isUser = false, void Function(String)? onToken, ScanDiagnostics? diagnostics}) async {
     // A cancelled request's own caller is released immediately (see
     // cancel() and _send below), but the actual native stop can still be
     // settling -- wait for it so two generations never overlap on the same
@@ -344,6 +345,8 @@ class GemmaQuizService {
     Future<void> run() async {
       try {
         if (mockSendExecute != null) {
+           diagnostics?.event('vision_mock');
+           if (imageBytes != null) diagnostics?.image(imageBytes);
            final res = await mockSendExecute!(prompt, imageBytes: imageBytes, fresh: fresh, isUser: isUser, onToken: onToken);
            if (!completer.isCompleted) completer.complete(res);
            return;
@@ -364,6 +367,10 @@ class GemmaQuizService {
         }
         if (fresh) await chat.clearHistory();
         final sw = Stopwatch()..start();
+        if (imageBytes != null) {
+          diagnostics?.event('vision_submit', {'requestId': '${diagnostics.id}/identify', 'bytes': imageBytes.length});
+          diagnostics?.image(imageBytes);
+        }
         await chat.addQueryChunk(imageBytes == null
             ? Message.text(text: prompt, isUser: true)
             : Message.withImage(text: prompt, imageBytes: imageBytes, isUser: true));
@@ -418,7 +425,7 @@ class GemmaQuizService {
     }
   }
 
-  Future<String?> _send(String prompt, {Uint8List? imageBytes, bool fresh = false, bool isUser = false, void Function(String)? onToken}) async {
+  Future<String?> _send(String prompt, {Uint8List? imageBytes, bool fresh = false, bool isUser = false, void Function(String)? onToken, ScanDiagnostics? diagnostics}) async {
     if (_activeCompleter != null) {
       if (!isUser) {
         _log('slot busy, rejecting scan request');
@@ -433,7 +440,7 @@ class GemmaQuizService {
       _pendingCompleter?.complete(null);
       final completer = Completer<String?>();
       _pendingCompleter = completer;
-      _pendingTask = () => _executeSend(prompt, imageBytes: imageBytes, fresh: fresh, isUser: true, onToken: onToken);
+      _pendingTask = () => _executeSend(prompt, imageBytes: imageBytes, fresh: fresh, isUser: true, onToken: onToken, diagnostics: diagnostics);
 
       if (!_activeIsUser) {
         _log('canceling active scan request to yield to user request');
@@ -462,7 +469,7 @@ class GemmaQuizService {
       }
     }
     
-    return _executeSend(prompt, imageBytes: imageBytes, fresh: fresh, isUser: isUser, onToken: onToken);
+    return _executeSend(prompt, imageBytes: imageBytes, fresh: fresh, isUser: isUser, onToken: onToken, diagnostics: diagnostics);
   }
 
   /// The in-flight stop, if any, so a new generation can't start on the
@@ -520,14 +527,24 @@ class GemmaQuizService {
 
   /// Step 1 of a photo scan: name the object, with nothing else in the
   /// prompt to bias it. Loads the image encoder if needed.
-  Future<PhotoIdentification> identifyItem(Uint8List imageBytes) async {
+  Future<PhotoIdentification> identifyItem(Uint8List imageBytes, {ScanDiagnostics? diagnostics}) async {
     const prompt =
         'Lihat foto ini dan sebutkan benda utama di dalamnya secara spesifik, '
         'misalnya "ponsel", "kardus", "kaleng aluminium", "botol plastik PET", '
         '"kulit pisang", "baterai", atau "kertas". Jika foto tidak jelas, tulis "tidak jelas". '
         'Balas HANYA JSON: {"item": "nama benda singkat", "material": "bahan utama", '
         '"category": "organik" atau "anorganik" atau "B3" atau "residu"}.';
-    final raw = await _send(prompt, imageBytes: imageBytes, fresh: true, isUser: false);
+    final timing = diagnostics == null ? null : (Stopwatch()..start());
+    int? firstTokenMs;
+    diagnostics?.event('identify_request', {'requestId': '${diagnostics.id}/identify'});
+    final raw = await _send(prompt, imageBytes: imageBytes, fresh: true, isUser: false,
+      diagnostics: diagnostics, onToken: timing == null ? null : (_) {
+        if (firstTokenMs != null) return;
+        firstTokenMs = timing.elapsedMilliseconds;
+        diagnostics?.event('identify_first_token', {'requestMs': firstTokenMs});
+      });
+    diagnostics?.event('identify_complete', {'requestMs': timing?.elapsedMilliseconds,
+      'firstTokenMs': firstTokenMs, 'rawJson': raw});
     if (raw == 'BUSY') return const PhotoIdentification.failed('busy');
     if (raw == null || raw == 'CANCELLED') {
       return PhotoIdentification.failed(_chat != null && !_loadedWithVision

@@ -84,3 +84,8 @@ assets/models/*.tflite
 # Local agent and tooling state
 .claude/
 .codegraph/
+
+# Local M2c debug crops and JSONL traces (including copied robot artifacts)
+**/m2c-diagnostics/
+scan-*-identify.jpg
+scan-*.jsonl
