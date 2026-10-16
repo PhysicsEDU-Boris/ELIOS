@@ -19,6 +19,12 @@ kept outside the repo.
   (`category_mismatch`, then `mismatch_choice`) with appCommit, frame, detector
   class/score, raw Gemma item/category, bins and the identify JPEG name.
 
+### Changed
+- Firmware: `firmware/maixcam2/app.yaml` (MaixVision manifest) is tracked; the
+  packaged zip in `firmware/maixcam2/dist/` is ignored as a build output.
+- Docs: decision 0012 states the canonical three-bin policy and the mismatch
+  gate; the module-grounded quiz plan requires page/section citations (planned).
+
 ### Fixed
 - M2c cancel (16 Oct retest, scan 0): a close while the model is still loading
   no longer submits the photo (`submit_skipped` is logged instead). A call
