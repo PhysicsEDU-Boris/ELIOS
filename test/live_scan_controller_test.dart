@@ -303,8 +303,8 @@ void main() {
     expect(container.read(wasteQuizProvider).messages.last.text, startsWith('Scan sampah dulu'));
     expect(c.machine.state, LiveScanState.asking);
 
-    question.complete('{"question": "Bahan utama botol ini?", "options": ["PET", "Kaca", "Logam", "Kertas"], '
-        '"correctIndex": 0, "explanation": "Botol minum umumnya PET."}');
+    question.complete('{"question": "Bahan utama botol ini?", "correct": "PET", "wrong": ["Kaca", "Logam", "Kertas"], '
+        ' "explanation": "Botol minum umumnya PET."}');
     await pumpEventQueue();
     expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.active);
     expect(c.machine.state, LiveScanState.quiz);

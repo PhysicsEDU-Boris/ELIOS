@@ -148,6 +148,19 @@ class GemmaQuizService {
   @visibleForTesting
   Future<void> Function()? mockBeforeSubmit;
 
+  /// Sampling temperature for the next model load; only the real-model
+  /// temperature test (decision 0013) changes it.
+  @visibleForTesting
+  double temperature = 0.9;
+
+  /// Pins the question angle so a test sends the same prompt every run.
+  @visibleForTesting
+  String? angleOverride;
+
+  /// Sees every raw question reply, parsed or not (decision 0013 test).
+  @visibleForTesting
+  void Function(String raw)? onQuestionReply;
+
   /// User-facing text for a model that isn't ready (also a scan pre-empted by a chat).
   static const notReadyMessage = 'AI belum siap untuk membaca foto. Coba lagi sebentar lagi.';
 
@@ -303,7 +316,7 @@ class GemmaQuizService {
             _chat = await model.createChat(
               systemInstruction: _systemInstruction,
               maxOutputTokens: 400,
-              temperature: 0.9,
+              temperature: temperature,
               topK: 40,
               topP: 0.95,
               randomSeed: _random.nextInt(1 << 30),
@@ -614,7 +627,7 @@ class GemmaQuizService {
     required QuizDifficulty difficulty,
     List<String> avoid = const [],
   }) async {
-    final angle = _angles[_random.nextInt(_angles.length)];
+    final angle = angleOverride ?? _angles[_random.nextInt(_angles.length)];
     final details = [
       if (waste.material != null && waste.material!.isNotEmpty) 'bahan: ${waste.material}',
       if (waste.category != null) 'kategori: ${waste.categoryNameId}',
@@ -626,9 +639,9 @@ class GemmaQuizService {
     final shape = type == QuizQuestionType.multipleChoice
         ? 'Buat SATU soal pilihan ganda ${difficulty.levelDescription} Topik: $angle dari benda tersebut. '
             'Soal harus menguji pemahaman atau analisis, bukan sekadar menebak tempat sampah. '
-            'Beri 4 pilihan singkat (maks 10 kata) yang semuanya masuk akal, hanya satu yang benar. '
-            'Balas HANYA JSON: {"question": "...", "options": ["...", "...", "...", "..."], '
-            '"correctIndex": 0, "explanation": "penjelasan 1-2 kalimat"}.'
+            'Beri tepat 1 jawaban benar dan tepat 3 pengecoh yang salah tapi masuk akal, masing-masing maks 10 kata. '
+            'Balas HANYA JSON: {"question": "...", "correct": "jawaban benar", '
+            '"wrong": ["pengecoh 1", "pengecoh 2", "pengecoh 3"], "explanation": "penjelasan 1-2 kalimat"}.'
         : 'Buat SATU soal essay ${difficulty.levelDescription} Topik: $angle dari benda tersebut. '
             'Soal meminta mahasiswa menjelaskan atau menganalisis dengan kata-katanya sendiri (maks 2 kalimat). '
             'Balas HANYA JSON: {"question": "...", "explanation": "poin-poin jawaban yang diharapkan"}.';
@@ -638,7 +651,8 @@ class GemmaQuizService {
       final raw = await _send(prompt, fresh: true, isUser: false);
       if (raw == 'BUSY' || raw == 'CANCELLED') return (retry: true, question: null);
       if (raw == null) return (retry: false, question: null);
-      final parsed = _parse(raw, type);
+      onQuestionReply?.call(raw);
+      final parsed = parseQuestion(raw, type);
       if (parsed == null) {
         _log('unparseable question (attempt ${attempt + 1}): $raw');
         continue;
@@ -745,7 +759,11 @@ class GemmaQuizService {
     }
   }
 
-  GeneratedQuestion? _parse(String raw, QuizQuestionType type) {
+  /// Multiple choice comes as one `correct` answer plus `wrong` distractors
+  /// (decision 0013), so the answer key is the structure itself: no index can
+  /// point at a missing or dropped option.
+  @visibleForTesting
+  GeneratedQuestion? parseQuestion(String raw, QuizQuestionType type) {
     final map = _jsonObject(raw);
     if (map == null) return null;
     final question = (map['question'] as String?)?.trim() ?? '';
@@ -754,17 +772,30 @@ class GemmaQuizService {
     if (type == QuizQuestionType.essay) {
       return GeneratedQuestion(type: type, question: question, explanation: explanation);
     }
-    final options = (map['options'] as List?)?.map((o) => '$o'.trim()).toList();
-    final correct = (map['correctIndex'] as num?)?.toInt();
-    if (options == null || options.length != 4 || options.any((o) => o.isEmpty)) return null;
-    if (correct == null || correct < 0 || correct > 3) return null;
-    // Small models tend to put the right answer in the same slot; shuffle.
-    final order = [0, 1, 2, 3]..shuffle(_random);
+    final correct = map['correct'] is String ? (map['correct'] as String).trim() : '';
+    final wrongRaw = map['wrong'];
+    if (_normalizeForDuplicateCheck(correct).isEmpty || wrongRaw is! List) return null;
+    final seen = {_normalizeForDuplicateCheck(correct)};
+    final wrong = <String>[];
+    for (final w in wrongRaw) {
+      final text = '$w'.trim();
+      final key = _normalizeForDuplicateCheck(text);
+      if (key.isEmpty || !seen.add(key)) {
+        // A distractor equal to the answer makes the key ambiguous: reject.
+        if (key == _normalizeForDuplicateCheck(correct)) return null;
+        continue;
+      }
+      wrong.add(text);
+    }
+    // ponytail: extra distractors past 3 are dropped (safe, the key is `correct`);
+    // the temperature test counts how often the model sends more than 3.
+    if (wrong.length < 3) return null;
+    final options = [correct, ...wrong.take(3)]..shuffle(_random);
     return GeneratedQuestion(
       type: type,
       question: question,
-      options: [for (final i in order) options[i]],
-      correctIndex: order.indexOf(correct),
+      options: options,
+      correctIndex: options.indexOf(correct),
       explanation: explanation,
     );
   }
