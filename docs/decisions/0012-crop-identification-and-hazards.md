@@ -272,3 +272,43 @@ and the provider's residu + E_Waste confirmation flow. Removing only the residu
 mapping makes the organic/unknown tests fail, then restoring it passes. No
 firmware, crop, cancellation, cooldown or module-ingestion change is included.
 Robot acceptance gaps and the planned module-grounded quiz remain open.
+
+## Three-bin policy and detector/Gemma mismatch gate — 16 Oct 2026 (owner)
+
+Policy (canonical statement). The robot has three physical bins only:
+organik, anorganik and B3. Order: Gemma's raw category; then the hazard veto
+(detector E_Waste, Gemma B3 or a hazardous item keyword) to B3, which always
+needs confirmation; then nonhazardous residu to the anorganik bin as a
+hardware fallback, because there is no residu compartment. This is NOT a
+claim that residu is scientifically anorganik or recyclable. Raw Gemma
+category (`identify_result.category`, `ScannedWaste.rawCategory`) and the
+resolved bin (`resolved.category`) stay separate in diagnostics.
+
+Mismatch gate (929fdf4). Problem: on 16 Oct a laptop was detected as
+Cardboard and Gemma said kardus/kertas/organik; with an E_Waste-only veto it
+went to the organik quiz. Now the detector class's expected category
+(Organic = organik; Paper, Paperboard, Cardboard, Plastic, Glass, Metal,
+Tetra_Pak = anorganik; E_Waste = B3; Human_Hand ignored) is compared with
+Gemma's RAW category; residu and anorganik are compatible. Any other
+difference, including a missing Gemma category, is a mismatch.
+
+On mismatch the session enters `confirmingMismatch`: no quiz is generated.
+The card shows the detector class and Gemma's item and category, with
+"Pakai detektor", "Pakai Gemma" or "Scan ulang". The quiz starts only after a
+choice; "Pakai detektor" keeps Gemma's item name with the detector's bin.
+Hazard wins: a hazard source shows the B3 card, never the mismatch card.
+The app has no category-driven robot sorting path today, so nothing is sorted
+before (or after) the choice; the arm stays under manual control.
+
+Each mismatch is a hard example in JSONL: `category_mismatch` (appCommit,
+frameId, detector label and score, raw Gemma item/category, Gemma-resolved
+bin, detector bin, identify JPEG file name in the same directory), then
+`mismatch_choice` (detector, gemma or rescan, with the final bin). Gemma's
+output and the keyword lists are unchanged; there is no cardboard override.
+
+Tests: Cardboard + organik shows the card with no question and logs the hard
+example and choice; Cardboard + anorganik or residu shows no card; E_Waste +
+anorganik shows the hazard card; Scan ulang leaves no late quiz; popup layout
+has no overflow. Break-check: disabling the gate fails the first test.
+Robot retest with the laptop is still required.
+

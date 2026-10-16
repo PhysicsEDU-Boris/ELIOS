@@ -49,6 +49,10 @@ Applies to the quiz content work associated with chart 5/M3; existing milestone
 ordering is unchanged. This records the owner requirement locally; the linked
 Notion plan has not been synchronized in this documentation-only change.
 
+Every generated question, answer key and explanation must come from the module
+and cite its page or section (for example "Modul 2, §2.3, hlm. 14"), so a
+reviewer can check it against the PDF. Not implemented and not validated.
+
 Once the PDF arrives, review the taught scope with the owner and plan how
 questions, answer keys and explanations will be grounded and checked against
 it. Do not implement ingestion or change runtime prompts before that input.
