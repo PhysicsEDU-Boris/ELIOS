@@ -1,4 +1,15 @@
-# M2c clean-image firmware (prepared, not deployed)
+# M2c clean-image firmware
+
+Deployed on the robot 16 Oct 2026: scan JSONL `firmwareSha256`
+`bbb3595e8070d4fab421ce38d5a9becbca26f6bcc8c34be4d7e29ed5c2ab79e6` matches
+`shasum -a 256 main.py`.
+
+## MaixVision package
+
+`app.yaml` is the MaixVision app manifest (`elios_clean_m2c_v1` v1.0.0, files:
+`main.py`). The package `dist/maix-elios_clean_m2c_v1-v1.0.0.zip` is a build
+output (exactly `app.yaml` + `main.py`), so it is gitignored; rebuild it from
+these two files in MaixVision. Bump `version` when `main.py` changes.
 
 Deployable entry point: **main.py** in this directory. It is a complete copy
 of the owner's local Maixcam.txt reference with the clean-image stream change.
@@ -24,7 +35,7 @@ verified byte-for-byte against the robot's currently installed script.
    The hash is also returned by `{"cmd":"ping"}` and included in scan JSONL
    as `firmwareSha256`. A version string alone is not a deployment check.
 4. Build the matching app from this branch:
-   `flutter build macos --debug --dart-define=LIVE_SCAN=true`.
+   `flutter build macos --debug --dart-define=LIVE_SCAN=true --dart-define=APP_COMMIT=$(git rev-parse --short HEAD)`.
    Quit the previous app, then `open build/macos/Build/Products/Debug/ELIOS.app`.
 5. To roll back, restore the backed-up robot script at the same active path and
    restart. The new app will retain preview/controls but cannot identify from

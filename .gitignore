@@ -89,3 +89,6 @@ assets/models/*.tflite
 **/m2c-diagnostics/
 scan-*-identify.jpg
 scan-*.jsonl
+
+# MaixVision package build output (rebuild from firmware/maixcam2/app.yaml + main.py)
+firmware/maixcam2/dist/
