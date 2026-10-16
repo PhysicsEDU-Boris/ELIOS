@@ -20,6 +20,7 @@ kept outside the repo.
   class/score, raw Gemma item/category, bins and the identify JPEG name.
 
 ### Changed
+- M2c merged into feature/live-scan by PR #17 (4de8947) after the owner's manual retest on 16 Oct; open hardware gaps are listed in docs/HANDOFF.md.
 - Firmware: `firmware/maixcam2/app.yaml` (MaixVision manifest) is tracked; the
   packaged zip in `firmware/maixcam2/dist/` is ignored as a build output.
 - Docs: decision 0012 states the canonical three-bin policy and the mismatch
