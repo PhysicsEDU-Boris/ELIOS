@@ -11,7 +11,17 @@ kept outside the repo.
 
 ## [Unreleased]
 
+### Fixed
+- M2c cancel (16 Oct retest, scan 0): a close while the model is still loading
+  no longer submits the photo (`submit_skipped` is logged instead). A call
+  already running has its result discarded and keeps the Gemma slot busy until
+  it really ends (capped at 8 s), so the next request never overlaps it.
+- A user close is logged as `failure: cancelled` (not "AI belum siap…") and the
+  live-scan overlay no longer shows ASK FAILED for it. Real failures unchanged.
+
 ### Added
+- M2c traceability: every m2c-diagnostics JSONL record carries `appCommit`
+  (`--dart-define=APP_COMMIT=$(git rev-parse --short HEAD)`; `unknown` if unset).
 - M2c debug diagnostics: locally saved exact vision input and correlated JSONL
   traces for frame/box/crop geometry, identification JSON, resolved hazard,
   crop/identify/question timings and lock-to-question latency. Artifacts stay

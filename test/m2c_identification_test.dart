@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:elio/models/scanned_waste.dart';
+import 'package:flutter/foundation.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/detection_crop.dart';
 import 'package:elio/services/detection_stabilizer.dart';
@@ -112,8 +112,11 @@ void main() {
     });
     tearDown(() async {
       quiz.dismiss();
+      if (!identify.isCompleted) identify.complete(null); // let a held call end so the slot frees
       await service.cancel();
+      await pumpEventQueue();
       service.mockSendExecute = null;
+      service.mockBeforeSubmit = null;
       c.dispose();
     });
 
@@ -242,6 +245,62 @@ void main() {
       await pumpEventQueue();
       expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.idle);
       expect(images, hasLength(1));
+    });
+
+    test('close while the model is still loading never submits', () async {
+      final loading = Completer<void>();
+      var prepared = false;
+      service.mockBeforeSubmit = () {
+        prepared = true;
+        return loading.future;
+      };
+      quiz.onRobotLocked(_frame(), _box);
+      await _until(() => prepared);
+      quiz.dismiss();
+      loading.complete();
+      await pumpEventQueue();
+      expect(images, isEmpty);
+      expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.idle);
+    });
+
+    test('close after submit discards the result, slot busy until the call ends', () async {
+      quiz.onRobotLocked(_frame(), _box);
+      await _until(() => images.isNotEmpty);
+      quiz.dismiss();
+      await pumpEventQueue();
+      expect((await service.identifyItem(Uint8List(1))).failure, 'busy');
+      identify.complete('{"item":"baterai","category":"B3"}');
+      await pumpEventQueue();
+      expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.idle);
+      final next = service.identifyItem(Uint8List(1));
+      await pumpEventQueue();
+      expect(images, hasLength(2), reason: 'slot free once the running call ended');
+      identify = Completer<String?>()..complete('{"item":"botol"}');
+      expect((await next).failure, isNot('busy'));
+    });
+
+    test('user close is logged as cancelled, not as a failure', () async {
+      final lines = <String>[];
+      final original = debugPrint;
+      debugPrint = (message, {wrapWidth}) => lines.add(message ?? '');
+      addTearDown(() => debugPrint = original);
+      quiz.onRobotLocked(_frame(), _box);
+      await _until(() => images.isNotEmpty);
+      quiz.dismiss();
+      await _until(() => lines.any((l) => l.contains('"identify_result"')));
+      final result = lines.firstWhere((l) => l.contains('"identify_result"'));
+      expect(result, contains('"failure":"cancelled"'));
+      expect(result, isNot(contains('belum siap')));
+      expect(lines.where((l) => l.startsWith('[M2c] {')),
+          everyElement(contains('"appCommit":')));
+    });
+
+    test('a real model failure still shows its failure text', () async {
+      quiz.onRobotLocked(_frame(), _box);
+      await _until(() => images.isNotEmpty);
+      identify.complete(null);
+      await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.finished);
+      expect(c.read(wasteQuizProvider).notice, GemmaQuizService.notReadyMessage);
     });
 
     test(

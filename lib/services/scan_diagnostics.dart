@@ -11,6 +11,9 @@ class ScanDiagnostics {
       _directory = directory ?? getApplicationSupportDirectory;
 
   static int _sequence = 0;
+
+  /// Build commit, from `--dart-define=APP_COMMIT=$(git rev-parse --short HEAD)`.
+  static const appCommit = String.fromEnvironment('APP_COMMIT', defaultValue: 'unknown');
   final String id;
   final Future<Directory> Function() _directory;
   final Stopwatch clock = Stopwatch()..start();
@@ -27,6 +30,7 @@ class ScanDiagnostics {
         'event': event,
         'at': DateTime.now().toUtc().toIso8601String(),
         'lockElapsedMs': clock.elapsedMilliseconds,
+        'appCommit': appCommit,
         ...data,
       });
     } catch (error) {

@@ -144,6 +144,13 @@ class GemmaQuizService {
   @visibleForTesting
   Future<void> Function()? mockStopGeneration;
 
+  /// Stand-in for the model load / history clear that precedes a submit.
+  @visibleForTesting
+  Future<void> Function()? mockBeforeSubmit;
+
+  /// User-facing text for a model that isn't ready (also a scan pre-empted by a chat).
+  static const notReadyMessage = 'AI belum siap untuk membaca foto. Coba lagi sebentar lagi.';
+
   bool get isReady => _chat != null;
   bool get isPrepared => _prepared;
 
@@ -342,9 +349,20 @@ class GemmaQuizService {
     final completer = Completer<String?>();
     _activeCompleter = completer;
 
+    // A cancel while the model was still loading must not reach the model.
+    bool cancelledBeforeSubmit() {
+      if (!completer.isCompleted) return false;
+      _log('request cancelled before submit; not sent');
+      diagnostics?.event('submit_skipped', {'reason': 'cancelled'});
+      return true;
+    }
+
+    var finished = false;
     Future<void> run() async {
       try {
         if (mockSendExecute != null) {
+           await mockBeforeSubmit?.call();
+           if (cancelledBeforeSubmit()) return;
            diagnostics?.event('vision_mock');
            if (imageBytes != null) diagnostics?.image(imageBytes);
            final res = await mockSendExecute!(prompt, imageBytes: imageBytes, fresh: fresh, isUser: isUser, onToken: onToken);
@@ -366,6 +384,7 @@ class GemmaQuizService {
           return;
         }
         if (fresh) await chat.clearHistory();
+        if (cancelledBeforeSubmit()) return;
         final sw = Stopwatch()..start();
         if (imageBytes != null) {
           diagnostics?.event('vision_submit', {'requestId': '${diagnostics.id}/identify', 'bytes': imageBytes.length});
@@ -375,11 +394,11 @@ class GemmaQuizService {
             ? Message.text(text: prompt, isUser: true)
             : Message.withImage(text: prompt, imageBytes: imageBytes, isUser: true));
             
-        final stream = chat.generateChatResponseAsync();
+        // Awaited to the end (not just listened to), so run() finishing
+        // means the native generation is over -- the slot waits for that.
         String fullText = '';
         int? firstTokenMs;
-        
-        stream.listen((response) {
+        await for (final response in chat.generateChatResponseAsync()) {
            final token = switch (response) {
              TextResponse(:final token) => token,
              _ => response.toString(),
@@ -387,41 +406,53 @@ class GemmaQuizService {
            firstTokenMs ??= sw.elapsedMilliseconds;
            fullText += token;
            onToken?.call(token);
-        }, onError: (e) {
-           if (!completer.isCompleted) completer.completeError(e);
-        }, onDone: () {
-           final total = sw.elapsedMilliseconds;
-           _log('generated ${fullText.length} chars (first token: ${firstTokenMs ?? 0}ms, total: ${total}ms)');
-           lastFirstTokenMs.value = firstTokenMs;
-           if (!completer.isCompleted) completer.complete(fullText.isEmpty ? null : fullText.trim());
-        });
+        }
+        final total = sw.elapsedMilliseconds;
+        _log('generated ${fullText.length} chars (first token: ${firstTokenMs ?? 0}ms, total: ${total}ms)');
+        lastFirstTokenMs.value = firstTokenMs;
+        if (!completer.isCompleted) completer.complete(fullText.isEmpty ? null : fullText.trim());
       } catch (e) {
         _log('generation failed: $e');
         if (!completer.isCompleted) completer.complete(null);
+      } finally {
+        finished = true;
       }
     }
-    
-    run();
-    
+
+    final running = run();
+
     try {
       return await completer.future.timeout(_generationTimeout);
     } catch (e) {
       if (e is TimeoutException) {
         _log('generation timeout');
+        if (!completer.isCompleted) completer.complete(null); // never submit after giving up
         await _stopGeneration();
       }
       return null;
     } finally {
-      if (_activeCompleter == completer) {
-        _activeCompleter = null;
-        if (_pendingCompleter != null) {
-           final nextTask = _pendingTask;
-           final nextCompleter = _pendingCompleter;
-           _pendingCompleter = null;
-           _pendingTask = null;
-           nextTask!().then((v) => nextCompleter!.complete(v)).catchError((e) => nextCompleter!.completeError(e));
-        }
+      // A cancelled caller is released at once (decision 0003), but its
+      // generation may still be running natively: the slot stays busy until
+      // it ends, so the next request never overlaps it.
+      if (finished) {
+        _releaseSlot(completer);
+      } else {
+        // ponytail: 8 s cap = 2 s stop cap + ~6 s worst prefill (decision 0003); a stream that never ends frees the slot here.
+        unawaited(running.timeout(const Duration(seconds: 8), onTimeout: () {})
+            .whenComplete(() => _releaseSlot(completer)));
       }
+    }
+  }
+
+  void _releaseSlot(Completer<String?> completer) {
+    if (_activeCompleter != completer) return;
+    _activeCompleter = null;
+    if (_pendingCompleter != null) {
+       final nextTask = _pendingTask;
+       final nextCompleter = _pendingCompleter;
+       _pendingCompleter = null;
+       _pendingTask = null;
+       nextTask!().then((v) => nextCompleter!.complete(v)).catchError((e) => nextCompleter!.completeError(e));
     }
   }
 
@@ -546,11 +577,12 @@ class GemmaQuizService {
     diagnostics?.event('identify_complete', {'requestMs': timing?.elapsedMilliseconds,
       'firstTokenMs': firstTokenMs, 'rawJson': raw});
     if (raw == 'BUSY') return const PhotoIdentification.failed('busy');
-    if (raw == null || raw == 'CANCELLED') {
+    if (raw == 'CANCELLED') return const PhotoIdentification.failed('cancelled');
+    if (raw == null) {
       return PhotoIdentification.failed(_chat != null && !_loadedWithVision
           ? 'AI di perangkat ini tidak bisa membaca foto (model gambar gagal dimuat). '
               'Pakai "Uji tanpa kamera" atau mode MaixCAM2.'
-          : 'AI belum siap untuk membaca foto. Coba lagi sebentar lagi.');
+          : notReadyMessage);
     }
     final map = _jsonObject(raw);
     final item = map?['item'] is String ? (map!['item'] as String).trim() : '';

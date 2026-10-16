@@ -248,7 +248,7 @@ void main() {
       expect(r.c.machine.state, LiveScanState.asking);
       r.c.onQuizPhase(WasteQuizPhase.idle);
       expect(r.c.machine.state, LiveScanState.searching);
-      expect(r.c.machine.lastAskFailed, isTrue);
+      expect(r.c.machine.lastAskFailed, isFalse, reason: 'a user close is not ASK FAILED');
     });
 
     test('a quiz already open (not started by the live scan, maybe minimized) shows QUIZ; nothing is asked or counted', () {

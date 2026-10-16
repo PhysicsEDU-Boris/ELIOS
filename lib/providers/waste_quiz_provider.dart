@@ -251,7 +251,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     }
     final item = result.item;
     if (item == null) {
-      final reason = result.failure ?? 'Benda di foto belum dikenali.';
+      // Not dismissed, so the cancel came from a chat request taking the slot.
+      final reason = result.failure == 'cancelled'
+          ? GemmaQuizService.notReadyMessage
+          : result.failure ?? 'Benda di foto belum dikenali.';
       state = state.copyWith(
         phase: WasteQuizPhase.finished,
         notice: reason,
