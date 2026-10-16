@@ -28,8 +28,14 @@
 - Close-before-send `submit_skipped` not seen on hardware (16 Oct 20:07 close
   came after the photo was sent; that path was logged `cancelled` correctly).
 - Residu routing not seen on hardware (Gemma never returned residu).
-- Real-model `integration_test/gemma_cancel_test.dart` not re-run after the
-  stream-reading change (await-for instead of listen).
+- Real-model `integration_test/gemma_cancel_test.dart`: run 16 Oct on macOS,
+  real gemma-4-E2B-it: 4/4 passed (M0.3, M0.4, M0.5a, M0.5b). Cancel to stream
+  close: 2-43 ms mid-generation, 713 ms when cancelled during prefill. M0.3 had
+  one conclusive sample (attempt 3).
+- M0.4 probes: 2 of 3 returned 5 options, quiz parse failed on both attempts.
+  Check whether the parser/prompt expects 4 options (for M3).
+- Image identify first token took 7-9 s in the test (vision encoder on CPU).
+  Compare with the JSONL identify times.
 - A chat that interrupts a scan or prefetch now waits up to 8 s for the
   cancelled call to end (decision 0003); real latency not measured.
 - Preview hidden under Looking/B3/quiz sheets: accepted for now; a small live

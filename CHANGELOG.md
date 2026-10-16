@@ -20,6 +20,7 @@ kept outside the repo.
   class/score, raw Gemma item/category, bins and the identify JPEG name.
 
 ### Changed
+- Docs: HANDOFF records the 16 Oct real-model `gemma_cancel_test` run (4/4 passed) and two open findings (5-option quiz parse failures, 7-9 s image first token).
 - M2c merged into feature/live-scan by PR #17 (4de8947) after the owner's manual retest on 16 Oct; open hardware gaps are listed in docs/HANDOFF.md.
 - Firmware: `firmware/maixcam2/app.yaml` (MaixVision manifest) is tracked; the
   packaged zip in `firmware/maixcam2/dist/` is ignored as a build output.
