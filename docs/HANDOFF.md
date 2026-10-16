@@ -1,59 +1,58 @@
 # Handoff
 
-- Branch `feat/m2c-crop-identify`; prior commits preserved; no push/merge.
-- Clean path local only, NOT deployed; M2c NOT complete.
+- Branch `feat/m2c-crop-identify`; app build c438e94; no push/merge. M2c INCOMPLETE.
+- Existing Xcode scheme change and untracked Maixcam.txt remain excluded.
 
-## Verified hardware evidence (before this fix)
+## Latest hardware failure (16 Oct 2026)
 
-- Exact model inputs contain red masks/green box edges, copied under ignored
-  `m2c-diagnostics/` in this repo. Each ID has `-identify.jpg` and `.jsonl`:
-  `scan-1792088943399297-0` (01:29:03 WIB): ponsel/anorganik;
-  `scan-1792088975920656-1` (01:29:35): limbah cair/residu;
-  `scan-1792089028005351-2` (01:30:28): perangkat elektronik/scanner/anorganik.
-- All three E_Waste locks correctly resolved hazardous. Third Continue opened
-  quiz. Contamination proven; effect on accuracy not established.
-- These follow the rebuilt b1c6d46 app launch at 01:13:18 WIB, 16 Oct 2026;
-  keep distinct from old `scan-1792085518243375-0` at 00:31:58.
-- Third timing: crop 41 ms; identify first token 5.056 s / complete 5.844 s;
-  confirmation wait 10.369 s; question generation 5.562 s / first token 728 ms;
-  total lock-to-question 21.820 s includes human wait, not just generation.
+- Rebuilt LIVE_SCAN app launched 10:25:01 WIB, PID 8194. Provenance:
+  ignored `m2c-diagnostics/clean-deploy-provenance.json`; build/output logs
+  `/private/tmp/m2c-clean-deploy-build.log`, `.stdout.log`, `.stderr.log`.
+- Owner reports deploying/checking firmware, but active hash NOT independently
+  verified. Backup `m2c-diagnostics/robot-backup/maiin.py` equals Maixcam.txt
+  (SHA-256 da57d135a004e399a4a4bb7a8c132209ce340fc3565856640d70bc2f5734a0cc).
+- Expected replacement hash: bbb3595e8070d4fab421ce38d5a9becbca26f6bcc8c34be4d7e29ed5c2ab79e6.
+- New JSONLs copied to ignored `m2c-diagnostics/`: scan-1792121308094220-0,
+  scan-1792121323937693-1, scan-1792121357069544-2, scan-1792121368294749-3.
+  Locks at 10:28:28/43 and 10:29:17/28 WIB: E_Waste/Plastic/E_Waste/Plastic.
+  All frameId/detectionFrameId/firmwareSha256 null, imageSource unavailable;
+  crop invalid in 0–3 ms; no identify_request or question generation.
+- First observed failure: transport-to-CapturedFrame lacks a usable clean pair.
+  Code trace implies legacy schema (no vision_protocol); malformed protocol 1
+  suppresses locks. Raw packets/active process hash needed to locate upstream cause.
+- Metadata-only probe of ws://192.168.4.1:8765 timed out; result saved as
+  `m2c-diagnostics/clean-failure-wire-probe.jsonl`. No payloads logged.
+- Recording Desktop/Screen Recording 2026-10-16 at 10.29.08.mov: warning at
+  00:09–15, preview visible 00:18, warning again 00:21. Overlay 10–12 fps;
+  preview continuity behind opaque popup and throughput regression NOT verified.
+- Uploaded red phone JPEG scan-1792119881048431-0 is 10:04:41 WIB, BEFORE
+  launch: baterai/anorganik -> hazardous; identify 5.614 s, question 4.550 s.
+  It cannot establish contamination in the new build's failed scans.
 
-## Implemented / compatibility
+## Clean path / prior evidence
 
-- Deployable `firmware/maixcam2/main.py` encodes originals BEFORE annotations.
-  Same-message clean_image/clean_detections carry matching frame IDs and hash.
-  Only fresh matched inference boxes qualify; cached/held boxes remain preview.
-- One additional JPEG per nonempty inference frame, none on intervening/empty
-  or held-only frames. Existing annotated preview is retained on every frame.
-- Flutter retains separate preview/clean bytes; rejects missing/mismatched clean
-  data, never falls back to annotated pixels. Preview-only is not empty-scene.
-- Legacy firmware: preview/controls and label-only mode work; LIVE_SCAN needs
-  firmware update, otherwise a notice replaces identification. Old apps ignore
-  added fields and still identify annotated images. Extra bandwidth/FPS untested.
-- Hazard veto, cancellation, model slot and anti-spam thresholds unchanged.
-  Lock sampling now follows fresh inference cadence; hardware retest required.
+- firmware/maixcam2/main.py encodes originals before masks/boxes/text. Fresh
+  clean_image/clean_detections share frame IDs; firmware hash accompanies frames.
+- Annotated preview retained; one extra JPEG per nonempty fresh inference frame.
+  Flutter rejects absent/mismatched clean data; never falls back to preview.
+  Hazard veto, cancellation, model slot and anti-spam thresholds unchanged.
+- Legacy firmware retains preview/controls, but LIVE_SCAN clean identify fails.
+- Prior 01:29–01:30 WIB sessions ...8943399297-0, ...8975920656-1, ...9028005351-2
+  prove red-mask/green-box contamination in old model inputs; all E_Waste -> B3.
+  Third: identify 5.844 s, confirmation wait 10.369 s, question 5.562 s;
+  total 21.820 s includes human wait. Accuracy effect remains unestablished.
+- Actual diagnostics: /Users/macbookairm12020/Library/Containers/E798601C-A67E-46BF-AB3D-AE1A58572F44/Data/Library/Application Support/com.boris.elio/m2c-diagnostics/
 
-## Diagnostics / deployment
+## Next / validation
 
-- Actual original diagnostic directory (macOS may require Finder copy):
-  `/Users/macbookairm12020/Library/Containers/E798601C-A67E-46BF-AB3D-AE1A58572F44/Data/Library/Application Support/com.boris.elio/m2c-diagnostics/`
-- New JSONL logs imageSource, frameId/detectionFrameId and firmwareSha256.
-  Artifacts remain local/gitignored. No keys, test images or Maixcam.txt committed.
-- Follow `firmware/maixcam2/README.md`: back up/compare active robot source,
-  deploy main.py to its confirmed entry point, verify startup/hash against
-  `shasum -a 256 firmware/maixcam2/main.py`. Deployment NOT verified here.
-- Build `flutter build macos --debug --dart-define=LIVE_SCAN=true`; quit old
-  app, then `open build/macos/Build/Products/Debug/ELIOS.app` (not flutter run).
-
-## Checks / remaining gates
-
-- Analyzer clean. Full tests: 226 pass; only 2 known stale splash failures.
-  Firmware stream test passes; annotated-selection and post-drawing-encoding
-  break-checks both fail as intended, fixes restored. Secret scan clean.
-- Owner: exact saved JPEG has NO synthetic annotation; IDs/hash match; preview
-  still segments and visibly moves during identify, confirmation and quiz.
-  Test isolated phone/bottle recognition and E_Waste veto on Gemma disagreement.
-- Retest Rescan, close during Looking/no late popup + subsequent successful scan;
-  after quiz close wait 15 s + >=2 s empty; 60 s hold; TTS separately by owner.
-- Separate follow-ups: captured stdout omitted scan logs despite saved files;
-  PET contradiction and Q5 fallback. No logging/quiz rewrite in this change.
+- Connect Mac to ELIOS Wi-Fi, keep preview running; capture active MaixVision
+  startup hash and rerun metadata-only probe. Compare field names/types, lengths,
+  protocol, IDs and hash before changing code; never print image base64.
+- Then one phone scan: exact saved JPEG clean, object in crop, matching IDs/hash,
+  E_Waste confirmation; Continue -> quiz. Bottle and moving segmented preview next.
+- Still pending: Rescan, close during Looking/no late popup + recovery, 15 s plus
+  >=2 s empty re-arm, 60 s hold, throughput, TTS separately with owner.
+- c438e94 checks: analyzer clean, 226 tests pass / 2 known stale splash failures;
+  firmware test and two break-checks passed. Latest rerun: 16 focused Flutter tests
+  and firmware test pass; diff check clean. No runtime code change.
+- Separate follow-ups: stdout scan-log gap, PET contradiction, Q5 fallback.

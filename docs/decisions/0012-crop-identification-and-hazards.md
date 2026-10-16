@@ -188,3 +188,27 @@ Deployment, exact clean robot-input JPEGs, annotated moving preview, isolated
 phone/bottle accuracy and B3 disagreement are still owner hardware gates.
 The stdout logging gap, PET contradiction and Q5 fallback are separate
 follow-ups. No recognition prompt/quiz rewrite or threshold tuning is included.
+
+## 16 Oct clean-stream failure investigation
+
+The c438e94 LIVE_SCAN build launched at 10:25:01 WIB (PID 8194). Four
+10:28–10:29 locks (sessions 1792121308094220-0, 1792121323937693-1,
+1792121357069544-2, 1792121368294749-3) have null frame/detection IDs and
+firmware hash, imageSource unavailable, and invalid crops before any Gemma
+request. Receipt age is 0–2 ms; that is not camera capture freshness.
+The warning means hasPairedCleanImage is false; its firmware-update wording
+is not evidence of the running firmware version. Protocol-1 malformed IDs,
+metadata or base64 suppress detections instead of producing these locks.
+The inspected receive path therefore points to the legacy schema branch,
+but raw packet metadata and the active firmware hash remain missing.
+The intended source emits protocol/frame/hash metadata on every preview;
+clean JPEG is added only for fresh nonempty inference. A direct metadata-only
+probe timed out. No unsupported firmware/parser fix or validation bypass made.
+
+The uploaded annotated JPEG 1792119881048431-0 is from 10:04:41 WIB,
+before this launch, and cannot be assigned to the failed scans. The 23.8 s
+recording shows failures at 00:09 and 00:21, with a boxed preview at 00:18;
+10–12 fps counters do not prove preview continuity behind the opaque popup.
+Next: capture the actual running startup hash and same-endpoint packet keys,
+field types, byte counts and matching IDs (never base64 contents), then retest
+one isolated phone. Deployment and clean-input hardware acceptance remain open.
