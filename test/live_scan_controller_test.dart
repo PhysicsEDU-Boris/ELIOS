@@ -29,7 +29,8 @@ const _hand = Detection(x: 300, y: 260, w: 400, h: 400, label: 'Human_Hand', sco
 class _Rig {
   _Rig({this.busy = false}) {
     c = LiveScanController(
-      startQuiz: (label) {
+      startQuiz: (detection) {
+        final label = detection.label;
         if (busy) return false;
         starts.add(label);
         startedAt = now;
@@ -167,8 +168,8 @@ void main() {
 
       final r = _Rig()..run(0, 3000, [_det('human_hand'), _det('Tetra_Pak', x: 600), _plastic]);
       final unknown = logs.where((l) => l.startsWith('[LiveScan] unknown detector label')).toList();
-      expect(unknown, hasLength(2));
-      expect(unknown.join(), allOf(contains('"human_hand"'), contains('"Tetra_Pak"')));
+      expect(unknown, hasLength(1));
+      expect(unknown.single, contains('"human_hand"'));
       expect(r.starts, isNotEmpty, reason: 'only the exact spelling is ignored');
     });
   });
@@ -247,7 +248,7 @@ void main() {
       expect(r.c.machine.state, LiveScanState.asking);
       r.c.onQuizPhase(WasteQuizPhase.idle);
       expect(r.c.machine.state, LiveScanState.searching);
-      expect(r.c.machine.lastAskFailed, isTrue);
+      expect(r.c.machine.lastAskFailed, isFalse, reason: 'a user close is not ASK FAILED');
     });
 
     test('a quiz already open (not started by the live scan, maybe minimized) shows QUIZ; nothing is asked or counted', () {
@@ -280,7 +281,8 @@ void main() {
 
     var now = 0;
     final c = LiveScanController(
-      startQuiz: (label) {
+      startQuiz: (detection) {
+        final label = detection.label;
         if (container.read(wasteQuizProvider).phase != WasteQuizPhase.idle) return false;
         quiz.startForLabel(label);
         return true;

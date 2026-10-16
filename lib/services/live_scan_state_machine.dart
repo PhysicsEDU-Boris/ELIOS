@@ -47,7 +47,7 @@ class LiveScanStateMachine {
   /// Asks refused because a quiz was already open.
   int get busyCount => _busyCount;
 
-  /// The last ask ended without a quiz. Stays set while that object is still
+  /// The last ask failed (not a user close) and ended without a quiz. Stays set while that object is still
   /// locked in the stabilizer (it is blocked until absent for re-arm time).
   bool get lastAskFailed => _lastAskFailed;
 
@@ -147,7 +147,7 @@ class LiveScanStateMachine {
       _busyCount++;
       _quizzedLabels.remove(_askedLabel); // no quiz ran for it
     }
-    _lastAskFailed = true;
+    _lastAskFailed = outcome != AskOutcome.cancelled; // a user close is not a failure
     _state = stabilizer.hasCandidate ? LiveScanState.locking : LiveScanState.searching;
   }
 

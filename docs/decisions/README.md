@@ -17,3 +17,5 @@ their status changed.
 | [0008](0008-live-scan-state-machine.md) | Live-scan state machine for the robot path (behind a switch) | Accepted |
 | [0009](0009-camera-stays-alive.md) | The camera stays alive during a quiz; Gemma preloads (M2b part 1) | Accepted |
 | [0010](0010-tts-single-slot-and-overlay-staleness.md) | One TTS slot, no stale overlay numbers, a monotonic default clock (M2b part 2) | Accepted |
+| [0011](0011-quiz-prefetch.md) | Prefetch questions through the single Gemma slot (M2b part 3) | Accepted |
+| [0012](0012-crop-identification-and-hazards.md) | Identify the locked crop and confirm hazards (M2c) | Accepted; robot acceptance pending |

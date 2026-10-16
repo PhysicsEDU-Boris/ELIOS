@@ -133,11 +133,14 @@ void main() {
       };
 
       final f1 = service.identifyItem(Uint8List(0));
+      await pumpEventQueue(); // the scan is running (submitted) before the user asks
+      expect(call, 1);
       final f2 = service.discuss(quizContext: 'ctx', history: [], message: 'hi');
       
       final res1 = await f1;
       expect(res1.item, isNull);
-      
+      completer1.complete(null); // the cancelled native call ends; only then the slot frees
+
       completer2.complete('reply');
       final res2 = await f2;
       expect(res2, 'reply');
@@ -162,7 +165,9 @@ void main() {
       final f1 = service.identifyItem(Uint8List(0));
       service.cancel();
       await f1;
-      
+      completer1.complete(null); // the cancelled native call ends
+      await pumpEventQueue();
+
       final completer2 = Completer<String?>();
       service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => completer2.future;
       final f2 = service.identifyItem(Uint8List(0));
@@ -178,7 +183,8 @@ void main() {
         stopCalled++;
         return stopCompleter.future;
       };
-      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => Completer<String?>().future;
+      final gen = Completer<String?>();
+      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => gen.future;
       final f1 = service.identifyItem(Uint8List(0));
 
       var cancelDone = false;
@@ -193,6 +199,8 @@ void main() {
 
       final res1 = await f1;
       expect(res1.item, isNull);
+      gen.complete(null); // end the call so the slot frees for the next test
+      await pumpEventQueue();
       service.mockStopGeneration = null;
     });
 
@@ -224,6 +232,8 @@ void main() {
         async.elapse(const Duration(seconds: 2)); // the cap in _stopGeneration
         expect(cancelSettled, isTrue, reason: '_stopGeneration must give up at 2 s, not wait the full 5 s');
 
+        genCompleter.complete(null); // end the call so the slot frees for the next test
+        async.flushMicrotasks();
         service.mockStopGeneration = null;
       });
     });
@@ -483,6 +493,9 @@ void main() {
         notifier.selectOption(0); // answers question 1, synchronous
         notifier.sendChatMessage('apa ini?'); // call 3 (isUser) cancels call 2 (prefetch)
         async.flushMicrotasks();
+        expect(calls, 2, reason: 'the chat waits until the cancelled prefetch has really ended');
+        completers[1].complete(null); // the native stop lands: call 2 ends
+        async.flushMicrotasks();
         expect(calls, 3, reason: 'the chat request pre-empted and ran despite the prefetch being active');
 
         completers[2].complete('balasan obrolan'); // the chat's own reply
@@ -505,6 +518,9 @@ void main() {
         // Settle it so the singleton GemmaQuizService isn't left mid-request
         // for the next test.
         notifier.dismiss();
+        for (final c in completers) {
+          if (!c.isCompleted) c.complete(null); // end every call so the slot frees
+        }
         async.flushMicrotasks();
       });
     });

@@ -123,11 +123,12 @@ void main() {
         r.hold(0, 1000, [_a]); // asks
         r.m.onAskOutcome(outcome);
         expect(r.m.state, LiveScanState.searching);
-        expect(r.m.lastAskFailed, isTrue);
+        final failed = outcome != AskOutcome.cancelled; // a user close is not ASK FAILED
+        expect(r.m.lastAskFailed, failed);
         r.hold(1100, 5000, [_a]); // same object still there: blocked, not retried in a loop
         expect(r.m.askCount, asks);
         expect(r.m.busyCount, 1 - asks);
-        expect(r.m.lastAskFailed, isTrue);
+        expect(r.m.lastAskFailed, failed);
         r.hold(5100, 6500, []);
         r.at(6600, []); // re-armed
         expect(r.m.lastAskFailed, isFalse);

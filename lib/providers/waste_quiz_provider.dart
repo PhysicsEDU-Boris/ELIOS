@@ -5,12 +5,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/chat_message.dart';
 import '../models/scanned_waste.dart';
+import '../services/detection_crop.dart';
+import '../services/detection_stabilizer.dart';
+import '../services/frame_source/frame_source.dart';
 import '../services/gemma_quiz_service.dart';
 import '../services/quiz_tts_service.dart';
+import '../services/scan_diagnostics.dart';
 import '../services/websocket_service.dart';
 import 'app_preferences_provider.dart';
 
-enum WasteQuizPhase { idle, identifying, loadingQuestion, active, finished }
+enum WasteQuizPhase { idle, identifying, confirmingHazard, confirmingMismatch, loadingQuestion, active, finished }
 
 /// Where the waste-detection label driving the popup quiz comes from.
 /// MaixCAM2 is the real hardware path; phone camera is a debug-only
@@ -43,6 +47,9 @@ class WasteQuizUiState {
   /// Why a session ended early (e.g. the photo couldn't be identified).
   final String? notice;
 
+  /// The detector class Gemma disagreed with (confirmingMismatch only).
+  final String? mismatchDetector;
+
   const WasteQuizUiState({
     this.phase = WasteQuizPhase.idle,
     this.minimized = false,
@@ -61,6 +68,7 @@ class WasteQuizUiState {
     this.sendingChat = false,
     this.voiceOn = true,
     this.notice,
+    this.mismatchDetector,
   });
 
   int get totalQuestions => difficulty.questionCount;
@@ -89,6 +97,7 @@ class WasteQuizUiState {
     bool? sendingChat,
     bool? voiceOn,
     String? notice,
+    String? mismatchDetector,
   }) {
     return WasteQuizUiState(
       phase: phase ?? this.phase,
@@ -108,6 +117,7 @@ class WasteQuizUiState {
       sendingChat: sendingChat ?? this.sendingChat,
       voiceOn: voiceOn ?? this.voiceOn,
       notice: notice ?? this.notice,
+      mismatchDetector: mismatchDetector ?? this.mismatchDetector,
     );
   }
 }
@@ -120,6 +130,8 @@ const _confidenceThreshold = 0.55;
 const _sameLabelCooldown = Duration(seconds: 25);
 
 class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
+  ScanDiagnostics? _diagnostics;
+  ScannedWaste? _detectorChoice; // Gemma's item in the detector's bin, for the mismatch card
   String? _lastLabel;
   DateTime? _lastShownAt;
   int _generation = 0;
@@ -153,6 +165,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// scan session, so a change applies to the next scan.
   WasteQuizUiState _freshSession({ScannedWaste? scan, required WasteQuizPhase phase}) {
     final difficulty = QuizDifficulty.fromSetting(ref.read(appPreferencesProvider).quizDifficulty);
+    _diagnostics = null;
     _lastAutoSpokenText = null; // a new object/quiz: nothing spoken for it yet
     return WasteQuizUiState(phase: phase, scan: scan, difficulty: difficulty, voiceOn: state.voiceOn);
   }
@@ -193,8 +206,53 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     unawaited(_identifyThenQuiz(imageBytes, generation));
   }
 
-  Future<void> _identifyThenQuiz(Uint8List imageBytes, int generation) async {
-    final result = await GemmaQuizService.instance.identifyItem(imageBytes);
+  /// The live lock's box and JPEG belong to the same stream frame.
+  void onRobotLocked(CapturedFrame frame, TrackedDetection detection) {
+    if (state.phase != WasteQuizPhase.idle) return;
+    _lastLabel = detection.label;
+    _lastShownAt = DateTime.now();
+    _askedQuestions.clear();
+    _cancelPrefetch();
+    final generation = ++_generation;
+    GemmaQuizService.instance.cancel();
+    state = _freshSession(phase: WasteQuizPhase.identifying);
+    final diagnostics = kDebugMode ? ScanDiagnostics() : null;
+    _diagnostics = diagnostics;
+    diagnostics?.event('lock', {'detectorLabel': detection.label, 'confidence': detection.score,
+      'frameReceivedAt': frame.timestamp.toUtc().toIso8601String(),
+      'frameAgeAtLockMs': DateTime.now().difference(frame.timestamp).inMilliseconds,
+      'captureTimestamp': null, 'detectionTimestamp': null,
+      'frameId': frame.frameId, 'detectionFrameId': frame.detectionFrameId,
+      'firmwareSha256': frame.firmwareSha256,
+      'imageSource': frame.hasPairedCleanImage ? 'clean_image' : 'unavailable',
+      'frameWidth': frame.width, 'frameHeight': frame.height,
+      'boxCenterXYWH': [detection.x, detection.y, detection.w, detection.h]});
+    unawaited(_cropThenIdentify(frame, detection, generation, diagnostics));
+  }
+
+  Future<void> _cropThenIdentify(CapturedFrame frame, TrackedDetection detection, int generation, ScanDiagnostics? diagnostics) async {
+    final timing = kDebugMode ? (Stopwatch()..start()) : null;
+    final crop = await compute(prepareDetectionCrop, (frame, detection));
+    final bytes = crop.bytes;
+    diagnostics?.event('crop_complete', {...crop.details, 'cropPreparationMs': timing?.elapsedMilliseconds,
+      'valid': bytes != null, 'stale': generation != _generation});
+    if (generation != _generation) return;
+    if (bytes == null) {
+      state = state.copyWith(phase: WasteQuizPhase.finished,
+          notice: frame.hasPairedCleanImage
+              ? 'Benda belum bisa dipotong dari foto. Coba scan lagi.'
+              : 'Foto asli tanpa anotasi belum tersedia. Perbarui firmware kamera, lalu scan lagi.');
+      return;
+    }
+    await _identifyThenQuiz(bytes, generation, detectorLabel: detection.label,
+        detectorScore: detection.score, frameId: frame.frameId, diagnostics: diagnostics);
+  }
+
+  Future<void> _identifyThenQuiz(Uint8List imageBytes, int generation,
+      {String? detectorLabel, double? detectorScore, int? frameId, ScanDiagnostics? diagnostics}) async {
+    final result = await GemmaQuizService.instance.identifyItem(imageBytes, diagnostics: diagnostics);
+    diagnostics?.event('identify_result', {'item': result.item, 'material': result.material,
+      'category': result.category, 'failure': result.failure, 'stale': generation != _generation});
     if (generation != _generation) return;
     if (result.failure == 'busy') {
       state = state.copyWith(phase: WasteQuizPhase.idle);
@@ -202,7 +260,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     }
     final item = result.item;
     if (item == null) {
-      final reason = result.failure ?? 'Benda di foto belum dikenali.';
+      // Not dismissed, so the cancel came from a chat request taking the slot.
+      final reason = result.failure == 'cancelled'
+          ? GemmaQuizService.notReadyMessage
+          : result.failure ?? 'Benda di foto belum dikenali.';
       state = state.copyWith(
         phase: WasteQuizPhase.finished,
         notice: reason,
@@ -210,9 +271,47 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       );
       return;
     }
-    state = state.copyWith(
-      scan: ScannedWaste.fromLabel(item, material: result.material, categoryHint: result.category),
-    );
+    final detectorHazard = detectorLabel != null &&
+        ScannedWaste.fromLabel(detectorLabel).category?.id == 'hazardous';
+    final scan = ScannedWaste.fromLabel(item, material: result.material,
+        categoryHint: result.category, hazardousEvidence: detectorHazard);
+    diagnostics?.event('resolved', {'item': scan.displayName, 'category': scan.category?.id,
+      'detectorHazard': detectorHazard, 'hazard': scan.category?.id == 'hazardous'});
+    state = state.copyWith(scan: scan);
+    if (scan.category?.id == 'hazardous') {
+      state = state.copyWith(phase: WasteQuizPhase.confirmingHazard);
+      return;
+    }
+    // Hazard wins above; any other detector/Gemma disagreement waits for the user.
+    if (detectorLabel != null && ScannedWaste.categoryMismatch(detectorLabel, result.category)) {
+      final detectorChoice = ScannedWaste.fromLabel(item, material: result.material,
+          categoryHint: ScannedWaste.detectorCategory(detectorLabel));
+      _detectorChoice = detectorChoice;
+      diagnostics?.event('category_mismatch', {'hardExample': true, 'frameId': frameId,
+        'detectorLabel': detectorLabel, 'detectorScore': detectorScore,
+        'gemmaItem': result.item, 'gemmaCategory': result.category,
+        'resolvedBin': scan.category?.id, 'detectorBin': detectorChoice.category?.id,
+        'identifyJpeg': '${diagnostics.id}-identify.jpg'});
+      state = state.copyWith(phase: WasteQuizPhase.confirmingMismatch, mismatchDetector: detectorLabel);
+      return;
+    }
+    _loadQuestion(0);
+  }
+
+  void confirmHazard() {
+    if (state.phase != WasteQuizPhase.confirmingHazard) return;
+    _diagnostics?.event('hazard_continue');
+    _loadQuestion(0);
+  }
+
+  /// The user picks the bin after a detector/Gemma mismatch; only then the quiz runs.
+  void resolveMismatch({required bool useDetector}) {
+    final detectorChoice = _detectorChoice;
+    if (state.phase != WasteQuizPhase.confirmingMismatch || detectorChoice == null) return;
+    final scan = useDetector ? detectorChoice : state.scan!;
+    _diagnostics?.event('mismatch_choice', {'choice': useDetector ? 'detector' : 'gemma',
+      'resolvedBin': scan.category?.id});
+    state = state.copyWith(scan: scan);
     _loadQuestion(0);
   }
 
@@ -228,6 +327,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   void _startSession(ScannedWaste scan) {
     _askedQuestions.clear();
     _cancelPrefetch();
+    if (scan.category?.id == 'hazardous') {
+      state = _freshSession(scan: scan, phase: WasteQuizPhase.confirmingHazard);
+      return;
+    }
     state = _freshSession(scan: scan, phase: WasteQuizPhase.loadingQuestion);
     _loadQuestion(0);
   }
@@ -251,6 +354,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       sendingChat: false,
     );
 
+    final diagnostics = _diagnostics;
+    diagnostics?.event('question_request', {'requestId': '${diagnostics.id}/question-${index + 1}'});
     final sw = kDebugMode ? (Stopwatch()..start()) : null;
     final generated = await GemmaQuizService.instance.generateQuestion(
       waste: scan,
@@ -258,6 +363,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       difficulty: state.difficulty,
       avoid: List.of(_askedQuestions),
     );
+    diagnostics?.event('question_complete', {'question': index + 1, 'generationMs': sw?.elapsedMilliseconds,
+      'firstTokenMs': GemmaQuizService.instance.lastFirstTokenMs.value,
+      'fallback': generated == null, 'stale': generation != _generation});
     if (sw != null) {
       // One line per question load, so a slow session (decision 0009) shows
       // exactly which question was slow and whether it fell back.
@@ -281,6 +389,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       isFallback: generated == null,
       messages: [...state.messages, ChatMessage(isUser: false, text: intro)],
     );
+    diagnostics?.event('question_shown', {'question': index + 1, 'totalLockToQuestionMs': diagnostics.clock.elapsedMilliseconds});
     if (index == 0) _startPrefetch();
   }
 
@@ -313,13 +422,22 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// session is closed or superseded.
   Future<GeneratedQuestion?> _generateForBuffer(ScannedWaste scan, int index, int gen) async {
     final type = questionTypeFor(index);
+    final diagnostics = _diagnostics;
+    var attempt = 0;
     while (gen == _prefetchSessionGen) {
+      final timing = kDebugMode ? (Stopwatch()..start()) : null;
+      final requestId = '${diagnostics?.id}/question-${index + 1}/attempt-${++attempt}';
+      diagnostics?.event('prefetch_request', {'requestId': requestId});
       final result = await GemmaQuizService.instance.generateQuestionBackground(
         waste: scan,
         type: type,
         difficulty: state.difficulty,
         avoid: List.of(_askedQuestions),
       );
+      diagnostics?.event('prefetch_complete', {'requestId': requestId,
+        'generationMs': timing?.elapsedMilliseconds, 'retry': result.retry,
+        'fallback': !result.retry && result.question == null,
+        'stale': gen != _prefetchSessionGen});
       if (!result.retry) return result.question; // success, or a real failure
       await Future<void>.delayed(_prefetchRetryDelay);
     }
@@ -552,6 +670,12 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   void restore() => state = state.copyWith(minimized: false);
 
   void dismiss() {
+    if (state.phase == WasteQuizPhase.confirmingMismatch) {
+      _diagnostics?.event('mismatch_choice', {'choice': 'rescan', 'resolvedBin': null});
+    }
+    _detectorChoice = null;
+    _diagnostics?.event('dismiss', {'phase': state.phase.name});
+    _diagnostics = null;
     _generation++;
     _cancelPrefetch();
     GemmaQuizService.instance.cancel();

@@ -8,6 +8,7 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/scanned_waste.dart';
+import 'scan_diagnostics.dart';
 
 enum GemmaStatus { idle, installing, loading, ready, error }
 
@@ -143,6 +144,13 @@ class GemmaQuizService {
   @visibleForTesting
   Future<void> Function()? mockStopGeneration;
 
+  /// Stand-in for the model load / history clear that precedes a submit.
+  @visibleForTesting
+  Future<void> Function()? mockBeforeSubmit;
+
+  /// User-facing text for a model that isn't ready (also a scan pre-empted by a chat).
+  static const notReadyMessage = 'AI belum siap untuk membaca foto. Coba lagi sebentar lagi.';
+
   bool get isReady => _chat != null;
   bool get isPrepared => _prepared;
 
@@ -254,8 +262,8 @@ class GemmaQuizService {
   }
 
   /// Single-flight load. [vision] loads the image encoder too — only the
-  /// device-camera scan needs it; the MaixCAM2 flow sends text only, which
-  /// keeps memory use (and the risk of being killed on a phone) much lower.
+  /// device-camera and live MaixCAM2 crop scans need it. Label-only quizzes
+  /// use text only to keep memory use lower.
   /// Switching to vision when a text-only model is loaded triggers a reload.
   Future<bool> ensureReady({bool vision = false}) async {
     if (_chat != null && (_loadedWithVision || !vision)) return true;
@@ -324,7 +332,7 @@ class GemmaQuizService {
     }
   }
 
-  Future<String?> _executeSend(String prompt, {Uint8List? imageBytes, bool fresh = false, bool isUser = false, void Function(String)? onToken}) async {
+  Future<String?> _executeSend(String prompt, {Uint8List? imageBytes, bool fresh = false, bool isUser = false, void Function(String)? onToken, ScanDiagnostics? diagnostics}) async {
     // A cancelled request's own caller is released immediately (see
     // cancel() and _send below), but the actual native stop can still be
     // settling -- wait for it so two generations never overlap on the same
@@ -341,9 +349,22 @@ class GemmaQuizService {
     final completer = Completer<String?>();
     _activeCompleter = completer;
 
+    // A cancel while the model was still loading must not reach the model.
+    bool cancelledBeforeSubmit() {
+      if (!completer.isCompleted) return false;
+      _log('request cancelled before submit; not sent');
+      diagnostics?.event('submit_skipped', {'reason': 'cancelled'});
+      return true;
+    }
+
+    var finished = false;
     Future<void> run() async {
       try {
         if (mockSendExecute != null) {
+           await mockBeforeSubmit?.call();
+           if (cancelledBeforeSubmit()) return;
+           diagnostics?.event('vision_mock');
+           if (imageBytes != null) diagnostics?.image(imageBytes);
            final res = await mockSendExecute!(prompt, imageBytes: imageBytes, fresh: fresh, isUser: isUser, onToken: onToken);
            if (!completer.isCompleted) completer.complete(res);
            return;
@@ -363,16 +384,21 @@ class GemmaQuizService {
           return;
         }
         if (fresh) await chat.clearHistory();
+        if (cancelledBeforeSubmit()) return;
         final sw = Stopwatch()..start();
+        if (imageBytes != null) {
+          diagnostics?.event('vision_submit', {'requestId': '${diagnostics.id}/identify', 'bytes': imageBytes.length});
+          diagnostics?.image(imageBytes);
+        }
         await chat.addQueryChunk(imageBytes == null
             ? Message.text(text: prompt, isUser: true)
             : Message.withImage(text: prompt, imageBytes: imageBytes, isUser: true));
             
-        final stream = chat.generateChatResponseAsync();
+        // Awaited to the end (not just listened to), so run() finishing
+        // means the native generation is over -- the slot waits for that.
         String fullText = '';
         int? firstTokenMs;
-        
-        stream.listen((response) {
+        await for (final response in chat.generateChatResponseAsync()) {
            final token = switch (response) {
              TextResponse(:final token) => token,
              _ => response.toString(),
@@ -380,45 +406,57 @@ class GemmaQuizService {
            firstTokenMs ??= sw.elapsedMilliseconds;
            fullText += token;
            onToken?.call(token);
-        }, onError: (e) {
-           if (!completer.isCompleted) completer.completeError(e);
-        }, onDone: () {
-           final total = sw.elapsedMilliseconds;
-           _log('generated ${fullText.length} chars (first token: ${firstTokenMs ?? 0}ms, total: ${total}ms)');
-           lastFirstTokenMs.value = firstTokenMs;
-           if (!completer.isCompleted) completer.complete(fullText.isEmpty ? null : fullText.trim());
-        });
+        }
+        final total = sw.elapsedMilliseconds;
+        _log('generated ${fullText.length} chars (first token: ${firstTokenMs ?? 0}ms, total: ${total}ms)');
+        lastFirstTokenMs.value = firstTokenMs;
+        if (!completer.isCompleted) completer.complete(fullText.isEmpty ? null : fullText.trim());
       } catch (e) {
         _log('generation failed: $e');
         if (!completer.isCompleted) completer.complete(null);
+      } finally {
+        finished = true;
       }
     }
-    
-    run();
-    
+
+    final running = run();
+
     try {
       return await completer.future.timeout(_generationTimeout);
     } catch (e) {
       if (e is TimeoutException) {
         _log('generation timeout');
+        if (!completer.isCompleted) completer.complete(null); // never submit after giving up
         await _stopGeneration();
       }
       return null;
     } finally {
-      if (_activeCompleter == completer) {
-        _activeCompleter = null;
-        if (_pendingCompleter != null) {
-           final nextTask = _pendingTask;
-           final nextCompleter = _pendingCompleter;
-           _pendingCompleter = null;
-           _pendingTask = null;
-           nextTask!().then((v) => nextCompleter!.complete(v)).catchError((e) => nextCompleter!.completeError(e));
-        }
+      // A cancelled caller is released at once (decision 0003), but its
+      // generation may still be running natively: the slot stays busy until
+      // it ends, so the next request never overlaps it.
+      if (finished) {
+        _releaseSlot(completer);
+      } else {
+        // ponytail: 8 s cap = 2 s stop cap + ~6 s worst prefill (decision 0003); a stream that never ends frees the slot here.
+        unawaited(running.timeout(const Duration(seconds: 8), onTimeout: () {})
+            .whenComplete(() => _releaseSlot(completer)));
       }
     }
   }
 
-  Future<String?> _send(String prompt, {Uint8List? imageBytes, bool fresh = false, bool isUser = false, void Function(String)? onToken}) async {
+  void _releaseSlot(Completer<String?> completer) {
+    if (_activeCompleter != completer) return;
+    _activeCompleter = null;
+    if (_pendingCompleter != null) {
+       final nextTask = _pendingTask;
+       final nextCompleter = _pendingCompleter;
+       _pendingCompleter = null;
+       _pendingTask = null;
+       nextTask!().then((v) => nextCompleter!.complete(v)).catchError((e) => nextCompleter!.completeError(e));
+    }
+  }
+
+  Future<String?> _send(String prompt, {Uint8List? imageBytes, bool fresh = false, bool isUser = false, void Function(String)? onToken, ScanDiagnostics? diagnostics}) async {
     if (_activeCompleter != null) {
       if (!isUser) {
         _log('slot busy, rejecting scan request');
@@ -433,7 +471,7 @@ class GemmaQuizService {
       _pendingCompleter?.complete(null);
       final completer = Completer<String?>();
       _pendingCompleter = completer;
-      _pendingTask = () => _executeSend(prompt, imageBytes: imageBytes, fresh: fresh, isUser: true, onToken: onToken);
+      _pendingTask = () => _executeSend(prompt, imageBytes: imageBytes, fresh: fresh, isUser: true, onToken: onToken, diagnostics: diagnostics);
 
       if (!_activeIsUser) {
         _log('canceling active scan request to yield to user request');
@@ -462,7 +500,7 @@ class GemmaQuizService {
       }
     }
     
-    return _executeSend(prompt, imageBytes: imageBytes, fresh: fresh, isUser: isUser, onToken: onToken);
+    return _executeSend(prompt, imageBytes: imageBytes, fresh: fresh, isUser: isUser, onToken: onToken, diagnostics: diagnostics);
   }
 
   /// The in-flight stop, if any, so a new generation can't start on the
@@ -520,23 +558,34 @@ class GemmaQuizService {
 
   /// Step 1 of a photo scan: name the object, with nothing else in the
   /// prompt to bias it. Loads the image encoder if needed.
-  Future<PhotoIdentification> identifyItem(Uint8List imageBytes) async {
+  Future<PhotoIdentification> identifyItem(Uint8List imageBytes, {ScanDiagnostics? diagnostics}) async {
     const prompt =
         'Lihat foto ini dan sebutkan benda utama di dalamnya secara spesifik, '
         'misalnya "ponsel", "kardus", "kaleng aluminium", "botol plastik PET", '
         '"kulit pisang", "baterai", atau "kertas". Jika foto tidak jelas, tulis "tidak jelas". '
         'Balas HANYA JSON: {"item": "nama benda singkat", "material": "bahan utama", '
         '"category": "organik" atau "anorganik" atau "B3" atau "residu"}.';
-    final raw = await _send(prompt, imageBytes: imageBytes, fresh: true, isUser: false);
+    final timing = diagnostics == null ? null : (Stopwatch()..start());
+    int? firstTokenMs;
+    diagnostics?.event('identify_request', {'requestId': '${diagnostics.id}/identify'});
+    final raw = await _send(prompt, imageBytes: imageBytes, fresh: true, isUser: false,
+      diagnostics: diagnostics, onToken: timing == null ? null : (_) {
+        if (firstTokenMs != null) return;
+        firstTokenMs = timing.elapsedMilliseconds;
+        diagnostics?.event('identify_first_token', {'requestMs': firstTokenMs});
+      });
+    diagnostics?.event('identify_complete', {'requestMs': timing?.elapsedMilliseconds,
+      'firstTokenMs': firstTokenMs, 'rawJson': raw});
     if (raw == 'BUSY') return const PhotoIdentification.failed('busy');
-    if (raw == null || raw == 'CANCELLED') {
+    if (raw == 'CANCELLED') return const PhotoIdentification.failed('cancelled');
+    if (raw == null) {
       return PhotoIdentification.failed(_chat != null && !_loadedWithVision
           ? 'AI di perangkat ini tidak bisa membaca foto (model gambar gagal dimuat). '
               'Pakai "Uji tanpa kamera" atau mode MaixCAM2.'
-          : 'AI belum siap untuk membaca foto. Coba lagi sebentar lagi.');
+          : notReadyMessage);
     }
     final map = _jsonObject(raw);
-    final item = (map?['item'] as String?)?.trim() ?? '';
+    final item = map?['item'] is String ? (map!['item'] as String).trim() : '';
     if (item.isEmpty || item.toLowerCase().contains('tidak jelas')) {
       return const PhotoIdentification.failed(
         'Benda di foto belum dikenali. Dekatkan kamera, pastikan terang, lalu scan lagi.',
@@ -545,8 +594,8 @@ class GemmaQuizService {
     _log('photo identified as "$item"');
     return PhotoIdentification(
       item: item,
-      material: (map?['material'] as String?)?.trim(),
-      category: (map?['category'] as String?)?.trim(),
+      material: map?['material'] is String ? (map!['material'] as String).trim() : null,
+      category: map?['category'] is String ? (map!['category'] as String).trim() : null,
     );
   }
 

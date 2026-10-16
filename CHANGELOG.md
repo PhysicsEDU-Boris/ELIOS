@@ -11,7 +11,55 @@ kept outside the repo.
 
 ## [Unreleased]
 
+### Added
+- M2c detector-vs-Gemma category gate: when the detector class's bin differs
+  from Gemma's raw category (residu counts as anorganik), no quiz runs until the
+  user picks "Pakai detektor", "Pakai Gemma" or "Scan ulang". Hazard
+  confirmation still wins. Each mismatch is logged as a hard example
+  (`category_mismatch`, then `mismatch_choice`) with appCommit, frame, detector
+  class/score, raw Gemma item/category, bins and the identify JPEG name.
+
+### Changed
+- Firmware: `firmware/maixcam2/app.yaml` (MaixVision manifest) is tracked; the
+  packaged zip in `firmware/maixcam2/dist/` is ignored as a build output.
+- Docs: decision 0012 states the canonical three-bin policy and the mismatch
+  gate; the module-grounded quiz plan requires page/section citations (planned).
+
 ### Fixed
+- M2c cancel (16 Oct retest, scan 0): a close while the model is still loading
+  no longer submits the photo (`submit_skipped` is logged instead). A call
+  already running has its result discarded and keeps the Gemma slot busy until
+  it really ends (capped at 8 s), so the next request never overlaps it.
+- A user close is logged as `failure: cancelled` (not "AI belum siap…") and the
+  live-scan overlay no longer shows ASK FAILED for it. Real failures unchanged.
+
+### Added
+- M2c traceability: every m2c-diagnostics JSONL record carries `appCommit`
+  (`--dart-define=APP_COMMIT=$(git rev-parse --short HEAD)`; `unknown` if unset).
+- M2c debug diagnostics: locally saved exact vision input and correlated JSONL
+  traces for frame/box/crop geometry, identification JSON, resolved hazard,
+  crop/identify/question timings and lock-to-question latency. Artifacts stay
+  in app support and are gitignored; release builds do not write them.
+- M2c: live robot locks send their same-frame bounding-box crop to Gemma
+  identification before generating a quiz. The popup shows “Looking…” while
+  identifying; hazardous items require “Lanjut kuis” or “Scan ulang”. A B3
+  classification from either detector or Gemma is preserved. All ten
+  MaixCAM2 classes have explicit Indonesian names and categories (the hand
+  stays ignored). Invalid crops/unrecognized images stop without a
+  detector-label quiz; dismissed results cannot reopen a session. Live scan
+  now preloads the image encoder. Decision 0012.
+
+### Fixed
+- Three-bin routing explicitly sends nonhazardous Gemma `residu` to inorganic,
+  independent of item keywords. Raw model category is retained separately from
+  the destination; detector/model/item hazard evidence still forces B3. Residu
+  quiz context describes the compartment without claiming recyclability.
+- M2c: Gemma crops paired clean camera pixels, never the annotated preview.
+  Prepared MaixCAM2 firmware encodes originals before drawing, sends clean
+  images only on nonempty fresh inference frames, and reports frame IDs/hash.
+  Preview and controls remain compatible with old firmware; clean identification
+  requires the update and otherwise shows a firmware notice. Not yet deployed
+  or hardware-validated. See decision 0012 and firmware/maixcam2/README.md.
 - M2b part 3 (PR #16 robot-test follow-up): tapping "Soal berikutnya" or
   skip no longer lets a still-playing voice (an answer verdict, essay
   grading, or chat reply) keep talking over the next question — both now

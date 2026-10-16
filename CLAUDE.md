@@ -30,7 +30,7 @@ Permanent rules for working in this repo (PhysicsEDU-Boris/ELIOS).
 
 ## Robot build
 
-- `flutter build macos --debug --dart-define=LIVE_SCAN=true`, then launch
+- `flutter build macos --debug --dart-define=LIVE_SCAN=true --dart-define=APP_COMMIT=$(git rev-parse --short HEAD)`, then launch
   with `open` — not `flutter run` from the IDE (breaks Local Network
   permission).
 

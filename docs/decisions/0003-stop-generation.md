@@ -193,3 +193,9 @@ throwing one doesn't escape (`mockStopGeneration`, a new
 - M2b part 2 (2026-10-14): `cancel()` awaits `stopGeneration()`; see the
   update above. Re-run the cancel integration test if this changes the
   measured stop/next-request timing meaningfully.
+- M2c cancel fix (2026-10-16): a request cancelled before submit is never sent
+  (checked right before the native submit). A cancelled caller is still
+  released at once, but the slot stays busy until its generation really ends
+  (stream done), capped at 8 s (2 s stop cap + ~6 s worst prefill). Scans get
+  BUSY meanwhile; a pre-empting chat waits for it. Re-run
+  `integration_test/gemma_cancel_test.dart` on the real model to confirm.

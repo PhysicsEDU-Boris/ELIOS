@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../models/chat_message.dart';
+import '../models/scanned_waste.dart';
 import '../providers/app_preferences_provider.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../services/gemma_quiz_service.dart';
@@ -305,6 +306,26 @@ class _QuestionPanel extends ConsumerWidget {
           const SizedBox(height: 8),
           if (state.phase == WasteQuizPhase.finished)
             _SummaryCard(state: state, onClose: notifier.dismiss)
+          else if (state.phase == WasteQuizPhase.confirmingHazard)
+            _CardBox(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Kemungkinan limbah B3: ${state.scan?.displayName ?? ""}',
+                      style: GoogleFonts.sora(color: elioInk, fontSize: 16, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  const Text('Jangan bongkar atau masukkan ke tempat sampah biasa. '
+                      'Minta bantuan petugas untuk penanganannya. Lanjutkan kuis tentang benda ini?'),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 8, children: [
+                    FilledButton(onPressed: notifier.confirmHazard, child: const Text('Lanjut kuis')),
+                    TextButton(onPressed: notifier.dismiss, child: const Text('Scan ulang')),
+                  ]),
+                ],
+              ),
+            )
+          else if (state.phase == WasteQuizPhase.confirmingMismatch)
+            _MismatchCard(state: state, notifier: notifier)
           else
             _QuestionCard(state: state),
           if (showAnswers) ...[
@@ -364,11 +385,11 @@ class _QuestionCard extends StatelessWidget {
               valueListenable: GemmaQuizService.instance.progress,
               builder: (context, p, _) {
                 final text = switch (p.status) {
+                  _ when state.phase == WasteQuizPhase.identifying => 'Looking…',
                   GemmaStatus.installing => p.installPercent > 0
                       ? 'Menyiapkan AI offline (hanya sekali)… ${p.installPercent}%'
                       : 'Menyiapkan AI offline (hanya sekali)…',
                   GemmaStatus.loading => 'Memuat model Gemma ke memori…',
-                  _ when state.phase == WasteQuizPhase.identifying => 'Gemma sedang mengenali benda di foto…',
                   // Questions 2+ are prefetched in the background (decision
                   // 0011): this only shows while this one isn't ready yet.
                   _ when state.questionIndex > 0 => 'Menyiapkan soal berikutnya…',
@@ -1046,6 +1067,42 @@ class _Chip extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: GoogleFonts.manrope(color: fg, fontSize: 11, fontWeight: FontWeight.w800),
         ),
+      ),
+    );
+  }
+}
+
+/// Detector and Gemma disagree on the bin: nothing runs until the user picks.
+class _MismatchCard extends StatelessWidget {
+  const _MismatchCard({required this.state, required this.notifier});
+  final WasteQuizUiState state;
+  final WasteQuizNotifier notifier;
+
+  @override
+  Widget build(BuildContext context) {
+    final detector = state.mismatchDetector ?? '-';
+    final detectorCategory = ScannedWaste.detectorCategory(detector) ?? '-';
+    final gemmaCategory = state.scan?.rawCategory ?? '-';
+    return _CardBox(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Kategori belum pasti',
+              style: GoogleFonts.sora(color: elioInk, fontSize: 16, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          Text('Detektor: $detector ($detectorCategory). '
+              'Gemma: ${state.scan?.displayName ?? '-'} ($gemmaCategory). Pilih kategori yang benar.'),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            FilledButton(
+                onPressed: () => notifier.resolveMismatch(useDetector: true),
+                child: Text('Pakai detektor ($detectorCategory)')),
+            OutlinedButton(
+                onPressed: () => notifier.resolveMismatch(useDetector: false),
+                child: Text('Pakai Gemma ($gemmaCategory)')),
+            TextButton(onPressed: notifier.dismiss, child: const Text('Scan ulang')),
+          ]),
+        ],
       ),
     );
   }
