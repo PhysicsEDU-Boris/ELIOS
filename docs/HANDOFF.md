@@ -43,8 +43,7 @@
   counter is the evidence the stream runs.
 - No robot sorting path exists in the app (plan 2.6); confirmation cards do
   not drive the arm.
-- 2 stale splash tests in `test/widget_test.dart`.
-- `lib/Screens` vs `lib/screens` directory case inconsistency.
+- 2 stale splash tests (`test/widget_test.dart`); `lib/Screens` vs `lib/screens` case.
 
 ## Dataset work (owner)
 
