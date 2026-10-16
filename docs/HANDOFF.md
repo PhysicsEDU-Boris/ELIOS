@@ -1,8 +1,7 @@
 # Handoff
 
 - Branch `feat/m2c-crop-identify`; app build c438e94. M2c INCOMPLETE; no push/merge.
-- Latest task documentation only; preserve user Xcode scheme, Maixcam.txt,
-  firmware app.yaml and dist/ changes; none staged with documentation.
+- Latest task implements explicit residu routing; preserve user Xcode scheme, Maixcam.txt,
 - Corrected evidence: [M2c review](test-results/m2c-clean-image-review.md).
 
 ## Verified clean-image results (16 Oct 2026)
@@ -35,10 +34,10 @@
 - Three bins only: organik, anorganik, B3. Intended: Gemma category, hazardous
   veto from supported sources, then residu -> inorganic. This is destination
   routing, not a claim that residu is recyclable. S7 outcome is expected.
-- Code discrepancy: ScannedWaste.fromLabel ignores residu hint and uses item
-  keywords; kertas resolves inorganic, but organic/unknown items may not.
-  Provider detector veto and hazardous item-keyword veto are present. Existing
-  inorganic display text implies recyclability. Documented; runtime unchanged.
+- Resolver now explicitly routes nonhazardous residu to inorganic independent
+  of item keywords. rawCategory retains Gemma's value; category is destination.
+  Detector hazard is a separate flag; detector/Gemma/item hazard still veto to B3.
+  Other category routing unchanged. Residu context makes no recycling guarantee.
 - Raw identify_result.category and resolved.category remain distinct in JSONL.
 - Future quiz must strictly use taught course-module content; owner PDF pending.
   [Quiz plan](pipeline/README.md#module-grounded-quiz-plan-owner-requirement):
@@ -55,5 +54,6 @@
 - Re-arm evidence excludes covered-lens intervals. Throughput comparison pending.
 - Smallest next test: expose preview, cancel Looking, wait for late result,
   clear/re-arm, then complete phone scan through B3 Continue while moving object.
-- Prior checks: analyzer clean; 226 pass / 2 known stale splash failures;
-  focused rerun 16 Flutter tests + firmware test pass. This task: doc checks only.
+- Routing checks: focused 17 tests pass; break-check fails organic/unknown residu
+  without mapping, then restored. Analyzer clean; full suite 231 pass, 2 known
+  stale splash failures. Robot retest remains pending.

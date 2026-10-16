@@ -5,12 +5,21 @@ import 'waste_category.dart';
 class ScannedWaste {
   final String rawLabel;
   final String displayName;
+
+  /// Resolved destination compartment, not the raw model classification.
   final WasteCategory? category;
+  final String? rawCategory;
 
   /// Main material, when known (photo scans report it).
   final String? material;
 
-  const ScannedWaste._(this.rawLabel, this.displayName, this.category, [this.material]);
+  const ScannedWaste._(
+    this.rawLabel,
+    this.displayName,
+    this.category, [
+    this.material,
+    this.rawCategory,
+  ]);
 
   /// All ten MaixCAM2 classes; the hand is deliberately not waste.
   static const detectorLabels = <String, (String, String?)>{
@@ -59,20 +68,37 @@ class ScannedWaste {
 
   /// [categoryHint] is Gemma's own classification of a photo ("organik",
   /// "anorganik", "B3", "residu"); it wins over the keyword lookup.
-  factory ScannedWaste.fromLabel(String label, {String? material, String? categoryHint}) {
+  factory ScannedWaste.fromLabel(
+    String label, {
+    String? material,
+    String? categoryHint,
+    bool hazardousEvidence = false,
+  }) {
     final hinted = switch (categoryHint?.toLowerCase().trim()) {
       'organik' => 'organic',
       'anorganik' => 'inorganic',
+      'residu' => 'inorganic',
       'b3' => 'hazardous',
       _ => null,
     };
     final base = ScannedWaste._fromKeywords(label);
     // Hazardous keywords (batteries, phones, e-waste) beat the model's guess:
     // a phone must go to B3 even if Gemma calls it "anorganik".
-    final category = hinted != null && base.category?.id != 'hazardous'
-        ? wasteCategories.where((c) => c.id == hinted).firstOrNull
-        : base.category;
-    return ScannedWaste._(label, base.displayName, category, material);
+    final hazard =
+        hazardousEvidence ||
+        hinted == 'hazardous' ||
+        base.category?.id == 'hazardous';
+    final destination = hazard ? 'hazardous' : hinted;
+    final category = destination == null
+        ? base.category
+        : wasteCategories.where((c) => c.id == destination).firstOrNull;
+    return ScannedWaste._(
+      label,
+      base.displayName,
+      category,
+      material,
+      categoryHint,
+    );
   }
 
   factory ScannedWaste._fromKeywords(String label) {
@@ -102,5 +128,9 @@ class ScannedWaste {
     return ScannedWaste._(label, display, match);
   }
 
-  String get categoryNameId => _categoryNamesId[category?.id] ?? 'tidak diketahui';
+  String get categoryNameId =>
+      rawCategory?.trim().toLowerCase() == 'residu' &&
+          category?.id == 'inorganic'
+      ? 'sampah residu (kompartemen anorganik; bukan jaminan dapat didaur ulang)'
+      : _categoryNamesId[category?.id] ?? 'tidak diketahui';
 }

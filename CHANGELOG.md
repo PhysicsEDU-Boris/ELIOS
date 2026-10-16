@@ -26,6 +26,10 @@ kept outside the repo.
   now preloads the image encoder. Decision 0012.
 
 ### Fixed
+- Three-bin routing explicitly sends nonhazardous Gemma `residu` to inorganic,
+  independent of item keywords. Raw model category is retained separately from
+  the destination; detector/model/item hazard evidence still forces B3. Residu
+  quiz context describes the compartment without claiming recyclability.
 - M2c: Gemma crops paired clean camera pixels, never the annotated preview.
   Prepared MaixCAM2 firmware encodes originals before drawing, sends clean
   images only on nonempty fresh inference frames, and reports frame IDs/hash.

@@ -56,7 +56,8 @@ Keep raw recognition category separate from the three-bin destination: use
 Gemma's category, apply hazardous veto to B3, otherwise route residu to inorganic.
 This physical routing does not imply that all residu is recyclable. Decision
 [0012](../decisions/0012-crop-identification-and-hazards.md) records the current
-resolver discrepancy: residu currently falls back to item keywords.
+resolver implementation: raw category is retained, hazard veto is applied first,
+and nonhazardous residu explicitly routes to inorganic independent of item keywords.
 
 Keep duplicate/conflicting questions (including bottle Q3/Q5 and earlier PET
 contradictions), Q5 retries/fallbacks, and Paper Q4 fallback as known follow-ups.

@@ -262,7 +262,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final detectorHazard = detectorLabel != null &&
         ScannedWaste.fromLabel(detectorLabel).category?.id == 'hazardous';
     final scan = ScannedWaste.fromLabel(item, material: result.material,
-        categoryHint: detectorHazard ? 'B3' : result.category);
+        categoryHint: result.category, hazardousEvidence: detectorHazard);
     diagnostics?.event('resolved', {'item': scan.displayName, 'category': scan.category?.id,
       'detectorHazard': detectorHazard, 'hazard': scan.category?.id == 'hazardous'});
     state = state.copyWith(scan: scan);

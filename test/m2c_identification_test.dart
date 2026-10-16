@@ -172,7 +172,7 @@ void main() {
           await _until(() => images.isNotEmpty);
           identify.complete(
             detectorHazard
-                ? '{"item":"kotak plastik","category":"anorganik"}'
+                ? '{"item":"kotak plastik","category":"residu"}'
                 : '{"item":"baterai","category":"B3"}',
           );
           await _until(
@@ -181,6 +181,9 @@ void main() {
                 WasteQuizPhase.confirmingHazard,
           );
           expect(c.read(wasteQuizProvider).scan?.category?.id, 'hazardous');
+          if (detectorHazard) {
+            expect(c.read(wasteQuizProvider).scan?.rawCategory, 'residu');
+          }
           expect(
             images,
             hasLength(1),

@@ -252,3 +252,23 @@ owner PDF pending, implementation deferred to the [quiz plan](../pipeline/README
 Duplicate/conflicting questions and Paper Q4 fallback remain separate follow-ups.
 Paper Q4's 8273 ms is measured generation duration, not a verified timeout cause;
 module context has not been shown to fix generation latency or fallback reliability.
+
+## Explicit residu routing implemented — 16 Oct 2026
+
+This supersedes the resolver discrepancy above. ScannedWaste.rawCategory retains
+Gemma's supplied category unchanged; category remains the resolved destination.
+The provider passes detector hazard separately as hazardousEvidence instead of
+replacing the raw category with B3. Hazard from the detector, Gemma B3 category,
+or existing item keywords wins first. Nonhazardous residu (case/space normalized
+for routing only) explicitly maps to inorganic, regardless of item keywords.
+Other recognized hints and unknown/missing-hint keyword fallback are unchanged.
+Existing JSONL identify_result.category and resolved.category remain distinct.
+For residu routed inorganic, categoryNameId describes residu and its compartment
+without implying recyclability; other category descriptions remain unchanged.
+
+Focused tests cover organic-sounding, inorganic-sounding and unknown residu
+items; raw-category retention; keyword/detector hazard veto; other hint behavior;
+and the provider's residu + E_Waste confirmation flow. Removing only the residu
+mapping makes the organic/unknown tests fail, then restoring it passes. No
+firmware, crop, cancellation, cooldown or module-ingestion change is included.
+Robot acceptance gaps and the planned module-grounded quiz remain open.
