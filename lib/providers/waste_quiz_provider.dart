@@ -14,7 +14,7 @@ import '../services/scan_diagnostics.dart';
 import '../services/websocket_service.dart';
 import 'app_preferences_provider.dart';
 
-enum WasteQuizPhase { idle, identifying, confirmingHazard, loadingQuestion, active, finished }
+enum WasteQuizPhase { idle, identifying, confirmingHazard, confirmingMismatch, loadingQuestion, active, finished }
 
 /// Where the waste-detection label driving the popup quiz comes from.
 /// MaixCAM2 is the real hardware path; phone camera is a debug-only
@@ -47,6 +47,9 @@ class WasteQuizUiState {
   /// Why a session ended early (e.g. the photo couldn't be identified).
   final String? notice;
 
+  /// The detector class Gemma disagreed with (confirmingMismatch only).
+  final String? mismatchDetector;
+
   const WasteQuizUiState({
     this.phase = WasteQuizPhase.idle,
     this.minimized = false,
@@ -65,6 +68,7 @@ class WasteQuizUiState {
     this.sendingChat = false,
     this.voiceOn = true,
     this.notice,
+    this.mismatchDetector,
   });
 
   int get totalQuestions => difficulty.questionCount;
@@ -93,6 +97,7 @@ class WasteQuizUiState {
     bool? sendingChat,
     bool? voiceOn,
     String? notice,
+    String? mismatchDetector,
   }) {
     return WasteQuizUiState(
       phase: phase ?? this.phase,
@@ -112,6 +117,7 @@ class WasteQuizUiState {
       sendingChat: sendingChat ?? this.sendingChat,
       voiceOn: voiceOn ?? this.voiceOn,
       notice: notice ?? this.notice,
+      mismatchDetector: mismatchDetector ?? this.mismatchDetector,
     );
   }
 }
@@ -125,6 +131,7 @@ const _sameLabelCooldown = Duration(seconds: 25);
 
 class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   ScanDiagnostics? _diagnostics;
+  ScannedWaste? _detectorChoice; // Gemma's item in the detector's bin, for the mismatch card
   String? _lastLabel;
   DateTime? _lastShownAt;
   int _generation = 0;
@@ -237,10 +244,12 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
               : 'Foto asli tanpa anotasi belum tersedia. Perbarui firmware kamera, lalu scan lagi.');
       return;
     }
-    await _identifyThenQuiz(bytes, generation, detectorLabel: detection.label, diagnostics: diagnostics);
+    await _identifyThenQuiz(bytes, generation, detectorLabel: detection.label,
+        detectorScore: detection.score, frameId: frame.frameId, diagnostics: diagnostics);
   }
 
-  Future<void> _identifyThenQuiz(Uint8List imageBytes, int generation, {String? detectorLabel, ScanDiagnostics? diagnostics}) async {
+  Future<void> _identifyThenQuiz(Uint8List imageBytes, int generation,
+      {String? detectorLabel, double? detectorScore, int? frameId, ScanDiagnostics? diagnostics}) async {
     final result = await GemmaQuizService.instance.identifyItem(imageBytes, diagnostics: diagnostics);
     diagnostics?.event('identify_result', {'item': result.item, 'material': result.material,
       'category': result.category, 'failure': result.failure, 'stale': generation != _generation});
@@ -273,12 +282,36 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       state = state.copyWith(phase: WasteQuizPhase.confirmingHazard);
       return;
     }
+    // Hazard wins above; any other detector/Gemma disagreement waits for the user.
+    if (detectorLabel != null && ScannedWaste.categoryMismatch(detectorLabel, result.category)) {
+      final detectorChoice = ScannedWaste.fromLabel(item, material: result.material,
+          categoryHint: ScannedWaste.detectorCategory(detectorLabel));
+      _detectorChoice = detectorChoice;
+      diagnostics?.event('category_mismatch', {'hardExample': true, 'frameId': frameId,
+        'detectorLabel': detectorLabel, 'detectorScore': detectorScore,
+        'gemmaItem': result.item, 'gemmaCategory': result.category,
+        'resolvedBin': scan.category?.id, 'detectorBin': detectorChoice.category?.id,
+        'identifyJpeg': '${diagnostics.id}-identify.jpg'});
+      state = state.copyWith(phase: WasteQuizPhase.confirmingMismatch, mismatchDetector: detectorLabel);
+      return;
+    }
     _loadQuestion(0);
   }
 
   void confirmHazard() {
     if (state.phase != WasteQuizPhase.confirmingHazard) return;
     _diagnostics?.event('hazard_continue');
+    _loadQuestion(0);
+  }
+
+  /// The user picks the bin after a detector/Gemma mismatch; only then the quiz runs.
+  void resolveMismatch({required bool useDetector}) {
+    final detectorChoice = _detectorChoice;
+    if (state.phase != WasteQuizPhase.confirmingMismatch || detectorChoice == null) return;
+    final scan = useDetector ? detectorChoice : state.scan!;
+    _diagnostics?.event('mismatch_choice', {'choice': useDetector ? 'detector' : 'gemma',
+      'resolvedBin': scan.category?.id});
+    state = state.copyWith(scan: scan);
     _loadQuestion(0);
   }
 
@@ -637,6 +670,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   void restore() => state = state.copyWith(minimized: false);
 
   void dismiss() {
+    if (state.phase == WasteQuizPhase.confirmingMismatch) {
+      _diagnostics?.event('mismatch_choice', {'choice': 'rescan', 'resolvedBin': null});
+    }
+    _detectorChoice = null;
     _diagnostics?.event('dismiss', {'phase': state.phase.name});
     _diagnostics = null;
     _generation++;

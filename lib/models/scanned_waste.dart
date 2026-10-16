@@ -66,6 +66,27 @@ class ScannedWaste {
     'hazardous': 'limbah B3 (berbahaya)',
   };
 
+  // Gemma's raw categories -> bin; residu has no compartment, so inorganic.
+  static const _rawCategoryBins = {
+    'organik': 'organic',
+    'anorganik': 'inorganic',
+    'residu': 'inorganic',
+    'b3': 'hazardous',
+  };
+  static const _binRawNames = {'organic': 'organik', 'inorganic': 'anorganik', 'hazardous': 'B3'};
+
+  /// The raw category a detector class implies ("organik", "anorganik",
+  /// "B3"), or null for an unknown class or the ignored hand.
+  static String? detectorCategory(String label) =>
+      _binRawNames[detectorLabels[label.trim()]?.$2];
+
+  /// The detector class and Gemma's raw category point to different bins
+  /// (residu counts as anorganik). Unknown detector classes never mismatch.
+  static bool categoryMismatch(String detectorLabel, String? gemmaCategory) {
+    final expected = detectorLabels[detectorLabel.trim()]?.$2;
+    return expected != null && expected != _rawCategoryBins[gemmaCategory?.toLowerCase().trim()];
+  }
+
   /// [categoryHint] is Gemma's own classification of a photo ("organik",
   /// "anorganik", "B3", "residu"); it wins over the keyword lookup.
   factory ScannedWaste.fromLabel(
@@ -74,13 +95,7 @@ class ScannedWaste {
     String? categoryHint,
     bool hazardousEvidence = false,
   }) {
-    final hinted = switch (categoryHint?.toLowerCase().trim()) {
-      'organik' => 'organic',
-      'anorganik' => 'inorganic',
-      'residu' => 'inorganic',
-      'b3' => 'hazardous',
-      _ => null,
-    };
+    final hinted = _rawCategoryBins[categoryHint?.toLowerCase().trim()];
     final base = ScannedWaste._fromKeywords(label);
     // Hazardous keywords (batteries, phones, e-waste) beat the model's guess:
     // a phone must go to B3 even if Gemma calls it "anorganik".

@@ -202,6 +202,73 @@ void main() {
       );
     }
 
+    group('detector vs Gemma category mismatch', () {
+      const cardboard = TrackedDetection(label: 'Cardboard', x: 40, y: 20, w: 40, h: 20, score: .81);
+      late List<String> lines;
+      setUp(() {
+        lines = [];
+        final original = debugPrint;
+        debugPrint = (message, {wrapWidth}) => lines.add(message ?? '');
+        addTearDown(() => debugPrint = original);
+      });
+      String logged(String event) =>
+          lines.firstWhere((l) => l.contains('"event":"$event"'), orElse: () => '');
+
+      Future<void> lockCardboard(String gemmaCategory) async {
+        quiz.onRobotLocked(_frame(), cardboard);
+        await _until(() => images.isNotEmpty);
+        identify.complete('{"item":"kardus","material":"kertas","category":"$gemmaCategory"}');
+      }
+
+      test('Cardboard + organik: card, no quiz until the user picks; hard example and choice logged', () async {
+        await lockCardboard('organik');
+        await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.confirmingMismatch);
+        await pumpEventQueue();
+        expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.confirmingMismatch);
+        expect(c.read(wasteQuizProvider).mismatchDetector, 'Cardboard');
+        expect(images, hasLength(1), reason: 'no question generation before a choice');
+        final hard = logged('category_mismatch');
+        for (final field in ['"hardExample":true', '"appCommit":', '"frameId":1', '"detectorLabel":"Cardboard"',
+            '"detectorScore":0.81', '"gemmaItem":"kardus"', '"gemmaCategory":"organik"',
+            '"resolvedBin":"organic"', '"detectorBin":"inorganic"', '-identify.jpg"']) {
+          expect(hard, contains(field));
+        }
+        quiz.resolveMismatch(useDetector: true);
+        expect(logged('mismatch_choice'), allOf(contains('"choice":"detector"'), contains('"resolvedBin":"inorganic"')));
+        expect(c.read(wasteQuizProvider).scan?.category?.id, 'inorganic');
+        await _until(() => images.length > 1);
+      });
+
+      for (final compatible in ['anorganik', 'residu']) {
+        test('Cardboard + $compatible: no card, straight to the quiz', () async {
+          await lockCardboard(compatible);
+          await _until(() => images.length > 1);
+          expect(c.read(wasteQuizProvider).phase, isNot(WasteQuizPhase.confirmingMismatch));
+          expect(c.read(wasteQuizProvider).scan?.category?.id, 'inorganic');
+          expect(logged('category_mismatch'), isEmpty);
+        });
+      }
+
+      test('E_Waste + anorganik still shows the hazard card, not the mismatch card', () async {
+        quiz.onRobotLocked(_frame(), const TrackedDetection(label: 'E_Waste', x: 40, y: 20, w: 40, h: 20));
+        await _until(() => images.isNotEmpty);
+        identify.complete('{"item":"laptop","category":"anorganik"}');
+        await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.confirmingHazard);
+        expect(logged('category_mismatch'), isEmpty);
+      });
+
+      test('Scan ulang on the mismatch card leaves no late quiz', () async {
+        await lockCardboard('organik');
+        await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.confirmingMismatch);
+        quiz.dismiss();
+        quiz.resolveMismatch(useDetector: false); // a late tap after closing does nothing
+        await pumpEventQueue();
+        expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.idle);
+        expect(images, hasLength(1));
+        expect(logged('mismatch_choice'), contains('"choice":"rescan"'));
+      });
+    });
+
     test('label-only hazardous scans also wait for confirmation', () {
       quiz.startForLabel('E_Waste');
       expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.confirmingHazard);

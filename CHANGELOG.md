@@ -11,6 +11,14 @@ kept outside the repo.
 
 ## [Unreleased]
 
+### Added
+- M2c detector-vs-Gemma category gate: when the detector class's bin differs
+  from Gemma's raw category (residu counts as anorganik), no quiz runs until the
+  user picks "Pakai detektor", "Pakai Gemma" or "Scan ulang". Hazard
+  confirmation still wins. Each mismatch is logged as a hard example
+  (`category_mismatch`, then `mismatch_choice`) with appCommit, frame, detector
+  class/score, raw Gemma item/category, bins and the identify JPEG name.
+
 ### Fixed
 - M2c cancel (16 Oct retest, scan 0): a close while the model is still loading
   no longer submits the photo (`submit_skipped` is logged instead). A call

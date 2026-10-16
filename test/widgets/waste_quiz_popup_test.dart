@@ -55,6 +55,8 @@ const _essayQuestion = GeneratedQuestion(
 final _states = <String, WasteQuizUiState>{
   'identifying': const WasteQuizUiState(phase: WasteQuizPhase.identifying),
   'hazard': WasteQuizUiState(phase: WasteQuizPhase.confirmingHazard, scan: ScannedWaste.fromLabel('E_Waste')),
+  'mismatch': WasteQuizUiState(phase: WasteQuizPhase.confirmingMismatch,
+      scan: ScannedWaste.fromLabel('kardus', categoryHint: 'organik'), mismatchDetector: 'Cardboard'),
   'loading': WasteQuizUiState(phase: WasteQuizPhase.loadingQuestion, scan: _scan),
   'mc-unanswered': WasteQuizUiState(
     phase: WasteQuizPhase.active,
