@@ -1,30 +1,32 @@
 # Handoff
 
-- Branch `feat/m2c-crop-identify`; app build c438e94. M2c INCOMPLETE; no push/merge.
-- Latest task implements explicit residu routing; preserve user Xcode scheme, Maixcam.txt,
+- Branch `feat/m2c-crop-identify`, local only (no push/merge). M2c INCOMPLETE.
+- Latest: da5621c cancel fix + build traceability. Rebuild with
+  `--dart-define=APP_COMMIT=$(git rev-parse --short HEAD)`; JSONL `appCommit` must match.
+- Preserve the user Xcode scheme, Maixcam.txt, firmware/maixcam2/ (uncommitted).
 - Corrected evidence: [M2c review](test-results/m2c-clean-image-review.md).
 
-## Verified clean-image results (16 Oct 2026)
+## 16 Oct 16:17 retest (build after e9a3b57) and da5621c fixes
 
-- Build LIVE_SCAN=true; launch 10:25:01 WIB, PID 8194. Ignored provenance:
-  `m2c-diagnostics/clean-deploy-provenance.json`. Bundle hash still matches.
-  Scan JSONLs lack app commit/PID; association relies on recorded launch.
-- Four exact JPEG/JSONL pairs in gitignored `m2c-diagnostics/`:
-  scan-1792124780829268-4 (11:26:20): dark phone -> baterai/anorganik -> B3;
-  scan-1792124818914637-5 (11:26:58): lit phone -> ponsel/anorganik -> B3;
-  scan-1792124904211888-6 (11:28:24): bottle -> botol plastik/anorganik;
-  scan-1792124980890907-7 (11:29:40): paper item -> kertas/residu -> inorganic.
-- All four exact inputs have NO synthetic masks/boxes/labels; object in crop
-  (bottle cap partly clipped); byte counts match vision_submit. All clean_image,
-  paired frame IDs 28/212/1174/2028, firmware hash matches local replacement:
-  bbb3595e8070d4fab421ce38d5a9becbca26f6bcc8c34be4d7e29ed5c2ab79e6.
-- Recording: Desktop/Screen Recording 2026-10-16 at 11.26.47.mov. S4 predates it.
-  S5 demonstrates Looking -> B3 -> Continue -> quiz despite Gemma anorganik.
-  S6 successful after cooldown/visible empty scene; no repeated identify per scan.
-- S5 identify 5302 ms; confirmation wait 3352 ms; Q1 generation 5110 ms;
-  total 13872 ms includes human wait. Full timing table in review.
-- Earlier contaminated inputs and 10:28–10:29 missing-clean failures stay separate.
-  No fallback to annotated pixels; cancellation/hazard/anti-spam rules unchanged.
+- PASS: close during Looking (no late popup, next scan ok); B3 Rescan (no quiz);
+  E_Waste veto over Gemma anorganik. TTS ok (owner). NOT TESTED: 60 s visible
+  hold; residu routing (no residu returned). FAIL: preview hidden under
+  Looking/B3/quiz sheets (design question for owner).
+- Gaps: laptop detected Cardboard -> Gemma kardus/organik -> organic bin
+  (veto needs detector E_Waste); scan 3 item named bottle, possibly a cup.
+- Fixed in da5621c: scan 0 vision_submit came 0.87 s after close. Now no submit
+  after a cancel (`submit_skipped`); running call's result discarded, slot busy
+  until it ends (cap 8 s); close logged `failure: cancelled`, no ASK FAILED.
+  Chat pre-empting a scan/prefetch now waits for that call to end.
+- Tests: analyzer clean; full suite 235 pass, 2 known stale splash failures.
+  Break-checked no-submit and slot-busy tests. Real-model
+  `integration_test/gemma_cancel_test.dart` NOT re-run.
+
+## Verified clean-image results (16 Oct 11:26, details in review)
+
+- Exact JPEG/JSONL pairs in gitignored `m2c-diagnostics/` (11:26 scans -4..-7;
+  16:17 scans scan-1792142261469202-0 to -4): no synthetic overlay, clean_image,
+  firmware sha bbb3595e…. Annotated pixels are never a fallback.
 
 ## Owner clarifications / resolver inspection
 
@@ -48,12 +50,7 @@
 
 ## Remaining acceptance / checks
 
-- Close during Looking: no late popup, then successful scan; explicit Rescan
-  with no late popup; continuous visible 60-second hold with one identify/quiz;
-  visibly moving preview during Looking/confirmation/quiz; owner TTS listening.
-- Re-arm evidence excludes covered-lens intervals. Throughput comparison pending.
-- Smallest next test: expose preview, cancel Looking, wait for late result,
-  clear/re-arm, then complete phone scan through B3 Continue while moving object.
-- Routing checks: focused 17 tests pass; break-check fails organic/unknown residu
-  without mapping, then restored. Analyzer clean; full suite 231 pass, 2 known
-  stale splash failures. Robot retest remains pending.
+- Rebuild at da5621c, then retest: close during Looking (expect no
+  vision_submit after dismiss), 60 s visible hold, residu item, hazard override.
+- Owner decision: should the preview stay visible during Looking/B3/quiz?
+- Detector-mislabel hazard gap (e-waste labelled Cardboard) needs a decision.
