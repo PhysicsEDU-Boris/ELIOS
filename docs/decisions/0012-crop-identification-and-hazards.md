@@ -2,6 +2,8 @@
 
 Date: 2026-10-15. Supersedes the label-only identification boundary in 0008.
 
+Status: Accepted (owner manual acceptance 16 Oct; hardware gaps listed in HANDOFF).
+
 ## Decision
 
 With `LIVE_SCAN=true`, a stabilizer lock passes its complete detection to
