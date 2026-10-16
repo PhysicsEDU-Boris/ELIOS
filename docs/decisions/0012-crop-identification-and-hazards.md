@@ -212,3 +212,43 @@ recording shows failures at 00:09 and 00:21, with a boxed preview at 00:18;
 Next: capture the actual running startup hash and same-endpoint packet keys,
 field types, byte counts and matching IDs (never base64 contents), then retest
 one isolated phone. Deployment and clean-input hardware acceptance remain open.
+
+## Owner clarification and clean-input acceptance evidence — 16 Oct 2026
+
+The [latest review](../test-results/m2c-clean-image-review.md) supersedes the
+pending clean-input evidence above: S4–S7 have annotation-free exact inputs,
+matching frame IDs and the intended firmware hash. Lit phone/bottle recognition
+and E_Waste confirmation before Continue/quiz are demonstrated. M2c remains
+incomplete: cancellation/recovery, explicit Rescan/no late popup, continuous
+visible 60-second hold, live preview during popups and owner TTS listening remain.
+At recording 01:24 and 01:32 the owner deliberately covered the lens; red/noisy
+imagery is NOT a firmware bug. Recovery occurred on uncovering. A clearer
+recording is planned; lens covering alone does not prove an empty scene.
+
+### Three-bin routing: intended policy versus inspected implementation
+
+Hardware has organik, anorganik and B3 compartments only. Intended order:
+use Gemma's category, apply B3 veto if any supported source raises hazard,
+otherwise route residu to inorganic because there is no residu compartment.
+Keep raw Gemma classification distinct from the resolved destination bin;
+residu routed to inorganic is not thereby recyclable. S7 kertas/residu ->
+Kertas/inorganic is an expected outcome, NOT a category-override failure.
+
+Inspection: WasteQuizNotifier._identifyThenQuiz applies detector hazard via
+categoryHint B3. ScannedWaste.fromLabel recognizes organik/anorganik/B3 and
+preserves hazardous item keywords. However, residu is not explicitly mapped:
+it falls through to _fromKeywords. S7 resolves inorganic through the kertas
+keyword, not a general residu routing rule. A residu item with organic keywords
+can resolve organic; one without recognized keywords can remain unclassified.
+This differs from the owner's general policy and is a documented follow-up,
+not authorization to change runtime behavior in this documentation task.
+The existing inorganic categoryNameId also says "dapat didaur ulang"; that
+wording must not be treated as a recyclability guarantee for the destination.
+Raw identify_result.category and resolved.category already remain separate in
+JSONL. No routing fallback, hazard veto or runtime code changed here.
+
+Future quizzes must be strictly grounded in the course module students learned;
+owner PDF pending, implementation deferred to the [quiz plan](../pipeline/README.md#module-grounded-quiz-plan-owner-requirement).
+Duplicate/conflicting questions and Paper Q4 fallback remain separate follow-ups.
+Paper Q4's 8273 ms is measured generation duration, not a verified timeout cause;
+module context has not been shown to fix generation latency or fallback reliability.

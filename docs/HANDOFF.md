@@ -1,58 +1,59 @@
 # Handoff
 
-- Branch `feat/m2c-crop-identify`; app build c438e94; no push/merge. M2c INCOMPLETE.
-- Existing Xcode scheme change and untracked Maixcam.txt remain excluded.
+- Branch `feat/m2c-crop-identify`; app build c438e94. M2c INCOMPLETE; no push/merge.
+- Latest task documentation only; preserve user Xcode scheme, Maixcam.txt,
+  firmware app.yaml and dist/ changes; none staged with documentation.
+- Corrected evidence: [M2c review](test-results/m2c-clean-image-review.md).
 
-## Latest hardware failure (16 Oct 2026)
+## Verified clean-image results (16 Oct 2026)
 
-- Rebuilt LIVE_SCAN app launched 10:25:01 WIB, PID 8194. Provenance:
-  ignored `m2c-diagnostics/clean-deploy-provenance.json`; build/output logs
-  `/private/tmp/m2c-clean-deploy-build.log`, `.stdout.log`, `.stderr.log`.
-- Owner reports deploying/checking firmware, but active hash NOT independently
-  verified. Backup `m2c-diagnostics/robot-backup/maiin.py` equals Maixcam.txt
-  (SHA-256 da57d135a004e399a4a4bb7a8c132209ce340fc3565856640d70bc2f5734a0cc).
-- Expected replacement hash: bbb3595e8070d4fab421ce38d5a9becbca26f6bcc8c34be4d7e29ed5c2ab79e6.
-- New JSONLs copied to ignored `m2c-diagnostics/`: scan-1792121308094220-0,
-  scan-1792121323937693-1, scan-1792121357069544-2, scan-1792121368294749-3.
-  Locks at 10:28:28/43 and 10:29:17/28 WIB: E_Waste/Plastic/E_Waste/Plastic.
-  All frameId/detectionFrameId/firmwareSha256 null, imageSource unavailable;
-  crop invalid in 0–3 ms; no identify_request or question generation.
-- First observed failure: transport-to-CapturedFrame lacks a usable clean pair.
-  Code trace implies legacy schema (no vision_protocol); malformed protocol 1
-  suppresses locks. Raw packets/active process hash needed to locate upstream cause.
-- Metadata-only probe of ws://192.168.4.1:8765 timed out; result saved as
-  `m2c-diagnostics/clean-failure-wire-probe.jsonl`. No payloads logged.
-- Recording Desktop/Screen Recording 2026-10-16 at 10.29.08.mov: warning at
-  00:09–15, preview visible 00:18, warning again 00:21. Overlay 10–12 fps;
-  preview continuity behind opaque popup and throughput regression NOT verified.
-- Uploaded red phone JPEG scan-1792119881048431-0 is 10:04:41 WIB, BEFORE
-  launch: baterai/anorganik -> hazardous; identify 5.614 s, question 4.550 s.
-  It cannot establish contamination in the new build's failed scans.
+- Build LIVE_SCAN=true; launch 10:25:01 WIB, PID 8194. Ignored provenance:
+  `m2c-diagnostics/clean-deploy-provenance.json`. Bundle hash still matches.
+  Scan JSONLs lack app commit/PID; association relies on recorded launch.
+- Four exact JPEG/JSONL pairs in gitignored `m2c-diagnostics/`:
+  scan-1792124780829268-4 (11:26:20): dark phone -> baterai/anorganik -> B3;
+  scan-1792124818914637-5 (11:26:58): lit phone -> ponsel/anorganik -> B3;
+  scan-1792124904211888-6 (11:28:24): bottle -> botol plastik/anorganik;
+  scan-1792124980890907-7 (11:29:40): paper item -> kertas/residu -> inorganic.
+- All four exact inputs have NO synthetic masks/boxes/labels; object in crop
+  (bottle cap partly clipped); byte counts match vision_submit. All clean_image,
+  paired frame IDs 28/212/1174/2028, firmware hash matches local replacement:
+  bbb3595e8070d4fab421ce38d5a9becbca26f6bcc8c34be4d7e29ed5c2ab79e6.
+- Recording: Desktop/Screen Recording 2026-10-16 at 11.26.47.mov. S4 predates it.
+  S5 demonstrates Looking -> B3 -> Continue -> quiz despite Gemma anorganik.
+  S6 successful after cooldown/visible empty scene; no repeated identify per scan.
+- S5 identify 5302 ms; confirmation wait 3352 ms; Q1 generation 5110 ms;
+  total 13872 ms includes human wait. Full timing table in review.
+- Earlier contaminated inputs and 10:28–10:29 missing-clean failures stay separate.
+  No fallback to annotated pixels; cancellation/hazard/anti-spam rules unchanged.
 
-## Clean path / prior evidence
+## Owner clarifications / resolver inspection
 
-- firmware/maixcam2/main.py encodes originals before masks/boxes/text. Fresh
-  clean_image/clean_detections share frame IDs; firmware hash accompanies frames.
-- Annotated preview retained; one extra JPEG per nonempty fresh inference frame.
-  Flutter rejects absent/mismatched clean data; never falls back to preview.
-  Hazard veto, cancellation, model slot and anti-spam thresholds unchanged.
-- Legacy firmware retains preview/controls, but LIVE_SCAN clean identify fails.
-- Prior 01:29–01:30 WIB sessions ...8943399297-0, ...8975920656-1, ...9028005351-2
-  prove red-mask/green-box contamination in old model inputs; all E_Waste -> B3.
-  Third: identify 5.844 s, confirmation wait 10.369 s, question 5.562 s;
-  total 21.820 s includes human wait. Accuracy effect remains unestablished.
-- Actual diagnostics: /Users/macbookairm12020/Library/Containers/E798601C-A67E-46BF-AB3D-AE1A58572F44/Data/Library/Application Support/com.boris.elio/m2c-diagnostics/
+- 01:24/01:32 red/noisy preview was intentional lens covering, NOT a firmware
+  bug; recovered on uncovering. Owner will visibly re-record the action.
+  Covering alone does not establish a qualifying empty-detector-scene interval.
+- Three bins only: organik, anorganik, B3. Intended: Gemma category, hazardous
+  veto from supported sources, then residu -> inorganic. This is destination
+  routing, not a claim that residu is recyclable. S7 outcome is expected.
+- Code discrepancy: ScannedWaste.fromLabel ignores residu hint and uses item
+  keywords; kertas resolves inorganic, but organic/unknown items may not.
+  Provider detector veto and hazardous item-keyword veto are present. Existing
+  inorganic display text implies recyclability. Documented; runtime unchanged.
+- Raw identify_result.category and resolved.category remain distinct in JSONL.
+- Future quiz must strictly use taught course-module content; owner PDF pending.
+  [Quiz plan](pipeline/README.md#module-grounded-quiz-plan-owner-requirement):
+  PLANNED, not implemented; external Notion plan not synchronized here.
+- Duplicate/conflicting quiz questions and Paper Q4 fallback remain follow-ups.
+  Q4 measured 8273 ms generation; timeout cause NOT established. Module context
+  is not proven to fix latency/fallback reliability. Stdout gap stays separate.
 
-## Next / validation
+## Remaining acceptance / checks
 
-- Connect Mac to ELIOS Wi-Fi, keep preview running; capture active MaixVision
-  startup hash and rerun metadata-only probe. Compare field names/types, lengths,
-  protocol, IDs and hash before changing code; never print image base64.
-- Then one phone scan: exact saved JPEG clean, object in crop, matching IDs/hash,
-  E_Waste confirmation; Continue -> quiz. Bottle and moving segmented preview next.
-- Still pending: Rescan, close during Looking/no late popup + recovery, 15 s plus
-  >=2 s empty re-arm, 60 s hold, throughput, TTS separately with owner.
-- c438e94 checks: analyzer clean, 226 tests pass / 2 known stale splash failures;
-  firmware test and two break-checks passed. Latest rerun: 16 focused Flutter tests
-  and firmware test pass; diff check clean. No runtime code change.
-- Separate follow-ups: stdout scan-log gap, PET contradiction, Q5 fallback.
+- Close during Looking: no late popup, then successful scan; explicit Rescan
+  with no late popup; continuous visible 60-second hold with one identify/quiz;
+  visibly moving preview during Looking/confirmation/quiz; owner TTS listening.
+- Re-arm evidence excludes covered-lens intervals. Throughput comparison pending.
+- Smallest next test: expose preview, cancel Looking, wait for late result,
+  clear/re-arm, then complete phone scan through B3 Continue while moving object.
+- Prior checks: analyzer clean; 226 pass / 2 known stale splash failures;
+  focused rerun 16 Flutter tests + firmware test pass. This task: doc checks only.

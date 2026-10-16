@@ -39,3 +39,28 @@ New quiz overlay designs: nodes
 
 Milestone rows are copied from the Notion "Suggested order" table. If the
 plan changes, update Notion first, then this file.
+
+## Module-grounded quiz plan (owner requirement)
+
+Status: PLANNED, not implemented; owner will supply the course module PDF
+(bahan ajar perkuliahan). Future Gemma quizzes must be based strictly on that
+module and material students have learned, rather than generic recycling trivia.
+Applies to the quiz content work associated with chart 5/M3; existing milestone
+ordering is unchanged. This records the owner requirement locally; the linked
+Notion plan has not been synchronized in this documentation-only change.
+
+Once the PDF arrives, review the taught scope with the owner and plan how
+questions, answer keys and explanations will be grounded and checked against
+it. Do not implement ingestion or change runtime prompts before that input.
+Keep raw recognition category separate from the three-bin destination: use
+Gemma's category, apply hazardous veto to B3, otherwise route residu to inorganic.
+This physical routing does not imply that all residu is recyclable. Decision
+[0012](../decisions/0012-crop-identification-and-hazards.md) records the current
+resolver discrepancy: residu currently falls back to item keywords.
+
+Keep duplicate/conflicting questions (including bottle Q3/Q5 and earlier PET
+contradictions), Q5 retries/fallbacks, and Paper Q4 fallback as known follow-ups.
+Paper Q4 measured 8273 ms generation and displayed a fallback; timeout is not a
+verified cause. Course context is not yet proven to fix generation latency or
+fallback reliability; validate content grounding and reliability separately.
+See the [corrected M2c review](../test-results/m2c-clean-image-review.md).
