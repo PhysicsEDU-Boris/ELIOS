@@ -21,6 +21,11 @@ CapturedFrame _frame({Uint8List? bytes, int width = 80}) => CapturedFrame(
   bytes:
       bytes ??
       Uint8List.fromList(img.encodePng(img.Image(width: 40, height: 20))),
+  cleanBytes:
+      bytes ??
+      Uint8List.fromList(img.encodePng(img.Image(width: 40, height: 20))),
+  frameId: 1,
+  detectionFrameId: 1,
   width: width,
   height: 40,
   timestamp: DateTime(2026),
@@ -244,6 +249,27 @@ void main() {
           () => c.read(wasteQuizProvider).phase == WasteQuizPhase.finished,
         );
         expect(c.read(wasteQuizProvider).notice, isNotNull);
+        expect(images, isEmpty);
+      },
+    );
+
+    test(
+      'legacy annotated robot frame stops with firmware notice and no Gemma request',
+      () async {
+        final frame = _frame();
+        quiz.onRobotLocked(
+          CapturedFrame(
+            bytes: frame.bytes,
+            width: frame.width,
+            height: frame.height,
+            timestamp: frame.timestamp,
+          ),
+          _box,
+        );
+        await _until(
+          () => c.read(wasteQuizProvider).phase == WasteQuizPhase.finished,
+        );
+        expect(c.read(wasteQuizProvider).notice, contains('firmware'));
         expect(images, isEmpty);
       },
     );

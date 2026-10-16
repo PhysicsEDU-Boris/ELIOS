@@ -125,3 +125,66 @@ re-arms; 60 s hold has only one identification/quiz; visibly moving preview
 during identify, confirmation and quiz. TTS requires a separate audio check.
 PET/anorganik contradictory premise and Q5's 7.048 s wait/fallback are separate
 quiz follow-ups; neither cause was established and neither is rewritten here.
+
+## Clean original pixels — 2026-10-16 (supersedes annotated crop input)
+
+The copied exact Gemma inputs from the rebuilt app prove contamination:
+`scan-1792088943399297-0`, `scan-1792088975920656-1`, and
+`scan-1792089028005351-2` contain red masks and green box edges. All three
+locked E_Waste and retained B3 despite Gemma returning ponsel/anorganik,
+limbah cair/residu, and perangkat elektronik/scanner/anorganik respectively.
+Correct recognition on one annotated input means the accuracy effect is not
+established. These 01:29–01:30 WIB scans are distinct from the old 00:31 scan.
+
+The complete deployable firmware is `firmware/maixcam2/main.py`, derived from
+untracked Maixcam.txt; deployment and hash verification instructions accompany
+it. It encodes a clean JPEG before any draw_seg_mask/draw_rect/draw_string,
+then draws and encodes the existing preview. No attempt is made to remove
+colors from already annotated pixels. Original appearance/background remain;
+Flutter applies the same center-box crop geometry to the clean original.
+
+Protocol 1 carries frame_id and detection_frame_id in the same message as
+clean_image/clean_detections. Only current inference results with misses == 0
+are eligible; cached or grace-held boxes remain preview-only. Clean JPEGs are
+encoded/sent only on nonempty fresh inference frames, never on intervening
+preview, empty or held-only frames. This keeps the established mask renderer
+and costs one additional JPEG on those inference frames, shared across clients.
+Legacy clients ignore the extra fields, but receive their bandwidth overhead.
+A demand-driven image request is deferred unless hardware throughput warrants
+that extra request/response and capture-retention complexity.
+
+CapturedFrame retains preview bytes separately. Its transport factory validates
+protocol, same-message dimensions and matching nonnegative integer IDs, parses
+fresh detections and never caches a clean image from an earlier frame. Invalid
+metadata/unsupported protocols preserve preview and suppress identification;
+missing clean pixels at a lock show a firmware-update notice, not a Gemma call.
+Preview-only messages have null scan detections; only a successful inference's
+empty list means an empty scene. Old firmware retains preview/control and
+label-only mode, but LIVE_SCAN identification requires clean-image firmware.
+Device-photo identification is unchanged. Old apps still use annotated input.
+
+The crop worker rejects absent/mismatched clean pixels and keeps generation
+cancellation guards. E_Waste veto, hazard actions, single model slot, preview
+subscriptions, score thresholds and anti-spam timers are unchanged. Lock
+sampling is now at inference cadence; its hardware latency/FPS must be checked.
+Firmware is responsible for original orientation and dimensions; receipt age
+still cannot measure camera capture age. Frames have no hardware clock time.
+A firmware SHA-256 is printed at startup, returned by ping, carried in frames
+and logged at lock for subsequent deployment verification.
+
+Timing evidence for session ...5351-2: identify 5.844 s, confirmation wait
+10.369 s (resolved to Continue), question generation 5.562 s, question first
+token 0.728 s, total lock-to-question 21.820 s. Total includes human wait and
+must not be reported as generation latency. Crop took 41 ms.
+
+Focused tests cover clean-versus-annotated pixels, image/frame pairing,
+legacy rejection, malformed metadata, fresh-empty versus preview-only frames,
+and the actual firmware push function's encode/draw order, cadence and held
+box filtering. Break-checks restore annotated crop selection and move clean
+encoding after drawing; both must fail, then be restored. Existing hazard,
+cancellation and anti-spam tests remain required.
+
+Deployment, exact clean robot-input JPEGs, annotated moving preview, isolated
+phone/bottle accuracy and B3 disagreement are still owner hardware gates.
+The stdout logging gap, PET contradiction and Q5 fallback are separate
+follow-ups. No recognition prompt/quiz rewrite or threshold tuning is included.

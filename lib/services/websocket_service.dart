@@ -375,14 +375,7 @@ class WebSocketService {
         currentDetections = <Detection>[];
         for (final item in raw) {
           if (item is! Map<String, dynamic>) continue;
-          currentDetections.add(Detection(
-            x: (item['x'] as num?)?.toDouble() ?? 0.0,
-            y: (item['y'] as num?)?.toDouble() ?? 0.0,
-            w: (item['w'] as num?)?.toDouble() ?? 0.0,
-            h: (item['h'] as num?)?.toDouble() ?? 0.0,
-            label: item['label'] as String? ?? '',
-            score: (item['score'] as num?)?.toDouble() ?? 0.0,
-          ));
+          currentDetections.add(Detection.fromJson(item));
         }
         _detectionsController.add(currentDetections);
       }
@@ -398,12 +391,11 @@ class WebSocketService {
       if (frameData != null) {
         _recordFrame(frameData);
         _framesController.add(frameData);
-        _capturedFramesController.add(CapturedFrame(
-          bytes: frameData,
+        _capturedFramesController.add(CapturedFrame.fromRobotMessage(decoded,
+          previewBytes: frameData,
           width: _imageWidth.toInt(),
           height: _imageHeight.toInt(),
-          timestamp: DateTime.now(),
-          detections: currentDetections,
+          previewDetections: currentDetections,
         ));
       }
 
@@ -526,6 +518,15 @@ class Detection {
     this.label = '',
     this.score = 0.0,
   });
+
+  factory Detection.fromJson(Map<String, dynamic> item) => Detection(
+    x: (item['x'] as num?)?.toDouble() ?? 0.0,
+    y: (item['y'] as num?)?.toDouble() ?? 0.0,
+    w: (item['w'] as num?)?.toDouble() ?? 0.0,
+    h: (item['h'] as num?)?.toDouble() ?? 0.0,
+    label: item['label'] as String? ?? '',
+    score: (item['score'] as num?)?.toDouble() ?? 0.0,
+  );
 
   @override
   String toString() =>

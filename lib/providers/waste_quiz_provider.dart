@@ -215,6 +215,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       'frameReceivedAt': frame.timestamp.toUtc().toIso8601String(),
       'frameAgeAtLockMs': DateTime.now().difference(frame.timestamp).inMilliseconds,
       'captureTimestamp': null, 'detectionTimestamp': null,
+      'frameId': frame.frameId, 'detectionFrameId': frame.detectionFrameId,
+      'firmwareSha256': frame.firmwareSha256,
+      'imageSource': frame.hasPairedCleanImage ? 'clean_image' : 'unavailable',
       'frameWidth': frame.width, 'frameHeight': frame.height,
       'boxCenterXYWH': [detection.x, detection.y, detection.w, detection.h]});
     unawaited(_cropThenIdentify(frame, detection, generation, diagnostics));
@@ -229,7 +232,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (generation != _generation) return;
     if (bytes == null) {
       state = state.copyWith(phase: WasteQuizPhase.finished,
-          notice: 'Benda belum bisa dipotong dari foto. Coba scan lagi.');
+          notice: frame.hasPairedCleanImage
+              ? 'Benda belum bisa dipotong dari foto. Coba scan lagi.'
+              : 'Foto asli tanpa anotasi belum tersedia. Perbarui firmware kamera, lalu scan lagi.');
       return;
     }
     await _identifyThenQuiz(bytes, generation, detectorLabel: detection.label, diagnostics: diagnostics);

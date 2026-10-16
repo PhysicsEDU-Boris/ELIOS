@@ -16,7 +16,8 @@ Uint8List? cropDetection((CapturedFrame, TrackedDetection) input) {
 ) {
   final (frame, box) = input;
   final details = <String, Object?>{};
-  if (frame.width <= 0 ||
+  if (!frame.hasPairedCleanImage ||
+      frame.width <= 0 ||
       frame.height <= 0 ||
       ![box.x, box.y, box.w, box.h].every((v) => v.isFinite) ||
       box.w <= 0 ||
@@ -24,7 +25,7 @@ Uint8List? cropDetection((CapturedFrame, TrackedDetection) input) {
     return (bytes: null, details: details);
   }
   try {
-    final image = img.decodeImage(frame.bytes);
+    final image = img.decodeImage(frame.cleanBytes!);
     if (image == null) return (bytes: null, details: details);
     details.addAll({
       'decodedWidth': image.width,

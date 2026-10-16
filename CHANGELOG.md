@@ -26,6 +26,12 @@ kept outside the repo.
   now preloads the image encoder. Decision 0012.
 
 ### Fixed
+- M2c: Gemma crops paired clean camera pixels, never the annotated preview.
+  Prepared MaixCAM2 firmware encodes originals before drawing, sends clean
+  images only on nonempty fresh inference frames, and reports frame IDs/hash.
+  Preview and controls remain compatible with old firmware; clean identification
+  requires the update and otherwise shows a firmware notice. Not yet deployed
+  or hardware-validated. See decision 0012 and firmware/maixcam2/README.md.
 - M2b part 3 (PR #16 robot-test follow-up): tapping "Soal berikutnya" or
   skip no longer lets a still-playing voice (an answer verdict, essay
   grading, or chat reply) keep talking over the next question — both now

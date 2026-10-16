@@ -32,6 +32,9 @@ void main() {
       );
       final frame = CapturedFrame(
         bytes: Uint8List.fromList(img.encodePng(source)),
+        cleanBytes: Uint8List.fromList(img.encodePng(source)),
+        frameId: 1,
+        detectionFrameId: 1,
         width: 160,
         height: 80,
         timestamp: DateTime(2026),
