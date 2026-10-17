@@ -12,6 +12,12 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- M3.2 course module chunks: `scripts/extract_module.py` (pypdf, no network)
+  turns the module PDF into 66 traceable chunks in
+  `assets/module/module_chunks.json` (sub-chapters, summaries, Q&A, glossary,
+  sources; PDF page, printed page, verbatim text). `assets/module/label_to_chunks.json`
+  maps the 9 detector classes to bin, chunks, coverage and evidence. Bundled,
+  not yet used by the quiz (decision 0014).
 - M3.1 real-model quiz temperature test
   (`integration_test/quiz_temperature_test.dart`): 5 fixed prompts at 0.9 /
   0.4 / 0.3, logs valid JSON, option count, one correct key, duplicates, empty
