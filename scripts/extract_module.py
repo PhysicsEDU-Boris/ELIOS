@@ -36,6 +36,11 @@ SOURCE_QUALITY = {
             'note': 'All 4.6 sources come from or cover Tetra Pak; the module says no independent source exists yet.'},
 }
 
+# Tables rebuilt as one sentence per row (decision 0017): chunk -> (PDF page, header's
+# first cell). pypdf's plain text loses cell borders; its positional visitor keeps them.
+ROW_TABLES = {'1.6': (8, 'Kelompok'), '2.6': (13, 'Benda'), '2.7': (14, 'Zat'), '2.9': (15, 'Tingkat'),
+              '4.7': (22, 'Sampah B3')}
+
 HEADER_TITLE = 'Modul Pendidikan Fisika Lingkungan –'
 HEADER_SUB = 'UNJ · Media ELIO'
 HALAMAN = re.compile(r'Halaman (\d+)')
@@ -73,6 +78,50 @@ def chapter_titles(pages):
         if m:
             titles[int(m[1])] = line
     return titles
+
+
+def table_rows(reader, page, first_header_cell):
+    """[[cell, ...], ...] for the table whose header starts with [first_header_cell]; row 0 is the header.
+
+    Text runs come cell by cell in reading order, so consecutive runs at the same x
+    form one cell, and returning to the first column starts a row. The table ends at
+    the first run outside the header's columns. Only a cell's first line has an absolute
+    y, and every cell of a row must share it, or the layout is not what we assume.
+    """
+    runs = []
+
+    def visit(text, cm, tm, font, size):
+        t = normalize(text).replace('\n', '').strip()
+        if t:
+            runs.append((round(tm[4] * cm[0] + cm[4], 1), round(tm[5] * cm[3] + cm[5], 1), t))
+
+    reader.pages[page - 1].extract_text(visitor_text=visit)
+    start = next(i for i, r in enumerate(runs) if r[2] == first_header_cell)
+    columns = [x for x, y, _ in runs[start:] if y == runs[start][1]]
+    cells = []
+    for x, y, t in runs[start:]:
+        if x not in columns:
+            break
+        if cells and cells[-1][0] == x:
+            cells[-1][2].append(t)
+        else:
+            cells.append([x, y, [t]])
+    rows = []
+    for x, y, lines in cells:
+        if x == columns[0]:
+            rows.append([])
+        rows[-1].append((y, ' '.join(lines)))
+    for n, row in enumerate(rows):
+        if len(row) != len(columns) or len({y for y, _ in row}) != 1:
+            sys.exit(f'p.{page} table {first_header_cell!r} row {n}: cells do not line up: {row}')
+    return [[cell for _, cell in row] for row in rows]
+
+
+def row_sentences(rows):
+    """'<first cell> — <header>: <cell> — ...' per data row, cells verbatim."""
+    header = rows[0]
+    return [' — '.join([row[0]] + [f'{h}: {c.rstrip(".")}' for h, c in zip(header[1:], row[1:])]) + '.'
+            for row in rows[1:]]
 
 
 def build(pdf=DEFAULT_PDF):
@@ -149,6 +198,8 @@ def build(pdf=DEFAULT_PDF):
         c['words'] = len(text.split())
         if c['id'] in SOURCE_QUALITY:
             c['sourceQuality'] = SOURCE_QUALITY[c['id']]
+        if c['id'] in ROW_TABLES:
+            c['rows'] = row_sentences(table_rows(reader, *ROW_TABLES[c['id']]))
         out.append(c)
     return {
         'source': 'docs/module/Modul_Sampah_B3_Daur_Ulang_ELIO.pdf',

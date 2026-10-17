@@ -68,7 +68,12 @@
       "printedPage": 8,
       "pdfPageEnd": 8,
       "text": "1.6 Tiga kelompok besar: organik, non-organik, dan B3\nPemilahan di sumber yang baik memakai tiga kelompok, bukan dua. Selain organik dan\nnon-organik, ada kelompok ketiga yaitu sampah B3 (misalnya baterai, lampu neon, aerosol, obat\nkedaluwarsa, dan elektronik rusak) yang tidak boleh bercampur dengan sampah biasa. Sebagian\nbenda non-organik (logam, kaca) sebenarnya berpindah ke kelompok B3 bila mengandung bahan\nberbahaya.\nKelompok\nCiri utama\nContoh\nNasib yang dianjurkan\nOrganik\nBerasal dari makhluk hidup,\ndapat terurai\nSisa makanan, daun\nKompos, biogas,\nvermikompos\nNon-organik\n(anorganik)\nSintetis atau mineral, tidak\nmudah terurai\nBotol plastik, kaleng,\nkaca\nReduce, reuse, recycle;\nbank sampah\nB3\nMengandung bahan\nberbahaya dan beracun,\nmudah meledak, menyala,\nkorosif, dan sebagainya\nBaterai, lampu neon,\naerosol, aki, obat\nkedaluwarsa\nDipisah, wadah tertutup,\ndisetor ke fasilitas\npengelola B3",
-      "words": 123
+      "words": 123,
+      "rows": [
+        "Organik — Ciri utama: Berasal dari makhluk hidup, dapat terurai — Contoh: Sisa makanan, daun — Nasib yang dianjurkan: Kompos, biogas, vermikompos.",
+        "Non-organik (anorganik) — Ciri utama: Sintetis atau mineral, tidak mudah terurai — Contoh: Botol plastik, kaleng, kaca — Nasib yang dianjurkan: Reduce, reuse, recycle; bank sampah.",
+        "B3 — Ciri utama: Mengandung bahan berbahaya dan beracun, mudah meledak, menyala, korosif, dan sebagainya — Contoh: Baterai, lampu neon, aerosol, aki, obat kedaluwarsa — Nasib yang dianjurkan: Dipisah, wadah tertutup, disetor ke fasilitas pengelola B3."
+      ]
     },
     {
       "id": "1.summary",
@@ -156,7 +161,19 @@
       "printedPage": 13,
       "pdfPageEnd": 13,
       "text": "2.6 Contoh sampah B3 rumah tangga\nBenda\nZat atau bahaya utama\nKarakteristik\nterkait\nPenanganan di rumah\nBaterai bekas\n(alkaline, Ni-Cd,\nlitium)\nLogam berat (mis. kadmium\npada Ni-Cd), elektrolit; baterai\nlitium dapat terbakar jika\nrusak atau korslet.\nBeracun, korosif,\nmudah menyala\nKumpulkan dalam wadah\nkering tertutup; tutup kutub\nbaterai litium dengan selotip;\njangan dibakar atau dibongkar.\nLampu TL, neon,\ndan CFL\nUap merkuri dalam jumlah\nkecil (beberapa miligram per\nlampu) dan kaca pecah.\nBeracun\nSimpan utuh dalam kemasan\nasli atau kardus; jangan\ndibuang bersama sampah\nbiasa.\nKaleng aerosol\n(semprotan, cat\nsemprot)\nGas bertekanan dan pelarut\nyang mudah menyala.\nMudah meledak\ndan mudah\nmenyala\nJauhkan dari panas; jangan\nditusuk atau dibakar; kaleng\nyang belum kosong tetap\ndiperlakukan B3.\nAki kendaraan\nbekas\nTimbal dan asam sulfat.\nBeracun, korosif\nSerahkan ke bengkel atau\npengepul resmi; jangan\ndibongkar.\nElektronik rusak\n(e-waste): ponsel,\ncharger, papan\nsirkuit, TV\nTimbal, merkuri, kadmium,\nbahan penghambat api,\nbaterai di dalamnya.\nBeracun\nSerahkan ke titik pengumpulan\ne-waste atau program\ntake-back produsen.\nPembersih kimia\ndan pemutih\npekat, penghilang\nkarat\nAsam atau basa kuat; klorin.\nKorosif, beracun\nSimpan dalam wadah asli\nbertutup; jangan dicampur\ndengan produk lain (dapat\nmelepas gas beracun).\nPestisida dan\ninsektisida\nkedaluwarsa\nZat racun aktif.\nBeracun\nWadah asli tertutup; serahkan\nke fasilitas pengumpul.\nObat dan bahan\nkimia\nkedaluwarsa\nZat aktif farmasi atau kimia.\nLimbah B3 (tidak\notomatis infeksius)\nJangan dibuang ke saluran air;\nserahkan ke apotek,\npuskesmas, atau program\npengumpulan bila tersedia.\nCat, thinner, dan\noli bekas\nPelarut organik, logam berat\npada cat tertentu.\nMudah menyala,\nberacun\nWadah logam atau plastik\ntertutup rapat; jauhkan dari\napi.\nTermometer\nmerkuri,\ntensimeter\nmerkuri\nMerkuri cair.\nBeracun\nJangan disapu atau divakum\nbila pecah; lihat langkah di 2.8.\nSumber: ITS News (contoh limbah B3 rumah tangga); detik.com (karakteristik); penjelasan teknis ringkas oleh\npenyusun modul. Jumlah merkuri per lampu bervariasi menurut produk.",
-      "words": 296
+      "words": 296,
+      "rows": [
+        "Baterai bekas (alkaline, Ni-Cd, litium) — Zat atau bahaya utama: Logam berat (mis. kadmium pada Ni-Cd), elektrolit; baterai litium dapat terbakar jika rusak atau korslet — Karakteristik terkait: Beracun, korosif, mudah menyala — Penanganan di rumah: Kumpulkan dalam wadah kering tertutup; tutup kutub baterai litium dengan selotip; jangan dibakar atau dibongkar.",
+        "Lampu TL, neon, dan CFL — Zat atau bahaya utama: Uap merkuri dalam jumlah kecil (beberapa miligram per lampu) dan kaca pecah — Karakteristik terkait: Beracun — Penanganan di rumah: Simpan utuh dalam kemasan asli atau kardus; jangan dibuang bersama sampah biasa.",
+        "Kaleng aerosol (semprotan, cat semprot) — Zat atau bahaya utama: Gas bertekanan dan pelarut yang mudah menyala — Karakteristik terkait: Mudah meledak dan mudah menyala — Penanganan di rumah: Jauhkan dari panas; jangan ditusuk atau dibakar; kaleng yang belum kosong tetap diperlakukan B3.",
+        "Aki kendaraan bekas — Zat atau bahaya utama: Timbal dan asam sulfat — Karakteristik terkait: Beracun, korosif — Penanganan di rumah: Serahkan ke bengkel atau pengepul resmi; jangan dibongkar.",
+        "Elektronik rusak (e-waste): ponsel, charger, papan sirkuit, TV — Zat atau bahaya utama: Timbal, merkuri, kadmium, bahan penghambat api, baterai di dalamnya — Karakteristik terkait: Beracun — Penanganan di rumah: Serahkan ke titik pengumpulan e-waste atau program take-back produsen.",
+        "Pembersih kimia dan pemutih pekat, penghilang karat — Zat atau bahaya utama: Asam atau basa kuat; klorin — Karakteristik terkait: Korosif, beracun — Penanganan di rumah: Simpan dalam wadah asli bertutup; jangan dicampur dengan produk lain (dapat melepas gas beracun).",
+        "Pestisida dan insektisida kedaluwarsa — Zat atau bahaya utama: Zat racun aktif — Karakteristik terkait: Beracun — Penanganan di rumah: Wadah asli tertutup; serahkan ke fasilitas pengumpul.",
+        "Obat dan bahan kimia kedaluwarsa — Zat atau bahaya utama: Zat aktif farmasi atau kimia — Karakteristik terkait: Limbah B3 (tidak otomatis infeksius) — Penanganan di rumah: Jangan dibuang ke saluran air; serahkan ke apotek, puskesmas, atau program pengumpulan bila tersedia.",
+        "Cat, thinner, dan oli bekas — Zat atau bahaya utama: Pelarut organik, logam berat pada cat tertentu — Karakteristik terkait: Mudah menyala, beracun — Penanganan di rumah: Wadah logam atau plastik tertutup rapat; jauhkan dari api.",
+        "Termometer merkuri, tensimeter merkuri — Zat atau bahaya utama: Merkuri cair — Karakteristik terkait: Beracun — Penanganan di rumah: Jangan disapu atau divakum bila pecah; lihat langkah di 2.8."
+      ]
     },
     {
       "id": "2.7",
@@ -167,7 +184,15 @@
       "printedPage": 14,
       "pdfPageEnd": 14,
       "text": "2.7 Bahaya dan dampak B3\nZat\nSumber umum\nDampak utama pada manusia dan lingkungan\nMerkuri (Hg)\nLampu TL/CFL, termometer,\ntensimeter lama, beberapa\nbaterai kancing lama\nMerusak sistem saraf; dapat terakumulasi di rantai\nmakanan perairan dalam bentuk metilmerkuri.\nTimbal (Pb)\nAki, solder papan sirkuit, cat\nlama\nMerusak sistem saraf, terutama berbahaya bagi\nanak-anak; mengganggu darah dan ginjal.\nKadmium (Cd)\nBaterai Ni-Cd, pigmen\nMerusak ginjal dan tulang; bersifat karsinogen\n(pemicu kanker).\nAsam dan basa\nkuat\nPembersih, cairan aki\nLuka bakar kimia pada kulit dan mata; merusak\nlogam dan beton.\nPelarut organik\nThinner, cat, pembersih\nMudah terbakar; uapnya mengganggu saraf dan\npernapasan.\nLitium (baterai\nLi-ion)\nPonsel, power bank, perangkat\nelektronik\nBaterai rusak atau tertekan dapat terbakar (thermal\nrunaway); sering memicu kebakaran di truk sampah\ndan TPA.\nJalur masuk ke lingkungan\n• B3 yang terbuang bersama sampah biasa menumpuk di TPA, lalu lindi (cairan rembesan)\nmembawa logam berat ke tanah dan air tanah.\n• Pembakaran terbuka sampah bercampur B3 melepas asap beracun, logam berat, dan dioksin ke\nudara.\n• Zat seperti merkuri dan timbal terakumulasi di tubuh makhluk hidup dan terbiomagnifikasi\n(konsentrasi naik di setiap tingkat rantai makanan).\n• Fasilitas pengolah limbah B3 di Indonesia masih terbatas dan umumnya melayani industri,\nsehingga limbah B3 rumah tangga sering tidak punya jalur resmi (ITS News).",
-      "words": 209
+      "words": 209,
+      "rows": [
+        "Merkuri (Hg) — Sumber umum: Lampu TL/CFL, termometer, tensimeter lama, beberapa baterai kancing lama — Dampak utama pada manusia dan lingkungan: Merusak sistem saraf; dapat terakumulasi di rantai makanan perairan dalam bentuk metilmerkuri.",
+        "Timbal (Pb) — Sumber umum: Aki, solder papan sirkuit, cat lama — Dampak utama pada manusia dan lingkungan: Merusak sistem saraf, terutama berbahaya bagi anak-anak; mengganggu darah dan ginjal.",
+        "Kadmium (Cd) — Sumber umum: Baterai Ni-Cd, pigmen — Dampak utama pada manusia dan lingkungan: Merusak ginjal dan tulang; bersifat karsinogen (pemicu kanker).",
+        "Asam dan basa kuat — Sumber umum: Pembersih, cairan aki — Dampak utama pada manusia dan lingkungan: Luka bakar kimia pada kulit dan mata; merusak logam dan beton.",
+        "Pelarut organik — Sumber umum: Thinner, cat, pembersih — Dampak utama pada manusia dan lingkungan: Mudah terbakar; uapnya mengganggu saraf dan pernapasan.",
+        "Litium (baterai Li-ion) — Sumber umum: Ponsel, power bank, perangkat elektronik — Dampak utama pada manusia dan lingkungan: Baterai rusak atau tertekan dapat terbakar (thermal runaway); sering memicu kebakaran di truk sampah dan TPA."
+      ]
     },
     {
       "id": "2.8",
@@ -189,7 +214,14 @@
       "printedPage": 15,
       "pdfPageEnd": 15,
       "text": "2.9 Hierarki pengelolaan B3\nPrinsip 3R juga berlaku untuk B3, dengan tambahan penekanan pada pencegahan:\nTingkat\nTindakan\nContoh\n1. Hindari/kurangi\n(reduce)\nPilih produk tanpa atau dengan\nsedikit B3.\nLampu LED (tanpa merkuri), baterai isi ulang,\npembersih ramah lingkungan, beli\nsecukupnya.\n2. Pakai ulang (reuse)\nPerpanjang umur pakai.\nPerbaiki elektronik, gunakan baterai isi ulang\nberulang kali, berbagi sisa cat yang masih\nlayak.\n3. Daur ulang atau\npemanfaatan\n(recycle)\nPulihkan material berharga\nlewat fasilitas berizin.\nAki bekas: timbal dilebur ulang; e-waste:\ntembaga, emas, dan aluminium dipulihkan.\n4. Pengolahan\nMenetralkan atau mengurangi\nbahaya.\nStabilisasi, insinerasi terkontrol, netralisasi\nasam-basa oleh pengolah berizin.\n5. Penimbunan\nterkontrol\nPilihan terakhir di fasilitas\nkhusus.\nLandfill khusus B3 dengan lapisan pelindung\ndan pemantauan.\nPeringatan\nDaur ulang e-waste secara informal (membakar kabel, merendam papan sirkuit dengan asam) sangat\nberbahaya bagi pekerja dan lingkungan. Daur ulang B3 hanya boleh dilakukan fasilitas berizin.",
-      "words": 141
+      "words": 141,
+      "rows": [
+        "1. Hindari/kurangi (reduce) — Tindakan: Pilih produk tanpa atau dengan sedikit B3 — Contoh: Lampu LED (tanpa merkuri), baterai isi ulang, pembersih ramah lingkungan, beli secukupnya.",
+        "2. Pakai ulang (reuse) — Tindakan: Perpanjang umur pakai — Contoh: Perbaiki elektronik, gunakan baterai isi ulang berulang kali, berbagi sisa cat yang masih layak.",
+        "3. Daur ulang atau pemanfaatan (recycle) — Tindakan: Pulihkan material berharga lewat fasilitas berizin — Contoh: Aki bekas: timbal dilebur ulang; e-waste: tembaga, emas, dan aluminium dipulihkan.",
+        "4. Pengolahan — Tindakan: Menetralkan atau mengurangi bahaya — Contoh: Stabilisasi, insinerasi terkontrol, netralisasi asam-basa oleh pengolah berizin.",
+        "5. Penimbunan terkontrol — Tindakan: Pilihan terakhir di fasilitas khusus — Contoh: Landfill khusus B3 dengan lapisan pelindung dan pemantauan."
+      ]
     },
     {
       "id": "2.10",
@@ -380,7 +412,13 @@
       "printedPage": 22,
       "pdfPageEnd": 22,
       "text": "4.7 Pengelolaan sampah B3 dan e-waste\nBerbeda dari plastik atau kertas, sampah B3 tidak didaur ulang oleh masyarakat sendiri.\nPemulihan material dari B3 hanya boleh dilakukan fasilitas berizin. Peran masyarakat adalah\nmemilah, menyimpan aman, dan menyetor.\nSampah B3\nYang dapat dipulihkan oleh fasilitas\nberizin\nPeran masyarakat\nAki bekas\nTimbal dilebur dan dipakai ulang; plastik\ncasing didaur ulang; asam dinetralkan\nSerahkan utuh ke bengkel atau\npengepul resmi\nE-waste (ponsel,\nlaptop, papan\nsirkuit)\nTembaga, aluminium, emas, perak dan logam\nlain\nSerahkan ke titik pengumpulan\ne-waste; hapus data pribadi lebih\ndulu\nLampu TL/CFL\nKaca, logam pada ujung lampu, dan merkuri\ndipulihkan dalam sistem tertutup\nSimpan utuh, jangan dipecahkan\nBaterai bekas\nLogam seperti nikel, kobalt, mangan, seng\n(tergantung jenis)\nKumpulkan dan setor ke titik\npengumpulan",
-      "words": 121
+      "words": 121,
+      "rows": [
+        "Aki bekas — Yang dapat dipulihkan oleh fasilitas berizin: Timbal dilebur dan dipakai ulang; plastik casing didaur ulang; asam dinetralkan — Peran masyarakat: Serahkan utuh ke bengkel atau pengepul resmi.",
+        "E-waste (ponsel, laptop, papan sirkuit) — Yang dapat dipulihkan oleh fasilitas berizin: Tembaga, aluminium, emas, perak dan logam lain — Peran masyarakat: Serahkan ke titik pengumpulan e-waste; hapus data pribadi lebih dulu.",
+        "Lampu TL/CFL — Yang dapat dipulihkan oleh fasilitas berizin: Kaca, logam pada ujung lampu, dan merkuri dipulihkan dalam sistem tertutup — Peran masyarakat: Simpan utuh, jangan dipecahkan.",
+        "Baterai bekas — Yang dapat dipulihkan oleh fasilitas berizin: Logam seperti nikel, kobalt, mangan, seng (tergantung jenis) — Peran masyarakat: Kumpulkan dan setor ke titik pengumpulan."
+      ]
     },
     {
       "id": "4.8",
