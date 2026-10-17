@@ -12,6 +12,11 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- M3.3 draft question bank `assets/quiz/question_bank_draft.json`: 56 items
+  (7 pools x 6 multiple choice + 2 essays), each with a verbatim module quote,
+  chunk id and PDF page; `scripts/validate_bank.py` checks them. Owner review
+  sheet in `docs/quiz-review/question_bank_review.md`. Not bundled, not used by
+  the quiz (decision 0015).
 - M3.2 course module chunks: `scripts/extract_module.py` (pypdf, no network)
   turns the module PDF into 66 traceable chunks in
   `assets/module/module_chunks.json` (sub-chapters, summaries, Q&A, glossary,

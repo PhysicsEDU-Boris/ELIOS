@@ -21,3 +21,4 @@ their status changed.
 | [0012](0012-crop-identification-and-hazards.md) | Identify the locked crop and confirm hazards (M2c) | Accepted (owner manual acceptance 16 Oct; hardware gaps listed in HANDOFF) |
 | [0013](0013-quiz-answer-schema.md) | Multiple-choice schema: one correct answer plus wrong distractors (M3.1) | Accepted |
 | [0014](0014-module-chunks.md) | The course module as traceable chunks (M3.2) | Accepted |
+| [0015](0015-question-bank-draft.md) | Module-grounded question bank, drafted for owner review (M3.3) | Proposed |

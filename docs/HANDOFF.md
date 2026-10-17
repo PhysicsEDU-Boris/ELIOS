@@ -1,8 +1,7 @@
 # Handoff
 
-- Base branch `feature/live-scan` at b5499d2 (PR #17 M2c merge 4de8947; docs PRs
-  #18-#20 merged). M3.1 PR #21 (`feat/m3-quiz-parse`) open, not merged. This task:
-  `feat/m3-module-chunks` (M3.2), branched from #21, PR into feature/live-scan.
+- Base branch `feature/live-scan` at ef405f9 (M3.1 #21 and M3.2 #22 merged). This task:
+  `feat/m3-question-bank` (M3.3), PR into feature/live-scan.
 - M2c merged after the owner's manual retest on 16 Oct (no recording, not log-verified).
 - Robot build: `flutter build macos --debug --dart-define=LIVE_SCAN=true
   --dart-define=APP_COMMIT=$(git rev-parse --short HEAD)`, launch with `open`.
@@ -12,20 +11,20 @@
   [0003](decisions/0003-stop-generation.md), [0011](decisions/0011-quiz-prefetch.md),
   [0012](decisions/0012-crop-identification-and-hazards.md),
   [0013](decisions/0013-quiz-answer-schema.md) ([M3.1 results](test-results/m3-quiz-parse.md)),
-  [0014](decisions/0014-module-chunks.md) ([M3.2 results](test-results/m3-module-chunks.md)).
+  [0014](decisions/0014-module-chunks.md) ([M3.2 results](test-results/m3-module-chunks.md)),
+  [0015](decisions/0015-question-bank-draft.md) ([review sheet](quiz-review/question_bank_review.md)).
 
-## What M3.2 delivers (feat/m3-module-chunks)
+## What M3.3 delivers (feat/m3-question-bank)
 
-- Module PDF (main ce9854c, sha 5fd520fd…, not committed) -> 66 verbatim chunks in
-  `assets/module/module_chunks.json` via `scripts/extract_module.py` (pypdf 5.1.0).
-  Re-run: put the PDF in docs/module/, then `python3 scripts/extract_module.py` and
-  `python3 scripts/test_extract_module.py`.
-- `assets/module/label_to_chunks.json`: 9 classes; Cardboard/Paperboard partial,
-  the rest covered. Bundled; not used by the quiz yet (M3.3).
+- `assets/quiz/question_bank_draft.json`: 56 draft items, 7 pools x (6 MC + 2 essays), every
+  quote verbatim from a chunk with its page. Check: `python3 scripts/validate_bank.py`.
+  Not in pubspec, not wired. Owner marks Accept/Edit/Reject in the review sheet.
 
-## M3.1 (PR #21, details in 0013)
+## M3.1 / M3.2 (PRs #21, #22; 0013, 0014)
 
-- MC asks for `correct` + 3 `wrong`: 5-option failures 0/17; parse 74% -> 88%; temperature stays 0.9.
+- MC asks for `correct` + 3 `wrong` (5-option failures 0/17; temperature stays 0.9).
+- 66 verbatim module chunks + label map in `assets/module/` (PDF not committed; rebuild: PDF in
+  docs/module/, `scripts/extract_module.py`, then `scripts/test_extract_module.py`).
 
 ## M2c (PR #17, details in 0012)
 
@@ -52,8 +51,8 @@
 ## Next step: M3 question bank
 
 - Done: 5-option parse fix + temperature test (0013). Not yet re-run on the robot.
-- Done: module chunks + label map (0014). Next (M3.3): questions, keys and explanations from
-  the chunks with page/section refs ([quiz plan](pipeline/README.md#module-grounded-quiz-plan-owner-requirement)).
+- Done: module chunks + label map (0014); draft bank (0015). Next: owner review, then wire
+  accepted items into the quiz per pool/difficulty ([quiz plan](pipeline/README.md#module-grounded-quiz-plan-owner-requirement)).
 - Owner: module inconsistencies to review (composting steps, 7.3 vs the app, 6.6 superscripts),
   listed in the M3.2 results.
 - Quiz follow-ups: duplicate/conflicting questions; Paper Q4 fallback (8273 ms).
