@@ -12,6 +12,13 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- M3.5 object bank `assets/quiz/object_bank_draft.json`: 13 objects (ponsel,
+  laptop, perangkat elektronik, baterai, lampu TL/CFL, botol plastik, gelas
+  plastik, toples kaca, kaleng aluminium, kardus, kertas, kulit pisang, kotak
+  susu) with synonyms, 3-4 MC and 1 essay each, every item quoting the module.
+  Owner review sheet `docs/quiz-review/object_bank_review.md` (decision 0017).
+- Module tables 1.6, 2.6, 2.7, 2.9 and 4.7 are also extracted as one sentence
+  per row (`rows`), checked against the PDF.
 - M3.3 draft question bank `assets/quiz/question_bank_draft.json`: 56 items
   (7 pools x 6 multiple choice + 2 essays), each with a verbatim module quote,
   chunk id and PDF page; `scripts/validate_bank.py` checks them. Owner review
@@ -35,6 +42,15 @@ kept outside the repo.
   class/score, raw Gemma item/category, bins and the identify JPEG name.
 
 ### Changed
+- Quiz questions now come from the pre-written bank: the object's own, then
+  its label pool, then fixed fallbacks. No question request goes to Gemma by
+  default; Gemma only identifies the object (and grades essays when on).
+  `--dart-define=GEMMA_QUESTIONS=true` restores generated questions, and
+  `--dart-define=ESSAY_QUESTIONS=true` restores essays (both off). A session
+  never repeats a question and ends early when none is left. The quiz header
+  names the bank instead of Gemma. `scripts/validate_bank.py` also rejects
+  source wording ("kutipan") and mixed units, and warns on true-looking wrong
+  options (decision 0017).
 - Multiple-choice questions now ask Gemma for `{"correct": "...", "wrong": [3 distractors]}`
   instead of 4 `options` plus `correctIndex` (decision 0013). The answer key is
   the `correct` field, so a 4th distractor is dropped safely; a distractor equal
