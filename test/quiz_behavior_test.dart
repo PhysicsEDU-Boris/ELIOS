@@ -380,11 +380,11 @@ void main() {
       GemmaQuizService.instance.mockSendExecute = null;
     });
 
-    const mcJson = '{"question": "Soal ke-1?", "options": ["A","B","C","D"], '
-        '"correctIndex": 0, "explanation": "e"}';
+    const mcJson = '{"question": "Soal ke-1?", "correct": "A", "wrong": ["B","C","D"], '
+        ' "explanation": "e"}';
 
     String fakeResponse(int n, String prompt) => prompt.contains('pilihan ganda')
-        ? '{"question": "Soal ke-$n?", "options": ["A","B","C","D"], "correctIndex": 0, "explanation": "e"}'
+        ? '{"question": "Soal ke-$n?", "correct": "A", "wrong": ["B","C","D"], "explanation": "e"}'
         : '{"question": "Soal ke-$n?", "explanation": "e"}';
 
     ProviderContainer mediumContainer() {

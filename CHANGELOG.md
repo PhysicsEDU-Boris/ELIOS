@@ -12,6 +12,10 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- M3.1 real-model quiz temperature test
+  (`integration_test/quiz_temperature_test.dart`): 5 fixed prompts at 0.9 /
+  0.4 / 0.3, logs valid JSON, option count, one correct key, duplicates, empty
+  fields and duration per attempt. Results in `docs/test-results/m3-quiz-parse.md`.
 - M2c detector-vs-Gemma category gate: when the detector class's bin differs
   from Gemma's raw category (residu counts as anorganik), no quiz runs until the
   user picks "Pakai detektor", "Pakai Gemma" or "Scan ulang". Hazard
@@ -20,6 +24,11 @@ kept outside the repo.
   class/score, raw Gemma item/category, bins and the identify JPEG name.
 
 ### Changed
+- Multiple-choice questions now ask Gemma for `{"correct": "...", "wrong": [3 distractors]}`
+  instead of 4 `options` plus `correctIndex` (decision 0013). The answer key is
+  the `correct` field, so a 4th distractor is dropped safely; a distractor equal
+  to the answer, an empty or non-string `correct`, or fewer than 3 distinct
+  distractors is still rejected. Production temperature unchanged (0.9).
 - Docs: HANDOFF records the 16 Oct real-model `gemma_cancel_test` run (4/4 passed) and two open findings (5-option quiz parse failures, 7-9 s image first token).
 - M2c merged into feature/live-scan by PR #17 (4de8947) after the owner's manual retest on 16 Oct; open hardware gaps are listed in docs/HANDOFF.md.
 - Firmware: `firmware/maixcam2/app.yaml` (MaixVision manifest) is tracked; the

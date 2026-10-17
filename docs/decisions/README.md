@@ -19,3 +19,4 @@ their status changed.
 | [0010](0010-tts-single-slot-and-overlay-staleness.md) | One TTS slot, no stale overlay numbers, a monotonic default clock (M2b part 2) | Accepted |
 | [0011](0011-quiz-prefetch.md) | Prefetch questions through the single Gemma slot (M2b part 3) | Accepted |
 | [0012](0012-crop-identification-and-hazards.md) | Identify the locked crop and confirm hazards (M2c) | Accepted (owner manual acceptance 16 Oct; hardware gaps listed in HANDOFF) |
+| [0013](0013-quiz-answer-schema.md) | Multiple-choice schema: one correct answer plus wrong distractors (M3.1) | Accepted |
