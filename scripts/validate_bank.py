@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Validates assets/quiz/question_bank_draft.json against the module chunks (decision 0015).
+"""Validates the quiz banks against the module chunks (decisions 0015, 0017):
+assets/quiz/question_bank_draft.json (label pools) and
+assets/quiz/object_bank_draft.json (per object).
 
     python3 scripts/validate_bank.py
 
@@ -14,6 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BANK = ROOT / 'assets/quiz/question_bank_draft.json'
+OBJECT_BANK = ROOT / 'assets/quiz/object_bank_draft.json'
 CHUNKS = ROOT / 'assets/module/module_chunks.json'
 LABELS = ROOT / 'assets/module/label_to_chunks.json'
 
@@ -36,6 +39,10 @@ BANNED = [
 TETRA_BANNED = (r'\d+\s*%', 'Tetra Pak percentages (approximate, company-sourced)')
 PAPER_FLAT = (r'\b(kertas|karton|kardus)\b (adalah|termasuk|merupakan) (sampah )?anorganik',
               'paper/cardboard stated flatly as anorganik')
+# A question reads as a question about the object, not about a text the student never saw.
+SOURCE_WORDING = r'kutipan|passage|modul kuliah'
+UNIT = re.compile(r'\d+(?:[.,]\d+)?(?:\s*-\s*\d+(?:[.,]\d+)?)?\s*(°C|%|kWh|MJ|J\b|g/cm3|mg/kg|atm|kali\b|tahun\b|hari\b|menit\b|kg\b|ton\b)')
+OBJECT_MIN_MC, OBJECT_ESSAYS = 3, 1
 
 
 def flat(text):
@@ -66,7 +73,9 @@ def check_quote(where, quote, chunk_id, page, chunks):
         return [f'{where}: unknown chunk {chunk_id}']
     if chunk_id in BANNED_CHUNKS:
         errors.append(f'{where}: chunk {chunk_id} is on the skip list')
-    if not quote or flat(quote) not in flat(chunk['text']):
+    # Verbatim in the chunk text, or in one of its PDF-verified table rows (decision 0017).
+    sources = [flat(chunk['text'])] + [flat(r) for r in chunk.get('rows', [])]
+    if not quote or not any(flat(quote) in src for src in sources):
         errors.append(f'{where}: quote not verbatim in chunk {chunk_id}')
     if len(quote.split()) > MAX_QUOTE_WORDS:
         errors.append(f'{where}: quote over {MAX_QUOTE_WORDS} words')
@@ -90,7 +99,20 @@ def check_mc(item):
         errors.append(f'{item["id"]}: a wrong option equals the correct answer')
     if len(re.split(r'(?<=[.!?])\s+', item.get('explanation', '').strip())) > 2 or not item.get('explanation'):
         errors.append(f'{item["id"]}: explanation must be 1-2 sentences')
+    units = {m.group(1) for o in [correct or '', *wrong] for m in UNIT.finditer(o)}
+    if len(units) > 1:
+        errors.append(f'{item["id"]}: options mix units {sorted(units)}')
     return errors
+
+
+def option_warnings(item, chunks):
+    """Report only: a wrong option that the cited chunk states word for word may be true."""
+    chunk = chunks.get(item.get('sourceChunk'))
+    if chunk is None or item.get('type') != 'mc':
+        return []
+    text = ' '.join(norm(' '.join([chunk['text'], *chunk.get('rows', [])])))
+    return [f'{item["id"]}: wrong option appears in chunk {chunk["id"]}, check it is false: "{w}"'
+            for w in item.get('wrong', []) if len(norm(w)) >= 3 and f' {" ".join(norm(w))} ' in f' {text} ']
 
 
 def check_essay(item, chunks):
@@ -101,10 +123,79 @@ def check_essay(item, chunks):
     return errors
 
 
+def check_item(item, chunks, module_questions):
+    """Rules shared by both banks for one item."""
+    errors = []
+    iid = item.get('id')
+    if item.get('type') == 'mc':
+        errors += check_mc(item)
+        errors += check_quote(iid, item.get('quote', ''), item.get('sourceChunk'), item.get('pdfPage'), chunks)
+    elif item.get('type') == 'essay':
+        errors += check_essay(item, chunks)
+        if not isinstance(item.get('pdfPage'), int):
+            errors.append(f'{iid}: missing pdfPage')
+    else:
+        errors.append(f'{iid}: type must be mc or essay')
+    if re.search(SOURCE_WORDING, item.get('question', ''), re.IGNORECASE):
+        errors.append(f'{iid}: question refers to the source text ("kutipan"/"passage"/"modul kuliah")')
+    body = ' | '.join(texts(item))
+    rules = BANNED + ([TETRA_BANNED] if item.get('pool') == 'tetra_pak' else []) \
+        + ([PAPER_FLAT] if item.get('pool') == 'paper_family' else [])
+    for pattern, why in rules:
+        if re.search(pattern, body, re.IGNORECASE if why != 'section 6.6 numbers' else 0):
+            errors.append(f'{iid}: skipped topic ({why})')
+    for mq in module_questions:
+        if jaccard(item['question'], mq) >= 0.8:
+            errors.append(f'{iid}: repeats the module question "{mq}"')
+    return errors
+
+
+def module_questions_of(chunks):
+    return [m for c in chunks.values() for m in re.findall(r'T: (.+?\?)', flat(c['text']))]
+
+
+def validate_objects(obank, chunks):
+    """The per-object bank: shared item rules plus per-object counts and name matching."""
+    errors = []
+    mq = module_questions_of(chunks)
+    seen_ids, owner_of = set(), {}
+    for o in obank['objects']:
+        name = o.get('object')
+        if o.get('pool') not in POOLS or not o.get('synonyms'):
+            errors.append(f'{name}: needs a known pool and synonyms')
+        for syn in o.get('synonyms', []):
+            key = ' '.join(norm(syn))
+            if key in owner_of and owner_of[key] != name:
+                errors.append(f'synonym "{syn}" belongs to both {owner_of[key]} and {name}')
+            owner_of[key] = name
+        items = o.get('items', [])
+        for item in items:
+            if item.get('id') in seen_ids:
+                errors.append(f'{item.get("id")}: duplicate id')
+            seen_ids.add(item.get('id'))
+            if item.get('object') != name or item.get('difficulty') not in DIFFICULTIES or item.get('status') != 'draft':
+                errors.append(f'{item.get("id")}: bad object, difficulty or status')
+            errors += check_item({**item, 'pool': o.get('pool')}, chunks, mq)
+        mcs = [i for i in items if i.get('type') == 'mc']
+        if len(mcs) < OBJECT_MIN_MC or {i['difficulty'] for i in mcs} != set(DIFFICULTIES):
+            errors.append(f'{name}: needs at least {OBJECT_MIN_MC} mc covering Mudah, Sedang and Sulit')
+        if sum(i.get('type') == 'essay' for i in items) != OBJECT_ESSAYS:
+            errors.append(f'{name}: needs exactly {OBJECT_ESSAYS} essay')
+        for a in range(len(items)):
+            for b in range(a + 1, len(items)):
+                if jaccard(items[a]['question'], items[b]['question']) >= 0.6:
+                    errors.append(f'{items[a]["id"]} / {items[b]["id"]}: near-duplicate questions')
+    return errors
+
+
+def warnings_of(items, chunks):
+    return [w for item in items for w in option_warnings(item, chunks)]
+
+
 def validate(bank, chunks, labels):
     errors = []
     items = bank['items']
-    module_questions = [m for c in chunks.values() for m in re.findall(r'T: (.+?\?)', flat(c['text']))]
+    module_questions = module_questions_of(chunks)
     seen = set()
     for item in items:
         iid = item.get('id')
@@ -113,24 +204,7 @@ def validate(bank, chunks, labels):
         seen.add(iid)
         if item.get('pool') not in POOLS or item.get('difficulty') not in DIFFICULTIES or item.get('status') != 'draft':
             errors.append(f'{iid}: bad pool, difficulty or status')
-        if item.get('type') == 'mc':
-            errors += check_mc(item)
-            errors += check_quote(iid, item.get('quote', ''), item.get('sourceChunk'), item.get('pdfPage'), chunks)
-        elif item.get('type') == 'essay':
-            errors += check_essay(item, chunks)
-            if not isinstance(item.get('pdfPage'), int):
-                errors.append(f'{iid}: missing pdfPage')
-        else:
-            errors.append(f'{iid}: type must be mc or essay')
-        body = ' | '.join(texts(item))
-        rules = BANNED + ([TETRA_BANNED] if item.get('pool') == 'tetra_pak' else []) \
-            + ([PAPER_FLAT] if item.get('pool') == 'paper_family' else [])
-        for pattern, why in rules:
-            if re.search(pattern, body, re.IGNORECASE if why != 'section 6.6 numbers' else 0):
-                errors.append(f'{iid}: skipped topic ({why})')
-        for mq in module_questions:
-            if jaccard(item['question'], mq) >= 0.8:
-                errors.append(f'{iid}: repeats the module question "{mq}"')
+        errors += check_item(item, chunks, module_questions)
 
     for pool in POOLS:
         in_pool = [i for i in items if i.get('pool') == pool]
@@ -159,10 +233,18 @@ def load():
     return json.loads(BANK.read_text(encoding='utf-8')), chunks, labels
 
 
+def load_objects():
+    return json.loads(OBJECT_BANK.read_text(encoding='utf-8'))
+
+
 if __name__ == '__main__':
-    errors = validate(*load())
+    bank, chunks, labels = load()
+    obank = load_objects()
+    object_items = [i for o in obank['objects'] for i in o['items']]
+    errors = validate(bank, chunks, labels) + validate_objects(obank, chunks)
     for e in errors:
         print(e)
-    bank = load()[0]
-    print(f'{len(bank["items"])} items, {len(errors)} problems')
+    for w in warnings_of(bank['items'] + object_items, chunks):
+        print('WARNING', w)
+    print(f'{len(bank["items"])} pool items, {len(object_items)} object items, {len(errors)} problems')
     sys.exit(1 if errors else 0)

@@ -80,5 +80,61 @@ class DraftBank(unittest.TestCase):
                 'question', 'Mengapa kemasan karton minuman tidak dimasukkan ke sampah organik padahal sebagian besar kertas?')))
 
 
+OBJECTS = vb.load_objects()
+
+
+def first_object_mc(obank, name=None):
+    o = next(o for o in obank['objects'] if name is None or o['object'] == name)
+    return o, next(i for i in o['items'] if i['type'] == 'mc')
+
+
+class ObjectBank(unittest.TestCase):
+    def errors_after(self, change):
+        obank = copy.deepcopy(OBJECTS)
+        change(obank)
+        return ' | '.join(vb.validate_objects(obank, CHUNKS))
+
+    def test_real_object_bank_is_clean_and_complete(self):
+        self.assertEqual(vb.validate_objects(OBJECTS, CHUNKS), [])
+        names = {o['object'] for o in OBJECTS['objects']}
+        for must in ('ponsel', 'laptop', 'baterai', 'lampu_tl_cfl', 'botol_plastik', 'gelas_plastik', 'toples_kaca',
+                     'kaleng_aluminium', 'kardus', 'kertas', 'kulit_pisang', 'kotak_susu'):
+            self.assertIn(must, names)
+
+    def test_source_wording_is_rejected(self):
+        self.assertIn('refers to the source text', self.errors_after(
+            lambda b: first_object_mc(b)[1].__setitem__('question', 'Berdasarkan kutipan, ponsel termasuk apa?')))
+        self.assertIn('refers to the source text', self.errors_after(
+            lambda b: first_object_mc(b)[1].__setitem__('question', 'Menurut modul kuliah, ponsel termasuk apa?')))
+
+    def test_mixed_units_are_rejected(self):
+        def mix(b):
+            item = first_object_mc(b, 'kaleng_aluminium')[1]  # options in %
+            item['wrong'][0] = 'Sekitar 660°C'
+        self.assertIn('mix units', self.errors_after(mix))
+
+    def test_row_sentence_quotes_count_as_verbatim(self):
+        o, item = first_object_mc(OBJECTS, 'perangkat_elektronik')
+        self.assertNotIn(vb.flat(item['quote']), vb.flat(CHUNKS[item['sourceChunk']]['text']),
+                         'this quote only exists in a table row sentence')
+        self.assertEqual(vb.check_quote('x', item['quote'], item['sourceChunk'], item['pdfPage'], CHUNKS), [])
+
+    def test_per_object_counts_and_shared_synonyms(self):
+        self.assertIn('at least 3 mc', self.errors_after(
+            lambda b: b['objects'][0].__setitem__('items', [i for i in b['objects'][0]['items'] if i['difficulty'] != 'Sulit'])))
+        self.assertIn('exactly 1 essay', self.errors_after(
+            lambda b: b['objects'][0].__setitem__('items', [i for i in b['objects'][0]['items'] if i['type'] != 'essay'])))
+        self.assertIn('belongs to both', self.errors_after(lambda b: b['objects'][1]['synonyms'].append('ponsel')))
+
+    def test_true_wrong_option_is_only_a_warning(self):
+        obank = copy.deepcopy(OBJECTS)
+        kertas = next(o for o in obank['objects'] if o['object'] == 'kertas')
+        item = next(i for i in kertas['items'] if i['type'] == 'mc' and i['sourceChunk'] == '4.3')
+        item['wrong'][0] = 'Serat selulosa kertas memendek setiap kali didaur ulang'
+        warnings = vb.warnings_of([item], CHUNKS)
+        self.assertTrue(any('check it is false' in w for w in warnings), warnings)
+        self.assertEqual(vb.validate_objects(obank, CHUNKS), [], 'a warning, not an error')
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

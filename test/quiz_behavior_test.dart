@@ -374,10 +374,15 @@ void main() {
       // one starts, so it never sees the slot as busy.
       await GemmaQuizService.instance.cancel();
       GemmaQuizService.instance.mockSendExecute = null;
+      // Prefetch is the opt-in Gemma question path (decision 0017 keeps it, off by default).
+      WasteQuizNotifier.gemmaQuestions = true;
+      WasteQuizNotifier.essayQuestions = true;
       await pumpEventQueue();
     });
     tearDown(() {
       GemmaQuizService.instance.mockSendExecute = null;
+      WasteQuizNotifier.gemmaQuestions = gemmaQuestionsEnabled;
+      WasteQuizNotifier.essayQuestions = essayQuestionsEnabled;
     });
 
     const mcJson = '{"question": "Soal ke-1?", "correct": "A", "wrong": ["B","C","D"], '

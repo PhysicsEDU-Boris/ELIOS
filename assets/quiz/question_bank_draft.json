@@ -446,7 +446,7 @@
       "wrong": [
         "Magnet, karena PP tertarik magnet sedangkan HDPE tidak",
         "Larutan dengan massa jenis di atas 1,38 g/cm3",
-        "Pemanasan sampai sekitar 660°C agar PP melebur lebih dulu"
+        "Larutan dengan massa jenis di bawah 0,90 g/cm3"
       ],
       "explanation": "Karena keduanya lebih ringan dari air, modul menyarankan larutan dengan massa jenis di antara massa jenis PP dan HDPE.",
       "sourceChunk": "6.1",
@@ -784,7 +784,7 @@
       "type": "mc",
       "difficulty": "Sulit",
       "question": "Perhitungan modul menunjukkan melebur 1 kg aluminium dari 25°C memerlukan sekitar 0,97 MJ. Mengapa tanur nyata memerlukan energi lebih banyak?",
-      "correct": "Karena ada rugi panas; 0,97 MJ hanya energi minimum untuk meleburkan",
+      "correct": "Karena ada rugi panas; perhitungan itu hanya energi minimum untuk meleburkan",
       "wrong": [
         "Karena aluminium harus dipanaskan sampai sekitar 1538°C",
         "Karena perhitungan itu sudah termasuk energi elektrolisis bauksit",

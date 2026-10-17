@@ -274,6 +274,9 @@ void main() {
     GemmaQuizService.instance.mockSendExecute =
         (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => question.future;
     addTearDown(() => GemmaQuizService.instance.mockSendExecute = null);
+    // Needs a question that is still loading: only the opt-in Gemma path has one (decision 0017).
+    WasteQuizNotifier.gemmaQuestions = true;
+    addTearDown(() => WasteQuizNotifier.gemmaQuestions = gemmaQuestionsEnabled);
 
     final container = ProviderContainer(overrides: [appPreferencesProvider.overrideWith(_SeededPrefs.new)]);
     addTearDown(container.dispose);

@@ -197,7 +197,9 @@ void main() {
           await _until(
             () => c.read(wasteQuizProvider).phase == WasteQuizPhase.active,
           );
-          expect(images.where((image) => image == null), isNotEmpty);
+          // Decision 0017: the question comes from the bank; Gemma only identified.
+          expect(c.read(wasteQuizProvider).question?.bankId, isNotNull);
+          expect(images.where((image) => image == null), isEmpty, reason: 'no question request to Gemma');
         },
       );
     }
@@ -236,13 +238,15 @@ void main() {
         quiz.resolveMismatch(useDetector: true);
         expect(logged('mismatch_choice'), allOf(contains('"choice":"detector"'), contains('"resolvedBin":"inorganic"')));
         expect(c.read(wasteQuizProvider).scan?.category?.id, 'inorganic');
-        await _until(() => images.length > 1);
+        await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
+        expect(images, hasLength(1), reason: 'bank question: no question request to Gemma');
       });
 
       for (final compatible in ['anorganik', 'residu']) {
         test('Cardboard + $compatible: no card, straight to the quiz', () async {
           await lockCardboard(compatible);
-          await _until(() => images.length > 1);
+          await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
+          expect(images, hasLength(1), reason: 'bank question: no question request to Gemma');
           expect(c.read(wasteQuizProvider).phase, isNot(WasteQuizPhase.confirmingMismatch));
           expect(c.read(wasteQuizProvider).scan?.category?.id, 'inorganic');
           expect(logged('category_mismatch'), isEmpty);
