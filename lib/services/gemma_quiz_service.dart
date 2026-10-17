@@ -8,7 +8,11 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/scanned_waste.dart';
+import 'module_retriever.dart';
 import 'scan_diagnostics.dart';
+
+/// Module-grounded questions (decision 0016); off until the owner approves the sample review.
+const groundedQuizEnabled = bool.fromEnvironment('GROUNDED_QUIZ');
 
 enum GemmaStatus { idle, installing, loading, ready, error }
 
@@ -22,6 +26,21 @@ class GemmaProgress {
   const GemmaProgress(this.status, {this.installPercent = 0, this.error});
 }
 
+/// Where a grounded question came from (decision 0016). Debug/log only; the
+/// UI reads the other fields of [GeneratedQuestion] exactly as before.
+@immutable
+class QuestionGrounding {
+  const QuestionGrounding({required this.chunkId, required this.quote, required this.pdfPage,
+      required this.sentChunkIds, required this.passage, this.rubric = const []});
+
+  final String chunkId;
+  final String quote;
+  final int? pdfPage;
+  final List<String> sentChunkIds;
+  final String passage;
+  final List<String> rubric;
+}
+
 /// A question produced by Gemma (or the offline fallback bank).
 @immutable
 class GeneratedQuestion {
@@ -30,6 +49,7 @@ class GeneratedQuestion {
   final List<String> options;
   final int correctIndex;
   final String explanation;
+  final QuestionGrounding? grounding;
 
   const GeneratedQuestion({
     required this.type,
@@ -37,6 +57,7 @@ class GeneratedQuestion {
     this.options = const [],
     this.correctIndex = -1,
     this.explanation = '',
+    this.grounding,
   });
 }
 
@@ -160,6 +181,21 @@ class GemmaQuizService {
   /// Sees every raw question reply, parsed or not (decision 0013 test).
   @visibleForTesting
   void Function(String raw)? onQuestionReply;
+
+  /// Sees every question prompt and the chunks it carried (decision 0016 test).
+  @visibleForTesting
+  void Function(String prompt, List<String> chunkIds)? onQuestionPrompt;
+
+  /// Grounded prompt instead of the random angle; also sizes the context for it.
+  @visibleForTesting
+  bool grounded = groundedQuizEnabled;
+
+  /// Why the last question request produced nothing (logged with the fallback).
+  String? lastQuestionFailure;
+
+  ModuleRetriever? _retriever;
+  @visibleForTesting
+  set retriever(ModuleRetriever value) => _retriever = value;
 
   /// User-facing text for a model that isn't ready (also a scan pre-empted by a chat).
   static const notReadyMessage = 'AI belum siap untuk membaca foto. Coba lagi sebentar lagi.';
@@ -307,7 +343,9 @@ class GemmaQuizService {
       for (final (backend, image) in attempts) {
         try {
           final model = await FlutterGemma.getActiveModel(
-            maxTokens: 1024,
+            // Grounded prompts carry ~450 words of module text (~1,100 tokens with
+            // the instructions), more than a 1024 context leaves after the reply.
+            maxTokens: grounded ? 2048 : 1024,
             preferredBackend: backend,
             supportImage: image,
             maxNumImages: image ? 1 : null,
@@ -626,7 +664,13 @@ class GemmaQuizService {
     required QuizQuestionType type,
     required QuizDifficulty difficulty,
     List<String> avoid = const [],
+    int questionIndex = 0,
+    List<String> usedChunkIds = const [],
   }) async {
+    if (grounded) {
+      return _tryGroundedQuestion(waste: waste, type: type, difficulty: difficulty, avoid: avoid,
+          questionIndex: questionIndex, usedChunkIds: usedChunkIds);
+    }
     final angle = angleOverride ?? _angles[_random.nextInt(_angles.length)];
     final details = [
       if (waste.material != null && waste.material!.isNotEmpty) 'bahan: ${waste.material}',
@@ -646,24 +690,166 @@ class GemmaQuizService {
             'Soal meminta mahasiswa menjelaskan atau menganalisis dengan kata-katanya sendiri (maks 2 kalimat). '
             'Balas HANYA JSON: {"question": "...", "explanation": "poin-poin jawaban yang diharapkan"}.';
     final prompt = '$context $shape$avoidText';
+    onQuestionPrompt?.call(prompt, const []);
+    return _attempts(prompt, avoid, (raw) {
+      final parsed = parseQuestion(raw, type);
+      return (question: parsed, reason: parsed == null ? 'unparseable' : null);
+    });
+  }
 
+  /// Up to 2 attempts of [prompt]; [check] parses one reply or says why not.
+  Future<({bool retry, GeneratedQuestion? question})> _attempts(String prompt, List<String> avoid,
+      ({GeneratedQuestion? question, String? reason}) Function(String raw) check) async {
+    lastQuestionFailure = null;
     for (var attempt = 0; attempt < 2; attempt++) {
       final raw = await _send(prompt, fresh: true, isUser: false);
       if (raw == 'BUSY' || raw == 'CANCELLED') return (retry: true, question: null);
-      if (raw == null) return (retry: false, question: null);
+      if (raw == null) {
+        lastQuestionFailure = 'model not ready or timed out';
+        return (retry: false, question: null);
+      }
       onQuestionReply?.call(raw);
-      final parsed = parseQuestion(raw, type);
+      final result = check(raw);
+      final parsed = result.question;
       if (parsed == null) {
-        _log('unparseable question (attempt ${attempt + 1}): $raw');
+        lastQuestionFailure = result.reason;
+        _log('rejected question (attempt ${attempt + 1}, ${result.reason}): $raw');
         continue;
       }
       if (avoid.any((a) => _normalizeForDuplicateCheck(a) == _normalizeForDuplicateCheck(parsed.question))) {
+        lastQuestionFailure = 'duplicate';
         _log('duplicate question rejected (attempt ${attempt + 1}): ${parsed.question}');
         continue;
       }
+      final g = parsed.grounding;
+      if (g != null) _log('grounded question from ${g.chunkId} (sent ${g.sentChunkIds.join(',')}): "${g.quote}"');
       return (retry: false, question: parsed);
     }
     return (retry: false, question: null);
+  }
+
+  // Depth per level, phrased so the model stays inside the passages
+  // (the ungrounded levelDescription invites outside topics such as polymer chemistry).
+  static const _groundedLevel = {
+    QuizDifficulty.easy: 'tingkat Mudah: menguji satu fakta atau konsep yang tertulis di kutipan.',
+    QuizDifficulty.medium: 'tingkat Sedang: menguji pemahaman, misalnya alasan atau penerapan isi kutipan pada benda ini.',
+    QuizDifficulty.hard: 'tingkat Sulit: menguji analisis yang menghubungkan dua hal dari kutipan.',
+  };
+
+  Future<({bool retry, GeneratedQuestion? question})> _tryGroundedQuestion({
+    required ScannedWaste waste,
+    required QuizQuestionType type,
+    required QuizDifficulty difficulty,
+    required List<String> avoid,
+    required int questionIndex,
+    required List<String> usedChunkIds,
+  }) async {
+    final retriever = _retriever ??= await ModuleRetriever.load();
+    final passages = retriever.retrieve(waste, questionIndex: questionIndex, usedChunkIds: usedChunkIds);
+    final prompt = groundedPrompt(waste: waste, type: type, difficulty: difficulty, passages: passages, avoid: avoid);
+    onQuestionPrompt?.call(prompt, [for (final p in passages) p.id]);
+    return _attempts(prompt, avoid, (raw) => parseGroundedQuestion(raw, type, passages, waste));
+  }
+
+  /// The object, its passages with chunk ids, and the grounding rule.
+  @visibleForTesting
+  static String groundedPrompt({
+    required ScannedWaste waste,
+    required QuizQuestionType type,
+    required QuizDifficulty difficulty,
+    required List<ModuleChunk> passages,
+    List<String> avoid = const [],
+  }) {
+    final details = [
+      if (waste.material != null && waste.material!.isNotEmpty) 'bahan: ${waste.material}',
+      if (waste.category != null) 'kategori: ${waste.categoryNameId}',
+    ].join(', ');
+    final name = waste.displayName;
+    final blocks = passages.map((p) => '[${p.id}] ${p.text.split(RegExp(r'\s+')).join(' ')}').join('\n');
+    final rule = 'Soal harus tentang benda "$name" (sebut namanya di soal) dan dapat dijawab dari kutipan; '
+        'jangan memakai pengetahuan di luar kutipan. ';
+    final ids = passages.map((p) => p.id).join(', ');
+    final evidence = '"quote": "satu kalimat yang disalin persis dari kutipan sebagai bukti", '
+        '"chunk": "nomor kutipan asal quote, salah satu dari: $ids"';
+    final shape = type == QuizQuestionType.multipleChoice
+        ? 'Buat SATU soal pilihan ganda ${_groundedLevel[difficulty]} $rule'
+            'Beri tepat 1 jawaban benar dan tepat 3 pengecoh yang salah menurut kutipan, masing-masing maks 10 kata. '
+            'Balas HANYA JSON: {"question": "...", "correct": "jawaban benar", '
+            '"wrong": ["pengecoh 1", "pengecoh 2", "pengecoh 3"], "explanation": "penjelasan 1-2 kalimat", $evidence}.'
+        : 'Buat SATU soal essay ${_groundedLevel[difficulty]} $rule'
+            'Soal meminta mahasiswa menjelaskan dengan kata-katanya sendiri (maks 2 kalimat). '
+            'Balas HANYA JSON: {"question": "...", "rubric": ["poin 1 dari kutipan", "poin 2 dari kutipan"], '
+            '"explanation": "jawaban yang diharapkan", $evidence}.';
+    final avoidText = avoid.isEmpty ? '' : ' Jangan mengulang soal ini: ${avoid.map((q) => '"$q"').join('; ')}.';
+    return 'Benda yang discan: "$name"${details.isEmpty ? '' : ' ($details)'}.\n'
+        'Kutipan modul kuliah:\n$blocks\n$shape$avoidText';
+  }
+
+  static String _flat(String s) => s.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).join(' ');
+
+  /// [parseQuestion] plus the grounding checks: the quote is copied from a sent
+  /// passage (whitespace-normalized), the chunk was sent, and the question names
+  /// the object (item, a synonym, or its material/label word).
+  @visibleForTesting
+  ({GeneratedQuestion? question, String? reason}) parseGroundedQuestion(
+      String raw, QuizQuestionType type, List<ModuleChunk> passages, ScannedWaste waste) {
+    final base = parseQuestion(raw, type);
+    if (base == null) return (question: null, reason: 'unparseable');
+    final map = _jsonObject(raw)!;
+    final quote = map['quote'] is String ? _flat(map['quote'] as String) : '';
+    final sent = {for (final p in passages) p.id: p};
+    // Accept a sent id written as "4.2", "[4.2]" or "kutipan 4.2"; nothing else.
+    final cited = '${map['chunk'] ?? ''}'.trim();
+    final chunkId = sent.keys.firstWhere(
+        (id) => RegExp('(^|[^0-9a-z.])${RegExp.escape(id)}(\$|[^0-9a-z.])').hasMatch(cited.toLowerCase()),
+        orElse: () => '');
+    if (chunkId.isEmpty) return (question: null, reason: 'chunk "$cited" was not sent');
+    if (quote.split(' ').length < 5 || !passages.any((p) => _flat(p.text).contains(quote))) {
+      return (question: null, reason: 'quote not verbatim in the passages');
+    }
+    // The model sometimes cites the wrong sent id; keep the chunk the quote is really from,
+    // so the logged page is right.
+    final source = _flat(sent[chunkId]!.text).contains(quote)
+        ? chunkId
+        : passages.firstWhere((p) => _flat(p.text).contains(quote)).id;
+    if (!mentionsObject(base.question, waste)) return (question: null, reason: 'question does not name the object');
+    // Placeholder points ("1", "poin 1") seen on the real model are not a rubric.
+    final rubric = [
+      if (map['rubric'] is List)
+        for (final r in map['rubric'] as List)
+          if ('$r'.trim().split(RegExp(r'\s+')).length >= 3) '$r'.trim(),
+    ];
+    if (type == QuizQuestionType.essay && rubric.isEmpty) return (question: null, reason: 'essay without rubric');
+    return (
+      question: GeneratedQuestion(
+        type: base.type,
+        question: base.question,
+        options: base.options,
+        correctIndex: base.correctIndex,
+        explanation: base.explanation,
+        grounding: QuestionGrounding(
+          chunkId: source,
+          quote: quote,
+          pdfPage: sent[source]!.pdfPage,
+          sentChunkIds: sent.keys.toList(),
+          passage: passages.map((p) => '[${p.id}] ${_flat(p.text)}').join('\n'),
+          rubric: rubric.take(4).toList(),
+        ),
+      ),
+      reason: null,
+    );
+  }
+
+  /// The question names the scanned object: item, a synonym, or a material/label word.
+  @visibleForTesting
+  static bool mentionsObject(String question, ScannedWaste waste) {
+    final q = ModuleRetriever.normalize(question);
+    final words = <String>{
+      ...ModuleRetriever.objectTerms(waste),
+      for (final w in ModuleRetriever.normalize('${waste.material ?? ''} ${waste.rawLabel}').trim().split(' '))
+        if (w.length > 3) w,
+    };
+    return words.any((w) => q.contains(' ${ModuleRetriever.normalize(w).trim()} '));
   }
 
   // ponytail: catches only case/punctuation-level repeats, not paraphrases --
@@ -677,8 +863,11 @@ class GemmaQuizService {
     required QuizQuestionType type,
     required QuizDifficulty difficulty,
     List<String> avoid = const [],
+    int questionIndex = 0,
+    List<String> usedChunkIds = const [],
   }) async {
-    final result = await _tryGenerateQuestion(waste: waste, type: type, difficulty: difficulty, avoid: avoid);
+    final result = await _tryGenerateQuestion(waste: waste, type: type, difficulty: difficulty, avoid: avoid,
+        questionIndex: questionIndex, usedChunkIds: usedChunkIds);
     return result.question;
   }
 
@@ -691,8 +880,11 @@ class GemmaQuizService {
     required QuizQuestionType type,
     required QuizDifficulty difficulty,
     List<String> avoid = const [],
+    int questionIndex = 0,
+    List<String> usedChunkIds = const [],
   }) =>
-      _tryGenerateQuestion(waste: waste, type: type, difficulty: difficulty, avoid: avoid);
+      _tryGenerateQuestion(waste: waste, type: type, difficulty: difficulty, avoid: avoid,
+          questionIndex: questionIndex, usedChunkIds: usedChunkIds);
 
   /// Answers a student's follow-up after they answered: each turn carries
   /// the question, the key and their answer, so replies stay on topic.
@@ -712,13 +904,20 @@ class GemmaQuizService {
   }
 
   /// Grades an essay answer against the question and its expected points.
+  /// A grounded question (decision 0016) passes its module passage and rubric,
+  /// so the grade follows the module rather than the model's own knowledge.
   Future<String?> reviewEssay({
     required String question,
     required String expectedPoints,
     required String answer,
+    String? passage,
+    List<String> rubric = const [],
   }) async {
     final prompt = 'Soal essay: "$question"\n'
+        '${passage == null ? '' : 'Kutipan modul kuliah:\n$passage\n'}'
+        '${rubric.isEmpty ? '' : 'Rubrik (dari kutipan): ${rubric.map((r) => '- $r').join(' ')}\n'}'
         '${expectedPoints.isEmpty ? '' : 'Poin jawaban yang diharapkan: $expectedPoints\n'}'
+        '${passage == null ? '' : 'Nilai hanya berdasarkan kutipan dan rubrik; jangan memakai pengetahuan di luar kutipan.\n'}'
         'Jawaban mahasiswa: "$answer"\n'
         'Mulai dengan "Benar", "Sebagian benar", atau "Kurang tepat", lalu jelaskan koreksinya '
         'dalam 2-4 kalimat teks biasa. Jangan pakai JSON, kode, atau markdown.';

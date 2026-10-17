@@ -136,6 +136,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   DateTime? _lastShownAt;
   int _generation = 0;
   final _askedQuestions = <String>[];
+  // Module chunks cited by this session's questions, so question k gets new
+  // passages (decision 0016); filled in generation order, prefetch included.
+  final _usedChunkIds = <String>[];
 
   // The text last spoken automatically (decision 0009: "one TTS slot, keyed
   // by object"), so the same quiz text isn't re-spoken if the message that
@@ -199,6 +202,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (state.phase != WasteQuizPhase.idle) return;
     _lastShownAt = DateTime.now();
     _askedQuestions.clear();
+    _usedChunkIds.clear();
     _cancelPrefetch();
     final generation = ++_generation;
     GemmaQuizService.instance.cancel();
@@ -212,6 +216,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _lastLabel = detection.label;
     _lastShownAt = DateTime.now();
     _askedQuestions.clear();
+    _usedChunkIds.clear();
     _cancelPrefetch();
     final generation = ++_generation;
     GemmaQuizService.instance.cancel();
@@ -326,6 +331,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   void _startSession(ScannedWaste scan) {
     _askedQuestions.clear();
+    _usedChunkIds.clear();
     _cancelPrefetch();
     if (scan.category?.id == 'hazardous') {
       state = _freshSession(scan: scan, phase: WasteQuizPhase.confirmingHazard);
@@ -362,17 +368,25 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       type: type,
       difficulty: state.difficulty,
       avoid: List.of(_askedQuestions),
+      questionIndex: index,
+      usedChunkIds: List.of(_usedChunkIds),
     );
+    _noteChunk(generated);
     diagnostics?.event('question_complete', {'question': index + 1, 'generationMs': sw?.elapsedMilliseconds,
       'firstTokenMs': GemmaQuizService.instance.lastFirstTokenMs.value,
-      'fallback': generated == null, 'stale': generation != _generation});
+      'fallback': generated == null, 'stale': generation != _generation,
+      if (generated == null) 'fallbackReason': GemmaQuizService.instance.lastQuestionFailure,
+      if (generated?.grounding != null) 'chunk': generated!.grounding!.chunkId,
+      if (generated?.grounding != null) 'quote': generated!.grounding!.quote});
     if (sw != null) {
       // One line per question load, so a slow session (decision 0009) shows
       // exactly which question was slow and whether it fell back.
       debugPrint('[WasteQuiz] ${scan.displayName}: question ${index + 1}/$total '
           '(${type.name}) in ${sw.elapsedMilliseconds}ms, first token '
           '${GemmaQuizService.instance.lastFirstTokenMs.value ?? '-'}ms, '
-          'fallback=${generated == null}');
+          'fallback=${generated == null}'
+          '${generated == null ? ' (${GemmaQuizService.instance.lastQuestionFailure})' : ''}'
+          '${generated?.grounding == null ? '' : ', chunk ${generated!.grounding!.chunkId}'}');
     }
     if (generation != _generation) return; // dismissed or superseded
 
@@ -412,6 +426,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       final q = await _generateForBuffer(scan, i, gen);
       if (gen != _prefetchSessionGen) return;
       if (q != null) _askedQuestions.add(q.question); // so index i+1 avoids it too
+      _noteChunk(q); // and gets other passages
       _prefetchCompleters[i]?.complete(q);
     }
   }
@@ -433,10 +448,15 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         type: type,
         difficulty: state.difficulty,
         avoid: List.of(_askedQuestions),
+        questionIndex: index,
+        usedChunkIds: List.of(_usedChunkIds),
       );
+      final failed = !result.retry && result.question == null;
       diagnostics?.event('prefetch_complete', {'requestId': requestId,
         'generationMs': timing?.elapsedMilliseconds, 'retry': result.retry,
-        'fallback': !result.retry && result.question == null,
+        'fallback': failed,
+        if (failed) 'fallbackReason': GemmaQuizService.instance.lastQuestionFailure,
+        if (result.question?.grounding != null) 'chunk': result.question!.grounding!.chunkId,
         'stale': gen != _prefetchSessionGen});
       if (!result.retry) return result.question; // success, or a real failure
       await Future<void>.delayed(_prefetchRetryDelay);
@@ -500,14 +520,38 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     );
   }
 
+  void _noteChunk(GeneratedQuestion? q) {
+    final chunk = q?.grounding?.chunkId;
+    if (chunk != null) _usedChunkIds.add(chunk);
+  }
+
+  /// The first fallback of [type] not yet shown this session, so a session
+  /// with several failed questions never repeats one (decision 0011 leftover).
+  // ponytail: three MC and two essay variants cover a 5-question session; a
+  // longer session reuses the last one. Swap for reviewed bank items once
+  // question_bank_draft.json (PR #23) is accepted.
   GeneratedQuestion _fallbackQuestion(ScannedWaste scan, QuizQuestionType type) {
+    final candidates = fallbackQuestions(scan, type);
+    return candidates.firstWhere((q) => !_askedQuestions.contains(q.question), orElse: () => candidates.last);
+  }
+
+  @visibleForTesting
+  static List<GeneratedQuestion> fallbackQuestions(ScannedWaste scan, QuizQuestionType type) {
     final name = scan.displayName.toLowerCase();
     if (type == QuizQuestionType.essay) {
-      return GeneratedQuestion(
-        type: type,
-        question: 'Analisis bagaimana $name sebaiknya dikelola setelah dibuang, '
-            'dan jelaskan dampak lingkungannya jika salah dikelola.',
-      );
+      return [
+        GeneratedQuestion(
+          type: type,
+          question: 'Analisis bagaimana $name sebaiknya dikelola setelah dibuang, '
+              'dan jelaskan dampak lingkungannya jika salah dikelola.',
+        ),
+        GeneratedQuestion(
+          type: type,
+          question: 'Jelaskan bagaimana prinsip 3R (reduce, reuse, recycle) dapat diterapkan pada $name, '
+              'mulai dari yang paling diutamakan.',
+          explanation: 'Reduce lebih utama daripada reuse, dan reuse lebih utama daripada recycle.',
+        ),
+      ];
     }
     final bins = ['Sampah organik', 'Daur ulang (anorganik)', 'Limbah B3', 'Sampah residu'];
     final correct = switch (scan.category?.id) {
@@ -516,13 +560,31 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       'hazardous' => 2,
       _ => 3,
     };
-    return GeneratedQuestion(
-      type: type,
-      question: 'Ke aliran pengelolaan mana $name seharusnya masuk?',
-      options: bins,
-      correctIndex: correct,
-      explanation: 'Jawaban yang tepat: ${bins[correct]}.',
-    );
+    return [
+      GeneratedQuestion(
+        type: type,
+        question: 'Ke aliran pengelolaan mana $name seharusnya masuk?',
+        options: bins,
+        correctIndex: correct,
+        explanation: 'Jawaban yang tepat: ${bins[correct]}.',
+      ),
+      GeneratedQuestion(
+        type: type,
+        question: 'Pemilahan sampah di sumber yang baik memakai berapa kelompok?',
+        options: const ['Dua: organik dan non-organik', 'Empat: organik, plastik, kertas, dan logam',
+          'Tiga: organik, non-organik, dan B3', 'Satu: semua dicampur lalu dipilah di TPA'],
+        correctIndex: 2,
+        explanation: 'Modul (1.6) memakai tiga kelompok: organik, non-organik, dan B3.',
+      ),
+      GeneratedQuestion(
+        type: type,
+        question: 'Dalam prinsip 3R, tindakan mana yang paling diutamakan?',
+        options: const ['Recycle (mendaur ulang)', 'Reduce (mengurangi)', 'Menimbun di TPA',
+          'Reuse (memakai kembali)'],
+        correctIndex: 1,
+        explanation: 'Modul (4.1): reduce lebih utama daripada reuse, dan reuse lebih utama daripada recycle.',
+      ),
+    ];
   }
 
   void selectOption(int index) {
@@ -556,6 +618,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       question: q!.question,
       expectedPoints: q.explanation,
       answer: trimmed,
+      passage: q.grounding?.passage,
+      rubric: q.grounding?.rubric ?? const [],
     );
     if (generation != _generation) return;
     _appendAiReply(reply ?? 'Jawaban tersimpan, tapi AI belum bisa mengoreksi. ${_aiUnavailableReason()}');
