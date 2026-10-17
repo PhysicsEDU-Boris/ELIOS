@@ -12,6 +12,15 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- M3.4 module-grounded quiz behind `--dart-define=GROUNDED_QUIZ=true` (default off,
+  not shipped: the question-1 latency gate failed in the real-model run). New
+  `lib/services/module_retriever.dart` picks 2-3 module passages per question
+  for the scanned object. The prompt asks for a verbatim `quote` and `chunk`,
+  validated before use. Essays are graded against the passage and rubric. With
+  the flag on, the model loads a 2048-token context. Real-model A/B test
+  `integration_test/grounded_quiz_test.dart`; results in
+  `docs/test-results/m3-grounded-quiz.md`, owner sample in
+  `docs/quiz-review/grounded_sample_review.md` (decision 0016).
 - M3.2 course module chunks: `scripts/extract_module.py` (pypdf, no network)
   turns the module PDF into 66 traceable chunks in
   `assets/module/module_chunks.json` (sub-chapters, summaries, Q&A, glossary,
@@ -43,6 +52,8 @@ kept outside the repo.
   gate; the module-grounded quiz plan requires page/section citations (planned).
 
 ### Fixed
+- A session with several failed questions no longer shows the same fallback
+  question twice (3 MC and 2 essay variants; decision 0011 leftover).
 - M2c cancel (16 Oct retest, scan 0): a close while the model is still loading
   no longer submits the photo (`submit_skipped` is logged instead). A call
   already running has its result discarded and keeps the Gemma slot busy until
