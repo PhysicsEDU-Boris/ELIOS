@@ -74,6 +74,7 @@ flutter:
     - assets/icon/
     - assets/models/
     - assets/module/
+    - assets/quiz/
 
 flutter_launcher_icons:
   android: "launcher_icon"

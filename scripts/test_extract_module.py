@@ -81,6 +81,22 @@ class ChunksMatchPdf(unittest.TestCase):
         qa = sorted(c['id'] for c in self.chunks if c['type'] == 'qa')
         self.assertEqual(qa, ['1.qa', '2.qa', '3.qa', '4.qa', '5.qa', '6.qa', '7.qa', '9.qa'])
 
+    def test_table_rows_are_verbatim_cells_from_their_page(self):
+        import extract_module
+        reader = pypdf.PdfReader(PDF)
+        expected = {'1.6': 3, '2.6': 10, '2.7': 6, '2.9': 5, '4.7': 4}
+        chunks = {c['id']: c for c in self.chunks}
+        for cid, (page, first) in extract_module.ROW_TABLES.items():
+            rows = extract_module.table_rows(reader, page, first)
+            self.assertEqual(len(rows) - 1, expected[cid], cid)
+            page_text = flat('\n'.join(self.pages[page]))
+            for row in rows:
+                for cell in row:
+                    self.assertTrue(flat(cell) in page_text, f'{cid}: cell not on p.{page}: {cell}')
+            self.assertEqual(chunks[cid]['rows'], extract_module.row_sentences(rows), cid)
+            # The original text is kept unchanged next to the rows.
+            self.assertTrue(flat(chunks[cid]['text']) in flat('\n'.join(self.pages[chunks[cid]['pdfPage']])), cid)
+
     def test_no_chunk_too_long(self):
         for c in self.chunks:
             self.assertLessEqual(len(c['text'].split()), MAX_WORDS, c['id'])

@@ -30,6 +30,8 @@ class GeneratedQuestion {
   final List<String> options;
   final int correctIndex;
   final String explanation;
+  /// The bank item this question came from (decision 0017), for logs; null when generated.
+  final String? bankId;
 
   const GeneratedQuestion({
     required this.type,
@@ -37,6 +39,7 @@ class GeneratedQuestion {
     this.options = const [],
     this.correctIndex = -1,
     this.explanation = '',
+    this.bankId,
   });
 }
 

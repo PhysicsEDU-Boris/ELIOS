@@ -414,9 +414,13 @@ class _QuestionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  state.isFallback
-                      ? 'SOAL CADANGAN (AI ON-DEVICE BELUM SIAP)'
-                      : 'SOAL AI GEMMA · ON-DEVICE (DARI SAMPAH YANG DISCAN)',
+                  state.question?.bankId != null
+                      ? 'SOAL DARI MODUL · BANK SOAL'
+                      : state.isFallback
+                          ? (WasteQuizNotifier.questionsFromGemma
+                              ? 'SOAL CADANGAN (AI ON-DEVICE BELUM SIAP)'
+                              : 'SOAL UMUM (BENDA BELUM ADA DI BANK SOAL)')
+                          : 'SOAL AI GEMMA · ON-DEVICE (DARI SAMPAH YANG DISCAN)',
                   style: GoogleFonts.manrope(color: elioPrimary, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.6),
                 ),
                 const SizedBox(height: 4),

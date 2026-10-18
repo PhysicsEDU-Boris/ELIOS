@@ -9,6 +9,7 @@ import '../services/detection_crop.dart';
 import '../services/detection_stabilizer.dart';
 import '../services/frame_source/frame_source.dart';
 import '../services/gemma_quiz_service.dart';
+import '../services/question_bank.dart';
 import '../services/quiz_tts_service.dart';
 import '../services/scan_diagnostics.dart';
 import '../services/websocket_service.dart';
@@ -21,9 +22,17 @@ enum WasteQuizPhase { idle, identifying, confirmingHazard, confirmingMismatch, l
 /// stand-in for testing without the robot.
 enum WasteQuizSource { maixCam2, phoneCamera }
 
-/// Question order within one scan session: alternate the two types.
-QuizQuestionType questionTypeFor(int index) =>
-    index.isEven ? QuizQuestionType.multipleChoice : QuizQuestionType.essay;
+/// Questions come from the reviewed bank (decision 0017); Gemma only identifies.
+/// `--dart-define=GEMMA_QUESTIONS=true` brings back Gemma-generated questions (kept for a later opt-in).
+const gemmaQuestionsEnabled = bool.fromEnvironment('GEMMA_QUESTIONS');
+
+/// Essay questions are off by default: sessions are multiple choice only (decision 0017).
+const essayQuestionsEnabled = bool.fromEnvironment('ESSAY_QUESTIONS');
+
+/// Question order within one scan session: alternate the two types, or
+/// multiple choice only when essays are off.
+QuizQuestionType questionTypeFor(int index, {bool essays = true}) =>
+    !essays || index.isEven ? QuizQuestionType.multipleChoice : QuizQuestionType.essay;
 
 @immutable
 class WasteQuizUiState {
@@ -137,6 +146,16 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   int _generation = 0;
   final _askedQuestions = <String>[];
 
+  /// Test overrides for the two build flags above.
+  @visibleForTesting
+  static bool gemmaQuestions = gemmaQuestionsEnabled;
+  @visibleForTesting
+  static bool essayQuestions = essayQuestionsEnabled;
+  static bool get questionsFromGemma => gemmaQuestions;
+
+  // This session's remaining bank questions per type (decision 0017).
+  Map<QuizQuestionType, List<GeneratedQuestion>>? _bankQueues;
+
   // The text last spoken automatically (decision 0009: "one TTS slot, keyed
   // by object"), so the same quiz text isn't re-spoken if the message that
   // triggered it is appended again or the popup rebuilds. The manual
@@ -199,6 +218,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (state.phase != WasteQuizPhase.idle) return;
     _lastShownAt = DateTime.now();
     _askedQuestions.clear();
+    _bankQueues = null;
     _cancelPrefetch();
     final generation = ++_generation;
     GemmaQuizService.instance.cancel();
@@ -212,6 +232,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _lastLabel = detection.label;
     _lastShownAt = DateTime.now();
     _askedQuestions.clear();
+    _bankQueues = null;
     _cancelPrefetch();
     final generation = ++_generation;
     GemmaQuizService.instance.cancel();
@@ -326,6 +347,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   void _startSession(ScannedWaste scan) {
     _askedQuestions.clear();
+    _bankQueues = null;
     _cancelPrefetch();
     if (scan.category?.id == 'hazardous') {
       state = _freshSession(scan: scan, phase: WasteQuizPhase.confirmingHazard);
@@ -344,7 +366,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     unawaited(QuizTtsService.instance.stop());
     final generation = ++_generation;
     final scan = state.scan!;
-    final type = questionTypeFor(index);
+    final type = questionTypeFor(index, essays: essayQuestions);
     final total = state.totalQuestions;
     state = state.copyWith(
       phase: WasteQuizPhase.loadingQuestion,
@@ -357,15 +379,17 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final diagnostics = _diagnostics;
     diagnostics?.event('question_request', {'requestId': '${diagnostics.id}/question-${index + 1}'});
     final sw = kDebugMode ? (Stopwatch()..start()) : null;
-    final generated = await GemmaQuizService.instance.generateQuestion(
-      waste: scan,
-      type: type,
-      difficulty: state.difficulty,
-      avoid: List.of(_askedQuestions),
-    );
+    final generated = gemmaQuestions
+        ? await GemmaQuizService.instance.generateQuestion(
+            waste: scan,
+            type: type,
+            difficulty: state.difficulty,
+            avoid: List.of(_askedQuestions),
+          )
+        : await _fromBank(scan, type);
     diagnostics?.event('question_complete', {'question': index + 1, 'generationMs': sw?.elapsedMilliseconds,
       'firstTokenMs': GemmaQuizService.instance.lastFirstTokenMs.value,
-      'fallback': generated == null, 'stale': generation != _generation});
+      'fallback': generated == null, 'stale': generation != _generation, 'bankId': generated?.bankId});
     if (sw != null) {
       // One line per question load, so a slow session (decision 0009) shows
       // exactly which question was slow and whether it fell back.
@@ -377,9 +401,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (generation != _generation) return; // dismissed or superseded
 
     final question = generated ?? _fallbackQuestion(scan, type);
+    if (question == null) return _finish();
     _askedQuestions.add(question.question);
     final intro = generated == null
-        ? 'Ini soal cadangan karena AI belum bisa membuat soal. ${_aiUnavailableReason()}'
+        ? _fallbackIntro()
         : type == QuizQuestionType.multipleChoice
             ? 'Pilih satu jawaban dulu. Setelah itu kamu bisa bertanya apa saja tentang soal ini.'
             : 'Tulis jawabanmu lalu kirim. Setelah dikoreksi, kamu bisa bertanya lebih lanjut.';
@@ -390,8 +415,24 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       messages: [...state.messages, ChatMessage(isUser: false, text: intro)],
     );
     diagnostics?.event('question_shown', {'question': index + 1, 'totalLockToQuestionMs': diagnostics.clock.elapsedMilliseconds});
-    if (index == 0) _startPrefetch();
+    if (index == 0 && gemmaQuestions) _startPrefetch();
   }
+
+  /// The next bank question of [type] not yet asked this session: the object's
+  /// own, then its pool's; null when the bank has nothing left (decision 0017).
+  Future<GeneratedQuestion?> _fromBank(ScannedWaste scan, QuizQuestionType type) async {
+    final bank = await QuestionBank.load();
+    final queue = (_bankQueues ??= {})[type] ??= bank.questionsFor(scan, type);
+    while (queue.isNotEmpty) {
+      final q = queue.removeAt(0);
+      if (!_askedQuestions.contains(q.question)) return q;
+    }
+    return null;
+  }
+
+  String _fallbackIntro() => gemmaQuestions
+      ? 'Ini soal cadangan karena AI belum bisa membuat soal. ${_aiUnavailableReason()}'
+      : 'Ini soal umum karena benda ini belum ada di bank soal.';
 
   /// Starts filling questions 2..N in the background through the single
   /// Gemma slot, one at a time, the instant question 1 shows.
@@ -421,7 +462,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// 0003) -- never surfacing that as a failure -- and stops once this
   /// session is closed or superseded.
   Future<GeneratedQuestion?> _generateForBuffer(ScannedWaste scan, int index, int gen) async {
-    final type = questionTypeFor(index);
+    final type = questionTypeFor(index, essays: essayQuestions);
     final diagnostics = _diagnostics;
     var attempt = 0;
     while (gen == _prefetchSessionGen) {
@@ -463,7 +504,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     unawaited(QuizTtsService.instance.stop());
     final generation = ++_generation;
     final scan = state.scan!;
-    final type = questionTypeFor(index);
+    final type = questionTypeFor(index, essays: essayQuestions);
     final total = state.totalQuestions;
     state = state.copyWith(
       phase: WasteQuizPhase.loadingQuestion,
@@ -474,7 +515,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     );
 
     final sw = Stopwatch()..start();
-    final generated = await _prefetchCompleters[index]?.future;
+    final generated = gemmaQuestions ? await _prefetchCompleters[index]?.future : await _fromBank(scan, type);
     final waitedMs = sw.elapsedMilliseconds;
     _lastNextWaitMs = waitedMs;
     if (kDebugMode) {
@@ -486,9 +527,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (generation != _generation) return; // dismissed or superseded while waiting
 
     final question = generated ?? _fallbackQuestion(scan, type);
+    if (question == null) return _finish();
     _askedQuestions.add(question.question);
     final intro = generated == null
-        ? 'Ini soal cadangan karena AI belum bisa membuat soal. ${_aiUnavailableReason()}'
+        ? _fallbackIntro()
         : type == QuizQuestionType.multipleChoice
             ? 'Pilih satu jawaban dulu. Setelah itu kamu bisa bertanya apa saja tentang soal ini.'
             : 'Tulis jawabanmu lalu kirim. Setelah dikoreksi, kamu bisa bertanya lebih lanjut.';
@@ -500,14 +542,34 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     );
   }
 
-  GeneratedQuestion _fallbackQuestion(ScannedWaste scan, QuizQuestionType type) {
+  /// The first fixed fallback of [type] not yet shown this session, so a
+  /// session never repeats a question (decision 0011 leftover, 0017).
+  // ponytail: three MC and two essay variants; an object with no bank entry
+  // and no pool ends its session after those instead of repeating one.
+  GeneratedQuestion? _fallbackQuestion(ScannedWaste scan, QuizQuestionType type) {
+    for (final q in fallbackQuestions(scan, type)) {
+      if (!_askedQuestions.contains(q.question)) return q;
+    }
+    return null; // all used: the session ends early rather than repeat one
+  }
+
+  @visibleForTesting
+  static List<GeneratedQuestion> fallbackQuestions(ScannedWaste scan, QuizQuestionType type) {
     final name = scan.displayName.toLowerCase();
     if (type == QuizQuestionType.essay) {
-      return GeneratedQuestion(
-        type: type,
-        question: 'Analisis bagaimana $name sebaiknya dikelola setelah dibuang, '
-            'dan jelaskan dampak lingkungannya jika salah dikelola.',
-      );
+      return [
+        GeneratedQuestion(
+          type: type,
+          question: 'Analisis bagaimana $name sebaiknya dikelola setelah dibuang, '
+              'dan jelaskan dampak lingkungannya jika salah dikelola.',
+        ),
+        GeneratedQuestion(
+          type: type,
+          question: 'Jelaskan bagaimana prinsip 3R (reduce, reuse, recycle) dapat diterapkan pada $name, '
+              'mulai dari yang paling diutamakan.',
+          explanation: 'Reduce lebih utama daripada reuse, dan reuse lebih utama daripada recycle.',
+        ),
+      ];
     }
     final bins = ['Sampah organik', 'Daur ulang (anorganik)', 'Limbah B3', 'Sampah residu'];
     final correct = switch (scan.category?.id) {
@@ -516,13 +578,31 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       'hazardous' => 2,
       _ => 3,
     };
-    return GeneratedQuestion(
-      type: type,
-      question: 'Ke aliran pengelolaan mana $name seharusnya masuk?',
-      options: bins,
-      correctIndex: correct,
-      explanation: 'Jawaban yang tepat: ${bins[correct]}.',
-    );
+    return [
+      GeneratedQuestion(
+        type: type,
+        question: 'Ke aliran pengelolaan mana $name seharusnya masuk?',
+        options: bins,
+        correctIndex: correct,
+        explanation: 'Jawaban yang tepat: ${bins[correct]}.',
+      ),
+      GeneratedQuestion(
+        type: type,
+        question: 'Pemilahan sampah di sumber yang baik memakai berapa kelompok?',
+        options: const ['Dua: organik dan non-organik', 'Empat: organik, plastik, kertas, dan logam',
+          'Tiga: organik, non-organik, dan B3', 'Satu: semua dicampur lalu dipilah di TPA'],
+        correctIndex: 2,
+        explanation: 'Modul (1.6) memakai tiga kelompok: organik, non-organik, dan B3.',
+      ),
+      GeneratedQuestion(
+        type: type,
+        question: 'Dalam prinsip 3R, tindakan mana yang paling diutamakan?',
+        options: const ['Recycle (mendaur ulang)', 'Reduce (mengurangi)', 'Menimbun di TPA',
+          'Reuse (memakai kembali)'],
+        correctIndex: 1,
+        explanation: 'Modul (4.1): reduce lebih utama daripada reuse, dan reuse lebih utama daripada recycle.',
+      ),
+    ];
   }
 
   void selectOption(int index) {
@@ -640,14 +720,15 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   }
 
   void _advance() {
-    if (state.isLastQuestion) {
-      state = state.copyWith(phase: WasteQuizPhase.finished);
-      final skipped = state.skippedCount > 0 ? ' ${state.skippedCount} soal dilewati.' : '';
-      _appendAiReply('Sesi selesai! Pilihan ganda benar: '
-          '${state.correctCount} dari ${state.mcAnswered}.$skipped Scan sampah lain untuk soal baru.');
-      return;
-    }
+    if (state.isLastQuestion) return _finish();
     _consumeQuestion(state.questionIndex + 1);
+  }
+
+  void _finish() {
+    state = state.copyWith(phase: WasteQuizPhase.finished);
+    final skipped = state.skippedCount > 0 ? ' ${state.skippedCount} soal dilewati.' : '';
+    _appendAiReply('Sesi selesai! Pilihan ganda benar: '
+        '${state.correctCount} dari ${state.mcAnswered}.$skipped Scan sampah lain untuk soal baru.');
   }
 
   void _appendAiReply(String text) {
