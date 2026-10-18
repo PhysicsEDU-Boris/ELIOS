@@ -12,6 +12,13 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- Debug-only question-source switch ("Bank soal" / "Gemma") under the LIVE_SCAN
+  debug overlay, saved in app preferences; applies from the next scan. Release
+  builds always use the bank; `GEMMA_QUESTIONS` now only sets the initial value.
+  Gemma mode falls back to the fixed questions, never to the bank. The header
+  reads "SOAL GEMMA" for Gemma questions, and every question logs one
+  `question_source` line (source, item, object, pool, ms from scan, fallback)
+  (decision 0018).
 - M3.5 object bank `assets/quiz/object_bank_draft.json`: 13 objects (ponsel,
   laptop, perangkat elektronik, baterai, lampu TL/CFL, botol plastik, gelas
   plastik, toples kaca, kaleng aluminium, kardus, kertas, kulit pisang, kotak

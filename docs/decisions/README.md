@@ -23,3 +23,4 @@ their status changed.
 | [0014](0014-module-chunks.md) | The course module as traceable chunks (M3.2) | Accepted |
 | [0015](0015-question-bank-draft.md) | Module-grounded question bank, drafted for owner review (M3.3) | Proposed |
 | [0017](0017-object-bank.md) | Pre-written object-specific questions; Gemma identifies only (M3.5) | Proposed |
+| [0018](0018-question-source-toggle.md) | Debug switch between the question bank and Gemma (M3.6) | Accepted |
