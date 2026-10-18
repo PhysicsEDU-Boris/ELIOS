@@ -49,6 +49,13 @@ kept outside the repo.
   class/score, raw Gemma item/category, bins and the identify JPEG name.
 
 ### Changed
+- Gemma question mode asks about one physics angle per question (density,
+  heat, recycling energy, decomposition, electricity, UV, physical sorting,
+  handling safety), chosen in code, fitting the object's bin and never repeated
+  in a session. The level texts lost their "life-cycle assessment" example;
+  replies mentioning LCA, siklus hidup or ekonomi sirkular are rejected and
+  retried with another angle, then fall back to the fixed questions. The
+  angle is logged per question (decision 0019).
 - Quiz questions now come from the pre-written bank: the object's own, then
   its label pool, then fixed fallbacks. No question request goes to Gemma by
   default; Gemma only identifies the object (and grades essays when on).
@@ -71,6 +78,8 @@ kept outside the repo.
   gate; the module-grounded quiz plan requires page/section citations (planned).
 
 ### Fixed
+- The quiz type chip no longer says "Essay" on multiple-choice questions when
+  essays are off.
 - M2c cancel (16 Oct retest, scan 0): a close while the model is still loading
   no longer submits the photo (`submit_skipped` is logged instead). A call
   already running has its result discarded and keeps the Gemma slot busy until

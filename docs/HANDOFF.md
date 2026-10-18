@@ -1,7 +1,7 @@
 # Handoff
 
-- Base branch `feature/live-scan` at 50ffacb (#21-#23, #25 merged; #24 grounded generator stays a
-  draft). This task: `feat/m3-question-source-toggle` (M3.6), PR into feature/live-scan.
+- Base branch `feature/live-scan` at cba4431 (#21-#23, #25, #26 merged; #24 grounded generator stays
+  a draft). This task: `feat/m3-gemma-topics` (M3.7), PR into feature/live-scan.
 - M2c merged after the owner's manual retest on 16 Oct (no recording, not log-verified).
 - Robot build: `flutter build macos --debug --dart-define=LIVE_SCAN=true
   --dart-define=APP_COMMIT=$(git rev-parse --short HEAD)`, launch with `open`.
@@ -14,19 +14,19 @@
   [0014](decisions/0014-module-chunks.md) ([M3.2 results](test-results/m3-module-chunks.md)),
   [0015](decisions/0015-question-bank-draft.md) ([review sheet](quiz-review/question_bank_review.md)),
   [0017](decisions/0017-object-bank.md) ([object review](quiz-review/object_bank_review.md)),
-  [0018](decisions/0018-question-source-toggle.md).
+  [0018](decisions/0018-question-source-toggle.md), [0019](decisions/0019-gemma-question-topics.md).
 
-## What M3.6 delivers (feat/m3-question-source-toggle)
+## What M3.7 delivers (feat/m3-gemma-topics)
 
-- Debug builds: "Bank soal" / "Gemma" switch under the LIVE_SCAN overlay (saved; next scan).
-  Gemma mode = old generation + prefetch, fixed fallback only. Release: always bank.
-- Compare runs with the `[WasteQuiz] question_source ...` lines (fromScanMs, loadMs, fallback).
+- Recording 18 Oct: 16 of 20 Gemma questions were about LCA / circular economy (Sulit level text,
+  2 random angles, avoid list). Now one physics angle per question, chosen in code, no repeats,
+  fitting the bin; banned-topic replies retried, then fixed fallback. `angle=` in the log line.
 
 ## Earlier M3 (0013-0017)
 
 - MC schema `correct` + 3 `wrong` (#21); 66 module chunks + label map (#22; PDF not committed,
   rebuild with `scripts/extract_module.py`); label-pool bank 56 items (#23); object bank 13 objects,
-  51 MC + 13 essays, all `draft`, served by default (#25). Check: `python3 scripts/validate_bank.py`.
+  51 MC + 13 essays, all `draft`, served by default (#25); debug Bank/Gemma switch (#26).
 
 ## M2c (PR #17, details in 0012)
 
@@ -36,7 +36,7 @@
 ## Robot tests still to run
 
 - Mismatch card; close-before-send `submit_skipped`; residu routing; 60 s hold with one
-  object; chat during Looking; M3.6 bank vs Gemma on phone, bottle, cardboard, banana peel.
+  object; chat during Looking; M3.7 Gemma angles (phone, bottle, cardboard, banana peel x2).
 
 ## KNOWN OPEN (not done)
 
