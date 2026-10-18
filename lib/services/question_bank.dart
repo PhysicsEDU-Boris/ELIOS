@@ -31,9 +31,12 @@ class QuestionBank {
 
   static Future<QuestionBank>? _loading;
 
+  /// The bank once [load] has finished (for synchronous lookups such as logging).
+  static QuestionBank? loaded;
+
   /// Loaded once from the bundled assets.
   static Future<QuestionBank> load() => _loading ??= () async {
-        return QuestionBank.fromJson(
+        return loaded = QuestionBank.fromJson(
           await rootBundle.loadString('assets/quiz/object_bank_draft.json'),
           await rootBundle.loadString('assets/quiz/question_bank_draft.json'),
         );

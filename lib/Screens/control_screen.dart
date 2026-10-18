@@ -20,6 +20,7 @@ import '../services/websocket_service.dart';
 import '../widgets/debug_phone_camera_sheet.dart';
 import '../widgets/desktop_viewport.dart';
 import '../widgets/live_scan_debug_overlay.dart';
+import '../widgets/question_source_switch.dart';
 import '../widgets/segmentation_overlay_painter.dart';
 import '../widgets/waste_quiz_popup.dart';
 import '../services/frame_source/maix_cam_source.dart';
@@ -391,7 +392,17 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
             Positioned(
               left: 12,
               bottom: 12,
-              child: SafeArea(child: LiveScanDebugOverlay(controller: _liveScan!)),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    LiveScanDebugOverlay(controller: _liveScan!),
+                    const SizedBox(height: 6),
+                    const QuestionSourceSwitch(), // decision 0018: applies from the next scan
+                  ],
+                ),
+              ),
             ),
         ],
       ),

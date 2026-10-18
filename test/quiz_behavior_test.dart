@@ -375,13 +375,13 @@ void main() {
       await GemmaQuizService.instance.cancel();
       GemmaQuizService.instance.mockSendExecute = null;
       // Prefetch is the opt-in Gemma question path (decision 0017 keeps it, off by default).
-      WasteQuizNotifier.gemmaQuestions = true;
+      WasteQuizNotifier.sourceOverride = QuestionSource.gemma;
       WasteQuizNotifier.essayQuestions = true;
       await pumpEventQueue();
     });
     tearDown(() {
       GemmaQuizService.instance.mockSendExecute = null;
-      WasteQuizNotifier.gemmaQuestions = gemmaQuestionsEnabled;
+      WasteQuizNotifier.sourceOverride = null;
       WasteQuizNotifier.essayQuestions = essayQuestionsEnabled;
     });
 

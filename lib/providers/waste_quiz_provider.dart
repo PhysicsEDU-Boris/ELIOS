@@ -22,9 +22,9 @@ enum WasteQuizPhase { idle, identifying, confirmingHazard, confirmingMismatch, l
 /// stand-in for testing without the robot.
 enum WasteQuizSource { maixCam2, phoneCamera }
 
-/// Questions come from the reviewed bank (decision 0017); Gemma only identifies.
-/// `--dart-define=GEMMA_QUESTIONS=true` brings back Gemma-generated questions (kept for a later opt-in).
-const gemmaQuestionsEnabled = bool.fromEnvironment('GEMMA_QUESTIONS');
+/// `--dart-define=GEMMA_QUESTIONS=true`: the question-source switch starts on Gemma
+/// (decision 0018); the default source is the reviewed bank (decision 0017).
+const gemmaQuestionsEnabled = defaultQuestionSource == QuestionSource.gemma;
 
 /// Essay questions are off by default: sessions are multiple choice only (decision 0017).
 const essayQuestionsEnabled = bool.fromEnvironment('ESSAY_QUESTIONS');
@@ -59,6 +59,9 @@ class WasteQuizUiState {
   /// The detector class Gemma disagreed with (confirmingMismatch only).
   final String? mismatchDetector;
 
+  /// The question source this session uses (decision 0018), for the header.
+  final QuestionSource questionSource;
+
   const WasteQuizUiState({
     this.phase = WasteQuizPhase.idle,
     this.minimized = false,
@@ -78,6 +81,7 @@ class WasteQuizUiState {
     this.voiceOn = true,
     this.notice,
     this.mismatchDetector,
+    this.questionSource = QuestionSource.bank,
   });
 
   int get totalQuestions => difficulty.questionCount;
@@ -127,6 +131,7 @@ class WasteQuizUiState {
       voiceOn: voiceOn ?? this.voiceOn,
       notice: notice ?? this.notice,
       mismatchDetector: mismatchDetector ?? this.mismatchDetector,
+      questionSource: questionSource,
     );
   }
 }
@@ -146,12 +151,18 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   int _generation = 0;
   final _askedQuestions = <String>[];
 
-  /// Test overrides for the two build flags above.
+  /// Test overrides: a fixed question source, and the essay build flag.
   @visibleForTesting
-  static bool gemmaQuestions = gemmaQuestionsEnabled;
+  static QuestionSource? sourceOverride;
   @visibleForTesting
   static bool essayQuestions = essayQuestionsEnabled;
-  static bool get questionsFromGemma => gemmaQuestions;
+
+  // Captured when a session starts, so a switch only affects the next scan (decision 0018).
+  QuestionSource _sessionSource = QuestionSource.bank;
+  bool get _gemma => _sessionSource == QuestionSource.gemma;
+
+  // From the scan result (the object known) to each question shown, for the per-question log.
+  Stopwatch? _scanClock;
 
   // This session's remaining bank questions per type (decision 0017).
   Map<QuizQuestionType, List<GeneratedQuestion>>? _bankQueues;
@@ -186,7 +197,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final difficulty = QuizDifficulty.fromSetting(ref.read(appPreferencesProvider).quizDifficulty);
     _diagnostics = null;
     _lastAutoSpokenText = null; // a new object/quiz: nothing spoken for it yet
-    return WasteQuizUiState(phase: phase, scan: scan, difficulty: difficulty, voiceOn: state.voiceOn);
+    _sessionSource = sourceOverride ?? effectiveQuestionSource(ref.read(appPreferencesProvider).questionSource);
+    _scanClock = scan == null ? null : (Stopwatch()..start());
+    return WasteQuizUiState(phase: phase, scan: scan, difficulty: difficulty, voiceOn: state.voiceOn,
+        questionSource: _sessionSource);
   }
 
   /// Called from the control screen's MaixCAM2 detections listener.
@@ -299,6 +313,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     diagnostics?.event('resolved', {'item': scan.displayName, 'category': scan.category?.id,
       'detectorHazard': detectorHazard, 'hazard': scan.category?.id == 'hazardous'});
     state = state.copyWith(scan: scan);
+    _scanClock = Stopwatch()..start();
     if (scan.category?.id == 'hazardous') {
       state = state.copyWith(phase: WasteQuizPhase.confirmingHazard);
       return;
@@ -379,7 +394,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final diagnostics = _diagnostics;
     diagnostics?.event('question_request', {'requestId': '${diagnostics.id}/question-${index + 1}'});
     final sw = kDebugMode ? (Stopwatch()..start()) : null;
-    final generated = gemmaQuestions
+    final loadClock = Stopwatch()..start();
+    final generated = _gemma
         ? await GemmaQuizService.instance.generateQuestion(
             waste: scan,
             type: type,
@@ -415,7 +431,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       messages: [...state.messages, ChatMessage(isUser: false, text: intro)],
     );
     diagnostics?.event('question_shown', {'question': index + 1, 'totalLockToQuestionMs': diagnostics.clock.elapsedMilliseconds});
-    if (index == 0 && gemmaQuestions) _startPrefetch();
+    _logQuestion(index, scan, generated, loadClock.elapsedMilliseconds);
+    if (index == 0 && _gemma) _startPrefetch();
   }
 
   /// The next bank question of [type] not yet asked this session: the object's
@@ -430,7 +447,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     return null;
   }
 
-  String _fallbackIntro() => gemmaQuestions
+  String _fallbackIntro() => _gemma
       ? 'Ini soal cadangan karena AI belum bisa membuat soal. ${_aiUnavailableReason()}'
       : 'Ini soal umum karena benda ini belum ada di bank soal.';
 
@@ -515,7 +532,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     );
 
     final sw = Stopwatch()..start();
-    final generated = gemmaQuestions ? await _prefetchCompleters[index]?.future : await _fromBank(scan, type);
+    final generated = _gemma ? await _prefetchCompleters[index]?.future : await _fromBank(scan, type);
     final waitedMs = sw.elapsedMilliseconds;
     _lastNextWaitMs = waitedMs;
     if (kDebugMode) {
@@ -540,6 +557,25 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       isFallback: generated == null,
       messages: [...state.messages, ChatMessage(isUser: false, text: intro)],
     );
+    _logQuestion(index, scan, generated, waitedMs);
+  }
+
+  /// One line per question shown, in both modes, so robot runs can be compared
+  /// (decision 0018). No question text.
+  void _logQuestion(int index, ScannedWaste scan, GeneratedQuestion? generated, int loadMs) {
+    final bank = QuestionBank.loaded;
+    final fields = <String, Object?>{
+      'question': index + 1,
+      'source': _sessionSource.name,
+      'item': scan.displayName,
+      'object': _gemma ? '-' : bank?.matchObject(scan) ?? '-',
+      'pool': _gemma ? 'gemma' : bank?.poolFor(scan) ?? '-',
+      'fromScanMs': _scanClock?.elapsedMilliseconds,
+      'loadMs': loadMs,
+      'fallback': generated == null ? 'yes' : 'no',
+    };
+    debugPrint('[WasteQuiz] question_source ${fields.entries.map((e) => '${e.key}=${e.value}').join(' ')}');
+    _diagnostics?.event('question_source', fields);
   }
 
   /// The first fixed fallback of [type] not yet shown this session, so a
