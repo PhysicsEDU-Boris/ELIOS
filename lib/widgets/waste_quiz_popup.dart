@@ -18,6 +18,16 @@ import '../theme/elio_learning_colors.dart';
 /// 600dp wide (question + 280dp AI chat), tabs below that. The question panel
 /// and the chat scroll independently, so long questions or AI replies never
 /// push content off-screen. Inert while idle so robot controls stay usable.
+/// Where the shown question came from (decisions 0017, 0018). A Gemma question
+/// never claims to be from the module.
+String questionSourceHeader(WasteQuizUiState state) {
+  if (state.question?.bankId != null) return 'SOAL DARI MODUL · BANK SOAL';
+  if (!state.isFallback) return 'SOAL GEMMA';
+  return state.questionSource == QuestionSource.gemma
+      ? 'SOAL CADANGAN (AI ON-DEVICE BELUM SIAP)'
+      : 'SOAL UMUM (BENDA BELUM ADA DI BANK SOAL)';
+}
+
 class WasteQuizPopup extends ConsumerWidget {
   const WasteQuizPopup({super.key});
 
@@ -414,13 +424,7 @@ class _QuestionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  state.question?.bankId != null
-                      ? 'SOAL DARI MODUL · BANK SOAL'
-                      : state.isFallback
-                          ? (WasteQuizNotifier.questionsFromGemma
-                              ? 'SOAL CADANGAN (AI ON-DEVICE BELUM SIAP)'
-                              : 'SOAL UMUM (BENDA BELUM ADA DI BANK SOAL)')
-                          : 'SOAL AI GEMMA · ON-DEVICE (DARI SAMPAH YANG DISCAN)',
+                  questionSourceHeader(state),
                   style: GoogleFonts.manrope(color: elioPrimary, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.6),
                 ),
                 const SizedBox(height: 4),

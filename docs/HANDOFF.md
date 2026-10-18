@@ -1,8 +1,7 @@
 # Handoff
 
-- Base branch `feature/live-scan` at ef405f9 (#21, #22 merged). Open: #23 label bank (0015),
-  #24 grounded generator (draft, stays off). This task: `feat/m3-object-bank` (M3.5), cut from
-  #23's head, PR into feature/live-scan.
+- Base branch `feature/live-scan` at 50ffacb (#21-#23, #25 merged; #24 grounded generator stays a
+  draft). This task: `feat/m3-question-source-toggle` (M3.6), PR into feature/live-scan.
 - M2c merged after the owner's manual retest on 16 Oct (no recording, not log-verified).
 - Robot build: `flutter build macos --debug --dart-define=LIVE_SCAN=true
   --dart-define=APP_COMMIT=$(git rev-parse --short HEAD)`, launch with `open`.
@@ -14,19 +13,20 @@
   [0013](decisions/0013-quiz-answer-schema.md) ([M3.1 results](test-results/m3-quiz-parse.md)),
   [0014](decisions/0014-module-chunks.md) ([M3.2 results](test-results/m3-module-chunks.md)),
   [0015](decisions/0015-question-bank-draft.md) ([review sheet](quiz-review/question_bank_review.md)),
-  [0017](decisions/0017-object-bank.md) ([object review](quiz-review/object_bank_review.md)).
+  [0017](decisions/0017-object-bank.md) ([object review](quiz-review/object_bank_review.md)),
+  [0018](decisions/0018-question-source-toggle.md).
 
-## What M3.5 delivers (feat/m3-object-bank)
+## What M3.6 delivers (feat/m3-question-source-toggle)
 
-- Questions come only from the bank (object -> label pool -> fixed fallback, no repeats); no question
-  request reaches Gemma by default. `GEMMA_QUESTIONS=true` / `ESSAY_QUESTIONS=true` opt back in.
-- 13 objects, 51 MC + 13 essays, all `draft`. Owner marks the review sheet; then add
-  `status: accepted` and filter on it (not built). Check: `python3 scripts/validate_bank.py`.
+- Debug builds: "Bank soal" / "Gemma" switch under the LIVE_SCAN overlay (saved; next scan).
+  Gemma mode = old generation + prefetch, fixed fallback only. Release: always bank.
+- Compare runs with the `[WasteQuiz] question_source ...` lines (fromScanMs, loadMs, fallback).
 
-## Earlier M3 (0013-0015)
+## Earlier M3 (0013-0017)
 
-- MC schema `correct` + 3 `wrong` (#21); 66 module chunks + label map in `assets/module/` (#22; PDF
-  not committed, rebuild with `scripts/extract_module.py`); label-pool bank, 56 items (#23).
+- MC schema `correct` + 3 `wrong` (#21); 66 module chunks + label map (#22; PDF not committed,
+  rebuild with `scripts/extract_module.py`); label-pool bank 56 items (#23); object bank 13 objects,
+  51 MC + 13 essays, all `draft`, served by default (#25). Check: `python3 scripts/validate_bank.py`.
 
 ## M2c (PR #17, details in 0012)
 
@@ -36,7 +36,7 @@
 ## Robot tests still to run
 
 - Mismatch card; close-before-send `submit_skipped`; residu routing; 60 s hold with one
-  object; chat during Looking; M3.5 quiz (bank questions, header "SOAL DARI MODUL").
+  object; chat during Looking; M3.6 bank vs Gemma on phone, bottle, cardboard, banana peel.
 
 ## KNOWN OPEN (not done)
 

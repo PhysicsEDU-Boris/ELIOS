@@ -88,13 +88,13 @@ void main() {
         if (imageBytes != null) return '{"item":"ponsel","material":"logam, kaca, plastik","category":"B3"}';
         return 'Benar, sesuai modul.';
       };
-      WasteQuizNotifier.gemmaQuestions = false;
+      WasteQuizNotifier.sourceOverride = QuestionSource.bank;
       WasteQuizNotifier.essayQuestions = false;
       await pumpEventQueue();
     });
     tearDown(() {
       GemmaQuizService.instance.mockSendExecute = null;
-      WasteQuizNotifier.gemmaQuestions = gemmaQuestionsEnabled;
+      WasteQuizNotifier.sourceOverride = null;
       WasteQuizNotifier.essayQuestions = essayQuestionsEnabled;
     });
 
