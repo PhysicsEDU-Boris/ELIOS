@@ -300,7 +300,9 @@ class _QuestionPanel extends ConsumerWidget {
                       fg: Colors.white,
                     ),
                     _Chip(
-                      label: questionTypeFor(state.questionIndex) == QuizQuestionType.multipleChoice
+                      // The shown question's own type: with essays off, every index is multiple choice.
+                      label: (state.question?.type ?? questionTypeFor(state.questionIndex)) ==
+                              QuizQuestionType.multipleChoice
                           ? 'Pilihan ganda'
                           : 'Essay · maks ${_EssayCard.wordLimit} kata',
                       bg: elioSecondaryContainer,

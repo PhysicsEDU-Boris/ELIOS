@@ -32,6 +32,8 @@ class GeneratedQuestion {
   final String explanation;
   /// The bank item this question came from (decision 0017), for logs; null when generated.
   final String? bankId;
+  /// The physics angle a Gemma question was asked about (decision 0019), for rotation and logs.
+  final String? angle;
 
   const GeneratedQuestion({
     required this.type,
@@ -40,19 +42,22 @@ class GeneratedQuestion {
     this.correctIndex = -1,
     this.explanation = '',
     this.bankId,
+    this.angle,
   });
 }
+
+/// One physics angle for a Gemma question (Fisika Lingkungan, decision 0019).
+typedef QuestionAngle = ({String id, String text, Set<String> bins});
 
 /// Quiz difficulty from Config Settings → Quiz → Difficulty. All levels are
 /// university level; they differ in depth and in how many questions a scan
 /// session has.
 enum QuizDifficulty {
-  easy(1, 'tingkat mahasiswa S1 tahun pertama: menguji pemahaman konsep inti '
-      '(jenis dan sifat material, cara pengolahannya), bukan hafalan sederhana.'),
-  medium(3, 'tingkat mahasiswa S1 menengah: menguji penerapan dan analisis, '
-      'misalnya proses daur ulang, sifat kimia material, atau hubungan sebab-akibat dampak lingkungan.'),
-  hard(5, 'tingkat mahasiswa S1 akhir: menguji analisis mendalam, misalnya life-cycle '
-      'assessment, kimia polimer atau logam, efisiensi energi daur ulang, kebijakan, atau perhitungan sederhana.');
+  // No topic examples here: every prompt carries the level text, and the old
+  // "misalnya life-cycle assessment" example made nearly every question an LCA one (decision 0019).
+  easy(1, 'tingkat mahasiswa S1 tahun pertama: menguji pemahaman konsep inti, bukan hafalan sederhana.'),
+  medium(3, 'tingkat mahasiswa S1 menengah: menguji penerapan konsep dan hubungan sebab-akibat.'),
+  hard(5, 'tingkat mahasiswa S1 akhir: menguji analisis sebab-akibat yang lebih dalam.');
 
   const QuizDifficulty(this.questionCount, this.levelDescription);
 
@@ -108,16 +113,46 @@ class GemmaQuizService {
       'asks for JSON, reply with only that JSON object; otherwise reply in '
       'plain sentences with no JSON, no code blocks and no markdown.';
 
-  // University-level angles; one is picked at random per question.
-  static const _angles = [
-    'komposisi material serta sifat kimia atau fisikanya',
-    'proses daur ulang atau pengolahan industrinya',
-    'dampak lingkungannya beserta mekanisme penyebabnya',
-    'siklus hidup produk dari produksi sampai pembuangan (life-cycle)',
-    'kebijakan dan sistem pengelolaan sampahnya',
-    'risiko kesehatan dan keselamatannya',
-    'ekonomi sirkular dan nilai material yang bisa dipulihkan',
+  /// Physics angles for Gemma questions, chosen in code and never repeated
+  /// within a session (decision 0019). `bins` lists where an angle makes sense:
+  /// no batteries for a banana peel, no recycling energy for food waste.
+  static const questionAngles = <QuestionAngle>[
+    (id: 'density', text: 'massa jenis serta mengapung atau tenggelam di air', bins: {'organic', 'inorganic'}),
+    (id: 'heat', text: 'kalor, titik lebur, dan suhu', bins: {'organic', 'inorganic', 'hazardous'}),
+    (id: 'recycling_energy', text: 'energi yang diperlukan atau dihemat saat didaur ulang', bins: {'inorganic', 'hazardous'}),
+    (id: 'decomposition', text: 'lama penguraian dan hal yang mempercepatnya', bins: {'organic', 'inorganic'}),
+    (id: 'electricity', text: 'listrik, baterai, serta risiko korsleting dan kebakaran', bins: {'hazardous'}),
+    (id: 'light_uv', text: 'cahaya, sinar UV, dan penuaan material', bins: {'inorganic', 'hazardous'}),
+    (id: 'physical_sorting', text: 'pemilahan berdasarkan sifat fisik (magnet, air, berat)', bins: {'organic', 'inorganic', 'hazardous'}),
+    (id: 'handling_safety', text: 'alasan benda ini berbahaya atau aman ditangani', bins: {'organic', 'inorganic', 'hazardous'}),
   ];
+
+  /// Topics a Gemma reply must not be about (decision 0019); a match counts as
+  /// a parse failure. Lower case; extend here.
+  static const bannedTopicTerms = ['lca', 'life cycle', 'life-cycle', 'siklus hidup', 'ekonomi sirkular', 'circular economy'];
+
+  /// The banned term in [text], or null. Whole words only ("lca" never matches inside another word).
+  static String? bannedTopicIn(String text) {
+    final lower = text.toLowerCase();
+    for (final term in bannedTopicTerms) {
+      if (RegExp('(^|[^a-z])${RegExp.escape(term)}(\$|[^a-z])').hasMatch(lower)) return term;
+    }
+    return null;
+  }
+
+  /// The angles that fit [waste]'s bin (unknown bin: treated as inorganic).
+  static List<QuestionAngle> anglesFor(ScannedWaste waste) {
+    final bin = waste.category?.id ?? 'inorganic';
+    return [for (final a in questionAngles) if (a.bins.contains(bin)) a];
+  }
+
+  /// An angle for [waste] not in [used]; when every fitting angle is used, any fitting one.
+  QuestionAngle pickAngle(ScannedWaste waste, Iterable<String> used) {
+    final fitting = anglesFor(waste);
+    final fresh = fitting.where((a) => !used.contains(a.id)).toList();
+    final pool = fresh.isEmpty ? fitting : fresh;
+    return pool[_random.nextInt(pool.length)];
+  }
 
   final ValueNotifier<GemmaProgress> progress =
       ValueNotifier(const GemmaProgress(GemmaStatus.idle));
@@ -629,44 +664,72 @@ class GemmaQuizService {
     required QuizQuestionType type,
     required QuizDifficulty difficulty,
     List<String> avoid = const [],
+    List<String> usedAngles = const [],
   }) async {
-    final angle = angleOverride ?? _angles[_random.nextInt(_angles.length)];
-    final details = [
-      if (waste.material != null && waste.material!.isNotEmpty) 'bahan: ${waste.material}',
-      if (waste.category != null) 'kategori: ${waste.categoryNameId}',
-    ].join(', ');
-    final context = 'Sampah yang discan: "${waste.displayName}"${details.isEmpty ? '' : ' ($details)'}.';
-    final avoidText = avoid.isEmpty
-        ? ''
-        : ' Jangan mengulang soal ini: ${avoid.map((q) => '"$q"').join('; ')}.';
-    final shape = type == QuizQuestionType.multipleChoice
-        ? 'Buat SATU soal pilihan ganda ${difficulty.levelDescription} Topik: $angle dari benda tersebut. '
-            'Soal harus menguji pemahaman atau analisis, bukan sekadar menebak tempat sampah. '
-            'Beri tepat 1 jawaban benar dan tepat 3 pengecoh yang salah tapi masuk akal, masing-masing maks 10 kata. '
-            'Balas HANYA JSON: {"question": "...", "correct": "jawaban benar", '
-            '"wrong": ["pengecoh 1", "pengecoh 2", "pengecoh 3"], "explanation": "penjelasan 1-2 kalimat"}.'
-        : 'Buat SATU soal essay ${difficulty.levelDescription} Topik: $angle dari benda tersebut. '
-            'Soal meminta mahasiswa menjelaskan atau menganalisis dengan kata-katanya sendiri (maks 2 kalimat). '
-            'Balas HANYA JSON: {"question": "...", "explanation": "poin-poin jawaban yang diharapkan"}.';
-    final prompt = '$context $shape$avoidText';
-
+    final tried = [...usedAngles];
     for (var attempt = 0; attempt < 2; attempt++) {
+      // Each attempt, the retry included, gets an angle no earlier question used.
+      final angle = pickAngle(waste, tried);
+      tried.add(angle.id);
+      final prompt = questionPrompt(waste: waste, type: type, difficulty: difficulty,
+          angleText: angleOverride ?? angle.text, avoid: avoid);
       final raw = await _send(prompt, fresh: true, isUser: false);
       if (raw == 'BUSY' || raw == 'CANCELLED') return (retry: true, question: null);
       if (raw == null) return (retry: false, question: null);
       onQuestionReply?.call(raw);
       final parsed = parseQuestion(raw, type);
       if (parsed == null) {
-        _log('unparseable question (attempt ${attempt + 1}): $raw');
+        _log('unparseable question (attempt ${attempt + 1}, angle ${angle.id}): $raw');
+        continue;
+      }
+      final banned = bannedTopicIn(raw);
+      if (banned != null) {
+        _log('banned topic "$banned" rejected (attempt ${attempt + 1}, angle ${angle.id})');
         continue;
       }
       if (avoid.any((a) => _normalizeForDuplicateCheck(a) == _normalizeForDuplicateCheck(parsed.question))) {
         _log('duplicate question rejected (attempt ${attempt + 1}): ${parsed.question}');
         continue;
       }
-      return (retry: false, question: parsed);
+      return (
+        retry: false,
+        question: GeneratedQuestion(type: parsed.type, question: parsed.question, options: parsed.options,
+            correctIndex: parsed.correctIndex, explanation: parsed.explanation, angle: angle.id),
+      );
     }
     return (retry: false, question: null);
+  }
+
+  /// The question prompt: the object, one physics angle, and the reply schema (decision 0019).
+  @visibleForTesting
+  static String questionPrompt({
+    required ScannedWaste waste,
+    required QuizQuestionType type,
+    required QuizDifficulty difficulty,
+    required String angleText,
+    List<String> avoid = const [],
+  }) {
+    final details = [
+      if (waste.material != null && waste.material!.isNotEmpty) 'bahan: ${waste.material}',
+      if (waste.category != null) 'kategori: ${waste.categoryNameId}',
+    ].join(', ');
+    final name = waste.displayName;
+    final context = 'Sampah yang discan: "$name"${details.isEmpty ? '' : ' ($details)'}.';
+    final avoidText = avoid.isEmpty
+        ? ''
+        : ' Jangan mengulang soal ini: ${avoid.map((q) => '"$q"').join('; ')}.';
+    // Ungrounded: ask for qualitative physics, not numbers or facts the model may not know.
+    const physics = 'Tanyakan prinsip fisikanya secara kualitatif; jangan meminta angka, data, atau nama aturan '
+        'yang harus dihafal.';
+    final shape = type == QuizQuestionType.multipleChoice
+        ? 'Buat SATU soal pilihan ganda tentang $angleText untuk "$name", ${difficulty.levelDescription} $physics '
+            'Beri tepat 1 jawaban benar dan tepat 3 pengecoh yang salah tapi masuk akal, masing-masing maks 10 kata. '
+            'Balas HANYA JSON: {"question": "...", "correct": "jawaban benar", '
+            '"wrong": ["pengecoh 1", "pengecoh 2", "pengecoh 3"], "explanation": "penjelasan 1-2 kalimat"}.'
+        : 'Buat SATU soal essay tentang $angleText untuk "$name", ${difficulty.levelDescription} $physics '
+            'Soal meminta mahasiswa menjelaskan dengan kata-katanya sendiri (maks 2 kalimat). '
+            'Balas HANYA JSON: {"question": "...", "explanation": "poin-poin jawaban yang diharapkan"}.';
+    return '$context $shape$avoidText';
   }
 
   // ponytail: catches only case/punctuation-level repeats, not paraphrases --
@@ -680,8 +743,10 @@ class GemmaQuizService {
     required QuizQuestionType type,
     required QuizDifficulty difficulty,
     List<String> avoid = const [],
+    List<String> usedAngles = const [],
   }) async {
-    final result = await _tryGenerateQuestion(waste: waste, type: type, difficulty: difficulty, avoid: avoid);
+    final result = await _tryGenerateQuestion(
+        waste: waste, type: type, difficulty: difficulty, avoid: avoid, usedAngles: usedAngles);
     return result.question;
   }
 
@@ -694,8 +759,9 @@ class GemmaQuizService {
     required QuizQuestionType type,
     required QuizDifficulty difficulty,
     List<String> avoid = const [],
+    List<String> usedAngles = const [],
   }) =>
-      _tryGenerateQuestion(waste: waste, type: type, difficulty: difficulty, avoid: avoid);
+      _tryGenerateQuestion(waste: waste, type: type, difficulty: difficulty, avoid: avoid, usedAngles: usedAngles);
 
   /// Answers a student's follow-up after they answered: each turn carries
   /// the question, the key and their answer, so replies stay on topic.

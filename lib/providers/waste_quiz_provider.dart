@@ -167,6 +167,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   // This session's remaining bank questions per type (decision 0017).
   Map<QuizQuestionType, List<GeneratedQuestion>>? _bankQueues;
 
+  // Physics angles Gemma questions already used this session, so none repeats (decision 0019).
+  final _usedAngles = <String>[];
+
   // The text last spoken automatically (decision 0009: "one TTS slot, keyed
   // by object"), so the same quiz text isn't re-spoken if the message that
   // triggered it is appended again or the popup rebuilds. The manual
@@ -233,6 +236,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _lastShownAt = DateTime.now();
     _askedQuestions.clear();
     _bankQueues = null;
+    _usedAngles.clear();
     _cancelPrefetch();
     final generation = ++_generation;
     GemmaQuizService.instance.cancel();
@@ -247,6 +251,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _lastShownAt = DateTime.now();
     _askedQuestions.clear();
     _bankQueues = null;
+    _usedAngles.clear();
     _cancelPrefetch();
     final generation = ++_generation;
     GemmaQuizService.instance.cancel();
@@ -363,6 +368,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   void _startSession(ScannedWaste scan) {
     _askedQuestions.clear();
     _bankQueues = null;
+    _usedAngles.clear();
     _cancelPrefetch();
     if (scan.category?.id == 'hazardous') {
       state = _freshSession(scan: scan, phase: WasteQuizPhase.confirmingHazard);
@@ -401,8 +407,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
             type: type,
             difficulty: state.difficulty,
             avoid: List.of(_askedQuestions),
+            usedAngles: List.of(_usedAngles),
           )
         : await _fromBank(scan, type);
+    if (generated?.angle != null) _usedAngles.add(generated!.angle!);
     diagnostics?.event('question_complete', {'question': index + 1, 'generationMs': sw?.elapsedMilliseconds,
       'firstTokenMs': GemmaQuizService.instance.lastFirstTokenMs.value,
       'fallback': generated == null, 'stale': generation != _generation, 'bankId': generated?.bankId});
@@ -470,6 +478,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       final q = await _generateForBuffer(scan, i, gen);
       if (gen != _prefetchSessionGen) return;
       if (q != null) _askedQuestions.add(q.question); // so index i+1 avoids it too
+      if (q?.angle != null) _usedAngles.add(q!.angle!); // and gets another angle
       _prefetchCompleters[i]?.complete(q);
     }
   }
@@ -491,6 +500,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         type: type,
         difficulty: state.difficulty,
         avoid: List.of(_askedQuestions),
+        usedAngles: List.of(_usedAngles),
       );
       diagnostics?.event('prefetch_complete', {'requestId': requestId,
         'generationMs': timing?.elapsedMilliseconds, 'retry': result.retry,
@@ -570,6 +580,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       'item': scan.displayName,
       'object': _gemma ? '-' : bank?.matchObject(scan) ?? '-',
       'pool': _gemma ? 'gemma' : bank?.poolFor(scan) ?? '-',
+      'angle': generated?.angle ?? '-',
       'fromScanMs': _scanClock?.elapsedMilliseconds,
       'loadMs': loadMs,
       'fallback': generated == null ? 'yes' : 'no',

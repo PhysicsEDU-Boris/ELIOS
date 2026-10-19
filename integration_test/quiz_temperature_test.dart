@@ -21,7 +21,7 @@ const _angles = [
   'komposisi material serta sifat kimia atau fisikanya',
   'proses daur ulang atau pengolahan industrinya',
   'dampak lingkungannya beserta mekanisme penyebabnya',
-  'siklus hidup produk dari produksi sampai pembuangan (life-cycle)',
+  'lama penguraian dan hal yang mempercepatnya',
   'risiko kesehatan dan keselamatannya',
 ];
 
