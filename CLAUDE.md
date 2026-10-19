@@ -16,6 +16,14 @@ Permanent rules for working in this repo (PhysicsEDU-Boris/ELIOS).
 - Firebase config files
 - The model file
 
+## Git safety
+
+- Never run `git reset --hard`, `git checkout -- .`, `git clean` or
+  `git stash drop` without asking first.
+- Before moving or rebasing a branch, run `git status`. If anything is
+  uncommitted (including the files in "Never commit"), stop and ask, or
+  copy those files to a temp folder first.
+
 ## Before opening/updating a PR
 
 - `flutter analyze`
