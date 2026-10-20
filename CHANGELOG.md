@@ -12,6 +12,10 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- M2d lock diagnostics (debug only): one rolling JSONL per app run with cooldown, re-arm,
+  blocked-reason, candidate, too-large-box, below-min-score and busy events (rate-limited,
+  `appCommit` on every line); the overlay shows why nothing locks and has a "Scan lagi" button
+  (disabled while a quiz is open) (decision 0020).
 - Debug-only question-source switch ("Bank soal" / "Gemma") under the LIVE_SCAN
   debug overlay, saved in app preferences; applies from the next scan. Release
   builds always use the bank; `GEMMA_QUESTIONS` now only sets the initial value.
@@ -49,6 +53,10 @@ kept outside the repo.
   class/score, raw Gemma item/category, bins and the identify JPEG name.
 
 ### Changed
+- Live-scan re-arm (decision 0020): after the 15 s cooldown an object with a different label may
+  lock while other objects stay in view; the same label waits until the quizzed object has been
+  absent 2 s, and the quizzed object held in view is never asked again. Replaces the 2 s
+  empty-scene rule and the 30 s same-label wait.
 - Gemma question mode asks about one physics angle per question (density,
   heat, recycling energy, decomposition, electricity, UV, physical sorting,
   handling safety), chosen in code, fitting the object's bin and never repeated
