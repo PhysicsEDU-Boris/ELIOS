@@ -1,6 +1,6 @@
 # 0008: Live-scan state machine for the robot path (behind a switch)
 
-- Status: Accepted
+- Status: Accepted; re-arm rule and 30 s label wait superseded by [0020](0020-lock-rearm-rule.md)
 - Date: 2026-10-09
 - Milestone: M2a (Notion plan 1.2, stage 3b, first part)
 - Code:

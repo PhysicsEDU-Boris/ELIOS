@@ -76,7 +76,11 @@ class DetectionStabilizer {
     this.maxFrameGap = const Duration(milliseconds: 1500),
     this.ignoredLabels = const {},
     DateTime Function()? clock,
+    this.onEvent,
   }) : _clock = clock ?? monotonicClock();
+
+  /// Diagnostics sink: candidate_start / candidate_drop (decision 0020).
+  final void Function(String event, Map<String, Object?> data)? onEvent;
 
   /// How long the same object must be seen before it locks.
   final Duration lockTime;
@@ -122,6 +126,21 @@ class DetectionStabilizer {
   /// An object is locked: it can't lock again until it re-arms.
   bool get isLocked => _locked != null;
 
+  /// Forgets the candidate and the lock, e.g. when the state machine re-arms
+  /// after a cooldown: a lock made while asks were refused must not block.
+  void reset() {
+    _drop('reset');
+    _candidate = null;
+    _locked = null;
+    _lockedMissingSince = null;
+    _candidateMissingSince = null;
+  }
+
+  void _drop(String reason) {
+    final c = _candidate;
+    if (c != null) onEvent?.call('candidate_drop', {'label': c.label, 'reason': reason});
+  }
+
   /// Feeds one frame's detections, timed by the injected clock. Returns a
   /// lock when the tracked object has just been held for [lockTime],
   /// otherwise null.
@@ -136,6 +155,7 @@ class DetectionStabilizer {
     final last = _lastFrameAt;
     if (last != null && now.isBefore(last)) return null;
     if (last != null && now.difference(last) > maxFrameGap) {
+      _drop('frame_gap');
       _candidate = null;
       _lockedMissingSince = null;
     }
@@ -167,8 +187,12 @@ class DetectionStabilizer {
       final inView = seen.any((d) => _sameObject(cand, d));
       final missing = _candidateMissingSince;
       if (!inView) {
-        if (now.difference(_candidateMissingSince ??= now) > dropoutTolerance) _candidate = null;
+        if (now.difference(_candidateMissingSince ??= now) > dropoutTolerance) {
+          _drop('dropout');
+          _candidate = null;
+        }
       } else if (missing != null && now.difference(missing) > dropoutTolerance) {
+        _drop('dropout');
         _candidate = null;
       } else {
         _candidateMissingSince = null;
@@ -185,12 +209,15 @@ class DetectionStabilizer {
     // locked label drops that candidate instead of re-arming.
     final stillLocked = _locked;
     if (stillLocked != null && _sameObject(stillLocked, target) && target.label == stillLocked.label) {
+      _drop('flicker_back');
       _candidate = null;
       return null;
     }
 
     final current = _candidate;
     if (current == null || !_sameObject(current, target) || current.label != target.label) {
+      if (current != null) _drop(_sameObject(current, target) ? 'label_change' : 'other_object');
+      onEvent?.call('candidate_start', {'label': target.label, 'score': (target.score * 100).round() / 100});
       _candidate = target;
       _candidateSince = now;
       _candidateMissingSince = null;

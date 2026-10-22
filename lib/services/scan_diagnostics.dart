@@ -6,8 +6,8 @@ import 'package:path_provider/path_provider.dart';
 
 /// Local debug artifacts only; writes never hold the model slot or UI open.
 class ScanDiagnostics {
-  ScanDiagnostics({Future<Directory> Function()? directory})
-    : id = 'scan-${DateTime.now().microsecondsSinceEpoch}-${_sequence++}',
+  ScanDiagnostics({Future<Directory> Function()? directory, String? id})
+    : id = id ?? 'scan-${DateTime.now().microsecondsSinceEpoch}-${_sequence++}',
       _directory = directory ?? getApplicationSupportDirectory;
 
   static int _sequence = 0;

@@ -1,8 +1,7 @@
 # Handoff
 
-- Base branch `feature/live-scan` at cba4431 (#21-#23, #25, #26 merged; #24 grounded generator stays
-  a draft). This task: `feat/m3-gemma-topics` (M3.7), PR into feature/live-scan.
-- M2c merged after the owner's manual retest on 16 Oct (no recording, not log-verified).
+- Base branch `feature/live-scan` at efd20da (#21-#23, #25-#28 merged; #24 grounded generator stays
+  a draft). This task: `feat/m2d-lock-diagnostics` (M2d), PR into feature/live-scan.
 - Robot build: `flutter build macos --debug --dart-define=LIVE_SCAN=true
   --dart-define=APP_COMMIT=$(git rev-parse --short HEAD)`, launch with `open`.
   Every m2c-diagnostics JSONL line carries `appCommit`; check it matches.
@@ -14,13 +13,13 @@
   [0014](decisions/0014-module-chunks.md) ([M3.2 results](test-results/m3-module-chunks.md)),
   [0015](decisions/0015-question-bank-draft.md) ([review sheet](quiz-review/question_bank_review.md)),
   [0017](decisions/0017-object-bank.md) ([object review](quiz-review/object_bank_review.md)),
-  [0018](decisions/0018-question-source-toggle.md), [0019](decisions/0019-gemma-question-topics.md).
+  [0018](decisions/0018-question-source-toggle.md), [0019](decisions/0019-gemma-question-topics.md), [0020](decisions/0020-lock-rearm-rule.md).
 
-## What M3.7 delivers (feat/m3-gemma-topics)
+## What M2d delivers (feat/m2d-lock-diagnostics, decision 0020)
 
-- Recording 18 Oct: 16 of 20 Gemma questions were about LCA / circular economy (Sulit level text,
-  2 random angles, avoid list). Now one physics angle per question, chosen in code, no repeats,
-  fitting the bin; banned-topic replies retried, then fixed fallback. `angle=` in the log line.
+- 20 Oct recording: ~6 min of COOLDOWN with objects at 83-95% (empty-scene rule). Now a different
+  label locks after 15 s; same label waits until the quizzed object is gone 2 s. Debug: reason
+  text, "Scan lagi", `livescan-<ms>.jsonl` lock events. M3.7 Gemma angles: decision 0019.
 
 ## Earlier M3 (0013-0017)
 
@@ -28,7 +27,7 @@
   rebuild with `scripts/extract_module.py`); label-pool bank 56 items (#23); object bank 13 objects,
   51 MC + 13 essays, all `draft`, served by default (#25); debug Bank/Gemma switch (#26).
 
-## M2c (PR #17, details in 0012)
+## M2c (PR #17, details in 0012; owner retest 16 Oct, not log-verified)
 
 - Lock -> clean crop -> Gemma identify -> B3 card -> quiz; three bins, mismatch gate,
   cancel fix. Real-model cancel test 16 Oct 4/4. Unit tests 255 pass, 2 stale splash.
@@ -36,7 +35,8 @@
 ## Robot tests still to run
 
 - Mismatch card; close-before-send `submit_skipped`; residu routing; 60 s hold with one
-  object; chat during Looking; M3.7 Gemma angles (phone, bottle, cardboard, banana peel x2).
+  object; chat during Looking; M3.7 Gemma angles; M2d: banana peel quizzed and left, bottle
+  locks after 15 s; second bottle waits until the first is gone 2 s.
 
 ## KNOWN OPEN (not done)
 

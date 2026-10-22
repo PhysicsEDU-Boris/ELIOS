@@ -12,6 +12,7 @@ import '../models/scanned_waste.dart';
 import '../providers/waste_quiz_provider.dart' show WasteQuizPhase;
 import 'detection_stabilizer.dart';
 import 'live_scan_state_machine.dart';
+import 'scan_diagnostics.dart';
 import 'websocket_service.dart' show Detection;
 
 /// Off by default: without the define the robot path keeps the old
@@ -25,12 +26,24 @@ class LiveScanController extends ChangeNotifier {
     int Function()? ttsCount,
     int? Function()? nextWaitMs,
     DateTime Function()? clock,
+    LiveScanEvent? onEvent,
   })  : _firstTokenMs = firstTokenMs,
         _ttsCount = ttsCount,
         _nextWaitMs = nextWaitMs,
-        _clock = clock ?? monotonicClock() {
-    machine = LiveScanStateMachine(DetectionStabilizer(ignoredLabels: ignoredLabels, clock: _clock), clock: _clock);
+        _clock = clock ?? monotonicClock(),
+        _sink = onEvent ?? (kDebugMode ? _runLog.event : null) {
+    machine = LiveScanStateMachine(
+        DetectionStabilizer(ignoredLabels: ignoredLabels, clock: _clock, onEvent: _emit),
+        clock: _clock,
+        onEvent: _emit);
   }
+
+  /// One lock-diagnostics JSONL per app run (debug only, decision 0020).
+  static final _runLog = ScanDiagnostics(id: 'livescan-${DateTime.now().millisecondsSinceEpoch}');
+
+  /// Any one event is written at most this often; the rest are counted and
+  /// the count rides on the next written line as `suppressed`.
+  static const eventInterval = Duration(milliseconds: 500);
 
   /// Minimum detector score for a box to start a lock.
   static const minScore = 0.70;
@@ -57,7 +70,42 @@ class LiveScanController extends ChangeNotifier {
   final int Function()? _ttsCount;
   final int? Function()? _nextWaitMs;
   final DateTime Function() _clock;
+  final LiveScanEvent? _sink;
   late final LiveScanStateMachine machine;
+
+  final _eventAt = <String, DateTime>{};
+  final _suppressed = <String, int>{};
+  String? _tooLargeKey;
+  DateTime? _belowMinAt;
+  BlockReason? _frameBlock;
+
+  /// Why nothing is being asked right now: the machine's reason, else this
+  /// frame's (boxes too large, scores under [minScore]); null when nothing blocks.
+  BlockReason? get blockReason => machine.blockReason ?? _frameBlock;
+
+  /// "Scan lagi" is enabled: no quiz is open.
+  bool get canManualRearm => machine.canManualRearm;
+
+  /// Debug "Scan lagi": clears the cooldown and the quizzed objects' waits.
+  bool manualRearm() {
+    final ok = machine.manualRearm();
+    notifyListeners();
+    return ok;
+  }
+
+  void _emit(String event, Map<String, Object?> data) {
+    final sink = _sink;
+    if (sink == null) return;
+    final now = _clock();
+    final last = _eventAt[event];
+    if (last != null && now.difference(last) < eventInterval) {
+      _suppressed[event] = (_suppressed[event] ?? 0) + 1;
+      return;
+    }
+    _eventAt[event] = now;
+    final skipped = _suppressed.remove(event);
+    sink(event, {...data, 'suppressed': ?skipped});
+  }
 
   final _unknownLogged = <String>{};
   final _keptAt = <String, DateTime>{};
@@ -96,16 +144,22 @@ class LiveScanController extends ChangeNotifier {
       ..add(now)
       ..removeWhere((t) => now.difference(t) >= const Duration(seconds: 1));
 
-    final maxArea = frameSize == null ? double.infinity : frameSize.width * frameSize.height * maxBoxAreaFraction;
-    final boxes = [
-      for (final d in detections)
-        if (d.label.trim().isNotEmpty && d.w * d.h <= maxArea)
-          TrackedDetection(label: d.label.trim(), x: d.x, y: d.y, w: d.w, h: d.h, score: d.score),
-    ];
-    final present = {
+    final frameArea = frameSize == null ? double.infinity : frameSize.width * frameSize.height;
+    final boxes = <TrackedDetection>[];
+    final tooLarge = <String, double>{};
+    for (final d in detections) {
+      final label = d.label.trim();
+      if (label.isEmpty) continue;
+      if (d.w * d.h > frameArea * maxBoxAreaFraction) {
+        if (!ignoredLabels.contains(label)) tooLarge[label] = (d.w * d.h / frameArea * 100).round() / 100;
+        continue;
+      }
+      boxes.add(TrackedDetection(label: label, x: d.x, y: d.y, w: d.w, h: d.h, score: d.score));
+    }
+    final present = [
       for (final d in boxes)
-        if (d.score >= presenceScore && !ignoredLabels.contains(d.label)) d.label,
-    };
+        if (d.score >= presenceScore && !ignoredLabels.contains(d.label)) d,
+    ];
 
     // Hysteresis: a label seen at minScore stays lockable down to keepLockScore,
     // as long as it doesn't drop below that for longer than the stabilizer's dropout.
@@ -125,8 +179,9 @@ class LiveScanController extends ChangeNotifier {
         if (d.score >= minScore || (d.score >= keepLockScore && kept.contains(d.label))) d,
     ];
     if (kDebugMode) _logUnknownLabels(tracked);
+    _logFiltered(tooLarge, present, tracked, now);
 
-    final lock = machine.onFrame(tracked, present: present);
+    final lock = machine.onFrame(tracked, presentBoxes: present);
     if (lock != null) {
       if (startQuiz(lock.detection)) {
         _askedAt = now;
@@ -135,6 +190,7 @@ class LiveScanController extends ChangeNotifier {
         _lastFirstTokenMs = null;
         _lastAskToQuestionMs = null;
       } else {
+        _emit('ask_busy', {'label': lock.detection.label});
         machine.onAskOutcome(AskOutcome.busy);
       }
     }
@@ -163,6 +219,35 @@ class LiveScanController extends ChangeNotifier {
         machine.onQuizOpen(); // a quiz the live scan didn't start
     }
     notifyListeners();
+  }
+
+  /// Boxes dropped before the stabilizer: too large (logged once per change
+  /// of labels) and in the scene but under [minScore] (a summary at most once
+  /// a second). Sets the frame's block reason when nothing is lockable.
+  void _logFiltered(Map<String, double> tooLarge, List<TrackedDetection> present, List<TrackedDetection> tracked,
+      DateTime now) {
+    final key = (tooLarge.keys.toList()..sort()).join(',');
+    if (key != _tooLargeKey) {
+      _tooLargeKey = key;
+      if (tooLarge.isNotEmpty) _emit('box_ignored_too_large', {'labels': tooLarge, 'maxAreaFraction': maxBoxAreaFraction});
+    }
+    final low = <String, double>{};
+    for (final d in present) {
+      if (tracked.contains(d)) continue;
+      final s = (d.score * 100).round() / 100;
+      if ((low[d.label] ?? -1) < s) low[d.label] = s;
+    }
+    if (low.isNotEmpty && (_belowMinAt == null || now.difference(_belowMinAt!) >= const Duration(seconds: 1))) {
+      _belowMinAt = now;
+      _emit('below_min_score', {'labels': low, 'minScore': minScore});
+    }
+    _frameBlock = tracked.isNotEmpty
+        ? null
+        : tooLarge.isNotEmpty
+            ? BlockReason('box_too_large', labels: tooLarge)
+            : low.isNotEmpty
+                ? BlockReason('below_min_score', labels: low)
+                : null;
   }
 
   /// Debug only: a label the app can't sort and doesn't ignore (for example

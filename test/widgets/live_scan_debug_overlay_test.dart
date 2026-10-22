@@ -19,6 +19,7 @@ void main() {
       },
       firstTokenMs: () => 412,
       clock: () => DateTime(2026).add(Duration(milliseconds: now)),
+      onEvent: (_, _) {},
     );
     addTearDown(c.dispose);
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: LiveScanDebugOverlay(controller: c))));
@@ -38,11 +39,25 @@ void main() {
     expect(find.textContaining('LIVE SCAN  QUIZ'), findsOneWidget);
     // ASKING fired at t=1000 (the lock); now is 1250 here (the loop's last increment).
     expect(find.textContaining('first token 412 ms   question 250 ms'), findsOneWidget);
-    expect(find.textContaining('wait Plastic 30s'), findsOneWidget); // blocked from the ask on
+    expect(find.textContaining('menunggu: kuis masih terbuka'), findsOneWidget);
     c.onQuizPhase(WasteQuizPhase.idle); // closed with the object still in view
     c.onDetections([plastic]);
     await tester.pump();
-    expect(find.textContaining('wait Plastic 30s'), findsOneWidget);
+    expect(find.textContaining('menunggu: jeda setelah kuis 15 s'), findsOneWidget);
+  });
+
+  testWidgets('"Scan lagi" is disabled while a quiz is open and re-arms after it (decision 0020)', (tester) async {
+    final c = await pump(tester, busy: false); // ASKING
+    final button = find.widgetWithText(OutlinedButton, 'Scan lagi');
+    expect(tester.widget<OutlinedButton>(button).onPressed, isNull);
+    c.onQuizPhase(WasteQuizPhase.active);
+    await tester.pump();
+    expect(tester.widget<OutlinedButton>(button).onPressed, isNull);
+    c.onQuizPhase(WasteQuizPhase.idle); // COOLDOWN
+    await tester.pump();
+    await tester.tap(button);
+    await tester.pump();
+    expect(find.textContaining('LIVE SCAN  SEARCHING'), findsOneWidget);
   });
 
   testWidgets('shows ASK FAILED after a busy ask while that object is still blocked', (tester) async {

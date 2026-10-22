@@ -39,6 +39,7 @@ class _Rig {
       },
       firstTokenMs: () => firstToken,
       clock: () => _t0.add(Duration(milliseconds: now)),
+      onEvent: (event, data) => events.add((event, data)),
     );
   }
 
@@ -48,6 +49,8 @@ class _Rig {
   int? firstToken = 321; // mutable: a test can simulate a fallback (null)
   late final LiveScanController c;
   final starts = <String>[];
+  final events = <(String, Map<String, Object?>)>[];
+  List<Map<String, Object?>> logged(String event) => [for (final (e, d) in events) if (e == event) d];
 
   void at(int ms, List<Detection> frame) {
     now = ms;
@@ -86,7 +89,9 @@ void main() {
       r.run(0, 60000, [_plastic, _hand], closeAt: 30000); // 4 fps, quiz closed at 30 s
       expect(r.starts, ['Plastic']);
       expect(r.c.machine.askCount, 1);
-      expect(r.c.machine.state, LiveScanState.cooldown);
+      // Decision 0020: re-armed after the cooldown, but the held object stays blocked.
+      expect(r.c.machine.state, LiveScanState.searching);
+      expect(r.c.blockReason?.code, 'same_object');
       expect(r.c.lastFirstTokenMs, 321);
       expect(r.c.lastAskToQuestionMs, 4000); // ASKING at 0, question shown at the default askMs
     });
@@ -181,7 +186,7 @@ void main() {
       r.run(20250, 22250, [_det('Plastic', score: 0.60)]); // dip: below lock, still present
       r.run(22500, 60000, [_plastic]);
       expect(r.starts, ['Plastic']);
-      expect(r.c.machine.state, LiveScanState.cooldown);
+      expect(r.c.machine.quizzedLabels, ['Plastic'], reason: 'present at 0.60: still the quizzed object');
     });
 
     test('(c) a hand alone is an empty scene', () {
@@ -191,11 +196,13 @@ void main() {
       expect(r.c.machine.state, LiveScanState.searching);
     });
 
-    test('(c) a low-score object (0.55) is not an empty scene', () {
+    test('(c) a low-score object (0.55) no longer holds the cooldown (decision 0020), and never locks', () {
       final r = _Rig();
       r.run(0, 10000, [_plastic], closeAt: 8000);
       r.run(10250, 60000, [_det('Metal', x: 600, score: 0.55)]);
-      expect(r.c.machine.state, LiveScanState.cooldown);
+      expect(r.c.machine.state, LiveScanState.searching);
+      expect(r.starts, ['Plastic']);
+      expect(r.c.blockReason?.code, 'below_min_score');
     });
 
     test('(c) a box under presenceScore (0.49) or over 0.6 of the frame does not count as present', () {
@@ -231,6 +238,72 @@ void main() {
       r.run(250, 1000, [_det('Plastic', score: 0.40)]);
       r.run(1250, 10000, [_det('Plastic', score: 0.65)]);
       expect(r.starts, isEmpty);
+    });
+  });
+
+  group('lock diagnostics and manual re-arm (decision 0020)', () {
+    test('box_ignored_too_large: once per change of labels, with the area fraction', () {
+      final big = _det('E_Waste', w: 500, h: 400); // 200000 / 307200 = 0.65 of the frame
+      final r = _Rig()..run(0, 3000, [big]);
+      expect(r.logged('box_ignored_too_large'), [
+        {'labels': {'E_Waste': 0.65}, 'maxAreaFraction': 0.6},
+      ]);
+      expect(r.c.blockReason?.text, 'menunggu: kotak terlalu besar (E_Waste 0.65)');
+      r.run(3250, 4000, []);
+      r.run(4250, 5000, [big]);
+      expect(r.logged('box_ignored_too_large'), hasLength(2), reason: 'gone and back is a change');
+    });
+
+    test('below_min_score: a summary at most once a second, best score per label', () {
+      final r = _Rig()..run(0, 2900, [_det('Plastic', score: 0.62), _det('Metal', x: 600, score: 0.55)], step: 100);
+      final lines = r.logged('below_min_score');
+      expect(lines, hasLength(3)); // at 0, 1000, 2000
+      expect(lines.first, {'labels': {'Plastic': 0.62, 'Metal': 0.55}, 'minScore': 0.70});
+      expect(r.c.blockReason?.text, 'menunggu: skor di bawah 0.70 (Plastic 0.62, Metal 0.55)');
+    });
+
+    test('ask_busy: a lock refused because a quiz is open', () {
+      final r = _Rig(busy: true)..run(0, 2000, [_plastic]);
+      expect(r.logged('ask_busy'), [
+        {'label': 'Plastic'},
+      ]);
+    });
+
+    test('every blocking reason is logged once per change with its values', () {
+      final r = _Rig();
+      r.run(0, 30000, [_plastic], closeAt: 8000); // quiz closed at 8000; Plastic stays
+      r.run(30250, 40000, [_plastic, _metal]); // Metal arrives: asked
+      final blocked = r.logged('rearm_blocked');
+      expect([for (final b in blocked) b['reason']], ['cooldown', 'same_object']);
+      expect(blocked.first['labels'], {'Plastic': 0.9});
+      expect(blocked.first['remainingMs'], 15000 - 250);
+      expect(blocked.last['labels'], {'Plastic': 0.9});
+      expect(r.logged('cooldown_enter'), hasLength(1));
+      expect(r.logged('rearm').single['reason'], 'cooldown_elapsed');
+      expect(r.logged('lock_dropped_same_label'), hasLength(1));
+      expect(r.starts, ['Plastic', 'Metal']);
+    });
+
+    test('"Scan lagi" during the cooldown: the held object can be asked again at once; logged', () {
+      final r = _Rig();
+      r.run(0, 10000, [_plastic], closeAt: 8000); // cooldown until 23000
+      expect(r.c.blockReason?.code, 'cooldown');
+      expect(r.c.canManualRearm, isTrue);
+      expect(r.c.manualRearm(), isTrue);
+      expect(r.logged('manual_rearm').single, containsPair('state', 'cooldown'));
+      expect(r.c.machine.state, LiveScanState.searching);
+      r.run(10250, 11500, [_plastic]);
+      expect(r.starts, ['Plastic', 'Plastic']);
+    });
+
+    test('"Scan lagi" is disabled and does nothing while a quiz is open', () {
+      final r = _Rig()..run(0, 6000, [_plastic]); // asked at 1000, question shown at 5000
+      expect(r.c.machine.state, LiveScanState.quiz);
+      expect(r.c.canManualRearm, isFalse);
+      expect(r.c.manualRearm(), isFalse);
+      expect(r.c.machine.state, LiveScanState.quiz);
+      expect(r.logged('manual_rearm'), isEmpty);
+      expect(r.c.blockReason?.text, 'menunggu: kuis masih terbuka');
     });
   });
 
