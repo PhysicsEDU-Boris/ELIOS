@@ -26,3 +26,4 @@ their status changed.
 | [0018](0018-question-source-toggle.md) | Debug switch between the question bank and Gemma (M3.6) | Accepted |
 | [0019](0019-gemma-question-topics.md) | Gemma questions ask about one physics angle, never LCA (M3.7) | Accepted |
 | [0020](0020-lock-rearm-rule.md) | After a quiz a different object may lock; lock diagnostics (M2d) | Accepted |
+| [0021](0021-manual-driving-orchestration.md) | Manual driving, camera distance and sorting orchestration (P1, R1, R2) | Proposed |
