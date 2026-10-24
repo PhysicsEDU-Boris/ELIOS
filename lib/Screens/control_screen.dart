@@ -16,6 +16,8 @@ import '../providers/waste_quiz_provider.dart';
 import '../services/gemma_quiz_service.dart';
 import '../services/live_scan_controller.dart';
 import '../services/quiz_tts_service.dart';
+import '../services/robot/r1_orchestrator.dart';
+import '../services/robot/robot_controller.dart';
 import '../services/websocket_service.dart';
 import '../widgets/debug_phone_camera_sheet.dart';
 import '../widgets/desktop_viewport.dart';
@@ -29,6 +31,11 @@ import '../services/frame_source/frame_source.dart';
 /// The MaixCAM2 already draws its box, mask and label into the video, so the
 /// app's own box is a debug aid, shown with the live-scan debug overlay only.
 const _showAppDetectionBoxes = kDebugMode && liveScanEnabled;
+
+/// `--dart-define=R1=true` (with LIVE_SCAN): R1 probes the MaixCAM2 command
+/// link (decision 0023) and shows the result in the debug overlay. The
+/// student flow (bin question, "Ambil") is not on screen yet (M4).
+const _r1Enabled = liveScanEnabled && bool.fromEnvironment('R1');
 
 class ControlScreen extends ConsumerStatefulWidget {
   const ControlScreen({super.key});
@@ -54,6 +61,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
   /// Set only when built with --dart-define=LIVE_SCAN=true (M2a).
   LiveScanController? _liveScan;
+
+  /// Set only with R1 (see [_r1Enabled]).
+  R1Orchestrator? _r1;
+  StreamSubscription<Map<String, dynamic>>? _r1Replies;
+  Timer? _r1Ticker;
+  String? _r1Status;
 
   static const Color textPrimary = Color(0xFF1C2833);
   static const Color textSecondary = Color(0xFF7F8C8D);
@@ -89,6 +102,18 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
       // a failed preload just leaves the model to load as today, on the
       // first quiz (see GemmaQuizService.warmUp/ensureReady).
       GemmaQuizService.instance.warmUp(vision: true);
+    }
+
+    if (_r1Enabled) {
+      final ws = WebSocketService();
+      final robot = MaixCamRobot(sink: ws.sendRobotCommand, motor: ws.sendMotorCommand);
+      _r1 = R1Orchestrator(robot);
+      _r1Replies = ws.robotReplies.listen(robot.handleMessage);
+      _r1Ticker = Timer.periodic(const Duration(milliseconds: 250), (_) {
+        final r1 = _r1!..tick();
+        final text = r1.robotConnected ? 'robot terhubung' : r1.message ?? 'memeriksa robot...';
+        if (mounted && text != _r1Status) setState(() => _r1Status = text);
+      });
     }
 
     // Subscribe to robot frames outside of build to avoid re-registering
@@ -133,6 +158,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
         if (!_streamStartedForCurrentConnection) {
           _streamStartedForCurrentConnection = true;
           debugPrint('[Control] Connected status observed, starting stream');
+          _onNewConnection();
           _robotNotifier.startStream();
 
           // Apply the user's chosen resolution preset on connect.
@@ -146,6 +172,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
       if (status == 'Disconnected' ||
           status == 'Reconnecting...' ||
           status == 'Connecting...') {
+        if (_streamStartedForCurrentConnection) _r1?.linkDown();
         _streamStartedForCurrentConnection = false;
       }
     }, fireImmediately: true);
@@ -153,6 +180,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     // Connect to the robot when the control screen opens.
     unawaited(_connectAndStartStream());
     debugPrint('Robot controls enabled: true (awaiting WebSocket connection)');
+  }
+
+  /// Once per (re)connection, from whichever path sees it first.
+  void _onNewConnection() {
+    _liveScan?.onLinkRestored(); // 0020: a drop can't time absence; harmless on the first connect
+    _r1?.linkUp(); // 0023: probe the command link (old firmware: "robot tidak terhubung")
   }
 
   void _enterLandscapeFullscreen() {
@@ -182,6 +215,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
       if (!_streamStartedForCurrentConnection) {
         _streamStartedForCurrentConnection = true;
         debugPrint('[Control] Starting stream after connect result');
+        _onNewConnection();
         _robotNotifier.startStream();
       }
     } else {
@@ -193,6 +227,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   void dispose() {
     _frameSubscription?.cancel();
     _statusSubscription?.close();
+    _r1Ticker?.cancel();
+    _r1Replies?.cancel();
 
     // Disconnect when leaving the control screen (not a quiz pause: the
     // stream stays up for the whole visit, M2b).
@@ -398,6 +434,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     LiveScanDebugOverlay(controller: _liveScan!),
+                    if (_r1 != null) ...[
+                      const SizedBox(height: 6),
+                      Text('R1: ${_r1Status ?? 'memeriksa robot...'}',
+                          style: const TextStyle(color: Colors.white, fontSize: 12, backgroundColor: Colors.black54)),
+                    ],
                     const SizedBox(height: 6),
                     const QuestionSourceSwitch(), // decision 0018: applies from the next scan
                   ],

@@ -24,6 +24,11 @@ class WebSocketService {
   final StreamController<CapturedFrame> _capturedFramesController =
       StreamController<CapturedFrame>.broadcast();
   final ValueNotifier<String> connectionStatus = ValueNotifier('Disconnected');
+  final StreamController<Map<String, dynamic>> _robotRepliesController =
+      StreamController<Map<String, dynamic>>.broadcast();
+
+  /// R1 command-link replies (decision 0023): `{"event": ..., "seq": n}`.
+  Stream<Map<String, dynamic>> get robotReplies => _robotRepliesController.stream;
 
   WebSocketChannel? _channel;
   Timer? _reconnectTimer;
@@ -351,6 +356,11 @@ class WebSocketService {
       final decoded = jsonDecode(message);
       if (decoded is! Map<String, dynamic>) return;
 
+      if (decoded['seq'] is int && decoded['event'] is String) {
+        _robotRepliesController.add(decoded);
+        return;
+      }
+
       if (decoded['event'] == 'pong') {
         debugPrint('[WS] Received pong');
       }
@@ -427,6 +437,12 @@ class WebSocketService {
     _channel!.sink.add(
       jsonEncode({'cmd': 'motor', 'left': left, 'right': right}),
     );
+  }
+
+  /// One R1 command (decision 0023); dropped while not connected (R1 times it out).
+  void sendRobotCommand(Map<String, Object?> command) {
+    if (!_isConnected || _channel == null) return;
+    _channel!.sink.add(jsonEncode(command));
   }
 
   void sendServoCommand(String part, int value) {

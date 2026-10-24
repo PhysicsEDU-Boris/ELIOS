@@ -12,6 +12,17 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- R1 orchestration (`lib/services/robot/`, decision 0023): a platform-independent state machine
+  SEARCHING → … → RESUME with every timeout. Driving is locked in the app and by `LOCK_DRIVE`;
+  pick done needs motion_done and the object off its floor spot; Human_Hand pauses the arm;
+  locks are ignored while sorting and settling; every exit stops the arm if needed and unlocks
+  driving. `RobotController`, `MaixCamRobot` (0023 messages), `SimulatedRobot`, `ArmFeedback`
+  and `ObjectIdentity` are included. In the app, only behind `--dart-define=R1=true`: a link
+  probe and "robot tidak terhubung" in the debug overlay. The student flow is not on screen
+  yet (M4).
+- The fake MaixCAM2's command hook speaks 0023 (`seq`); it answers STATUS, LOCK/UNLOCK_DRIVE,
+  HOLD and STOP.
+
 - T1 fake MaixCAM2 (`tools/fake_maixcam/`): a Python WebSocket server with `main.py`'s protocol,
   rendering frames through the owner's robotic_hand_sim (`--sim-path`, not copied), with
   ground-truth detections, optional noise and P1 fields (`--old-firmware` turns them off), 10
@@ -65,6 +76,10 @@ kept outside the repo.
   class/score, raw Gemma item/category, bins and the identify JPEG name.
 
 ### Changed
+- The question-source switch is no longer saved: every launch starts on the bank (0018
+  amendment; the 24 Oct "Gemma" start came from a value saved in an earlier debug session).
+- After a link drop and reconnect, the live scan forgets the quizzed objects of closed quizzes
+  and resets the stabilizer, so a new object at the old spot can lock (0020, "Link drop").
 - Live-scan re-arm (decision 0020): after the 15 s cooldown an object with a different label may
   lock while other objects stay in view; the same label waits until the quizzed object has been
   absent 2 s, and the quizzed object held in view is never asked again. Replaces the 2 s

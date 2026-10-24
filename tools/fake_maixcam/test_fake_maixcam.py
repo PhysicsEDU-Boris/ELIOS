@@ -218,25 +218,43 @@ def test_link_drop_goes_silent_refuses_then_recovers(tmp_path):
 
 
 @needs_sim
-def test_command_hook_hold_sweep_and_todos(tmp_path):
+def test_command_link_0023_shape(tmp_path):
     async def body(url, fake):
         async with websockets.connect(url) as ws:
             await ws.recv()
             replies = []
+            seq = 0
 
             async def send(cmd, n):
-                await ws.send(json.dumps({**cmd, "id": len(replies)}))
+                nonlocal seq
+                seq += 1
+                await ws.send(json.dumps({**cmd, "seq": seq}))
                 for _ in range(n):
                     replies.append(json.loads(await asyncio.wait_for(ws.recv(), 2)))
 
+            await send({"cmd": "STATUS"}, 1)
+            await send({"cmd": "LOCK_DRIVE"}, 1)
+            locked = fake.drive_locked
+            await send({"cmd": "UNLOCK_DRIVE"}, 1)
             await send({"cmd": "HOLD"}, 2)
             await send({"cmd": "J1_SWEEP", "to": 6}, 2)  # 6 deg at 60 deg/s: done in ~0.1 s
-            await send({"cmd": "PICK"}, 1)
-            return [(r["event"], r["cmd"]) for r in replies], fake.world.angles[0]
+            await send({"cmd": "STOP"}, 1)
+            await send({"cmd": "PICK", "dist_cm": 24.0, "lateral_cm": None}, 1)
+            await send({"cmd": "FLY"}, 1)
+            return replies, locked, fake.drive_locked, fake.world.angles[0]
 
-    events, j1 = run(tmp_path, {"items": [BOTTLE]}, body)
-    assert events == [("ack", "HOLD"), ("motion_done", "HOLD"), ("ack", "J1_SWEEP"), ("motion_done", "J1_SWEEP"),
-                      ("error", "PICK")]
+    replies, locked, unlocked_after, j1 = run(tmp_path, {"items": [BOTTLE]}, body)
+    assert replies == [
+        {"event": "ack", "seq": 1, "drive_locked": False},
+        {"event": "ack", "seq": 2},
+        {"event": "ack", "seq": 3},
+        {"event": "ack", "seq": 4}, {"event": "motion_done", "seq": 4},
+        {"event": "ack", "seq": 5}, {"event": "motion_done", "seq": 5},
+        {"event": "ack", "seq": 6},
+        {"event": "error", "seq": 7, "reason": "not_implemented"},
+        {"event": "error", "seq": 8, "reason": "unknown_cmd"},
+    ]
+    assert locked and not unlocked_after
     assert j1 == pytest.approx(6)
 
 
@@ -247,7 +265,7 @@ def test_labels_match_main_py_and_app():
 def test_shipped_scenarios_load(tmp_path):
     labels = fm.load_labels()
     paths = sorted((fm.HERE / "scenarios").glob("*.yaml"))
-    assert len(paths) == 10
+    assert len(paths) >= 10  # the 10 shipped ones, plus any local scenarios
     for p in paths:
         fm.load_scenario(p, labels)
     s = yaml.safe_load(paths[0].read_text())

@@ -86,6 +86,12 @@ class LiveScanController extends ChangeNotifier {
   /// "Scan lagi" is enabled: no quiz is open.
   bool get canManualRearm => machine.canManualRearm;
 
+  /// The robot link reconnected after a drop (decision 0020).
+  void onLinkRestored() {
+    machine.onLinkRestored();
+    notifyListeners();
+  }
+
   /// Debug "Scan lagi": clears the cooldown and the quizzed objects' waits.
   bool manualRearm() {
     final ok = machine.manualRearm();

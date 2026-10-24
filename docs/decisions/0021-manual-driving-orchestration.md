@@ -1,6 +1,7 @@
 # 0021: Manual driving, camera distance and the sorting orchestration (P1, R1, R2)
 
-- Status: Proposed (owner decided 22 Oct, not built; amended 24 Oct, see "Amendment 24 Oct")
+- Status: Proposed (owner decided 22 Oct; amended 24 Oct, see "Amendment 24 Oct"). R1 built on the
+  simulator 24 Oct: [0023](0023-r1-command-link.md) (command link, states, constants).
 - Date: 2026-10-22
 - Builds on: [0008](0008-live-scan-state-machine.md), [0012](0012-crop-identification-and-hazards.md),
   [0020](0020-lock-rearm-rule.md).

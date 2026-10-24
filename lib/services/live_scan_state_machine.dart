@@ -248,6 +248,17 @@ class LiveScanStateMachine {
     return true;
   }
 
+  /// The link to the robot came back after a drop (decision 0020, "Link
+  /// drop"): no frames arrived, so no absence could be timed, and the robot
+  /// may have been driven. Forgets the quizzed objects of closed quizzes and
+  /// the stabilizer's lock; an open quiz and a running cooldown are kept.
+  void onLinkRestored() {
+    final forgotten = [for (final q in _quizzed) if (q != _asked) q.box.label];
+    _quizzed.removeWhere((q) => q != _asked);
+    if (!_frozen) stabilizer.reset();
+    onEvent?.call('link_restored', {'state': _state.name, 'forgotten': forgotten});
+  }
+
   void _rearm(String reason, DateTime now) {
     _state = LiveScanState.searching;
     final closed = _closedAt;

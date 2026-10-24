@@ -20,12 +20,27 @@ void main() {
   test('defaults and release builds resolve to the bank', () {
     expect(defaultQuestionSource, QuestionSource.bank, reason: 'no GEMMA_QUESTIONS define in tests');
     expect(const AppPreferences().questionSource, QuestionSource.bank);
-    final stored = AppPreferences.fromMap({'questionSource': 'gemma'});
-    expect(stored.questionSource, QuestionSource.gemma, reason: 'the switch is persisted');
-    expect(effectiveQuestionSource(stored.questionSource, debug: true), QuestionSource.gemma);
-    expect(effectiveQuestionSource(stored.questionSource, debug: false), QuestionSource.bank,
-        reason: 'release always uses the bank, whatever is stored');
-    expect(AppPreferences.fromMap({'questionSource': 'nonsense'}).questionSource, QuestionSource.bank);
+    expect(effectiveQuestionSource(QuestionSource.gemma, debug: true), QuestionSource.gemma);
+    expect(effectiveQuestionSource(QuestionSource.gemma, debug: false), QuestionSource.bank,
+        reason: 'release always uses the bank, whatever the switch says');
+    expect(AppPreferences.fromMap({'questionSource': 'gemma'}).questionSource, QuestionSource.bank,
+        reason: 'a value saved by an older build is ignored');
+    expect(const AppPreferences(questionSource: QuestionSource.gemma).toMap(), isNot(contains('questionSource')),
+        reason: 'the switch is never saved');
+  });
+
+  test('a launch after a debug session left the switch on Gemma starts on the bank (24 Oct)', () async {
+    SharedPreferences.setMockInitialValues({
+      'flutter.app_preferences_v1': '{"quizDifficulty": "Hard", "questionSource": "gemma"}',
+    });
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    container.read(appPreferencesProvider);
+    for (var i = 0; i < 10 && container.read(appPreferencesProvider).quizDifficulty != 'Hard'; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(container.read(appPreferencesProvider).quizDifficulty, 'Hard', reason: 'the saved preferences loaded');
+    expect(container.read(appPreferencesProvider).questionSource, QuestionSource.bank);
   });
 
   test('the header names the source of the shown question', () {

@@ -52,7 +52,9 @@ and J1 targets that are reached at 60 deg/s. Ten scenarios ship (see the README)
 with `main.py`'s `LABELS` and the app's `ScannedWaste.detectorLabels`. On 24 Oct all three were
 identical: no mismatch.
 
-**Command hook for R1** (shape provisional until 0023):
+**Command hook for R1**: since R1, it uses [0023](0023-r1-command-link.md)'s shape, `{"cmd", "seq"}` →
+`{"event", "seq"}`. It answers `STATUS`, `LOCK_DRIVE`, `UNLOCK_DRIVE`, `HOLD` and `STOP`, and
+replies `error: unknown_cmd` to other commands. Before R1, the shape was a placeholder:
 
 - A handler table for `{"cmd": NAME, "id": n}`, replying `ack` / `motion_done` / `error`.
 - `HOLD` and `J1_SWEEP` are implemented.
