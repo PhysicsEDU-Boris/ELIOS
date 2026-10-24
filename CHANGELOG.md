@@ -12,6 +12,11 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- T1 fake MaixCAM2 (`tools/fake_maixcam/`): a Python WebSocket server with `main.py`'s protocol,
+  rendering frames through the owner's robotic_hand_sim (`--sim-path`, not copied), with
+  ground-truth detections, optional noise and P1 fields (`--old-firmware` turns them off), 10
+  YAML scenarios, a label check against `main.py` and the app (no mismatch), and an R1 command
+  hook (HOLD, J1_SWEEP; the rest TODO). No app or firmware change (decision 0024).
 - P1 detection protocol: optional per-detection `track_id`, `dist_cm`, `lateral_cm` and
   per-frame `arm_tags` are parsed as nullable (`Detection`, `ArmTag`,
   `WebSocketService.armTags`). Missing or malformed values are null; old firmware is unchanged.

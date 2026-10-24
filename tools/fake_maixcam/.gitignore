@@ -1,0 +1,4 @@
+__pycache__/
+.pytest_cache/
+# Photos are local only (licence and size); see images/README.md.
+images/*/

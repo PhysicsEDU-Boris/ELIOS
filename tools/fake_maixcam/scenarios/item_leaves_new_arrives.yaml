@@ -1,0 +1,9 @@
+name: item_leaves_new_arrives
+description: A bottle is quizzed, taken away at 20 s; a can arrives at 26 s. Expect a second lock on the can (0020).
+duration_s: 50
+items:
+  - {id: bottle, label: Plastic, pos_mm: [-54, -301], size_mm: [70, 120], score: 0.88}
+  - {id: can, label: Metal, pos_mm: [-54, -301], size_mm: [66, 115], score: 0.86, visible: false}
+events:
+  - {t: 20, do: leave, item: bottle}
+  - {t: 26, do: appear, item: can}

@@ -1,0 +1,258 @@
+"""Fake MaixCAM2 tests (decision 0024). No robot needed, but the simulator is:
+ROBOTIC_HAND_SIM=<checkout of github.com/3dbore/robotic_hand_sim> (default: next to this repo).
+
+    cd tools/fake_maixcam && python -m pytest -q
+"""
+import ast
+import asyncio
+import json
+import os
+import time
+from pathlib import Path
+
+import pytest
+import websockets
+import yaml
+
+import fake_maixcam as fm
+
+REPO = fm.HERE.parents[1]
+SIM = Path(os.environ.get("ROBOTIC_HAND_SIM", REPO.parent / "robotic_hand_sim"))
+needs_sim = pytest.mark.skipif(not (SIM / "hil_toolkit").is_dir(), reason=f"simulator not found at {SIM}")
+
+BOTTLE = {"id": "bottle", "label": "Plastic", "pos_mm": [-54, -301], "size_mm": [70, 120], "score": 0.88}
+F_Y = (fm.IMG_H / 2) / 0.4769755  # 0022: (H/2) / tan(V/2), V = 51 deg
+LENS_H_MM = 86.2
+
+
+def main_py_fields():
+    """Frame and detection keys exactly as firmware/maixcam2/main.py builds them."""
+    tree = ast.parse((REPO / "firmware/maixcam2/main.py").read_text())
+    push = next(n for n in tree.body if isinstance(n, ast.AsyncFunctionDef) and n.name == "ws_frame_pusher")
+    frame, det = set(), set()
+    for n in ast.walk(push):
+        if isinstance(n, ast.Assign) and isinstance(n.value, ast.Dict) and getattr(n.targets[0], "id", "") == "message":
+            frame |= {k.value for k in n.value.keys}
+        if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Subscript) and getattr(n.targets[0].value, "id", "") == "message":
+            frame.add(n.targets[0].slice.value)
+        if (isinstance(n, ast.Call) and getattr(n.func, "attr", "") == "append" and getattr(n.func.value, "id", "") == "dets"):
+            det |= {k.value for k in n.args[0].keys}
+    return frame, det
+
+
+def run(tmp_path, scenario, body, p1=None, fps=20.0):
+    """Starts the fake on a free port, runs `await body(url, fake)`, stops it."""
+    path = tmp_path / "s.yaml"
+    path.write_text(yaml.safe_dump({"name": "test", **scenario}))
+    labels = fm.load_labels()
+    sc = fm.load_scenario(path, labels)
+    world = fm.SimWorld(SIM, sc)
+    fake = fm.FakeMaixCam(world, sc, labels, fps=fps, p1=p1, log=lambda *_: None)
+
+    async def main():
+        ready = asyncio.get_running_loop().create_future()
+        server = asyncio.create_task(fake.serve("127.0.0.1", 0, ready))
+        port = await ready
+        try:
+            return await body(f"ws://127.0.0.1:{port}", fake)
+        finally:
+            server.cancel()
+
+    try:
+        return asyncio.run(main())
+    finally:
+        world.close()
+
+
+async def frames(ws, n, timeout=5.0):
+    out = []
+    while len(out) < n:
+        msg = json.loads(await asyncio.wait_for(ws.recv(), timeout))
+        if "frame_id" in msg:
+            out.append(msg)
+    return out
+
+
+async def detection_frame(ws):
+    while True:
+        (msg,) = await frames(ws, 1)
+        if msg["detection_frame_id"] == msg["frame_id"]:
+            return msg
+
+
+@needs_sim
+def test_connect_ping_pong_and_disconnect(tmp_path):
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            assert json.loads(await ws.recv()) == {"status": "Connected"}
+            await ws.send(json.dumps({"cmd": "ping"}))
+            pong = json.loads(await ws.recv())
+            assert pong["event"] == "pong" and pong["firmware_version"].startswith("fake-sim-")
+            for cmd in ({"cmd": "motor", "left": 1, "right": 1}, {"cmd": "servo", "part": "base", "val": 90},
+                        {"cmd": "set_resolution", "width": 1920, "height": 1080}):
+                await ws.send(json.dumps(cmd))  # logged / ignored, never answered
+            await ws.send(json.dumps({"cmd": "disconnect"}))
+            assert json.loads(await ws.recv()) == {"event": "disconnect_ack"}
+            with pytest.raises(websockets.ConnectionClosed):
+                await asyncio.wait_for(ws.recv(), 2)
+    run(tmp_path, {"items": [BOTTLE]}, body)
+
+
+@needs_sim
+def test_start_and_stop_stream(tmp_path):
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            with pytest.raises(asyncio.TimeoutError):
+                await frames(ws, 1, timeout=0.5)  # nothing before start_stream
+            await ws.send(json.dumps({"cmd": "start_stream"}))
+            ids = [m["frame_id"] for m in await frames(ws, 4)]
+            assert ids == sorted(ids) and len(set(ids)) == 4
+            await ws.send(json.dumps({"cmd": "stop_stream"}))
+            await asyncio.sleep(0.3)
+            while True:  # drain what was in flight
+                try:
+                    await asyncio.wait_for(ws.recv(), 0.05)
+                except asyncio.TimeoutError:
+                    break
+            with pytest.raises(asyncio.TimeoutError):
+                await frames(ws, 1, timeout=0.6)
+    run(tmp_path, {"items": [BOTTLE]}, body)
+
+
+@needs_sim
+def test_frame_fields_match_main_py_old_firmware(tmp_path):
+    frame_keys, det_keys = main_py_fields()
+    assert {"vision_protocol", "frame_id", "detection_frame_id", "image", "img_w", "img_h", "detections",
+            "clean_detections", "clean_image"} <= frame_keys
+
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            await ws.send(json.dumps({"cmd": "start_stream"}))
+            msgs = await frames(ws, 4)
+            det = next(m for m in msgs if m["detection_frame_id"] == m["frame_id"])
+            held = next(m for m in msgs if m["frame_id"] == det["frame_id"] + 1)
+            return det, held
+
+    det, held = run(tmp_path, {"items": [BOTTLE]}, body, p1=False)
+    assert set(det) == frame_keys
+    assert set(held) == frame_keys - {"clean_detections", "clean_image"}
+    assert held["detections"] == det["detections"]  # held between inference frames, like main.py
+    assert (det["img_w"], det["img_h"]) == (640, 480)
+    (d,) = det["detections"]
+    assert set(d) == det_keys
+    assert d["label"] == "Plastic" and d["class_id"] == 8 and det["clean_detections"] == [d]
+    # main.py's convention: integer centre x/y and w/h of the box.
+    assert all(isinstance(d[k], int) for k in "xywh") and abs(d["x"] - 320) <= 2
+
+
+@needs_sim
+def test_p1_fields_on_and_off(tmp_path):
+    tag_pose = [0.0, 50.0, -148.0, 192.0, -71.0]  # wrist turned so tag 0 faces the lens
+
+    async def body(url, fake):
+        fake.world.angles[:] = fake.world.target[:] = tag_pose
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            await ws.send(json.dumps({"cmd": "start_stream"}))
+            return await detection_frame(ws)
+
+    on = run(tmp_path, {"items": [BOTTLE]}, body)
+    (d,) = on["detections"]
+    assert isinstance(d["track_id"], int) and isinstance(d["dist_cm"], float) and isinstance(d["lateral_cm"], float)
+    assert [t["id"] for t in on["arm_tags"]] == [0] and 200 < on["arm_tags"][0]["dist_mm"] < 330
+    off = run(tmp_path, {"items": [BOTTLE]}, body, p1=False)
+    assert "arm_tags" not in off
+    assert not set(fm.P1_KEYS) & set(off["detections"][0])
+
+
+@needs_sim
+@pytest.mark.parametrize("pos, j1", [((-54, -301), 0), ((-54, -331), 0), ((-124, -281), 0), ((6, -251), 0),
+                                     ((-54, -301), 12)])
+def test_dist_cm_matches_0022_formula(tmp_path, pos, j1):
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            await ws.send(json.dumps({"cmd": "start_stream"}))
+            return (await detection_frame(ws))["detections"][0]
+
+    d = run(tmp_path, {"items": [{**BOTTLE, "pos_mm": list(pos)}], "arm": {"j1": j1}}, body)
+    v_bottom = d["y"] + d["h"] / 2
+    dist = F_Y * LENS_H_MM / (v_bottom - fm.IMG_H / 2) / 10
+    assert abs(d["dist_cm"] - dist) < 1.0, (d, dist)
+    if j1 == 0:
+        assert abs(d["dist_cm"] - (-pos[1] - 51.1) / 10) < 0.2  # ground truth from the scenario
+        lateral = dist * (d["x"] - fm.IMG_W / 2) / F_Y  # square pixels: f_x == f_y
+        assert abs(d["lateral_cm"] - lateral) < 1.0, (d, lateral)
+
+
+@needs_sim
+def test_link_drop_goes_silent_refuses_then_recovers(tmp_path):
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            await ws.send(json.dumps({"cmd": "start_stream"}))
+            times = []
+            refused = None
+            start = time.monotonic()
+            while time.monotonic() - start < 2.6:
+                try:
+                    await asyncio.wait_for(ws.recv(), 0.1)
+                    times.append(time.monotonic() - start)
+                except asyncio.TimeoutError:
+                    pass
+                if refused is None and 0.7 < time.monotonic() - start:
+                    try:
+                        async with websockets.connect(url, open_timeout=0.5):
+                            refused = False
+                    except Exception:
+                        refused = True
+            return times, refused
+
+    times, refused = run(tmp_path, {"items": [BOTTLE], "events": [{"t": 0.3, "do": "link_drop", "for_s": 1.2}]}, body)
+    gaps = [b - a for a, b in zip(times, times[1:])]
+    assert max(gaps) >= 1.0, gaps  # silent during the drop
+    assert times[-1] > 1.8  # frames again on the same connection afterwards
+    assert refused
+
+
+@needs_sim
+def test_command_hook_hold_sweep_and_todos(tmp_path):
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            replies = []
+
+            async def send(cmd, n):
+                await ws.send(json.dumps({**cmd, "id": len(replies)}))
+                for _ in range(n):
+                    replies.append(json.loads(await asyncio.wait_for(ws.recv(), 2)))
+
+            await send({"cmd": "HOLD"}, 2)
+            await send({"cmd": "J1_SWEEP", "to": 6}, 2)  # 6 deg at 60 deg/s: done in ~0.1 s
+            await send({"cmd": "PICK"}, 1)
+            return [(r["event"], r["cmd"]) for r in replies], fake.world.angles[0]
+
+    events, j1 = run(tmp_path, {"items": [BOTTLE]}, body)
+    assert events == [("ack", "HOLD"), ("motion_done", "HOLD"), ("ack", "J1_SWEEP"), ("motion_done", "J1_SWEEP"),
+                      ("error", "PICK")]
+    assert j1 == pytest.approx(6)
+
+
+def test_labels_match_main_py_and_app():
+    assert fm.check_labels() == []
+
+
+def test_shipped_scenarios_load(tmp_path):
+    labels = fm.load_labels()
+    paths = sorted((fm.HERE / "scenarios").glob("*.yaml"))
+    assert len(paths) == 10
+    for p in paths:
+        fm.load_scenario(p, labels)
+    s = yaml.safe_load(paths[0].read_text())
+    for bad in ({"items": [{**s["items"][0], "label": "Bottle"}]},  # not a detector class
+                {"events": [{"t": 1, "do": "explode"}]}):
+        (tmp_path / "bad.yaml").write_text(yaml.safe_dump({**s, **bad}))
+        with pytest.raises(ValueError):
+            fm.load_scenario(tmp_path / "bad.yaml", labels)
