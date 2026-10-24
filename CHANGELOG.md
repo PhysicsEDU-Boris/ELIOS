@@ -113,6 +113,12 @@ kept outside the repo.
   gate; the module-grounded quiz plan requires page/section citations (planned).
 
 ### Fixed
+- Bank questions in a live scan follow the detector class, not Gemma's words. A Plastic box that
+  Gemma called "Label" (kertas) got a paper question on 24 Oct; it now gets the plastic pool.
+  `ScannedWaste.detectorLabel` carries the class. A bank object is used only if its `label` is
+  that class. A same-bin class disagreement is logged as `class_mismatch` (no card). The Gemma
+  question prompt names the detector class next to its category hint. The debug overlay shows
+  Gemma's item and the detector class (decision 0025).
 - The quiz type chip no longer says "Essay" on multiple-choice questions when
   essays are off.
 - M2c cancel (16 Oct retest, scan 0): a close while the model is still loading

@@ -1,7 +1,7 @@
 # Handoff
 
-- Base `feature/live-scan` at d26d81f (PRs up to #32 merged); R1 is on `feat/r1-orchestration` (PR
-  open). #24 stays a draft. T1b (photo cards) was not started. Never commit the Xcode scheme or Maixcam.txt.
+- Base `feature/live-scan` at 66ca897 (PRs up to #33 merged); B1 is on `feat/b1-bank-detector-class`
+  (PR open). #24 stays a draft. T1b (photo cards) was not started. Never commit the Xcode scheme or Maixcam.txt.
 - Robot build: see CLAUDE.md, launch with `open`; check every JSONL line's `appCommit` matches.
 - Decisions: [0013](decisions/0013-quiz-answer-schema.md) MC schema,
   [0014](decisions/0014-module-chunks.md) module chunks, [0015](decisions/0015-question-bank-draft.md)
@@ -10,7 +10,8 @@
   [0019](decisions/0019-gemma-question-topics.md) Gemma angles, [0020](decisions/0020-lock-rearm-rule.md)
   re-arm rule, [0021](decisions/0021-manual-driving-orchestration.md) driving + orchestration (proposed,
   amended 24 Oct), [0022](decisions/0022-detection-protocol-distance-tags.md) P1 protocol + topology,
-  [0023](decisions/0023-r1-command-link.md) R1 + command link, [0024](decisions/0024-fake-maixcam-sim.md) fake MaixCAM2.
+  [0023](decisions/0023-r1-command-link.md) R1 + command link, [0024](decisions/0024-fake-maixcam-sim.md) fake MaixCAM2,
+  [0025](decisions/0025-bank-detector-class.md) detector class picks bank questions.
 - Topology (0021e): app -> MaixCAM2 only (WiFi); MaixCAM2 -> ESP32 (arm, 6 servos incl. J1) and Uno
   (wheels) over UART; the arm is not working yet. The Mac is debug only.
 
@@ -19,11 +20,8 @@
 - Built and tested on `SimulatedRobot` only. The app shows the link probe only (`--dart-define=R1=true`):
   today's firmware answers nothing, so "R1: robot tidak terhubung" and the live scan as before.
 - Waits on R1-fw (the firmware command link) and the M4 screens for the student flow.
-
-## Fake MaixCAM2 (T1)
-
-- `tools/fake_maixcam/` (README): main.py's protocol, robotic_hand_sim frames (9b2737e), 10
-  scenarios; app config `127.0.0.1:8765`. Manual check on the macOS debug build: NOT run yet.
+- Fake MaixCAM2 (T1, `tools/fake_maixcam/` README): app config `127.0.0.1:8765`; the owner used it
+  on 24 Oct on the Mac (found B1 and the reconnect rule).
 
 ## M2d robot test (NOT run yet; the fake's scenarios cover most of it)
 
@@ -34,7 +32,8 @@
 
 ## Quiz state
 
-- Bank is the default source, every launch (Gemma: debug only, not saved, 0018/0019). All items are
+- Bank is the default source, every launch (Gemma: debug only, not saved, 0018/0019). Live scans
+  pick bank questions by the detector class (0025); `class_mismatch` lines show Gemma disagreeing. All items are
   `draft`; owner is reviewing [object](quiz-review/object_bank_review.md) and [question](quiz-review/question_bank_review.md) banks.
 - Next quiz task, after the review: accepted-filter (release: `accepted` only), kardus Q1, level
   chip vs Mudah-first, generic Q5, "menurut modul" wording.

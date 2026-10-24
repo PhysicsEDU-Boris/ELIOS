@@ -712,6 +712,9 @@ class GemmaQuizService {
     final details = [
       if (waste.material != null && waste.material!.isNotEmpty) 'bahan: ${waste.material}',
       if (waste.category != null) 'kategori: ${waste.categoryNameId}',
+      // Next to the category hint (decision 0025): the camera's class, as a hint only.
+      if (ScannedWaste.detectorLabels[waste.detectorLabel]?.$2 != null)
+        'menurut detektor kamera: ${ScannedWaste.detectorLabels[waste.detectorLabel]!.$1}',
     ].join(', ');
     final name = waste.displayName;
     final context = 'Sampah yang discan: "$name"${details.isEmpty ? '' : ' ($details)'}.';

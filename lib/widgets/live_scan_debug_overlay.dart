@@ -10,9 +10,12 @@ import '../services/live_scan_state_machine.dart';
 /// what blocks a new lock right now (decision 0020), and the "Scan lagi"
 /// button (manual re-arm, disabled while a quiz is open).
 class LiveScanDebugOverlay extends StatelessWidget {
-  const LiveScanDebugOverlay({super.key, required this.controller});
+  const LiveScanDebugOverlay({super.key, required this.controller, this.scanLine});
 
   final LiveScanController controller;
+
+  /// The current scan: Gemma's item and the detector class (decision 0025).
+  final String? scanLine;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +46,8 @@ class LiveScanDebugOverlay extends StatelessWidget {
                   'first token ${firstToken == null ? '-' : '$firstToken ms'}'
                   '   question ${askToQuestion == null ? '-' : '$askToQuestion ms'}'
                   '   next ${nextWait == null ? '-' : '$nextWait ms'}'
-                  '${blocked == null ? '' : '\n$blocked'}',
+                  '${blocked == null ? '' : '\n$blocked'}'
+                  '${scanLine == null ? '' : '\n$scanLine'}',
                   style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.35, fontFamily: 'monospace'),
                 ),
                 const SizedBox(height: 4),

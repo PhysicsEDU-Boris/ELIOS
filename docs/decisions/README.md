@@ -22,7 +22,7 @@ their status changed.
 | [0013](0013-quiz-answer-schema.md) | Multiple-choice schema: one correct answer plus wrong distractors (M3.1) | Accepted |
 | [0014](0014-module-chunks.md) | The course module as traceable chunks (M3.2) | Accepted |
 | [0015](0015-question-bank-draft.md) | Module-grounded question bank, drafted for owner review (M3.3) | Proposed |
-| [0017](0017-object-bank.md) | Pre-written object-specific questions; Gemma identifies only (M3.5) | Proposed |
+| [0017](0017-object-bank.md) | Pre-written object-specific questions; Gemma identifies only (M3.5); live-scan selection amended by 0025 | Proposed |
 | [0018](0018-question-source-toggle.md) | Debug switch between the question bank and Gemma (M3.6); not saved across launches since 24 Oct | Accepted |
 | [0019](0019-gemma-question-topics.md) | Gemma questions ask about one physics angle, never LCA (M3.7) | Accepted |
 | [0020](0020-lock-rearm-rule.md) | After a quiz a different object may lock; lock diagnostics (M2d); reconnect forgets quizzed objects (24 Oct) | Accepted |
@@ -30,3 +30,4 @@ their status changed.
 | [0022](0022-detection-protocol-distance-tags.md) | Optional `track_id`, `dist_cm`, `lateral_cm`, `arm_tags`; firmware distance spec and topology (P1) | Accepted (app parsing; firmware spec only) |
 | [0023](0023-r1-command-link.md) | R1 orchestration and the app-to-MaixCAM2 command link | Accepted (app side; firmware R1-fw pending) |
 | [0024](0024-fake-maixcam-sim.md) | Sim-backed fake MaixCAM2 for testing without the robot (T1) | Accepted |
+| [0025](0025-bank-detector-class.md) | In a live scan the detector class picks the bank questions; same-bin class mismatch is logged, no card (B1) | Accepted |
