@@ -59,7 +59,7 @@ class SimulatedRobot extends RobotController {
   @override
   void transmit(Map<String, Object?> message) {
     sent.add(message);
-    if (!linkUp || !commandLink) return;
+    if (!linkUp || !commandLink || message['cmd'] == 'HEARTBEAT') return; // HEARTBEAT: no seq, no reply
     final cmd = message['cmd'] as String;
     final seq = message['seq'] as int;
     final now = clock();

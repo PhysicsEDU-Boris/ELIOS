@@ -106,6 +106,7 @@ class R1Orchestrator {
     _linkUp = true;
     if (_unlockOnReconnect) {
       _unlockOnReconnect = false;
+      robot.driveLocked = false;
       robot.unlockDrive();
     }
     _connected = null;
@@ -123,6 +124,28 @@ class R1Orchestrator {
       _end('link_lost', 'Koneksi ke robot terputus. Robot berhenti.', stop: false);
     } else {
       message = 'robot tidak terhubung';
+    }
+  }
+
+  /// The emergency stop (decision 0026): the safe exit now (STOP if the arm
+  /// may move), but driving stays locked, in the app and on the MaixCAM2,
+  /// until [resumeAfterStop] ("Lanjutkan").
+  void emergencyStop(String reason) {
+    if (_state != R1State.searching) {
+      _end('emergency_stop', 'Robot dihentikan ($reason). Tekan "Lanjutkan" jika sudah aman.',
+          stop: _armActive, keepLocked: true);
+    }
+    robot.driveLocked = true;
+    _unlockOnReconnect = false; // only "Lanjutkan" unlocks, not a reconnect
+  }
+
+  /// "Lanjutkan" after an emergency stop: driving is unlocked again.
+  void resumeAfterStop() {
+    robot.driveLocked = false;
+    if (_linkUp) {
+      robot.unlockDrive();
+    } else {
+      _unlockOnReconnect = true;
     }
   }
 
@@ -469,7 +492,7 @@ class R1Orchestrator {
 
   /// Every exit: stop the arm if it may move, unlock driving (app now,
   /// MaixCAM2 now or at the reconnect), tell the student, back to SEARCHING.
-  void _end(String reason, String text, {required bool stop}) {
+  void _end(String reason, String text, {required bool stop, bool keepLocked = false}) {
     final from = _state;
     if (reason != 'done') onEvent?.call('r1_abort', {'reason': reason, 'from': from.name});
     _pending.clear();
@@ -478,9 +501,11 @@ class R1Orchestrator {
       _settleUntil = _clock().add(armSettle);
     }
     robot
-      ..driveLocked = false
+      ..driveLocked = keepLocked
       ..nudgeOnly = false;
-    if (_linkUp) {
+    if (keepLocked) {
+      // emergency stop: [resumeAfterStop] unlocks
+    } else if (_linkUp) {
       robot.unlockDrive();
     } else {
       _unlockOnReconnect = true;

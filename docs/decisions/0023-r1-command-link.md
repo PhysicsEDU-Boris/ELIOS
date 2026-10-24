@@ -196,3 +196,16 @@ and the live scan works as before.
 - Teleop jogging, the manual sort mode, R2.
 - The overlay layout (M4).
 - The firmware side (R1-fw).
+
+## Amendment 24 Oct (E1): HEARTBEAT and the emergency stop
+
+- **`{"cmd": "HEARTBEAT"}`**: app → MaixCAM2 every 250 ms while connected. It has no `seq` and
+  no reply. It feeds the MaixCAM2's 1 s watchdog ([0026](0026-emergency-stop-motion-gate.md)).
+  Today's firmware ignores it.
+- **The emergency stop** sends `STOP` and `motor 0,0` (repeated) from the app's motion gate,
+  whether or not R1 is running.
+  - R1's `emergencyStop` runs its safe exit but keeps driving locked, with no `UNLOCK_DRIVE`.
+  - Only `resumeAfterStop` ("Lanjutkan") unlocks; a reconnect does not.
+  - While the app is STOPPED, only `STOP`, `STATUS` and `HEARTBEAT` reach the MaixCAM2.
+- R1's error exits (`robot_error`, `robot_unreachable`, `pick_failed`) put the app into STOPPED
+  (`error`).

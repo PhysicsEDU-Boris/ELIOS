@@ -12,6 +12,7 @@ import '../models/scanned_waste.dart';
 import '../providers/waste_quiz_provider.dart' show WasteQuizPhase;
 import 'detection_stabilizer.dart';
 import 'live_scan_state_machine.dart';
+import 'robot/r1_constants.dart' show armSettle;
 import 'scan_diagnostics.dart';
 import 'websocket_service.dart' show Detection;
 
@@ -79,9 +80,25 @@ class LiveScanController extends ChangeNotifier {
   DateTime? _belowMinAt;
   BlockReason? _frameBlock;
 
-  /// Why nothing is being asked right now: the machine's reason, else this
-  /// frame's (boxes too large, scores under [minScore]); null when nothing blocks.
-  BlockReason? get blockReason => machine.blockReason ?? _frameBlock;
+  /// Why nothing is being asked right now: the J1 guard, else the machine's
+  /// reason, else this frame's (boxes too large, scores under [minScore]).
+  BlockReason? get blockReason => _armFrozen ? const BlockReason('arm_moving') : machine.blockReason ?? _frameBlock;
+
+  /// J1 guard (decision 0020): the arm moves the camera until this time.
+  DateTime? _armGuardUntil;
+  bool _armFrozen = false;
+
+  /// The app sent an arm command expected to move for [motion]: the guard
+  /// holds for it plus ARM_SETTLE.
+  void onArmCommand(Duration motion) => _extendArmGuard(motion + armSettle);
+
+  void _extendArmGuard(Duration d) {
+    final until = _clock().add(d);
+    if (_armGuardUntil == null || until.isAfter(_armGuardUntil!)) _armGuardUntil = until;
+  }
+
+  /// Logs one event to the live-scan JSONL (the emergency stop, 0026).
+  void logEvent(String event, Map<String, Object?> data) => _emit(event, data);
 
   /// "Scan lagi" is enabled: no quiz is open.
   bool get canManualRearm => machine.canManualRearm;
@@ -144,11 +161,27 @@ class LiveScanController extends ChangeNotifier {
 
   /// [frameSize] is the frame the boxes are in; without it the box-size
   /// filter is skipped.
-  void onDetections(List<Detection> detections, {Size? frameSize}) {
+  ///
+  /// [armMoving] is the frame's `arm_moving` (null: the firmware doesn't say).
+  /// While the arm moves and for ARM_SETTLE after, the frame is not analysed:
+  /// nothing locks or re-arms, and no absence is counted (J1 guard, 0020).
+  void onDetections(List<Detection> detections, {Size? frameSize, bool? armMoving}) {
     final now = _clock();
     _recentFrames
       ..add(now)
       ..removeWhere((t) => now.difference(t) >= const Duration(seconds: 1));
+    if (armMoving == true) _extendArmGuard(armSettle);
+    final guard = _armGuardUntil;
+    if (guard != null && now.isBefore(guard)) {
+      if (!_armFrozen) _emit('arm_guard', {'untilMs': guard.difference(now).inMilliseconds});
+      _armFrozen = true;
+      notifyListeners();
+      return;
+    }
+    if (_armFrozen) {
+      _armFrozen = false;
+      machine.onArmSettled();
+    }
 
     final frameArea = frameSize == null ? double.infinity : frameSize.width * frameSize.height;
     final boxes = <TrackedDetection>[];

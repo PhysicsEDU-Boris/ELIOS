@@ -33,6 +33,7 @@ WS_PORT = 8765
 IMG_W, IMG_H = 640, 480
 DET_EVERY_N_FRAMES = 2  # main.py: detections refresh every 2nd frame, held in between
 JOINT_SPEED_DPS = 60.0
+WATCHDOG_S = 1.0  # decision 0026 b: no app message this long -> wheels 0, arm hold
 HIDDEN_FRACTION = 0.6  # a card covered more than this by nearer cards gets no box  # ESP32 firmware limit, per joint (0021e)
 P1_KEYS = ("track_id", "dist_cm", "lateral_cm")
 
@@ -311,6 +312,8 @@ class FakeMaixCam:
         self.pending = list(scenario["events"])
         self.motion = None  # (client, command) waiting for motion_done
         self.drive_locked = False
+        self.last_app_message = time.monotonic()
+        self.watchdog_fired = False
         # Decision 0023's command link. DRIVE is the existing `motor` message (dropped while locked).
         self.handlers = {
             "STATUS": self._cmd_status,
@@ -395,16 +398,20 @@ class FakeMaixCam:
 
     async def handler(self, ws):
         self.clients.add(ws)
+        self.last_app_message = time.monotonic()
         self.log(f"[WS] Client connected: {ws.remote_address}")
         await ws.send(json.dumps({"status": "Connected"}))
         try:
             async for message in ws:
                 if self.link_down():
                     continue  # lost on the air
+                self._app_alive()
                 try:
                     data = json.loads(message)
                     cmd = data.get("cmd", "")
-                    if cmd == "ping":
+                    if cmd == "HEARTBEAT":
+                        pass  # decision 0026: no seq, no reply; it only feeds the watchdog
+                    elif cmd == "ping":
                         await ws.send(json.dumps({"event": "pong", "firmware_version": FIRMWARE_VERSION,
                                                   "firmware_sha256": FIRMWARE_SHA256}))
                     elif cmd == "start_stream":
@@ -439,6 +446,21 @@ class FakeMaixCam:
             if not self.clients:
                 self.streaming = False
             self.log(f"[WS] clients remaining: {len(self.clients)}")
+
+    # -- MaixCAM2 watchdog (decision 0026 b, simulated: the fake only logs and holds J1) --
+
+    def _app_alive(self):
+        self.last_app_message = time.monotonic()
+        if self.watchdog_fired:
+            self.watchdog_fired = False
+            self.log("[Watchdog] app messages again")
+
+    def _watchdog(self, now):
+        if self.clients and not self.watchdog_fired and now - self.last_app_message > WATCHDOG_S:
+            self.watchdog_fired = True
+            self.world.target[:] = self.world.angles  # arm hold: stop where it is, never detach
+            self.motion = None
+            self.log(f"[Watchdog] no app message for {WATCHDOG_S:g} s: wheels 0 / arm hold")
 
     # -- R1 command link (decision 0023: {"cmd": NAME, "seq": n, ...} -> {"event": ..., "seq": n}) --
 
@@ -482,6 +504,7 @@ class FakeMaixCam:
                 self.apply_events()
             arrived = self.world.step(started - last)
             last = started
+            self._watchdog(started)
             if arrived and self.motion is not None:
                 ws, data = self.motion
                 self.motion = None
@@ -522,6 +545,7 @@ class FakeMaixCam:
                     tags = self.world.arm_tags()
                     if tags:
                         message["arm_tags"] = tags
+                    message["arm_moving"] = not arrived  # decision 0026
                 if detection_frame_id == frame_id:
                     message["clean_detections"] = clean_dets
                     if clean_b64 is not None:

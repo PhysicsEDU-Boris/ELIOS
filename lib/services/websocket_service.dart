@@ -68,6 +68,10 @@ class WebSocketService {
   /// Nothing reads this yet (R1 will).
   List<ArmTag>? get armTags => _armTags;
   List<ArmTag>? _armTags;
+
+  /// The last frame's `arm_moving` (decision 0026); null when the firmware doesn't say.
+  bool? get armMoving => _armMoving;
+  bool? _armMoving;
   Stream<Size> get resolutionAcks => _resolutionAckController.stream;
   Stream<CapturedFrame> get capturedFrames => _capturedFramesController.stream;
 
@@ -393,6 +397,7 @@ class WebSocketService {
           currentDetections.add(Detection.fromJson(item));
         }
         _armTags = ArmTag.listFromJson(decoded['arm_tags']);
+        _armMoving = armMovingFromJson(decoded['arm_moving']);
         _detectionsController.add(currentDetections);
       }
 
@@ -500,8 +505,10 @@ class WebSocketService {
     _stopWatchdog();
 
     // Best-effort orderly disconnect handshake — device can clean up its
-    // side immediately rather than waiting to notice the TCP drop.
+    // side immediately rather than waiting to notice the TCP drop. Wheels off
+    // first: the last motor command stays in force on the robot (0026).
     try {
+      _channel?.sink.add(jsonEncode({'cmd': 'motor', 'left': 0, 'right': 0}));
       _channel?.sink.add(jsonEncode({'cmd': 'disconnect'}));
     } catch (_) {}
 
@@ -593,5 +600,8 @@ class ArmTag {
 }
 
 int? _optInt(Object? v) => v is int ? v : null;
+
+/// A frame's optional `arm_moving` (decision 0026): a bool, else null (unknown).
+bool? armMovingFromJson(Object? v) => v is bool ? v : null;
 
 double? _optDouble(Object? v) => v is num && v.isFinite ? v.toDouble() : null;

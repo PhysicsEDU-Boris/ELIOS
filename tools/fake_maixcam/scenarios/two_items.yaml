@@ -1,5 +1,5 @@
 name: two_items
-description: Two items side by side at different distances. One locks first (close its quiz by 25 s); the other waits until the first leaves at 40 s, then locks.
+description: Two items with different labels side by side at different distances. One locks first (close its quiz by 25 s). Per 0020 the other (a different label) may lock once the 15 s cooldown is over, even with the first still in view; the first leaving at 40 s changes nothing for it.
 duration_s: 70
 items:
   - {id: bottle, label: Plastic, pos_mm: [36, -301], size_mm: 120, score: 0.9}

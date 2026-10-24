@@ -133,3 +133,16 @@ Found in the 24 Oct tests on the Mac:
   `one_<label>` scenarios.
 
 Tests: `test_make_crops.py`, plus the T1b section of `test_fake_maixcam.py`.
+
+## Amendment 24 Oct (E1)
+
+- The fake accepts `HEARTBEAT` (no reply).
+- It simulates the MaixCAM2 watchdog of 0026 (b): with no app message for 1 s it logs
+  `[Watchdog] no app message for 1 s: wheels 0 / arm hold` and holds J1 where it is. It logs
+  `[Watchdog] app messages again` when they return.
+- With `p1` on, it sends `arm_moving` per frame (true while J1 moves).
+- New scenarios:
+  - `two_same_class`: two Plastic items, and what 0020 and M6 do with them;
+  - the owner's `all_classes`: nine classes, one at a time.
+- `two_items`' description now says a different label may lock after the cooldown even with the
+  first item in view.

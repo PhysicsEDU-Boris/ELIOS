@@ -81,35 +81,19 @@ class RobotControlNotifier extends Notifier<RobotState> {
 
   void resetConnectionState() => _ws.resetConnectionState();
 
-  // Drive commands ────────────────────────────────────────────────────────────
-
-  void sendMotor(int left, int right) => _ws.sendMotorCommand(left, right);
+  // Motion goes through the control screen's MotionGate (decision 0026); this
+  // notifier keeps the slider values only.
 
   void startStream() => _ws.sendStartStreamCommand();
 
   void stopStream() => _ws.sendStopStreamCommand();
 
-  // Arm commands + local state update ────────────────────────────────────────
+  // Slider state (the servo command itself is sent by the gate) ───────────────
 
   void setPwmSpeed(double v) => state = state.copyWith(pwmSpeed: v);
-
-  void setBaseAngle(double v) {
-    state = state.copyWith(baseAngle: v);
-    _ws.sendServoCommand('base', v.toInt());
-  }
-
-  void setElbowAngle(double v) {
-    state = state.copyWith(elbowAngle: v);
-    _ws.sendServoCommand('elbow', v.toInt());
-  }
-
-  void setGripperVal(double v) {
-    state = state.copyWith(gripperVal: v);
-    _ws.sendServoCommand('gripper', v.toInt());
-  }
-
-  void pickUp() => _ws.sendServoCommand('gripper', 100);
-  void release() => _ws.sendServoCommand('gripper', 0);
+  void setBaseAngle(double v) => state = state.copyWith(baseAngle: v);
+  void setElbowAngle(double v) => state = state.copyWith(elbowAngle: v);
+  void setGripperVal(double v) => state = state.copyWith(gripperVal: v);
 
   // Resolution control ────────────────────────────────────────────────────────
 

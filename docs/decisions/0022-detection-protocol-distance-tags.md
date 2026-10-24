@@ -121,3 +121,8 @@ the id but does not use it for identity until M6 is accepted.
   - **Arduino Uno** = the wheels / chassis only.
 - Nothing plugs into the Mac. The macOS build stays a debug and visualization target.
 - `RobotController.heartbeat` exists only if the MaixCAM2 adds one.
+
+## Amendment 24 Oct (E1)
+
+New optional per-frame field `arm_moving` (bool; `null` when missing or not a bool), for the J1
+guard. It is specified in [0026](0026-emergency-stop-motion-gate.md).

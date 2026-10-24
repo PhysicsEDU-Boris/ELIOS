@@ -1,0 +1,8 @@
+name: two_same_class
+description: Two Plastic items side by side (a bottle 25 cm ahead, a cup to its left). One locks and is quizzed first (close that quiz by 25 s). Per 0020 the other Plastic item waits - same label - until the quizzed one has been absent 2 s; at 40 s the quizzed bottle leaves, and the cup locks about 2 s later. With track ids (M6) the cup would be a different object and could lock right after the cooldown, while the bottle stays in view.
+duration_s: 70
+items:
+  - {id: bottle, label: Plastic, pos_mm: [-54, -301], size_mm: 120, score: 0.9}
+  - {id: cup, label: Plastic, pos_mm: [46, -321], size_mm: 100, score: 0.84}
+events:
+  - {t: 40, do: leave, item: bottle}

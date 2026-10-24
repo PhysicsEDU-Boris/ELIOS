@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart'
-    show DeviceOrientation, SystemChrome, SystemUiMode;
+    show DeviceOrientation, HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey, SystemChrome, SystemUiMode;
 
 import '../models/config_model.dart';
 import '../models/scanned_waste.dart';
@@ -17,6 +17,7 @@ import '../providers/waste_quiz_provider.dart';
 import '../services/gemma_quiz_service.dart';
 import '../services/live_scan_controller.dart';
 import '../services/quiz_tts_service.dart';
+import '../services/robot/motion_gate.dart';
 import '../services/robot/r1_orchestrator.dart';
 import '../services/robot/robot_controller.dart';
 import '../services/websocket_service.dart';
@@ -45,7 +46,7 @@ class ControlScreen extends ConsumerStatefulWidget {
   ConsumerState<ControlScreen> createState() => _ControlScreenState();
 }
 
-class _ControlScreenState extends ConsumerState<ControlScreen> {
+class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindingObserver {
   final MaixCamSource _source = MaixCamSource();
   CapturedFrame? _latestFrame;
   StreamSubscription<CapturedFrame>? _frameSubscription;
@@ -62,6 +63,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
   /// Set only when built with --dart-define=LIVE_SCAN=true (M2a).
   LiveScanController? _liveScan;
+
+  /// Every motor and servo command passes here (decision 0026): the
+  /// emergency stop, STOPPED, R1's drive lock, the link, the heartbeat.
+  late final MotionGate _gate;
 
   /// Set only with R1 (see [_r1Enabled]).
   R1Orchestrator? _r1;
@@ -105,10 +110,34 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
       GemmaQuizService.instance.warmUp(vision: true);
     }
 
+    final ws = WebSocketService();
+    final robot = MaixCamRobot(
+      sink: (command) {
+        if (_gate.allowsCommand(command)) ws.sendRobotCommand(command);
+      },
+      motor: ws.sendMotorCommand,
+    );
+    _gate = MotionGate(
+      robot: robot,
+      sendServo: ws.sendServoCommand,
+      onEvent: (event, data) {
+        debugPrint('[Control] $event $data');
+        _liveScan?.logEvent(event, data);
+      },
+      onStop: (reason) => _r1?.emergencyStop(reason),
+      onArmCommand: (motion) => _liveScan?.onArmCommand(motion),
+      armBusy: () => _r1?.ignoresLiveScanLocks ?? false,
+    )..addListener(() {
+        if (mounted) setState(() {});
+      });
+    WidgetsBinding.instance.addObserver(this);
+    HardwareKeyboard.instance.addHandler(_onKey);
+
     if (_r1Enabled) {
-      final ws = WebSocketService();
-      final robot = MaixCamRobot(sink: ws.sendRobotCommand, motor: ws.sendMotorCommand);
-      _r1 = R1Orchestrator(robot);
+      _r1 = R1Orchestrator(robot, onResume: (reason) {
+        // A robot that misbehaved stops everything until "Lanjutkan" (0026).
+        if (const {'robot_error', 'robot_unreachable', 'pick_failed'}.contains(reason)) _gate.emergencyStop('error');
+      });
       _r1Replies = ws.robotReplies.listen(robot.handleMessage);
       _r1Ticker = Timer.periodic(const Duration(milliseconds: 250), (_) {
         final r1 = _r1!..tick();
@@ -146,6 +175,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           liveScan.onDetections(
             frame.detections!,
             frameSize: Size(frame.width.toDouble(), frame.height.toDouble()),
+            armMoving: WebSocketService().armMoving, // same message as the frame (0026)
           );
         } else {
           ref.read(wasteQuizProvider.notifier).onDetections(frame.detections!);
@@ -174,6 +204,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           status == 'Reconnecting...' ||
           status == 'Connecting...') {
         if (_streamStartedForCurrentConnection) _r1?.linkDown();
+        _gate.linkLost(); // STOPPED (link_lost) until "Lanjutkan" (0026)
         _streamStartedForCurrentConnection = false;
       }
     }, fireImmediately: true);
@@ -189,9 +220,31 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
   /// Once per (re)connection, from whichever path sees it first.
   void _onNewConnection() {
+    _gate.linkRestored(); // first: STOP + motor 0,0 before anything else (0026)
     _liveScan?.onLinkRestored(); // 0020: a drop can't time absence; harmless on the first connect
     _r1?.linkUp(); // 0023: probe the command link (old firmware: "robot tidak terhubung")
   }
+
+  /// Escape, or space outside a text field: the emergency stop.
+  bool _onKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
+    final key = event.logicalKey;
+    final typing = FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<EditableText>() != null;
+    if (key == LogicalKeyboardKey.escape || (key == LogicalKeyboardKey.space && !typing)) {
+      _gate.emergencyStop('button');
+      return true;
+    }
+    return false;
+  }
+
+  /// "Lanjutkan": the deliberate second action after a stop.
+  void _resumeAfterStop() {
+    _gate.resume();
+    _r1?.resumeAfterStop();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) => _gate.onAppLifecycle(state);
 
   void _enterLandscapeFullscreen() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -234,6 +287,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     _statusSubscription?.close();
     _r1Ticker?.cancel();
     _r1Replies?.cancel();
+    HardwareKeyboard.instance.removeHandler(_onKey);
+    WidgetsBinding.instance.removeObserver(this);
+    _gate.dispose(); // motor 0,0, heartbeat off
 
     // Disconnect when leaving the control screen (not a quiz pause: the
     // stream stays up for the whole visit, M2b).
@@ -320,30 +376,19 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                               ),
                               enabled: isOperational,
                               labelOnLeft: true,
-                              onChanged: (value) =>
-                                  notifier.setElbowAngle(value * 180),
+                              onChanged: (value) {
+                                if (_gate.servo('elbow', (value * 180).toInt())) notifier.setElbowAngle(value * 180);
+                              },
                             ),
                             const SizedBox(width: 12),
                             _LandscapeDriveControls(
                               speed: speed,
                               enabled: isOperational,
-                              onForward: () => notifier.sendMotor(
-                                speed.toInt(),
-                                speed.toInt(),
-                              ),
-                              onBack: () => notifier.sendMotor(
-                                -speed.toInt(),
-                                -speed.toInt(),
-                              ),
-                              onLeft: () => notifier.sendMotor(
-                                -speed.toInt(),
-                                speed.toInt(),
-                              ),
-                              onRight: () => notifier.sendMotor(
-                                speed.toInt(),
-                                -speed.toInt(),
-                              ),
-                              onStop: () => notifier.sendMotor(0, 0),
+                              onForward: () => _gate.motor(speed.toInt(), speed.toInt()),
+                              onBack: () => _gate.motor(-speed.toInt(), -speed.toInt()),
+                              onLeft: () => _gate.motor(-speed.toInt(), speed.toInt()),
+                              onRight: () => _gate.motor(speed.toInt(), -speed.toInt()),
+                              onStop: _gate.stopWheels, // also every D-pad release
                             ),
                             const SizedBox(width: 14),
                             SizedBox(
@@ -367,8 +412,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                                   const SizedBox(height: 12),
                                   _LandscapeActionButtons(
                                     enabled: isOperational,
-                                    onPickUp: notifier.pickUp,
-                                    onRelease: notifier.release,
+                                    onPickUp: () => _gate.servo('gripper', 100),
+                                    onRelease: () => _gate.servo('gripper', 0),
                                   ),
                                 ],
                               ),
@@ -389,8 +434,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                               ),
                               enabled: isOperational,
                               labelOnLeft: false,
-                              onChanged: (value) =>
-                                  notifier.setBaseAngle(value * 180),
+                              onChanged: (value) {
+                                if (_gate.servo('base', (value * 180).toInt())) notifier.setBaseAngle(value * 180);
+                              },
                             ),
                           ],
                         ),
@@ -438,7 +484,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    LiveScanDebugOverlay(controller: _liveScan!, scanLine: _scanLine(ref.watch(wasteQuizProvider).scan)),
+                    LiveScanDebugOverlay(
+                        controller: _liveScan!,
+                        scanLine: [
+                          ?_scanLine(ref.watch(wasteQuizProvider).scan),
+                          'gerak diblokir ${_gate.blocked}${_gate.stopped ? '   STOPPED (${_gate.stopReason})' : ''}',
+                        ].join('\n')),
                     if (_r1 != null) ...[
                       const SizedBox(height: 6),
                       Text('R1: ${_r1Status ?? 'memeriksa robot...'}',
@@ -450,8 +501,90 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                 ),
               ),
             ),
+          // Last, so it stays on top of the quiz and the overlays (decision 0026).
+          Positioned(
+            top: 12,
+            right: 12,
+            child: SafeArea(
+              child: _EmergencyStop(
+                stopped: _gate.stopped,
+                reason: _gate.stopReason,
+                onStop: () => _gate.emergencyStop('button'),
+                onResume: _resumeAfterStop,
+              ),
+            ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+/// The emergency stop (decision 0026): one tap on the big red button; while
+/// STOPPED it says why and offers "Lanjutkan", the deliberate second action.
+class _EmergencyStop extends StatelessWidget {
+  const _EmergencyStop({required this.stopped, required this.reason, required this.onStop, required this.onResume});
+
+  final bool stopped;
+  final String? reason;
+  final VoidCallback onStop;
+  final VoidCallback onResume;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Semantics(
+          button: true,
+          label: 'Berhenti darurat',
+          child: SizedBox(
+            width: 96,
+            height: 96,
+            child: ElevatedButton(
+              onPressed: onStop,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD32F2F),
+                foregroundColor: Colors.white,
+                shape: const CircleBorder(),
+                elevation: 6,
+              ),
+              child: const Text('STOP', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+            ),
+          ),
+        ),
+        if (stopped) ...[
+          const SizedBox(height: 8),
+          Material(
+            color: const Color(0xFFD32F2F),
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    reason == 'link_lost'
+                        ? 'ROBOT DIHENTIKAN\nkoneksi terputus'
+                        : 'ROBOT DIHENTIKAN\n($reason)',
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 6),
+                  OutlinedButton(
+                    onPressed: onResume,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white),
+                    ),
+                    child: const Text('Lanjutkan'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

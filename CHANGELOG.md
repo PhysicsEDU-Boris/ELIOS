@@ -12,6 +12,22 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- E1 emergency stop (decision 0026):
+  - A large red STOP button, plus Escape (and space outside text fields). It sends 0023 STOP
+    and motor 0,0 (repeated), and R1 takes its safe exit.
+  - STOPPED blocks every motion until "Lanjutkan".
+  - One `MotionGate` for the D-pad, the sliders and the gripper (STOPPED, drive lock, link, R1
+    sorting), with a blocked count in the debug overlay.
+  - Motor 0,0 on D-pad release, screen leave, app background and every disconnect.
+  - A link loss means STOPPED, and STOP + 0,0 first on the reconnect.
+  - The app sends HEARTBEAT at 4 Hz.
+  - The firmware watchdog spec (MaixCAM2 1 s, Uno 500 ms, ESP32 hold, physical e-stop).
+- J1 guard (0020): while the arm moves (the app's servo sends, or the new per-frame
+  `arm_moving`) and for ARM_SETTLE after, the live scan neither locks, re-arms nor counts
+  absence. Quizzed objects are found again by label afterwards, so a J1 sweep no longer repeats
+  a quiz.
+- Fake MaixCAM2: HEARTBEAT, a simulated 1 s watchdog log, and `arm_moving`; scenarios
+  `two_same_class` and the owner's `all_classes`.
 - T1b fake MaixCAM2:
   - `make_crops.py` writes tight per-class crops from the training set (9 × 20 with the default
     seed).
@@ -86,6 +102,8 @@ kept outside the repo.
   class/score, raw Gemma item/category, bins and the identify JPEG name.
 
 ### Changed
+- The control screen's D-pad, sliders and gripper buttons no longer send directly; the
+  `RobotControlNotifier` setters only keep slider state (decision 0026).
 - The question-source switch is no longer saved: every launch starts on the bank (0018
   amendment; the 24 Oct "Gemma" start came from a value saved in an earlier debug session).
 - After a link drop and reconnect, the live scan forgets the quizzed objects of closed quizzes

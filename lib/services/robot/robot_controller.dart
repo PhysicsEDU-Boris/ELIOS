@@ -91,6 +91,10 @@ abstract class RobotController {
   int hold() => send('HOLD');
   int stop() => send('STOP');
 
+  /// The app is alive (decision 0026): no seq, no reply; the MaixCAM2's watchdog
+  /// stops the wheels and holds the arm when these stop coming.
+  void heartbeat() => transmit({'cmd': 'HEARTBEAT'});
+
   /// The student's drive buttons. False (and nothing sent) while driving is locked.
   bool drive(int left, int right) {
     if (driveLocked) return false;
