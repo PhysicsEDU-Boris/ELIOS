@@ -2,5 +2,5 @@ name: single_item_60s
 description: One plastic bottle held 25 cm ahead for 60 s. Expect exactly one lock and one quiz.
 duration_s: 60
 items:
-  - {id: bottle, label: Plastic, pos_mm: [-54, -301], size_mm: [70, 120], score: 0.88}
+  - {id: bottle, label: Plastic, pos_mm: [-54, -301], size_mm: 120, score: 0.88}
 noise: {score_jitter: 0.03}

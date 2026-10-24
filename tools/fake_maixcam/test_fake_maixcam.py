@@ -10,6 +10,8 @@ import os
 import time
 from pathlib import Path
 
+import cv2
+import numpy as np
 import pytest
 import websockets
 import yaml
@@ -20,7 +22,7 @@ REPO = fm.HERE.parents[1]
 SIM = Path(os.environ.get("ROBOTIC_HAND_SIM", REPO.parent / "robotic_hand_sim"))
 needs_sim = pytest.mark.skipif(not (SIM / "hil_toolkit").is_dir(), reason=f"simulator not found at {SIM}")
 
-BOTTLE = {"id": "bottle", "label": "Plastic", "pos_mm": [-54, -301], "size_mm": [70, 120], "score": 0.88}
+BOTTLE = {"id": "bottle", "label": "Plastic", "pos_mm": [-54, -301], "size_mm": 120, "score": 0.88}
 F_Y = (fm.IMG_H / 2) / 0.4769755  # 0022: (H/2) / tan(V/2), V = 51 deg
 LENS_H_MM = 86.2
 
@@ -46,7 +48,7 @@ def run(tmp_path, scenario, body, p1=None, fps=20.0):
     path.write_text(yaml.safe_dump({"name": "test", **scenario}))
     labels = fm.load_labels()
     sc = fm.load_scenario(path, labels)
-    world = fm.SimWorld(SIM, sc)
+    world = fm.SimWorld(SIM, sc, images_dir=tmp_path / "no-images", log=lambda *_: None)  # placeholders only
     fake = fm.FakeMaixCam(world, sc, labels, fps=fps, p1=p1, log=lambda *_: None)
 
     async def main():
@@ -274,3 +276,143 @@ def test_shipped_scenarios_load(tmp_path):
         (tmp_path / "bad.yaml").write_text(yaml.safe_dump({**s, **bad}))
         with pytest.raises(ValueError):
             fm.load_scenario(tmp_path / "bad.yaml", labels)
+
+
+# ── Photo cards, occlusion, timing (T1b) ─────────────────────────────────────
+
+def world_for(tmp_path, items, images_dir=None, occlusion=True, log=None):
+    path = tmp_path / "w.yaml"
+    path.write_text(yaml.safe_dump({"name": "w", "items": items, "occlusion": occlusion}))
+    sc = fm.load_scenario(path, fm.load_labels())
+    return fm.SimWorld(SIM, sc, images_dir=images_dir or tmp_path / "no-images", log=log or (lambda *_: None))
+
+
+def write_photo(path, w, h, colour=(40, 160, 220)):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(str(path), np.full((h, w, 3), colour, np.uint8))
+    return path
+
+
+def test_card_aspect_follows_the_photo():
+    assert fm.card_size(120, np.zeros((100, 200, 3))) == (120, 60)
+    assert fm.card_size(120, np.zeros((300, 150, 3))) == (60, 120)
+    assert fm.card_size([70, 120], np.zeros((300, 150, 3))) == (60, 120), "a [w, h] pair counts as its larger side"
+
+
+def test_whole_photos_are_centre_cropped_to_4_3():
+    assert fm.centre_crop_4_3(np.zeros((300, 1000, 3))).shape[:2] == (300, 400)
+    assert fm.centre_crop_4_3(np.zeros((1000, 300, 3))).shape[:2] == (400, 300)
+
+
+def test_whole_photo_texture_is_4_3_and_logged(tmp_path):
+    images = tmp_path / "images"
+    write_photo(images / "Glass" / "wide.jpg", 1000, 300)
+    lines = []
+    tex = fm.texture_for({"id": "jar", "label": "Glass"}, 0, images, lines.append)
+    assert tex.shape[:2] == (300, 400)
+    assert any("[Photo] jar (Glass): whole" in l for l in lines)
+
+
+def test_placeholder_has_no_text():
+    for seed in range(5):
+        img = fm.placeholder_texture(seed)
+        colours = np.unique(img.reshape(-1, 3), axis=0)
+        assert len(colours) <= 2, "two flat colours only: any text would add more"
+
+
+def test_photo_choice_order_and_seed(tmp_path):
+    images = tmp_path / "images"
+    item = {"id": "bottle", "label": "Plastic"}
+    assert fm.choose_photo(item, 0, images) == (None, "placeholder")
+    whole = write_photo(images / "Plastic" / "whole.jpg", 400, 300)
+    assert fm.choose_photo(item, 0, images) == (whole, "whole")
+    crops = [write_photo(images / "Plastic" / "crops" / f"c{k}.jpg", 100, 150) for k in range(6)]
+    path, kind = fm.choose_photo(item, 0, images)
+    assert kind == "crop" and path in crops
+    own = write_photo(fm.HERE / "images" / "_test_own.jpg", 50, 50)
+    try:
+        assert fm.choose_photo({**item, "photo": "images/_test_own.jpg"}, 0, images) == (own, "photo")
+    finally:
+        own.unlink()
+    assert fm.choose_photo({**item, "photo": "images/missing.jpg"}, 0, images)[1] == "crop", "missing own photo: next in order"
+    picks = lambda seed: [fm.choose_photo({"id": f"i{k}", "label": "Plastic"}, seed, images)[0] for k in range(8)]
+    assert picks(3) == picks(3), "the same seed repeats a run"
+    assert picks(3) != picks(4), "another seed picks other crops"
+
+
+@needs_sim
+def test_photo_card_logged_and_rendered_box_matches_the_card(tmp_path):
+    images = tmp_path / "images"
+    write_photo(images / "Plastic" / "crops" / "tall.jpg", 100, 200, colour=(0, 0, 255))
+    lines = []
+    world = world_for(tmp_path, [BOTTLE], images, log=lines.append)
+    try:
+        assert any("[Photo] bottle (Plastic): crop" in l and "tall.jpg" in l for l in lines)
+        w, h = (lambda c: (abs(c[0, 0] - c[1, 0]), c[2, 2]))(world.corners["bottle"])
+        assert (w, h) == (60, 120), "photo aspect 1:2, longer side 120 mm"
+        img = world.render()
+        red = (img[..., 0] > 200) & (img[..., 1] < 60) & (img[..., 2] < 60)
+        ys, xs = np.nonzero(red)
+        x, y, bw, bh = world.box("bottle")
+        assert abs(xs.min() - x) <= 1.5 and abs(xs.max() + 1 - (x + bw)) <= 1.5
+        assert abs(ys.min() - y) <= 1.5 and abs(ys.max() + 1 - (y + bh)) <= 1.5
+    finally:
+        world.close()
+
+
+@needs_sim
+def test_placeholder_is_logged_as_a_warning(tmp_path):
+    lines = []
+    world = world_for(tmp_path, [BOTTLE], log=lines.append)
+    world.close()
+    assert any("WARNING bottle" in l and "placeholder" in l for l in lines)
+
+
+@needs_sim
+def test_occlusion_hidden_half_hidden_and_off(tmp_path):
+    front = {"id": "front", "label": "Human_Hand", "pos_mm": [-54, -260], "size_mm": 170, "score": 0.97}
+    # A tall card whose image-left edge sits on the optical axis (x = -54): it hides the bottle's image-right half.
+    half = {**front, "pos_mm": [-54 - 170 * 3 / 4 / 2, -260]}
+    world = world_for(tmp_path, [BOTTLE, front])
+    try:
+        boxes = world.boxes(["bottle", "front"])
+        assert boxes["bottle"] is None, "more than 60 % hidden: no box"
+        assert boxes["front"] == world.box("front")
+    finally:
+        world.close()
+    world = world_for(tmp_path, [BOTTLE, half])
+    try:
+        full, part = world.box("bottle"), world.boxes(["bottle", "front"])["bottle"]
+        assert part is not None and abs(part[2] - full[2] / 2) <= 3, "half hidden: the visible half only"
+        assert abs(part[0] - full[0]) <= 1.5, "the visible part is the bottle's own (image-left) side"
+        assert abs(part[3] - full[3]) <= 1.5
+    finally:
+        world.close()
+    world = world_for(tmp_path, [BOTTLE, front], occlusion=False)
+    try:
+        assert world.boxes(["bottle", "front"])["bottle"] == world.box("bottle"), "occlusion: false"
+    finally:
+        world.close()
+
+
+def test_timing_warnings(tmp_path):
+    def warnings(events, items=None):
+        path = tmp_path / "t.yaml"
+        path.write_text(yaml.safe_dump({"name": "t", "events": events, "items": items or [
+            BOTTLE, {**BOTTLE, "id": "can", "label": "Metal", "visible": False}]}))
+        return fm.load_scenario(path, fm.load_labels())["warnings"]
+
+    assert warnings([{"t": 30, "do": "leave", "item": "bottle"}, {"t": 38, "do": "appear", "item": "can"}]) == []
+    early = warnings([{"t": 10, "do": "leave", "item": "bottle"}])
+    assert len(early) == 1 and "before 25 s" in early[0]
+    swap = warnings([{"t": 30, "do": "leave", "item": "bottle"}, {"t": 35, "do": "appear", "item": "can"}])
+    assert len(swap) == 1 and "needs 8 s" in swap[0]
+    far = {**BOTTLE, "id": "can", "label": "Metal", "pos_mm": [100, -350], "visible": False}
+    assert warnings([{"t": 30, "do": "leave", "item": "bottle"}, {"t": 31, "do": "appear", "item": "can"}],
+                    [BOTTLE, far]) == [], "another spot: no gap needed"
+
+
+def test_shipped_scenarios_follow_the_timing_rule():
+    labels = fm.load_labels()
+    for p in sorted((fm.HERE / "scenarios").glob("*.yaml")):
+        assert fm.load_scenario(p, labels)["warnings"] == [], p.name

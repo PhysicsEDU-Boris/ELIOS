@@ -12,6 +12,16 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- T1b fake MaixCAM2:
+  - `make_crops.py` writes tight per-class crops from the training set (9 × 20 with the default
+    seed).
+  - Cards show a crop, else a whole photo cut to 4:3, else a text-free placeholder; the aspect
+    is never stretched, and `size_mm` is the longer side. The photo choice is seeded and logged.
+  - Nearer cards hide farther ones: more than 60 % hidden means no box; partly hidden means a
+    reduced box.
+  - Loading a scenario warns about events before 25 s and same-spot swaps under 8 s.
+  - Scenarios: the six timed ones were fixed; added `organic_items`, `organic_mango` and nine
+    `one_<label>` (decision 0024).
 - R1 orchestration (`lib/services/robot/`, decision 0023): a platform-independent state machine
   SEARCHING → … → RESUME with every timeout. Driving is locked in the app and by `LOCK_DRIVE`;
   pick done needs motion_done and the object off its floor spot; Human_Hand pauses the arm;
@@ -113,6 +123,8 @@ kept outside the repo.
   gate; the module-grounded quiz plan requires page/section citations (planned).
 
 ### Fixed
+- The lamp bank object (`lampu_tl_cfl`) has `"label": "E_Waste"` again, so it is served on
+  E_Waste boxes (decision 0025's side effect).
 - Bank questions in a live scan follow the detector class, not Gemma's words. A Plastic box that
   Gemma called "Label" (kertas) got a paper question on 24 Oct; it now gets the plastic pool.
   `ScannedWaste.detectorLabel` carries the class. A bank object is used only if its `label` is
