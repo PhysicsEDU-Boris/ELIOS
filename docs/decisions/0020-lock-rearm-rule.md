@@ -98,3 +98,32 @@ connection).
   cooldown. 0020 already accepts that for an object gone 2 s.
 
 The `link_restored` diagnostic event records the state and the forgotten labels.
+
+## J1 guard (added 24 Oct, E1)
+
+Found with the fake MaixCAM2 (`j1_sweep_item_in_view`):
+
+- The camera turned +25, -25 and back to 0 deg with a quizzed bottle in view.
+- The bottle was out of view for more than 2 s, so it was forgotten.
+- After the cooldown, the same bottle was quizzed again.
+
+On the robot every pick turns J1 (the camera rides on it), so every sort would repeat a quiz.
+
+**Rule:** while the arm moves, and for `ARM_SETTLE` (1.5 s) after, no frame is analysed. The
+stabilizer neither locks nor re-arms, and no absence is counted for quizzed objects.
+
+- "Arm moving" comes from:
+  - the app's own servo commands (the largest angle change ÷ 60 deg/s; an unknown start counts
+    as 180 deg);
+  - the per-frame `arm_moving` field (0026; `null` until the firmware sends it).
+- When the guard ends, each quizzed object is found again **by its label** (any position) and
+  its absence restarts, like after a quiz. **Nothing is forgotten**: unlike a link drop, the
+  scene is the same, only the camera turned.
+- The stabilizer resumes through its frame-gap rule: a candidate from before the guard is
+  dropped and has to hold 1 s again; a lock stays.
+- The overlay says "menunggu: lengan bergerak". The `arm_guard` and `arm_settled` events go to
+  the JSONL.
+- Code: `LiveScanController.onArmCommand` / `onDetections(armMoving:)`,
+  `LiveScanStateMachine.onArmSettled`.
+
+This works with or without R1. R1's own lock-ignore during SORTING (0023) stays as it is.

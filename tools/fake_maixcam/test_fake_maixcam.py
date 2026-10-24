@@ -42,14 +42,14 @@ def main_py_fields():
     return frame, det
 
 
-def run(tmp_path, scenario, body, p1=None, fps=20.0):
+def run(tmp_path, scenario, body, p1=None, fps=20.0, log=None):
     """Starts the fake on a free port, runs `await body(url, fake)`, stops it."""
     path = tmp_path / "s.yaml"
     path.write_text(yaml.safe_dump({"name": "test", **scenario}))
     labels = fm.load_labels()
     sc = fm.load_scenario(path, labels)
     world = fm.SimWorld(SIM, sc, images_dir=tmp_path / "no-images", log=lambda *_: None)  # placeholders only
-    fake = fm.FakeMaixCam(world, sc, labels, fps=fps, p1=p1, log=lambda *_: None)
+    fake = fm.FakeMaixCam(world, sc, labels, fps=fps, p1=p1, log=log or (lambda *_: None))
 
     async def main():
         ready = asyncio.get_running_loop().create_future()
@@ -416,3 +416,52 @@ def test_shipped_scenarios_follow_the_timing_rule():
     labels = fm.load_labels()
     for p in sorted((fm.HERE / "scenarios").glob("*.yaml")):
         assert fm.load_scenario(p, labels)["warnings"] == [], p.name
+
+
+# ── E1: arm_moving, HEARTBEAT, watchdog (decision 0026) ──────────────────────
+
+@needs_sim
+def test_arm_moving_while_j1_turns(tmp_path):
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            await ws.send(json.dumps({"cmd": "start_stream"}))
+            return [m.get("arm_moving") for m in await frames(ws, 30)]
+
+    moving = run(tmp_path, {"items": [BOTTLE], "events": [{"t": 0.3, "do": "arm", "j1": 20}]}, body)
+    assert moving[0] is False, "still at first"
+    assert True in moving, "true while J1 turns (20 deg at 60 deg/s)"
+    assert moving[-1] is False, "false again once it arrived"
+    old = run(tmp_path, {"items": [BOTTLE], "events": [{"t": 0.3, "do": "arm", "j1": 20}]}, body, p1=False)
+    assert set(old) == {None}, "old firmware: no arm_moving field"
+
+
+@needs_sim
+def test_heartbeat_feeds_the_watchdog_and_gets_no_reply(tmp_path):
+    lines = []
+
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            await asyncio.sleep(1.4)  # the app says nothing
+            fired = [l for l in lines if "[Watchdog] no app message" in l]
+            replies = []
+            for _ in range(8):  # 2 s of heartbeats at 4 Hz
+                await ws.send(json.dumps({"cmd": "HEARTBEAT"}))
+                try:
+                    replies.append(json.loads(await asyncio.wait_for(ws.recv(), 0.25)))
+                except asyncio.TimeoutError:
+                    pass
+            return fired, replies, list(lines)
+
+    fired, replies, after = run(tmp_path, {"items": [BOTTLE]}, body, log=lines.append)
+    assert fired == ["[Watchdog] no app message for 1 s: wheels 0 / arm hold"]
+    assert replies == [], "HEARTBEAT has no reply"
+    assert after.count("[Watchdog] app messages again") == 1
+    assert sum("[Watchdog] no app message" in l for l in after) == 1, "no new watchdog while heartbeats flow"
+
+
+def test_new_scenarios_load_without_timing_warnings():
+    labels = fm.load_labels()
+    for name in ("two_items", "two_same_class", "all_classes"):
+        assert fm.load_scenario(fm.HERE / "scenarios" / f"{name}.yaml", labels)["warnings"] == [], name

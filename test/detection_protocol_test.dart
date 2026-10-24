@@ -58,4 +58,12 @@ void main() {
       expect(ArmTag.listFromJson([]), isEmpty);
     });
   });
+
+  test('arm_moving (decision 0026): a bool, else null (unknown, old firmware)', () {
+    expect(armMovingFromJson(true), isTrue);
+    expect(armMovingFromJson(false), isFalse);
+    for (final bad in <Object?>[null, 'true', 1, 0, [], {}]) {
+      expect(armMovingFromJson(bad), isNull, reason: '$bad');
+    }
+  });
 }

@@ -1,8 +1,7 @@
 # Handoff
 
-- Base `feature/live-scan` at 19aa58a (PRs up to #34 merged); T1b is on `feat/t1b-photo-cards`
-  (PR open). #24 stays a draft. Never commit the Xcode scheme or Maixcam.txt.
-- Robot build: see CLAUDE.md, launch with `open`; check every JSONL line's `appCommit` matches.
+- Base `feature/live-scan` at 09a1c87 (PRs up to #35 merged); E1 is on `feat/e1-emergency-stop`
+  (PR open). #24 stays a draft. Robot build: CLAUDE.md, launch with `open`, check `appCommit`.
 - Decisions: [0013](decisions/0013-quiz-answer-schema.md) MC schema,
   [0014](decisions/0014-module-chunks.md) module chunks, [0015](decisions/0015-question-bank-draft.md)
   label bank, 0016 grounded quiz (on draft #24 only), [0017](decisions/0017-object-bank.md) object bank,
@@ -11,7 +10,8 @@
   re-arm rule, [0021](decisions/0021-manual-driving-orchestration.md) driving + orchestration (proposed,
   amended 24 Oct), [0022](decisions/0022-detection-protocol-distance-tags.md) P1 protocol + topology,
   [0023](decisions/0023-r1-command-link.md) R1 + command link, [0024](decisions/0024-fake-maixcam-sim.md) fake MaixCAM2,
-  [0025](decisions/0025-bank-detector-class.md) detector class picks bank questions.
+  [0025](decisions/0025-bank-detector-class.md) detector class picks bank questions,
+  [0026](decisions/0026-emergency-stop-motion-gate.md) emergency stop, motion gate, watchdog spec.
 - Topology (0021e): app -> MaixCAM2 only (WiFi); MaixCAM2 -> ESP32 (arm, 6 servos incl. J1) and Uno
   (wheels) over UART; the arm is not working yet. The Mac is debug only.
 
@@ -19,7 +19,8 @@
 
 - Built and tested on `SimulatedRobot` only. The app shows the link probe only (`--dart-define=R1=true`):
   today's firmware answers nothing, so "R1: robot tidak terhubung" and the live scan as before.
-- Waits on R1-fw (the firmware command link) and the M4 screens for the student flow.
+- Waits on R1-fw and the M4 screens. E1: STOP works now but today's firmware ignores STOP/HEARTBEAT,
+  so it stops the wheels (motor 0,0) only; the arm keeps its last angles.
 - Fake MaixCAM2 (T1/T1b, `tools/fake_maixcam/` README): run `make_crops.py` once, app config
   `127.0.0.1:8765`; photo cards, occlusion, timing rule (events ≥ 25 s); 21 scenarios incl. `one_<label>`.
 
@@ -40,9 +41,10 @@
 
 ## Next tasks, in order
 
-1. **Next: emergency stop** (before any real arm test; also gate the `servo` sliders while R1 sorts).
-2. R1-fw: the 0023 command link in `main.py` (+ the fake's PICK/MOVE_TO_BIN/DROP), then arm bring-up
-   over the ESP32 UART (plan 2.6 superseded by 0021e).
+1. **Next: R1-fw**: in `main.py`, the 0023 command link + 0026 (HEARTBEAT, 1 s watchdog, STOP,
+   wheel refresh ≤ 200 ms, `arm_moving`); the fake's PICK/MOVE_TO_BIN/DROP. Uno 500 ms watchdog and
+   ESP32 hold are sketch changes outside this repo. A physical e-stop before any arm test near people.
+2. Arm bring-up over the ESP32 UART (plan 2.6 superseded by 0021e).
 3. Camera calibration + firmware `dist_cm` / `arm_tags` (0022 spec).
 4. M4 overlay, including R1's student screens. 5. R2 sort modes. 6. CI.
 8. M5 Android.

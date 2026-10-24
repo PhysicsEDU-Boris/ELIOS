@@ -5,6 +5,7 @@ import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/gemma_quiz_service.dart';
 import 'package:elio/services/live_scan_controller.dart';
+import 'package:elio/services/robot/r1_constants.dart' show armSettle;
 import 'package:elio/services/live_scan_state_machine.dart';
 import 'package:elio/services/websocket_service.dart';
 
@@ -56,16 +57,17 @@ class _Rig {
   final events = <(String, Map<String, Object?>)>[];
   List<Map<String, Object?>> logged(String event) => [for (final (e, d) in events) if (e == event) d];
 
-  void at(int ms, List<Detection> frame) {
+  void at(int ms, List<Detection> frame, {bool? armMoving}) {
     now = ms;
-    c.onDetections(frame, frameSize: _frame);
+    c.onDetections(frame, frameSize: _frame, armMoving: armMoving);
   }
 
   /// Frames every [step] ms; the fake quiz shows its question [askMs] after
   /// a start and is closed by the user at [closeAt] (if given).
-  void run(int from, int to, List<Detection> frame, {int step = 250, int askMs = 4000, int? closeAt}) {
+  void run(int from, int to, List<Detection> frame,
+      {int step = 250, int askMs = 4000, int? closeAt, bool? armMoving}) {
     for (var t = from; t <= to; t += step) {
-      at(t, frame);
+      at(t, frame, armMoving: armMoving);
       if (c.machine.state == LiveScanState.asking && startedAt != null && t >= startedAt! + askMs) {
         c.onQuizPhase(WasteQuizPhase.active);
       }
@@ -86,6 +88,46 @@ void main() {
   // (stop() on every question change, decision 0011's TTS fix) -- its lazy
   // FlutterTts() construction needs the binding ready, even with voice off.
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('J1 guard (decision 0020, "J1 guard")', () {
+    test('24 Oct j1_sweep: the camera turns away and back, the quizzed bottle is not quizzed again', () {
+      final r = _Rig();
+      r.run(0, 10000, [_plastic], closeAt: 8000);
+      r.run(10250, 25000, [_plastic]); // cooldown over at 23 s; the quizzed bottle stays blocked
+      // J1 sweeps +25, -25, 0 for 3 s: the bottle leaves the image, then comes back elsewhere
+      // in the image (no overlap with its old box: J1 stopped at a slightly different angle).
+      r.run(25250, 28000, [], armMoving: true);
+      r.run(28250, 29000, [_det('Plastic', x: 470)], armMoving: true);
+      r.run(29250, 60000, [_det('Plastic', x: 470)], armMoving: false);
+      expect(r.starts, ['Plastic']);
+      expect(r.logged('arm_guard'), isNotEmpty);
+    });
+
+    test('while the arm moves nothing locks; once still, a different object locks as usual', () {
+      final r = _Rig();
+      r.run(0, 3000, [_metal], armMoving: true);
+      expect(r.starts, isEmpty);
+      expect(r.c.blockReason?.code, 'arm_moving');
+      expect(r.c.blockReason?.text, 'menunggu: lengan bergerak');
+      r.run(3250, 3250 + armSettle.inMilliseconds - 250, [_metal]); // ARM_SETTLE after the last moving frame
+      expect(r.starts, isEmpty);
+      r.run(3250 + armSettle.inMilliseconds, 7000, [_metal]);
+      expect(r.starts, ['Metal']);
+    });
+
+    test("the app's own servo command holds the guard for its motion plus ARM_SETTLE", () {
+      final r = _Rig();
+      r.at(0, [_metal]);
+      r.at(500, [_metal]); // a candidate, 0.5 s held
+      r.c.onArmCommand(const Duration(seconds: 1)); // e.g. 60 deg at 60 deg/s
+      r.run(750, 2750, [_metal]); // frozen until 0.5 + 1 + 1.5 = 3 s
+      expect(r.starts, isEmpty);
+      expect(r.c.blockReason?.code, 'arm_moving');
+      r.run(3000, 6000, [_metal]); // 3 s: the first analysed frame again
+      expect(r.starts, ['Metal'], reason: 'the frozen stabilizer resumes');
+      expect(r.startedAt, 3000 + 1000, reason: 'the lock time starts over after the freeze (no pre-freeze credit)');
+    });
+  });
 
   group('acceptance (scripted frames, fake identify)', () {
     test('track_id fills the stabilizer slot, but box overlap still decides (decision 0022)', () {

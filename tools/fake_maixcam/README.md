@@ -117,7 +117,9 @@ Loading a scenario checks both, and prints `[Scenario] WARNING ...` (it is not a
 | `item_leaves_new_arrives` | The bottle leaves at 30 s; a can arrives on the same spot at 38 s: a second lock (0020). |
 | `flicker_dropouts` | Score jitter, 15 % flicker, a 300 ms dropout every 2 s: still one lock. |
 | `hand_enters` | A Human_Hand in front of the quizzed bottle from 25 to 40 s: the bottle is hidden, the hand never locks. |
-| `two_items` | Two items: one locks; the other waits until the first leaves at 40 s. |
+| `two_items` | Two items with different labels: one locks; the other may lock after the 15 s cooldown even with the first in view (0020). |
+| `two_same_class` | Two Plastic items: the second waits until the quizzed one has been gone 2 s (0020); with track ids (M6) it would not. |
+| `all_classes` | Nine classes one after another (35 s each, 10 s gaps): identify checks in one run. |
 | `b3_item` | E_Waste: the hazard confirmation path. |
 | `label_change_same_box` | Paper becomes Cardboard on the same box at 30 s. |
 | `link_drop_mid_quiz` | Keep the first quiz open; the link goes silent at 30 s for 12 s (longer than the 8 s watchdog): reconnect. |
@@ -156,6 +158,14 @@ events:                   # t in seconds from start_stream; tested events at t >
 
 A label must be one of the 10 detector classes. Unknown labels, items or events are refused when
 the scenario loads.
+
+## Heartbeat, watchdog and arm_moving (decision 0026)
+
+- `{"cmd": "HEARTBEAT"}` (from the app, 4 Hz) is accepted, with no reply.
+- With no app message for 1 s, the fake logs `[Watchdog] no app message for 1 s: wheels 0 / arm
+  hold` and holds J1 where it is. It logs `[Watchdog] app messages again` when they return.
+- With `p1` on, every frame carries `arm_moving` (true while J1 moves). The app's J1 guard uses
+  it.
 
 ## Command link (decision 0023)
 
