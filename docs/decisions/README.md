@@ -28,3 +28,4 @@ their status changed.
 | [0020](0020-lock-rearm-rule.md) | After a quiz a different object may lock; lock diagnostics (M2d) | Accepted |
 | [0021](0021-manual-driving-orchestration.md) | Manual driving, camera distance and sorting orchestration (P1, R1, R2); amended 24 Oct | Proposed |
 | [0022](0022-detection-protocol-distance-tags.md) | Optional `track_id`, `dist_cm`, `lateral_cm`, `arm_tags`; firmware distance spec and topology (P1) | Accepted (app parsing; firmware spec only) |
+| [0024](0024-fake-maixcam-sim.md) | Sim-backed fake MaixCAM2 for testing without the robot (T1); 0023 reserved for R1's command link | Accepted |

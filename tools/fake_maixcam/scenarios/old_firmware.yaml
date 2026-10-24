@@ -1,0 +1,7 @@
+name: old_firmware
+description: Like single_item_60s but without any P1 field (track_id, dist_cm, lateral_cm, arm_tags). Behaviour must be identical.
+duration_s: 60
+p1: false
+items:
+  - {id: bottle, label: Plastic, pos_mm: [-54, -301], size_mm: [70, 120], score: 0.88}
+noise: {score_jitter: 0.03}

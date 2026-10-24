@@ -1,0 +1,7 @@
+name: link_drop_mid_quiz
+description: The link goes silent 8 s in (mid-quiz) for 12 s, longer than the app's 8 s watchdog. Expect a reconnect and no stuck quiz.
+duration_s: 40
+items:
+  - {id: bottle, label: Plastic, pos_mm: [-54, -301], size_mm: [70, 120], score: 0.88}
+events:
+  - {t: 8, do: link_drop, for_s: 12}

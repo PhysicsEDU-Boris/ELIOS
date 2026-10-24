@@ -1,0 +1,4 @@
+# The detector's 10 classes, in class_id order. Copied from the training set's data.yaml
+# (Roboflow boresartz/waste-dataset-v8-gdnlt v1, nc: 10); identical to LABELS in
+# firmware/maixcam2/main.py. `python fake_maixcam.py --check-labels` compares both with the app.
+names: ['Cardboard', 'E_Waste', 'Glass', 'Human_Hand', 'Metal', 'Organic', 'Paper', 'Paperboard', 'Plastic', 'Tetra_Pak']

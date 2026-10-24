@@ -1,0 +1,9 @@
+name: j1_sweep_item_in_view
+description: J1 turns the camera (60 deg/s) to 25, -25 and back to 0 while a bottle is in view; the box slides across and out of the image.
+duration_s: 30
+items:
+  - {id: bottle, label: Plastic, pos_mm: [-54, -301], size_mm: [70, 120], score: 0.88}
+events:
+  - {t: 5, do: arm, j1: 25}
+  - {t: 10, do: arm, j1: -25}
+  - {t: 15, do: arm, j1: 0}
