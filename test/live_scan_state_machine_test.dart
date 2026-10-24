@@ -445,6 +445,34 @@ void main() {
       expect(r.asked, ['Plastic', 'Plastic']);
     });
 
+    test('link drop: after reconnect a new object of the same label at the same spot locks (24 Oct)', () {
+      final r = _Rig();
+      r.hold(0, 1000, [_a]);
+      r.m.onAskOutcome(AskOutcome.questionReady);
+      r.at(2000, [_a]);
+      r.m.onQuizClosed();
+      r.hold(2100, 20000, [_a]); // cooldown over, the quizzed object still in view
+      expect(r.m.blockReason?.code, 'same_object');
+      // The link drops for 12 s: no frames. A different Plastic item now stands on the same spot.
+      r.m.onLinkRestored();
+      expect(r.logged('link_restored').single, {'state': 'searching', 'forgotten': ['Plastic']});
+      r.hold(32000, 33000, [_a]);
+      expect(r.asked, ['Plastic', 'Plastic']);
+    });
+
+    test('link drop during an open quiz: that quiz object stays remembered', () {
+      final r = _Rig();
+      r.hold(0, 1000, [_a]);
+      r.m.onAskOutcome(AskOutcome.questionReady);
+      r.m.onLinkRestored();
+      expect(r.m.state, LiveScanState.quiz);
+      r.at(2000, [_a]);
+      r.m.onQuizClosed();
+      r.hold(2100, 20000, [_a]);
+      expect(r.asked, ['Plastic'], reason: 'the object of the open quiz is not asked again');
+      expect(r.m.blockReason?.code, 'same_object');
+    });
+
     test('block texts for the overlay', () {
       expect(const BlockReason('same_object', labels: {'Plastic': 0.93}).text,
           'menunggu: benda yang sudah dikuis masih terlihat (Plastic 0.93)');

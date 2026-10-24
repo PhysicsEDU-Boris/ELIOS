@@ -70,3 +70,31 @@ The debug overlay shows the current reason in plain text (e.g. "menunggu: benda 
 masih terlihat (Plastic 0.93)") and a "Scan lagi" button, enabled only when no quiz is open, that
 ends the cooldown and forgets the quizzed objects. Release builds show neither (the overlay is
 only built in debug) and write no log.
+
+## Link drop (added 24 Oct, R1)
+
+Found in the 24 Oct fake-MaixCAM2 test:
+
+- A Plastic item was quizzed and stayed in view.
+- The link dropped for 12 s.
+- After the reconnect, a different Plastic item at the same spot stayed blocked as "benda yang
+  sudah dikuis masih terlihat".
+
+No frames arrive during a drop, so no absence can be timed, and the old memory never let go.
+
+**Decision: on every reconnect, forget the quizzed objects of closed quizzes and reset the
+stabilizer** (`LiveScanStateMachine.onLinkRestored`, called by the control screen on each new
+connection).
+
+- An open quiz, and the object it is about, are kept, so it is not asked again once it closes.
+- A running cooldown is kept: it runs on the clock.
+
+**Why not keep the memory:**
+
+- During a drop the app cannot see anything, and the robot may have been driven: the scene
+  before and after are unrelated.
+- Keeping the memory blocks a new object for as long as anything overlaps the old box.
+- Forgetting costs at most one repeat quiz of an object that stayed in view, after the 15 s
+  cooldown. 0020 already accepts that for an object gone 2 s.
+
+The `link_restored` diagnostic event records the state and the forgotten labels.

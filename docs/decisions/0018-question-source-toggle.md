@@ -45,3 +45,23 @@ SIAP)".
   `[WasteQuiz] question_source question= source= item= object= pool= fromScanMs= loadMs= fallback=`.
   `pool` is `gemma` in Gemma mode. `fromScanMs` runs from the resolved scan, so for B3 or
   mismatch scans it includes the confirmation card. No question text is logged.
+
+## Amendment 24 Oct (R1): the switch is no longer saved
+
+In the 24 Oct fake-MaixCAM2 test, a debug build started on "Gemma".
+
+- The build default is the bank: the robot build passes no `GEMMA_QUESTIONS`, and
+  `defaultQuestionSource` is the bank.
+- So the value came from `shared_preferences`, saved when the switch was moved in an earlier
+  debug session.
+
+**The question source is now kept for the running session only:**
+
+- `AppPreferences.toMap` no longer writes it, and `fromMap` ignores a value saved by an older
+  build.
+- Every launch, and every fresh install, starts on the build default (the bank).
+- Release builds still always use the bank.
+- Comparing the two sources still works within one session, which is what the switch is for.
+
+Test: `test/question_source_test.dart`, "a launch after a debug session left the switch on Gemma
+starts on the bank".

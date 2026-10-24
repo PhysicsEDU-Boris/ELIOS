@@ -208,10 +208,16 @@ class FakeMaixCam:
         for it in self.items.values():
             self._set_visible(it, it["visible"])
         self.pending = list(scenario["events"])
-        self.motion = None  # (client, cmd, id) waiting for motion_done
+        self.motion = None  # (client, command) waiting for motion_done
+        self.drive_locked = False
+        # Decision 0023's command link. DRIVE is the existing `motor` message (dropped while locked).
         self.handlers = {
-            "J1_SWEEP": self._cmd_j1_sweep,
+            "STATUS": self._cmd_status,
+            "LOCK_DRIVE": self._cmd_drive_lock,
+            "UNLOCK_DRIVE": self._cmd_drive_lock,
             "HOLD": self._cmd_hold,
+            "STOP": self._cmd_stop,
+            "J1_SWEEP": self._cmd_j1_sweep,  # fake only (tests, scenarios): not part of 0023
             # TODO(R1, 0023): PICK -> IK to the item's floor spot, 60 deg/s per joint, then
             # close the gripper; ack now, motion_done when the arm arrives, error if unreachable.
             "PICK": self._cmd_todo,
@@ -219,10 +225,7 @@ class FakeMaixCam:
             "MOVE_TO_BIN": self._cmd_todo,
             # TODO(R1, 0023): DROP -> open the gripper, hide the carried item.
             "DROP": self._cmd_todo,
-            # TODO(R1, 0023): STOP -> freeze every joint (target = current angles).
-            "STOP": self._cmd_todo,
-            # TODO(R1, 0023): DRIVE -> move every item by -(dx, dy) to fake the robot driving.
-            "DRIVE": self._cmd_todo,
+            # TODO(R1-fw): `motor` while unlocked -> move every item by -(dx, dy) to fake the robot driving.
         }
 
     def _set_visible(self, item, visible):
@@ -315,13 +318,16 @@ class FakeMaixCam:
                         await ws.close()
                         break
                     elif cmd == "motor":
-                        self.log("[WS] motor left={} right={}".format(data.get("left", 0), data.get("right", 0)))
+                        dropped = " dropped (drive locked)" if self.drive_locked else ""
+                        self.log("[WS] motor left={} right={}{}".format(data.get("left", 0), data.get("right", 0), dropped))
                     elif cmd == "servo":
                         self.log("[WS] servo part={} val={}".format(data.get("part", ""), data.get("val", 0)))
                     elif cmd == "set_resolution":
                         self.log(f"[WS] set_resolution received but ignored — resolution is fixed at {IMG_W}x{IMG_H}")
-                    elif cmd in self.handlers:
+                    elif cmd in self.handlers and isinstance(data.get("seq"), int):
                         await self.handlers[cmd](ws, data)
+                    elif isinstance(data.get("seq"), int):
+                        await self._reply(ws, "error", data, reason="unknown_cmd")
                 except Exception as pe:
                     self.log(f"[WS] parse error: {pe}")
         except websockets.ConnectionClosed:
@@ -332,10 +338,22 @@ class FakeMaixCam:
                 self.streaming = False
             self.log(f"[WS] clients remaining: {len(self.clients)}")
 
-    # -- R1 command link (0023, provisional shape: {"cmd": NAME, "id": n, ...}) --
+    # -- R1 command link (decision 0023: {"cmd": NAME, "seq": n, ...} -> {"event": ..., "seq": n}) --
 
     async def _reply(self, ws, event, data, **extra):
-        await ws.send(json.dumps({"event": event, "cmd": data["cmd"], "id": data.get("id"), **extra}))
+        await ws.send(json.dumps({"event": event, "seq": data["seq"], **extra}))
+
+    async def _cmd_status(self, ws, data):
+        await self._reply(ws, "ack", data, drive_locked=self.drive_locked)
+
+    async def _cmd_drive_lock(self, ws, data):
+        self.drive_locked = data["cmd"] == "LOCK_DRIVE"
+        await self._reply(ws, "ack", data)
+
+    async def _cmd_stop(self, ws, data):
+        self.world.target[:] = self.world.angles
+        self.motion = None
+        await self._reply(ws, "ack", data)
 
     async def _cmd_j1_sweep(self, ws, data):
         self.world.set_j1(float(data["to"]))

@@ -103,15 +103,20 @@ events:                   # t in seconds from start_stream
 A label must be one of the 10 detector classes. Unknown labels, items or events are refused when
 the scenario loads.
 
-## Command link (R1, decision 0023: not written yet)
+## Command link (decision 0023)
 
-`{"cmd": NAME, "id": n, ...}` gets `{"event": "ack" | "motion_done" | "error", "cmd": NAME, "id": n}`
-back. The shape is provisional until 0023 defines it.
+`{"cmd": NAME, "seq": n, ...}` gets `{"event": "ack" | "motion_done" | "error", "seq": n}` back.
 
-- Implemented: `HOLD` (ack, then motion_done), and `J1_SWEEP` with `{"to": deg}` (ack, then
-  motion_done when J1 arrives at 60 deg/s).
-- Not implemented yet: `PICK`, `MOVE_TO_BIN`, `DROP`, `STOP` and `DRIVE` reply
-  `error: not_implemented`. The TODOs in `FakeMaixCam.__init__` say what each one should do.
+- Answered:
+  - `STATUS`: ack, with `drive_locked`;
+  - `LOCK_DRIVE` / `UNLOCK_DRIVE`: ack; `motor` is logged as dropped while locked;
+  - `HOLD`: ack, then motion_done;
+  - `STOP`: ack;
+  - `J1_SWEEP {"to": deg}`: fake only, not part of 0023. Ack, then motion_done when J1 arrives at
+    60 deg/s.
+- `PICK`, `MOVE_TO_BIN` and `DROP` reply `error: not_implemented`. Their TODOs in
+  `FakeMaixCam.__init__` say what each one should do.
+- Any other command with a `seq` replies `error: unknown_cmd`.
 
 ## Tests
 
