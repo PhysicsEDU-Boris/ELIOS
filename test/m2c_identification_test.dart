@@ -238,6 +238,7 @@ void main() {
         quiz.resolveMismatch(useDetector: true);
         expect(logged('mismatch_choice'), allOf(contains('"choice":"detector"'), contains('"resolvedBin":"inorganic"')));
         expect(c.read(wasteQuizProvider).scan?.category?.id, 'inorganic');
+        expect(c.read(wasteQuizProvider).scan?.detectorLabel, 'Cardboard', reason: 'the detector choice keeps its class');
         await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
         expect(images, hasLength(1), reason: 'bank question: no question request to Gemma');
       });
@@ -252,6 +253,26 @@ void main() {
           expect(logged('category_mismatch'), isEmpty);
         });
       }
+
+      test('24 Oct, decision 0025: Plastic box + Gemma "Label" (kertas): no card, plastic question, class_mismatch logged',
+          () async {
+        quiz.onRobotLocked(_frame(), _box);
+        await _until(() => images.isNotEmpty);
+        identify.complete('{"item":"Label","material":"kertas","category":"anorganik"}');
+        await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
+        final state = c.read(wasteQuizProvider);
+        expect(state.scan?.detectorLabel, 'Plastic');
+        expect(state.scan?.rawLabel, 'Label');
+        expect(state.question?.bankId, startsWith('plastic-'), reason: 'a plastic pool question');
+        expect(logged('category_mismatch'), isEmpty);
+        final line = logged('class_mismatch');
+        for (final field in ['"detectorLabel":"Plastic"', '"gemmaItem":"Label"', '"gemmaMaterial":"kertas"',
+            '"gemmaPool":"paper_family"', '"chosenPool":"plastic"']) {
+          expect(line, contains(field));
+        }
+        expect(lines.where((l) => l.contains('question_source') && l.contains('detector=Plastic') && l.contains('pool=plastic')),
+            isNotEmpty);
+      });
 
       test('E_Waste + anorganik still shows the hazard card, not the mismatch card', () async {
         quiz.onRobotLocked(_frame(), const TrackedDetection(label: 'E_Waste', x: 40, y: 20, w: 40, h: 20));

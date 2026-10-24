@@ -13,12 +13,17 @@ class ScannedWaste {
   /// Main material, when known (photo scans report it).
   final String? material;
 
+  /// The MaixCAM2 detector class of the locked box (live scan only), kept
+  /// apart from [rawLabel], which is Gemma's item text there (decision 0025).
+  final String? detectorLabel;
+
   const ScannedWaste._(
     this.rawLabel,
     this.displayName,
     this.category, [
     this.material,
     this.rawCategory,
+    this.detectorLabel,
   ]);
 
   /// All ten MaixCAM2 classes; the hand is deliberately not waste.
@@ -94,6 +99,7 @@ class ScannedWaste {
     String? material,
     String? categoryHint,
     bool hazardousEvidence = false,
+    String? detectorLabel,
   }) {
     final hinted = _rawCategoryBins[categoryHint?.toLowerCase().trim()];
     final base = ScannedWaste._fromKeywords(label);
@@ -113,6 +119,7 @@ class ScannedWaste {
       category,
       material,
       categoryHint,
+      detectorLabel,
     );
   }
 

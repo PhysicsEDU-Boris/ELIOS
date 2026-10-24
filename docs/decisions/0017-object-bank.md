@@ -87,3 +87,8 @@
 - Removing the Gemma question code.
 - Filtering accepted/rejected items at runtime. The owner's review result has no field yet:
   add `status: accepted` and filter on it once the review is done.
+
+## Amendment 24 Oct (B1)
+
+In a live scan, an object is served only if its `label` is the detector class. Otherwise the
+detector class's label pool is served. See [0025](0025-bank-detector-class.md).

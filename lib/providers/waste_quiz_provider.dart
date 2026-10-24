@@ -314,7 +314,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final detectorHazard = detectorLabel != null &&
         ScannedWaste.fromLabel(detectorLabel).category?.id == 'hazardous';
     final scan = ScannedWaste.fromLabel(item, material: result.material,
-        categoryHint: result.category, hazardousEvidence: detectorHazard);
+        categoryHint: result.category, hazardousEvidence: detectorHazard, detectorLabel: detectorLabel);
     diagnostics?.event('resolved', {'item': scan.displayName, 'category': scan.category?.id,
       'detectorHazard': detectorHazard, 'hazard': scan.category?.id == 'hazardous'});
     state = state.copyWith(scan: scan);
@@ -326,7 +326,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     // Hazard wins above; any other detector/Gemma disagreement waits for the user.
     if (detectorLabel != null && ScannedWaste.categoryMismatch(detectorLabel, result.category)) {
       final detectorChoice = ScannedWaste.fromLabel(item, material: result.material,
-          categoryHint: ScannedWaste.detectorCategory(detectorLabel));
+          categoryHint: ScannedWaste.detectorCategory(detectorLabel), detectorLabel: detectorLabel);
       _detectorChoice = detectorChoice;
       diagnostics?.event('category_mismatch', {'hardExample': true, 'frameId': frameId,
         'detectorLabel': detectorLabel, 'detectorScore': detectorScore,
@@ -447,12 +447,28 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// own, then its pool's; null when the bank has nothing left (decision 0017).
   Future<GeneratedQuestion?> _fromBank(ScannedWaste scan, QuizQuestionType type) async {
     final bank = await QuestionBank.load();
+    if (_bankQueues == null) _logClassMismatch(bank, scan);
     final queue = (_bankQueues ??= {})[type] ??= bank.questionsFor(scan, type);
     while (queue.isNotEmpty) {
       final q = queue.removeAt(0);
       if (!_askedQuestions.contains(q.question)) return q;
     }
     return null;
+  }
+
+  /// Same bin, different class (decision 0025): logged once per session, no card.
+  void _logClassMismatch(QuestionBank bank, ScannedWaste scan) {
+    final gemmaPool = bank.classMismatch(scan);
+    if (gemmaPool == null) return;
+    final fields = <String, Object?>{
+      'detectorLabel': scan.detectorLabel,
+      'gemmaItem': scan.displayName,
+      'gemmaMaterial': scan.material,
+      'gemmaPool': gemmaPool,
+      'chosenPool': bank.selection(scan).pool,
+    };
+    debugPrint('[WasteQuiz] class_mismatch ${fields.entries.map((e) => '${e.key}=${e.value}').join(' ')}');
+    _diagnostics?.event('class_mismatch', fields);
   }
 
   String _fallbackIntro() => _gemma
@@ -573,13 +589,14 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// One line per question shown, in both modes, so robot runs can be compared
   /// (decision 0018). No question text.
   void _logQuestion(int index, ScannedWaste scan, GeneratedQuestion? generated, int loadMs) {
-    final bank = QuestionBank.loaded;
+    final chosen = QuestionBank.loaded?.selection(scan);
     final fields = <String, Object?>{
       'question': index + 1,
       'source': _sessionSource.name,
       'item': scan.displayName,
-      'object': _gemma ? '-' : bank?.matchObject(scan) ?? '-',
-      'pool': _gemma ? 'gemma' : bank?.poolFor(scan) ?? '-',
+      'detector': scan.detectorLabel ?? '-',
+      'object': _gemma ? '-' : chosen?.object ?? '-',
+      'pool': _gemma ? 'gemma' : chosen?.pool ?? '-',
       'angle': generated?.angle ?? '-',
       'fromScanMs': _scanClock?.elapsedMilliseconds,
       'loadMs': loadMs,

@@ -91,7 +91,41 @@ class QuestionBank {
     ('kardus', 'paper_family'), ('karton', 'paper_family'), ('kertas', 'paper_family'),
   ];
 
-  /// The label pool: the detector class when known, else the bin, else item/material words.
+  /// The detector class when it can decide (decision 0025): it has a label
+  /// pool and its bin is the scan's resolved bin. Null for the phone camera, a
+  /// manual scan, or a bin the user overrode in the mismatch card (and so for
+  /// B3 against non-B3, both ways).
+  String? _decidingClass(ScannedWaste scan) {
+    final det = scan.detectorLabel?.trim();
+    if (det == null || !_labelPools.containsKey(det)) return null;
+    final bin = ScannedWaste.detectorLabels[det]?.$2;
+    return bin != null && bin == scan.category?.id ? det : null;
+  }
+
+  /// What [scan] is served (decision 0025): (a) the bank object matched from
+  /// Gemma's words, if its `label` is the detector class (or no class decides);
+  /// (b) else the detector class's label pool; (c) with no deciding class,
+  /// today's fallback ([poolFor]).
+  ({String? object, String? pool}) selection(ScannedWaste scan) {
+    final det = _decidingClass(scan);
+    final object = _match(scan);
+    if (object != null && (det == null || object.label == det)) return (object: object.name, pool: object.pool);
+    if (det != null) return (object: null, pool: _labelPools[det]);
+    return (object: null, pool: poolFor(scan));
+  }
+
+  /// The label pool Gemma's words point to, when the detector class decides and
+  /// they point to a different one in the same bin (Plastic box, Gemma
+  /// "kertas"). Logged as `class_mismatch`; no card is shown (decision 0025).
+  String? classMismatch(ScannedWaste scan) {
+    final det = _decidingClass(scan);
+    if (det == null) return null;
+    final gemma = _match(scan)?.pool ?? _wordPool(scan);
+    return gemma != null && gemma != _labelPools[det] ? gemma : null;
+  }
+
+  /// Without a deciding detector class: the raw label's pool (a detector class
+  /// in a manual scan), else the bin, else item/material words.
   String? poolFor(ScannedWaste scan) {
     final label = _labelPools[scan.rawLabel.trim()];
     if (label != null) return label;
@@ -101,6 +135,10 @@ class QuestionBank {
       case 'organic':
         return 'organik';
     }
+    return _wordPool(scan);
+  }
+
+  static String? _wordPool(ScannedWaste scan) {
     final text = normalize('${scan.displayName} ${scan.material ?? ''}');
     for (final (word, pool) in _poolWords) {
       if (_has(text, word)) return pool;
@@ -112,12 +150,12 @@ class QuestionBank {
   /// then its pool's (the object's pool when matched). Options are shuffled.
   List<GeneratedQuestion> questionsFor(ScannedWaste scan, QuizQuestionType type, {Random? random}) {
     final rng = random ?? Random();
-    final object = _match(scan);
-    final pool = object?.pool ?? poolFor(scan);
+    final chosen = selection(scan);
+    final object = _objects.where((o) => o.name == chosen.object).firstOrNull;
     final kind = type == QuizQuestionType.multipleChoice ? 'mc' : 'essay';
     final items = [
       ...?object?.items,
-      ...?_pools[pool],
+      ...?_pools[chosen.pool],
     ].where((i) => i['type'] == kind);
     return [for (final i in items) _toQuestion(i, type, rng)];
   }
@@ -142,10 +180,11 @@ class QuestionBank {
 }
 
 class _BankObject {
-  _BankObject(this.name, this.pool, this.synonyms, this.notIf, this.items);
+  _BankObject(this.name, this.label, this.pool, this.synonyms, this.notIf, this.items);
 
   factory _BankObject.fromJson(Map<String, dynamic> j) => _BankObject(
         j['object'] as String,
+        j['label'] as String?,
         j['pool'] as String,
         [for (final s in j['synonyms'] as List) s as String],
         [for (final s in (j['notIf'] as List?) ?? const []) s as String],
@@ -153,6 +192,9 @@ class _BankObject {
       );
 
   final String name;
+
+  /// The detector class this object belongs to (null: none, e.g. lamps).
+  final String? label;
   final String pool;
   final List<String> synonyms;
   final List<String> notIf;

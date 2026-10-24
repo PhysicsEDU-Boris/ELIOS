@@ -10,6 +10,7 @@ import 'package:flutter/services.dart'
     show DeviceOrientation, SystemChrome, SystemUiMode;
 
 import '../models/config_model.dart';
+import '../models/scanned_waste.dart';
 import '../providers/esp_config_provider.dart';
 import '../providers/robot_provider.dart';
 import '../providers/waste_quiz_provider.dart';
@@ -181,6 +182,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     unawaited(_connectAndStartStream());
     debugPrint('Robot controls enabled: true (awaiting WebSocket connection)');
   }
+
+  /// Debug overlay: Gemma's item next to the detector class (decision 0025).
+  static String? _scanLine(ScannedWaste? scan) =>
+      scan == null ? null : 'gemma "${scan.displayName}"   detektor ${scan.detectorLabel ?? '-'}';
 
   /// Once per (re)connection, from whichever path sees it first.
   void _onNewConnection() {
@@ -433,7 +438,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    LiveScanDebugOverlay(controller: _liveScan!),
+                    LiveScanDebugOverlay(controller: _liveScan!, scanLine: _scanLine(ref.watch(wasteQuizProvider).scan)),
                     if (_r1 != null) ...[
                       const SizedBox(height: 6),
                       Text('R1: ${_r1Status ?? 'memeriksa robot...'}',
