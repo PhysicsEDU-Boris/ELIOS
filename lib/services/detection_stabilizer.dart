@@ -75,6 +75,7 @@ class DetectionStabilizer {
     this.rearmAfter = const Duration(milliseconds: 1500),
     this.maxFrameGap = const Duration(milliseconds: 1500),
     this.ignoredLabels = const {},
+    this.matchTrackIds = true,
     DateTime Function()? clock,
     this.onEvent,
   }) : _clock = clock ?? monotonicClock();
@@ -108,6 +109,10 @@ class DetectionStabilizer {
   /// Labels removed before tracking (compared after trimming, exact match),
   /// e.g. the hand holding the item. They can never be tracked or locked.
   final Set<String> ignoredLabels;
+
+  /// False: [TrackedDetection.trackId] is carried but box overlap alone
+  /// decides identity (the live scan, decision 0022, until track ids are proven).
+  final bool matchTrackIds;
 
   final DateTime Function() _clock;
 
@@ -259,7 +264,7 @@ class DetectionStabilizer {
 
   /// Track ids decide when both sides have one; otherwise box overlap does.
   bool _sameObject(TrackedDetection a, TrackedDetection b) {
-    if (a.trackId != null && b.trackId != null) return a.trackId == b.trackId;
+    if (matchTrackIds && a.trackId != null && b.trackId != null) return a.trackId == b.trackId;
     return intersectionOverUnion(a, b) >= iouThreshold;
   }
 }

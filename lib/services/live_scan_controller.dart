@@ -33,7 +33,7 @@ class LiveScanController extends ChangeNotifier {
         _clock = clock ?? monotonicClock(),
         _sink = onEvent ?? (kDebugMode ? _runLog.event : null) {
     machine = LiveScanStateMachine(
-        DetectionStabilizer(ignoredLabels: ignoredLabels, clock: _clock, onEvent: _emit),
+        DetectionStabilizer(ignoredLabels: ignoredLabels, matchTrackIds: false, clock: _clock, onEvent: _emit),
         clock: _clock,
         onEvent: _emit);
   }
@@ -154,7 +154,7 @@ class LiveScanController extends ChangeNotifier {
         if (!ignoredLabels.contains(label)) tooLarge[label] = (d.w * d.h / frameArea * 100).round() / 100;
         continue;
       }
-      boxes.add(TrackedDetection(label: label, x: d.x, y: d.y, w: d.w, h: d.h, score: d.score));
+      boxes.add(TrackedDetection(label: label, x: d.x, y: d.y, w: d.w, h: d.h, score: d.score, trackId: d.trackId));
     }
     final present = [
       for (final d in boxes)

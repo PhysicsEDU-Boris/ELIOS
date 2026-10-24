@@ -58,6 +58,11 @@ class WebSocketService {
   Stream<List<Detection>> get detections => _detectionsController.stream;
   double get imageWidth => _imageWidth;
   double get imageHeight => _imageHeight;
+
+  /// The last frame's `arm_tags` (decision 0022); null when it had none.
+  /// Nothing reads this yet (R1 will).
+  List<ArmTag>? get armTags => _armTags;
+  List<ArmTag>? _armTags;
   Stream<Size> get resolutionAcks => _resolutionAckController.stream;
   Stream<CapturedFrame> get capturedFrames => _capturedFramesController.stream;
 
@@ -377,6 +382,7 @@ class WebSocketService {
           if (item is! Map<String, dynamic>) continue;
           currentDetections.add(Detection.fromJson(item));
         }
+        _armTags = ArmTag.listFromJson(decoded['arm_tags']);
         _detectionsController.add(currentDetections);
       }
 
@@ -510,6 +516,17 @@ class Detection {
   final String label;
   final double score;
 
+  /// Optional fields (decision 0022); null when the firmware doesn't send
+  /// them or sends a malformed value. Nothing depends on them yet.
+  final int? trackId;
+
+  /// Floor distance (cm) from the point below the lens, along the optical
+  /// axis, to the box's bottom edge.
+  final double? distCm;
+
+  /// Sideways floor offset (cm) from the optical axis.
+  final double? lateralCm;
+
   const Detection({
     required this.x,
     required this.y,
@@ -517,6 +534,9 @@ class Detection {
     required this.h,
     this.label = '',
     this.score = 0.0,
+    this.trackId,
+    this.distCm,
+    this.lateralCm,
   });
 
   factory Detection.fromJson(Map<String, dynamic> item) => Detection(
@@ -526,6 +546,9 @@ class Detection {
     h: (item['h'] as num?)?.toDouble() ?? 0.0,
     label: item['label'] as String? ?? '',
     score: (item['score'] as num?)?.toDouble() ?? 0.0,
+    trackId: _optInt(item['track_id']),
+    distCm: _optDouble(item['dist_cm']),
+    lateralCm: _optDouble(item['lateral_cm']),
   );
 
   @override
@@ -533,3 +556,26 @@ class Detection {
       'Detection($label ${(score * 100).toStringAsFixed(0)}% '
       'x=$x y=$y w=$w h=$h)';
 }
+
+/// One AprilTag on the arm, from a frame's `arm_tags` (decision 0022):
+/// id 0 = gripper underside, id 1 = arm B rear face.
+class ArmTag {
+  const ArmTag({required this.id, required this.distMm});
+
+  final int id;
+  final double distMm;
+
+  /// Null when [raw] is not a list; malformed entries are skipped.
+  static List<ArmTag>? listFromJson(Object? raw) {
+    if (raw is! List) return null;
+    return [
+      for (final t in raw)
+        if (t is Map && _optInt(t['id']) != null && _optDouble(t['dist_mm']) != null)
+          ArmTag(id: _optInt(t['id'])!, distMm: _optDouble(t['dist_mm'])!),
+    ];
+  }
+}
+
+int? _optInt(Object? v) => v is int ? v : null;
+
+double? _optDouble(Object? v) => v is num && v.isFinite ? v.toDouble() : null;
