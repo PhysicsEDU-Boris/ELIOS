@@ -2,5 +2,5 @@ name: flicker_dropouts
 description: One bottle with score jitter, 15 % random flicker and a 300 ms dropout every 2 s. Expect one lock, no repeat quiz.
 duration_s: 60
 items:
-  - {id: bottle, label: Plastic, pos_mm: [-54, -301], size_mm: [70, 120], score: 0.8}
+  - {id: bottle, label: Plastic, pos_mm: [-54, -301], size_mm: 120, score: 0.8}
 noise: {score_jitter: 0.08, flicker: 0.15, dropout_ms: 300, dropout_every_s: 2}

@@ -1,7 +1,7 @@
 # Handoff
 
-- Base `feature/live-scan` at 66ca897 (PRs up to #33 merged); B1 is on `feat/b1-bank-detector-class`
-  (PR open). #24 stays a draft. T1b (photo cards) was not started. Never commit the Xcode scheme or Maixcam.txt.
+- Base `feature/live-scan` at 19aa58a (PRs up to #34 merged); T1b is on `feat/t1b-photo-cards`
+  (PR open). #24 stays a draft. Never commit the Xcode scheme or Maixcam.txt.
 - Robot build: see CLAUDE.md, launch with `open`; check every JSONL line's `appCommit` matches.
 - Decisions: [0013](decisions/0013-quiz-answer-schema.md) MC schema,
   [0014](decisions/0014-module-chunks.md) module chunks, [0015](decisions/0015-question-bank-draft.md)
@@ -20,8 +20,8 @@
 - Built and tested on `SimulatedRobot` only. The app shows the link probe only (`--dart-define=R1=true`):
   today's firmware answers nothing, so "R1: robot tidak terhubung" and the live scan as before.
 - Waits on R1-fw (the firmware command link) and the M4 screens for the student flow.
-- Fake MaixCAM2 (T1, `tools/fake_maixcam/` README): app config `127.0.0.1:8765`; the owner used it
-  on 24 Oct on the Mac (found B1 and the reconnect rule).
+- Fake MaixCAM2 (T1/T1b, `tools/fake_maixcam/` README): run `make_crops.py` once, app config
+  `127.0.0.1:8765`; photo cards, occlusion, timing rule (events ≥ 25 s); 21 scenarios incl. `one_<label>`.
 
 ## M2d robot test (NOT run yet; the fake's scenarios cover most of it)
 
@@ -45,7 +45,6 @@
    over the ESP32 UART (plan 2.6 superseded by 0021e).
 3. Camera calibration + firmware `dist_cm` / `arm_tags` (0022 spec).
 4. M4 overlay, including R1's student screens. 5. R2 sort modes. 6. CI.
-7. T1b photo cards for the fake.
 8. M5 Android.
 9. M6 ByteTrack (conditional on the two-object overlap test).
 10. M7 release hygiene.

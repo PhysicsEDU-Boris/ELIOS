@@ -519,7 +519,7 @@
         "lampu",
         "tl"
       ],
-      "label": null,
+      "label": "E_Waste",
       "pool": "e_waste_b3",
       "items": [
         {

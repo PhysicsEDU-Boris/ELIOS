@@ -27,6 +27,19 @@ ScannedWaste _live(String item, {String? material, String? category, String? det
         hazardousEvidence: detector != null && ScannedWaste.fromLabel(detector).category?.id == 'hazardous');
 
 void main() {
+  test('every bank object names its detector class (0025 serves an object only on its class)', () {
+    final objects = (jsonDecode(File('assets/quiz/object_bank_draft.json').readAsStringSync())['objects'] as List)
+        .cast<Map<String, dynamic>>();
+    for (final o in objects) {
+      expect(ScannedWaste.detectorLabels.containsKey(o['label']) && o['label'] != 'Human_Hand', isTrue,
+          reason: '${o['object']} has label ${o['label']}');
+    }
+  });
+
+  test('detector E_Waste + Gemma "lampu neon": the lamp object again (T1b)', () {
+    expect(_bank.selection(_live('lampu neon', detector: 'E_Waste')), (object: 'lampu_tl_cfl', pool: 'e_waste_b3'));
+  });
+
   test('24 Oct: detector Plastic + Gemma "Label" (kertas): plastic pool, class mismatch noted', () {
     final scan = _live('Label', material: 'kertas', category: 'anorganik', detector: 'Plastic');
     expect(scan.rawLabel, 'Label', reason: "rawLabel stays Gemma's text");

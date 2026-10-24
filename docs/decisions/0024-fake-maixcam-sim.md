@@ -88,3 +88,48 @@ replies `error: unknown_cmd` to other commands. Before R1, the shape was a place
 - link drop, the command hook, labels, and scenario validation.
 
 Each test was break-checked against a mutated fake.
+
+## Amendment 24 Oct (T1b): photo cards, occlusion, timing
+
+Found in the 24 Oct tests on the Mac:
+
+- Whole camera frames stretched onto tall cards made Gemma misidentify items: a battery photo that
+  was mostly pegboard wall came back as "Tiruan".
+- Placeholder cards printed their label, so Gemma read it ("Label plastik").
+- Cards never hid each other: the bottle behind the hand card still got a box, and its identify
+  crop showed the hand.
+- Three scenarios fired their event while the first quiz was still open, so they tested nothing.
+
+**Photo cards**
+
+- `make_crops.py` cuts tight crops (10 % margin, at least 80 px, not touching the edge, no
+  Human_Hand) from the training set into `images/<label>/crops/`. It is seeded, and it stops
+  when `data.yaml` differs from `labels.yaml`. With the default seed, 9 classes × 20 crops.
+- An item uses, in order: its own `photo:`, then a crop, then a whole photo centre-cropped to
+  4:3, then a placeholder. The pick depends on `--seed` and the item id, and is logged.
+- `size_mm` is now the card's longer side. The other side follows the photo, so nothing is
+  stretched; an old `[w, h]` pair counts as its larger value.
+- The placeholder is a plain striped colour with no text, and is logged as a warning.
+
+**Occlusion** (per scenario, on by default)
+
+- Each card's projected outline is filled, nearest card first.
+- A card more than 60 % covered by nearer cards gets no box; a partly covered one gets the box
+  of its visible part.
+- The rendered image already uses depth, so the clean image and the identify crop show what the
+  camera sees.
+- The arm still does not occlude.
+
+**Timing rule**
+
+- Tested events happen at t ≥ 25 s.
+- A swap on the same spot (within 5 cm) needs ≥ 8 s: the cooldown's tail plus 0020's 2 s
+  absence.
+- Loading a scenario warns about both.
+- Fixed: `hand_enters` (hand 25-40 s, replacing the owner's `hand_late`), `two_items` (40 s),
+  `j1_sweep_item_in_view` (from 25 s), `item_leaves_new_arrives` (30 → 38 s),
+  `label_change_same_box` (30 s), `link_drop_mid_quiz` (30 s).
+- Added: the owner's `organic_items` / `organic_mango` (moved to dataset crops), and nine
+  `one_<label>` scenarios.
+
+Tests: `test_make_crops.py`, plus the T1b section of `test_fake_maixcam.py`.

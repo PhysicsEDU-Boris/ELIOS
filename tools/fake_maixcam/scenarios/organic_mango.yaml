@@ -1,0 +1,6 @@
+name: organic_mango
+description: Only a cut fruit (Organic dataset crop, the closest to the owner's mango photo) held 25 cm ahead for 90 s. Expect a fruit identify, one quiz, no repeat. The photo comes from make_crops.py (default seed); if missing, any Organic crop is used.
+duration_s: 90
+items:
+  - {id: fruit, label: Organic, photo: images/Organic/crops/train_org-177-_jpg.rf.7a6b82fcc51d45603431ed5d_0.jpg, pos_mm: [-54, -301], size_mm: 120, score: 0.86}
+noise: {score_jitter: 0.03}

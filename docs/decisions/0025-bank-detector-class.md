@@ -61,8 +61,8 @@ count as a mismatch.
 
 Consequences:
 
-- An object with no detector `label` (lampu TL/CFL) is no longer served on an E_Waste box. Those
-  scans get the `e_waste_b3` pool.
+- An object with no detector `label` would not be served. The lamp (lampu TL/CFL) had none; since
+  T1b it has `"label": "E_Waste"`, and a test checks that every bank object names its class.
 - Without a detector class, everything is as before.
 
 ## Gemma mode
