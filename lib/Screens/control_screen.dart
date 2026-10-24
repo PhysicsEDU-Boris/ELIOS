@@ -22,7 +22,9 @@ import '../services/robot/r1_orchestrator.dart';
 import '../services/robot/robot_controller.dart';
 import '../services/websocket_service.dart';
 import '../widgets/debug_phone_camera_sheet.dart';
+import '../widgets/control_layout.dart';
 import '../widgets/desktop_viewport.dart';
+import '../widgets/drive_pad.dart';
 import '../widgets/live_scan_debug_overlay.dart';
 import '../widgets/question_source_switch.dart';
 import '../widgets/segmentation_overlay_painter.dart';
@@ -128,6 +130,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onArmCommand: (motion) => _liveScan?.onArmCommand(motion),
       armBusy: () => _r1?.ignoresLiveScanLocks ?? false,
     )..addListener(() {
+        _liveScan?.setScanPaused(_gate.stopped); // no lock, identify or new quiz while STOPPED (0026)
         if (mounted) setState(() {});
       });
     WidgetsBinding.instance.addObserver(this);
@@ -177,7 +180,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             frameSize: Size(frame.width.toDouble(), frame.height.toDouble()),
             armMoving: WebSocketService().armMoving, // same message as the frame (0026)
           );
-        } else {
+        } else if (!_gate.stopped) {
           ref.read(wasteQuizProvider.notifier).onDetections(frame.detections!);
         }
       }
@@ -351,10 +354,43 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          SafeArea(
-            child: Padding(
+      body: SafeArea(
+        child: ControlLayout(
+          stoppedBanner: _gate.stopped ? StoppedBanner(reason: _gate.stopReason, onResume: _resumeAfterStop) : null,
+          stopButton: EmergencyStopButton(onStop: () => _gate.emergencyStop('button')),
+          drivePad: DrivePad(
+            speed: speed,
+            enabled: isOperational,
+            onForward: () => _gate.motor(speed.toInt(), speed.toInt()),
+            onBack: () => _gate.motor(-speed.toInt(), -speed.toInt()),
+            onLeft: () => _gate.motor(-speed.toInt(), speed.toInt()),
+            onRight: () => _gate.motor(speed.toInt(), -speed.toInt()),
+            onStop: _gate.stopWheels, // also every D-pad release
+          ),
+          debugPanel: kDebugMode && _liveScan != null
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    LiveScanDebugOverlay(
+                        controller: _liveScan!,
+                        scanLine: [
+                          ?_scanLine(ref.watch(wasteQuizProvider).scan),
+                          'gerak diblokir ${_gate.blocked}${_gate.stopped ? '   STOPPED (${_gate.stopReason})' : ''}',
+                        ].join('\n')),
+                    if (_r1 != null) ...[
+                      const SizedBox(height: 6),
+                      Text('R1: ${_r1Status ?? 'memeriksa robot...'}',
+                          style: const TextStyle(color: Colors.white, fontSize: 12, backgroundColor: Colors.black54)),
+                    ],
+                    const SizedBox(height: 6),
+                    const QuestionSourceSwitch(), // decision 0018: applies from the next scan
+                  ],
+                )
+              : null,
+          content: Stack(
+            children: [
+          Padding(
               padding: const EdgeInsets.all(12),
               child: LayoutBuilder(
                 builder: (context, constraints) {
@@ -362,7 +398,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                     child: FittedBox(
                       fit: BoxFit.contain,
                       child: SizedBox(
-                        width: 960,
+                        width: 790,
                         height: 380,
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -379,16 +415,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                               onChanged: (value) {
                                 if (_gate.servo('elbow', (value * 180).toInt())) notifier.setElbowAngle(value * 180);
                               },
-                            ),
-                            const SizedBox(width: 12),
-                            _LandscapeDriveControls(
-                              speed: speed,
-                              enabled: isOperational,
-                              onForward: () => _gate.motor(speed.toInt(), speed.toInt()),
-                              onBack: () => _gate.motor(-speed.toInt(), -speed.toInt()),
-                              onLeft: () => _gate.motor(-speed.toInt(), speed.toInt()),
-                              onRight: () => _gate.motor(speed.toInt(), -speed.toInt()),
-                              onStop: _gate.stopWheels, // also every D-pad release
                             ),
                             const SizedBox(width: 14),
                             SizedBox(
@@ -446,7 +472,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                 },
               ),
             ),
-          ),
           Positioned(
             top: 12,
             left: 12,
@@ -474,117 +499,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                 ),
               ),
             ),
-          const WasteQuizPopup(),
-          if (kDebugMode && _liveScan != null)
-            Positioned(
-              left: 12,
-              bottom: 12,
-              child: SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    LiveScanDebugOverlay(
-                        controller: _liveScan!,
-                        scanLine: [
-                          ?_scanLine(ref.watch(wasteQuizProvider).scan),
-                          'gerak diblokir ${_gate.blocked}${_gate.stopped ? '   STOPPED (${_gate.stopReason})' : ''}',
-                        ].join('\n')),
-                    if (_r1 != null) ...[
-                      const SizedBox(height: 6),
-                      Text('R1: ${_r1Status ?? 'memeriksa robot...'}',
-                          style: const TextStyle(color: Colors.white, fontSize: 12, backgroundColor: Colors.black54)),
-                    ],
-                    const SizedBox(height: 6),
-                    const QuestionSourceSwitch(), // decision 0018: applies from the next scan
-                  ],
-                ),
-              ),
-            ),
-          // Last, so it stays on top of the quiz and the overlays (decision 0026).
-          Positioned(
-            top: 12,
-            right: 12,
-            child: SafeArea(
-              child: _EmergencyStop(
-                stopped: _gate.stopped,
-                reason: _gate.stopReason,
-                onStop: () => _gate.emergencyStop('button'),
-                onResume: _resumeAfterStop,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The emergency stop (decision 0026): one tap on the big red button; while
-/// STOPPED it says why and offers "Lanjutkan", the deliberate second action.
-class _EmergencyStop extends StatelessWidget {
-  const _EmergencyStop({required this.stopped, required this.reason, required this.onStop, required this.onResume});
-
-  final bool stopped;
-  final String? reason;
-  final VoidCallback onStop;
-  final VoidCallback onResume;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Semantics(
-          button: true,
-          label: 'Berhenti darurat',
-          child: SizedBox(
-            width: 96,
-            height: 96,
-            child: ElevatedButton(
-              onPressed: onStop,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD32F2F),
-                foregroundColor: Colors.white,
-                shape: const CircleBorder(),
-                elevation: 6,
-              ),
-              child: const Text('STOP', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
-            ),
+          const WasteQuizPopup(), // inside the content area only: it never covers the rail
+            ],
           ),
         ),
-        if (stopped) ...[
-          const SizedBox(height: 8),
-          Material(
-            color: const Color(0xFFD32F2F),
-            borderRadius: BorderRadius.circular(10),
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    reason == 'link_lost'
-                        ? 'ROBOT DIHENTIKAN\nkoneksi terputus'
-                        : 'ROBOT DIHENTIKAN\n($reason)',
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 6),
-                  OutlinedButton(
-                    onPressed: onResume,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white),
-                    ),
-                    child: const Text('Lanjutkan'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ],
+      ),
     );
   }
 }
@@ -801,155 +720,6 @@ class _VerticalControlSlider extends StatelessWidget {
                   const SizedBox(width: 4),
                   Expanded(child: Center(child: labels)),
                 ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LandscapeDriveControls extends StatelessWidget {
-  const _LandscapeDriveControls({
-    required this.speed,
-    required this.enabled,
-    required this.onForward,
-    required this.onBack,
-    required this.onLeft,
-    required this.onRight,
-    required this.onStop,
-  });
-
-  final double speed;
-  final bool enabled;
-  final VoidCallback onForward;
-  final VoidCallback onBack;
-  final VoidCallback onLeft;
-  final VoidCallback onRight;
-  final VoidCallback onStop;
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: enabled ? 1 : 0.65,
-      child: AbsorbPointer(
-        absorbing: !enabled,
-        child: SizedBox(
-          width: 158,
-          height: 270,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'DRIVE CONTROLS',
-                style: TextStyle(
-                  color: Color(0xFF3F4943),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 2,
-                ),
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: 158,
-                height: 180,
-                child: Stack(
-                  children: [
-                    Align(
-                      alignment: Alignment.topCenter,
-                      child: _DpadButton(
-                        icon: Icons.arrow_upward,
-                        onPressed: onForward,
-                        onReleased: onStop,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: _DpadButton(
-                        icon: Icons.arrow_back,
-                        onPressed: onLeft,
-                        onReleased: onStop,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.center,
-                      child: _DpadButton(
-                        icon: Icons.hexagon_outlined,
-                        onPressed: onStop,
-                        onReleased: onStop,
-                        isStop: true,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: _DpadButton(
-                        icon: Icons.arrow_forward,
-                        onPressed: onRight,
-                        onReleased: onStop,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: _DpadButton(
-                        icon: Icons.arrow_downward,
-                        onPressed: onBack,
-                        onReleased: onStop,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${speed.toInt()}% PWM',
-                style: const TextStyle(
-                  color: _ControlScreenState.textSecondary,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DpadButton extends StatelessWidget {
-  const _DpadButton({
-    required this.icon,
-    required this.onPressed,
-    required this.onReleased,
-    this.isStop = false,
-  });
-
-  final IconData icon;
-  final VoidCallback onPressed;
-  final VoidCallback onReleased;
-  final bool isStop;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => onPressed(),
-      onTapUp: (_) => onReleased(),
-      onTapCancel: onReleased,
-      child: Container(
-        width: 52,
-        height: 56,
-        decoration: BoxDecoration(
-          color: isStop ? const Color(0xFFFEF2F2) : Colors.white,
-          borderRadius: BorderRadius.circular(isStop ? 26 : 12),
-          border: Border.all(
-            color: isStop ? const Color(0xFFFECACA) : const Color(0xFFBEC9C2),
-          ),
-        ),
-        child: Icon(
-          icon,
-          color: isStop
-              ? _ControlScreenState.redAccent
-              : _ControlScreenState.textPrimary,
-          size: isStop ? 30 : 28,
         ),
       ),
     );

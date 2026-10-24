@@ -314,6 +314,7 @@ class FakeMaixCam:
         self.drive_locked = False
         self.last_app_message = time.monotonic()
         self.watchdog_fired = False
+        self.heartbeats, self.heartbeat_window = 0, None  # rate-limited "heartbeat xN/s" line
         # Decision 0023's command link. DRIVE is the existing `motor` message (dropped while locked).
         self.handlers = {
             "STATUS": self._cmd_status,
@@ -410,10 +411,11 @@ class FakeMaixCam:
                     data = json.loads(message)
                     cmd = data.get("cmd", "")
                     if cmd == "HEARTBEAT":
-                        pass  # decision 0026: no seq, no reply; it only feeds the watchdog
+                        self._log_heartbeat()  # decision 0026: no seq, no reply; it only feeds the watchdog
                     elif cmd == "ping":
                         await ws.send(json.dumps({"event": "pong", "firmware_version": FIRMWARE_VERSION,
                                                   "firmware_sha256": FIRMWARE_SHA256}))
+                        self.log("[WS] ping -> pong")
                     elif cmd == "start_stream":
                         self.streaming = True
                         if self.t0 is None:
@@ -423,6 +425,7 @@ class FakeMaixCam:
                         self.streaming = False
                         self.log("[WS] stop_stream — streaming OFF")
                     elif cmd == "disconnect":
+                        self.log("[WS] disconnect -> disconnect_ack")
                         await ws.send(json.dumps({"event": "disconnect_ack"}))
                         await ws.close()
                         break
@@ -434,9 +437,14 @@ class FakeMaixCam:
                     elif cmd == "set_resolution":
                         self.log(f"[WS] set_resolution received but ignored — resolution is fixed at {IMG_W}x{IMG_H}")
                     elif cmd in self.handlers and isinstance(data.get("seq"), int):
+                        if cmd != "STOP":  # STOP logs its own line
+                            self.log(f"[WS] {cmd} seq={data['seq']}")
                         await self.handlers[cmd](ws, data)
                     elif isinstance(data.get("seq"), int):
+                        self.log(f"[WS] unknown cmd {cmd!r} seq={data['seq']} -> error unknown_cmd")
                         await self._reply(ws, "error", data, reason="unknown_cmd")
+                    else:
+                        self.log(f"[WS] unknown cmd {cmd!r} (ignored)")
                 except Exception as pe:
                     self.log(f"[WS] parse error: {pe}")
         except websockets.ConnectionClosed:
@@ -474,7 +482,18 @@ class FakeMaixCam:
         self.drive_locked = data["cmd"] == "LOCK_DRIVE"
         await self._reply(ws, "ack", data)
 
+    def _log_heartbeat(self):
+        """One line a second at most: "heartbeat x4/s"."""
+        now = time.monotonic()
+        if self.heartbeat_window is None:
+            self.heartbeat_window = now
+        self.heartbeats += 1
+        if now - self.heartbeat_window >= 1.0:
+            self.log(f"[WS] heartbeat x{round(self.heartbeats / (now - self.heartbeat_window))}/s")
+            self.heartbeats, self.heartbeat_window = 0, now
+
     async def _cmd_stop(self, ws, data):
+        self.log(f"[WS] STOP seq={data['seq']} -> wheels 0, arm hold")
         self.world.target[:] = self.world.angles
         self.motion = None
         await self._reply(ws, "ack", data)

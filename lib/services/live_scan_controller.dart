@@ -82,7 +82,25 @@ class LiveScanController extends ChangeNotifier {
 
   /// Why nothing is being asked right now: the J1 guard, else the machine's
   /// reason, else this frame's (boxes too large, scores under [minScore]).
-  BlockReason? get blockReason => _armFrozen ? const BlockReason('arm_moving') : machine.blockReason ?? _frameBlock;
+  BlockReason? get blockReason => _scanPaused
+      ? const BlockReason('stopped')
+      : _armFrozen
+          ? const BlockReason('arm_moving')
+          : machine.blockReason ?? _frameBlock;
+
+  /// STOPPED (decision 0026): frames still stream and show, but none is
+  /// analysed, so nothing locks, identifies or opens a quiz. An open quiz
+  /// stays usable. After "Lanjutkan" the 0020 rules apply as usual.
+  bool get scanPaused => _scanPaused;
+  bool _scanPaused = false;
+  bool _skippedWhilePaused = false;
+
+  void setScanPaused(bool paused) {
+    if (paused == _scanPaused) return;
+    _scanPaused = paused;
+    _emit(paused ? 'scan_paused' : 'scan_resumed', {'state': machine.state.name});
+    notifyListeners();
+  }
 
   /// J1 guard (decision 0020): the arm moves the camera until this time.
   DateTime? _armGuardUntil;
@@ -170,6 +188,15 @@ class LiveScanController extends ChangeNotifier {
     _recentFrames
       ..add(now)
       ..removeWhere((t) => now.difference(t) >= const Duration(seconds: 1));
+    if (_scanPaused) {
+      _skippedWhilePaused = true;
+      notifyListeners();
+      return;
+    }
+    if (_skippedWhilePaused) {
+      _skippedWhilePaused = false;
+      machine.onAnalysisResumed('stopped');
+    }
     if (armMoving == true) _extendArmGuard(armSettle);
     final guard = _armGuardUntil;
     if (guard != null && now.isBefore(guard)) {
@@ -180,7 +207,7 @@ class LiveScanController extends ChangeNotifier {
     }
     if (_armFrozen) {
       _armFrozen = false;
-      machine.onArmSettled();
+      machine.onAnalysisResumed('arm');
     }
 
     final frameArea = frameSize == null ? double.infinity : frameSize.width * frameSize.height;

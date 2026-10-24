@@ -40,6 +40,16 @@ class LiveScanDebugOverlay extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                OutlinedButton(
+                  onPressed: controller.canManualRearm ? controller.manualRearm : null,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    visualDensity: VisualDensity.compact,
+                    side: const BorderSide(color: Colors.white54),
+                  ),
+                  child: const Text('Scan lagi'),
+                ),
+                const SizedBox(height: 4),
                 Text(
                   'LIVE SCAN  $state\n'
                   'fps ${controller.fps}   identify ${m.askCount}   busy ${m.busyCount}   tts ${controller.ttsCount}\n'
@@ -49,16 +59,6 @@ class LiveScanDebugOverlay extends StatelessWidget {
                   '${blocked == null ? '' : '\n$blocked'}'
                   '${scanLine == null ? '' : '\n$scanLine'}',
                   style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.35, fontFamily: 'monospace'),
-                ),
-                const SizedBox(height: 4),
-                OutlinedButton(
-                  onPressed: controller.canManualRearm ? controller.manualRearm : null,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    visualDensity: VisualDensity.compact,
-                    side: const BorderSide(color: Colors.white54),
-                  ),
-                  child: const Text('Scan lagi'),
                 ),
               ],
             ),

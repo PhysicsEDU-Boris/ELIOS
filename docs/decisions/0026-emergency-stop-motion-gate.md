@@ -102,3 +102,40 @@ until the release arrives. See the Uno watchdog below for why the firmware must 
   firmware).
 - The app's J1 guard uses it, together with its own servo sends (0020).
 - The fake MaixCAM2 sends it while J1 moves (`p1: true` only).
+
+## Amendment 24 Oct (E1b): placement, scanning while STOPPED
+
+Found on the Mac (800x632, fake MaixCAM2):
+
+- STOP covered the quiz's close (X) and minimise buttons, so a student could not close a quiz.
+- The STOPPED banner covered the chat.
+- "STOP" wrapped as "STO" / "P".
+- After a reconnect while STOPPED, the live scan quizzed the same bottle again.
+
+**Layout** (`lib/widgets/control_layout.dart`)
+
+- STOP, the D-pad and the debug panel get their own **rail**: on the right in landscape, at the
+  bottom in portrait.
+- The STOPPED banner is a **full-width strip on top**.
+- The camera, the sliders and the quiz popup lay out in the remaining area only. So the quiz
+  modal never covers the rail, and STOP never covers the quiz.
+- STOP is a fixed 96 px circle. Its one-line "STOP" label scales down instead of wrapping.
+- "Scan lagi" is the first item of the debug panel, so it is never scrolled away.
+- Escape and space still stop.
+- Tested at 800x632, 390x844 and 1024x768, with a quiz open and with the banner: STOP, the
+  quiz's X and minimise, an answer, the D-pad, "Scan lagi" and "Lanjutkan" are all on top where
+  they sit.
+- Side effect: in an 800 px window the quiz area is 580 px wide, so the quiz shows one pane (its
+  chat behind its button) instead of two.
+
+**Scanning while STOPPED**
+
+- Whatever the reason, frames still stream and show, but the live scan analyses none: nothing
+  locks, identifies or opens a quiz (`LiveScanController.setScanPaused`). Without live scan, the
+  detection-triggered quiz path is skipped as well.
+- **A quiz already open stays open and usable.** Answering is not motion, and an identification
+  already running counts as open.
+- After "Lanjutkan", the quizzed objects are found again by label and their absence restarts, as
+  after the J1 guard. Then 0020's cooldown and re-arm rules apply as usual.
+- Logged as `scan_paused` / `scan_resumed`. The overlay says "menunggu: robot dihentikan
+  (STOP)".

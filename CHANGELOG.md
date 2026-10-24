@@ -141,6 +141,16 @@ kept outside the repo.
   gate; the module-grounded quiz plan requires page/section citations (planned).
 
 ### Fixed
+- E1b (decision 0026):
+  - STOP no longer covers the quiz's close/minimise buttons. STOP, the D-pad and the debug
+    panel live in their own rail (right in landscape, bottom in portrait), and the STOPPED banner
+    is a full-width strip on top. Tested at 800x632, 390x844 and 1024x768.
+  - The "STOP" label no longer wraps.
+  - While STOPPED the live scan no longer locks, identifies or opens a quiz (a reconnect
+    re-quizzed the same bottle); an open quiz stays usable. `scan_paused` / `scan_resumed` are
+    logged.
+  - The fake MaixCAM2 logs every command, including STOP (with seq) and a rate-limited heartbeat
+    line.
 - The lamp bank object (`lampu_tl_cfl`) has `"label": "E_Waste"` again, so it is served on
   E_Waste boxes (decision 0025's side effect).
 - Bank questions in a live scan follow the detector class, not Gemma's words. A Plastic box that

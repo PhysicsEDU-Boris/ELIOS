@@ -129,6 +129,49 @@ void main() {
     });
   });
 
+  group('STOPPED pauses the scan (decision 0026, E1b)', () {
+    test('no lock, identify or quiz while STOPPED; frames still counted; resume locks as usual', () {
+      final r = _Rig();
+      r.c.setScanPaused(true);
+      r.run(0, 5000, [_plastic]);
+      expect(r.starts, isEmpty);
+      expect(r.c.fps, greaterThan(0), reason: 'frames still stream');
+      expect(r.c.blockReason?.code, 'stopped');
+      expect(r.c.blockReason?.text, 'menunggu: robot dihentikan (STOP)');
+      r.c.setScanPaused(false);
+      r.run(5250, 8000, [_plastic]);
+      expect(r.starts, ['Plastic'], reason: 'after "Lanjutkan" the object locks after the usual 1 s');
+      expect(r.startedAt, 5250 + 1000);
+      expect(r.logged('scan_paused'), hasLength(1));
+      expect(r.logged('scan_resumed'), hasLength(1));
+    });
+
+    test('24 Oct: a reconnect while STOPPED does not quiz the same bottle; after Lanjutkan the 0020 rules apply', () {
+      final r = _Rig();
+      r.run(0, 10000, [_plastic], closeAt: 8000);
+      r.c.setScanPaused(true); // the link drops: STOPPED (link_lost)
+      r.c.onLinkRestored(); // the reconnect forgets the quizzed bottle (0020 "Link drop")
+      r.run(20000, 40000, [_plastic]);
+      expect(r.starts, ['Plastic'], reason: 'no new quiz while STOPPED');
+      r.c.setScanPaused(false);
+      r.run(40250, 45000, [_plastic]);
+      expect(r.starts, ['Plastic', 'Plastic'], reason: 'after Lanjutkan the forgotten bottle may lock again (0020)');
+    });
+
+    test('an open quiz stays open and closes normally while STOPPED', () {
+      final r = _Rig();
+      r.run(0, 5000, [_plastic]); // locked at 1 s, question at 5 s
+      expect(r.c.machine.state, LiveScanState.quiz);
+      r.c.setScanPaused(true);
+      r.run(5250, 9000, [_plastic]);
+      r.c.onQuizPhase(WasteQuizPhase.idle); // the student closes it
+      expect(r.c.machine.state, LiveScanState.cooldown);
+      r.c.setScanPaused(false);
+      r.run(9250, 30000, [_plastic]);
+      expect(r.starts, ['Plastic'], reason: 'the quizzed bottle stays quizzed');
+    });
+  });
+
   group('acceptance (scripted frames, fake identify)', () {
     test('track_id fills the stabilizer slot, but box overlap still decides (decision 0022)', () {
       final r = _Rig();
