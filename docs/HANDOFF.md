@@ -1,6 +1,7 @@
 # Handoff
 
-- Base branch `feature/live-scan` at e3aa90d. PRs #21-#23 and #25-#29 merged; #24 (grounded quiz)
+- Base branch `feature/live-scan` at 79f336c. PRs #21-#23 and #25-#30 merged; P1 is on
+  `feat/p1-detection-protocol` (PR open, not merged); #24 (grounded quiz)
   stays an open draft (latency gate failed). Never commit the user Xcode scheme or Maixcam.txt.
 - Robot build: `flutter build macos --debug --dart-define=LIVE_SCAN=true
   --dart-define=APP_COMMIT=$(git rev-parse --short HEAD)`, launch with `open`. Every JSONL line
@@ -10,7 +11,10 @@
   label bank, 0016 grounded quiz (on draft #24 only), [0017](decisions/0017-object-bank.md) object bank,
   [0018](decisions/0018-question-source-toggle.md) source switch,
   [0019](decisions/0019-gemma-question-topics.md) Gemma angles, [0020](decisions/0020-lock-rearm-rule.md)
-  re-arm rule, [0021](decisions/0021-manual-driving-orchestration.md) driving + orchestration (proposed).
+  re-arm rule, [0021](decisions/0021-manual-driving-orchestration.md) driving + orchestration (proposed,
+  amended 24 Oct), [0022](decisions/0022-detection-protocol-distance-tags.md) P1 protocol + topology.
+- Topology (0021e): app -> MaixCAM2 only (WiFi); MaixCAM2 -> ESP32 (arm, 6 servos incl. J1) and
+  Uno (wheels) over UART. The Mac is debug only.
 
 ## M2d robot test (NOT run yet)
 
@@ -32,12 +36,13 @@
 
 ## Next tasks, in order
 
-1. P1 protocol: optional `track_id`, `dist_cm`, `arm_tags` (0021).
-2. R1 orchestration (0021).
+1. **Next: R1 orchestration** (0021 + amendment). P1 fields are parsed but unused; firmware
+   sends them only after camera calibration (0022).
+2. Camera calibration + firmware `dist_cm` / `arm_tags` (0022 spec).
 3. R2 sort modes (0021).
 4. Emergency stop (before any real arm test).
 5. CI.
-6. Arm bring-up + ESP32 link (plan 2.6).
+6. Arm bring-up: MaixCAM2 -> ESP32 UART (plan 2.6 superseded by 0021e).
 7. M4 overlay.
 8. M5 Android.
 9. M6 ByteTrack (conditional on the two-object overlap test).

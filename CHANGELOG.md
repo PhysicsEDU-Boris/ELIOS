@@ -12,6 +12,13 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- P1 detection protocol: optional per-detection `track_id`, `dist_cm`, `lateral_cm` and
+  per-frame `arm_tags` are parsed as nullable (`Detection`, `ArmTag`,
+  `WebSocketService.armTags`). Missing or malformed values are null; old firmware is unchanged.
+  `track_id` fills the stabilizer's `trackId` slot, but the live scan keeps box overlap for
+  identity (`matchTrackIds: false`). Nothing uses the fields yet. Firmware distance/tag spec and
+  robot topology in decision 0022; decision 0021 amended (`PICK_BAND_CM` 20-28, pick-done rule,
+  J1 camera rule, topology, plan 2.6 superseded).
 - M2d lock diagnostics (debug only): one rolling JSONL per app run with cooldown, re-arm,
   blocked-reason, candidate, too-large-box, below-min-score and busy events (rate-limited,
   `appCommit` on every line); the overlay shows why nothing locks and has a "Scan lagi" button

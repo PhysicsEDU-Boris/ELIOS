@@ -14,8 +14,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 final _t0 = DateTime(2026, 1, 1);
 
-Detection _det(String label, {double x = 320, double score = 0.9, double w = 120, double h = 160}) =>
-    Detection(x: x, y: 240, w: w, h: h, label: label, score: score);
+Detection _det(String label,
+        {double x = 320, double score = 0.9, double w = 120, double h = 160, int? trackId, double? distCm, double? lateralCm}) =>
+    Detection(
+        x: x, y: 240, w: w, h: h, label: label, score: score, trackId: trackId, distCm: distCm, lateralCm: lateralCm);
 
 const _frame = Size(640, 480); // MaixCAM2 frame; 0.6 of it is 184320 px²
 
@@ -33,6 +35,7 @@ class _Rig {
         final label = detection.label;
         if (busy) return false;
         starts.add(label);
+        startedTrackIds.add(detection.trackId);
         startedAt = now;
         c.onQuizPhase(WasteQuizPhase.loadingQuestion);
         return true;
@@ -49,6 +52,7 @@ class _Rig {
   int? firstToken = 321; // mutable: a test can simulate a fallback (null)
   late final LiveScanController c;
   final starts = <String>[];
+  final startedTrackIds = <int?>[];
   final events = <(String, Map<String, Object?>)>[];
   List<Map<String, Object?>> logged(String event) => [for (final (e, d) in events) if (e == event) d];
 
@@ -84,6 +88,15 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('acceptance (scripted frames, fake identify)', () {
+    test('track_id fills the stabilizer slot, but box overlap still decides (decision 0022)', () {
+      final r = _Rig();
+      r.at(0, [_det('Plastic', trackId: 7, distCm: 24.5, lateralCm: -3)]);
+      r.at(500, [_det('Plastic', trackId: 8)]); // a new id on the same box: still one object
+      r.at(1000, [_det('Plastic', trackId: 9)]);
+      expect(r.starts, ['Plastic']);
+      expect(r.startedTrackIds, [9]);
+    });
+
     test('same object held 60 s: exactly 1 identify', () {
       final r = _Rig();
       r.run(0, 60000, [_plastic, _hand], closeAt: 30000); // 4 fps, quiz closed at 30 s
