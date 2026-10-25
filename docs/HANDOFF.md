@@ -2,10 +2,9 @@
 
 ## Where things stand
 
-- Branch `feat/u1-control-layout`, cut from `feature/live-scan` at 650752e (merge of PR #37).
-  No U1 work and no U1 PR yet. PRs #31-#37 are all merged; #24 (grounded quiz) stays a draft.
-- Never commit the Xcode scheme, `Maixcam.txt` or `docs/module/`.
-- Robot build: see CLAUDE.md "Robot build"; launch with `open` and check `appCommit` in the JSONL.
+- Branch `feat/u1-control-layout` (from `feature/live-scan` at 650752e): U1 done at b9fbaa8,
+  **not pushed, no PR yet**. PRs #31-#37 are merged; #24 (grounded quiz) stays a draft.
+- Never commit the Xcode scheme, `Maixcam.txt` or `docs/module/`. Robot build: CLAUDE.md; check `appCommit` in the JSONL.
 
 ## Done (24-25 Oct, PRs #31-#37)
 
@@ -19,18 +18,17 @@
 
 ## Not done / next step
 
-- **U1 (next):** make the Control screen match Figma node 43:30 (file `J2jSbARJSyJCStNFeWkWDj`).
-  Blocked: the Figma connector was disconnected. **Next step: reconnect Figma (`/mcp`), then run
-  `get_design_context` on 43:30** and build to the U1 spec: no clipping (scroll instead), STOP
-  under the speed slider plus a quiz-header STOP pill, debug items in a side sheet, widget tests
-  at 5 sizes with PNGs in `docs/test-results/u1-control-layout/`.
-- After U1: R1-fw in `main.py` (0023 command link + 0026: HEARTBEAT, 1 s watchdog, STOP, ≤ 200 ms
+- **U1 (done, needs push + PR):** Control screen = Figma 43:30. Wide one row; under 1100 px camera
+  on top; scrolls when short. STOP 74 px under the speed slider + a STOP pill in the quiz header.
+  Leaf reopens a minimised quiz. Debug items in the Debug Scan side sheet (debug builds only).
+  PNGs in `docs/test-results/u1-control-layout/` (`U1_PNG=true`). Trophy count: placeholder (U5).
+- Next: R1-fw in `main.py` (0023 command link + 0026: HEARTBEAT, 1 s watchdog, STOP, ≤ 200 ms
   wheel refresh, `arm_moving`); Uno/ESP32 sketches (outside this repo); arm bring-up, M4, R2, CI.
 - Quiz: the owner reviews the banks, then the accepted-filter task.
 
-## Tests (at 650752e)
+## Tests (at b9fbaa8)
 
-- `flutter analyze` is clean. `flutter test` gives 370 passed and **2 failed**: the known-stale
+- `flutter analyze` is clean. `flutter test` gives 395 passed and **2 failed**: the known-stale
   splash tests in `test/widget_test.dart`.
 - The fake's pytest: 31 pass (needs `ROBOTIC_HAND_SIM` or the sim next to the repo).
 - `scripts/check-secrets.sh` is clean. The macOS robot build compiles.
@@ -45,6 +43,9 @@
   [0026](decisions/0026-emergency-stop-motion-gate.md) emergency stop + watchdog spec. Older: [README](decisions/README.md).
 
 ## Test on the robot
+
+- U1: resize the window (wide, 770x553, narrow): nothing cut off, the page scrolls. STOP under
+  the speed slider, the quiz-header STOP, Escape and space all stop; Debug Scan opens the sheet.
 
 - STOP (button, Escape, space) stops the **wheels only**: today's firmware ignores STOP and
   HEARTBEAT, so the arm keeps its last angles. **Before any arm test near people:** R1-fw, the
