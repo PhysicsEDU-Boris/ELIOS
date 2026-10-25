@@ -17,6 +17,7 @@ class DrivePad extends StatelessWidget {
     required this.onLeft,
     required this.onRight,
     required this.onStop,
+    this.compact = false,
   });
 
   final double speed;
@@ -27,17 +28,21 @@ class DrivePad extends StatelessWidget {
   final VoidCallback onRight;
   final VoidCallback onStop;
 
+  /// 56 px keys, no top inset: the narrow Control layout (U1).
+  final bool compact;
+
   @override
   Widget build(BuildContext context) {
     Widget button(IconData icon, VoidCallback onPressed, {bool isStop = false}) =>
-        _DpadButton(icon: icon, onPressed: onPressed, onReleased: onStop, isStop: isStop);
+        _DpadButton(icon: icon, onPressed: onPressed, onReleased: onStop, isStop: isStop, size: compact ? 56 : 68);
+    final rowGap = SizedBox(height: compact ? 4 : 12);
     return Opacity(
       opacity: enabled ? 1 : 0.65,
       child: AbsorbPointer(
         absorbing: !enabled,
         // Figma 43:42: 68 px keys, 4 px apart in the middle row, 12 px above and below.
         child: Padding(
-          padding: const EdgeInsets.only(top: 36),
+          padding: EdgeInsets.only(top: compact ? 0 : 36),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -45,9 +50,9 @@ class DrivePad extends StatelessWidget {
                 'DRIVE CONTROLS',
                 style: TextStyle(color: _label, fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.68),
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: compact ? 8 : 14),
               button(Icons.arrow_upward, onForward),
-              const SizedBox(height: 12),
+              rowGap,
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -58,9 +63,9 @@ class DrivePad extends StatelessWidget {
                   button(Icons.arrow_forward, onRight),
                 ],
               ),
-              const SizedBox(height: 12),
+              rowGap,
               button(Icons.arrow_downward, onBack),
-              const SizedBox(height: 14),
+              SizedBox(height: compact ? 8 : 14),
               Text(
                 '${speed.toInt()}% PWM',
                 style: const TextStyle(color: _textSecondary, fontSize: 12, fontWeight: FontWeight.w500, letterSpacing: 0.48),
@@ -79,12 +84,14 @@ class _DpadButton extends StatelessWidget {
     required this.onPressed,
     required this.onReleased,
     this.isStop = false,
+    this.size = 68,
   });
 
   final IconData icon;
   final VoidCallback onPressed;
   final VoidCallback onReleased;
   final bool isStop;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -94,11 +101,11 @@ class _DpadButton extends StatelessWidget {
       onTapUp: (_) => onReleased(),
       onTapCancel: onReleased,
       child: Container(
-        width: 68,
-        height: 68,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: isStop ? const Color(0xFFFDF1EF) : Colors.white,
-          borderRadius: BorderRadius.circular(isStop ? 34 : 12),
+          borderRadius: BorderRadius.circular(isStop ? size / 2 : 12),
           border: Border.all(
             color: isStop ? const Color(0xFFF3CFCA) : const Color(0xFFDCDCDC),
           ),
@@ -109,7 +116,7 @@ class _DpadButton extends StatelessWidget {
           color: isStop
               ? _redAccent
               : _textPrimary,
-          size: isStop ? 36 : 32,
+          size: size * (isStop ? 0.53 : 0.47),
         ),
       ),
     );
