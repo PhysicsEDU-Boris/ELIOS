@@ -12,12 +12,21 @@ const _armGreen = Color(0xFF5DB89C);
 const _pickUpGreen = Color(0xFF6CC1A6);
 const _stopRed = Color(0xFFD32F2F);
 
-/// The Control screen (decisions 0026, U1). Wide (from [wideMinWidth]): one
-/// row, as in Figma 43:30. Narrower: the camera on top, the controls below,
-/// wrapping on a phone. Everything scrolls, so nothing is ever cut off, and the
-/// leaf button sits in the flow at the bottom right, so it covers nothing. The
-/// quiz lays over the whole area below the STOPPED strip; its header has its
-/// own STOP, because it hides the one under the speed slider.
+/// Builds a control at full size or compact (the two-column layout).
+typedef ControlBuilder = Widget Function(bool compact);
+
+/// The Control screen (decisions 0026, U1).
+///
+/// - Wide (from [wideMinWidth]): one row, as in Figma 43:30.
+/// - Two columns (from [twoColumnMinWidth]): camera + PICK UP / RELEASE on the
+///   left, sized from the space the compact controls leave; the controls on
+///   the right. At 770x553 everything fits on one screen.
+/// - Stacked (phones): camera on top, the controls wrap below, the page scrolls.
+///
+/// Scrolling is the last fallback. Whenever the page can scroll, STOP is
+/// pinned bottom right instead of under the speed slider, so it never scrolls
+/// away. The quiz lays over everything below the STOPPED strip and has its
+/// own STOP in its header.
 class ControlLayout extends StatelessWidget {
   const ControlLayout({
     super.key,
@@ -43,97 +52,194 @@ class ControlLayout extends StatelessWidget {
   /// Shown only in debug builds ([debugBuild]).
   final Widget? debugScanButton;
   final bool debugBuild;
-  final Widget armHeight;
-  final Widget drivePad;
+  final ControlBuilder armHeight;
+  final ControlBuilder drivePad;
   final Widget camera;
   final Widget actions;
-  final Widget speed;
+  final ControlBuilder speed;
   final Widget stopButton;
-  final Widget armReach;
+  final ControlBuilder armReach;
   final Widget launcher;
   final Widget quiz;
   final Widget? stoppedBanner;
 
   static const wideMinWidth = 1100.0;
   static const cameraMaxWidth = 524.0;
+  static const cameraMinWidth = 240.0;
+
+  /// Compact controls (90 + 176 + 74 + 90 + gaps) + the smallest camera + gaps.
+  static const _controlsWidth = 90 + 8 + 176 + 8 + 74 + 8 + 90.0;
+  static const twoColumnMinWidth = 2 * _pad + _controlsWidth + 16 + cameraMinWidth;
+
+  /// Full-size controls (74 + 212 + 74 + 130 + gaps) fit beside the smallest camera.
+  static const _fullControlsWidth = 74 + 8 + 212 + 8 + 74 + 8 + 130.0;
+
+  static const _pad = 16.0;
+  static const _topBar = 48.0; // a pill row
+  static const _actionsHeight = 72.0;
+  static const _launcherHeight = 8 + 102.0;
+
+  /// The least height each layout needs without scrolling.
+  static const _wideMinHeight = 2 * _pad + _topBar + 40 + 388 + _launcherHeight;
+  static const _twoColumnMinHeight = 2 * _pad + _topBar + 16 + ArmSlider.compactHeight + _launcherHeight;
+  static const _twoColumnFullMinHeight = 2 * _pad + _topBar + 16 + 388 + _launcherHeight;
 
   @override
   Widget build(BuildContext context) {
     const gap = SizedBox(width: 16, height: 16);
-    final cameraColumn = ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: cameraMaxWidth),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [AspectRatio(aspectRatio: cameraMaxWidth / 300, child: camera), gap, actions],
+    const gap8 = SizedBox(width: 8, height: 8);
+    final topBar = SizedBox(
+      width: double.infinity,
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        spacing: 12,
+        runSpacing: 8,
+        children: [
+          exitButton,
+          Wrap(spacing: 12, runSpacing: 8, children: [
+            if (debugBuild && debugScanButton != null) debugScanButton!,
+            historyButton,
+          ]),
+        ],
       ),
     );
-    final speedColumn = Column(mainAxisSize: MainAxisSize.min, children: [speed, gap, stopButton]);
+    final rightLauncher = Align(alignment: Alignment.centerRight, child: launcher);
+
     return Column(
       children: [
         ?stoppedBanner,
         Expanded(
-          child: Stack(
-            children: [
-              LayoutBuilder(builder: (context, constraints) {
-                final wide = constraints.maxWidth >= wideMinWidth;
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Wrap(
-                              alignment: WrapAlignment.spaceBetween,
-                              spacing: 12,
-                              runSpacing: 8,
-                              children: [
-                                exitButton,
-                                Wrap(spacing: 12, runSpacing: 8, children: [
-                                  if (debugBuild && debugScanButton != null) debugScanButton!,
-                                  historyButton,
-                                ]),
-                              ],
-                            ),
-                            SizedBox(height: wide ? 40 : 24),
-                            if (wide)
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  armHeight, gap, drivePad, gap,
-                                  Flexible(child: cameraColumn), gap,
-                                  speedColumn, gap, armReach,
-                                ],
-                              )
-                            else ...[
-                              Center(child: cameraColumn),
-                              gap,
-                              Wrap(
-                                alignment: WrapAlignment.center,
-                                spacing: 16,
-                                runSpacing: 16,
-                                children: [armHeight, drivePad, speedColumn, armReach],
-                              ),
-                            ],
-                          ],
+          child: LayoutBuilder(builder: (context, viewport) {
+            final width = viewport.maxWidth;
+            final Widget body;
+            final bool pinStop;
+            if (width >= wideMinWidth || width >= twoColumnMinWidth) {
+              final wide = width >= wideMinWidth;
+              // Two columns: full-size controls when they fit (1024x768), compact otherwise (770x553).
+              final compact = !wide &&
+                  (width < 2 * _pad + _fullControlsWidth + 16 + cameraMinWidth ||
+                      viewport.maxHeight < _twoColumnFullMinHeight);
+              final minHeight = wide ? _wideMinHeight : compact ? _twoColumnMinHeight : _twoColumnFullMinHeight;
+              pinStop = viewport.maxHeight < minHeight;
+              final speedColumn = Column(mainAxisSize: MainAxisSize.min, children: [
+                speed(compact),
+                if (!pinStop) ...[compact ? const SizedBox(height: 12) : gap, stopButton],
+              ]);
+              final Widget main;
+              if (wide) {
+                main = Column(children: [
+                  topBar,
+                  const SizedBox(height: 40),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      armHeight(false), gap, drivePad(false), gap,
+                      Flexible(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: cameraMaxWidth),
+                          child: Column(mainAxisSize: MainAxisSize.min, children: [
+                            AspectRatio(aspectRatio: cameraMaxWidth / 300, child: camera),
+                            gap,
+                            actions,
+                          ]),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16),
-                          child: Align(alignment: Alignment.centerRight, child: launcher),
+                      ),
+                      gap, speedColumn, gap, armReach(false),
+                    ],
+                  ),
+                  const Spacer(),
+                  rightLauncher,
+                ]);
+              } else {
+                main = Column(children: [
+                  topBar,
+                  gap,
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // The camera takes what the controls leave: 4:3, width- or height-bound.
+                        Expanded(
+                          child: LayoutBuilder(builder: (context, left) {
+                            final byHeight = (left.maxHeight - 12 - _actionsHeight) * 4 / 3;
+                            final w = [left.maxWidth, byHeight, cameraMaxWidth].reduce((a, b) => a < b ? a : b);
+                            return Align(
+                              alignment: Alignment.topCenter,
+                              child: SizedBox(
+                                width: w < cameraMinWidth ? cameraMinWidth : w,
+                                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                                  AspectRatio(aspectRatio: 4 / 3, child: camera),
+                                  const SizedBox(height: 12),
+                                  actions,
+                                ]),
+                              ),
+                            );
+                          }),
+                        ),
+                        gap,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [armHeight(compact), gap8, drivePad(compact), gap8, speedColumn, gap8, armReach(compact)],
+                            ),
+                            const Spacer(),
+                            launcher,
+                          ],
                         ),
                       ],
                     ),
                   ),
-                );
-              }),
-              quiz,
-            ],
-          ),
+                ]);
+              }
+              body = SizedBox(
+                height: (pinStop ? minHeight : viewport.maxHeight) - 2 * _pad,
+                child: main,
+              );
+            } else {
+              // Phones: the page scrolls, so STOP is always pinned.
+              pinStop = true;
+              body = Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  topBar,
+                  gap,
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: cameraMaxWidth),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        AspectRatio(aspectRatio: 4 / 3, child: camera),
+                        const SizedBox(height: 12),
+                        actions,
+                      ]),
+                    ),
+                  ),
+                  gap,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [armHeight(false), drivePad(false), speed(false), armReach(false)],
+                  ),
+                  gap,
+                  rightLauncher,
+                ],
+              );
+            }
+            return Stack(
+              children: [
+                SingleChildScrollView(
+                  // Room under the content for the pinned STOP.
+                  padding: EdgeInsets.fromLTRB(_pad, _pad, _pad, pinStop ? _pad + EmergencyStopButton.size + 16 : _pad),
+                  child: body,
+                ),
+                if (pinStop) Positioned(right: _pad, bottom: _pad, child: stopButton),
+                quiz,
+              ],
+            );
+          }),
         ),
       ],
     );
@@ -217,6 +323,7 @@ class ArmSlider extends StatelessWidget {
     required this.value,
     required this.enabled,
     required this.onChanged,
+    this.compact = false,
   });
 
   final String label;
@@ -225,20 +332,34 @@ class ArmSlider extends StatelessWidget {
   final bool enabled;
   final ValueChanged<double> onChanged;
 
+  /// 90 px wide (the label on two lines) and a 220 px slider: the narrow layout.
+  final bool compact;
+
+  static const compactHeight = 32 + 6 + 12 + 6 + 220.0;
+
   @override
   Widget build(BuildContext context) {
+    const style = TextStyle(color: _label, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.96);
     return Opacity(
       opacity: enabled ? 1 : 0.70,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, maxLines: 1, style: const TextStyle(color: _label, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.96)),
-          const SizedBox(height: 10),
+          if (compact)
+            SizedBox(
+              width: 90,
+              height: 32,
+              // May break after "/" (zero-width space): "FORWARD/" over "BACKWARD".
+              child: Center(child: Text(label.replaceAll('/', '/\u200B'), maxLines: 2, textAlign: TextAlign.center, style: style)),
+            )
+          else
+            Text(label, maxLines: 1, style: style),
+          SizedBox(height: compact ? 6 : 10),
           Text(sublabel, maxLines: 1, style: const TextStyle(color: _subLabel, fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 0.8)),
-          const SizedBox(height: 10),
+          SizedBox(height: compact ? 6 : 10),
           Container(
             width: 74,
-            height: 340,
+            height: compact ? 220 : 340,
             decoration: BoxDecoration(
               color: _armGreen,
               borderRadius: BorderRadius.circular(12),
@@ -267,11 +388,14 @@ class ArmSlider extends StatelessWidget {
 
 /// Speed (PWM): Figma's card turned upright, 74 wide, so STOP fits under it.
 class SpeedSlider extends StatelessWidget {
-  const SpeedSlider({super.key, required this.speed, required this.enabled, required this.onChanged});
+  const SpeedSlider({super.key, required this.speed, required this.enabled, required this.onChanged, this.compact = false});
 
   final double speed;
   final bool enabled;
   final ValueChanged<double> onChanged;
+
+  /// 160 px tall instead of 222: the narrow layout.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -280,7 +404,7 @@ class SpeedSlider extends StatelessWidget {
       child: RotatedBox(
         quarterTurns: 3,
         child: Container(
-          width: 222,
+          width: compact ? 160 : 222,
           height: 74,
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
           decoration: BoxDecoration(
@@ -321,7 +445,8 @@ class SpeedSlider extends StatelessWidget {
   }
 }
 
-/// PICK UP and RELEASE, under the camera.
+/// PICK UP and RELEASE, under the camera. The label scales down in a narrow
+/// column instead of being clipped.
 class GripperButtons extends StatelessWidget {
   const GripperButtons({super.key, required this.enabled, required this.onPickUp, required this.onRelease});
 
@@ -333,6 +458,15 @@ class GripperButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     const text = TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: 1.44);
     final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(12));
+    const padding = EdgeInsets.symmetric(horizontal: 10);
+    Widget label(IconData icon, String text) => FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, size: 26),
+            const SizedBox(width: 10),
+            Text(text, maxLines: 1),
+          ]),
+        );
     return Opacity(
       opacity: enabled ? 1 : 0.65,
       child: Row(
@@ -340,18 +474,18 @@ class GripperButtons extends StatelessWidget {
           Expanded(
             child: SizedBox(
               height: 72,
-              child: FilledButton.icon(
+              child: FilledButton(
                 onPressed: enabled ? onPickUp : null,
-                icon: const Icon(Icons.pan_tool_alt_outlined, size: 26),
-                label: const Text('PICK UP', maxLines: 1),
                 style: FilledButton.styleFrom(
                   backgroundColor: _pickUpGreen,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: _pickUpGreen,
                   disabledForegroundColor: Colors.white,
                   shape: shape,
+                  padding: padding,
                   textStyle: text,
                 ),
+                child: label(Icons.pan_tool_alt_outlined, 'PICK UP'),
               ),
             ),
           ),
@@ -359,18 +493,18 @@ class GripperButtons extends StatelessWidget {
           Expanded(
             child: SizedBox(
               height: 72,
-              child: OutlinedButton.icon(
+              child: OutlinedButton(
                 onPressed: enabled ? onRelease : null,
-                icon: const Icon(Icons.back_hand_outlined, size: 26),
-                label: const Text('RELEASE', maxLines: 1),
                 style: OutlinedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: _label,
                   disabledForegroundColor: _label,
                   side: const BorderSide(color: Color(0xFFD9D9D9)),
                   shape: shape,
+                  padding: padding,
                   textStyle: text,
                 ),
+                child: label(Icons.back_hand_outlined, 'RELEASE'),
               ),
             ),
           ),

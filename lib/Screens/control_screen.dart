@@ -368,7 +368,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
           historyButton: const HistoryPill(),
-          armHeight: ArmSlider(
+          armHeight: (compact) => ArmSlider(
+            compact: compact,
             label: 'UP/DOWN',
             sublabel: 'ARM HEIGHT',
             value: (robotState.elbowAngle / 180).clamp(0.0, 1.0),
@@ -377,7 +378,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
               if (_gate.servo('elbow', (value * 180).toInt())) notifier.setElbowAngle(value * 180);
             },
           ),
-          drivePad: DrivePad(
+          drivePad: (compact) => DrivePad(
+            compact: compact,
             speed: speed,
             enabled: isOperational,
             onForward: () => _gate.motor(speed.toInt(), speed.toInt()),
@@ -404,9 +406,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             onPickUp: () => _gate.servo('gripper', 100),
             onRelease: () => _gate.servo('gripper', 0),
           ),
-          speed: SpeedSlider(speed: speed, enabled: isOperational, onChanged: notifier.setPwmSpeed),
+          speed: (compact) => SpeedSlider(compact: compact, speed: speed, enabled: isOperational, onChanged: notifier.setPwmSpeed),
           stopButton: EmergencyStopButton(onStop: stop),
-          armReach: ArmSlider(
+          armReach: (compact) => ArmSlider(
+            compact: compact,
             label: 'FORWARD/BACKWARD',
             sublabel: 'ARM REACH',
             value: (robotState.baseAngle / 180).clamp(0.0, 1.0),

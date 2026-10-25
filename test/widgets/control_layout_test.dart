@@ -79,8 +79,9 @@ Future<void> _pump(WidgetTester tester, Size size, {_Quiz quiz = _Quiz.none, boo
             debugScanButton: ControlPill(icon: Icons.bug_report_outlined, label: 'Debug Scan', onTap: () => _tap('debug')),
             debugBuild: debugBuild,
             historyButton: const HistoryPill(),
-            armHeight: ArmSlider(label: 'UP/DOWN', sublabel: 'ARM HEIGHT', value: 0.2, enabled: true, onChanged: (_) => _tap('height')),
-            drivePad: DrivePad(
+            armHeight: (c) => ArmSlider(compact: c, label: 'UP/DOWN', sublabel: 'ARM HEIGHT', value: 0.2, enabled: true, onChanged: (_) => _tap('height')),
+            drivePad: (c) => DrivePad(
+              compact: c,
               speed: 75,
               enabled: true,
               onForward: () => _tap('forward'),
@@ -91,9 +92,9 @@ Future<void> _pump(WidgetTester tester, Size size, {_Quiz quiz = _Quiz.none, boo
             ),
             camera: const ColoredBox(color: Color(0xFFD9D9D9)),
             actions: GripperButtons(enabled: true, onPickUp: () => _tap('pick up'), onRelease: () => _tap('release')),
-            speed: SpeedSlider(speed: 75, enabled: true, onChanged: (_) => _tap('speed')),
+            speed: (c) => SpeedSlider(compact: c, speed: 75, enabled: true, onChanged: (_) => _tap('speed')),
             stopButton: EmergencyStopButton(onStop: () => _tap('stop')),
-            armReach: ArmSlider(label: 'FORWARD/BACKWARD', sublabel: 'ARM REACH', value: 0.3, enabled: true, onChanged: (_) => _tap('reach')),
+            armReach: (c) => ArmSlider(compact: c, label: 'FORWARD/BACKWARD', sublabel: 'ARM REACH', value: 0.3, enabled: true, onChanged: (_) => _tap('reach')),
             launcher: const QuizLauncherButton(),
             quiz: WasteQuizPopup(onStop: () => _tap('quiz stop'), showLauncher: false),
           ),
@@ -106,10 +107,12 @@ Future<void> _pump(WidgetTester tester, Size size, {_Quiz quiz = _Quiz.none, boo
 
 /// Scrolled into view, then on top at its centre: its own render object (or
 /// a descendant) is on the hit-test path there, not something covering it.
-Future<void> _expectTappable(WidgetTester tester, Finder finder, String what) async {
+Future<void> _expectTappable(WidgetTester tester, Finder finder, String what, {bool scroll = true}) async {
   expect(finder, findsOneWidget, reason: what);
-  await tester.ensureVisible(finder);
-  await tester.pump();
+  if (scroll) {
+    await tester.ensureVisible(finder);
+    await tester.pump();
+  }
   final target = tester.renderObject(finder);
   final hits = tester.hitTestOnBinding(tester.getCenter(finder)).path.map((e) => e.target).whereType<RenderObject>();
   bool inside(RenderObject r) {
@@ -180,6 +183,30 @@ void main() {
           if (_savePngs && quiz == _Quiz.minimised && !stopped) await _savePng(tester, name);
           expect(tester.takeException(), isNull);
           expect(find.textContaining('LIVE SCAN'), findsNothing, reason: 'the debug panel is off the screen');
+
+          // Above the fold, before any scrolling: STOP at every size (the quiz's own STOP while the
+          // quiz is open), and down to 770x553 the D-pad and both arm sliders too.
+          final screen = Offset.zero & size;
+          void onScreen(Finder f, String what) {
+            expect(f, findsOneWidget, reason: what);
+            final r = tester.getRect(f);
+            expect(screen.contains(r.topLeft) && screen.contains(r.bottomRight - const Offset(0.01, 0.01)), isTrue,
+                reason: '$what at $r is not fully on the ${size.width.toInt()}x${size.height.toInt()} screen');
+          }
+
+          if (quiz == _Quiz.open) {
+            onScreen(find.ancestor(of: find.descendant(of: find.byType(WasteQuizPopup), matching: find.text('STOP')), matching: find.byType(InkWell)).first, 'quiz-header STOP');
+          } else {
+            onScreen(find.byType(EmergencyStopButton), 'STOP');
+            await _expectTappable(tester, find.byType(EmergencyStopButton), 'STOP (unscrolled)', scroll: false);
+          }
+          if (size.width >= 770) { // 770x553, 800x632, 1024x768 and 1366x768
+            for (final key in [Icons.arrow_upward, Icons.arrow_back, Icons.hexagon_outlined, Icons.arrow_forward, Icons.arrow_downward]) {
+              onScreen(find.byIcon(key), 'D-pad $key');
+            }
+            onScreen(find.byType(ArmSlider).first, 'UP/DOWN slider');
+            onScreen(find.byType(ArmSlider).last, 'FORWARD/BACKWARD slider');
+          }
 
           if (stopped) await _tapOnce(tester, find.text('Lanjutkan'), 'resume');
 
