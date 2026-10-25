@@ -418,8 +418,12 @@ class SpeedSlider extends StatelessWidget {
               Row(
                 children: [
                   const Expanded(
-                    child: Text('Speed (PWM)', maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: _label, fontSize: 15, fontWeight: FontWeight.w500)),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text('Speed (PWM)', maxLines: 1,
+                          style: TextStyle(color: _label, fontSize: 15, fontWeight: FontWeight.w500)),
+                    ),
                   ),
                   Text('${speed.toInt()}%', style: const TextStyle(color: _armGreen, fontSize: 14, fontWeight: FontWeight.w700)),
                 ],

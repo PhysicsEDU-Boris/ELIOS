@@ -182,6 +182,8 @@ void main() {
           await _pump(tester, size, quiz: quiz, stopped: stopped);
           if (_savePngs && quiz == _Quiz.minimised && !stopped) await _savePng(tester, name);
           expect(tester.takeException(), isNull);
+          expect(tester.renderObject<RenderParagraph>(find.text('Speed (PWM)')).didExceedMaxLines, isFalse,
+              reason: 'the full speed label remains visible in compact controls');
           expect(find.textContaining('LIVE SCAN'), findsNothing, reason: 'the debug panel is off the screen');
 
           // Above the fold, before any scrolling: STOP at every size (the quiz's own STOP while the
