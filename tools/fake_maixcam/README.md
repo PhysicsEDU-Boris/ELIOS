@@ -161,6 +161,10 @@ the scenario loads.
 
 ## Heartbeat, watchdog and arm_moving (decision 0026)
 
+Every command the fake receives gets a log line. For example, `[WS] STOP seq=12 -> wheels 0,
+arm hold`, `[WS] heartbeat x4/s` (at most once a second) and `[WS] unknown cmd 'X'`. So after a
+reconnect you can read STOP and `motor left=0 right=0` coming first.
+
 - `{"cmd": "HEARTBEAT"}` (from the app, 4 Hz) is accepted, with no reply.
 - With no app message for 1 s, the fake logs `[Watchdog] no app message for 1 s: wheels 0 / arm
   hold` and holds J1 where it is. It logs `[Watchdog] app messages again` when they return.

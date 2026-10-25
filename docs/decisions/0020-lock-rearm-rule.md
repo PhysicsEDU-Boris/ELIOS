@@ -99,6 +99,10 @@ connection).
 
 The `link_restored` diagnostic event records the state and the forgotten labels.
 
+A link drop also puts the app into STOPPED ([0026](0026-emergency-stop-motion-gate.md)). Nothing
+locks until "Lanjutkan"; after it, a forgotten object still in view can be quizzed again once
+the cooldown is over (the cost accepted above).
+
 ## J1 guard (added 24 Oct, E1)
 
 Found with the fake MaixCAM2 (`j1_sweep_item_in_view`):
@@ -121,9 +125,9 @@ stabilizer neither locks nor re-arms, and no absence is counted for quizzed obje
   scene is the same, only the camera turned.
 - The stabilizer resumes through its frame-gap rule: a candidate from before the guard is
   dropped and has to hold 1 s again; a lock stays.
-- The overlay says "menunggu: lengan bergerak". The `arm_guard` and `arm_settled` events go to
-  the JSONL.
+- The overlay says "menunggu: lengan bergerak". The `arm_guard` and `analysis_resumed` events go
+  to the JSONL.
 - Code: `LiveScanController.onArmCommand` / `onDetections(armMoving:)`,
-  `LiveScanStateMachine.onArmSettled`.
+  `LiveScanStateMachine.onAnalysisResumed` (event `analysis_resumed`; STOPPED uses it too, 0026).
 
 This works with or without R1. R1's own lock-ignore during SORTING (0023) stays as it is.

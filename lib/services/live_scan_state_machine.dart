@@ -51,6 +51,7 @@ class BlockReason {
       'box_too_large' => 'menunggu: kotak terlalu besar (${objs()})',
       'below_min_score' => 'menunggu: skor di bawah 0.70 (${objs()})',
       'arm_moving' => 'menunggu: lengan bergerak',
+      'stopped' => 'menunggu: robot dihentikan (STOP)',
       _ => 'menunggu: $code',
     };
   }
@@ -249,17 +250,17 @@ class LiveScanStateMachine {
     return true;
   }
 
-  /// The J1 guard ended (decision 0020, "J1 guard"): no frames were analysed
-  /// while the arm moved the camera, so each quizzed object is found again by
-  /// its label (any position) and its absence restarts, like after a quiz.
+  /// Frames were not analysed for a while: the J1 guard (the arm moved the
+  /// camera, 0020) or STOPPED (0026). Each quizzed object is found again by its
+  /// label (any position) and its absence restarts, like after a quiz.
   /// Nothing is forgotten.
-  void onArmSettled() {
+  void onAnalysisResumed(String why) {
     for (final q in _quizzed) {
       q
         ..rebind = true
         ..missingSince = null;
     }
-    onEvent?.call('arm_settled', {'quizzed': quizzedLabels});
+    onEvent?.call('analysis_resumed', {'why': why, 'quizzed': quizzedLabels});
   }
 
   /// The link to the robot came back after a drop (decision 0020, "Link

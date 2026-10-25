@@ -465,3 +465,40 @@ def test_new_scenarios_load_without_timing_warnings():
     labels = fm.load_labels()
     for name in ("two_items", "two_same_class", "all_classes"):
         assert fm.load_scenario(fm.HERE / "scenarios" / f"{name}.yaml", labels)["warnings"] == [], name
+
+
+# ── E1b: every command logs a line ───────────────────────────────────────────
+
+@needs_sim
+def test_every_command_logs_a_line(tmp_path):
+    lines = []
+
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            await ws.send(json.dumps({"cmd": "STOP", "seq": 7}))
+            await ws.recv()  # its ack
+            await ws.send(json.dumps({"cmd": "motor", "left": 0, "right": 0}))
+            await ws.send(json.dumps({"cmd": "LOCK_DRIVE", "seq": 8}))
+            await ws.recv()
+            await ws.send(json.dumps({"cmd": "FLY", "seq": 9}))
+            await ws.recv()
+            await ws.send(json.dumps({"cmd": "DANCE"}))
+            await ws.send(json.dumps({"cmd": "ping"}))
+            await ws.recv()
+            for _ in range(10):  # 2.5 s at 4 Hz
+                await ws.send(json.dumps({"cmd": "HEARTBEAT"}))
+                await asyncio.sleep(0.25)
+            return list(lines)
+
+    out = run(tmp_path, {"items": [BOTTLE]}, body, log=lines.append)
+    assert "[WS] STOP seq=7 -> wheels 0, arm hold" in out
+    assert "[WS] motor left=0 right=0" in out, "motor lines unchanged"
+    assert out.index("[WS] STOP seq=7 -> wheels 0, arm hold") < out.index("[WS] motor left=0 right=0")
+    assert "[WS] LOCK_DRIVE seq=8" in out
+    assert "[WS] unknown cmd 'FLY' seq=9 -> error unknown_cmd" in out
+    assert "[WS] unknown cmd 'DANCE' (ignored)" in out
+    assert "[WS] ping -> pong" in out
+    beats = [l for l in out if l.startswith("[WS] heartbeat")]
+    assert 1 <= len(beats) <= 3, "once a second at most"
+    assert all(l in ("[WS] heartbeat x4/s", "[WS] heartbeat x3/s", "[WS] heartbeat x5/s") for l in beats), beats

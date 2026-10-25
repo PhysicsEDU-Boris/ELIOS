@@ -146,3 +146,15 @@ Tests: `test_make_crops.py`, plus the T1b section of `test_fake_maixcam.py`.
   - the owner's `all_classes`: nine classes, one at a time.
 - `two_items`' description now says a different label may lock after the cooldown even with the
   first item in view.
+
+## Amendment 24 Oct (E1b): a log line for every command
+
+So that "STOP first on reconnect" can be read in the log, not inferred, the fake now logs every
+command it receives:
+
+- `[WS] STOP seq=N -> wheels 0, arm hold`;
+- `[WS] <CMD> seq=N` for the other 0023 commands;
+- `[WS] heartbeat x4/s` (at most once a second);
+- `[WS] ping -> pong` and `[WS] disconnect -> disconnect_ack`;
+- `[WS] unknown cmd 'X' ...`;
+- motor and servo lines as before.

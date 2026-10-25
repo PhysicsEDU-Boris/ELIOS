@@ -1,6 +1,6 @@
 # Handoff
 
-- Base `feature/live-scan` at 09a1c87 (PRs up to #35 merged); E1 is on `feat/e1-emergency-stop`
+- Base `feature/live-scan` at 734e7a1 (PRs up to #36 merged); E1b is on `feat/e1b-stop-layout`
   (PR open). #24 stays a draft. Robot build: CLAUDE.md, launch with `open`, check `appCommit`.
 - Decisions: [0013](decisions/0013-quiz-answer-schema.md) MC schema,
   [0014](decisions/0014-module-chunks.md) module chunks, [0015](decisions/0015-question-bank-draft.md)
@@ -19,8 +19,8 @@
 
 - Built and tested on `SimulatedRobot` only. The app shows the link probe only (`--dart-define=R1=true`):
   today's firmware answers nothing, so "R1: robot tidak terhubung" and the live scan as before.
-- Waits on R1-fw and the M4 screens. E1: STOP works now but today's firmware ignores STOP/HEARTBEAT,
-  so it stops the wheels (motor 0,0) only; the arm keeps its last angles.
+- Waits on R1-fw and the M4 screens. E1/E1b: STOP sits in its own rail, pauses scanning; today's firmware
+  ignores STOP/HEARTBEAT, so it stops the wheels (motor 0,0) only; the arm keeps its last angles.
 - Fake MaixCAM2 (T1/T1b, `tools/fake_maixcam/` README): run `make_crops.py` once, app config
   `127.0.0.1:8765`; photo cards, occlusion, timing rule (events ≥ 25 s); 21 scenarios incl. `one_<label>`.
 
