@@ -28,10 +28,10 @@
   `arm_moving`) only after the ESP32 and Uno sketches exist. Later: arm bring-up, M4, R2, CI.
 - Quiz: the owner reviews the banks, then the accepted-filter task.
 
-## Tests (at 0b05c1f)
+## Tests (at cdcbf1a)
 
-- `flutter analyze` clean. `flutter test`: 395 pass, 2 fail (stale splash in `test/widget_test.dart`).
-- Fake's pytest 31 pass. Secret scan clean. Layout tests (32 cases) and break-checks pass.
+- `flutter analyze` clean. `flutter test`: 407 pass, 2 fail (stale splash in `test/widget_test.dart`).
+- Fake's pytest 31 pass. Secret scan clean. Layout tests (44 cases) and break-checks pass.
 
 ## Decisions
 
