@@ -64,17 +64,18 @@ class ControlLayout extends StatelessWidget {
   final Widget? stoppedBanner;
 
   static const wideMinWidth = 1100.0;
-  static const desktopMinWidth = 760.0;
+  static const desktopMinWidth = 700.0;
   static const cameraMaxWidth = 524.0;
   static const cameraMinWidth = 240.0;
 
   static const _pad = 16.0;
+  static const _padCompact = 8.0;
   static const _topBar = 48.0; // a pill row
-  static const _launcherHeight = 8 + 56.0;
 
   /// The least height each layout needs without scrolling.
-  static const _wideMinHeight = 2 * _pad + _topBar + 40 + 388 + _launcherHeight;
-  static const _desktopMinHeight = 2 * _pad + _topBar + 16 + ArmSlider.compactHeight + _launcherHeight;
+  static const _wideMinHeight = 2 * _pad + _topBar + 40 + 388 + 64.0;
+  static const _desktopMinHeight = 2 * _pad + _topBar + 16 + ArmSlider.compactHeight;
+  static const _landscapeShortMinHeight = 2 * _padCompact + 36.0 + 8.0 + ArmSlider.compactHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +94,6 @@ class ControlLayout extends StatelessWidget {
         ],
       ),
     );
-    final rightLauncher = Align(alignment: Alignment.centerRight, child: launcher);
 
     return Column(
       children: [
@@ -101,21 +101,27 @@ class ControlLayout extends StatelessWidget {
         Expanded(
           child: LayoutBuilder(builder: (context, viewport) {
             final width = viewport.maxWidth;
+            final isShort = viewport.maxHeight < 500;
+            final pad = isShort ? _padCompact : _pad;
             final Widget body;
             final bool pinStop;
             if (width >= desktopMinWidth) {
               final wide = width >= wideMinWidth;
               final compact = !wide;
-              final minHeight = wide ? _wideMinHeight : _desktopMinHeight;
+              final minHeight = wide
+                  ? _wideMinHeight
+                  : isShort
+                      ? _landscapeShortMinHeight
+                      : _desktopMinHeight;
               pinStop = viewport.maxHeight < minHeight;
               final gap = SizedBox(width: compact ? 8 : 16, height: compact ? 8 : 16);
               final speedColumn = Column(mainAxisSize: MainAxisSize.min, children: [
                 speed(compact),
-                if (!pinStop) ...[compact ? const SizedBox(height: 12) : gap, stopButton],
+                if (!pinStop) ...[compact ? const SizedBox(height: 8) : gap, stopButton],
               ]);
               final main = Column(children: [
                 topBar,
-                SizedBox(height: wide ? 40 : 16),
+                SizedBox(height: wide ? 40 : (isShort ? 8 : 16)),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,17 +140,15 @@ class ControlLayout extends StatelessWidget {
                     gap, speedColumn, gap, armReach(compact),
                   ],
                 ),
-                const Spacer(),
-                rightLauncher,
               ]);
               body = SizedBox(
-                height: (pinStop ? minHeight : viewport.maxHeight) - 2 * _pad,
+                height: (pinStop ? minHeight : viewport.maxHeight) - 2 * pad,
                 child: main,
               );
             } else {
-              // Phones: the page scrolls, so STOP is always pinned.
+              // Phones: the page scrolls, so STOP is always pinned bottom right.
               pinStop = true;
-              const gap = SizedBox(width: 16, height: 16);
+              const gap = SizedBox(width: 12, height: 12);
               body = Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -154,32 +158,37 @@ class ControlLayout extends StatelessWidget {
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: cameraMaxWidth),
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
-                        AspectRatio(aspectRatio: 4 / 3, child: camera),
-                        const SizedBox(height: 12),
+                        AspectRatio(aspectRatio: 16 / 9, child: camera),
+                        const SizedBox(height: 10),
                         actions,
                       ]),
                     ),
                   ),
-                  gap,
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 16,
-                    runSpacing: 16,
-                    children: [armHeight(false), drivePad(false), speed(false), armReach(false)],
+                  const SizedBox(height: 16),
+                  // Motion controls row: Arm Height, DrivePad, Arm Reach
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      armHeight(true),
+                      drivePad(true),
+                      armReach(true),
+                    ],
                   ),
-                  gap,
-                  rightLauncher,
+                  const SizedBox(height: 16),
+                  Center(child: speed(true)),
+                  const SizedBox(height: 24),
                 ],
               );
             }
             return Stack(
               children: [
                 SingleChildScrollView(
-                  // Room under the content for the pinned STOP.
-                  padding: EdgeInsets.fromLTRB(_pad, _pad, _pad, pinStop ? _pad + EmergencyStopButton.size + 16 : _pad),
+                  padding: EdgeInsets.fromLTRB(pad, pad, pad, pinStop ? pad + EmergencyStopButton.size + 16 : pad),
                   child: body,
                 ),
-                if (pinStop) Positioned(right: _pad, bottom: _pad, child: stopButton),
+                if (pinStop) Positioned(right: pad, bottom: pad, child: stopButton),
+                Positioned(right: pad, bottom: pinStop ? pad + EmergencyStopButton.size + 8 : pad, child: launcher),
                 quiz,
               ],
             );
