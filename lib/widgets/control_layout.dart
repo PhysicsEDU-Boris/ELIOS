@@ -12,15 +12,15 @@ const _armGreen = Color(0xFF5DB89C);
 const _pickUpGreen = Color(0xFF6CC1A6);
 const _stopRed = Color(0xFFD32F2F);
 
-/// Builds a control at full size or compact (the two-column layout).
+/// Builds a control at full size or compact.
 typedef ControlBuilder = Widget Function(bool compact);
 
 /// The Control screen (decisions 0026, U1).
 ///
-/// - Wide (from [wideMinWidth]): one row, as in Figma 43:30.
-/// - Two columns (from [twoColumnMinWidth]): camera + PICK UP / RELEASE on the
-///   left, sized from the space the compact controls leave; the controls on
-///   the right. At 770x553 everything fits on one screen.
+/// - Desktop (from [desktopMinWidth]): one row, as in Figma 43:30. Arm height
+///   and D-pad on the left, camera and gripper in the center, speed + STOP and
+///   arm reach on the right. Down to 770x553 everything fits on one screen
+///   without scrolling using compact controls.
 /// - Stacked (phones): camera on top, the controls wrap below, the page scrolls.
 ///
 /// Scrolling is the last fallback. Whenever the page can scroll, STOP is
@@ -64,30 +64,20 @@ class ControlLayout extends StatelessWidget {
   final Widget? stoppedBanner;
 
   static const wideMinWidth = 1100.0;
+  static const desktopMinWidth = 760.0;
   static const cameraMaxWidth = 524.0;
   static const cameraMinWidth = 240.0;
 
-  /// Compact controls (90 + 176 + 74 + 90 + gaps) + the smallest camera + gaps.
-  static const _controlsWidth = 90 + 8 + 176 + 8 + 74 + 8 + 90.0;
-  static const twoColumnMinWidth = 2 * _pad + _controlsWidth + 16 + cameraMinWidth;
-
-  /// Full-size controls (74 + 212 + 74 + 130 + gaps) fit beside the smallest camera.
-  static const _fullControlsWidth = 74 + 8 + 212 + 8 + 74 + 8 + 130.0;
-
   static const _pad = 16.0;
   static const _topBar = 48.0; // a pill row
-  static const _actionsHeight = 72.0;
-  static const _launcherHeight = 8 + 102.0;
+  static const _launcherHeight = 8 + 56.0;
 
   /// The least height each layout needs without scrolling.
   static const _wideMinHeight = 2 * _pad + _topBar + 40 + 388 + _launcherHeight;
-  static const _twoColumnMinHeight = 2 * _pad + _topBar + 16 + ArmSlider.compactHeight + _launcherHeight;
-  static const _twoColumnFullMinHeight = 2 * _pad + _topBar + 16 + 388 + _launcherHeight;
+  static const _desktopMinHeight = 2 * _pad + _topBar + 16 + ArmSlider.compactHeight + _launcherHeight;
 
   @override
   Widget build(BuildContext context) {
-    const gap = SizedBox(width: 16, height: 16);
-    const gap8 = SizedBox(width: 8, height: 8);
     final topBar = SizedBox(
       width: double.infinity,
       child: Wrap(
@@ -113,87 +103,40 @@ class ControlLayout extends StatelessWidget {
             final width = viewport.maxWidth;
             final Widget body;
             final bool pinStop;
-            if (width >= wideMinWidth || width >= twoColumnMinWidth) {
+            if (width >= desktopMinWidth) {
               final wide = width >= wideMinWidth;
-              // Two columns: full-size controls when they fit (1024x768), compact otherwise (770x553).
-              final compact = !wide &&
-                  (width < 2 * _pad + _fullControlsWidth + 16 + cameraMinWidth ||
-                      viewport.maxHeight < _twoColumnFullMinHeight);
-              final minHeight = wide ? _wideMinHeight : compact ? _twoColumnMinHeight : _twoColumnFullMinHeight;
+              final compact = !wide;
+              final minHeight = wide ? _wideMinHeight : _desktopMinHeight;
               pinStop = viewport.maxHeight < minHeight;
+              final gap = SizedBox(width: compact ? 8 : 16, height: compact ? 8 : 16);
               final speedColumn = Column(mainAxisSize: MainAxisSize.min, children: [
                 speed(compact),
                 if (!pinStop) ...[compact ? const SizedBox(height: 12) : gap, stopButton],
               ]);
-              final Widget main;
-              if (wide) {
-                main = Column(children: [
-                  topBar,
-                  const SizedBox(height: 40),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      armHeight(false), gap, drivePad(false), gap,
-                      Flexible(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: cameraMaxWidth),
-                          child: Column(mainAxisSize: MainAxisSize.min, children: [
-                            AspectRatio(aspectRatio: cameraMaxWidth / 300, child: camera),
-                            gap,
-                            actions,
-                          ]),
-                        ),
+              final main = Column(children: [
+                topBar,
+                SizedBox(height: wide ? 40 : 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    armHeight(compact), gap, drivePad(compact), gap,
+                    Flexible(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: cameraMaxWidth),
+                        child: Column(mainAxisSize: MainAxisSize.min, children: [
+                          AspectRatio(aspectRatio: cameraMaxWidth / 300, child: camera),
+                          gap,
+                          actions,
+                        ]),
                       ),
-                      gap, speedColumn, gap, armReach(false),
-                    ],
-                  ),
-                  const Spacer(),
-                  rightLauncher,
-                ]);
-              } else {
-                main = Column(children: [
-                  topBar,
-                  gap,
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // The camera takes what the controls leave: 4:3, width- or height-bound.
-                        Expanded(
-                          child: LayoutBuilder(builder: (context, left) {
-                            final byHeight = (left.maxHeight - 12 - _actionsHeight) * 4 / 3;
-                            final w = [left.maxWidth, byHeight, cameraMaxWidth].reduce((a, b) => a < b ? a : b);
-                            return Align(
-                              alignment: Alignment.topCenter,
-                              child: SizedBox(
-                                width: w < cameraMinWidth ? cameraMinWidth : w,
-                                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                                  AspectRatio(aspectRatio: 4 / 3, child: camera),
-                                  const SizedBox(height: 12),
-                                  actions,
-                                ]),
-                              ),
-                            );
-                          }),
-                        ),
-                        gap,
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [armHeight(compact), gap8, drivePad(compact), gap8, speedColumn, gap8, armReach(compact)],
-                            ),
-                            const Spacer(),
-                            launcher,
-                          ],
-                        ),
-                      ],
                     ),
-                  ),
-                ]);
-              }
+                    gap, speedColumn, gap, armReach(compact),
+                  ],
+                ),
+                const Spacer(),
+                rightLauncher,
+              ]);
               body = SizedBox(
                 height: (pinStop ? minHeight : viewport.maxHeight) - 2 * _pad,
                 child: main,
@@ -201,6 +144,7 @@ class ControlLayout extends StatelessWidget {
             } else {
               // Phones: the page scrolls, so STOP is always pinned.
               pinStop = true;
+              const gap = SizedBox(width: 16, height: 16);
               body = Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
