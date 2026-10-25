@@ -29,11 +29,10 @@
   `arm_moving`) only after the ESP32 and Uno sketches exist. Later: arm bring-up, M4, R2, CI.
 - Quiz: the owner reviews the banks, then the accepted-filter task.
 
-## Tests (at a392ba6)
+## Tests (at f1c5567)
 
-- `flutter analyze` is clean. `flutter test` gives 395 passed and **2 failed**: the known-stale
-  splash tests in `test/widget_test.dart`.
-- Fake's pytest 31 pass and the macOS robot build compiles (both at b9fbaa8). Secret scan clean.
+- `flutter analyze` clean. `flutter test`: 395 pass, 2 fail (stale splash in `test/widget_test.dart`).
+- Fake's pytest 31 pass. Secret scan clean. Layout tests (32 cases) and break-checks pass.
 
 ## Decisions
 
