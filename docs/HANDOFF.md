@@ -2,9 +2,9 @@
 
 ## Where things stand
 
-- Branch `feat/u1-control-layout` (from `feature/live-scan` at 650752e): U1 done at b9fbaa8,
+- Branch `feat/u1-control-layout` (from `feature/live-scan` at 650752e): U1 + the fold fix,
   **not pushed, no PR yet**. PRs #31-#37 are merged; #24 (grounded quiz) stays a draft.
-- Never commit the Xcode scheme, `Maixcam.txt` or `docs/module/`. Robot build: CLAUDE.md; check `appCommit` in the JSONL.
+- Never commit the Xcode scheme, `Maixcam.txt`, `docs/module/`. Robot build: see CLAUDE.md.
 
 ## Done (24-25 Oct, PRs #31-#37)
 
@@ -16,25 +16,24 @@
 
 ## In progress
 
-- U1 fix (before the PR): STOP and the controls above the fold at 770x553 / 390x844.
+- Nothing open. U1 fold fix done (STOP above the fold at every size); next: push + PR.
 
 ## Not done / next step
 
-- **U1 (done, needs push + PR):** Control screen = Figma 43:30. Wide one row; under 1100 px camera
-  on top; scrolls when short. STOP 74 px under the speed slider + a STOP pill in the quiz header.
-  Leaf reopens a minimised quiz. Debug items in the Debug Scan side sheet (debug builds only).
-  PNGs in `docs/test-results/u1-control-layout/` (`U1_PNG=true`). Trophy count: placeholder (U5).
+- **U1 (done, needs push + PR):** Control screen = Figma 43:30. Wide one row; under 1100 px the
+  camera left of the controls (all on one screen at 770x553); phones scroll with STOP pinned.
+  STOP under the speed slider + in the quiz header. Leaf reopens a minimised quiz. Debug items in
+  a side sheet (debug only). PNGs: `docs/test-results/u1-control-layout/`. Trophies: placeholder.
 - Next, in order: **L1** (the fake behaves like the real robot; Notion "Robot link plan"), then
   **L0b** (serial protocol), then **L5 + U2**. R1-fw (`main.py`: HEARTBEAT, 1 s watchdog, STOP,
   `arm_moving`) only after the ESP32 and Uno sketches exist. Later: arm bring-up, M4, R2, CI.
 - Quiz: the owner reviews the banks, then the accepted-filter task.
 
-## Tests (at b9fbaa8)
+## Tests (at a392ba6)
 
 - `flutter analyze` is clean. `flutter test` gives 395 passed and **2 failed**: the known-stale
   splash tests in `test/widget_test.dart`.
-- The fake's pytest: 31 pass (needs `ROBOTIC_HAND_SIM` or the sim next to the repo).
-- `scripts/check-secrets.sh` is clean. The macOS robot build compiles (at b9fbaa8).
+- Fake's pytest 31 pass and the macOS robot build compiles (both at b9fbaa8). Secret scan clean.
 
 ## Decisions
 
@@ -47,14 +46,14 @@
 
 ## Test on the robot
 
-- U1: resize the window (wide, 770x553, narrow): nothing cut off, the page scrolls. STOP under
-  the speed slider, the quiz-header STOP, Escape and space all stop; Debug Scan opens the sheet.
+- U1: at 770x553 STOP, D-pad and sliders show without scrolling; a very short window pins STOP
+  bottom right. The quiz-header STOP, Escape and space stop too; Debug Scan opens the sheet.
 - STOP (button, Escape, space) stops the **wheels only**: today's firmware ignores STOP and
   HEARTBEAT, so the arm keeps its last angles. **Before any arm test near people:** R1-fw, the
   sketch watchdogs, and a physical e-stop.
 - Link loss: STOPPED, and STOP + motor 0,0 first on the reconnect. No new quiz until
   "Lanjutkan"; an open quiz stays usable.
-- J1 guard: move the arm-reach slider with a quizzed object in view; no second quiz.
+- J1 guard: move the arm-reach slider with a quizzed object in view; no second quiz. R1=true:
+  "R1: robot tidak terhubung" with today's firmware.
 - M2d re-arm checks (not run yet): a bottle locks 15 s after a quiz while the quizzed peel stays
   in view; same-label objects wait 2 s; check `livescan-*.jsonl`.
-- `--dart-define=R1=true` should show "R1: robot tidak terhubung" with today's firmware.

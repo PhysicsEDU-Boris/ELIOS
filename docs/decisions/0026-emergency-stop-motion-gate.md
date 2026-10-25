@@ -150,11 +150,16 @@ The Control screen now follows Figma 43:30 (file `J2jSbARJSyJCStNFeWkWDj`); E1b'
   compact red STOP pill next to minimise and X. It calls the same emergency stop.
 - The STOPPED strip and "Lanjutkan" are unchanged: a full-width strip on top of everything,
   the quiz included.
-- **No clipping:** wide (1100 px and up) is one row; narrower puts the camera on top and the
-  controls below (wrapping on a phone); the whole screen scrolls when short. The leaf button
-  that reopens a minimised quiz sits in that flow at the bottom right, so it covers nothing.
+- **STOP is never below the fold.** Wide (1100 px and up) is one row. From 734 px: the camera
+  (4:3, at least 240 px wide, sized from the space the controls leave) with PICK UP / RELEASE on
+  the left, the controls on the right (compact at 770x553, full size at 1024x768); at 770x553
+  everything fits on one screen, STOPPED strip included. Phones stack and scroll. Scrolling is
+  the last fallback, and **whenever the page can scroll, STOP is pinned bottom right** instead
+  of under the speed slider. The leaf button sits in the flow at the bottom right.
 - **Debug items** leave the screen: in debug builds only, "Debug Scan" opens a side sheet with
   the live-scan readout, the bank/Gemma switch, "Reset scan (debug)" (was "Scan lagi") and the
   phone-camera scan. Release builds show none of it.
 - Tested at 1366x768, 1024x768, 800x632, 770x553 and 390x844, with no quiz, a quiz open or
-  minimised, each with and without STOPPED (`test/widgets/control_layout_test.dart`).
+  minimised, each with and without STOPPED (`test/widgets/control_layout_test.dart`): STOP (or
+  the quiz's STOP) is on screen before any scrolling; from 770x553 up also the D-pad and both arm
+  sliders.

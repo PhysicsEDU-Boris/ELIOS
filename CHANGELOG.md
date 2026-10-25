@@ -105,7 +105,8 @@ kept outside the repo.
 - U1: the Control screen follows Figma 43:30 (decision 0026 amendment): Exit, Debug Scan (debug
   builds) and History (placeholder trophy count) on top; arm height, D-pad, camera with PICK UP /
   RELEASE, the vertical speed slider with STOP under it, arm reach. Under 1100 px the camera
-  goes on top; short windows scroll, nothing is cut off. The quiz header has its own STOP. The
+  (4:3) sits left of the controls and takes the space they leave; at 770x553 everything fits on
+  one screen. Phones and windows that must scroll pin STOP bottom right. The quiz header has its own STOP. The
   ELIO leaf reopens a minimised quiz (was "Kuis AI"). The debug panel moved to the Debug Scan
   side sheet; "Scan lagi" is now "Reset scan (debug)".
 - The control screen's D-pad, sliders and gripper buttons no longer send directly; the
