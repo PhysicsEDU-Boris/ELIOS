@@ -33,9 +33,11 @@ class DrivePad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isShort = MediaQuery.maybeSizeOf(context)?.height != null && MediaQuery.sizeOf(context).height < 500;
+    final buttonSize = isShort ? 48.0 : (compact ? 56.0 : 68.0);
     Widget button(IconData icon, VoidCallback onPressed, {bool isStop = false}) =>
-        _DpadButton(icon: icon, onPressed: onPressed, onReleased: onStop, isStop: isStop, size: compact ? 56 : 68);
-    final rowGap = SizedBox(height: compact ? 4 : 12);
+        _DpadButton(icon: icon, onPressed: onPressed, onReleased: onStop, isStop: isStop, size: buttonSize);
+    final rowGap = SizedBox(height: isShort ? 3 : (compact ? 4 : 12));
     return Opacity(
       opacity: enabled ? 1 : 0.65,
       child: AbsorbPointer(
@@ -46,11 +48,16 @@ class DrivePad extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'DRIVE CONTROLS',
-                style: TextStyle(color: _label, fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.68),
+                style: TextStyle(
+                  color: _label,
+                  fontSize: isShort ? 11 : 14,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: isShort ? 1.2 : 1.68,
+                ),
               ),
-              SizedBox(height: compact ? 8 : 14),
+              SizedBox(height: isShort ? 4 : (compact ? 8 : 14)),
               button(Icons.arrow_upward, onForward),
               rowGap,
               Row(
@@ -65,10 +72,15 @@ class DrivePad extends StatelessWidget {
               ),
               rowGap,
               button(Icons.arrow_downward, onBack),
-              SizedBox(height: compact ? 8 : 14),
+              SizedBox(height: isShort ? 4 : (compact ? 8 : 14)),
               Text(
                 '${speed.toInt()}% PWM',
-                style: const TextStyle(color: _textSecondary, fontSize: 12, fontWeight: FontWeight.w500, letterSpacing: 0.48),
+                style: TextStyle(
+                  color: _textSecondary,
+                  fontSize: isShort ? 10 : 12,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.48,
+                ),
               ),
             ],
           ),

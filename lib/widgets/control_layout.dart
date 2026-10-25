@@ -64,7 +64,7 @@ class ControlLayout extends StatelessWidget {
   final Widget? stoppedBanner;
 
   static const wideMinWidth = 1100.0;
-  static const desktopMinWidth = 700.0;
+  static const desktopMinWidth = 600.0;
   static const cameraMaxWidth = 524.0;
   static const cameraMinWidth = 240.0;
 
@@ -75,7 +75,7 @@ class ControlLayout extends StatelessWidget {
   /// The least height each layout needs without scrolling.
   static const _wideMinHeight = 2 * _pad + _topBar + 40 + 388 + 64.0;
   static const _desktopMinHeight = 2 * _pad + _topBar + 16 + ArmSlider.compactHeight;
-  static const _landscapeShortMinHeight = 2 * _padCompact + 36.0 + 8.0 + ArmSlider.compactHeight;
+  static const _landscapeShortMinHeight = 2 * _padCompact + 32.0 + 6.0 + ArmSlider.compactShortHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -114,14 +114,14 @@ class ControlLayout extends StatelessWidget {
                       ? _landscapeShortMinHeight
                       : _desktopMinHeight;
               pinStop = viewport.maxHeight < minHeight;
-              final gap = SizedBox(width: compact ? 8 : 16, height: compact ? 8 : 16);
+              final gap = SizedBox(width: isShort ? 6 : (compact ? 8 : 16), height: isShort ? 6 : (compact ? 8 : 16));
               final speedColumn = Column(mainAxisSize: MainAxisSize.min, children: [
                 speed(compact),
-                if (!pinStop) ...[compact ? const SizedBox(height: 8) : gap, stopButton],
+                if (!pinStop) ...[gap, stopButton],
               ]);
               final main = Column(children: [
                 topBar,
-                SizedBox(height: wide ? 40 : (isShort ? 8 : 16)),
+                SizedBox(height: wide ? 40 : (isShort ? 6 : 16)),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,9 +129,17 @@ class ControlLayout extends StatelessWidget {
                     armHeight(compact), gap, drivePad(compact), gap,
                     Flexible(
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: cameraMaxWidth),
+                        constraints: BoxConstraints(
+                          maxWidth: isShort ? 360 : cameraMaxWidth,
+                          maxHeight: isShort ? 220 : 388,
+                        ),
                         child: Column(mainAxisSize: MainAxisSize.min, children: [
-                          AspectRatio(aspectRatio: cameraMaxWidth / 300, child: camera),
+                          Flexible(
+                            child: AspectRatio(
+                              aspectRatio: isShort ? 16 / 9 : (cameraMaxWidth / 300),
+                              child: camera,
+                            ),
+                          ),
                           gap,
                           actions,
                         ]),
@@ -146,7 +154,7 @@ class ControlLayout extends StatelessWidget {
                 child: main,
               );
             } else {
-              // Phones: the page scrolls, so STOP is always pinned bottom right.
+              // Narrow portrait: stacked fallback with pinned STOP.
               pinStop = true;
               const gap = SizedBox(width: 12, height: 12);
               body = Column(
@@ -165,15 +173,20 @@ class ControlLayout extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Motion controls row: Arm Height, DrivePad, Arm Reach
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      armHeight(true),
-                      drivePad(true),
-                      armReach(true),
-                    ],
+                  // Motion controls row: Arm Height, DrivePad, Arm Reach, scaled to never overflow
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        armHeight(true),
+                        const SizedBox(width: 8),
+                        drivePad(true),
+                        const SizedBox(width: 8),
+                        armReach(true),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Center(child: speed(true)),
@@ -210,6 +223,12 @@ class ControlPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isShort = MediaQuery.maybeSizeOf(context)?.height != null && MediaQuery.sizeOf(context).height < 500;
+    final fontSize = isShort ? 13.0 : 16.0;
+    final iconSize = isShort ? 16.0 : 20.0;
+    final padVert = isShort ? 6.0 : (trailing == null ? 12.0 : 8.0);
+    final padLeft = isShort ? 14.0 : 20.0;
+    final padRight = isShort ? 14.0 : (trailing == null ? 24.0 : 10.0);
     return Material(
       color: _pillFill,
       elevation: 2,
@@ -219,14 +238,14 @@ class ControlPill extends StatelessWidget {
         onTap: onTap,
         customBorder: const StadiumBorder(),
         child: Padding(
-          padding: EdgeInsets.fromLTRB(20, trailing == null ? 12 : 8, trailing == null ? 24 : 10, trailing == null ? 12 : 8),
+          padding: EdgeInsets.fromLTRB(padLeft, padVert, padRight, padVert),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 20, color: _ink),
-              const SizedBox(width: 8),
-              Text(label, maxLines: 1, style: const TextStyle(color: _ink, fontSize: 16, fontWeight: FontWeight.w600)),
-              if (trailing != null) ...[const SizedBox(width: 8), trailing!],
+              Icon(icon, size: iconSize, color: _ink),
+              const SizedBox(width: 6),
+              Text(label, maxLines: 1, style: TextStyle(color: _ink, fontSize: fontSize, fontWeight: FontWeight.w600)),
+              if (trailing != null) ...[const SizedBox(width: 6), trailing!],
             ],
           ),
         ),
@@ -289,30 +308,37 @@ class ArmSlider extends StatelessWidget {
   final bool compact;
 
   static const compactHeight = 32 + 6 + 12 + 6 + 220.0;
+  static const compactShortHeight = 26 + 3 + 10 + 3 + 180.0;
 
   @override
   Widget build(BuildContext context) {
-    const style = TextStyle(color: _label, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.96);
+    final isShort = MediaQuery.maybeSizeOf(context)?.height != null && MediaQuery.sizeOf(context).height < 500;
+    final trackHeight = isShort ? 180.0 : (compact ? 220.0 : 340.0);
+    final sliderWidth = isShort ? 66.0 : 74.0;
+    final gap = isShort ? 3.0 : (compact ? 6.0 : 10.0);
+    final style = TextStyle(color: _label, fontSize: isShort ? 10.5 : 12, fontWeight: FontWeight.w700, letterSpacing: isShort ? 0.7 : 0.96);
+    final subStyle = TextStyle(color: _subLabel, fontSize: isShort ? 9.0 : 10.0, fontWeight: FontWeight.w500, letterSpacing: 0.8);
+
     return Opacity(
       opacity: enabled ? 1 : 0.70,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (compact)
+          if (compact || isShort)
             SizedBox(
-              width: 90,
-              height: 32,
+              width: isShort ? 80 : 90,
+              height: isShort ? 26 : 32,
               // May break after "/" (zero-width space): "FORWARD/" over "BACKWARD".
               child: Center(child: Text(label.replaceAll('/', '/\u200B'), maxLines: 2, textAlign: TextAlign.center, style: style)),
             )
           else
             Text(label, maxLines: 1, style: style),
-          SizedBox(height: compact ? 6 : 10),
-          Text(sublabel, maxLines: 1, style: const TextStyle(color: _subLabel, fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 0.8)),
-          SizedBox(height: compact ? 6 : 10),
+          SizedBox(height: gap),
+          Text(sublabel, maxLines: 1, style: subStyle),
+          SizedBox(height: gap),
           Container(
-            width: 74,
-            height: compact ? 220 : 340,
+            width: sliderWidth,
+            height: trackHeight,
             decoration: BoxDecoration(
               color: _armGreen,
               borderRadius: BorderRadius.circular(12),
@@ -352,14 +378,17 @@ class SpeedSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isShort = MediaQuery.maybeSizeOf(context)?.height != null && MediaQuery.sizeOf(context).height < 500;
+    final cardWidth = isShort ? 140.0 : (compact ? 160.0 : 222.0);
+    final cardHeight = isShort ? 66.0 : 74.0;
     return Opacity(
       opacity: enabled ? 1 : 0.70,
       child: RotatedBox(
         quarterTurns: 3,
         child: Container(
-          width: compact ? 160 : 222,
-          height: 74,
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          width: cardWidth,
+          height: cardHeight,
+          padding: EdgeInsets.fromLTRB(isShort ? 10 : 16, isShort ? 6 : 10, isShort ? 10 : 16, isShort ? 2 : 4),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
@@ -378,18 +407,18 @@ class SpeedSlider extends StatelessWidget {
                           style: TextStyle(color: _label, fontSize: 15, fontWeight: FontWeight.w500)),
                     ),
                   ),
-                  Text('${speed.toInt()}%', style: const TextStyle(color: _armGreen, fontSize: 14, fontWeight: FontWeight.w700)),
+                  Text('${speed.toInt()}%', style: TextStyle(color: _armGreen, fontSize: isShort ? 12 : 14, fontWeight: FontWeight.w700)),
                 ],
               ),
               Expanded(
                 child: SliderTheme(
-                  data: const SliderThemeData(
-                    activeTrackColor: Color(0xFFC8C8C8),
-                    inactiveTrackColor: Color(0xFFECECEC),
-                    trackHeight: 6,
+                  data: SliderThemeData(
+                    activeTrackColor: const Color(0xFFC8C8C8),
+                    inactiveTrackColor: const Color(0xFFECECEC),
+                    trackHeight: isShort ? 4 : 6,
                     thumbColor: Colors.white,
-                    thumbShape: RoundSliderThumbShape(enabledThumbRadius: 12, elevation: 2),
-                    overlayShape: RoundSliderOverlayShape(overlayRadius: 16),
+                    thumbShape: RoundSliderThumbShape(enabledThumbRadius: isShort ? 10 : 12, elevation: 2),
+                    overlayShape: RoundSliderOverlayShape(overlayRadius: isShort ? 14 : 16),
                   ),
                   child: Slider(value: speed.clamp(0, 100), max: 100, onChanged: enabled ? onChanged : null),
                 ),
@@ -413,14 +442,17 @@ class GripperButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const text = TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: 1.44);
+    final isShort = MediaQuery.maybeSizeOf(context)?.height != null && MediaQuery.sizeOf(context).height < 500;
+    final btnHeight = isShort ? 48.0 : 72.0;
+    final text = TextStyle(fontSize: isShort ? 14 : 18, fontWeight: FontWeight.w700, letterSpacing: isShort ? 1.0 : 1.44);
+    final iconSize = isShort ? 20.0 : 26.0;
     final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(12));
-    const padding = EdgeInsets.symmetric(horizontal: 10);
+    final padding = EdgeInsets.symmetric(horizontal: isShort ? 6 : 10);
     Widget label(IconData icon, String text) => FittedBox(
           fit: BoxFit.scaleDown,
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, size: 26),
-            const SizedBox(width: 10),
+            Icon(icon, size: iconSize),
+            SizedBox(width: isShort ? 6 : 10),
             Text(text, maxLines: 1),
           ]),
         );
@@ -430,7 +462,7 @@ class GripperButtons extends StatelessWidget {
         children: [
           Expanded(
             child: SizedBox(
-              height: 72,
+              height: btnHeight,
               child: FilledButton(
                 onPressed: enabled ? onPickUp : null,
                 style: FilledButton.styleFrom(
@@ -446,10 +478,10 @@ class GripperButtons extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: isShort ? 8 : 16),
           Expanded(
             child: SizedBox(
-              height: 72,
+              height: btnHeight,
               child: OutlinedButton(
                 onPressed: enabled ? onRelease : null,
                 style: OutlinedButton.styleFrom(
@@ -482,12 +514,14 @@ class EmergencyStopButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isShort = MediaQuery.maybeSizeOf(context)?.height != null && MediaQuery.sizeOf(context).height < 500;
+    final btnSize = isShort ? 64.0 : size;
     final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(12));
     return Semantics(
       button: true,
       label: 'Berhenti darurat',
       child: SizedBox.square(
-        dimension: size,
+        dimension: btnSize,
         child: Material(
           color: _stopRed,
           shape: shape,
@@ -496,9 +530,9 @@ class EmergencyStopButton extends StatelessWidget {
             customBorder: shape,
             onTap: onStop,
             // Scaled down, never wrapped, in whatever font the device has.
-            child: const Padding(
-              padding: EdgeInsets.all(10),
-              child: FittedBox(
+            child: Padding(
+              padding: EdgeInsets.all(isShort ? 8 : 10),
+              child: const FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   'STOP',
@@ -531,30 +565,34 @@ class StoppedBanner extends StatelessWidget {
       'error' => 'robot error',
       _ => reason ?? '-',
     };
+    final isShort = MediaQuery.maybeSizeOf(context)?.height != null && MediaQuery.sizeOf(context).height < 500;
     return Material(
       color: const Color(0xFFD32F2F),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: isShort ? 4 : 6),
         child: Row(
           children: [
-            const Icon(Icons.pan_tool_rounded, color: Colors.white),
-            const SizedBox(width: 10),
+            Icon(Icons.pan_tool_rounded, color: Colors.white, size: isShort ? 18 : 24),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
                 'ROBOT DIHENTIKAN ($why). Pemindaian berhenti; kuis yang terbuka tetap bisa dijawab.',
-                maxLines: 2,
+                maxLines: isShort ? 1 : 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: isShort ? 11.5 : 14),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             OutlinedButton(
               onPressed: onResume,
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
                 side: const BorderSide(color: Colors.white),
+                padding: EdgeInsets.symmetric(horizontal: isShort ? 8 : 16, vertical: isShort ? 4 : 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text('Lanjutkan'),
+              child: Text('Lanjutkan', style: TextStyle(fontSize: isShort ? 12 : 14)),
             ),
           ],
         ),

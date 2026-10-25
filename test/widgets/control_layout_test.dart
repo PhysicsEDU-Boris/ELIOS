@@ -46,6 +46,8 @@ const _sizes = {
   '1024x768': Size(1024, 768),
   '800x632': Size(800, 632),
   '770x553': Size(770, 553), // the owner's Mac window
+  '844x390': Size(844, 390), // phone landscape (iPhone / modern Android)
+  '800x360': Size(800, 360), // Android compact landscape (Figma 52:52)
   '390x844': Size(390, 844), // phone portrait
 };
 
