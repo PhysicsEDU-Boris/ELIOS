@@ -20,8 +20,8 @@
 
 ## Not done / next step
 
-- **U1 (done, needs push + PR):** Control screen = Figma 43:30. Wide one row; under 1100 px the
-  camera left of the controls (all on one screen at 770x553); phones scroll with STOP pinned.
+- **U1 (done, needs push + PR):** Control screen = Figma 43:30. Desktop 1-row down to 770x553
+  (camera centered, controls flanked, compact < 1100 px); phones scroll with STOP pinned.
   STOP under the speed slider + in the quiz header. Leaf reopens a minimised quiz. Debug items in
   a side sheet (debug only). PNGs: `docs/test-results/u1-control-layout/`. Trophies: placeholder.
 - Next, in order: **L1** (the fake behaves like the real robot; Notion "Robot link plan"), then
@@ -29,7 +29,7 @@
   `arm_moving`) only after the ESP32 and Uno sketches exist. Later: arm bring-up, M4, R2, CI.
 - Quiz: the owner reviews the banks, then the accepted-filter task.
 
-## Tests (at f1c5567)
+## Tests (at edf317b)
 
 - `flutter analyze` clean. `flutter test`: 395 pass, 2 fail (stale splash in `test/widget_test.dart`).
 - Fake's pytest 31 pass. Secret scan clean. Layout tests (32 cases) and break-checks pass.
