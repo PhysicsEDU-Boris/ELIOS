@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../models/chat_message.dart';
@@ -29,7 +30,15 @@ String questionSourceHeader(WasteQuizUiState state) {
 }
 
 class WasteQuizPopup extends ConsumerWidget {
-  const WasteQuizPopup({super.key});
+  const WasteQuizPopup({super.key, this.onStop, this.showLauncher = true});
+
+  /// The emergency stop, as a STOP pill in the header (decision 0026): the
+  /// open quiz covers the screen's own STOP.
+  final VoidCallback? onStop;
+
+  /// The leaf button that reopens a minimised quiz, bottom right. The Control
+  /// screen places its own [QuizLauncherButton] in its layout instead.
+  final bool showLauncher;
 
   static const twoPaneMinWidth = 600.0;
 
@@ -55,7 +64,7 @@ class WasteQuizPopup extends ConsumerWidget {
                     child: Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 1100, maxHeight: 720),
-                        child: active ? SizedBox.expand(child: _QuizCard(state: state)) : null,
+                        child: active ? SizedBox.expand(child: _QuizCard(state: state, onStop: onStop)) : null,
                       ),
                     ),
                   ),
@@ -64,32 +73,96 @@ class WasteQuizPopup extends ConsumerWidget {
             ),
           ),
         ),
-        if (active && state.minimized)
-          Positioned(right: 16, bottom: 16, child: SafeArea(child: _MinimizedBubble())),
+        if (showLauncher) const Positioned(right: 16, bottom: 16, child: SafeArea(child: QuizLauncherButton())),
       ],
     );
   }
 }
 
-class _MinimizedBubble extends ConsumerWidget {
+/// The ELIO leaf (Figma 43:95): reopens the minimised quiz. Nothing while
+/// no quiz is minimised.
+class QuizLauncherButton extends ConsumerWidget {
+  const QuizLauncherButton({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Material(
-      color: elioPrimary,
-      elevation: 6,
-      borderRadius: BorderRadius.circular(28),
-      child: InkWell(
-        onTap: () => ref.read(wasteQuizProvider.notifier).restore(),
-        borderRadius: BorderRadius.circular(28),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.quiz_rounded, color: Colors.white, size: 18),
-              const SizedBox(width: 8),
-              Text('Kuis AI', style: GoogleFonts.manrope(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
-            ],
+    final state = ref.watch(wasteQuizProvider);
+    if (state.phase == WasteQuizPhase.idle || !state.minimized) return const SizedBox.shrink();
+    final outer = BorderRadius.circular(28);
+    return Tooltip(
+      message: 'Buka kuis',
+      child: Material(
+        color: Colors.white,
+        elevation: 6,
+        shadowColor: Colors.black38,
+        shape: RoundedRectangleBorder(borderRadius: outer, side: const BorderSide(color: Color(0xFFBCCAC1))),
+        child: InkWell(
+          onTap: () => ref.read(wasteQuizProvider.notifier).restore(),
+          borderRadius: outer,
+          child: Padding(
+            padding: const EdgeInsets.all(7),
+            child: Container(
+              width: 72,
+              height: 72,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1C1C1C),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: elioPrimary, width: 2),
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(child: Image.asset('assets/icon/ELIO_ICON.png', fit: BoxFit.cover)),
+                  // The small leaf and loop around the big one, as placed in Figma.
+                  Positioned(
+                    left: 2.18,
+                    top: -1.45,
+                    width: 66,
+                    height: 72.94,
+                    child: Center(
+                      child: Transform.rotate(
+                        angle: 33 * math.pi / 180,
+                        child: SvgPicture.asset('assets/icon/elio_leaf_loop.svg', width: 38.56, height: 62.2),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The compact STOP in the quiz header (decision 0026): the same emergency
+/// stop as the button under the speed slider.
+class _StopPill extends StatelessWidget {
+  const _StopPill({required this.onStop});
+  final VoidCallback onStop;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Berhenti darurat',
+      child: Material(
+        color: const Color(0xFFD32F2F),
+        shape: const StadiumBorder(),
+        child: InkWell(
+          onTap: onStop,
+          customBorder: const StadiumBorder(),
+          child: const SizedBox(
+            height: 32,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Center(
+                child: Text('STOP', maxLines: 1, softWrap: false,
+                    style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1)),
+              ),
+            ),
           ),
         ),
       ),
@@ -98,8 +171,9 @@ class _MinimizedBubble extends ConsumerWidget {
 }
 
 class _QuizCard extends ConsumerStatefulWidget {
-  const _QuizCard({required this.state});
+  const _QuizCard({required this.state, this.onStop});
   final WasteQuizUiState state;
+  final VoidCallback? onStop;
 
   @override
   ConsumerState<_QuizCard> createState() => _QuizCardState();
@@ -192,6 +266,7 @@ class _QuizCardState extends ConsumerState<_QuizCard> {
           speakingIndex: _speakingIndex,
           onSendChat: _sendChat,
           onListen: _listen,
+          onStop: widget.onStop,
         );
 
     return Material(
@@ -228,17 +303,29 @@ class _QuizCardState extends ConsumerState<_QuizCard> {
                 ),
                 child: Row(
                   children: [
-                    _TabButton(label: 'Soal', selected: _tab == 0, onTap: () => setState(() => _tab = 0)),
-                    const SizedBox(width: 6),
-                    _TabButton(
-                      label: unread > 0 && _tab == 0 ? 'Asisten AI • $unread' : 'Asisten AI',
-                      selected: _tab == 1,
-                      onTap: () => setState(() {
-                        _tab = 1;
-                        _seenMessages = state.messages.length;
-                      }),
+                    // Scaled down on a phone, so STOP, minimise and X always fit.
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          children: [
+                            _TabButton(label: 'Soal', selected: _tab == 0, onTap: () => setState(() => _tab = 0)),
+                            const SizedBox(width: 6),
+                            _TabButton(
+                              label: unread > 0 && _tab == 0 ? 'Asisten AI • $unread' : 'Asisten AI',
+                              selected: _tab == 1,
+                              onTap: () => setState(() {
+                                _tab = 1;
+                                _seenMessages = state.messages.length;
+                              }),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 6),
+                    if (widget.onStop != null) ...[_StopPill(onStop: widget.onStop!), const SizedBox(width: 6)],
                     _WindowIconButton(icon: Icons.remove_rounded, tooltip: 'Kecilkan', onTap: notifier.minimize),
                     const SizedBox(width: 6),
                     _WindowIconButton(icon: Icons.close_rounded, tooltip: 'Tutup', onTap: notifier.dismiss),
@@ -736,6 +823,7 @@ class _ChatPanel extends ConsumerWidget {
     required this.speakingIndex,
     required this.onSendChat,
     required this.onListen,
+    this.onStop,
   });
 
   final WasteQuizUiState state;
@@ -745,6 +833,7 @@ class _ChatPanel extends ConsumerWidget {
   final int? speakingIndex;
   final VoidCallback onSendChat;
   final void Function(int index, String text) onListen;
+  final VoidCallback? onStop;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -775,6 +864,7 @@ class _ChatPanel extends ConsumerWidget {
                       style: GoogleFonts.sora(color: elioInk, fontSize: 14, fontWeight: FontWeight.w600),
                     ),
                   ),
+                  if (onStop != null) ...[_StopPill(onStop: onStop!), const SizedBox(width: 6)],
                   _WindowIconButton(icon: Icons.remove_rounded, tooltip: 'Kecilkan', onTap: notifier.minimize),
                   const SizedBox(width: 6),
                   _WindowIconButton(icon: Icons.close_rounded, tooltip: 'Tutup', onTap: notifier.dismiss),

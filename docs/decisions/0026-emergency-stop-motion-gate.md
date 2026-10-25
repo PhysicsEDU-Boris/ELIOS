@@ -28,8 +28,8 @@ Nothing could stop the robot:
 
 **STOP button**
 
-- A large red STOP sits on top of everything on the Control screen (over the quiz and the
-  live-scan overlay). Escape triggers it too, and so does space when no text field has focus.
+- A large red STOP on the Control screen (placement: see the U1 amendment below; an open quiz
+  has its own STOP in its header). Escape triggers it too, and so does space when no text field has focus.
 - Pressing it sends, at once, 0023 `STOP` (with `seq`) and `motor 0,0`, then `motor 0,0` four
   more times, 100 ms apart, fire-and-forget (the WiFi link is lossy).
 - R1 takes its safe exit: `STOP` if the arm may be moving. Driving stays **locked**, and the
@@ -139,3 +139,22 @@ Found on the Mac (800x632, fake MaixCAM2):
   after the J1 guard. Then 0020's cooldown and re-arm rules apply as usual.
 - Logged as `scan_paused` / `scan_resumed`. The overlay says "menunggu: robot dihentikan
   (STOP)".
+
+## Amendment 25 Oct (U1): STOP under the speed slider, a STOP in the quiz header
+
+The Control screen now follows Figma 43:30 (file `J2jSbARJSyJCStNFeWkWDj`); E1b's rail is gone.
+
+- **STOP** is a 74 x 74 red square under the vertical Speed (PWM) slider, with "STOP" on one
+  line (scaled down, never wrapped). Escape and space still trigger it.
+- **Quiz-header STOP:** an open quiz covers the screen, STOP included, so the quiz header has a
+  compact red STOP pill next to minimise and X. It calls the same emergency stop.
+- The STOPPED strip and "Lanjutkan" are unchanged: a full-width strip on top of everything,
+  the quiz included.
+- **No clipping:** wide (1100 px and up) is one row; narrower puts the camera on top and the
+  controls below (wrapping on a phone); the whole screen scrolls when short. The leaf button
+  that reopens a minimised quiz sits in that flow at the bottom right, so it covers nothing.
+- **Debug items** leave the screen: in debug builds only, "Debug Scan" opens a side sheet with
+  the live-scan readout, the bank/Gemma switch, "Reset scan (debug)" (was "Scan lagi") and the
+  phone-camera scan. Release builds show none of it.
+- Tested at 1366x768, 1024x768, 800x632, 770x553 and 390x844, with no quiz, a quiz open or
+  minimised, each with and without STOPPED (`test/widgets/control_layout_test.dart`).

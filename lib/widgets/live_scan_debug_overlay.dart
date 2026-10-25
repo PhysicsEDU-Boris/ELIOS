@@ -7,8 +7,8 @@ import '../services/live_scan_state_machine.dart';
 /// quiz starts ("identify calls"), asks refused as busy, utterances started
 /// (decision 0009), the last question's first-token time and
 /// ASKING-to-question time, the last "Soal berikutnya" wait (decision 0011),
-/// what blocks a new lock right now (decision 0020), and the "Scan lagi"
-/// button (manual re-arm, disabled while a quiz is open).
+/// what blocks a new lock right now (decision 0020), and "Reset scan (debug)"
+/// (the manual re-arm, disabled while a quiz is open). Shown in the Debug Scan side sheet.
 class LiveScanDebugOverlay extends StatelessWidget {
   const LiveScanDebugOverlay({super.key, required this.controller, this.scanLine});
 
@@ -47,7 +47,7 @@ class LiveScanDebugOverlay extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                     side: const BorderSide(color: Colors.white54),
                   ),
-                  child: const Text('Scan lagi'),
+                  child: const Text('Reset scan (debug)'),
                 ),
                 const SizedBox(height: 4),
                 Text(
