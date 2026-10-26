@@ -1,6 +1,6 @@
 id: elios_clean_m2c_v1
 name: ELIOS Clean Vision
-version: 1.0.0
+version: 1.1.0
 author: ELIOS
 icon: ''
 desc: >-
@@ -9,3 +9,5 @@ desc: >-
   for arm/wheels
 files:
   - main.py
+  - arm_commands.py
+  - arm_protocol.py
