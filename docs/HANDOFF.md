@@ -9,7 +9,7 @@
   [0024](decisions/0024-fake-maixcam-sim.md) fake MaixCAM2,
   [0025](decisions/0025-bank-detector-class.md) bank class,
   [0026](decisions/0026-emergency-stop-motion-gate.md) stop + watchdog,
-  [0027](decisions/0027-trophy-rules-and-scan-history.md) trophy rules & scan history.
+  [0028](decisions/0028-trophy-rules-and-scan-history.md) trophy rules & scan history.
 
 ## Done (H1 Scan History & U1 Control Screen)
 

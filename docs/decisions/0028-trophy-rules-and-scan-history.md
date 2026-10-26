@@ -1,4 +1,4 @@
-# 0027: Trophy rules, student levels, and local scan history (H1)
+# 0028: Trophy rules, student levels, and local scan history (H1)
 
 - Status: Accepted
 - Date: 2026-10-26

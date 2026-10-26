@@ -12,7 +12,7 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
-- H1 scan history, trophy rules, and student levels (decision 0027, Figma 100:170):
+- H1 scan history, trophy rules, and student levels (decision 0028, Figma 100:170):
   - Pure trophy rules (`lib/models/trophy_rules.dart`): 10 trophies per correct answer, essay score
     awarded directly, grade percentage thresholds (Sempurna, Hebat, Bagus, Belajar Lagi, Coba Lagi),
     and 5 student levels (Lv1 Eco Starter 0-99, Lv2 Waste Spotter 100-249, Lv3 Bin Expert 250-499,
