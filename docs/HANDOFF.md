@@ -1,6 +1,6 @@
 # Handoff
 
-- Author: Gemini. Branch `feat/u2-result-card`, base `origin/feature/live-scan` (`c39831b`).
+- Author: Gemini. Branch `feat/u2-result-card` (PR #43 open), base `origin/feature/live-scan` (`c39831b`).
   Never commit Xcode scheme, `Maixcam.txt`, `docs/module/`.
 - Decisions: 0013–0019 quiz/module; [0020](decisions/0020-lock-rearm-rule.md) re-arm,
   [0021](decisions/0021-manual-driving-orchestration.md) orchestration,
