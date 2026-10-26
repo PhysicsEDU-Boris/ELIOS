@@ -23,6 +23,7 @@ const liveScanEnabled = bool.fromEnvironment('LIVE_SCAN');
 class LiveScanController extends ChangeNotifier {
   LiveScanController({
     required this.startQuiz,
+    this.manualPickUpQuiz = false,
     int? Function()? firstTokenMs,
     int Function()? ttsCount,
     int? Function()? nextWaitMs,
@@ -67,6 +68,7 @@ class LiveScanController extends ChangeNotifier {
 
   /// Starts identification for the locked box; false if a quiz is open.
   final bool Function(TrackedDetection detection) startQuiz;
+  final bool manualPickUpQuiz;
   final int? Function()? _firstTokenMs;
   final int Function()? _ttsCount;
   final int? Function()? _nextWaitMs;
@@ -79,6 +81,25 @@ class LiveScanController extends ChangeNotifier {
   String? _tooLargeKey;
   DateTime? _belowMinAt;
   BlockReason? _frameBlock;
+  TrackedDetection? _pendingPickUp;
+
+  /// G1 flow: the detection lock waits for the student's PICK UP action.
+  bool onPickUpPressed() {
+    final detection = _pendingPickUp;
+    if (!manualPickUpQuiz || detection == null || machine.state != LiveScanState.asking) return false;
+    _pendingPickUp = null;
+    if (startQuiz(detection)) {
+      _askedAt = _clock();
+      _lastFirstTokenMs = null;
+      _lastAskToQuestionMs = null;
+      notifyListeners();
+      return true;
+    }
+    _emit('ask_busy', {'label': detection.label});
+    machine.onAskOutcome(AskOutcome.busy);
+    notifyListeners();
+    return false;
+  }
 
   /// Why nothing is being asked right now: the J1 guard, else the machine's
   /// reason, else this frame's (boxes too large, scores under [minScore]).
@@ -249,7 +270,9 @@ class LiveScanController extends ChangeNotifier {
 
     final lock = machine.onFrame(tracked, presentBoxes: present);
     if (lock != null) {
-      if (startQuiz(lock.detection)) {
+      if (manualPickUpQuiz) {
+        _pendingPickUp = lock.detection;
+      } else if (startQuiz(lock.detection)) {
         _askedAt = now;
         // A new ask starts clean: don't show the previous quiz's numbers
         // while this one is still loading, or if it falls back / fails.

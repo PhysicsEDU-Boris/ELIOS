@@ -52,7 +52,9 @@ void main() {
     expect(w.since(before).where((s) => s == 'motor 0,0').length, 5, reason: 'once now, 4 repeats');
     expect(w.gate.motor(75, 75), isFalse);
     expect(w.gate.servo('elbow', 30), isFalse);
-    expect(w.gate.blocked, 2);
+    expect(w.gate.servo('reach', 90), isFalse);
+    expect(w.gate.servo('gripper', 100), isFalse);
+    expect(w.gate.blocked, 4);
     w.robot.pick(distCm: 24);
     w.robot.unlockDrive();
     expect(w.since(before).where((s) => !s.startsWith('motor') && s != 'HEARTBEAT'), ['STOP'],

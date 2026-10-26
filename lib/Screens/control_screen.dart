@@ -40,6 +40,7 @@ const _showAppDetectionBoxes = kDebugMode && liveScanEnabled;
 /// link (decision 0023) and shows the result in the debug overlay. The
 /// student flow (bin question, "Ambil") is not on screen yet (M4).
 const _r1Enabled = liveScanEnabled && bool.fromEnvironment('R1');
+const _pickUpQuizFlow = liveScanEnabled && bool.fromEnvironment('G1_PICKUP_QUIZ_FLOW');
 
 class ControlScreen extends ConsumerStatefulWidget {
   const ControlScreen({super.key});
@@ -92,6 +93,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
     if (liveScanEnabled) {
       _liveScan = LiveScanController(
+        manualPickUpQuiz: _pickUpQuizFlow,
         startQuiz: (detection) {
           if (ref.read(wasteQuizProvider).phase != WasteQuizPhase.idle) return false;
           final frame = _latestFrame;
@@ -403,8 +405,20 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           ),
           actions: GripperButtons(
             enabled: isOperational,
-            onPickUp: () => _gate.servo('gripper', 100),
-            onRelease: () => _gate.servo('gripper', 0),
+            width: robotState.gripperVal,
+            onWidthChanged: (value) {
+              final width = value.round();
+              if (_gate.servo('gripper', width)) notifier.setGripperVal(width.toDouble());
+            },
+            onPickUp: () {
+              if (_gate.servo('gripper', 100)) {
+                notifier.setGripperVal(100);
+                if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
+              }
+            },
+            onRelease: () {
+              if (_gate.servo('gripper', 0)) notifier.setGripperVal(0);
+            },
           ),
           speed: (compact) => SpeedSlider(compact: compact, speed: speed, enabled: isOperational, onChanged: notifier.setPwmSpeed),
           stopButton: EmergencyStopButton(onStop: stop),
@@ -412,10 +426,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             compact: compact,
             label: 'FORWARD/BACKWARD',
             sublabel: 'ARM REACH',
-            value: (robotState.baseAngle / 180).clamp(0.0, 1.0),
+            value: (robotState.reachValue / 180).clamp(0.0, 1.0),
             enabled: isOperational,
             onChanged: (value) {
-              if (_gate.servo('base', (value * 180).toInt())) notifier.setBaseAngle(value * 180);
+              if (_gate.servo('reach', (value * 180).toInt())) notifier.setReachValue(value * 180);
             },
           ),
           launcher: const QuizLauncherButton(),
@@ -435,6 +449,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         child: ListView(
           padding: const EdgeInsets.all(12),
           children: [
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              const Text('Base', style: TextStyle(color: Colors.white)),
+              IconButton(onPressed: () => _nudgeBase(-2), icon: const Icon(Icons.chevron_left, color: Colors.white), tooltip: 'Base left'),
+              IconButton(onPressed: () => _nudgeBase(2), icon: const Icon(Icons.chevron_right, color: Colors.white), tooltip: 'Base right'),
+            ]),
             if (_liveScan != null)
               LiveScanDebugOverlay(
                   controller: _liveScan!,
@@ -472,6 +491,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         ),
       ),
     );
+  }
+
+  void _nudgeBase(double delta) {
+    final angle = (ref.read(robotControlProvider).baseAngle + delta).clamp(0.0, 180.0);
+    if (_gate.servo('base', angle.toInt())) _robotNotifier.setBaseAngle(angle);
   }
 }
 

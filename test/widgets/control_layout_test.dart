@@ -93,7 +93,8 @@ Future<void> _pump(WidgetTester tester, Size size, {_Quiz quiz = _Quiz.none, boo
               onStop: () => _tap('wheels stop'),
             ),
             camera: const ColoredBox(color: Color(0xFFD9D9D9)),
-            actions: GripperButtons(enabled: true, onPickUp: () => _tap('pick up'), onRelease: () => _tap('release')),
+            actions: GripperButtons(enabled: true, width: 30, onWidthChanged: (_) => _tap('width'),
+                onPickUp: () => _tap('pick up'), onRelease: () => _tap('release')),
             speed: (c) => SpeedSlider(compact: c, speed: 75, enabled: true, onChanged: (_) => _tap('speed')),
             stopButton: EmergencyStopButton(onStop: () => _tap('stop')),
             armReach: (c) => ArmSlider(compact: c, label: 'FORWARD/BACKWARD', sublabel: 'ARM REACH', value: 0.3, enabled: true, onChanged: (_) => _tap('reach')),
@@ -182,6 +183,9 @@ void main() {
         testWidgets('$name, quiz ${quiz.name}${stopped ? ', STOPPED' : ''}: no overflow, every control one tap away',
             (tester) async {
           await _pump(tester, size, quiz: quiz, stopped: stopped);
+          final scrollable = find.descendant(of: find.byType(SingleChildScrollView), matching: find.byType(Scrollable));
+          expect(tester.state<ScrollableState>(scrollable.first).position.maxScrollExtent, 0,
+              reason: 'the extra gripper slider must fit without scrolling at $name');
           if (_savePngs && quiz == _Quiz.minimised && !stopped) await _savePng(tester, name);
           expect(tester.takeException(), isNull);
           expect(tester.renderObject<RenderParagraph>(find.text('Speed (PWM)')).didExceedMaxLines, isFalse,
@@ -242,6 +246,10 @@ void main() {
           await _tapOnce(tester, find.descendant(of: find.byType(ArmSlider).first, matching: find.byType(Slider)), 'height');
           await _tapOnce(tester, find.descendant(of: find.byType(ArmSlider).last, matching: find.byType(Slider)), 'reach');
           await _tapOnce(tester, find.descendant(of: find.byType(SpeedSlider), matching: find.byType(Slider)), 'speed');
+          final gripperSlider = find.descendant(of: find.byType(GripperButtons), matching: find.byType(Slider));
+          expect(tester.widget<Slider>(gripperSlider).max, 100);
+          expect(tester.widget<Slider>(gripperSlider).value, 30);
+          await _tapOnce(tester, gripperSlider, 'width');
           await _tapOnce(tester, find.text('PICK UP'), 'pick up');
           await _tapOnce(tester, find.text('RELEASE'), 'release');
           await _tapOnce(tester, find.text('Exit'), 'exit');
