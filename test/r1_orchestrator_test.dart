@@ -473,5 +473,30 @@ void main() {
       expect([for (final id in ['organic', 'inorganic', 'hazardous', 'x', null]) Bin.fromCategoryId(id)],
           [Bin.organik, Bin.anorganik, Bin.b3, null, null]);
     });
+
+    test('R1 SORTING ignores HOME (decision 0027)', () {
+      final r = _Rig();
+      r.toSorting();
+      expect(r.r1.state, R1State.sorting);
+      final countBefore = r.count('HOME');
+
+      expect(r.r1.home(), isFalse, reason: 'HOME ignored while sorting');
+      expect(r.count('HOME'), countBefore);
+
+      // When searching (not sorting), HOME is allowed
+      final r2 = _Rig();
+      expect(r2.r1.state, R1State.searching);
+      expect(r2.r1.home(), isTrue, reason: 'HOME accepted while idle');
+      expect(r2.count('HOME'), 1);
+
+      // When hand is in view, HOME triggers hand pause
+      final r3 = _Rig();
+      r3.robot.handInView = true;
+      r3.run(200);
+      expect(r3.r1.handInView, isTrue);
+      expect(r3.r1.home(), isFalse, reason: 'hand in view pauses HOME');
+      expect(r3.r1.message, contains('Ada tangan!'));
+      expect(r3.count('HOLD'), greaterThanOrEqualTo(1));
+    });
   });
 }

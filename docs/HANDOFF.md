@@ -1,14 +1,16 @@
 # Handoff
 
-Branch `feat/g1c-stopped-camera` (base `780fa37`, origin/feature/live-scan).
+Branch `feat/g2b-arm-home-control` (base `90e1150`, origin/feature/live-scan), HEAD `d752ef6`. PR #46 open.
 
-## Done (G1c STOPPED Camera Preservation)
+## Done (G2b Arm HOME and Height Control)
 
-- `control_layout.dart`: camera maintains minimum width >= 240 px and identical dimensions with and without STOPPED.
-- Calculated `isShort` from window/screen height so STOPPED banner does not flip layout mode.
-- Removed vertical flex squeezing on camera inside desktop column; banner height is absorbed by controls and scroll.
-- Layout tests verify camera size equality and width >= 240 px across all 7 resolutions plus 800x630/800x520. Break-check verified old layout fails.
-- Tests: `flutter analyze` 0 issues; `flutter test` clean (except 2 known stale splash failures in widget_test.dart); `check-secrets.sh` clean.
+- `RobotController.home()` sends HOME command; `SimulatedRobot` models 2s travel to J4 home pose `[0.0, -42.5, 90.0]`.
+- Parsed `ee_mm` and `at_home` from `STATUS` reply into `RobotState` and Riverpod `robotControlProvider`.
+- ARM HEIGHT control wired to `servo part=height` (hand ±Z) via `MotionGate` instead of elbow. Lateral control disabled.
+- `HomeButton` with 1-second hold-to-confirm gesture and green progress fill on student screen; instant button in Debug Scan sheet.
+- MotionGate routing: HOME blocked while STOPPED (not in `_allowedWhileStopped`), ignored during R1 SORTING, paused on hand in view (`HOLD`).
+- Debug overlay: AprilTag chips for IDs 0 and 1 shown with `dist_mm` only when seen; EE xyz readout from `ee_mm`.
+- Decision [0027](decisions/0027-arm-serial-protocol.md).
 
 ## R1 (0023), L1
 
@@ -20,6 +22,7 @@ Branch `feat/g1c-stopped-camera` (base `780fa37`, origin/feature/live-scan).
 ## M2d robot test (not run; fake scenarios cover most)
 
 - Quizzed peel in view: bottle locks 15 s after quiz closes; second bottle waits 2 s; check JSONL.
+- Arm HOME & height test: verify hold-1s HOME returns all-zero pose, ARM HEIGHT moves ±Z.
 
 ## Quiz state
 
@@ -28,7 +31,7 @@ Branch `feat/g1c-stopped-camera` (base `780fa37`, origin/feature/live-scan).
 
 ## Next tasks
 
-1. R1-fw (0023 link + 0026 watchdog/STOP), after G2a.
+1. R1-fw (0023 link + 0026 watchdog/STOP), after G2a/G2b.
 2. Arm bring-up over ESP32 UART after ESP32/Uno sketches; use physical e-stop near people.
 3. Camera calibration (0022), M4 overlay, R2 sort modes, CI, M5 Android, M6 ByteTrack, M7 release.
 

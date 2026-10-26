@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import '../Screens/scan_history_screen.dart';
@@ -34,6 +36,7 @@ class ControlLayout extends StatelessWidget {
     super.key,
     required this.exitButton,
     required this.historyButton,
+    this.homeButton,
     this.debugScanButton,
     this.debugBuild = kDebugMode,
     required this.armHeight,
@@ -50,6 +53,7 @@ class ControlLayout extends StatelessWidget {
 
   final Widget exitButton;
   final Widget historyButton;
+  final Widget? homeButton;
 
   /// Shown only in debug builds ([debugBuild]).
   final Widget? debugScanButton;
@@ -95,6 +99,7 @@ class ControlLayout extends StatelessWidget {
             spacing: 12,
             runSpacing: 8,
             children: [
+              ?homeButton,
               if (debugBuild && debugScanButton != null) debugScanButton!,
               historyButton,
             ],
@@ -330,6 +335,129 @@ class ControlPill extends StatelessWidget {
               if (trailing != null) ...[const SizedBox(width: 6), trailing!],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// HOME button with 1-second hold-to-confirm (decision 0027).
+class HomeButton extends StatefulWidget {
+  const HomeButton({
+    super.key,
+    required this.onConfirmed,
+    this.enabled = true,
+    this.holdDuration = const Duration(seconds: 1),
+  });
+
+  final VoidCallback onConfirmed;
+  final bool enabled;
+  final Duration holdDuration;
+
+  @override
+  State<HomeButton> createState() => _HomeButtonState();
+}
+
+class _HomeButtonState extends State<HomeButton> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  Timer? _holdTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.holdDuration,
+    );
+  }
+
+  @override
+  void dispose() {
+    _holdTimer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onDown() {
+    if (!widget.enabled) return;
+    _holdTimer?.cancel();
+    _controller.forward(from: 0.0);
+    _holdTimer = Timer(widget.holdDuration, () {
+      widget.onConfirmed();
+    });
+  }
+
+  void _onUpOrCancel() {
+    _holdTimer?.cancel();
+    _holdTimer = null;
+    if (!widget.enabled) return;
+    _controller.reset();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isShort =
+        MediaQuery.maybeSizeOf(context)?.height != null &&
+        MediaQuery.sizeOf(context).height < 500;
+    final fontSize = isShort ? 13.0 : 16.0;
+    final iconSize = isShort ? 16.0 : 20.0;
+    final padVert = isShort ? 6.0 : 12.0;
+    final padLeft = isShort ? 14.0 : 20.0;
+    final padRight = isShort ? 14.0 : 24.0;
+
+    return Opacity(
+      opacity: widget.enabled ? 1.0 : 0.5,
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: (_) => _onDown(),
+        onPointerUp: (_) => _onUpOrCancel(),
+        onPointerCancel: (_) => _onUpOrCancel(),
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return Material(
+              color: _pillFill,
+              elevation: 2,
+              shadowColor: Colors.black26,
+              shape: const StadiumBorder(side: BorderSide(color: _pillBorder)),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                children: [
+                  if (_controller.value > 0)
+                    Positioned.fill(
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: _controller.value,
+                        child: Container(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                        ),
+                      ),
+                    ),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(padLeft, padVert, padRight, padVert),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.home_outlined, size: iconSize, color: _ink),
+                        const SizedBox(width: 6),
+                        Text(
+                          'HOME',
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: _ink,
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );

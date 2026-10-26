@@ -216,6 +216,18 @@ class R1Orchestrator {
     if (_questionsRunning) _completeQuestion();
   }
 
+  /// Requests HOME pose (decision 0027). Ignored while sorting or waiting for quiz/drop,
+  /// paused if a hand is in view.
+  bool home() {
+    if (_state == R1State.sorting || _state == R1State.waitBoth) return false;
+    if (_handInView) {
+      _pause();
+      return false;
+    }
+    robot.home();
+    return true;
+  }
+
   bool get _questionsRunning =>
       (_state == R1State.sorting || _state == R1State.waitBoth) && !_questionsComplete;
 
@@ -312,6 +324,8 @@ class R1Orchestrator {
     }
   }
 
+  bool get handInView => _handInView;
+  bool get handPaused => _handPaused;
   bool get _handInView => _handSeenAt != null && _clock().difference(_handSeenAt!) < handClearFor;
 
   // ── Steps ─────────────────────────────────────────────────────────────────

@@ -78,6 +78,7 @@ Future<void> _pump(WidgetTester tester, Size size, {_Quiz quiz = _Quiz.none, boo
           body: ControlLayout(
             stoppedBanner: stopped ? StoppedBanner(reason: 'link_lost', onResume: () => _tap('resume')) : null,
             exitButton: ControlPill(icon: Icons.arrow_back_rounded, label: 'Exit', onTap: () => _tap('exit')),
+            homeButton: HomeButton(onConfirmed: () => _tap('home')),
             debugScanButton: ControlPill(icon: Icons.bug_report_outlined, label: 'Debug Scan', onTap: () => _tap('debug')),
             debugBuild: debugBuild,
             historyButton: const HistoryPill(),
@@ -253,6 +254,7 @@ void main() {
           await _tapOnce(tester, find.text('PICK UP'), 'pick up');
           await _tapOnce(tester, find.text('RELEASE'), 'release');
           await _tapOnce(tester, find.text('Exit'), 'exit');
+          await _expectTappable(tester, find.byType(HomeButton), 'HOME');
           await _tapOnce(tester, find.text('Debug Scan'), 'debug');
           await _expectTappable(tester, find.text('History'), 'History');
           if (quiz == _Quiz.minimised) {

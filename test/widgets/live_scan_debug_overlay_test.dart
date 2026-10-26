@@ -66,4 +66,71 @@ void main() {
     expect(find.textContaining('identify 0   busy 1'), findsOneWidget);
     expect(find.textContaining('first token -   question -'), findsOneWidget); // busy: no quiz opened
   });
+
+  testWidgets('tag chips show only when seen, and EE xyz readout renders (decision 0027)', (tester) async {
+    final c = LiveScanController(
+      startQuiz: (_, _) => false,
+      firstTokenMs: () => 0,
+      onEvent: (_, _) {},
+    );
+    addTearDown(c.dispose);
+
+    // 1. No tags, no EE
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: LiveScanDebugOverlay(controller: c),
+      ),
+    ));
+    expect(find.byKey(const ValueKey('tag_chip_0')), findsNothing);
+    expect(find.byKey(const ValueKey('tag_chip_1')), findsNothing);
+    expect(find.text('EE: -'), findsOneWidget);
+
+    // 2. Only tag 0 seen, with EE xyz
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: LiveScanDebugOverlay(
+          controller: c,
+          armTags: const [ArmTag(id: 0, distMm: 142.5)],
+          eeMm: const [0.0, -42.5, 90.0],
+        ),
+      ),
+    ));
+    expect(find.byKey(const ValueKey('tag_chip_0')), findsOneWidget);
+    expect(find.text('Tag 0: 142.5 mm'), findsOneWidget);
+    expect(find.byKey(const ValueKey('tag_chip_1')), findsNothing);
+    expect(find.text('EE: x=0.0 y=-42.5 z=90.0 mm'), findsOneWidget);
+
+    // 3. Both tag 0 and tag 1 seen, plus tag 2 (which must be ignored)
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: LiveScanDebugOverlay(
+          controller: c,
+          armTags: const [
+            ArmTag(id: 0, distMm: 142.5),
+            ArmTag(id: 1, distMm: 285.0),
+            ArmTag(id: 2, distMm: 50.0),
+          ],
+          eeMm: const [10.5, 120.0, -15.2],
+        ),
+      ),
+    ));
+    expect(find.byKey(const ValueKey('tag_chip_0')), findsOneWidget);
+    expect(find.text('Tag 0: 142.5 mm'), findsOneWidget);
+    expect(find.byKey(const ValueKey('tag_chip_1')), findsOneWidget);
+    expect(find.text('Tag 1: 285.0 mm'), findsOneWidget);
+    expect(find.byKey(const ValueKey('tag_chip_2')), findsNothing);
+    expect(find.text('EE: x=10.5 y=120.0 z=-15.2 mm'), findsOneWidget);
+
+    // 4. Tags hidden again
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: LiveScanDebugOverlay(
+          controller: c,
+          armTags: const [],
+        ),
+      ),
+    ));
+    expect(find.byKey(const ValueKey('tag_chip_0')), findsNothing);
+    expect(find.byKey(const ValueKey('tag_chip_1')), findsNothing);
+  });
 }

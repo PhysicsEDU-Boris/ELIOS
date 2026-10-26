@@ -38,14 +38,20 @@ class RobotState {
   final double baseAngle;
   final double elbowAngle;
   final double reachValue;
+  final double heightValue;
   final double gripperVal;
+  final List<double>? eeMm;
+  final bool? atHome;
 
   const RobotState({
     this.pwmSpeed = 75,
     this.baseAngle = 90,
     this.elbowAngle = 45,
     this.reachValue = 90,
+    this.heightValue = 90,
     this.gripperVal = 0,
+    this.eeMm,
+    this.atHome,
   });
 
   RobotState copyWith({
@@ -53,14 +59,20 @@ class RobotState {
     double? baseAngle,
     double? elbowAngle,
     double? reachValue,
+    double? heightValue,
     double? gripperVal,
+    List<double>? eeMm,
+    bool? atHome,
   }) {
     return RobotState(
       pwmSpeed: pwmSpeed ?? this.pwmSpeed,
       baseAngle: baseAngle ?? this.baseAngle,
       elbowAngle: elbowAngle ?? this.elbowAngle,
       reachValue: reachValue ?? this.reachValue,
+      heightValue: heightValue ?? this.heightValue,
       gripperVal: gripperVal ?? this.gripperVal,
+      eeMm: eeMm ?? this.eeMm,
+      atHome: atHome ?? this.atHome,
     );
   }
 }
@@ -98,7 +110,18 @@ class RobotControlNotifier extends Notifier<RobotState> {
   void setBaseAngle(double v) => state = state.copyWith(baseAngle: v);
   void setElbowAngle(double v) => state = state.copyWith(elbowAngle: v);
   void setReachValue(double v) => state = state.copyWith(reachValue: v);
+  void setHeightValue(double v) => state = state.copyWith(heightValue: v);
   void setGripperVal(double v) => state = state.copyWith(gripperVal: v);
+
+  void updateStatus({List<double>? eeMm, bool? atHome}) {
+    state = state.copyWith(
+      eeMm: eeMm ?? state.eeMm,
+      atHome: atHome ?? state.atHome,
+      reachValue: atHome == true ? 90.0 : state.reachValue,
+      heightValue: atHome == true ? 90.0 : state.heightValue,
+      gripperVal: atHome == true ? 0.0 : state.gripperVal,
+    );
+  }
 
   // Resolution control ────────────────────────────────────────────────────────
 

@@ -53,9 +53,12 @@ void main() {
     expect(w.gate.motor(75, 75), isFalse);
     expect(w.gate.servo('elbow', 30), isFalse);
     expect(w.gate.servo('reach', 90), isFalse);
+    expect(w.gate.servo('height', 90), isFalse);
+    expect(w.gate.home(), isFalse);
     expect(w.gate.servo('gripper', 100), isFalse);
-    expect(w.gate.blocked, 4);
+    expect(w.gate.blocked, 6);
     w.robot.pick(distCm: 24);
+    w.robot.home();
     w.robot.unlockDrive();
     expect(w.since(before).where((s) => !s.startsWith('motor') && s != 'HEARTBEAT'), ['STOP'],
         reason: 'R1 commands blocked too (only STOP, STATUS, HEARTBEAT pass)');
@@ -240,5 +243,29 @@ void main() {
       expect(robot.commands.last, 'UNLOCK_DRIVE');
       expect(robot.driveLocked, isFalse);
     });
+  });
+
+  testWidgets('gate blocks HOME and height while STOPPED (decision 0027)', (tester) async {
+    final w = _Wire()..gate.linkRestored();
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(w.gate.home(), isTrue);
+    expect(w.sent.contains('HOME'), isTrue);
+    expect(w.gate.servo('height', 90), isTrue);
+    expect(w.sent.contains('servo height=90'), isTrue);
+
+    w.gate.emergencyStop('button');
+    final countBefore = w.gate.blocked;
+    final sentBefore = w.sent.length;
+
+    expect(w.gate.home(), isFalse);
+    expect(w.gate.servo('height', 120), isFalse);
+    expect(w.gate.blocked, countBefore + 2);
+    expect(w.sent.length, sentBefore, reason: 'neither HOME nor servo height sent while stopped');
+
+    w.robot.home();
+    expect(w.sent.length, sentBefore, reason: 'robot.home() blocked by allowsCommand while stopped');
+
+    w.gate.dispose();
+    await tester.pump(const Duration(seconds: 1));
   });
 }

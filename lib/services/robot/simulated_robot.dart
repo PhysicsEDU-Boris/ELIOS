@@ -8,7 +8,10 @@ import '../websocket_service.dart' show Detection;
 import 'robot_controller.dart';
 
 class SimulatedRobot extends RobotController {
-  SimulatedRobot(this.clock);
+  SimulatedRobot(this.clock) {
+    eeMm = const [0.0, -42.5, 90.0];
+    atHome = true;
+  }
 
   final DateTime Function() clock;
 
@@ -25,6 +28,7 @@ class SimulatedRobot extends RobotController {
     'PICK': const Duration(seconds: 4),
     'MOVE_TO_BIN': const Duration(seconds: 3),
     'DROP': const Duration(seconds: 2),
+    'HOME': const Duration(seconds: 2),
     'HOLD': Duration.zero,
   };
 
@@ -71,15 +75,23 @@ class SimulatedRobot extends RobotController {
     if (cmd == 'LOCK_DRIVE') firmwareDriveLocked = true;
     if (cmd == 'UNLOCK_DRIVE') firmwareDriveLocked = false;
     if (dropReplies[cmd] == 'ack') return;
-    _due.add((now.add(ackDelay), RobotReply(ReplyKind.ack, seq)));
+    final reply = cmd == 'STATUS'
+        ? RobotReply(ReplyKind.ack, seq, eeMm: eeMm, atHome: atHome)
+        : RobotReply(ReplyKind.ack, seq);
+    _due.add((now.add(ackDelay), reply));
     final motion = motionTime[cmd];
     if (motion == null || dropReplies[cmd] == 'motion_done') return;
     final done = now.add(ackDelay + motion);
     _due.add((done, RobotReply(ReplyKind.motionDone, seq)));
     if (cmd == 'PICK' && !pickMisses) _pickedAt = done;
+    if (cmd == 'HOME') {
+      atHome = false;
+      _homedAt = done;
+    }
   }
 
   DateTime? _pickedAt;
+  DateTime? _homedAt;
 
   @override
   void transmitMotor(int left, int right) {
@@ -97,6 +109,12 @@ class SimulatedRobot extends RobotController {
     if (picked != null && !now.isBefore(picked)) {
       objectOnFloor = false;
       _pickedAt = null;
+    }
+    final homed = _homedAt;
+    if (homed != null && !now.isBefore(homed)) {
+      atHome = true;
+      eeMm = const [0.0, -42.5, 90.0];
+      _homedAt = null;
     }
     final ready = [for (final r in _due) if (!r.$1.isAfter(now)) r];
     _due.removeWhere(ready.contains);
