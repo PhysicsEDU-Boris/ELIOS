@@ -6,7 +6,7 @@ library;
 
 import 'detection_stabilizer.dart';
 
-enum LiveScanState { searching, locking, asking, quiz, cooldown }
+enum LiveScanState { searching, locking, asking, quiz, cooldown, waitingForRescan }
 
 /// How a requested quiz start ended.
 enum AskOutcome { questionReady, failed, busy, cancelled }
@@ -45,6 +45,7 @@ class BlockReason {
     String objs() => labels.entries.take(2).map((e) => '${e.key} ${e.value.toStringAsFixed(2)}').join(', ');
     return switch (code) {
       'quiz_open' => 'menunggu: kuis masih terbuka',
+      'waiting_for_rescan' => 'menunggu: tekan \'Scan lagi\' untuk memindai kembali',
       'cooldown' => 'menunggu: jeda setelah kuis ${((remaining?.inMilliseconds ?? 0) / 1000).ceil()} s',
       'same_object' => 'menunggu: benda yang sudah dikuis masih terlihat (${objs()})',
       'same_label' => 'menunggu: label sama, tunggu benda sebelumnya pergi 2 s (${objs()})',
@@ -140,6 +141,12 @@ class LiveScanStateMachine {
     }
 
     _follow(scene, now);
+
+    if (_state == LiveScanState.waitingForRescan) {
+      _setBlock(const BlockReason('waiting_for_rescan'));
+      return null;
+    }
+
     final blocked = <TrackedDetection, String>{};
     final eligible = <TrackedDetection>[];
     for (final d in detections) {
@@ -220,6 +227,22 @@ class LiveScanStateMachine {
     _asked = null;
   }
 
+  /// The quiz session finished (decision 0030): wait for "Scan lagi" before
+  /// asking anything new, even if the item is still in view.
+  void onQuizFinished() {
+    if (_state != LiveScanState.quiz && _state != LiveScanState.asking) return;
+    _state = LiveScanState.waitingForRescan;
+    _closedAt = _clock();
+    _asked = null;
+    _setBlock(const BlockReason('waiting_for_rescan'));
+    for (final q in _quizzed) {
+      q
+        ..rebind = true
+        ..missingSince = null;
+    }
+    onEvent?.call('waiting_for_rescan_enter', {'quizzed': quizzedLabels});
+  }
+
   void onQuizClosed() {
     if (_state != LiveScanState.quiz) return;
     _state = LiveScanState.cooldown;
@@ -235,7 +258,21 @@ class LiveScanStateMachine {
     onEvent?.call('cooldown_enter', {'cooldownMs': quizCooldown.inMilliseconds, 'quizzed': quizzedLabels});
   }
 
-  /// "Scan lagi" (debug): ends the cooldown and forgets every quizzed object.
+  /// "Scan lagi": ends the cooldown or waitingForRescan state. Quizzed objects
+  /// stay blocked until absent for [quizzedObjectAbsentToRearm] (decision 0020, 0030).
+  bool rescan() {
+    if (_frozen) return false;
+    final now = _clock();
+    onEvent?.call('rescan', {
+      'state': _state.name,
+      'quizzed': quizzedLabels,
+      if (_closedAt != null) 'sinceCloseMs': now.difference(_closedAt!).inMilliseconds,
+    });
+    _rearm('rescan', now);
+    return true;
+  }
+
+  /// Debug "forget everything" reset: ends the cooldown and forgets every quizzed object.
   /// Does nothing while a quiz is open. Returns whether it re-armed.
   bool manualRearm() {
     if (_frozen) return false;
@@ -249,6 +286,9 @@ class LiveScanStateMachine {
     _rearm('manual', now);
     return true;
   }
+
+  /// Alias for [manualRearm].
+  bool forgetEverything() => manualRearm();
 
   /// Frames were not analysed for a while: the J1 guard (the arm moved the
   /// camera, 0020) or STOPPED (0026). Each quizzed object is found again by its

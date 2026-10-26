@@ -14,6 +14,11 @@ class ScanRecordStore extends ChangeNotifier {
   static ScanRecordStore? _instance;
   static ScanRecordStore get instance => _instance ??= ScanRecordStore();
 
+  @visibleForTesting
+  static void setInstanceForTesting(ScanRecordStore? store) {
+    _instance = store;
+  }
+
   final File? _customFile;
   List<ScanRecord> _records = [];
   bool _loaded = false;

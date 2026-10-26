@@ -12,6 +12,18 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- U2 result card, trophies, "Scan lagi", and saving into Scan History (decision 0030):
+  - Result card on quiz finish: item name, category badge, "x dari N benar", trophies earned (+20 Piala),
+    grade badge (Sempurna, Hebat, Bagus, Belajar Lagi, Coba Lagi), cumulative level & progress bar,
+    and action buttons ("Scan lagi" and "Tutup").
+  - Persistent ScanRecord generation with JPEG crop photo saved to documents directory, added to
+    `ScanRecordStore.instance` upon session completion. Updates HistoryPill live count and history screen.
+  - Live scan state machine `waitingForRescan` state: pauses locking while result card is displayed;
+    "Scan lagi" re-arms scanning while preserving decision 0020 absent-to-rearm cooldown on quizzed items.
+  - Debug "forget everything" action in Debug Scan sheet resets quizzed memory and state immediately.
+  - R1 drop gating: when `--dart-define=R1=true`, displays "Robot sedang membuang ke tempat sampah..."
+    and disables "Scan lagi" until R1 DROP motion completes and returns to idle.
+  - Log events: `session_result` `{correct, total, trophies}` and `rescan_tapped`.
 - H1 scan history, trophy rules, and student levels (decision 0028, Figma 100:170):
   - Pure trophy rules (`lib/models/trophy_rules.dart`): 10 trophies per correct answer, essay score
     awarded directly, grade percentage thresholds (Sempurna, Hebat, Bagus, Belajar Lagi, Coba Lagi),
