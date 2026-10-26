@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../models/chat_message.dart';
+import '../models/scan_record.dart';
 import '../models/scanned_waste.dart';
 import '../services/detection_crop.dart';
 import '../services/detection_stabilizer.dart';
@@ -12,6 +15,7 @@ import '../services/gemma_quiz_service.dart';
 import '../services/question_bank.dart';
 import '../services/quiz_tts_service.dart';
 import '../services/scan_diagnostics.dart';
+import '../services/scan_record_store.dart';
 import '../services/websocket_service.dart';
 import 'app_preferences_provider.dart';
 
@@ -62,6 +66,12 @@ class WasteQuizUiState {
   /// The question source this session uses (decision 0018), for the header.
   final QuestionSource questionSource;
 
+  /// Questions answered or skipped in the current scan session (decision 0030).
+  final List<RecordQuestion> recordedQuestions;
+
+  /// The cropped JPEG bytes of the detected waste item.
+  final Uint8List? cropBytes;
+
   const WasteQuizUiState({
     this.phase = WasteQuizPhase.idle,
     this.minimized = false,
@@ -82,6 +92,8 @@ class WasteQuizUiState {
     this.notice,
     this.mismatchDetector,
     this.questionSource = QuestionSource.bank,
+    this.recordedQuestions = const [],
+    this.cropBytes,
   });
 
   int get totalQuestions => difficulty.questionCount;
@@ -96,6 +108,7 @@ class WasteQuizUiState {
     WasteQuizPhase? phase,
     bool? minimized,
     ScannedWaste? scan,
+    QuizDifficulty? difficulty,
     int? questionIndex,
     GeneratedQuestion? question,
     bool? isFallback,
@@ -111,12 +124,15 @@ class WasteQuizUiState {
     bool? voiceOn,
     String? notice,
     String? mismatchDetector,
+    List<RecordQuestion>? recordedQuestions,
+    Uint8List? cropBytes,
+    bool clearCropBytes = false,
   }) {
     return WasteQuizUiState(
       phase: phase ?? this.phase,
       minimized: minimized ?? this.minimized,
       scan: scan ?? this.scan,
-      difficulty: difficulty,
+      difficulty: difficulty ?? this.difficulty,
       questionIndex: questionIndex ?? this.questionIndex,
       question: question ?? this.question,
       isFallback: isFallback ?? this.isFallback,
@@ -132,6 +148,8 @@ class WasteQuizUiState {
       notice: notice ?? this.notice,
       mismatchDetector: mismatchDetector ?? this.mismatchDetector,
       questionSource: questionSource,
+      recordedQuestions: recordedQuestions ?? this.recordedQuestions,
+      cropBytes: clearCropBytes ? null : (cropBytes ?? this.cropBytes),
     );
   }
 }
@@ -191,6 +209,12 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// overlay (decision 0011).
   int? get lastNextWaitMs => _lastNextWaitMs;
 
+  // The recorded question answers for the current session (decision 0030).
+  final _recordedQuestions = <RecordQuestion>[];
+
+  // The cropped JPEG bytes of the current waste item.
+  Uint8List? _cropBytes;
+
   @override
   WasteQuizUiState build() => const WasteQuizUiState();
 
@@ -202,8 +226,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _lastAutoSpokenText = null; // a new object/quiz: nothing spoken for it yet
     _sessionSource = sourceOverride ?? effectiveQuestionSource(ref.read(appPreferencesProvider).questionSource);
     _scanClock = scan == null ? null : (Stopwatch()..start());
+    _recordedQuestions.clear();
     return WasteQuizUiState(phase: phase, scan: scan, difficulty: difficulty, voiceOn: state.voiceOn,
-        questionSource: _sessionSource);
+        questionSource: _sessionSource, recordedQuestions: const [], cropBytes: _cropBytes);
   }
 
   /// Called from the control screen's MaixCAM2 detections listener.
@@ -235,6 +260,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (state.phase != WasteQuizPhase.idle) return;
     _lastShownAt = DateTime.now();
     _askedQuestions.clear();
+    _recordedQuestions.clear();
+    _cropBytes = imageBytes;
     _bankQueues = null;
     _usedAngles.clear();
     _cancelPrefetch();
@@ -250,6 +277,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _lastLabel = detection.label;
     _lastShownAt = DateTime.now();
     _askedQuestions.clear();
+    _recordedQuestions.clear();
+    _cropBytes = null;
     _bankQueues = null;
     _usedAngles.clear();
     _cancelPrefetch();
@@ -274,6 +303,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final timing = kDebugMode ? (Stopwatch()..start()) : null;
     final crop = await compute(prepareDetectionCrop, (frame, detection));
     final bytes = crop.bytes;
+    if (bytes != null) _cropBytes = bytes;
     diagnostics?.event('crop_complete', {...crop.details, 'cropPreparationMs': timing?.elapsedMilliseconds,
       'valid': bytes != null, 'stale': generation != _generation});
     if (generation != _generation) return;
@@ -361,6 +391,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (state.phase != WasteQuizPhase.idle) return;
     _lastLabel = label;
     _lastShownAt = DateTime.now();
+    _cropBytes = null;
+    _recordedQuestions.clear();
     GemmaQuizService.instance.cancel();
     _startSession(ScannedWaste.fromLabel(label));
   }
@@ -425,7 +457,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (generation != _generation) return; // dismissed or superseded
 
     final question = generated ?? _fallbackQuestion(scan, type);
-    if (question == null) return _finish();
+    if (question == null) {
+      unawaited(_finish());
+      return;
+    }
     _askedQuestions.add(question.question);
     final intro = generated == null
         ? _fallbackIntro()
@@ -570,7 +605,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (generation != _generation) return; // dismissed or superseded while waiting
 
     final question = generated ?? _fallbackQuestion(scan, type);
-    if (question == null) return _finish();
+    if (question == null) {
+      unawaited(_finish());
+      return;
+    }
     _askedQuestions.add(question.question);
     final intro = generated == null
         ? _fallbackIntro()
@@ -674,10 +712,19 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (state.phase != WasteQuizPhase.active || q == null) return;
     if (q.type != QuizQuestionType.multipleChoice || state.selectedOption != null) return;
     final correct = index == q.correctIndex;
+    _recordedQuestions.add(RecordQuestion(
+      question: q.question,
+      yourAnswer: q.options[index],
+      rightAnswer: q.options[q.correctIndex],
+      isCorrect: correct,
+      trophies: correct ? 10 : 0,
+      isEssay: false,
+    ));
     state = state.copyWith(
       selectedOption: index,
       mcAnswered: state.mcAnswered + 1,
       correctCount: state.correctCount + (correct ? 1 : 0),
+      recordedQuestions: List.unmodifiable(_recordedQuestions),
     );
     final verdict = correct
         ? 'Benar!'
@@ -685,7 +732,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _appendAiReply(q.explanation.isEmpty ? verdict : '$verdict ${q.explanation}');
   }
 
-  Future<void> submitEssay(String answerText) async {
+  Future<void> submitEssay(String answerText, {int? score}) async {
     final trimmed = answerText.trim();
     final q = state.question;
     if (trimmed.isEmpty || state.sendingChat || q?.type != QuizQuestionType.essay) return;
@@ -702,6 +749,38 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       answer: trimmed,
     );
     if (generation != _generation) return;
+
+    int essayScore;
+    if (score != null) {
+      essayScore = score.clamp(0, 10);
+    } else if (reply != null) {
+      final lower = reply.trim().toLowerCase();
+      if (lower.startsWith('benar')) {
+        essayScore = 10;
+      } else if (lower.startsWith('sebagian benar')) {
+        essayScore = 6;
+      } else if (lower.startsWith('kurang tepat')) {
+        essayScore = 2;
+      } else {
+        essayScore = 5;
+      }
+    } else {
+      essayScore = 5;
+    }
+    final isCorrect = essayScore >= 6;
+    _recordedQuestions.add(RecordQuestion(
+      question: q.question,
+      yourAnswer: trimmed,
+      rightAnswer: q.explanation.isNotEmpty ? q.explanation : 'Sesuai modul materi',
+      isCorrect: isCorrect,
+      trophies: essayScore,
+      isEssay: true,
+      essayScore: essayScore,
+    ));
+    state = state.copyWith(
+      correctCount: state.correctCount + (isCorrect ? 1 : 0),
+      recordedQuestions: List.unmodifiable(_recordedQuestions),
+    );
     _appendAiReply(reply ?? 'Jawaban tersimpan, tapi AI belum bisa mengoreksi. ${_aiUnavailableReason()}');
   }
 
@@ -769,11 +848,25 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   /// Only allowed when Config Settings → Quiz → Skip Allowed is on.
   void skipQuestion() {
-    if (state.phase != WasteQuizPhase.active || state.answered) return;
+    final q = state.question;
+    if (state.phase != WasteQuizPhase.active || state.answered || q == null) return;
     if (!ref.read(appPreferencesProvider).skipAllowed) return;
+    final isEssay = q.type == QuizQuestionType.essay;
+    _recordedQuestions.add(RecordQuestion(
+      question: q.question,
+      yourAnswer: '(dilewati)',
+      rightAnswer: isEssay
+          ? (q.explanation.isNotEmpty ? q.explanation : '-')
+          : (q.options.isNotEmpty ? q.options[q.correctIndex] : '-'),
+      isCorrect: false,
+      trophies: 0,
+      isEssay: isEssay,
+      essayScore: isEssay ? 0 : null,
+    ));
     state = state.copyWith(
       skippedCount: state.skippedCount + 1,
       messages: [...state.messages, ChatMessage(isUser: false, text: 'Soal ${state.questionIndex + 1} dilewati.')],
+      recordedQuestions: List.unmodifiable(_recordedQuestions),
     );
     _advance();
   }
@@ -784,15 +877,69 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   }
 
   void _advance() {
-    if (state.isLastQuestion) return _finish();
+    if (state.isLastQuestion) {
+      unawaited(_finish());
+      return;
+    }
     _consumeQuestion(state.questionIndex + 1);
   }
 
-  void _finish() {
-    state = state.copyWith(phase: WasteQuizPhase.finished);
+  Future<void> _finish() async {
+    final sessionTrophies = _recordedQuestions.fold<int>(0, (sum, q) => sum + q.trophies);
+
+    String? photoPath;
+    if (_cropBytes != null) {
+      try {
+        final dir = await getApplicationDocumentsDirectory();
+        final scansDir = Directory('${dir.path}/scans');
+        if (!scansDir.existsSync()) scansDir.createSync(recursive: true);
+        final file = File('${scansDir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.jpg');
+        file.writeAsBytesSync(_cropBytes!, flush: true);
+        photoPath = file.path;
+      } catch (e) {
+        debugPrint('[WasteQuiz] Failed to save crop photo: $e');
+      }
+    }
+
+    if (_recordedQuestions.isNotEmpty) {
+      final scan = state.scan;
+      final record = ScanRecord(
+        id: 'scan-${DateTime.now().millisecondsSinceEpoch}',
+        time: DateTime.now(),
+        itemName: scan?.displayName ?? 'Sampah',
+        category: ScanCategory.fromString(scan?.category?.id),
+        cropPhotoPath: photoPath,
+        difficulty: state.difficulty,
+        questions: List.unmodifiable(_recordedQuestions),
+        trophies: sessionTrophies,
+      );
+      try {
+        await ScanRecordStore.instance.addRecord(record);
+      } catch (e) {
+        debugPrint('[WasteQuiz] Failed to add record to store: $e');
+      }
+    }
+
+    _diagnostics?.event('session_result', {
+      'correct': state.correctCount,
+      'total': state.totalQuestions,
+      'trophies': sessionTrophies,
+    });
+    debugPrint('[WasteQuiz] session_result correct=${state.correctCount} total=${state.totalQuestions} trophies=$sessionTrophies');
+
+    state = state.copyWith(
+      phase: WasteQuizPhase.finished,
+      recordedQuestions: List.unmodifiable(_recordedQuestions),
+      cropBytes: _cropBytes,
+    );
     final skipped = state.skippedCount > 0 ? ' ${state.skippedCount} soal dilewati.' : '';
     _appendAiReply('Sesi selesai! Pilihan ganda benar: '
         '${state.correctCount} dari ${state.mcAnswered}.$skipped Scan sampah lain untuk soal baru.');
+  }
+
+  void logRescanTapped() {
+    _diagnostics?.event('rescan_tapped', {});
+    debugPrint('[WasteQuiz] rescan_tapped');
   }
 
   void _appendAiReply(String text) {
@@ -825,6 +972,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _cancelPrefetch();
     GemmaQuizService.instance.cancel();
     unawaited(QuizTtsService.instance.stop());
+    _cropBytes = null;
+    _recordedQuestions.clear();
     state = WasteQuizUiState(voiceOn: state.voiceOn);
   }
 }
