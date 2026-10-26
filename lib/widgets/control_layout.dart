@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
+import '../Screens/scan_history_screen.dart';
+import '../services/scan_record_store.dart';
 
 // Figma 43:30 (Control Screen · Chat Minimized).
 const _ink = Color(0xFF333333);
@@ -254,33 +256,53 @@ class ControlPill extends StatelessWidget {
   }
 }
 
-/// History with the trophy count. ponytail: the count is a placeholder and
-/// a tap does nothing until U5 brings the history screen and the points.
+/// History with the trophy count. Opens the scan history screen.
 class HistoryPill extends StatelessWidget {
-  const HistoryPill({super.key, this.trophies = 0});
+  const HistoryPill({
+    super.key,
+    this.trophies,
+    this.store,
+    this.onTap,
+  });
 
-  final int trophies;
+  final int? trophies;
+  final ScanRecordStore? store;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ControlPill(
-      icon: Icons.history_rounded,
-      label: 'History',
-      onTap: () {},
-      trailing: DecoratedBox(
-        decoration: const ShapeDecoration(color: Color(0x33D89E00), shape: StadiumBorder()),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 4, 10, 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.emoji_events_rounded, size: 14, color: Color(0xFFD89E00)),
-              const SizedBox(width: 4),
-              Text('$trophies', style: const TextStyle(color: Color(0xFF7A5900), fontSize: 12, fontWeight: FontWeight.w700)),
-            ],
+    final effectiveStore = store ?? ScanRecordStore.instance;
+    return AnimatedBuilder(
+      animation: effectiveStore,
+      builder: (context, _) {
+        final total = trophies ?? effectiveStore.totalTrophies;
+        return ControlPill(
+          icon: Icons.history_rounded,
+          label: 'History',
+          onTap: onTap ??
+              () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (context) => ScanHistoryScreen(store: effectiveStore),
+                  ),
+                );
+              },
+          trailing: DecoratedBox(
+            decoration: const ShapeDecoration(color: Color(0x33D89E00), shape: StadiumBorder()),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 10, 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.emoji_events_rounded, size: 14, color: Color(0xFFD89E00)),
+                  const SizedBox(width: 4),
+                  Text('$total', style: const TextStyle(color: Color(0xFF7A5900), fontSize: 12, fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
