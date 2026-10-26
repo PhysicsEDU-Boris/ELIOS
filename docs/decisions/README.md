@@ -33,3 +33,4 @@ their status changed.
 | [0025](0025-bank-detector-class.md) | In a live scan the detector class picks the bank questions; same-bin class mismatch is logged, no card (B1) | Accepted |
 | [0026](0026-emergency-stop-motion-gate.md) | Emergency stop, one motion gate, link loss, heartbeat; firmware watchdog spec (E1); STOP rail layout, no scanning while STOPPED (E1b) | Accepted (app; firmware spec) |
 | [0028](0028-trophy-rules-and-scan-history.md) | Trophy rules, student levels, and local scan history (H1) | Accepted |
+| [0030](0030-result-card-and-scan-history.md) | Result card, trophies, "Scan lagi", and saving into Scan History (U2) | Accepted |
