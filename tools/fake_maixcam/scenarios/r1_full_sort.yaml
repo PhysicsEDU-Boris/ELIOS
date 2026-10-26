@@ -1,0 +1,5 @@
+name: r1_full_sort
+description: Pick a reachable Plastic bottle, move it to the organik bin, then drop it.
+duration_s: 60
+items:
+  - {id: bottle, label: Plastic, pos_mm: [-54, -301], size_mm: 120, score: 0.88}

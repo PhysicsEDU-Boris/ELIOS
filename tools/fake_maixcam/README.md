@@ -12,7 +12,7 @@ The protocol is copied from `firmware/maixcam2/main.py`:
 - `{"status":"Connected"}` on connect.
 - `ping` gets a `pong` with `firmware_version` `fake-sim-<n>`.
 - `start_stream` / `stop_stream` turn the stream on and off; `disconnect` gets `disconnect_ack`.
-- `motor` and `servo` are only logged; `set_resolution` is ignored.
+- `motor` moves the simulated base; servo `base` and `elbow` move the simulated arm, and `gripper` opens/closes it.
 - Frames carry `vision_protocol`, `firmware_sha256`, `frame_id`, `detection_frame_id`, `image`,
   `img_w`, `img_h` and `detections`. Detection frames (every 2nd frame) also carry
   `clean_detections` and `clean_image`.
@@ -126,6 +126,11 @@ Loading a scenario checks both, and prints `[Scenario] WARNING ...` (it is not a
 | `old_firmware` | No P1 fields: behaviour identical to `single_item_60s`. |
 | `j1_sweep_item_in_view` | From 25 s, J1 turns to 25, -25 and 0 at 60 deg/s; the box slides out and back. |
 | `organic_items`, `organic_mango` | The owner's organic checks, now on dataset crops: a cut fruit (the closest to a mango), then a peel at 38 s. |
+| `r1_full_sort` | Plastic PICK → organik bin → DROP. |
+| `r1_b3_sort` | E_Waste phone for the B3 hazard-confirmation path. |
+| `r1_hand_pauses_arm` | A hand appears during the sort window and leaves later. |
+| `r1_unreachable` | PICK rejects an item outside arm reach. |
+| `r1_position_nudge` | Item near the useful reach edge for manual base-position nudges. |
 
 ## Writing a scenario
 
@@ -182,8 +187,10 @@ reconnect you can read STOP and `motor left=0 right=0` coming first.
   - `STOP`: ack;
   - `J1_SWEEP {"to": deg}`: fake only, not part of 0023. Ack, then motion_done when J1 arrives at
     60 deg/s.
-- `PICK`, `MOVE_TO_BIN` and `DROP` reply `error: not_implemented`. Their TODOs in
-  `FakeMaixCam.__init__` say what each one should do.
+- `PICK`, `MOVE_TO_BIN` and `DROP`: use the simulator's IK and 60 deg/s joint motion; ACK is
+  immediate and `motion_done` follows arrival. PICK matches supplied distance/lateral to a visible
+  card; unreachable targets return `error: unreachable`. The carried card follows the gripper and
+  is hidden after DROP.
 - Any other command with a `seq` replies `error: unknown_cmd`.
 
 ## Tests
@@ -193,7 +200,8 @@ cd tools/fake_maixcam && ROBOTIC_HAND_SIM=~/GITHUB/ELIO/robotic_hand_sim ~/.venv
 ```
 
 The tests need no hardware, but they do need the simulator: without it, the tests that use the
-sim are skipped.
+sim are skipped. Wheel motion uses estimated fixed PWM-to-speed and track-width values; calibrate
+those before quantitative drive tests.
 
 ## Limits
 

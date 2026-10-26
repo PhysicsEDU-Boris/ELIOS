@@ -224,6 +224,11 @@ def test_command_link_0023_shape(tmp_path):
     async def body(url, fake):
         async with websockets.connect(url) as ws:
             await ws.recv()
+            async def heartbeat():
+                while True:
+                    await ws.send(json.dumps({"cmd": "HEARTBEAT"}))
+                    await asyncio.sleep(0.2)
+            keepalive = asyncio.create_task(heartbeat())
             replies = []
             seq = 0
 
@@ -232,18 +237,22 @@ def test_command_link_0023_shape(tmp_path):
                 seq += 1
                 await ws.send(json.dumps({**cmd, "seq": seq}))
                 for _ in range(n):
-                    replies.append(json.loads(await asyncio.wait_for(ws.recv(), 2)))
+                    replies.append(json.loads(await asyncio.wait_for(ws.recv(), 10)))
 
             await send({"cmd": "STATUS"}, 1)
             await send({"cmd": "LOCK_DRIVE"}, 1)
             locked = fake.drive_locked
+            await ws.send(json.dumps({"cmd": "motor", "left": 50, "right": 50}))
+            await asyncio.sleep(0.1)
+            assert fake.world.motor == (0, 0)
             await send({"cmd": "UNLOCK_DRIVE"}, 1)
             await send({"cmd": "HOLD"}, 2)
             await send({"cmd": "J1_SWEEP", "to": 6}, 2)  # 6 deg at 60 deg/s: done in ~0.1 s
             await send({"cmd": "STOP"}, 1)
-            await send({"cmd": "PICK", "dist_cm": 24.0, "lateral_cm": None}, 1)
+            await send({"cmd": "PICK", "dist_cm": 24.0, "lateral_cm": None}, 2)
             await send({"cmd": "FLY"}, 1)
-            return replies, locked, fake.drive_locked, fake.world.angles[0]
+            keepalive.cancel()
+            return replies, locked, fake.drive_locked, fake.held_item
 
     replies, locked, unlocked_after, j1 = run(tmp_path, {"items": [BOTTLE]}, body)
     assert replies == [
@@ -253,11 +262,71 @@ def test_command_link_0023_shape(tmp_path):
         {"event": "ack", "seq": 4}, {"event": "motion_done", "seq": 4},
         {"event": "ack", "seq": 5}, {"event": "motion_done", "seq": 5},
         {"event": "ack", "seq": 6},
-        {"event": "error", "seq": 7, "reason": "not_implemented"},
+        {"event": "ack", "seq": 7}, {"event": "motion_done", "seq": 7},
         {"event": "error", "seq": 8, "reason": "unknown_cmd"},
     ]
     assert locked and not unlocked_after
-    assert j1 == pytest.approx(6)
+    assert j1 == "bottle"
+
+
+@needs_sim
+def test_r1_pick_bin_drop_and_drive_servo(tmp_path):
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            async def heartbeat():
+                while True:
+                    await ws.send(json.dumps({"cmd": "HEARTBEAT"}))
+                    await asyncio.sleep(0.2)
+            keepalive = asyncio.create_task(heartbeat())
+
+            async def command(cmd, seq, replies=1):
+                await ws.send(json.dumps({**cmd, "seq": seq}))
+                return [json.loads(await asyncio.wait_for(ws.recv(), 10)) for _ in range(replies)]
+
+            async def motion(cmd, seq):
+                result = await command(cmd, seq, 2)
+                assert result == [{"event": "ack", "seq": seq}, {"event": "motion_done", "seq": seq}]
+
+            dist, lateral = fake.world.distance("bottle")
+            await motion({"cmd": "PICK", "dist_cm": dist, "lateral_cm": lateral}, 1)
+            assert fake.held_item == "bottle" and fake.world.gripper_closed
+            await motion({"cmd": "MOVE_TO_BIN", "bin": "organik"}, 2)
+            assert fake.held_bin == "organik"
+            await motion({"cmd": "DROP"}, 3)
+            assert fake.held_item is None and not fake.items["bottle"]["on"]
+
+            await ws.send(json.dumps({"cmd": "servo", "part": "base", "val": 120}))
+            await asyncio.sleep(1)
+            assert fake.world.angles[0] == pytest.approx(30, abs=1)
+            await ws.send(json.dumps({"cmd": "servo", "part": "elbow", "val": 60}))
+            await asyncio.sleep(0.1)
+            assert fake.world.target[1] == pytest.approx(30)
+            await ws.send(json.dumps({"cmd": "servo", "part": "gripper", "val": 0}))
+            await asyncio.sleep(0.1)
+            assert not fake.world.gripper_closed
+            before = fake.world.robot_xy.copy()
+            await ws.send(json.dumps({"cmd": "motor", "left": 50, "right": 50}))
+            await asyncio.sleep(0.2)
+            fake.world.set_motor(0, 0)
+            assert np.linalg.norm(fake.world.robot_xy - before) > 10
+            keepalive.cancel()
+            return fake.world.angles[0]
+
+    assert run(tmp_path, {"items": [BOTTLE]}, body) == pytest.approx(30, abs=1)
+
+
+@needs_sim
+def test_r1_unreachable_pick_is_rejected(tmp_path):
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            dist, lateral = fake.world.distance("far")
+            await ws.send(json.dumps({"cmd": "PICK", "seq": 1, "dist_cm": dist, "lateral_cm": lateral}))
+            return json.loads(await asyncio.wait_for(ws.recv(), 2))
+
+    assert run(tmp_path, {"items": [{**BOTTLE, "id": "far", "pos_mm": [-54, -701]}]}, body) == {
+        "event": "error", "seq": 1, "reason": "unreachable"}
 
 
 def test_labels_match_main_py_and_app():
@@ -267,7 +336,7 @@ def test_labels_match_main_py_and_app():
 def test_shipped_scenarios_load(tmp_path):
     labels = fm.load_labels()
     paths = sorted((fm.HERE / "scenarios").glob("*.yaml"))
-    assert len(paths) >= 10  # the 10 shipped ones, plus any local scenarios
+    assert len(paths) >= 15  # L1 scenarios plus the existing shipped ones
     for p in paths:
         fm.load_scenario(p, labels)
     s = yaml.safe_load(paths[0].read_text())
