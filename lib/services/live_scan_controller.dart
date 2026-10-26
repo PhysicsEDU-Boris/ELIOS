@@ -152,7 +152,17 @@ class LiveScanController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Debug "Scan lagi": clears the cooldown and the quizzed objects' waits.
+  /// Student "Scan lagi": ends the cooldown/waitingForRescan state without forgetting quizzed objects.
+  bool rescan() {
+    final ok = machine.rescan();
+    notifyListeners();
+    return ok;
+  }
+
+  /// Debug "forget everything" reset: clears the wait and forgets all quizzed objects.
+  bool forgetEverything() => manualRearm();
+
+  /// Debug "Scan lagi" / manual rearm: clears the cooldown and the quizzed objects' waits.
   bool manualRearm() {
     final ok = machine.manualRearm();
     notifyListeners();
@@ -306,10 +316,21 @@ class LiveScanController extends ChangeNotifier {
           machine.onAskOutcome(AskOutcome.cancelled); // dismissed before the question arrived
         }
       case LiveScanState.quiz:
-        if (phase == WasteQuizPhase.idle) machine.onQuizClosed();
+        if (phase == WasteQuizPhase.finished) {
+          machine.onQuizFinished();
+        } else if (phase == WasteQuizPhase.idle) {
+          machine.onQuizClosed();
+        }
+      case LiveScanState.waitingForRescan:
+        if (phase == WasteQuizPhase.idle) {
+          // Stays waiting for "Scan lagi" or "Reset scan (debug)".
+        }
       default:
-        if (phase == WasteQuizPhase.idle) return;
-        machine.onQuizOpen(); // a quiz the live scan didn't start
+        if (phase == WasteQuizPhase.finished) {
+          machine.onQuizFinished();
+        } else if (phase != WasteQuizPhase.idle) {
+          machine.onQuizOpen(); // a quiz the live scan didn't start
+        }
     }
     notifyListeners();
   }

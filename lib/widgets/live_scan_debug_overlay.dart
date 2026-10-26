@@ -41,7 +41,7 @@ class LiveScanDebugOverlay extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 OutlinedButton(
-                  onPressed: controller.canManualRearm ? controller.manualRearm : null,
+                  onPressed: controller.canManualRearm ? controller.forgetEverything : null,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     visualDensity: VisualDensity.compact,
