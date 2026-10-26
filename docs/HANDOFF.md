@@ -1,32 +1,14 @@
 # Handoff
 
-## In progress
+Branch `feat/g1c-stopped-camera` (base `780fa37`, origin/feature/live-scan).
 
-- G2a (`feat/g2a-arm-protocol`, PR #44): protocol decision 0027 and fake HOME/STATUS/reach/height.
-  Lateral is disabled in v1 because world-X requires J1 and pans the camera. Measured tags: home
-  shows none; inspect `[0,50,-120,90,-45]` shows tags 0 and 1. Fake suite: 39 passed.
-- U2 result card / scan history (decision 0030) is merged in #43.
-- Never commit Xcode scheme, `Maixcam.txt`, or `docs/module/`.
-- Decisions: 0013–0019 quiz/module; [0020](decisions/0020-lock-rearm-rule.md),
-  [0021](decisions/0021-manual-driving-orchestration.md),
-  [0022](decisions/0022-detection-protocol-distance-tags.md),
-  [0023](decisions/0023-r1-command-link.md), [0024](decisions/0024-fake-maixcam-sim.md),
-  [0025](decisions/0025-bank-detector-class.md),
-  [0026](decisions/0026-emergency-stop-motion-gate.md),
-  [0027](decisions/0027-arm-serial-protocol.md),
-  [0028](decisions/0028-trophy-rules-and-scan-history.md),
-  [0029](decisions/0029-arm-reach-gripper.md),
-  [0030](decisions/0030-result-card-and-scan-history.md).
+## Done (G1c STOPPED Camera Preservation)
 
-## Done (U2 Result Card & Scan History)
-
-- Result card shows item/category, correct count, trophies, grade/level and "Scan lagi" / "Tutup".
-- Completed sessions save a ScanRecord with JPEG crop; HistoryPill updates live.
-- `waitingForRescan` pauses locks until rescan while preserving 0020 re-arm behavior.
-- R1 DROP gate keeps rescan disabled until the drop completes; emits result/rescan telemetry.
-- Tests: `live_scan_rescan_test.dart`, `result_card_test.dart` (5 viewports, no overflow, STOP reachable).
-- H1: trophy/level rules, local ScanRecord JSON, responsive History; 33 new tests passed (444 total,
-  with two known stale splash failures).
+- `control_layout.dart`: camera maintains minimum width >= 240 px and identical dimensions with and without STOPPED.
+- Calculated `isShort` from window/screen height so STOPPED banner does not flip layout mode.
+- Removed vertical flex squeezing on camera inside desktop column; banner height is absorbed by controls and scroll.
+- Layout tests verify camera size equality and width >= 240 px across all 7 resolutions plus 800x630/800x520. Break-check verified old layout fails.
+- Tests: `flutter analyze` 0 issues; `flutter test` clean (except 2 known stale splash failures in widget_test.dart); `check-secrets.sh` clean.
 
 ## R1 (0023), L1
 

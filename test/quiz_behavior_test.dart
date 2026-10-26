@@ -89,7 +89,7 @@ void main() {
     expect(last.text, startsWith('Jawab soalnya dulu'));
   });
 
-  test('skip works only when "Skip Allowed" is on', () {
+  test('skip works only when "Skip Allowed" is on', () async {
     final off = _container(skipAllowed: false);
     off.read(wasteQuizProvider.notifier).skipQuestion();
     expect(off.read(wasteQuizProvider).phase, WasteQuizPhase.active);
@@ -97,6 +97,7 @@ void main() {
     // Easy = 1 question, so skipping the only question finishes the session.
     final on = _container(skipAllowed: true);
     on.read(wasteQuizProvider.notifier).skipQuestion();
+    await pumpEventQueue();
     expect(on.read(wasteQuizProvider).phase, WasteQuizPhase.finished);
     expect(on.read(wasteQuizProvider).skippedCount, 1);
   });
