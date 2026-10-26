@@ -1,6 +1,6 @@
 # Handoff
 
-Branch `feat/g2b-arm-home-control` (base `90e1150`, origin/feature/live-scan). PR open.
+Branch `feat/g2b-arm-home-control` (base `90e1150`, origin/feature/live-scan), HEAD `d752ef6`. PR #46 open.
 
 ## Done (G2b Arm HOME and Height Control)
 
