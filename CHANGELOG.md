@@ -11,6 +11,15 @@ kept outside the repo.
 
 ## [Unreleased]
 
+### Added
+- G2b arm HOME, height control and debug overlays (decision 0027):
+  - `RobotController.home()` sends `{"cmd":"HOME","seq":n}`; `SimulatedRobot` models 2-second travel to `[0.0, -42.5, 90.0]` and ack/motion_done sequence.
+  - Parsed `ee_mm` and `at_home` from `STATUS` reply into `RobotState` and Riverpod `robotControlProvider`.
+  - Student screen ARM HEIGHT slider wired to `servo part=height` (hand ±Z) via MotionGate instead of elbow, with neutral 90. Lateral control disabled.
+  - `HomeButton` widget with 1-second hold-to-confirm and visual progress feedback on student top bar; instant `HOME` button in Debug Scan sheet.
+  - Routed through `MotionGate`: blocked while STOPPED (not in `_allowedWhileStopped`), ignored during R1 SORTING, and hand-pause applies (`Human_Hand` -> `HOLD`).
+  - Debug overlay displays tag chips for AprilTag IDs 0 and 1 only when detected with distance in mm, and real-time end-effector XYZ coordinates from `ee_mm`.
+
 ### Fixed
 - G1c: STOPPED never shrinks camera. In `control_layout.dart`, camera retains a minimum width of at least 240 px and identical dimensions with and without STOPPED across all test viewports and Mac window heights (480–640 px). Banner height is absorbed by controls spacing and scrolling rather than squeezing the camera.
 

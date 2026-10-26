@@ -26,7 +26,7 @@ const _allowedWhileStopped = {'STOP', 'STATUS', 'HEARTBEAT'};
 
 class MotionGate extends ChangeNotifier {
   MotionGate({required this.robot, required this.sendServo, this.onEvent, this.onStop, this.onArmCommand,
-      this.armBusy});
+      this.armBusy, this.handPaused});
 
   /// The MaixCAM2 client: STOP (with seq), HEARTBEAT, and motor through [RobotController.drive].
   final RobotController robot;
@@ -43,6 +43,9 @@ class MotionGate extends ChangeNotifier {
 
   /// R1 is moving the arm itself: manual servo commands wait.
   final bool Function()? armBusy;
+
+  /// A hand is in view: arm commands paused by existing Human_Hand -> HOLD behavior (0027).
+  final bool Function()? handPaused;
 
   bool _linkUp = false;
   bool _stopped = false;
@@ -80,6 +83,20 @@ class MotionGate extends ChangeNotifier {
     return true;
   }
 
+  /// Arm HOME request (student screen with hold-to-confirm, debug sheet instant).
+  /// Blocked while STOPPED, without link, while arm is busy (e.g. R1 sorting),
+  /// or paused by hand (decision 0027).
+  bool home() {
+    if (_stopped || !_linkUp || (armBusy?.call() ?? false)) return _block('home', {});
+    if (handPaused?.call() ?? false) {
+      robot.hold();
+      return _block('home', {'reason': 'hand_paused'});
+    }
+    onArmCommand?.call(const Duration(seconds: 2));
+    robot.home();
+    return true;
+  }
+
   /// Motor 0,0: D-pad release, leaving the screen, the app going to the
   /// background, a disconnect. Never blocked (only lost without a link).
   bool stopWheels() {
@@ -95,10 +112,18 @@ class MotionGate extends ChangeNotifier {
 
   bool _block(String kind, Map<String, Object?> data) {
     _blocked++;
+    final reason = data['reason'] ??
+        (_stopped
+            ? 'stopped'
+            : !_linkUp
+                ? 'no_link'
+                : kind == 'motor'
+                    ? 'drive_locked'
+                    : 'arm_busy');
     onEvent?.call('motion_blocked', {
       'kind': kind,
       ...data,
-      'reason': _stopped ? 'stopped' : !_linkUp ? 'no_link' : kind == 'motor' ? 'drive_locked' : 'arm_busy',
+      'reason': reason,
     });
     notifyListeners();
     return false;

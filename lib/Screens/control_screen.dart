@@ -73,7 +73,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
   /// Set only with R1 (see [_r1Enabled]).
   R1Orchestrator? _r1;
-  StreamSubscription<Map<String, dynamic>>? _r1Replies;
+  StreamSubscription<Map<String, dynamic>>? _robotReplies;
   Timer? _r1Ticker;
   String? _r1Status;
 
@@ -130,6 +130,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onStop: (reason) => _r1?.emergencyStop(reason),
       onArmCommand: (motion) => _liveScan?.onArmCommand(motion),
       armBusy: () => _r1?.ignoresLiveScanLocks ?? false,
+      handPaused: () => _r1?.handInView ?? false,
     )..addListener(() {
         _liveScan?.setScanPaused(_gate.stopped); // no lock, identify or new quiz while STOPPED (0026)
         if (mounted) setState(() {});
@@ -137,12 +138,22 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     WidgetsBinding.instance.addObserver(this);
     HardwareKeyboard.instance.addHandler(_onKey);
 
+    _robotReplies = ws.robotReplies.listen((msg) {
+      robot.handleMessage(msg);
+      final reply = RobotReply.fromJson(msg);
+      if (reply != null && (reply.eeMm != null || reply.atHome != null)) {
+        ref.read(robotControlProvider.notifier).updateStatus(
+              eeMm: reply.eeMm,
+              atHome: reply.atHome,
+            );
+      }
+    });
+
     if (_r1Enabled) {
       _r1 = R1Orchestrator(robot, onResume: (reason) {
         // A robot that misbehaved stops everything until "Lanjutkan" (0026).
         if (const {'robot_error', 'robot_unreachable', 'pick_failed'}.contains(reason)) _gate.emergencyStop('error');
       });
-      _r1Replies = ws.robotReplies.listen(robot.handleMessage);
       _r1Ticker = Timer.periodic(const Duration(milliseconds: 250), (_) {
         final r1 = _r1!..tick();
         final text = r1.robotConnected ? 'robot terhubung' : r1.message ?? 'memeriksa robot...';
@@ -232,6 +243,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _gate.linkRestored(); // first: STOP + motor 0,0 before anything else (0026)
     _liveScan?.onLinkRestored(); // 0020: a drop can't time absence; harmless on the first connect
     _r1?.linkUp(); // 0023: probe the command link (old firmware: "robot tidak terhubung")
+    _gate.robot.status();
   }
 
   /// Escape, or space outside a text field: the emergency stop.
@@ -295,7 +307,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _frameSubscription?.cancel();
     _statusSubscription?.close();
     _r1Ticker?.cancel();
-    _r1Replies?.cancel();
+    _robotReplies?.cancel();
     ref.read(r1DropPendingProvider.notifier).state = false;
     HardwareKeyboard.instance.removeHandler(_onKey);
     WidgetsBinding.instance.removeObserver(this);
@@ -374,15 +386,19 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             label: 'Debug Scan',
             onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
+          homeButton: HomeButton(
+            onConfirmed: _gate.home,
+            enabled: isOperational,
+          ),
           historyButton: const HistoryPill(),
           armHeight: (compact) => ArmSlider(
             compact: compact,
             label: 'UP/DOWN',
             sublabel: 'ARM HEIGHT',
-            value: (robotState.elbowAngle / 180).clamp(0.0, 1.0),
+            value: (robotState.heightValue / 180).clamp(0.0, 1.0),
             enabled: isOperational,
             onChanged: (value) {
-              if (_gate.servo('elbow', (value * 180).toInt())) notifier.setElbowAngle(value * 180);
+              if (_gate.servo('height', (value * 180).toInt())) notifier.setHeightValue(value * 180);
             },
           ),
           drivePad: (compact) => DrivePad(
@@ -465,14 +481,29 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
               const Text('Base', style: TextStyle(color: Colors.white)),
               IconButton(onPressed: () => _nudgeBase(-2), icon: const Icon(Icons.chevron_left, color: Colors.white), tooltip: 'Base left'),
               IconButton(onPressed: () => _nudgeBase(2), icon: const Icon(Icons.chevron_right, color: Colors.white), tooltip: 'Base right'),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                key: const ValueKey('debug_home_button'),
+                onPressed: () => _gate.home(),
+                icon: const Icon(Icons.home_outlined, size: 18),
+                label: const Text('HOME'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white54),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                ),
+              ),
             ]),
             if (_liveScan != null)
               LiveScanDebugOverlay(
-                  controller: _liveScan!,
-                  scanLine: [
-                    ?_scanLine(ref.watch(wasteQuizProvider).scan),
-                    'gerak diblokir ${_gate.blocked}${_gate.stopped ? '   STOPPED (${_gate.stopReason})' : ''}',
-                  ].join('\n')),
+                controller: _liveScan!,
+                scanLine: [
+                  ?_scanLine(ref.watch(wasteQuizProvider).scan),
+                  'gerak diblokir ${_gate.blocked}${_gate.stopped ? '   STOPPED (${_gate.stopReason})' : ''}',
+                ].join('\n'),
+                armTags: WebSocketService().armTags,
+                eeMm: ref.watch(robotControlProvider).eeMm,
+              ),
             if (_r1 != null) ...[
               const SizedBox(height: 6),
               Text('R1: ${_r1Status ?? 'memeriksa robot...'}',

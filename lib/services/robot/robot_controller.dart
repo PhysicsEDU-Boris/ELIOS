@@ -28,11 +28,13 @@ enum ReplyKind { ack, motionDone, error }
 
 /// One MaixCAM2 reply to a command (0023).
 class RobotReply {
-  const RobotReply(this.kind, this.seq, {this.reason});
+  const RobotReply(this.kind, this.seq, {this.reason, this.eeMm, this.atHome});
 
   final ReplyKind kind;
   final int seq;
   final String? reason;
+  final List<double>? eeMm;
+  final bool? atHome;
 
   /// Null when [msg] is not a command reply (frames, pong, old firmware's messages).
   static RobotReply? fromJson(Map<String, dynamic> msg) {
@@ -46,7 +48,17 @@ class RobotReply {
     };
     if (kind == null) return null;
     final reason = msg['reason'];
-    return RobotReply(kind, seq, reason: reason is String ? reason : null);
+    final eeRaw = msg['ee_mm'];
+    List<double>? eeMm;
+    if (eeRaw is List) {
+      final list = <double>[];
+      for (final v in eeRaw) {
+        if (v is num && v.isFinite) list.add(v.toDouble());
+      }
+      if (list.length == eeRaw.length) eeMm = list;
+    }
+    final atHome = msg['at_home'] is bool ? msg['at_home'] as bool : null;
+    return RobotReply(kind, seq, reason: reason is String ? reason : null, eeMm: eeMm, atHome: atHome);
   }
 
   @override
@@ -80,7 +92,14 @@ abstract class RobotController {
     return seq;
   }
 
+  /// The last reported end-effector position in mm [x, y, z] (decision 0027).
+  List<double>? eeMm;
+
+  /// Whether the arm target is currently all-zero home pose (decision 0027).
+  bool? atHome;
+
   int status() => send('STATUS');
+  int home() => send('HOME');
   int lockDrive() => send('LOCK_DRIVE');
   int unlockDrive() => send('UNLOCK_DRIVE');
   int pick({double? distCm, double? lateralCm}) => send('PICK', {'dist_cm': distCm, 'lateral_cm': lateralCm});
@@ -121,7 +140,11 @@ class MaixCamRobot extends RobotController {
   /// Feed every decoded message from the MaixCAM2; non-replies are ignored.
   void handleMessage(Map<String, dynamic> msg) {
     final reply = RobotReply.fromJson(msg);
-    if (reply != null) onReply?.call(reply);
+    if (reply != null) {
+      if (reply.eeMm != null) eeMm = reply.eeMm;
+      if (reply.atHome != null) atHome = reply.atHome;
+      onReply?.call(reply);
+    }
   }
 }
 
