@@ -11,6 +11,9 @@ kept outside the repo.
 
 ## [Unreleased]
 
+### Fixed
+- G1c: STOPPED never shrinks camera. In `control_layout.dart`, camera retains a minimum width of at least 240 px and identical dimensions with and without STOPPED across all test viewports and Mac window heights (480–640 px). Banner height is absorbed by controls spacing and scrolling rather than squeezing the camera.
+
 ### Added
 - U2 result card, trophies, "Scan lagi", and saving into Scan History (decision 0030):
   - Result card on quiz finish: item name, category badge, "x dari N benar", trophies earned (+20 Piala),

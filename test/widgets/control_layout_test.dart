@@ -265,14 +265,24 @@ void main() {
     }
   }
 
-  testWidgets('STOPPED banner preserves the camera at desktop sizes', (tester) async {
-    for (final size in [const Size(1366, 768), const Size(770, 553)]) {
+  testWidgets('STOPPED banner preserves the camera size at all layout sizes (>= 240 px)', (tester) async {
+    final sizesToTest = {
+      ..._sizes,
+      '800x630': const Size(800, 630),
+      '800x520': const Size(800, 520),
+    };
+    for (final MapEntry(key: name, value: size) in sizesToTest.entries) {
+      await _pump(tester, size, stopped: false);
+      final normal = tester.getSize(find.byKey(const ValueKey('control_camera')));
       await _pump(tester, size, stopped: true);
-      expect(
-        tester.getSize(find.byKey(const ValueKey('control_camera'))).width,
-        greaterThanOrEqualTo(ControlLayout.cameraMinWidth),
-        reason: 'camera at ${size.width.toInt()}x${size.height.toInt()} with STOPPED',
-      );
+      final stopped = tester.getSize(find.byKey(const ValueKey('control_camera')));
+
+      expect(normal.width, greaterThanOrEqualTo(ControlLayout.cameraMinWidth),
+          reason: 'normal camera width at $name must be >= ${ControlLayout.cameraMinWidth}');
+      expect(stopped.width, greaterThanOrEqualTo(ControlLayout.cameraMinWidth),
+          reason: 'stopped camera width at $name must be >= ${ControlLayout.cameraMinWidth}');
+      expect(stopped, normal,
+          reason: 'camera size at $name must be identical with and without STOPPED banner');
     }
   });
 
