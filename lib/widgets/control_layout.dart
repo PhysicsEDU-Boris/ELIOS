@@ -104,7 +104,8 @@ class ControlLayout extends StatelessWidget {
           child: LayoutBuilder(builder: (context, viewport) {
             final width = viewport.maxWidth;
             final isShort = viewport.maxHeight < 500;
-            final pad = isShort ? _padCompact : _pad;
+            final compactDesktop = width >= desktopMinWidth && width < wideMinWidth;
+            final pad = isShort || compactDesktop ? _padCompact : _pad;
             final Widget body;
             final bool pinStop;
             if (width >= desktopMinWidth) {
@@ -116,7 +117,7 @@ class ControlLayout extends StatelessWidget {
                       ? _landscapeShortMinHeight
                       : _desktopMinHeight;
               pinStop = viewport.maxHeight < minHeight;
-              final gap = SizedBox(width: isShort ? 6 : (compact ? 8 : 16), height: isShort ? 6 : (compact ? 8 : 16));
+              final gap = SizedBox(width: isShort ? 6 : (compact ? 2 : 16), height: isShort ? 6 : (compact ? 8 : 16));
               final speedColumn = Column(mainAxisSize: MainAxisSize.min, children: [
                 speed(compact),
                 if (!pinStop) ...[gap, stopButton],
@@ -132,6 +133,7 @@ class ControlLayout extends StatelessWidget {
                     Flexible(
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
+                          minWidth: cameraMinWidth,
                           maxWidth: isShort ? 360 : cameraMaxWidth,
                           maxHeight: isShort ? 220 : 388,
                         ),

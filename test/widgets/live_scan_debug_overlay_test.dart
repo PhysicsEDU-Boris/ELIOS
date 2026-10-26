@@ -12,7 +12,7 @@ void main() {
     var now = 0;
     late final LiveScanController c;
     c = LiveScanController(
-      startQuiz: (_) {
+      startQuiz: (_, _) {
         if (busy) return false;
         c.onQuizPhase(WasteQuizPhase.loadingQuestion);
         return true;

@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/gemma_quiz_service.dart';
 import 'package:elio/services/live_scan_controller.dart';
+import 'package:elio/services/detection_crop.dart';
+import 'package:elio/services/detection_stabilizer.dart' show TrackedDetection;
+import 'package:elio/services/frame_source/frame_source.dart';
 import 'package:elio/services/robot/r1_constants.dart' show armSettle;
 import 'package:elio/services/live_scan_state_machine.dart';
 import 'package:elio/services/websocket_service.dart';
@@ -12,6 +16,7 @@ import 'package:elio/widgets/control_layout.dart' show GripperButtons;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 
 final _t0 = DateTime(2026, 1, 1);
 
@@ -33,7 +38,7 @@ class _Rig {
   _Rig({this.busy = false, bool manualPickUpQuiz = false}) {
     c = LiveScanController(
       manualPickUpQuiz: manualPickUpQuiz,
-      startQuiz: (detection) {
+      startQuiz: (detection, _) {
         final label = detection.label;
         if (busy) return false;
         starts.add(label);
@@ -90,19 +95,63 @@ void main() {
   // FlutterTts() construction needs the binding ready, even with voice off.
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('G1: PICK UP starts quiz after a lock, while lock alone does not', (tester) async {
-    final r = _Rig(manualPickUpQuiz: true);
-    r.run(0, 1500, [_plastic]);
-    expect(r.c.machine.state, LiveScanState.asking);
-    expect(r.starts, isEmpty, reason: 'the live-scan lock alone must not open quiz');
+  testWidgets('G1b: PICK UP crops the frame captured at lock despite later frames without clean_image', (tester) async {
+    final imageBytes = Uint8List.fromList(img.encodePng(img.Image(width: 640, height: 480)));
+    final lockedFrame = CapturedFrame(
+      bytes: imageBytes,
+      cleanBytes: imageBytes,
+      width: 640,
+      height: 480,
+      timestamp: _t0,
+      frameId: 1,
+      detectionFrameId: 1,
+    );
+    final laterFrame = CapturedFrame(
+      bytes: imageBytes,
+      width: 640,
+      height: 480,
+      timestamp: _t0,
+      frameId: 2,
+      detectionFrameId: 2,
+    );
+    var now = 0;
+    CapturedFrame? latestFrame;
+    TrackedDetection? lockedDetection;
+    Uint8List? crop;
+    CapturedFrame? startedFrame;
+    final controller = LiveScanController(
+      manualPickUpQuiz: true,
+      clock: () => _t0.add(Duration(milliseconds: now)),
+      startQuiz: (detection, frame) {
+        startedFrame = frame;
+        lockedDetection = detection;
+        crop = cropDetection((frame!, detection));
+        return crop != null;
+      },
+    );
+    addTearDown(controller.dispose);
+
+    for (now = 0; now <= 1500; now += 250) {
+      latestFrame = lockedFrame;
+      controller.onDetections([_plastic], frameSize: _frame, capturedFrame: lockedFrame);
+    }
+    expect(controller.machine.state, LiveScanState.asking);
+    expect(startedFrame, isNull, reason: 'the live-scan lock alone must not open quiz');
+    for (now = 1750; now <= 2250; now += 250) {
+      latestFrame = laterFrame;
+      controller.onDetections([_plastic], frameSize: _frame, capturedFrame: laterFrame);
+    }
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: GripperButtons(
       enabled: true,
-      onPickUp: r.c.onPickUpPressed,
+      onPickUp: controller.onPickUpPressed,
       onRelease: () {},
     ))));
     await tester.tap(find.text('PICK UP'));
-    expect(r.starts, ['Plastic']);
-    expect(r.startedAt, 1500);
+
+    expect(startedFrame, same(lockedFrame));
+    expect(crop, isNotNull);
+    expect(cropDetection((latestFrame!, lockedDetection!)), isNull,
+        reason: 'the old _latestFrame path cannot crop without paired clean_image');
   });
 
   group('J1 guard (decision 0020, "J1 guard")', () {
@@ -471,7 +520,7 @@ void main() {
 
     var now = 0;
     final c = LiveScanController(
-      startQuiz: (detection) {
+        startQuiz: (detection, _) {
         final label = detection.label;
         if (container.read(wasteQuizProvider).phase != WasteQuizPhase.idle) return false;
         quiz.startForLabel(label);
@@ -501,7 +550,7 @@ void main() {
   });
 
   test('LiveScanController with no clock: argument still works (uses the monotonic default, decision 0009)', () {
-    final c = LiveScanController(startQuiz: (_) => true);
+    final c = LiveScanController(startQuiz: (_, _) => true);
     expect(c.machine.state, LiveScanState.searching);
     c.onDetections([_plastic]);
     expect(c.machine.state, LiveScanState.locking);

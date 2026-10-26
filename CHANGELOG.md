@@ -28,6 +28,8 @@ kept outside the repo.
   camera; a debug-only Base ◀ ▶ nudge remains available. Added 0–100 gripper-width control,
   with PICK UP closing and RELEASE opening. The opt-in `G1_PICKUP_QUIZ_FLOW` starts the quiz
   when PICK UP is pressed; the default live-scan lock behavior is unchanged.
+- G1b fixes: PICK UP crops from the `CapturedFrame` paired with its lock, not a later preview
+  frame, and compact desktop layouts preserve the camera's minimum width while STOPPED.
 - L1 fake MaixCAM2 robot motion: simulator-backed PICK / MOVE_TO_BIN / DROP with IK and 60 deg/s
   joint stepping, carried-card/gripper behavior, motor-driven base motion, servo-driven arm
   motion, and five R1 scenarios.

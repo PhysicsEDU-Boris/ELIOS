@@ -92,7 +92,7 @@ Future<void> _pump(WidgetTester tester, Size size, {_Quiz quiz = _Quiz.none, boo
               onRight: () {},
               onStop: () => _tap('wheels stop'),
             ),
-            camera: const ColoredBox(color: Color(0xFFD9D9D9)),
+              camera: const ColoredBox(key: ValueKey('control_camera'), color: Color(0xFFD9D9D9)),
             actions: GripperButtons(enabled: true, width: 30, onWidthChanged: (_) => _tap('width'),
                 onPickUp: () => _tap('pick up'), onRelease: () => _tap('release')),
             speed: (c) => SpeedSlider(compact: c, speed: 75, enabled: true, onChanged: (_) => _tap('speed')),
@@ -264,6 +264,17 @@ void main() {
       }
     }
   }
+
+  testWidgets('STOPPED banner preserves the camera at desktop sizes', (tester) async {
+    for (final size in [const Size(1366, 768), const Size(770, 553)]) {
+      await _pump(tester, size, stopped: true);
+      expect(
+        tester.getSize(find.byKey(const ValueKey('control_camera'))).width,
+        greaterThanOrEqualTo(ControlLayout.cameraMinWidth),
+        reason: 'camera at ${size.width.toInt()}x${size.height.toInt()} with STOPPED',
+      );
+    }
+  });
 
   testWidgets('STOPPED: the open quiz stays usable (answer, then close with X)', (tester) async {
     await _pump(tester, const Size(800, 632), quiz: _Quiz.open, stopped: true);

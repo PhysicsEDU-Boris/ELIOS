@@ -15,8 +15,9 @@
 - The physical gripper servo is D2, range 10–90 (open=10, close=90). Firmware L2 maps
   `0..100` to `10..90` and holds the commanded width.
 - In the G1 flow, PICK UP sends gripper 100 and opens the quiz immediately after the button
-  press; RELEASE sends gripper 0. The quiz-on-pick-up path remains opt-in until L5. L4 will
-  wait for `motion_done` before progressing the flow.
+  press; RELEASE sends gripper 0. The quiz uses the `CapturedFrame` paired with the detection
+  lock, even if later preview frames lack `clean_image`. The quiz-on-pick-up path remains opt-in
+  until L5. L4 will wait for `motion_done` before progressing the flow.
 
 ## Rationale
 

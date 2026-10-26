@@ -43,7 +43,7 @@ void main() {
       final starts = <String>[];
       final events = <String>[];
       final c = LiveScanController(
-        startQuiz: (detection) {
+        startQuiz: (detection, _) {
           final label = detection.label;
           if (container.read(wasteQuizProvider).phase != WasteQuizPhase.idle) return false;
           starts.add(label);
