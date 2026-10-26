@@ -255,8 +255,11 @@ def test_command_link_0023_shape(tmp_path):
             return replies, locked, fake.drive_locked, fake.held_item
 
     replies, locked, unlocked_after, j1 = run(tmp_path, {"items": [BOTTLE]}, body)
-    assert replies == [
-        {"event": "ack", "seq": 1, "drive_locked": False},
+    assert replies[0]["event"] == "ack" and replies[0]["seq"] == 1
+    assert replies[0]["drive_locked"] is False
+    assert replies[0]["at_home"] is True
+    assert len(replies[0]["ee_mm"]) == 3
+    assert replies[1:] == [
         {"event": "ack", "seq": 2},
         {"event": "ack", "seq": 3},
         {"event": "ack", "seq": 4}, {"event": "motion_done", "seq": 4},
@@ -267,6 +270,33 @@ def test_command_link_0023_shape(tmp_path):
     ]
     assert locked and not unlocked_after
     assert j1 == "bottle"
+
+
+@needs_sim
+def test_home_moves_all_joints_to_zero_and_status_reports_pose(tmp_path):
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            fake.world.angles[:] = fake.world.target[:] = [0, 8, -10, 2, -4]
+            fake.world.set_servo("gripper", 100)
+            await ws.send(json.dumps({"cmd": "STATUS", "seq": 1}))
+            before = json.loads(await asyncio.wait_for(ws.recv(), 2))
+            assert before["at_home"] is False
+            assert len(before["ee_mm"]) == 3
+            await ws.send(json.dumps({"cmd": "HOME", "seq": 2}))
+            replies = [json.loads(await asyncio.wait_for(ws.recv(), 10)) for _ in range(2)]
+            assert replies == [{"event": "ack", "seq": 2}, {"event": "motion_done", "seq": 2}]
+            await ws.send(json.dumps({"cmd": "STATUS", "seq": 3}))
+            status = json.loads(await asyncio.wait_for(ws.recv(), 2))
+            return status, fake.world.angles.copy(), fake.world.target.copy(), fake.world.gripper_width
+
+    status, angles, target, grip = run(tmp_path, {"items": []}, body)
+    assert status["event"] == "ack" and status["seq"] == 3
+    assert status["at_home"] is True
+    assert status["ee_mm"] == pytest.approx([0, -42.5, 90], abs=0.1)
+    assert angles == pytest.approx(np.zeros(5), abs=0.1)
+    assert target == pytest.approx(np.zeros(5), abs=0.1)
+    assert grip == 0
 
 
 @needs_sim
@@ -357,6 +387,17 @@ def world_for(tmp_path, items, images_dir=None, occlusion=True, log=None):
 
 
 @needs_sim
+def test_fake_uses_robot_sim_effective_joint_limits(tmp_path):
+    world = world_for(tmp_path, [])
+    try:
+        assert world.cc.ase.JOINT_LIMITS == [(-90.0, 90.0), (-50.0, 50.0),
+                                            (-180.0, 0.0), (-25.0, 90.0),
+                                            (-90.0, 90.0)]
+    finally:
+        world.close()
+
+
+@needs_sim
 def test_reach_moves_hand_on_y_without_panning_camera_and_clamps(tmp_path):
     world = world_for(tmp_path, [])
     try:
@@ -372,11 +413,49 @@ def test_reach_moves_hand_on_y_without_panning_camera_and_clamps(tmp_path):
         minus_y = ase.forward_kinematics(world.target)[2]
         assert minus_y[1] < plus_y[1]
         assert world.set_servo("reach", 1000)
-        assert world.reach_value == 180
+        assert world.hand_values["reach"] == 180
         limits = np.asarray(ase.JOINT_LIMITS)
         assert np.all(world.target >= limits[:, 0])
         assert np.all(world.target <= limits[:, 1])
         assert not world.set_servo("unknown", 90)
+    finally:
+        world.close()
+
+
+@needs_sim
+def test_height_uses_cartesian_ik_without_panning_camera(tmp_path):
+    world = world_for(tmp_path, [])
+    try:
+        ase = world.cc.ase
+        camera = world.cc.camera_pose(world.angles[0])
+        start = ase.forward_kinematics(world.target)[2].copy()
+        assert world.set_servo("height", 91)
+        plus = ase.forward_kinematics(world.target)[2].copy()
+        assert plus[2] > start[2]
+        assert world.target[0] == 0
+        assert world.set_servo("height", 90)
+        assert np.allclose(ase.forward_kinematics(world.target)[2], start, atol=0.1)
+        assert world.set_servo("height", 89)
+        minus = ase.forward_kinematics(world.target)[2].copy()
+        assert minus[2] < start[2]
+        assert world.set_servo("height", 1000)
+        limits = np.asarray(ase.JOINT_LIMITS)
+        assert np.all(world.target >= limits[:, 0])
+        assert np.all(world.target <= limits[:, 1])
+        assert np.allclose(world.cc.camera_pose(world.angles[0]), camera)
+    finally:
+        world.close()
+
+
+@needs_sim
+def test_lateral_is_disabled_without_moving_j1_or_camera(tmp_path):
+    world = world_for(tmp_path, [])
+    try:
+        target = world.target.copy()
+        camera = world.cc.camera_pose(world.angles[0])
+        assert not world.set_servo("lateral", 91)
+        assert np.array_equal(world.target, target)
+        assert np.allclose(world.cc.camera_pose(world.angles[0]), camera)
     finally:
         world.close()
 
