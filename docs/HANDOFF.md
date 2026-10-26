@@ -1,7 +1,7 @@
 # Handoff
 
-- Author: Gemini. Branch `feat/h1-scan-history` (HEAD), base `origin/feature/live-scan` (51d36c2, PR #39 merged).
-  PR not opened yet. Never commit Xcode scheme, `Maixcam.txt`, `docs/module/`.
+- Author: Gemini. Branch `feat/h1-scan-history` (HEAD `3526c2c`), base `origin/feature/live-scan` (`51d36c2`, PR #39 merged).
+  PR #40 (open, not merged). Never commit Xcode scheme, `Maixcam.txt`, `docs/module/`.
 - Decisions: 0013–0019 quiz/module; [0020](decisions/0020-lock-rearm-rule.md) re-arm,
   [0021](decisions/0021-manual-driving-orchestration.md) orchestration,
   [0022](decisions/0022-detection-protocol-distance-tags.md) protocol,
