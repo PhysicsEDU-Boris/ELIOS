@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 const _textPrimary = Color(0xFF1C2833);
-const _textSecondary = Color(0xFF7F8C8D);
+const _label = Color(0xFF6B6B6B);
+const _textSecondary = Color(0xFF9A9A9A);
 const _redAccent = Color(0xFFE74C3C);
 
 /// The wheel D-pad: one `motor` command on touch-down, [onStop] (motor 0,0) on
@@ -16,6 +17,7 @@ class DrivePad extends StatelessWidget {
     required this.onLeft,
     required this.onRight,
     required this.onStop,
+    this.compact = false,
   });
 
   final double speed;
@@ -26,84 +28,58 @@ class DrivePad extends StatelessWidget {
   final VoidCallback onRight;
   final VoidCallback onStop;
 
+  /// 56 px keys, no top inset: the narrow Control layout (U1).
+  final bool compact;
+
   @override
   Widget build(BuildContext context) {
+    final isShort = MediaQuery.maybeSizeOf(context)?.height != null && MediaQuery.sizeOf(context).height < 500;
+    final buttonSize = isShort ? 48.0 : (compact ? 56.0 : 68.0);
+    Widget button(IconData icon, VoidCallback onPressed, {bool isStop = false}) =>
+        _DpadButton(icon: icon, onPressed: onPressed, onReleased: onStop, isStop: isStop, size: buttonSize);
+    final rowGap = SizedBox(height: isShort ? 3 : (compact ? 4 : 12));
     return Opacity(
       opacity: enabled ? 1 : 0.65,
       child: AbsorbPointer(
         absorbing: !enabled,
-        child: SizedBox(
-          width: 158,
-          height: 270,
+        // Figma 43:42: 68 px keys, 4 px apart in the middle row, 12 px above and below.
+        child: Padding(
+          padding: EdgeInsets.only(top: compact ? 0 : 36),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'DRIVE CONTROLS',
                 style: TextStyle(
-                  color: Color(0xFF3F4943),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 2,
+                  color: _label,
+                  fontSize: isShort ? 11 : 14,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: isShort ? 1.2 : 1.68,
                 ),
               ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: 158,
-                height: 180,
-                child: Stack(
-                  children: [
-                    Align(
-                      alignment: Alignment.topCenter,
-                      child: _DpadButton(
-                        icon: Icons.arrow_upward,
-                        onPressed: onForward,
-                        onReleased: onStop,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: _DpadButton(
-                        icon: Icons.arrow_back,
-                        onPressed: onLeft,
-                        onReleased: onStop,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.center,
-                      child: _DpadButton(
-                        icon: Icons.hexagon_outlined,
-                        onPressed: onStop,
-                        onReleased: onStop,
-                        isStop: true,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: _DpadButton(
-                        icon: Icons.arrow_forward,
-                        onPressed: onRight,
-                        onReleased: onStop,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: _DpadButton(
-                        icon: Icons.arrow_downward,
-                        onPressed: onBack,
-                        onReleased: onStop,
-                      ),
-                    ),
-                  ],
-                ),
+              SizedBox(height: isShort ? 4 : (compact ? 8 : 14)),
+              button(Icons.arrow_upward, onForward),
+              rowGap,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  button(Icons.arrow_back, onLeft),
+                  const SizedBox(width: 4),
+                  button(Icons.hexagon_outlined, onStop, isStop: true),
+                  const SizedBox(width: 4),
+                  button(Icons.arrow_forward, onRight),
+                ],
               ),
-              const SizedBox(height: 8),
+              rowGap,
+              button(Icons.arrow_downward, onBack),
+              SizedBox(height: isShort ? 4 : (compact ? 8 : 14)),
               Text(
                 '${speed.toInt()}% PWM',
-                style: const TextStyle(
+                style: TextStyle(
                   color: _textSecondary,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
+                  fontSize: isShort ? 10 : 12,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.48,
                 ),
               ),
             ],
@@ -120,12 +96,14 @@ class _DpadButton extends StatelessWidget {
     required this.onPressed,
     required this.onReleased,
     this.isStop = false,
+    this.size = 68,
   });
 
   final IconData icon;
   final VoidCallback onPressed;
   final VoidCallback onReleased;
   final bool isStop;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -135,21 +113,22 @@ class _DpadButton extends StatelessWidget {
       onTapUp: (_) => onReleased(),
       onTapCancel: onReleased,
       child: Container(
-        width: 52,
-        height: 56,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
-          color: isStop ? const Color(0xFFFEF2F2) : Colors.white,
-          borderRadius: BorderRadius.circular(isStop ? 26 : 12),
+          color: isStop ? const Color(0xFFFDF1EF) : Colors.white,
+          borderRadius: BorderRadius.circular(isStop ? size / 2 : 12),
           border: Border.all(
-            color: isStop ? const Color(0xFFFECACA) : const Color(0xFFBEC9C2),
+            color: isStop ? const Color(0xFFF3CFCA) : const Color(0xFFDCDCDC),
           ),
+          boxShadow: isStop ? null : const [BoxShadow(color: Color(0x0F000000), blurRadius: 3, offset: Offset(0, 1))],
         ),
         child: Icon(
           icon,
           color: isStop
               ? _redAccent
               : _textPrimary,
-          size: isStop ? 30 : 28,
+          size: size * (isStop ? 0.53 : 0.47),
         ),
       ),
     );

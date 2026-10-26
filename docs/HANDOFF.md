@@ -1,59 +1,44 @@
 # Handoff
 
-- Base `feature/live-scan` at 734e7a1 (PRs up to #36 merged); E1b is on `feat/e1b-stop-layout`
-  (PR open). #24 stays a draft. Robot build: CLAUDE.md, launch with `open`, check `appCommit`.
-- Decisions: [0013](decisions/0013-quiz-answer-schema.md) MC schema,
-  [0014](decisions/0014-module-chunks.md) module chunks, [0015](decisions/0015-question-bank-draft.md)
-  label bank, 0016 grounded quiz (on draft #24 only), [0017](decisions/0017-object-bank.md) object bank,
-  [0018](decisions/0018-question-source-toggle.md) source switch,
-  [0019](decisions/0019-gemma-question-topics.md) Gemma angles, [0020](decisions/0020-lock-rearm-rule.md)
-  re-arm rule, [0021](decisions/0021-manual-driving-orchestration.md) driving + orchestration (proposed,
-  amended 24 Oct), [0022](decisions/0022-detection-protocol-distance-tags.md) P1 protocol + topology,
-  [0023](decisions/0023-r1-command-link.md) R1 + command link, [0024](decisions/0024-fake-maixcam-sim.md) fake MaixCAM2,
-  [0025](decisions/0025-bank-detector-class.md) detector class picks bank questions,
-  [0026](decisions/0026-emergency-stop-motion-gate.md) emergency stop, motion gate, watchdog spec.
-- Topology (0021e): app -> MaixCAM2 only (WiFi); MaixCAM2 -> ESP32 (arm, 6 servos incl. J1) and Uno
-  (wheels) over UART; the arm is not working yet. The Mac is debug only.
+- Base `feature/live-scan` at 650752e; HEAD on `feat/u1-control-layout` (PR open, not merged).
+  PRs #31-#37 merged; #24 stays draft. Never commit Xcode scheme, `Maixcam.txt`, `docs/module/`.
+
+## Done (U1 Control screen layout)
+
+- Control screen = Figma 43:30 1-row layout across desktop & Android landscape (`800x360`–`1366x768`).
+- Short landscape responsive sizing (`<500 dp`): 180 dp sliders, 48 dp D-pad, 140 dp speed, 64 dp STOP.
+- STOP stays seated under speed slider with 0 scroll; camera framed in `Flexible` (`maxHeight: 220 dp`).
+- Symmetrical phone portrait (`390x844`) fallback with `FittedBox` motion row and pinned STOP.
+- 44 layout tests passing (7 sizes × 6 states); generated PNGs in `docs/test-results/u1-control-layout/`.
 
 ## R1 (0023)
 
-- Built and tested on `SimulatedRobot` only. The app shows the link probe only (`--dart-define=R1=true`):
-  today's firmware answers nothing, so "R1: robot tidak terhubung" and the live scan as before.
-- Waits on R1-fw and the M4 screens. E1/E1b: STOP sits in its own rail, pauses scanning; today's firmware
-  ignores STOP/HEARTBEAT, so it stops the wheels (motor 0,0) only; the arm keeps its last angles.
-- Fake MaixCAM2 (T1/T1b, `tools/fake_maixcam/` README): run `make_crops.py` once, app config
-  `127.0.0.1:8765`; photo cards, occlusion, timing rule (events ≥ 25 s); 21 scenarios incl. `one_<label>`.
+- Simulated robot only; `--dart-define=R1=true` shows "R1: robot tidak terhubung" on today's firmware.
+- Waits on R1-fw and M4 screens. STOP stops wheels (motor 0,0); arm holds last angles until R1-fw.
 
-## M2d robot test (NOT run yet; the fake's scenarios cover most of it)
+## M2d robot test (not run yet; fake scenarios cover most)
 
-- Banana peel quizzed and left in view; a bottle locks 15 s after the quiz closes (overlay: the
-  cooldown, then "benda yang sudah dikuis masih terlihat"); a second bottle waits 2 s.
-- "Scan lagi" (off while a quiz is open); B3 path; `livescan-*.jsonl`. Repeat quizzes from
-  flicker: raise `quizzedObjectAbsentToRearm` to 5-8 s.
+- Quizzed peel in view: bottle locks 15 s after quiz closes; second bottle waits 2 s; check JSONL.
 
 ## Quiz state
 
-- Bank is the default source, every launch (Gemma: debug only, not saved, 0018/0019). Live scans
-  pick bank questions by the detector class (0025); `class_mismatch` lines show Gemma disagreeing. All items are
-  `draft`; owner is reviewing [object](quiz-review/object_bank_review.md) and [question](quiz-review/question_bank_review.md) banks.
-- Next quiz task, after the review: accepted-filter (release: `accepted` only), kardus Q1, level
-  chip vs Mudah-first, generic Q5, "menurut modul" wording.
+- Bank is default source (0018/0019); detector class picks questions (0025); owner reviewing banks.
+- Next quiz task: accepted-filter, kardus Q1, level chip vs Mudah-first, generic Q5.
 
 ## Next tasks, in order
 
-1. **Next: R1-fw**: in `main.py`, the 0023 command link + 0026 (HEARTBEAT, 1 s watchdog, STOP,
-   wheel refresh ≤ 200 ms, `arm_moving`); the fake's PICK/MOVE_TO_BIN/DROP. Uno 500 ms watchdog and
-   ESP32 hold are sketch changes outside this repo. A physical e-stop before any arm test near people.
-2. Arm bring-up over the ESP32 UART (plan 2.6 superseded by 0021e).
-3. Camera calibration + firmware `dist_cm` / `arm_tags` (0022 spec).
-4. M4 overlay, including R1's student screens. 5. R2 sort modes. 6. CI.
-8. M5 Android.
-9. M6 ByteTrack (conditional on the two-object overlap test).
-10. M7 release hygiene.
+1. **L1** (in progress by another agent; fake = real robot; Notion "Robot link plan").
+2. **L0b** (serial protocol), then **L5 + U2**. R1-fw only after ESP32 & Uno sketches exist.
+3. Arm bring-up (ESP32 UART), camera calibration (0022), M4 overlay, R2, CI, M5 Android.
 
 ## Known open
 
-- Image identify first token 7-9 s (vision encoder on CPU); a chat interrupting a scan waits up
-  to 8 s for the cancelled call (0003).
-- 2 stale splash tests (`test/widget_test.dart`); `lib/Screens` vs `lib/screens` case. Dataset
-  (owner): laptop as E_Waste; yellow cup scores 39-56%.
+- Image identify first token 7-9 s; chat interrupting scan waits up to 8 s for cancelled call (0003).
+- 2 stale splash tests (`test/widget_test.dart`); yellow cup scores 39-56%.
+
+## Decisions
+
+- [0020](decisions/0020-lock-rearm-rule.md) re-arm, [0021](decisions/0021-manual-driving-orchestration.md) orchestration,
+  [0022](decisions/0022-detection-protocol-distance-tags.md) detection protocol, [0023](decisions/0023-r1-command-link.md) R1 link,
+  [0024](decisions/0024-fake-maixcam-sim.md) fake MaixCAM2, [0025](decisions/0025-bank-detector-class.md) bank class,
+  [0026](decisions/0026-emergency-stop-motion-gate.md) emergency stop + watchdog spec.

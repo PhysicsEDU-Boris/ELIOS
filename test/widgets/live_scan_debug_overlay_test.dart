@@ -46,9 +46,9 @@ void main() {
     expect(find.textContaining('menunggu: jeda setelah kuis 15 s'), findsOneWidget);
   });
 
-  testWidgets('"Scan lagi" is disabled while a quiz is open and re-arms after it (decision 0020)', (tester) async {
+  testWidgets('"Reset scan (debug)" is disabled while a quiz is open and re-arms after it (decision 0020)', (tester) async {
     final c = await pump(tester, busy: false); // ASKING
-    final button = find.widgetWithText(OutlinedButton, 'Scan lagi');
+    final button = find.widgetWithText(OutlinedButton, 'Reset scan (debug)');
     expect(tester.widget<OutlinedButton>(button).onPressed, isNull);
     c.onQuizPhase(WasteQuizPhase.active);
     await tester.pump();
