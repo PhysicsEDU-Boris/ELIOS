@@ -24,6 +24,10 @@ kept outside the repo.
     category filters (All, B3, Recyclable, Organic), photo thumbnails, difficulty chips, and detailed
     question cards highlighting student vs correct answers.
   - History pill on control screen wired to real trophy count and opens scan history screen.
+- G1 manual arm controls: ARM REACH moves the hand along ±Y without turning J1 or panning the
+  camera; a debug-only Base ◀ ▶ nudge remains available. Added 0–100 gripper-width control,
+  with PICK UP closing and RELEASE opening. The opt-in `G1_PICKUP_QUIZ_FLOW` starts the quiz
+  when PICK UP is pressed; the default live-scan lock behavior is unchanged.
 - L1 fake MaixCAM2 robot motion: simulator-backed PICK / MOVE_TO_BIN / DROP with IK and 60 deg/s
   joint stepping, carried-card/gripper behavior, motor-driven base motion, servo-driven arm
   motion, and five R1 scenarios.

@@ -1,7 +1,15 @@
 # Handoff
 
-- Author: Gemini. Branch `feat/h1-scan-history` (HEAD `3526c2c`), base `origin/feature/live-scan` (`51d36c2`, PR #39 merged).
-  PR #40 (open, not merged). Never commit Xcode scheme, `Maixcam.txt`, `docs/module/`.
+## In progress
+
+- G1 (`feat/g1-reach-gripper`), based on `origin/feature/live-scan` after #40, #38 and L1. ARM REACH
+  uses Cartesian ±Y IK without moving J1/camera; gripper width is 0 open to 100 closed. PICK UP
+  closes the gripper and may start the quiz only with `G1_PICKUP_QUIZ_FLOW=true`; L4 motion_done
+  gating and L5 rollout remain future work. G1 tests and analyzer pass; full Flutter suite retains
+  the two known stale splash-test failures. Local commits only; not pushed.
+- Decision: [0027a](decisions/0027a-arm-reach-gripper.md).
+
+- H1 scan history was merged in #40. Never commit Xcode scheme, `Maixcam.txt`, or `docs/module/`.
 - Decisions: 0013–0019 quiz/module; [0020](decisions/0020-lock-rearm-rule.md) re-arm,
   [0021](decisions/0021-manual-driving-orchestration.md) orchestration,
   [0022](decisions/0022-detection-protocol-distance-tags.md) protocol,
@@ -9,6 +17,7 @@
   [0024](decisions/0024-fake-maixcam-sim.md) fake MaixCAM2,
   [0025](decisions/0025-bank-detector-class.md) bank class,
   [0026](decisions/0026-emergency-stop-motion-gate.md) stop + watchdog,
+  [0027a](decisions/0027a-arm-reach-gripper.md) arm reach + gripper width,
   [0028](decisions/0028-trophy-rules-and-scan-history.md) trophy rules & scan history.
 
 ## Done (H1 Scan History & U1 Control Screen)
