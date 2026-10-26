@@ -356,6 +356,52 @@ def world_for(tmp_path, items, images_dir=None, occlusion=True, log=None):
     return fm.SimWorld(SIM, sc, images_dir=images_dir or tmp_path / "no-images", log=log or (lambda *_: None))
 
 
+@needs_sim
+def test_reach_moves_hand_on_y_without_panning_camera_and_clamps(tmp_path):
+    world = world_for(tmp_path, [])
+    try:
+        ase = world.cc.ase
+        camera = world.cc.camera_pose(world.angles[0])
+        start = ase.forward_kinematics(world.angles)[2].copy()
+        assert world.set_servo("reach", 120)
+        plus_y = ase.forward_kinematics(world.target)[2].copy()
+        assert plus_y[1] > start[1]
+        assert world.angles[0] == world.target[0] == 0
+        assert np.allclose(world.cc.camera_pose(world.angles[0]), camera)
+        assert world.set_servo("reach", 60)
+        minus_y = ase.forward_kinematics(world.target)[2]
+        assert minus_y[1] < plus_y[1]
+        assert world.set_servo("reach", 1000)
+        assert world.reach_value == 180
+        limits = np.asarray(ase.JOINT_LIMITS)
+        assert np.all(world.target >= limits[:, 0])
+        assert np.all(world.target <= limits[:, 1])
+        assert not world.set_servo("unknown", 90)
+    finally:
+        world.close()
+
+
+@needs_sim
+def test_gripper_width_controls_jaw_gap_and_closed_threshold(tmp_path):
+    world = world_for(tmp_path, [])
+    try:
+        world.set_servo("gripper", 0)
+        opened = world.gripper_jaws[0][0].points.copy()
+        world.set_servo("gripper", 49)
+        almost_closed = world.gripper_jaws[0][0].points.copy()
+        assert not world.gripper_closed
+        world.set_servo("gripper", 50)
+        assert world.gripper_closed
+        world.set_servo("gripper", 100)
+        closed = world.gripper_jaws[0][0].points.copy()
+        assert world.gripper_width == 100
+        assert not np.allclose(opened, almost_closed)
+        assert not np.allclose(opened, closed)
+        assert not world.set_servo("unknown", 90)
+    finally:
+        world.close()
+
+
 def write_photo(path, w, h, colour=(40, 160, 220)):
     path.parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(path), np.full((h, w, 3), colour, np.uint8))
