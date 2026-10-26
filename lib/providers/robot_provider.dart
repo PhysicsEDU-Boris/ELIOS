@@ -37,25 +37,29 @@ class RobotState {
   final double pwmSpeed;
   final double baseAngle;
   final double elbowAngle;
+  final double reachValue;
   final double gripperVal;
 
   const RobotState({
     this.pwmSpeed = 75,
     this.baseAngle = 90,
     this.elbowAngle = 45,
-    this.gripperVal = 10,
+    this.reachValue = 90,
+    this.gripperVal = 0,
   });
 
   RobotState copyWith({
     double? pwmSpeed,
     double? baseAngle,
     double? elbowAngle,
+    double? reachValue,
     double? gripperVal,
   }) {
     return RobotState(
       pwmSpeed: pwmSpeed ?? this.pwmSpeed,
       baseAngle: baseAngle ?? this.baseAngle,
       elbowAngle: elbowAngle ?? this.elbowAngle,
+      reachValue: reachValue ?? this.reachValue,
       gripperVal: gripperVal ?? this.gripperVal,
     );
   }
@@ -93,6 +97,7 @@ class RobotControlNotifier extends Notifier<RobotState> {
   void setPwmSpeed(double v) => state = state.copyWith(pwmSpeed: v);
   void setBaseAngle(double v) => state = state.copyWith(baseAngle: v);
   void setElbowAngle(double v) => state = state.copyWith(elbowAngle: v);
+  void setReachValue(double v) => state = state.copyWith(reachValue: v);
   void setGripperVal(double v) => state = state.copyWith(gripperVal: v);
 
   // Resolution control ────────────────────────────────────────────────────────

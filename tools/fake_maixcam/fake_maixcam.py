@@ -42,6 +42,7 @@ DRIVE_MM_PER_PWM_S = 2.0
 WHEEL_TRACK_MM = 250.0
 PICK_MATCH_TOLERANCE_MM = 100.0
 IK_TOLERANCE_MM = 5.0
+GRIPPER_MAX_GAP_MM = 60.0
 BIN_TARGETS = {
     "organik": (0.0, -150.0, 80.0),
     "anorganik": (100.0, -150.0, 80.0),
@@ -194,6 +195,8 @@ class SimWorld:
         self.motor = (0, 0)
         self.held_item = None
         self.gripper_closed = False
+        self.gripper_width = 0
+        self.reach_value = 90
         for it in scenario["items"]:
             texture = texture_for(it, seed, images_dir, log)
             (x, y), (w, h) = it["pos_mm"], card_size(it["size_mm"], texture)
@@ -210,6 +213,14 @@ class SimWorld:
             self.corners[it["id"]] = corners.copy()
         self.set_j1(scenario["arm"].get("j1", 0.0), now=True)
         self.cam.set_pose(self.angles)  # project() uses the camera's current pose, so pose it before any render
+        self.gripper_jaws = []
+        self.gripper_jaw_points = []
+        for side in (-1, 1):
+            jaw = pv.Cube(center=(0, -100, 88.2), x_length=6, y_length=24, z_length=8)
+            self.cam.plotter.add_mesh(jaw, color="#3D4943", lighting=False)
+            self.gripper_jaws.append((jaw, side))
+            self.gripper_jaw_points.append(jaw.points.copy())
+        self._sync_gripper()
 
     def set_j1(self, deg, now=False):
         self.target[0] = deg
@@ -228,6 +239,7 @@ class SimWorld:
         delta = np.clip(self.target - self.angles, -JOINT_SPEED_DPS * dt, JOINT_SPEED_DPS * dt)
         self.angles += delta
         self._sync_cards()
+        self._sync_gripper()
         return bool(np.allclose(self.angles, self.target))
 
     def set_motor(self, left, right):
@@ -261,13 +273,44 @@ class SimWorld:
             mesh.points[:] = corners
             mesh.Modified()
 
+    def _sync_gripper(self):
+        transform = self.cc.ase.link_transforms(self.angles)[5]
+        gap = GRIPPER_MAX_GAP_MM * (1 - self.gripper_width / 100)
+        for (jaw, side), points in zip(self.gripper_jaws, self.gripper_jaw_points):
+            local = points.copy()
+            local[:, 0] += side * (gap / 2 + 3)
+            jaw.points[:] = (np.c_[local, np.ones(len(local))] @ transform.T)[:, :3]
+            jaw.Modified()
+
     def set_servo(self, part, value):
         if part == "base":
             self.target[0] = value - 90
         elif part == "elbow":
             self.target[1] = 90 - value
+        elif part == "reach":
+            value = max(0, min(180, int(value)))
+            direction = np.sign(value - self.reach_value)
+            if direction:
+                ase = self.cc.ase
+                angles = self.target.copy()
+                base = angles[0]
+                pitch, roll = ase.desired_global_pitch, ase.desired_global_roll
+                ase.desired_global_pitch = float(sum(angles[1:4]))
+                ase.desired_global_roll = float(angles[4])
+                try:
+                    for _ in range(abs(value - self.reach_value)):
+                        angles = ase.ik_step(angles, np.array([0, direction * ase.IK_STEP_SIZE, 0]))
+                        angles[0] = base  # reach changes the hand position while the camera stays on J1
+                        ase.clamp_angles(angles)
+                finally:
+                    ase.desired_global_pitch, ase.desired_global_roll = pitch, roll
+                self.target[:] = angles
+            self.reach_value = value
+            return True
         elif part == "gripper":
-            self.gripper_closed = value >= 50
+            self.gripper_width = max(0, min(100, int(value)))
+            self.gripper_closed = self.gripper_width >= 50
+            self._sync_gripper()
             return True
         else:
             return False
@@ -549,7 +592,8 @@ class FakeMaixCam:
                         self.world.set_motor(0, 0) if self.drive_locked else self.world.set_motor(left, right)
                     elif cmd == "servo":
                         part, value = data.get("part"), data.get("val")
-                        if not isinstance(part, str) or not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= 180:
+                        limit = 100 if part == "gripper" else 180
+                        if not isinstance(part, str) or not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= limit:
                             self.log("[WS] invalid servo command ignored")
                             continue
                         moved = self.world.set_servo(part, value)

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' show Size;
 
 import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
@@ -8,8 +7,9 @@ import 'package:elio/services/live_scan_controller.dart';
 import 'package:elio/services/robot/r1_constants.dart' show armSettle;
 import 'package:elio/services/live_scan_state_machine.dart';
 import 'package:elio/services/websocket_service.dart';
+import 'package:elio/widgets/control_layout.dart' show GripperButtons;
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -30,8 +30,9 @@ const _hand = Detection(x: 300, y: 260, w: 400, h: 400, label: 'Human_Hand', sco
 /// A controller with a fake clock and a fake quiz the test drives
 /// ("fake identify": a quiz start is recorded, its phases are scripted).
 class _Rig {
-  _Rig({this.busy = false}) {
+  _Rig({this.busy = false, bool manualPickUpQuiz = false}) {
     c = LiveScanController(
+      manualPickUpQuiz: manualPickUpQuiz,
       startQuiz: (detection) {
         final label = detection.label;
         if (busy) return false;
@@ -88,6 +89,21 @@ void main() {
   // (stop() on every question change, decision 0011's TTS fix) -- its lazy
   // FlutterTts() construction needs the binding ready, even with voice off.
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('G1: PICK UP starts quiz after a lock, while lock alone does not', (tester) async {
+    final r = _Rig(manualPickUpQuiz: true);
+    r.run(0, 1500, [_plastic]);
+    expect(r.c.machine.state, LiveScanState.asking);
+    expect(r.starts, isEmpty, reason: 'the live-scan lock alone must not open quiz');
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: GripperButtons(
+      enabled: true,
+      onPickUp: r.c.onPickUpPressed,
+      onRelease: () {},
+    ))));
+    await tester.tap(find.text('PICK UP'));
+    expect(r.starts, ['Plastic']);
+    expect(r.startedAt, 1500);
+  });
 
   group('J1 guard (decision 0020, "J1 guard")', () {
     test('24 Oct j1_sweep: the camera turns away and back, the quizzed bottle is not quizzed again', () {

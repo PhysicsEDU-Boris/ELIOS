@@ -159,9 +159,16 @@ class ControlLayout extends StatelessWidget {
               // Narrow portrait: stacked fallback with pinned STOP.
               pinStop = true;
               const gap = SizedBox(width: 12, height: 12);
-              body = Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+              body = SizedBox(
+                height: viewport.maxHeight - 2 * pad - EmergencyStopButton.size - 16,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.topCenter,
+                  child: SizedBox(
+                    width: width - 2 * pad,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                   topBar,
                   gap,
                   Center(
@@ -192,8 +199,11 @@ class ControlLayout extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Center(child: speed(true)),
-                  const SizedBox(height: 24),
-                ],
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ),
               );
             }
             return Stack(
@@ -456,11 +466,14 @@ class SpeedSlider extends StatelessWidget {
 /// PICK UP and RELEASE, under the camera. The label scales down in a narrow
 /// column instead of being clipped.
 class GripperButtons extends StatelessWidget {
-  const GripperButtons({super.key, required this.enabled, required this.onPickUp, required this.onRelease});
+  const GripperButtons({super.key, required this.enabled, required this.onPickUp, required this.onRelease,
+    this.width = 0, this.onWidthChanged});
 
   final bool enabled;
   final VoidCallback onPickUp;
   final VoidCallback onRelease;
+  final double width;
+  final ValueChanged<double>? onWidthChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -480,8 +493,8 @@ class GripperButtons extends StatelessWidget {
         );
     return Opacity(
       opacity: enabled ? 1 : 0.65,
-      child: Row(
-        children: [
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Row(children: [
           Expanded(
             child: SizedBox(
               height: btnHeight,
@@ -519,8 +532,16 @@ class GripperButtons extends StatelessWidget {
               ),
             ),
           ),
+        ]),
+        if (onWidthChanged != null) ...[
+          SizedBox(height: isShort ? 2 : 4),
+          Row(children: [
+            const Text('GRIPPER WIDTH', style: TextStyle(color: _label, fontSize: 9, fontWeight: FontWeight.w700)),
+            Expanded(child: Slider(value: width.clamp(0, 100), max: 100, onChanged: enabled ? onWidthChanged : null)),
+            Text('${width.round()}%', style: const TextStyle(color: _label, fontSize: 9)),
+          ]),
         ],
-      ),
+      ]),
     );
   }
 }
