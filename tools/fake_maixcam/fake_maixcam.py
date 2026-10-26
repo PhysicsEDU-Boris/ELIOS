@@ -48,6 +48,10 @@ BIN_TARGETS = {
     "anorganik": (100.0, -150.0, 80.0),
     "b3": (-100.0, -150.0, 80.0),
 }
+HAND_AXES = {
+    "reach": np.array([0.0, 1.0, 0.0]),
+    "height": np.array([0.0, 0.0, 1.0]),
+}
 
 
 def load_labels(path=HERE / "labels.yaml"):
@@ -183,8 +187,10 @@ class SimWorld:
         sys.path.insert(0, str(Path(sim_path).resolve()))
         import pyvista as pv
         from hil_toolkit import calibration_camera as cc
+        from hil_toolkit.hardware_mapping import apply_effective_limits
         from hil_toolkit.tags_toolkit.tag_model import TAGS
         self.cc, self.tags = cc, TAGS
+        apply_effective_limits()
         self.cam = cc.SimCalibrationCamera(IMG_W, IMG_H)
         self.angles = np.zeros(5)
         self.target = np.zeros(5)
@@ -196,7 +202,7 @@ class SimWorld:
         self.held_item = None
         self.gripper_closed = False
         self.gripper_width = 0
-        self.reach_value = 90
+        self.hand_values = {"reach": 90, "height": 90}
         for it in scenario["items"]:
             texture = texture_for(it, seed, images_dir, log)
             (x, y), (w, h) = it["pos_mm"], card_size(it["size_mm"], texture)
@@ -287,9 +293,10 @@ class SimWorld:
             self.target[0] = value - 90
         elif part == "elbow":
             self.target[1] = 90 - value
-        elif part == "reach":
+        elif part in self.hand_values:
             value = max(0, min(180, int(value)))
-            direction = np.sign(value - self.reach_value)
+            delta = value - self.hand_values[part]
+            direction = np.sign(delta)
             if direction:
                 ase = self.cc.ase
                 angles = self.target.copy()
@@ -298,14 +305,14 @@ class SimWorld:
                 ase.desired_global_pitch = float(sum(angles[1:4]))
                 ase.desired_global_roll = float(angles[4])
                 try:
-                    for _ in range(abs(value - self.reach_value)):
-                        angles = ase.ik_step(angles, np.array([0, direction * ase.IK_STEP_SIZE, 0]))
-                        angles[0] = base  # reach changes the hand position while the camera stays on J1
+                    for _ in range(abs(delta)):
+                        angles = ase.ik_step(angles, direction * ase.IK_STEP_SIZE * HAND_AXES[part])
+                        angles[0] = base  # Cartesian hand motion keeps the camera on J1
                         ase.clamp_angles(angles)
                 finally:
                     ase.desired_global_pitch, ase.desired_global_roll = pitch, roll
                 self.target[:] = angles
-            self.reach_value = value
+            self.hand_values[part] = value
             return True
         elif part == "gripper":
             self.gripper_width = max(0, min(100, int(value)))
@@ -474,6 +481,7 @@ class FakeMaixCam:
         # Decision 0023's command link. DRIVE is the existing `motor` message (dropped while locked).
         self.handlers = {
             "STATUS": self._cmd_status,
+            "HOME": self._cmd_home,
             "LOCK_DRIVE": self._cmd_drive_lock,
             "UNLOCK_DRIVE": self._cmd_drive_lock,
             "HOLD": self._cmd_hold,
@@ -645,7 +653,19 @@ class FakeMaixCam:
         await ws.send(json.dumps({"event": event, "seq": data["seq"], **extra}))
 
     async def _cmd_status(self, ws, data):
-        await self._reply(ws, "ack", data, drive_locked=self.drive_locked)
+        ee = self.world.cc.ase.forward_kinematics(self.world.angles)[2]
+        at_home = bool(np.allclose(self.world.target, np.zeros(5), atol=1e-6)
+                        and self.world.gripper_width == 0)
+        await self._reply(ws, "ack", data, drive_locked=self.drive_locked,
+                          ee_mm=[round(float(v), 1) for v in ee], at_home=at_home)
+
+    async def _cmd_home(self, ws, data):
+        started = await self._begin_motion(ws, data, np.zeros(5))
+        if started:
+            self.world.hand_values.update(reach=90, height=90)
+            self.world.gripper_width = 0
+            self.world.gripper_closed = False
+            self.world._sync_gripper()
 
     async def _cmd_drive_lock(self, ws, data):
         self.drive_locked = data["cmd"] == "LOCK_DRIVE"

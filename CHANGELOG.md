@@ -24,6 +24,10 @@ kept outside the repo.
   - R1 drop gating: when `--dart-define=R1=true`, displays "Robot sedang membuang ke tempat sampah..."
     and disables "Scan lagi" until R1 DROP motion completes and returns to idle.
   - Log events: `session_result` `{correct, total, trophies}` and `rescan_tapped`.
+- G2a arm protocol (decision 0027): HOME, Cartesian reach/height controls, disabled lateral axis,
+  six-field ESP32 servo line, boot/home assumptions, STATUS pose fields, and measured arm-tag poses.
+  The fake now homes all five joints, reports simulated `ee_mm`/commanded `at_home`, and applies
+  the simulator's effective hardware limits.
 - H1 scan history, trophy rules, and student levels (decision 0028, Figma 100:170):
   - Pure trophy rules (`lib/models/trophy_rules.dart`): 10 trophies per correct answer, essay score
     awarded directly, grade percentage thresholds (Sempurna, Hebat, Bagus, Belajar Lagi, Coba Lagi),
