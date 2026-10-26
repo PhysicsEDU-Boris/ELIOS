@@ -124,8 +124,8 @@ void main() {
       var now = DateTime(2026);
       final controller = LiveScanController(
         clock: () => now,
-        startQuiz: (box) {
-          quiz.onRobotLocked(_frame(), box);
+        startQuiz: (box, frame) {
+          quiz.onRobotLocked(frame ?? _frame(), box);
           return true;
         },
       );
@@ -306,7 +306,7 @@ void main() {
         var now = DateTime(2026);
         final controller = LiveScanController(
           clock: () => now,
-          startQuiz: (_) => true,
+          startQuiz: (_, _) => true,
         );
         addTearDown(controller.dispose);
         const detection = Detection(

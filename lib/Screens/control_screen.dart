@@ -94,9 +94,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     if (liveScanEnabled) {
       _liveScan = LiveScanController(
         manualPickUpQuiz: _pickUpQuizFlow,
-        startQuiz: (detection) {
+        startQuiz: (detection, frame) {
           if (ref.read(wasteQuizProvider).phase != WasteQuizPhase.idle) return false;
-          final frame = _latestFrame;
           if (frame == null) return false;
           ref.read(wasteQuizProvider.notifier).onRobotLocked(frame, detection);
           return true;
@@ -171,7 +170,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       }
 
       setState(() => _latestFrame = frame);
-      
+
       // Auto-generated waste quiz: only fed by the real MaixCAM2 stream, the
       // debug phone-camera path triggers it manually instead.
       if (frame.detections != null && ref.read(debugQuizSourceProvider) == WasteQuizSource.maixCam2) {
@@ -181,6 +180,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             frame.detections!,
             frameSize: Size(frame.width.toDouble(), frame.height.toDouble()),
             armMoving: WebSocketService().armMoving, // same message as the frame (0026)
+            capturedFrame: frame,
           );
         } else if (!_gate.stopped) {
           ref.read(wasteQuizProvider.notifier).onDetections(frame.detections!);

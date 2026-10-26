@@ -2,13 +2,14 @@
 
 ## In progress
 
-- G1 (`feat/g1-reach-gripper`), based on `origin/feature/live-scan` after #40, #38 and L1. ARM REACH
-  uses Cartesian ±Y IK without moving J1/camera; gripper width is 0 open to 100 closed. PICK UP
-  closes the gripper and may start the quiz only with `G1_PICKUP_QUIZ_FLOW=true`; L4 motion_done
-  gating and L5 rollout remain future work. G1 tests and analyzer pass; full Flutter suite retains
-  the two known stale splash-test failures. Local commits only; not pushed.
+- G1b (`feat/g1b-pickup-frame`), based on `origin/feature/live-scan` at `7054de6` (#41). Preserve
+  the lock-time `CapturedFrame` for PICK UP crop and keep STOPPED from shrinking the camera below
+  its minimum at 1366x768 and 770x553. Regressions, Flutter analyze and secret scan pass; the full
+  suite has 446 passes plus two stale splash-navigation failures. PR pending.
+- G1 reach/gripper was merged in #41. ARM REACH moves the hand along Cartesian ±Y without turning
+  J1/camera; width is 0 open to 100 closed. PICK UP closes and starts the opt-in quiz flow; L4
+  motion_done gating and L5 rollout remain future work.
 - Decision: [0029](decisions/0029-arm-reach-gripper.md).
-
 - H1 scan history was merged in #40. Never commit Xcode scheme, `Maixcam.txt`, or `docs/module/`.
 - Decisions: 0013–0019 quiz/module; [0020](decisions/0020-lock-rearm-rule.md) re-arm,
   [0021](decisions/0021-manual-driving-orchestration.md) orchestration,

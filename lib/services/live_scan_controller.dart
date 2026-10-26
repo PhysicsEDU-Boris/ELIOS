@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import '../models/scanned_waste.dart';
 import '../providers/waste_quiz_provider.dart' show WasteQuizPhase;
 import 'detection_stabilizer.dart';
+import 'frame_source/frame_source.dart' show CapturedFrame;
 import 'live_scan_state_machine.dart';
 import 'robot/r1_constants.dart' show armSettle;
 import 'scan_diagnostics.dart';
@@ -67,7 +68,7 @@ class LiveScanController extends ChangeNotifier {
   static const ignoredLabels = {'Human_Hand'};
 
   /// Starts identification for the locked box; false if a quiz is open.
-  final bool Function(TrackedDetection detection) startQuiz;
+  final bool Function(TrackedDetection detection, CapturedFrame? frame) startQuiz;
   final bool manualPickUpQuiz;
   final int? Function()? _firstTokenMs;
   final int Function()? _ttsCount;
@@ -81,14 +82,17 @@ class LiveScanController extends ChangeNotifier {
   String? _tooLargeKey;
   DateTime? _belowMinAt;
   BlockReason? _frameBlock;
-  TrackedDetection? _pendingPickUp;
+  (TrackedDetection, CapturedFrame?)? _pendingPickUp;
 
   /// G1 flow: the detection lock waits for the student's PICK UP action.
   bool onPickUpPressed() {
-    final detection = _pendingPickUp;
-    if (!manualPickUpQuiz || detection == null || machine.state != LiveScanState.asking) return false;
+    final pending = _pendingPickUp;
+    if (!manualPickUpQuiz || pending == null || machine.state != LiveScanState.asking || pending.$2 == null) {
+      return false;
+    }
+    final (detection, frame) = pending;
     _pendingPickUp = null;
-    if (startQuiz(detection)) {
+    if (startQuiz(detection, frame)) {
       _askedAt = _clock();
       _lastFirstTokenMs = null;
       _lastAskToQuestionMs = null;
@@ -204,7 +208,7 @@ class LiveScanController extends ChangeNotifier {
   /// [armMoving] is the frame's `arm_moving` (null: the firmware doesn't say).
   /// While the arm moves and for ARM_SETTLE after, the frame is not analysed:
   /// nothing locks or re-arms, and no absence is counted (J1 guard, 0020).
-  void onDetections(List<Detection> detections, {Size? frameSize, bool? armMoving}) {
+  void onDetections(List<Detection> detections, {Size? frameSize, bool? armMoving, CapturedFrame? capturedFrame}) {
     final now = _clock();
     _recentFrames
       ..add(now)
@@ -271,8 +275,8 @@ class LiveScanController extends ChangeNotifier {
     final lock = machine.onFrame(tracked, presentBoxes: present);
     if (lock != null) {
       if (manualPickUpQuiz) {
-        _pendingPickUp = lock.detection;
-      } else if (startQuiz(lock.detection)) {
+        _pendingPickUp = (lock.detection, capturedFrame);
+      } else if (startQuiz(lock.detection, capturedFrame)) {
         _askedAt = now;
         // A new ask starts clean: don't show the previous quiz's numbers
         // while this one is still loading, or if it falls back / fails.
