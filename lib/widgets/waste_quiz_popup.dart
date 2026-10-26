@@ -6,11 +6,15 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../models/chat_message.dart';
+import '../models/scan_record.dart';
 import '../models/scanned_waste.dart';
+import '../models/trophy_rules.dart';
 import '../providers/app_preferences_provider.dart';
+import '../providers/robot_provider.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../services/gemma_quiz_service.dart';
 import '../services/quiz_tts_service.dart';
+import '../services/scan_record_store.dart';
 import '../theme/elio_learning_colors.dart';
 
 /// Scan-triggered quiz popup (Figma: "Android Compact · Quiz Popup").
@@ -30,11 +34,14 @@ String questionSourceHeader(WasteQuizUiState state) {
 }
 
 class WasteQuizPopup extends ConsumerWidget {
-  const WasteQuizPopup({super.key, this.onStop, this.showLauncher = true});
+  const WasteQuizPopup({super.key, this.onStop, this.onRescan, this.showLauncher = true});
 
   /// The emergency stop, as a STOP pill in the header (decision 0026): the
   /// open quiz covers the screen's own STOP.
   final VoidCallback? onStop;
+
+  /// Triggered when the student taps "Scan lagi" on the result card (decision 0030).
+  final VoidCallback? onRescan;
 
   /// The leaf button that reopens a minimised quiz, bottom right. The Control
   /// screen places its own [QuizLauncherButton] in its layout instead.
@@ -64,7 +71,9 @@ class WasteQuizPopup extends ConsumerWidget {
                     child: Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 1100, maxHeight: 720),
-                        child: active ? SizedBox.expand(child: _QuizCard(state: state, onStop: onStop)) : null,
+                        child: active
+                            ? SizedBox.expand(child: _QuizCard(state: state, onStop: onStop, onRescan: onRescan))
+                            : null,
                       ),
                     ),
                   ),
@@ -171,9 +180,10 @@ class _StopPill extends StatelessWidget {
 }
 
 class _QuizCard extends ConsumerStatefulWidget {
-  const _QuizCard({required this.state, this.onStop});
+  const _QuizCard({required this.state, this.onStop, this.onRescan});
   final WasteQuizUiState state;
   final VoidCallback? onStop;
+  final VoidCallback? onRescan;
 
   @override
   ConsumerState<_QuizCard> createState() => _QuizCardState();
@@ -257,6 +267,7 @@ class _QuizCardState extends ConsumerState<_QuizCard> {
       state: state,
       answerController: _answerController,
       wordCount: _wordCount,
+      onRescan: widget.onRescan,
     );
     Widget chatPanel({required bool showHeader}) => _ChatPanel(
           state: state,
@@ -346,11 +357,13 @@ class _QuestionPanel extends ConsumerWidget {
     required this.state,
     required this.answerController,
     required this.wordCount,
+    this.onRescan,
   });
 
   final WasteQuizUiState state;
   final TextEditingController answerController;
   final int wordCount;
+  final VoidCallback? onRescan;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -404,7 +417,7 @@ class _QuestionPanel extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           if (state.phase == WasteQuizPhase.finished)
-            _SummaryCard(state: state, onClose: notifier.dismiss)
+            _ResultCard(state: state, onClose: notifier.dismiss, onRescan: onRescan)
           else if (state.phase == WasteQuizPhase.confirmingHazard)
             _CardBox(
               child: Column(
@@ -527,37 +540,236 @@ class _QuestionCard extends StatelessWidget {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.state, required this.onClose});
+class _ResultCard extends ConsumerWidget {
+  const _ResultCard({
+    required this.state,
+    required this.onClose,
+    this.onRescan,
+  });
+
   final WasteQuizUiState state;
   final VoidCallback onClose;
+  final VoidCallback? onRescan;
+
+  @visibleForTesting
+  static bool r1EnabledOverride = false;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (state.notice != null) {
+      return _CardBox(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Scan belum berhasil',
+              style: GoogleFonts.sora(color: elioInk, fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              state.notice!,
+              style: GoogleFonts.inter(color: elioMuted, fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton(
+                key: const Key('result_card_close_button'),
+                onPressed: onClose,
+                style: FilledButton.styleFrom(backgroundColor: elioPrimary),
+                child: const Text('Tutup'),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final scan = state.scan;
+    final itemName = scan?.displayName ?? 'Sampah';
+    final category = ScanCategory.fromString(scan?.category?.id);
+
+    final earnedTrophies = state.recordedQuestions.isNotEmpty
+        ? state.recordedQuestions.fold<int>(0, (sum, q) => sum + q.trophies)
+        : trophiesForScores(correctMcCount: state.correctCount);
+    final totalQuestions = state.totalQuestions;
+    final grade = gradeFor(trophies: earnedTrophies, totalQuestions: totalQuestions);
+
+    final store = ScanRecordStore.instance;
+    final totalTrophies = store.totalTrophies;
+    final userLevel = store.userLevel;
+    final levelProgress = store.levelProgress;
+
+    final isR1 = r1EnabledOverride || const bool.fromEnvironment('R1');
+    final r1Pending = isR1 && ref.watch(r1DropPendingProvider);
+
     return _CardBox(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            state.notice != null ? 'Scan belum berhasil' : 'Sesi selesai 🎉',
-            style: GoogleFonts.sora(color: elioInk, fontSize: 16, fontWeight: FontWeight.w600),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  itemName,
+                  style: GoogleFonts.sora(color: elioInk, fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: category.bg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  category.badgeLabel,
+                  style: TextStyle(color: category.fg, fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            state.notice ??
-                'Pilihan ganda benar: ${state.correctCount} dari ${state.mcAnswered}.'
-                    '${state.skippedCount > 0 ? ' ${state.skippedCount} soal dilewati.' : ''} '
-                    'Scan sampah lain untuk mendapat soal baru.',
-            style: GoogleFonts.inter(color: elioMuted, fontSize: 13, height: 1.4),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                '${state.correctCount} dari $totalQuestions benar',
+                style: GoogleFonts.inter(color: elioInk, fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              Container(
+                key: const Key('result_card_trophies_badge'),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.emoji_events_rounded, size: 16, color: Color(0xFFD97706)),
+                    const SizedBox(width: 4),
+                    Text(
+                      '+$earnedTrophies Piala',
+                      style: const TextStyle(color: Color(0xFFB45309), fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                key: const Key('result_card_grade_badge'),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: elioPrimary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  grade.label,
+                  style: const TextStyle(color: elioPrimary, fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton(
-              onPressed: onClose,
-              style: FilledButton.styleFrom(backgroundColor: elioPrimary),
-              child: const Text('Tutup'),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: elioSurfaceContainerLow,
+              borderRadius: BorderRadius.circular(8),
             ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        userLevel.levelAndTitle,
+                        key: const Key('result_card_level_text'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(color: elioInk, fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$totalTrophies Total Piala',
+                      style: GoogleFonts.inter(color: elioMuted, fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: levelProgress,
+                    backgroundColor: const Color(0xFFE5E7EB),
+                    valueColor: const AlwaysStoppedAnimation<Color>(elioPrimary),
+                    minHeight: 6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (r1Pending) ...[
+            const SizedBox(height: 10),
+            Container(
+              key: const Key('result_card_r1_drop_notice'),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF9C3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFACC15)),
+              ),
+              child: const Row(
+                children: [
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF854D0E)),
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Robot sedang membuang ke tempat sampah...',
+                      style: TextStyle(color: Color(0xFF854D0E), fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              FilledButton.icon(
+                key: const Key('result_card_rescan_button'),
+                onPressed: r1Pending
+                    ? null
+                    : () {
+                        ref.read(wasteQuizProvider.notifier).logRescanTapped();
+                        onRescan?.call();
+                        onClose();
+                      },
+                icon: const Icon(Icons.qr_code_scanner_rounded, size: 16),
+                label: const Text('Scan lagi'),
+                style: FilledButton.styleFrom(backgroundColor: elioPrimary),
+              ),
+              OutlinedButton(
+                key: const Key('result_card_close_button'),
+                onPressed: onClose,
+                style: OutlinedButton.styleFrom(side: const BorderSide(color: elioOutlineVariant)),
+                child: const Text('Tutup'),
+              ),
+            ],
           ),
         ],
       ),

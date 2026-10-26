@@ -116,3 +116,8 @@ final robotControlProvider = NotifierProvider<RobotControlNotifier, RobotState>(
 final resolutionAckProvider = StreamProvider<Size>((ref) {
   return WebSocketService().resolutionAcks;
 });
+
+/// R1 DROP in progress gate (UI plan U2): when R1 is enabled and sorting/dropping,
+/// the Result Card shows "Robot sedang membuang ke tempat sampah..." and keeps
+/// "Scan lagi" disabled until DROP finishes.
+final r1DropPendingProvider = StateProvider<bool>((ref) => false);

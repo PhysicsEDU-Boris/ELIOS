@@ -147,6 +147,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         final r1 = _r1!..tick();
         final text = r1.robotConnected ? 'robot terhubung' : r1.message ?? 'memeriksa robot...';
         if (mounted && text != _r1Status) setState(() => _r1Status = text);
+        final dropPending = r1.state == R1State.sorting || r1.state == R1State.waitBoth;
+        if (ref.read(r1DropPendingProvider) != dropPending) {
+          ref.read(r1DropPendingProvider.notifier).state = dropPending;
+        }
       });
     }
 
@@ -292,6 +296,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _statusSubscription?.close();
     _r1Ticker?.cancel();
     _r1Replies?.cancel();
+    ref.read(r1DropPendingProvider.notifier).state = false;
     HardwareKeyboard.instance.removeHandler(_onKey);
     WidgetsBinding.instance.removeObserver(this);
     _gate.dispose(); // motor 0,0, heartbeat off
@@ -433,7 +438,14 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             },
           ),
           launcher: const QuizLauncherButton(),
-          quiz: WasteQuizPopup(onStop: stop, showLauncher: false),
+          quiz: WasteQuizPopup(
+            onStop: stop,
+            showLauncher: false,
+            onRescan: () {
+              _liveScan?.logEvent('rescan_tapped', {});
+              _liveScan?.rescan();
+            },
+          ),
         ),
       ),
     );
