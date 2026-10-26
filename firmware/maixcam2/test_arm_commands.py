@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from arm_commands import ArmCommandLink, WATCHDOG_S
+from arm_commands import ArmCommandLink, ControlAuthority, WATCHDOG_S
 from arm_protocol import HOME_TARGET, joint_target
 
 
@@ -28,7 +28,7 @@ def seed_trusted_pose(link, joints, target):
 
 
 def send(link, cmd, seq=1, **args):
-    return link.receive(json.dumps({"cmd": cmd, "seq": seq, **args}))
+    return link.receive(json.dumps({"cmd": cmd, "seq": seq, **args}), authorized=True)
 
 
 class ArmCommandTest(unittest.TestCase):
@@ -65,14 +65,14 @@ class ArmCommandTest(unittest.TestCase):
         link = ArmCommandLink(clock=clock)
         self.assertEqual(send(link, "HOLD"), [
             {"event": "error", "seq": 1, "reason": "pose_unknown"}])
-        self.assertEqual(send(link, "STOP"), [{"event": "ack", "seq": 1}])
+        self.assertEqual(send(link, "STOP"), [{"event": "ack", "seq": 1, "effect": "logical_only"}])
         self.assertEqual(send(link, "HOME"), [
             {"event": "error", "seq": 1, "reason": "stopped"}])
         clock.value = WATCHDOG_S
         link.poll()
         self.assertTrue(link.stale)
         self.assertFalse(link.pose_known)
-        link.receive('{"cmd":"HEARTBEAT"}')
+        link.receive('{"cmd":"HEARTBEAT"}', authorized=True)
         self.assertFalse(link.stale)
         self.assertTrue(link.stopped)  # app must send deliberate UNLOCK_DRIVE
         self.assertFalse(link.motor_allowed(1, 1))
@@ -84,11 +84,11 @@ class ArmCommandTest(unittest.TestCase):
         link = ArmCommandLink(clock=Clock())
         self.assertFalse(link.motor_allowed(1, 1))
         self.assertTrue(link.motor_allowed(0, 0))
-        self.assertEqual(send(link, "UNLOCK_DRIVE"), [{"event": "ack", "seq": 1}])
+        self.assertEqual(send(link, "UNLOCK_DRIVE"), [{"event": "ack", "seq": 1, "effect": "logical_only"}])
         self.assertTrue(link.motor_allowed(255, -255))
         self.assertFalse(link.motor_allowed(256, 0))
         self.assertFalse(link.motor_allowed(True, 0))
-        self.assertEqual(send(link, "LOCK_DRIVE"), [{"event": "ack", "seq": 1}])
+        self.assertEqual(send(link, "LOCK_DRIVE"), [{"event": "ack", "seq": 1, "effect": "logical_only"}])
         self.assertFalse(link.motor_allowed(1, 1))
 
     def test_bad_partial_and_unknown_messages_do_not_move_or_reply(self):
@@ -114,17 +114,17 @@ class ArmCommandTest(unittest.TestCase):
         link = ArmCommandLink(uart, motion_enabled=True, clock=Clock())
         seed_trusted_pose(link, (0, 0, 0, 0, 0), HOME_TARGET)
         send(link, "UNLOCK_DRIVE")
-        self.assertEqual(link.receive('{"cmd":"servo","part":"gripper","val":100}'), [])
+        self.assertEqual(link.receive('{"cmd":"servo","part":"gripper","val":100}', authorized=True), [])
         self.assertEqual(uart.lines, ["90,90,90,180,90,90\n"])
-        self.assertEqual(link.receive('{"cmd":"servo","part":"reach","val":100}'), [])
+        self.assertEqual(link.receive('{"cmd":"servo","part":"reach","val":100}', authorized=True), [])
         self.assertEqual(len(uart.lines), 1)
 
     def test_hold_acknowledges_without_claiming_mcu_hold(self):
         uart = MockUART()
         link = ArmCommandLink(uart, motion_enabled=True, clock=Clock())
         seed_trusted_pose(link, (0, 0, 0, 0, 0), HOME_TARGET)
-        self.assertEqual(send(link, "HOLD"), [
-            {"event": "ack", "seq": 1}, {"event": "motion_done", "seq": 1}])
+        self.assertEqual(send(link, "HOLD"), [{"event": "ack", "seq": 1, "effect": "logical_only"}])
+        self.assertTrue(link.stopped)
         self.assertEqual(uart.lines, [])
 
     def test_hold_during_estimated_motion_marks_pose_unknown(self):
@@ -136,6 +136,75 @@ class ArmCommandTest(unittest.TestCase):
             {"event": "error", "seq": 5, "reason": "mcu_hold_required"}])
         self.assertFalse(link.pose_known)
         self.assertEqual(uart.lines, [])
+
+    def test_status_never_reports_estimated_home_as_physical_home(self):
+        link = ArmCommandLink(clock=Clock())
+        seed_trusted_pose(link, (0, 0, 0, 0, 0), HOME_TARGET)
+        self.assertEqual(send(link, "STATUS"), [
+            {"event": "ack", "seq": 1, "ee_mm": None, "at_home": None}])
+
+    def test_malformed_invalid_and_unauthorized_floods_do_not_refresh(self):
+        clock = Clock()
+        link = ArmCommandLink(clock=clock)
+        floods = ("{", "[]", '{"cmd":"UNKNOWN","seq":1}',
+                  '{"cmd":"HEARTBEAT","seq":1}', '{"cmd":"STATUS"}')
+        for index in range(25):
+            clock.value = (index + 1) * 0.01
+            link.receive(floods[index % len(floods)], authorized=(index % 5 != 4))
+        self.assertEqual(link.last_message_at, 0.0)
+        clock.value += WATCHDOG_S - 0.1
+        link.poll()
+        self.assertTrue(link.stale)
+        self.assertTrue(link.stopped)
+
+    def test_heartbeat_cadence_and_gap(self):
+        clock = Clock()
+        link = ArmCommandLink(clock=clock)
+        for _ in range(4):
+            clock.value += 0.25
+            link.receive('{"cmd":"HEARTBEAT"}', authorized=True)
+            link.poll()
+            self.assertFalse(link.stale)
+        clock.value += WATCHDOG_S - 0.01
+        link.poll()
+        self.assertFalse(link.stale)
+        clock.value += 0.01
+        link.poll()
+        self.assertTrue(link.stale)
+
+    def test_single_authenticated_client_owns_watchdog_until_disconnect(self):
+        clock = Clock()
+        link = ArmCommandLink(clock=clock)
+        token = "t" * 32
+        authority = ControlAuthority(token)
+        owner, duplicate = object(), object()
+        self.assertTrue(authority.claim(owner, token))
+        self.assertFalse(authority.claim(duplicate, token))
+        clock.value = 0.75
+        link.receive('{"cmd":"HEARTBEAT"}', authorized=authority.owns(owner))
+        link.receive('{"cmd":"HEARTBEAT"}', authorized=authority.owns(duplicate))
+        clock.value = 1.76
+        link.poll()
+        self.assertTrue(link.stale)
+        authority.release(owner)
+        link.disconnected()
+        self.assertFalse(authority.owns(duplicate))
+        clock.value = 1.5
+        link.receive('{"cmd":"HEARTBEAT"}', authorized=authority.owns(duplicate))
+        self.assertTrue(link.stale)
+
+    def test_missing_or_short_control_secret_disables_authority(self):
+        for secret in (None, "", "short", "t" * 31):
+            self.assertFalse(ControlAuthority(secret).claim(object(), "t" * 32))
+
+    def test_unauthorized_status_and_stop_do_not_change_link_state(self):
+        link = ArmCommandLink(clock=Clock())
+        self.assertEqual(link.receive('{"cmd":"STATUS","seq":1}'), [
+            {"event": "error", "seq": 1, "reason": "unauthorized"}])
+        self.assertEqual(link.receive('{"cmd":"STOP","seq":2}'), [
+            {"event": "error", "seq": 2, "reason": "unauthorized"}])
+        self.assertEqual(link.last_message_at, 0.0)
+        self.assertFalse(link.stale)
 
 
 if __name__ == "__main__":

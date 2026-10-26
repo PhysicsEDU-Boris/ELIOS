@@ -5,9 +5,9 @@
 # WiFi AP is provisioned by the OS; this script does not configure WiFi.
 
 from maix import image, display, camera, touchscreen, nn, app, tensor, time as mtime, uart
-import json, asyncio, websockets, base64, math, hashlib
+import json, asyncio, websockets, base64, math, hashlib, os
 import numpy as np
-from arm_commands import ArmCommandLink
+from arm_commands import ArmCommandLink, ControlAuthority
 
 # Clean vision protocol: image stays annotated for old preview clients.
 FIRMWARE_VERSION = "m2c-clean-v1"
@@ -372,6 +372,9 @@ _ws_server    = None
 ARM_MOTION_ENABLED = False
 ARM_UART = uart.UART("/dev/ttyS4", 115200) if ARM_MOTION_ENABLED else None
 arm_command_link = ArmCommandLink(ARM_UART, motion_enabled=ARM_MOTION_ENABLED)
+control_authority = ControlAuthority(os.getenv("ELIOS_CONTROL_TOKEN", ""))
+if control_authority.expected_token is None:
+    print("[Safety] ELIOS_CONTROL_TOKEN missing or too short; WebSocket control is disabled")
 
 # ── Stream resolution — FIXED, no runtime switching ──────────────────────────
 # The model's own native input size when it loaded successfully, so the
@@ -448,6 +451,16 @@ async def ws_handler(websocket):
     ws_clients.add(websocket)
     ws_status = "Client connected"
     print("[WS] Client connected:", websocket.remote_address)
+    try:
+        auth_header = websocket.request.headers.get("Authorization", "")
+    except Exception:
+        auth_header = ""
+    scheme, separator, token = auth_header.partition(" ")
+    is_control_owner = control_authority.claim(
+        websocket, token if separator and scheme.lower() == "bearer" else None
+    )
+    if is_control_owner:
+        print("[Safety] authenticated control WebSocket claimed")
 
     # Tell Flutter websocket_service.dart: status=Connected
     try:
@@ -461,17 +474,19 @@ async def ws_handler(websocket):
             try:
                 message = await asyncio.wait_for(websocket.recv(), timeout=0.1)
             except asyncio.TimeoutError:
-                for reply in arm_command_link.poll():
-                    try:
-                        await websocket.send(json.dumps(reply))
-                    except Exception:
-                        break
+                replies = arm_command_link.poll()
+                if is_control_owner:
+                    for reply in replies:
+                        try:
+                            await websocket.send(json.dumps(reply))
+                        except Exception:
+                            break
                 if arm_command_link.stale and not watchdog_reported:
                     print("[Safety] 1 s app watchdog expired; arm pose unknown, MaixCAM motion requests blocked")
                     watchdog_reported = True
                 continue
 
-            replies = arm_command_link.receive(message)
+            replies = arm_command_link.receive(message, authorized=is_control_owner)
             if not arm_command_link.stale:
                 watchdog_reported = False
             try:
@@ -508,15 +523,18 @@ async def ws_handler(websocket):
                 elif cmd == "motor":
                     left  = data.get("left", 0)
                     right = data.get("right", 0)
-                    if arm_command_link.motor_allowed(left, right):
+                    if is_control_owner and arm_command_link.motor_allowed(left, right):
                         print("[WS] motor left={} right={}".format(left, right))
                     else:
                         print("[Safety] motor blocked by STOP/drive lock/watchdog")
 
                 elif cmd == "servo":
-                    part = data.get("part", "")
-                    val  = data.get("val", 0)
-                    print("[WS] servo part={} val={}".format(part, val))
+                    if is_control_owner:
+                        part = data.get("part", "")
+                        val  = data.get("val", 0)
+                        print("[WS] servo part={} val={}".format(part, val))
+                    else:
+                        print("[Safety] servo command blocked: no control lease")
 
                 elif cmd == "set_resolution":
                     # Resolution is fixed at STREAM_RESOLUTION. Ignored
@@ -530,10 +548,12 @@ async def ws_handler(websocket):
         print("[WS] connection closed:", ce)
     finally:
         ws_clients.discard(websocket)
+        if is_control_owner:
+            control_authority.release(websocket)
+            arm_command_link.disconnected()
         ws_status = "Serving" if ws_clients else "Idle"
         if not ws_clients:
             ws_streaming = False
-            arm_command_link.disconnected()
         print("[WS] clients remaining:", len(ws_clients))
 
 async def ws_frame_pusher():

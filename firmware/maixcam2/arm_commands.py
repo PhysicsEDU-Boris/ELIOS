@@ -1,12 +1,39 @@
 """Conservative MaixCAM2 half of the R1 arm command link."""
 
 import json
+import hmac
+import math
 import time
 
 from arm_protocol import HOME_TARGET, gripper_servo, write_target
 
 WATCHDOG_S = 1.0
 JOINT_SPEED_DPS = 60.0
+
+
+class ControlAuthority:
+    """Single authenticated WebSocket lease; an unset token denies every claim."""
+
+    def __init__(self, expected_token):
+        self.expected_token = (
+            expected_token if isinstance(expected_token, str) and len(expected_token) >= 32 else None
+        )
+        self.owner = None
+
+    def claim(self, client, token):
+        if (self.expected_token is None or not isinstance(token, str) or
+                not hmac.compare_digest(token, self.expected_token)):
+            return False
+        if self.owner is None:
+            self.owner = client
+        return self.owner is client
+
+    def owns(self, client):
+        return self.owner is client
+
+    def release(self, client):
+        if self.owner is client:
+            self.owner = None
 
 
 class ArmCommandLink:
@@ -30,27 +57,57 @@ class ArmCommandLink:
         seq = data.get("seq")
         return seq if isinstance(seq, int) and not isinstance(seq, bool) and seq >= 0 else None
 
-    def receive(self, raw):
-        self.last_message_at = self.clock()
+    def receive(self, raw, authorized=False):
         try:
             data = json.loads(raw)
         except (TypeError, ValueError):
             return []
         if not isinstance(data, dict) or not isinstance(data.get("cmd"), str):
             return []
-        self.stale = False
         cmd = data["cmd"]
         seq = self._valid_seq(data)
         if cmd == "HEARTBEAT":
+            if authorized and data == {"cmd": "HEARTBEAT"}:
+                self.last_message_at = self.clock()
+                self.stale = False
             return []
-        if cmd == "servo":
+
+        if not authorized:
+            return [self._error(seq, "unauthorized")] if seq is not None else []
+        if cmd in ("STATUS", "STOP", "LOCK_DRIVE", "UNLOCK_DRIVE", "HOLD", "HOME", "DROP"):
+            if seq is None or set(data) != {"cmd", "seq"}:
+                return [self._error(seq, "bad_args")] if seq is not None else []
+        elif cmd == "MOVE_TO_BIN":
+            if (seq is None or set(data) != {"cmd", "seq", "bin"} or
+                    data.get("bin") not in ("organik", "anorganik", "b3")):
+                return [self._error(seq, "bad_args")] if seq is not None else []
+        elif cmd == "PICK":
+            if (seq is None or set(data) != {"cmd", "seq", "dist_cm", "lateral_cm"} or
+                    not self._valid_optional_number(data.get("dist_cm")) or
+                    not self._valid_optional_number(data.get("lateral_cm"))):
+                return [self._error(seq, "bad_args")] if seq is not None else []
+        elif cmd == "servo":
+            if (set(data) not in ({"cmd", "part", "val"}, {"cmd", "part", "val", "seq"}) or
+                    ("seq" in data and seq is None)):
+                return [self._error(seq, "bad_args")] if seq is not None else []
             return self._servo(data, seq)
+        elif cmd == "motor":
+            if set(data) != {"cmd", "left", "right"} or not self.motor_allowed(data.get("left"), data.get("right")):
+                return []
+            return []
+        elif cmd in ("ping", "start_stream", "stop_stream", "disconnect"):
+            if set(data) != {"cmd"}:
+                return []
+            return []
+        else:
+            return [self._error(seq, "unknown_cmd")] if seq is not None else []
+
         if seq is None:
             return []
         if cmd == "STATUS":
             return [{"event": "ack", "seq": seq,
                      "ee_mm": None,
-                     "at_home": (self.target == HOME_TARGET) if self.pose_known else None}]
+                     "at_home": None}]
         if cmd == "STOP":
             self.stopped = True
             self.drive_locked = True
@@ -60,29 +117,30 @@ class ArmCommandLink:
                 self.target = None
             self.busy_until = None
             self.active_seq = None
-            return [{"event": "ack", "seq": seq}]
+            return [{"event": "ack", "seq": seq, "effect": "logical_only"}]
         if cmd == "LOCK_DRIVE":
             self.drive_locked = True
-            return [{"event": "ack", "seq": seq}]
+            return [{"event": "ack", "seq": seq, "effect": "logical_only"}]
         if cmd == "UNLOCK_DRIVE":
             self.stopped = False
             self.drive_locked = False
-            return [{"event": "ack", "seq": seq}]
+            return [{"event": "ack", "seq": seq, "effect": "logical_only"}]
         if cmd == "HOLD":
             if not self.pose_known or self.target is None:
                 return [self._error(seq, "pose_unknown")]
             if self.busy_until is not None:
                 self.stopped = True
+                self.drive_locked = True
                 self.pose_known = False
                 self.joints = None
                 self.target = None
                 self.busy_until = None
                 self.active_seq = None
                 return [self._error(seq, "mcu_hold_required")]
+            self.stopped = True
             self.busy_until = None
             self.active_seq = None
-            return [{"event": "ack", "seq": seq},
-                    {"event": "motion_done", "seq": seq}]
+            return [{"event": "ack", "seq": seq, "effect": "logical_only"}]
         if cmd in ("HOME", "PICK", "MOVE_TO_BIN", "DROP"):
             if self.stopped:
                 return [self._error(seq, "stopped")]
@@ -116,6 +174,17 @@ class ArmCommandLink:
                 replies.extend(self.poll())
             return replies
         return [self._error(seq, "unknown_cmd")]
+
+    @staticmethod
+    def _valid_optional_number(value):
+        if value is None:
+            return True
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return False
+        try:
+            return math.isfinite(value)
+        except OverflowError:
+            return False
 
     def _servo(self, data, seq):
         part, value = data.get("part"), data.get("val")
