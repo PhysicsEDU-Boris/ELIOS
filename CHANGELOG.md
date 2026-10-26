@@ -12,6 +12,18 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- H1 scan history, trophy rules, and student levels (decision 0028, Figma 100:170):
+  - Pure trophy rules (`lib/models/trophy_rules.dart`): 10 trophies per correct answer, essay score
+    awarded directly, grade percentage thresholds (Sempurna, Hebat, Bagus, Belajar Lagi, Coba Lagi),
+    and 5 student levels (Lv1 Eco Starter 0-99, Lv2 Waste Spotter 100-249, Lv3 Bin Expert 250-499,
+    Lv4 Eco Sorter 500-999, Lv5 Planet Guardian 1000+) with fractional level progress.
+  - ScanRecord model and local JSON store (`lib/services/scan_record_store.dart`) persisted to
+    app documents directory with sample data seeder for debug mode.
+  - Scan History screen (`lib/Screens/scan_history_screen.dart`): responsive layout (side-by-side on
+    wide viewports >= 750 px, list then detail on mobile), trophy progression bar, "Lokal" sync chip,
+    category filters (All, B3, Recyclable, Organic), photo thumbnails, difficulty chips, and detailed
+    question cards highlighting student vs correct answers.
+  - History pill on control screen wired to real trophy count and opens scan history screen.
 - L1 fake MaixCAM2 robot motion: simulator-backed PICK / MOVE_TO_BIN / DROP with IK and 60 deg/s
   joint stepping, carried-card/gripper behavior, motor-driven base motion, servo-driven arm
   motion, and five R1 scenarios.
