@@ -1,4 +1,4 @@
-# 0027a — Arm reach and gripper width
+# 0029 — Arm reach and gripper width
 
 **Status:** accepted for G1; firmware mapping is specified for L2.
 
