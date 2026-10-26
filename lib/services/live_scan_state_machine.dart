@@ -234,6 +234,7 @@ class LiveScanStateMachine {
     _state = LiveScanState.waitingForRescan;
     _closedAt = _clock();
     _asked = null;
+    _setBlock(const BlockReason('waiting_for_rescan'));
     for (final q in _quizzed) {
       q
         ..rebind = true

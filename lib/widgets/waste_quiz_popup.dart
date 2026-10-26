@@ -47,6 +47,11 @@ class WasteQuizPopup extends ConsumerWidget {
   /// screen places its own [QuizLauncherButton] in its layout instead.
   final bool showLauncher;
 
+  @visibleForTesting
+  static bool get r1EnabledOverride => _ResultCard.r1EnabledOverride;
+  @visibleForTesting
+  static set r1EnabledOverride(bool val) => _ResultCard.r1EnabledOverride = val;
+
   static const twoPaneMinWidth = 600.0;
 
   @override
