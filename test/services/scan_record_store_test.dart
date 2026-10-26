@@ -199,5 +199,67 @@ void main() {
 
       expect(store.totalTrophies, 50); // 20 + 20 + 10 + 0
     });
+
+    test('restarting store preserves existing records and addRecord without load retains history', () async {
+      // 1. Initial store saves a real record
+      final store1 = ScanRecordStore(customFile: testFile);
+      final record1 = ScanRecord(
+        id: 'initial-scan',
+        time: DateTime.now(),
+        itemName: 'Kardus',
+        category: ScanCategory.recyclable,
+        difficulty: QuizDifficulty.easy,
+        questions: const [
+          RecordQuestion(
+            question: 'Dimana kardus dibuang?',
+            yourAnswer: 'Daur ulang',
+            rightAnswer: 'Daur ulang',
+            isCorrect: true,
+            trophies: 10,
+          ),
+        ],
+        trophies: 10,
+      );
+      await store1.addRecord(record1);
+      expect(store1.records.length, 1);
+      expect(store1.totalTrophies, 10);
+
+      // 2. Restart store (new instance, simulating app rebuild / restart)
+      final store2 = ScanRecordStore(customFile: testFile);
+
+      // Verify that adding a second record without an explicit load() does NOT
+      // overwrite or wipe existing records, but preserves record1.
+      final record2 = ScanRecord(
+        id: 'second-scan',
+        time: DateTime.now(),
+        itemName: 'Baterai Jam',
+        category: ScanCategory.b3,
+        difficulty: QuizDifficulty.medium,
+        questions: const [
+          RecordQuestion(
+            question: 'Kategori baterai?',
+            yourAnswer: 'B3',
+            rightAnswer: 'B3',
+            isCorrect: true,
+            trophies: 10,
+          ),
+        ],
+        trophies: 10,
+      );
+      await store2.addRecord(record2);
+
+      expect(store2.records.length, 2);
+      expect(store2.records[0].id, 'second-scan');
+      expect(store2.records[1].id, 'initial-scan');
+      expect(store2.totalTrophies, 20);
+
+      // 3. Restart store once more and load explicitly: records still there
+      final store3 = ScanRecordStore(customFile: testFile);
+      final reloaded = await store3.load();
+      expect(reloaded.length, 2);
+      expect(store3.records[0].id, 'second-scan');
+      expect(store3.records[1].id, 'initial-scan');
+      expect(store3.totalTrophies, 20);
+    });
   });
 }

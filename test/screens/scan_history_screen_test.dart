@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:elio/Screens/scan_history_screen.dart';
+import 'package:elio/models/scan_record.dart';
+import 'package:elio/services/gemma_quiz_service.dart';
 import 'package:elio/services/scan_record_store.dart';
 
 void main() {
@@ -52,7 +54,7 @@ void main() {
         expect(find.byType(ScanHistoryScreen), findsOneWidget);
         expect(tester.takeException(), isNull);
         expect(find.text('Scan History'), findsOneWidget);
-        expect(find.text('Lokal'), findsOneWidget);
+        expect(find.text('Tersimpan lokal'), findsOneWidget);
         expect(find.text('Belum Ada Riwayat Scan'), findsOneWidget);
 
         // Debug action button is present and tappable in debug mode
@@ -86,7 +88,7 @@ void main() {
 
         // 2. Header elements
         expect(find.text('Scan History'), findsOneWidget);
-        expect(find.text('Lokal'), findsOneWidget);
+        expect(find.text('Tersimpan lokal'), findsOneWidget);
         expect(find.text('50 trophies'), findsOneWidget); // 20 + 20 + 10 + 0
 
         // 3. Filters
@@ -145,5 +147,55 @@ void main() {
         expect(closed, isTrue);
       });
     }
+  });
+
+  group('ScanHistoryScreen G2c difficulty pill and local sync text', () {
+    testWidgets('shows Tersimpan lokal instead of synced and displays real question count in difficulty pills', (tester) async {
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      // Seed a record with Easy difficulty but 2 questions
+      final record = ScanRecord(
+        id: 'test-custom-q-count',
+        time: DateTime(2026, 10, 26, 15, 30),
+        itemName: 'Kardus Cokelat',
+        category: ScanCategory.recyclable,
+        difficulty: QuizDifficulty.easy,
+        questions: const [
+          RecordQuestion(
+            question: 'Soal 1',
+            yourAnswer: 'Daur ulang',
+            rightAnswer: 'Daur ulang',
+            isCorrect: true,
+            trophies: 10,
+          ),
+          RecordQuestion(
+            question: 'Soal 2',
+            yourAnswer: 'Lipat',
+            rightAnswer: 'Lipat',
+            isCorrect: true,
+            trophies: 10,
+          ),
+        ],
+        trophies: 20,
+      );
+
+      await store.addRecord(record);
+
+      await tester.pumpWidget(createSubject());
+      await tester.pumpAndSettle();
+
+      // Top chip
+      expect(find.text('Tersimpan lokal'), findsOneWidget);
+      expect(find.text('synced'), findsNothing);
+
+      // Detail subtitle shows Tersimpan lokal
+      expect(find.textContaining('Photo and 2 questions · Tersimpan lokal'), findsOneWidget);
+      expect(find.textContaining('synced'), findsNothing);
+
+      // Difficulty pill reflects real question count: 'Easy · 2Q' (detail pill and header)
+      expect(find.text('Easy · 2Q'), findsAtLeastNWidgets(1));
+    });
   });
 }

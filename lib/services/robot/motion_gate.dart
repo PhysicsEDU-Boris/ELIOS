@@ -53,10 +53,12 @@ class MotionGate extends ChangeNotifier {
   int _blocked = 0;
   Timer? _heartbeat;
   final _lastAngle = <String, int>{};
+  int? _lastHomeSeq;
 
   bool get stopped => _stopped;
   String? get stopReason => _stopReason;
   bool get linkUp => _linkUp;
+  int? get lastHomeSeq => _lastHomeSeq;
 
   /// Motion commands dropped so far (debug overlay).
   int get blocked => _blocked;
@@ -93,9 +95,19 @@ class MotionGate extends ChangeNotifier {
       return _block('home', {'reason': 'hand_paused'});
     }
     onArmCommand?.call(const Duration(seconds: 2));
-    robot.home();
+    _lastHomeSeq = robot.home();
     return true;
   }
+
+  /// Resets internal servo angles to neutral home values (decision 0027/G2c).
+  void resetToHome() {
+    _lastAngle['reach'] = 90;
+    _lastAngle['height'] = 90;
+    _lastAngle['gripper'] = 0;
+  }
+
+  /// Sends STATUS query through to robot (allowed while stopped).
+  int status() => robot.status();
 
   /// Motor 0,0: D-pad release, leaving the screen, the app going to the
   /// background, a disconnect. Never blocked (only lost without a link).

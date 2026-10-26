@@ -178,7 +178,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
           Icon(Icons.check_circle_outline_rounded, size: 14, color: _greenAccent),
           SizedBox(width: 4),
           Text(
-            'Lokal',
+            'Tersimpan lokal',
             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _greenDark),
           ),
         ],
@@ -569,7 +569,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Scanned ${record.time.hour.toString().padLeft(2, '0')}:${record.time.minute.toString().padLeft(2, '0')} · Photo and ${record.totalQuestions} questions synced',
+                          'Scanned ${record.time.hour.toString().padLeft(2, '0')}:${record.time.minute.toString().padLeft(2, '0')} · Photo and ${record.totalQuestions} questions · Tersimpan lokal',
                           style: const TextStyle(fontSize: 12, color: _subLabel),
                         ),
                         const SizedBox(height: 10),
@@ -577,9 +577,18 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                           spacing: 6,
                           runSpacing: 6,
                           children: [
-                            _buildDifficultyPill('Easy · 1Q', isSelected: record.difficulty == QuizDifficulty.easy),
-                            _buildDifficultyPill('Medium · 2Q', isSelected: record.difficulty == QuizDifficulty.medium),
-                            _buildDifficultyPill('Hard · 3Q', isSelected: record.difficulty == QuizDifficulty.hard),
+                            _buildDifficultyPill(
+                              'Easy · ${record.difficulty == QuizDifficulty.easy ? record.totalQuestions : 1}Q',
+                              isSelected: record.difficulty == QuizDifficulty.easy,
+                            ),
+                            _buildDifficultyPill(
+                              'Medium · ${record.difficulty == QuizDifficulty.medium ? record.totalQuestions : 2}Q',
+                              isSelected: record.difficulty == QuizDifficulty.medium,
+                            ),
+                            _buildDifficultyPill(
+                              'Hard · ${record.difficulty == QuizDifficulty.hard ? record.totalQuestions : 3}Q',
+                              isSelected: record.difficulty == QuizDifficulty.hard,
+                            ),
                           ],
                         ),
                       ],

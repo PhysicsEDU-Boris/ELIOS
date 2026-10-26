@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -12,7 +13,13 @@ class ScanRecordStore extends ChangeNotifier {
   ScanRecordStore({File? customFile}) : _customFile = customFile;
 
   static ScanRecordStore? _instance;
-  static ScanRecordStore get instance => _instance ??= ScanRecordStore();
+  static ScanRecordStore get instance {
+    if (_instance == null) {
+      _instance = ScanRecordStore();
+      unawaited(_instance!.load());
+    }
+    return _instance!;
+  }
 
   @visibleForTesting
   static void setInstanceForTesting(ScanRecordStore? store) {
@@ -22,11 +29,24 @@ class ScanRecordStore extends ChangeNotifier {
   final File? _customFile;
   List<ScanRecord> _records = [];
   bool _loaded = false;
+  Future<List<ScanRecord>>? _loadFuture;
 
-  List<ScanRecord> get records => List.unmodifiable(_records);
+  List<ScanRecord> get records {
+    if (!_loaded && _loadFuture == null) {
+      unawaited(load());
+    }
+    return List.unmodifiable(_records);
+  }
+
   bool get isLoaded => _loaded;
 
-  int get totalTrophies => _records.fold<int>(0, (sum, r) => sum + r.trophies);
+  int get totalTrophies {
+    if (!_loaded && _loadFuture == null) {
+      unawaited(load());
+    }
+    return _records.fold<int>(0, (sum, r) => sum + r.trophies);
+  }
+
   StudentLevel get userLevel => StudentLevel.forTotal(totalTrophies);
   double get levelProgress => userLevel.progress(totalTrophies);
 
@@ -37,7 +57,15 @@ class ScanRecordStore extends ChangeNotifier {
   }
 
   /// Loads records from disk. If the file does not exist, starts empty.
-  Future<List<ScanRecord>> load() async {
+  Future<List<ScanRecord>> load({bool force = false}) {
+    if (!force && _loaded && _loadFuture == null) {
+      return Future.value(_records);
+    }
+    _loadFuture ??= _doLoad();
+    return _loadFuture!;
+  }
+
+  Future<List<ScanRecord>> _doLoad() async {
     try {
       final file = await _getFile();
       if (!file.existsSync()) {
@@ -58,8 +86,10 @@ class ScanRecordStore extends ChangeNotifier {
     } catch (e) {
       debugPrint('[ScanRecordStore] Load failed: $e');
       _records = [];
+    } finally {
+      _loaded = true;
+      _loadFuture = null;
     }
-    _loaded = true;
     notifyListeners();
     return _records;
   }
@@ -79,7 +109,11 @@ class ScanRecordStore extends ChangeNotifier {
   }
 
   /// Inserts a new record at the top of the list and saves.
+  /// Ensures records are loaded from disk first so previous records are preserved across app restarts.
   Future<void> addRecord(ScanRecord record) async {
+    if (!_loaded) {
+      await load();
+    }
     _records.insert(0, record);
     notifyListeners();
     await save();
@@ -87,6 +121,9 @@ class ScanRecordStore extends ChangeNotifier {
 
   /// Clears all stored records.
   Future<void> clearRecords() async {
+    if (!_loaded) {
+      await load();
+    }
     _records.clear();
     notifyListeners();
     await save();

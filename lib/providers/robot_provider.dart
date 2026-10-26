@@ -123,6 +123,16 @@ class RobotControlNotifier extends Notifier<RobotState> {
     );
   }
 
+  /// Resets arm sliders and gripper to neutral home values (decision 0027/G2c).
+  void resetToHome() {
+    state = state.copyWith(
+      reachValue: 90.0,
+      heightValue: 90.0,
+      gripperVal: 0.0,
+      atHome: true,
+    );
+  }
+
   // Resolution control ────────────────────────────────────────────────────────
 
   void setResolution({String? preset, int? width, int? height}) =>

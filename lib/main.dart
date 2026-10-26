@@ -13,6 +13,7 @@ import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
 
 import 'firebase_options_loader.dart';
 import 'services/gemma_quiz_service.dart';
+import 'services/scan_record_store.dart';
 import 'widgets/desktop_viewport.dart';
 import 'utils/system_ui.dart';
 import 'Screens/home_shell.dart';
@@ -66,6 +67,9 @@ void main() async {
     } catch (error) {
       debugPrint('FlutterGemma.initialize failed: $error');
     }
+
+    // Preload scan records from disk so trophies and history are immediately available.
+    unawaited(ScanRecordStore.instance.load());
 
     runApp(const ElioApp());
   } catch (error, stackTrace) {

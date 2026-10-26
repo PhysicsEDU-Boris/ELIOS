@@ -21,6 +21,11 @@ kept outside the repo.
   - Debug overlay displays tag chips for AprilTag IDs 0 and 1 only when detected with distance in mm, and real-time end-effector XYZ coordinates from `ee_mm`.
 
 ### Fixed
+- G2c: HOME slider sync, STATUS polling, and ScanRecordStore persistence:
+  - Reset reach and height sliders to neutral 90 and gripper to 0 in both UI state and MotionGate on HOME `ack` and `motion_done`, preventing inverted relative kinematics after home.
+  - Send debounced STATUS requests (~300 ms) after reach/height drag ends and immediately upon `motion_done` to keep `ee_mm` and EE xyz overlay display current.
+  - Fixed `ScanRecordStore` data loss across app rebuilds and restarts by ensuring records are loaded prior to write/append operations and preloading eagerly on app launch.
+  - Scan History UI fixes: changed sync badge and card subtitle to "Tersimpan lokal" and ensured difficulty chips display dynamic question count (e.g. `Easy · 2Q`).
 - G1c: STOPPED never shrinks camera. In `control_layout.dart`, camera retains a minimum width of at least 240 px and identical dimensions with and without STOPPED across all test viewports and Mac window heights (480–640 px). Banner height is absorbed by controls spacing and scrolling rather than squeezing the camera.
 
 ### Added

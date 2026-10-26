@@ -98,8 +98,15 @@ abstract class RobotController {
   /// Whether the arm target is currently all-zero home pose (decision 0027).
   bool? atHome;
 
+  /// The sequence number of the most recent HOME command sent.
+  int? lastHomeSeq;
+
   int status() => send('STATUS');
-  int home() => send('HOME');
+  int home() {
+    final seq = send('HOME');
+    lastHomeSeq = seq;
+    return seq;
+  }
   int lockDrive() => send('LOCK_DRIVE');
   int unlockDrive() => send('UNLOCK_DRIVE');
   int pick({double? distCm, double? lateralCm}) => send('PICK', {'dist_cm': distCm, 'lateral_cm': lateralCm});

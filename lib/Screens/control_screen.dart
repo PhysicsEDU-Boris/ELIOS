@@ -74,6 +74,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// Set only with R1 (see [_r1Enabled]).
   R1Orchestrator? _r1;
   StreamSubscription<Map<String, dynamic>>? _robotReplies;
+  Timer? _statusDebounceTimer;
   Timer? _r1Ticker;
   String? _r1Status;
 
@@ -141,11 +142,22 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _robotReplies = ws.robotReplies.listen((msg) {
       robot.handleMessage(msg);
       final reply = RobotReply.fromJson(msg);
-      if (reply != null && (reply.eeMm != null || reply.atHome != null)) {
-        ref.read(robotControlProvider.notifier).updateStatus(
-              eeMm: reply.eeMm,
-              atHome: reply.atHome,
-            );
+      if (reply != null) {
+        if (reply.seq == robot.lastHomeSeq) {
+          if (reply.kind == ReplyKind.ack || reply.kind == ReplyKind.motionDone) {
+            ref.read(robotControlProvider.notifier).resetToHome();
+            _gate.resetToHome();
+          }
+        }
+        if (reply.eeMm != null || reply.atHome != null) {
+          ref.read(robotControlProvider.notifier).updateStatus(
+                eeMm: reply.eeMm,
+                atHome: reply.atHome,
+              );
+        }
+        if (reply.kind == ReplyKind.motionDone) {
+          robot.status();
+        }
       }
     });
 
@@ -308,6 +320,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _statusSubscription?.close();
     _r1Ticker?.cancel();
     _robotReplies?.cancel();
+    _statusDebounceTimer?.cancel();
     ref.read(r1DropPendingProvider.notifier).state = false;
     HardwareKeyboard.instance.removeHandler(_onKey);
     WidgetsBinding.instance.removeObserver(this);
@@ -398,7 +411,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             value: (robotState.heightValue / 180).clamp(0.0, 1.0),
             enabled: isOperational,
             onChanged: (value) {
-              if (_gate.servo('height', (value * 180).toInt())) notifier.setHeightValue(value * 180);
+              if (_gate.servo('height', (value * 180).toInt())) {
+                notifier.setHeightValue(value * 180);
+                _scheduleStatusRequest();
+              }
             },
           ),
           drivePad: (compact) => DrivePad(
@@ -450,7 +466,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             value: (robotState.reachValue / 180).clamp(0.0, 1.0),
             enabled: isOperational,
             onChanged: (value) {
-              if (_gate.servo('reach', (value * 180).toInt())) notifier.setReachValue(value * 180);
+              if (_gate.servo('reach', (value * 180).toInt())) {
+                notifier.setReachValue(value * 180);
+                _scheduleStatusRequest();
+              }
             },
           ),
           launcher: const QuizLauncherButton(),
@@ -534,6 +553,15 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         ),
       ),
     );
+  }
+
+  void _scheduleStatusRequest() {
+    _statusDebounceTimer?.cancel();
+    _statusDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _gate.status();
+      }
+    });
   }
 
   void _nudgeBase(double delta) {
