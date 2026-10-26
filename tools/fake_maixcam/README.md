@@ -12,7 +12,9 @@ The protocol is copied from `firmware/maixcam2/main.py`:
 - `{"status":"Connected"}` on connect.
 - `ping` gets a `pong` with `firmware_version` `fake-sim-<n>`.
 - `start_stream` / `stop_stream` turn the stream on and off; `disconnect` gets `disconnect_ack`.
-- `motor` moves the simulated base; servo `base` and `elbow` move the simulated arm, and `gripper` opens/closes it.
+- `motor` moves the simulated base; `servo` `reach` and `height` use 2 mm Cartesian IK steps
+  without turning J1; debug `base` still turns J1. `lateral` is rejected because world-X motion
+  needs J1 and would pan the attached camera. The `gripper` value is width (0 open, 100 closed).
 - Frames carry `vision_protocol`, `firmware_sha256`, `frame_id`, `detection_frame_id`, `image`,
   `img_w`, `img_h` and `detections`. Detection frames (every 2nd frame) also carry
   `clean_detections` and `clean_image`.
@@ -181,7 +183,10 @@ reconnect you can read STOP and `motor left=0 right=0` coming first.
 `{"cmd": NAME, "seq": n, ...}` gets `{"event": "ack" | "motion_done" | "error", "seq": n}` back.
 
 - Answered:
-  - `STATUS`: ack, with `drive_locked`;
+  - `STATUS`: ack, with `drive_locked`, `ee_mm: [x,y,z]` and `at_home` (commanded target is all
+    zero joints and gripper open; this is not physical position feedback);
+  - `HOME`: ack, then motion_done after the simulated joints reach zero at 60 deg/s; opens the
+    gripper to its D2 home value;
   - `LOCK_DRIVE` / `UNLOCK_DRIVE`: ack; `motor` is logged as dropped while locked;
   - `HOLD`: ack, then motion_done;
   - `STOP`: ack;
@@ -192,6 +197,13 @@ reconnect you can read STOP and `motor left=0 right=0` coming first.
   card; unreachable targets return `error: unreachable`. The carried card follows the gripper and
   is hidden after DROP.
 - Any other command with a `seq` replies `error: unknown_cmd`.
+
+Arm serial output and the app safety contract are specified in
+[decision 0027](../../docs/decisions/0027-arm-serial-protocol.md): the fake's `HOME` and supported
+hand axes follow that contract, but the app must gate HOME while STOPPED or sorting and pause it
+on Human_Hand. A camera reboot does not home the arm; without servo feedback, only the last
+commanded pose is known. The measured tag-check poses are `home` `[0,0,0,0,0]` (no arm tags
+visible) and `inspect` `[0,50,-120,90,-45]` (tags 0 and 1 visible).
 
 ## Tests
 
