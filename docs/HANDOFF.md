@@ -2,11 +2,11 @@
 
 Branch `feat/g2c-home-status-fixes` (base `58fd087`, origin/feature/live-scan). PR #48 (open, by Gemini).
 
-## Done (G2c Mac Test Fixes)
+## Done (G2c Mac Test Fixes & Protocol Hardening)
 
-- On HOME (ack and motion_done), reset reach and height values to 90 and gripper to 0 in UI and MotionGate.
-- Kept `ee_mm` current by sending STATUS on `motion_done` and debounced 300 ms after reach/height drag.
-- Fixed `ScanRecordStore` data loss across rebuild/restart with preload on startup and safe load guard.
+- Strict HOME completion: reset reach/height/gripper to 90/90/0 and set `atHome: true` only on matching `motion_done`; handle errors, STOP, disconnects, and timeout without claiming home completion.
+- Kept `ee_mm` current: send STATUS after `motion_done` and debounced 300 ms after drag; clear coordinates on null `ee_mm` or disconnect.
+- Serialized `ScanRecordStore` concurrent operations (load, add, clear, save) to guarantee disk persistence under rapid writes.
 - Scan History: display "Tersimpan lokal" sync indicator and real question count on difficulty pills.
 - Decisions [0027](decisions/0027-arm-serial-protocol.md), [0028](decisions/0028-trophy-rules-and-scan-history.md), [0030](decisions/0030-quiz-result-card-and-history-save.md).
 
@@ -19,9 +19,10 @@ Branch `feat/g2c-home-status-fixes` (base `58fd087`, origin/feature/live-scan). 
 
 ## Robot / Mac test
 
-- Drag height to 171, hold HOME 1s -> after home, drag to 160 moves arm DOWN from neutral (not up).
-- End-effector XYZ readout updates live ~300 ms after reach/height slider release and on motion_done.
-- Complete a quiz -> restart app -> scan history retains record and trophies count.
+- Drag height to 171, hold HOME 1s -> sliders reset only on `motion_done`; drag to 160 moves arm DOWN from neutral.
+- Trigger STOP, disconnect, or timeout during HOME -> pending home canceled, sliders and `atHome` remain unconfirmed.
+- End-effector XYZ readout updates live ~300 ms after reach/height release, on `motion_done`, and clears when null.
+- Complete a quiz / rapid saves -> restart app -> scan history retains all records and trophies count.
 
 ## Quiz state
 
@@ -35,5 +36,5 @@ Branch `feat/g2c-home-status-fixes` (base `58fd087`, origin/feature/live-scan). 
 
 ## Known open / Tests
 
-- 470 unit/widget tests pass; 2 known stale splash tests (`test/widget_test.dart`) fail.
+- 476 unit/widget tests pass; 2 known stale splash tests (`test/widget_test.dart`) fail.
 - Image identify first token 7–9 s; chat interrupting scan waits up to 8 s (0003).

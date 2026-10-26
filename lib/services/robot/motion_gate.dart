@@ -25,8 +25,17 @@ const stopRepeatInterval = Duration(milliseconds: 100);
 const _allowedWhileStopped = {'STOP', 'STATUS', 'HEARTBEAT'};
 
 class MotionGate extends ChangeNotifier {
-  MotionGate({required this.robot, required this.sendServo, this.onEvent, this.onStop, this.onArmCommand,
-      this.armBusy, this.handPaused});
+  MotionGate({
+    required this.robot,
+    required this.sendServo,
+    this.onEvent,
+    this.onStop,
+    this.onArmCommand,
+    this.armBusy,
+    this.handPaused,
+    this.onHomeTimeout,
+    this.homeTimeoutDuration = const Duration(seconds: 5),
+  });
 
   /// The MaixCAM2 client: STOP (with seq), HEARTBEAT, and motor through [RobotController.drive].
   final RobotController robot;
@@ -47,6 +56,12 @@ class MotionGate extends ChangeNotifier {
   /// A hand is in view: arm commands paused by existing Human_Hand -> HOLD behavior (0027).
   final bool Function()? handPaused;
 
+  /// Called when an in-flight HOME command times out without motion_done.
+  final void Function()? onHomeTimeout;
+
+  /// Maximum time to wait for motion_done after HOME is sent.
+  final Duration homeTimeoutDuration;
+
   bool _linkUp = false;
   bool _stopped = false;
   String? _stopReason;
@@ -54,11 +69,20 @@ class MotionGate extends ChangeNotifier {
   Timer? _heartbeat;
   final _lastAngle = <String, int>{};
   int? _lastHomeSeq;
+  int? _pendingHomeSeq;
+  bool _homeAcked = false;
+  Timer? _homeTimeoutTimer;
 
   bool get stopped => _stopped;
   String? get stopReason => _stopReason;
   bool get linkUp => _linkUp;
   int? get lastHomeSeq => _lastHomeSeq;
+  int? get pendingHomeSeq => _pendingHomeSeq;
+  bool get isHoming => _pendingHomeSeq != null;
+  bool get homeAcked => _homeAcked;
+
+  @visibleForTesting
+  Map<String, int> get lastAngles => Map.unmodifiable(_lastAngle);
 
   /// Motion commands dropped so far (debug overlay).
   int get blocked => _blocked;
@@ -95,8 +119,63 @@ class MotionGate extends ChangeNotifier {
       return _block('home', {'reason': 'hand_paused'});
     }
     onArmCommand?.call(const Duration(seconds: 2));
-    _lastHomeSeq = robot.home();
+    _homeTimeoutTimer?.cancel();
+    final seq = robot.home();
+    _lastHomeSeq = seq;
+    _pendingHomeSeq = seq;
+    _homeAcked = false;
+    robot.atHome = false;
+    _homeTimeoutTimer = Timer(homeTimeoutDuration, () {
+      if (_pendingHomeSeq == seq) {
+        _pendingHomeSeq = null;
+        _homeAcked = false;
+        robot.atHome = false;
+        onEvent?.call('home_timeout', {'seq': seq});
+        onHomeTimeout?.call();
+        notifyListeners();
+      }
+    });
     return true;
+  }
+
+  /// Handles command replies relevant to HOME.
+  /// Returns true only on verified successful completion (motion_done with matching seq).
+  bool onHomeReply(RobotReply reply) {
+    if (_pendingHomeSeq == null || reply.seq != _pendingHomeSeq) {
+      return false;
+    }
+    if (reply.kind == ReplyKind.ack) {
+      _homeAcked = true;
+      // ack means accepted by controller; motion is underway. Do NOT reset cache or mark done.
+      return false;
+    }
+    if (reply.kind == ReplyKind.motionDone) {
+      _homeTimeoutTimer?.cancel();
+      _pendingHomeSeq = null;
+      _homeAcked = false;
+      resetToHome();
+      robot.atHome = true;
+      return true;
+    }
+    if (reply.kind == ReplyKind.error) {
+      _homeTimeoutTimer?.cancel();
+      _pendingHomeSeq = null;
+      _homeAcked = false;
+      robot.atHome = false;
+      return false;
+    }
+    return false;
+  }
+
+  /// Cancels in-flight HOME if interrupted (by STOP, disconnect, error).
+  void cancelHome({String reason = 'cancelled'}) {
+    if (_pendingHomeSeq != null) {
+      _homeTimeoutTimer?.cancel();
+      onEvent?.call('home_interrupted', {'seq': _pendingHomeSeq, 'reason': reason});
+      _pendingHomeSeq = null;
+      _homeAcked = false;
+      robot.atHome = false;
+    }
   }
 
   /// Resets internal servo angles to neutral home values (decision 0027/G2c).
@@ -155,6 +234,7 @@ class MotionGate extends ChangeNotifier {
   void emergencyStop(String reason) {
     _stopped = true;
     _stopReason = reason;
+    cancelHome(reason: reason);
     onEvent?.call('emergency_stop', {'reason': reason, 'linkUp': _linkUp});
     _sendStop();
     onStop?.call(reason);
@@ -186,6 +266,7 @@ class MotionGate extends ChangeNotifier {
     if (!_linkUp) return;
     _linkUp = false;
     _heartbeat?.cancel();
+    cancelHome(reason: 'link_lost');
     if (!_stopped) emergencyStop('link_lost');
     notifyListeners();
   }
@@ -205,6 +286,7 @@ class MotionGate extends ChangeNotifier {
   /// Leaving the screen: wheels off, heartbeat off.
   @override
   void dispose() {
+    _homeTimeoutTimer?.cancel();
     stopWheels();
     _heartbeat?.cancel();
     super.dispose();

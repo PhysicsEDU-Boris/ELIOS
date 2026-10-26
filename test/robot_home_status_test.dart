@@ -31,11 +31,19 @@ class _FakeTransport {
       'seq': seq,
     });
   }
+
+  void replyError(int seq, {String reason = 'busy'}) {
+    onReplyMessage?.call({
+      'event': 'error',
+      'seq': seq,
+      'reason': reason,
+    });
+  }
 }
 
 void main() {
-  group('G2c HOME reset and slider matching fake _cmd_home', () {
-    test('on HOME ack and motion_done, reset reach & height to 90 and gripper to 0', () async {
+  group('G2c HOME completion, rejection, timeout, and interruption regression tests', () {
+    test('on HOME: ack does not reset sliders or mark atHome; motion_done resets sliders to 90 and marks atHome', () async {
       final transport = _FakeTransport();
       final robot = MaixCamRobot(
         sink: transport.send,
@@ -53,8 +61,10 @@ void main() {
       expect(container.read(robotControlProvider).heightValue, 171);
       expect(container.read(robotControlProvider).reachValue, 140);
       expect(container.read(robotControlProvider).gripperVal, 80);
+      expect(container.read(robotControlProvider).atHome, false);
 
-      final gate = MotionGate(
+      late final MotionGate gate;
+      gate = MotionGate(
         robot: robot,
         sendServo: (part, val) => transport.send({'cmd': 'servo', 'part': part, 'val': val}),
       )..linkRestored();
@@ -64,10 +74,18 @@ void main() {
         robot.handleMessage(msg);
         final reply = RobotReply.fromJson(msg);
         if (reply != null) {
-          if (reply.seq == robot.lastHomeSeq) {
-            if (reply.kind == ReplyKind.ack || reply.kind == ReplyKind.motionDone) {
-              notifier.resetToHome();
-              gate.resetToHome();
+          if (gate.pendingHomeSeq != null && reply.seq == gate.pendingHomeSeq) {
+            if (reply.kind == ReplyKind.motionDone) {
+              final ok = gate.onHomeReply(reply);
+              if (ok) {
+                notifier.resetToHome();
+              }
+            } else if (reply.kind == ReplyKind.error) {
+              gate.onHomeReply(reply);
+              notifier.updateStatus(atHome: false);
+            } else if (reply.kind == ReplyKind.ack) {
+              gate.onHomeReply(reply);
+              // Ack alone: do NOT reset sliders or set atHome: true
             }
           }
           if (reply.eeMm != null || reply.atHome != null) {
@@ -83,29 +101,32 @@ void main() {
       expect(gate.home(), isTrue);
       final homeSeq = robot.lastHomeSeq;
       expect(homeSeq, isNotNull);
+      expect(gate.pendingHomeSeq, homeSeq);
       expect(transport.sent.any((m) => m['cmd'] == 'HOME' && m['seq'] == homeSeq), isTrue);
 
-      // Change sliders mid-flight (user or stale state)
-      notifier.setHeightValue(171);
-
-      // 3. HOME ack arrives -> resets reach/height to 90, gripper to 0
+      // 3. HOME ack arrives -> MUST NOT reset reach/height/gripper or mark atHome true
       transport.replyAck(homeSeq!);
       await pumpEventQueue();
 
-      expect(container.read(robotControlProvider).reachValue, 90.0, reason: 'reach reset to 90 on ack');
-      expect(container.read(robotControlProvider).heightValue, 90.0, reason: 'height reset to 90 on ack');
-      expect(container.read(robotControlProvider).gripperVal, 0.0, reason: 'gripper reset to 0 on ack');
+      expect(gate.homeAcked, isTrue);
+      expect(gate.pendingHomeSeq, homeSeq, reason: 'HOME still in flight');
+      expect(container.read(robotControlProvider).reachValue, 140.0, reason: 'reach must NOT be reset on ack');
+      expect(container.read(robotControlProvider).heightValue, 171.0, reason: 'height must NOT be reset on ack');
+      expect(container.read(robotControlProvider).gripperVal, 80.0, reason: 'gripper must NOT be reset on ack');
+      expect(container.read(robotControlProvider).atHome, false, reason: 'atHome must NOT be true on ack alone');
 
-      // User drags slightly before motion_done
-      notifier.setHeightValue(95);
-
-      // 4. HOME motion_done arrives -> resets again
+      // 4. HOME motion_done arrives -> NOW resets to neutral (90, 90, 0) and marks atHome true
       transport.replyMotionDone(homeSeq);
       await pumpEventQueue();
 
+      expect(gate.pendingHomeSeq, isNull, reason: 'HOME complete');
       expect(container.read(robotControlProvider).reachValue, 90.0, reason: 'reach reset to 90 on motion_done');
       expect(container.read(robotControlProvider).heightValue, 90.0, reason: 'height reset to 90 on motion_done');
       expect(container.read(robotControlProvider).gripperVal, 0.0, reason: 'gripper reset to 0 on motion_done');
+      expect(container.read(robotControlProvider).atHome, true, reason: 'atHome is true on motion_done');
+      expect(gate.lastAngles['height'], 90);
+      expect(gate.lastAngles['reach'], 90);
+      expect(gate.lastAngles['gripper'], 0);
 
       // 5. Dragging down from neutral (e.g. to 80)
       // Since neutral is 90, moving down from neutral gives delta = 80 - 90 = -10 (direction: down)
@@ -113,7 +134,6 @@ void main() {
       expect(gate.servo('height', downValue), isTrue);
       final servoMsg = transport.sent.lastWhere((m) => m['cmd'] == 'servo' && m['part'] == 'height');
       expect(servoMsg['val'], downValue);
-      // Delta from neutral 90 in the fake
       final fakeDelta = downValue - 90;
       expect(fakeDelta, isNegative, reason: 'must move down from neutral (negative delta)');
 
@@ -122,6 +142,199 @@ void main() {
       // In the fake, delta from 90 would be 160 - 90 = +70 (moves UP, not down).
       final unhomedDelta = 160 - 90;
       expect(unhomedDelta > 0, isTrue, reason: 'stale 160 move without reset moves UP from neutral (+70)');
+
+      gate.dispose();
+    });
+
+    test('rejected HOME: error reply does not mark atHome or reset slider cache', () async {
+      final transport = _FakeTransport();
+      final robot = MaixCamRobot(
+        sink: transport.send,
+        motor: (l, r) {},
+      );
+
+      final container = ProviderContainer();
+      final notifier = container.read(robotControlProvider.notifier);
+      notifier.setHeightValue(171);
+      notifier.setReachValue(140);
+      notifier.setGripperVal(80);
+
+      late final MotionGate gate;
+      gate = MotionGate(
+        robot: robot,
+        sendServo: (part, val) => transport.send({'cmd': 'servo', 'part': part, 'val': val}),
+      )..linkRestored();
+
+      transport.onReplyMessage = (msg) {
+        robot.handleMessage(msg);
+        final reply = RobotReply.fromJson(msg);
+        if (reply != null) {
+          if (gate.pendingHomeSeq != null && reply.seq == gate.pendingHomeSeq) {
+            if (reply.kind == ReplyKind.motionDone) {
+              if (gate.onHomeReply(reply)) notifier.resetToHome();
+            } else if (reply.kind == ReplyKind.error) {
+              gate.onHomeReply(reply);
+              notifier.updateStatus(atHome: false);
+            }
+          }
+        }
+      };
+
+      expect(gate.home(), isTrue);
+      final homeSeq = robot.lastHomeSeq!;
+      expect(gate.pendingHomeSeq, homeSeq);
+
+      // Robot rejects HOME with error (e.g. busy or hardware fault)
+      transport.replyError(homeSeq, reason: 'busy');
+      await pumpEventQueue();
+
+      expect(gate.pendingHomeSeq, isNull, reason: 'rejected HOME is no longer pending');
+      expect(container.read(robotControlProvider).reachValue, 140.0);
+      expect(container.read(robotControlProvider).heightValue, 171.0);
+      expect(container.read(robotControlProvider).gripperVal, 80.0);
+      expect(container.read(robotControlProvider).atHome, false);
+      expect(gate.lastAngles['height'], isNot(90));
+
+      gate.dispose();
+    });
+
+    test('interrupted HOME: STOP cancels pending HOME and ignores late motion_done', () async {
+      final transport = _FakeTransport();
+      final robot = MaixCamRobot(
+        sink: transport.send,
+        motor: (l, r) {},
+      );
+
+      final container = ProviderContainer();
+      final notifier = container.read(robotControlProvider.notifier);
+      notifier.setHeightValue(171);
+      notifier.setReachValue(140);
+
+      late final MotionGate gate;
+      gate = MotionGate(
+        robot: robot,
+        sendServo: (part, val) => transport.send({'cmd': 'servo', 'part': part, 'val': val}),
+      )..linkRestored();
+
+      transport.onReplyMessage = (msg) {
+        robot.handleMessage(msg);
+        final reply = RobotReply.fromJson(msg);
+        if (reply != null) {
+          if (gate.pendingHomeSeq != null && reply.seq == gate.pendingHomeSeq) {
+            if (reply.kind == ReplyKind.motionDone) {
+              if (gate.onHomeReply(reply)) notifier.resetToHome();
+            }
+          }
+        }
+      };
+
+      expect(gate.home(), isTrue);
+      final homeSeq = robot.lastHomeSeq!;
+      transport.replyAck(homeSeq);
+      await pumpEventQueue();
+
+      // Emergency stop interrupts HOME mid-flight
+      gate.emergencyStop('button');
+      notifier.updateStatus(atHome: false);
+
+      expect(gate.pendingHomeSeq, isNull, reason: 'STOP must cancel pending HOME');
+      expect(gate.stopped, isTrue);
+      expect(container.read(robotControlProvider).atHome, false);
+
+      // Late motion_done arrives from hardware
+      transport.replyMotionDone(homeSeq);
+      await pumpEventQueue();
+
+      expect(container.read(robotControlProvider).heightValue, 171.0, reason: 'late motion_done must be ignored after STOP');
+      expect(container.read(robotControlProvider).atHome, false);
+      expect(gate.lastAngles['height'], isNot(90));
+
+      gate.dispose();
+    });
+
+    test('interrupted HOME: linkLost cancels pending HOME and ignores late motion_done', () async {
+      final transport = _FakeTransport();
+      final robot = MaixCamRobot(
+        sink: transport.send,
+        motor: (l, r) {},
+      );
+
+      final container = ProviderContainer();
+      final notifier = container.read(robotControlProvider.notifier);
+      notifier.setHeightValue(171);
+
+      late final MotionGate gate;
+      gate = MotionGate(
+        robot: robot,
+        sendServo: (part, val) => transport.send({'cmd': 'servo', 'part': part, 'val': val}),
+      )..linkRestored();
+
+      transport.onReplyMessage = (msg) {
+        robot.handleMessage(msg);
+        final reply = RobotReply.fromJson(msg);
+        if (reply != null) {
+          if (gate.pendingHomeSeq != null && reply.seq == gate.pendingHomeSeq) {
+            if (reply.kind == ReplyKind.motionDone) {
+              if (gate.onHomeReply(reply)) notifier.resetToHome();
+            }
+          }
+        }
+      };
+
+      expect(gate.home(), isTrue);
+      final homeSeq = robot.lastHomeSeq!;
+      transport.replyAck(homeSeq);
+      await pumpEventQueue();
+
+      // Disconnect occurs
+      gate.linkLost();
+      notifier.updateStatus(atHome: false);
+
+      expect(gate.pendingHomeSeq, isNull, reason: 'linkLost must cancel pending HOME');
+      expect(container.read(robotControlProvider).atHome, false);
+
+      transport.replyMotionDone(homeSeq);
+      await pumpEventQueue();
+
+      expect(container.read(robotControlProvider).heightValue, 171.0);
+      expect(container.read(robotControlProvider).atHome, false);
+
+      gate.dispose();
+    });
+
+    test('HOME timeout: cancels pending HOME when motion_done never arrives', () async {
+      final transport = _FakeTransport();
+      final robot = MaixCamRobot(
+        sink: transport.send,
+        motor: (l, r) {},
+      );
+
+      final container = ProviderContainer();
+      final notifier = container.read(robotControlProvider.notifier);
+      notifier.setHeightValue(171);
+
+      late final MotionGate gate;
+      gate = MotionGate(
+        robot: robot,
+        sendServo: (part, val) => transport.send({'cmd': 'servo', 'part': part, 'val': val}),
+        homeTimeoutDuration: const Duration(milliseconds: 100),
+        onHomeTimeout: () => notifier.updateStatus(atHome: false),
+      )..linkRestored();
+
+      expect(gate.home(), isTrue);
+      final homeSeq = robot.lastHomeSeq!;
+      transport.replyAck(homeSeq);
+      await pumpEventQueue();
+
+      expect(gate.pendingHomeSeq, homeSeq);
+
+      // Wait past timeout (150 ms > 100 ms)
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      await pumpEventQueue();
+
+      expect(gate.pendingHomeSeq, isNull, reason: 'timeout must clear pending HOME');
+      expect(container.read(robotControlProvider).atHome, false);
+      expect(container.read(robotControlProvider).heightValue, 171.0);
 
       gate.dispose();
     });
@@ -156,8 +369,18 @@ void main() {
         robot.handleMessage(msg);
         final reply = RobotReply.fromJson(msg);
         if (reply != null) {
-          if (reply.eeMm != null || reply.atHome != null) {
-            notifier.updateStatus(eeMm: reply.eeMm, atHome: reply.atHome);
+          if (reply.seq == robot.lastStatusSeq) {
+            notifier.updateStatus(
+              eeMm: reply.eeMm,
+              clearEeMm: reply.eeMm == null,
+              atHome: reply.atHome,
+            );
+          } else if (reply.hasEeMm || reply.atHome != null) {
+            notifier.updateStatus(
+              eeMm: reply.eeMm,
+              clearEeMm: reply.hasEeMm && reply.eeMm == null,
+              atHome: reply.atHome,
+            );
           }
           if (reply.kind == ReplyKind.motionDone) {
             robot.status();
@@ -228,6 +451,83 @@ void main() {
       gate.dispose();
       liveScanController.dispose();
       await tester.pump(const Duration(seconds: 1)); // let periodic timers settle
+    });
+
+    testWidgets('STATUS handles null or unavailable ee_mm without presenting stale coordinates', (tester) async {
+      final transport = _FakeTransport();
+      final robot = MaixCamRobot(
+        sink: transport.send,
+        motor: (l, r) {},
+      );
+
+      final container = ProviderContainer();
+      final notifier = container.read(robotControlProvider.notifier);
+      // Start with known coordinates
+      notifier.updateStatus(eeMm: const [10.0, -20.0, 30.0], atHome: false);
+
+      final gate = MotionGate(
+        robot: robot,
+        sendServo: (part, val) => transport.send({'cmd': 'servo', 'part': part, 'val': val}),
+      )..linkRestored();
+
+      transport.onReplyMessage = (msg) {
+        robot.handleMessage(msg);
+        final reply = RobotReply.fromJson(msg);
+        if (reply != null) {
+          if (reply.seq == robot.lastStatusSeq) {
+            notifier.updateStatus(
+              eeMm: reply.eeMm,
+              clearEeMm: reply.eeMm == null,
+              atHome: reply.atHome,
+            );
+          } else if (reply.hasEeMm || reply.atHome != null) {
+            notifier.updateStatus(
+              eeMm: reply.eeMm,
+              clearEeMm: reply.hasEeMm && reply.eeMm == null,
+              atHome: reply.atHome,
+            );
+          }
+        }
+      };
+
+      final liveScanController = LiveScanController(startQuiz: (detection, frame) => true);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: Scaffold(
+              body: Consumer(
+                builder: (context, ref, _) {
+                  final ee = ref.watch(robotControlProvider).eeMm;
+                  return LiveScanDebugOverlay(
+                    controller: liveScanController,
+                    eeMm: ee,
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Initially shows known coordinates
+      expect(find.text('EE: x=10.0 y=-20.0 z=30.0 mm'), findsOneWidget);
+
+      // Now query STATUS, but robot returns status reply with null or omitted ee_mm (e.g. uncalibrated arm)
+      final statusSeq = robot.status();
+      transport.replyAck(statusSeq, eeMm: null, atHome: false);
+      await tester.pump();
+
+      // Readout must NOT show the old stale coordinates! Must show "EE: -"
+      expect(find.text('EE: x=10.0 y=-20.0 z=30.0 mm'), findsNothing);
+      expect(find.text('EE: -'), findsOneWidget);
+      expect(container.read(robotControlProvider).eeMm, isNull);
+      expect(robot.eeMm, isNull);
+
+      gate.dispose();
+      liveScanController.dispose();
+      await tester.pump(const Duration(seconds: 1));
     });
   });
 }

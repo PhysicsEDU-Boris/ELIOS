@@ -130,10 +130,18 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       },
       onStop: (reason) => _r1?.emergencyStop(reason),
       onArmCommand: (motion) => _liveScan?.onArmCommand(motion),
+      onHomeTimeout: () {
+        if (mounted) {
+          ref.read(robotControlProvider.notifier).updateStatus(atHome: false);
+        }
+      },
       armBusy: () => _r1?.ignoresLiveScanLocks ?? false,
       handPaused: () => _r1?.handInView ?? false,
     )..addListener(() {
         _liveScan?.setScanPaused(_gate.stopped); // no lock, identify or new quiz while STOPPED (0026)
+        if (_gate.stopped && mounted) {
+          ref.read(robotControlProvider.notifier).updateStatus(atHome: false);
+        }
         if (mounted) setState(() {});
       });
     WidgetsBinding.instance.addObserver(this);
@@ -143,15 +151,30 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       robot.handleMessage(msg);
       final reply = RobotReply.fromJson(msg);
       if (reply != null) {
-        if (reply.seq == robot.lastHomeSeq) {
-          if (reply.kind == ReplyKind.ack || reply.kind == ReplyKind.motionDone) {
-            ref.read(robotControlProvider.notifier).resetToHome();
-            _gate.resetToHome();
+        if (_gate.pendingHomeSeq != null && reply.seq == _gate.pendingHomeSeq) {
+          if (reply.kind == ReplyKind.motionDone) {
+            final homeSuccess = _gate.onHomeReply(reply);
+            if (homeSuccess) {
+              ref.read(robotControlProvider.notifier).resetToHome();
+            }
+          } else if (reply.kind == ReplyKind.error) {
+            _gate.onHomeReply(reply);
+            ref.read(robotControlProvider.notifier).updateStatus(atHome: false);
+          } else if (reply.kind == ReplyKind.ack) {
+            _gate.onHomeReply(reply);
+            // Ack alone means accepted; do not mark successful or reset slider cache.
           }
         }
-        if (reply.eeMm != null || reply.atHome != null) {
+        if (reply.seq == robot.lastStatusSeq) {
           ref.read(robotControlProvider.notifier).updateStatus(
                 eeMm: reply.eeMm,
+                clearEeMm: reply.eeMm == null,
+                atHome: reply.atHome,
+              );
+        } else if (reply.hasEeMm || reply.atHome != null) {
+          ref.read(robotControlProvider.notifier).updateStatus(
+                eeMm: reply.eeMm,
+                clearEeMm: reply.hasEeMm && reply.eeMm == null,
                 atHome: reply.atHome,
               );
         }
@@ -238,6 +261,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         if (_streamStartedForCurrentConnection) _r1?.linkDown();
         _gate.linkLost(); // STOPPED (link_lost) until "Lanjutkan" (0026)
         _streamStartedForCurrentConnection = false;
+        ref.read(robotControlProvider.notifier).updateStatus(
+              clearEeMm: true,
+              clearAtHome: true,
+            );
       }
     }, fireImmediately: true);
 

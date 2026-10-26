@@ -261,5 +261,34 @@ void main() {
       expect(store3.records[1].id, 'initial-scan');
       expect(store3.totalTrophies, 20);
     });
+
+    test('rapid overlapping addRecord calls do not lose records', () async {
+      final store = ScanRecordStore(customFile: testFile);
+      const count = 10;
+      final futures = <Future<void>>[];
+      for (var i = 0; i < count; i++) {
+        futures.add(store.addRecord(
+          ScanRecord(
+            id: 'concurrent-$i',
+            time: DateTime.now(),
+            itemName: 'Item $i',
+            category: ScanCategory.recyclable,
+            difficulty: QuizDifficulty.easy,
+            questions: const [],
+            trophies: 10,
+          ),
+        ));
+      }
+      await Future.wait(futures);
+
+      expect(store.records.length, count);
+      expect(store.totalTrophies, count * 10);
+
+      // Reload into fresh instance to verify disk persistence
+      final storeReloaded = ScanRecordStore(customFile: testFile);
+      final diskRecords = await storeReloaded.load();
+      expect(diskRecords.length, count);
+      expect(storeReloaded.totalTrophies, count * 10);
+    });
   });
 }

@@ -30,6 +30,25 @@ class ScanRecordStore extends ChangeNotifier {
   List<ScanRecord> _records = [];
   bool _loaded = false;
   Future<List<ScanRecord>>? _loadFuture;
+  Future<void>? _pendingOperation;
+
+  Future<T> _synchronized<T>(Future<T> Function() operation) async {
+    while (_pendingOperation != null) {
+      try {
+        await _pendingOperation;
+      } catch (_) {}
+    }
+    final completer = Completer<void>();
+    _pendingOperation = completer.future;
+    try {
+      return await operation();
+    } finally {
+      completer.complete();
+      if (_pendingOperation == completer.future) {
+        _pendingOperation = null;
+      }
+    }
+  }
 
   List<ScanRecord> get records {
     if (!_loaded && _loadFuture == null) {
@@ -61,7 +80,16 @@ class ScanRecordStore extends ChangeNotifier {
     if (!force && _loaded && _loadFuture == null) {
       return Future.value(_records);
     }
-    _loadFuture ??= _doLoad();
+    if (_loadFuture != null) {
+      return _loadFuture!;
+    }
+    _loadFuture = _synchronized(() async {
+      try {
+        return await _doLoad();
+      } finally {
+        _loadFuture = null;
+      }
+    });
     return _loadFuture!;
   }
 
@@ -88,14 +116,17 @@ class ScanRecordStore extends ChangeNotifier {
       _records = [];
     } finally {
       _loaded = true;
-      _loadFuture = null;
     }
     notifyListeners();
     return _records;
   }
 
   /// Persists current records to disk.
-  Future<void> save() async {
+  Future<void> save() {
+    return _synchronized(() => _doSave());
+  }
+
+  Future<void> _doSave() async {
     try {
       final file = await _getFile();
       if (!file.parent.existsSync()) {
@@ -109,24 +140,28 @@ class ScanRecordStore extends ChangeNotifier {
   }
 
   /// Inserts a new record at the top of the list and saves.
-  /// Ensures records are loaded from disk first so previous records are preserved across app restarts.
-  Future<void> addRecord(ScanRecord record) async {
-    if (!_loaded) {
-      await load();
-    }
-    _records.insert(0, record);
-    notifyListeners();
-    await save();
+  /// Fully synchronized to guarantee overlapping writes never race or drop records.
+  Future<void> addRecord(ScanRecord record) {
+    return _synchronized(() async {
+      if (!_loaded) {
+        await _doLoad();
+      }
+      _records.insert(0, record);
+      notifyListeners();
+      await _doSave();
+    });
   }
 
   /// Clears all stored records.
-  Future<void> clearRecords() async {
-    if (!_loaded) {
-      await load();
-    }
-    _records.clear();
-    notifyListeners();
-    await save();
+  Future<void> clearRecords() {
+    return _synchronized(() async {
+      if (!_loaded) {
+        await _doLoad();
+      }
+      _records.clear();
+      notifyListeners();
+      await _doSave();
+    });
   }
 
   /// Populates store with the sample records from Figma node 100:170 (for debug mode).

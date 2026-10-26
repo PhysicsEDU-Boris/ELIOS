@@ -28,13 +28,21 @@ enum ReplyKind { ack, motionDone, error }
 
 /// One MaixCAM2 reply to a command (0023).
 class RobotReply {
-  const RobotReply(this.kind, this.seq, {this.reason, this.eeMm, this.atHome});
+  const RobotReply(
+    this.kind,
+    this.seq, {
+    this.reason,
+    this.eeMm,
+    this.atHome,
+    this.hasEeMm = false,
+  });
 
   final ReplyKind kind;
   final int seq;
   final String? reason;
   final List<double>? eeMm;
   final bool? atHome;
+  final bool hasEeMm;
 
   /// Null when [msg] is not a command reply (frames, pong, old firmware's messages).
   static RobotReply? fromJson(Map<String, dynamic> msg) {
@@ -48,6 +56,7 @@ class RobotReply {
     };
     if (kind == null) return null;
     final reason = msg['reason'];
+    final hasEe = msg.containsKey('ee_mm');
     final eeRaw = msg['ee_mm'];
     List<double>? eeMm;
     if (eeRaw is List) {
@@ -58,7 +67,14 @@ class RobotReply {
       if (list.length == eeRaw.length) eeMm = list;
     }
     final atHome = msg['at_home'] is bool ? msg['at_home'] as bool : null;
-    return RobotReply(kind, seq, reason: reason is String ? reason : null, eeMm: eeMm, atHome: atHome);
+    return RobotReply(
+      kind,
+      seq,
+      reason: reason is String ? reason : null,
+      eeMm: eeMm,
+      atHome: atHome,
+      hasEeMm: hasEe,
+    );
   }
 
   @override
@@ -101,7 +117,14 @@ abstract class RobotController {
   /// The sequence number of the most recent HOME command sent.
   int? lastHomeSeq;
 
-  int status() => send('STATUS');
+  /// The sequence number of the most recent STATUS command sent.
+  int? lastStatusSeq;
+
+  int status() {
+    final seq = send('STATUS');
+    lastStatusSeq = seq;
+    return seq;
+  }
   int home() {
     final seq = send('HOME');
     lastHomeSeq = seq;
@@ -148,7 +171,12 @@ class MaixCamRobot extends RobotController {
   void handleMessage(Map<String, dynamic> msg) {
     final reply = RobotReply.fromJson(msg);
     if (reply != null) {
-      if (reply.eeMm != null) eeMm = reply.eeMm;
+      if (reply.hasEeMm) {
+        eeMm = reply.eeMm;
+      } else if (reply.seq == lastStatusSeq) {
+        // Status response lacked ee_mm; clear stale coordinates
+        eeMm = null;
+      }
       if (reply.atHome != null) atHome = reply.atHome;
       onReply?.call(reply);
     }
