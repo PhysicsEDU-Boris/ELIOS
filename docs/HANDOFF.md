@@ -1,26 +1,25 @@
 # Handoff
 
-- Branch `feat/h1-scan-history` rebased onto `origin/feature/live-scan` (PR #39 merged).
-  Never commit Xcode scheme, `Maixcam.txt`, `docs/module/`.
+- Author: Gemini. Branch `feat/h1-scan-history` (HEAD), base `origin/feature/live-scan` (51d36c2, PR #39 merged).
+  PR not opened yet. Never commit Xcode scheme, `Maixcam.txt`, `docs/module/`.
 - Decisions: 0013–0019 quiz/module; [0020](decisions/0020-lock-rearm-rule.md) re-arm,
   [0021](decisions/0021-manual-driving-orchestration.md) orchestration,
   [0022](decisions/0022-detection-protocol-distance-tags.md) protocol,
   [0023](decisions/0023-r1-command-link.md) R1 link,
   [0024](decisions/0024-fake-maixcam-sim.md) fake MaixCAM2,
   [0025](decisions/0025-bank-detector-class.md) bank class,
-  [0026](decisions/0026-emergency-stop-motion-gate.md) stop + watchdog.
+  [0026](decisions/0026-emergency-stop-motion-gate.md) stop + watchdog,
+  [0027](decisions/0027-trophy-rules-and-scan-history.md) trophy rules & scan history.
 
-## In progress
+## Done (H1 Scan History & U1 Control Screen)
 
-- H1 (UI plan U5 + U6): Trophy rules, ScanRecord store, Scan History screen (Figma 100:170).
-
-## Done (U1 Control screen layout)
-
-- Figma 43:30 one-row layout across desktop and Android landscape (`800x360`–`1366x768`).
-- Short landscape sizing (`<500 dp`): 180 dp sliders, 48 dp D-pad, 140 dp speed, 64 dp STOP.
-- STOP stays under speed with no scroll; camera uses `Flexible` (`maxHeight: 220 dp`).
-- Phone portrait (`390x844`) fallback uses `FittedBox` motion row and pinned STOP.
-- 44 layout tests passed (7 sizes × 6 states); PNGs in `docs/test-results/u1-control-layout/`.
+- Pure trophy rules (`lib/models/trophy_rules.dart`): 10 trophies/correct MC, essay /10, grade %
+  (Sempurna, Hebat, Bagus, Belajar Lagi, Coba Lagi), Lv1–Lv5 progression (340 is Lv3 Bin Expert).
+- ScanRecord model and local JSON store (`lib/services/scan_record_store.dart`) with sample seeder.
+- Scan History screen (`lib/Screens/scan_history_screen.dart`, Figma 100:170): side-by-side on wide
+  screens (>=750 px), list-then-detail on phones (<750 px), zero overflow, all controls tappable.
+- HistoryPill hooked in `lib/widgets/control_layout.dart` with live trophy count and screen navigation.
+- Tests: 33 new boundary/store/widget tests passed; 444 passed across suite (2 known splash failures).
 
 ## R1 (0023), L1
 
@@ -41,7 +40,7 @@
 
 ## Next tasks, in order
 
-1. **Next: L0b serial protocol decision 0027**, then R1-fw (0023 link + 0026 watchdog/STOP).
+1. **Next: G1 gripper reach integration**, then L0b serial protocol decision, then R1-fw (0023 link + 0026 watchdog/STOP).
 2. Arm bring-up over ESP32 UART after ESP32/Uno sketches; use physical e-stop near people.
 3. Camera calibration (`0022`), M4 overlay, R2 sort modes, CI, M5 Android, M6 ByteTrack, M7 release.
 
