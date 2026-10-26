@@ -12,6 +12,10 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- MaixCAM2 L2/L4 command-link handling with a 1 s arm-command watchdog, conservative
+  unknown-pose reporting, STOP/HOLD replies, estimated joint-travel completion,
+  and a tested D2,D3,D4,D5,D6,D8 newline formatter. Physical arm output remains
+  disabled pending owner validation; ESP32/Arduino enforcement remains owner-owned.
 - G2b arm HOME, height control and debug overlays (decision 0027):
   - `RobotController.home()` sends `{"cmd":"HOME","seq":n}`; `SimulatedRobot` models 2-second travel to `[0.0, -42.5, 90.0]` and ack/motion_done sequence.
   - Parsed `ee_mm` and `at_home` from `STATUS` reply into `RobotState` and Riverpod `robotControlProvider`.

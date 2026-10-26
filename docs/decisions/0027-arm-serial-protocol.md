@@ -1,6 +1,6 @@
 # 0027: Arm serial protocol, home, Cartesian hand controls and tags
 
-- Status: Accepted for G2a; ESP32 implementation remains L2.
+- Status: Accepted. MaixCAM2 L2/L4 link logic is in this repository; ESP32 execution remains owner-owned.
 - Date: 2026-10-26
 - Builds on: [0023](0023-r1-command-link.md), [0026](0026-emergency-stop-motion-gate.md),
   [0029](0029-arm-reach-gripper.md).
@@ -27,8 +27,10 @@
 
 The MaixCAM2 sends one newline-terminated ASCII line per arm target, in this exact order:
 `D2,D3,D4,D5,D6,D8`. Values are absolute servo degrees. For the five arm joints,
-`servo = home + sign × ratio × sim_angle`; ratio is 1:1. Firmware clamps to the effective
-`robotic_hand_sim` limits and changes each joint at no more than 60°/s.
+`servo = home + sign × ratio × sim_angle`; ratio is 1:1. The MaixCAM2 formatter clamps
+sim angles to the effective `robotic_hand_sim` limits before mapping. The ESP32 owner
+firmware must enforce physical joint limits and the 60°/s maximum; MaixCAM2 does not
+interpolate servo motion.
 
 | Field | Function | Home | Sign | Effective sim range |
 |---|---|---:|---:|---:|
@@ -39,7 +41,8 @@ The MaixCAM2 sends one newline-terminated ASCII line per arm target, in this exa
 | D6 | J2 Arm A | 90 | −1 | −50..+50° |
 | D8 | J1 base | 90 | +1 | −90..+90° |
 
-D7 mirrors D6 in firmware (`180 − D6`). The all-home line is `10,90,90,180,90,90\n`.
+D7 mirrors D6 in the ESP32 owner firmware (`180 − D6`); D7 is not sent by MaixCAM2.
+The all-home line is `10,90,90,180,90,90\n`.
 Gripper conversion is `10 + 0.8 × width`; it is not part of the five-joint angle mapping.
 The 1:1 gear ratio for D8 (J1) is an assumption; the owner must confirm the real planetary gear.
 
@@ -47,7 +50,9 @@ The 1:1 gear ratio for D8 (J1) is an assumption; the owner must confirm the real
 
 There is no servo-position feedback. Only ESP32 `setup()` writes the home line at power-on; a
 MaixCAM2 reboot does not home the arm. The arm must be parked at home before power-off (owner
-confirms this hardware rule). `motion_done` means the MaixCAM2's commanded travel-time estimate
+confirms this hardware rule). Until trusted state exists, MaixCAM2 reports pose unknown and
+rejects movement. Its motion gate also stays disabled until reach/height IK and safe routes are
+validated. `motion_done` means the MaixCAM2's commanded travel-time estimate
 has elapsed, not that a sensor verified the pose. `STATUS` adds `ee_mm:[x,y,z]` and `at_home`:
 `ee_mm` is the J4 point (as in the sim's "EE position (J4)"); the fake reports it from the
 current simulated angles. With no real feedback, hardware `ee_mm` is only an estimate from the

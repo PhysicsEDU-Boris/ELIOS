@@ -6,10 +6,9 @@ Deployed on the robot 16 Oct 2026: scan JSONL `firmwareSha256`
 
 ## MaixVision package
 
-`app.yaml` is the MaixVision app manifest (`elios_clean_m2c_v1` v1.0.0, files:
-`main.py`). The package `dist/maix-elios_clean_m2c_v1-v1.0.0.zip` is a build
-output (exactly `app.yaml` + `main.py`), so it is gitignored; rebuild it from
-these two files in MaixVision. Bump `version` when `main.py` changes.
+`app.yaml` is the MaixVision app manifest (`elios_clean_m2c_v1` v1.1.0, files:
+`main.py`, `arm_commands.py`, `arm_protocol.py`). Rebuild the ignored package
+from these files in MaixVision. Bump `version` when a packaged file changes.
 
 Deployable entry point: **main.py** in this directory. It is a complete copy
 of the owner's local Maixcam.txt reference with the clean-image stream change.
@@ -23,10 +22,12 @@ verified byte-for-byte against the robot's currently installed script.
    MaixVision/SSH workflow. Record its active project/boot path and SHA-256.
    Compare it to the reference above before replacing it; if it differs, review
    those changes first so device-specific behavior is not lost. This reference's
-   motor/servo handlers only print commands; it does not add hardware actuation.
-2. Deploy this directory's `main.py` to that confirmed active entry-point path,
-   retaining the robot's existing model `/root/models/elios_waste_seg.mud`,
-   MaixPy, numpy, websockets and AP configuration. Do not deploy the test file.
+   arm target output is guarded off (`ARM_MOTION_ENABLED = False`). This change
+   has only been exercised with mock UART; do not deploy it for physical motion.
+2. Deploy the MaixVision package files (`main.py`, `arm_commands.py`,
+   `arm_protocol.py`) to the confirmed active app, retaining the existing model
+   `/root/models/elios_waste_seg.mud`, MaixPy, numpy, websockets and AP configuration.
+   Do not deploy the test files.
    Do not run a second server beside the existing port-8765 process.
 3. Restart the existing robot application using your normal deployment workflow.
    Its console must print `[Firmware] m2c-clean-v1 <sha256>`.
@@ -63,6 +64,24 @@ once per capture, shared across clients; legacy clients ignore the added fields
 but still receive the larger inference messages. Bandwidth/FPS require hardware
 measurement; identification now samples fresh inference frames, not every preview.
 No cooldown, lock or score thresholds changed. No recoloring/inpainting is used.
+
+## L2/L4 arm command link
+
+The MaixCAM2 handles uppercase command replies, reports unknown pose after boot,
+disconnect or watchdog expiry, and rejects arm motion while the output gate is
+closed. The watchdog blocks MaixCAM arm requests; it does not enforce ESP32 HOLD
+or Uno wheel-off. `arm_protocol.py` formats the D2,D3,D4,D5,D6,D8 newline line
+and keeps gripper width conversion separate. Tests use a mock UART.
+
+ESP32 execution remains owner-owned: UART receive, D7 mirror, joint limits,
+60°/s motion, servo hold/STOP enforcement and ESP32-only boot homing. MaixCAM2
+reach/height IK, EE kinematics, trusted home confirmation and a safe bin-to-home
+waypoint are not implemented or hardware verified. The Uno watchdog/wheel-off
+path and D8 1:1 ratio also remain unconfirmed. Keep the motion gate closed until
+these are resolved.
+
+Desktop checks: `python3 -m unittest discover -s firmware/maixcam2 -p 'test_arm*.py'`
+and `python3 -m unittest firmware/maixcam2/test_clean_stream.py`.
 
 ## Retest gate
 
