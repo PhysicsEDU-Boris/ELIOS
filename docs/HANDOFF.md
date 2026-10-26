@@ -1,16 +1,7 @@
 # Handoff
 
-## In progress
-
-- G1b (`feat/g1b-pickup-frame`), based on `origin/feature/live-scan` at `7054de6` (#41). Preserve
-  the lock-time `CapturedFrame` for PICK UP crop and keep STOPPED from shrinking the camera below
-  its minimum at 1366x768 and 770x553. Regressions, Flutter analyze and secret scan pass; the full
-  suite has 446 passes plus two stale splash-navigation failures. PR pending.
-- G1 reach/gripper was merged in #41. ARM REACH moves the hand along Cartesian ±Y without turning
-  J1/camera; width is 0 open to 100 closed. PICK UP closes and starts the opt-in quiz flow; L4
-  motion_done gating and L5 rollout remain future work.
-- Decision: [0029](decisions/0029-arm-reach-gripper.md).
-- H1 scan history was merged in #40. Never commit Xcode scheme, `Maixcam.txt`, or `docs/module/`.
+- Author: Gemini. Branch `feat/u2-result-card` (in progress), base `origin/feature/live-scan` (`c39831b`, PR #42 merged).
+  Never commit Xcode scheme, `Maixcam.txt`, `docs/module/`.
 - Decisions: 0013–0019 quiz/module; [0020](decisions/0020-lock-rearm-rule.md) re-arm,
   [0021](decisions/0021-manual-driving-orchestration.md) orchestration,
   [0022](decisions/0022-detection-protocol-distance-tags.md) protocol,
@@ -18,8 +9,12 @@
   [0024](decisions/0024-fake-maixcam-sim.md) fake MaixCAM2,
   [0025](decisions/0025-bank-detector-class.md) bank class,
   [0026](decisions/0026-emergency-stop-motion-gate.md) stop + watchdog,
-  [0029](decisions/0029-arm-reach-gripper.md) arm reach + gripper width,
-  [0028](decisions/0028-trophy-rules-and-scan-history.md) trophy rules & scan history.
+  [0028](decisions/0028-trophy-rules-and-scan-history.md) trophy rules & scan history,
+  [0029](decisions/0029-arm-reach-gripper.md) arm reach + gripper width.
+
+## In progress
+
+- U2 (UI plan U2 + H1): Result card, trophies and "Scan lagi", saving into Scan History.
 
 ## Done (H1 Scan History & U1 Control Screen)
 
@@ -29,7 +24,6 @@
 - Scan History screen (`lib/Screens/scan_history_screen.dart`, Figma 100:170): side-by-side on wide
   screens (>=750 px), list-then-detail on phones (<750 px), zero overflow, all controls tappable.
 - HistoryPill hooked in `lib/widgets/control_layout.dart` with live trophy count and screen navigation.
-- Tests: 33 new boundary/store/widget tests passed; 444 passed across suite (2 known splash failures).
 
 ## R1 (0023), L1
 
@@ -50,7 +44,7 @@
 
 ## Next tasks, in order
 
-1. **Next: G1 gripper reach integration**, then L0b serial protocol decision, then R1-fw (0023 link + 0026 watchdog/STOP).
+1. **Next: G2a fake/docs**, then L0b serial protocol decision 0027, then R1-fw (0023 link + 0026 watchdog/STOP).
 2. Arm bring-up over ESP32 UART after ESP32/Uno sketches; use physical e-stop near people.
 3. Camera calibration (`0022`), M4 overlay, R2 sort modes, CI, M5 Android, M6 ByteTrack, M7 release.
 
