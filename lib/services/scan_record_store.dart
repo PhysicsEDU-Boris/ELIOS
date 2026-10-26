@@ -35,13 +35,13 @@ class ScanRecordStore extends ChangeNotifier {
   Future<List<ScanRecord>> load() async {
     try {
       final file = await _getFile();
-      if (!await file.exists()) {
+      if (!file.existsSync()) {
         _records = [];
         _loaded = true;
         notifyListeners();
         return _records;
       }
-      final content = await file.readAsString();
+      final content = file.readAsStringSync();
       if (content.trim().isEmpty) {
         _records = [];
       } else {
@@ -63,11 +63,11 @@ class ScanRecordStore extends ChangeNotifier {
   Future<void> save() async {
     try {
       final file = await _getFile();
-      if (!await file.parent.exists()) {
-        await file.parent.create(recursive: true);
+      if (!file.parent.existsSync()) {
+        file.parent.createSync(recursive: true);
       }
       final jsonString = jsonEncode(_records.map((r) => r.toJson()).toList());
-      await file.writeAsString(jsonString, flush: true);
+      file.writeAsStringSync(jsonString, flush: true);
     } catch (e) {
       debugPrint('[ScanRecordStore] Save failed: $e');
     }

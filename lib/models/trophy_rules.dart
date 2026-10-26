@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 /// Grade given based on quiz percentage (trophies / (questions * 10) * 100).
 /// Boundaries:
 /// - 100 %     : Sempurna
