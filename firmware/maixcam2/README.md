@@ -69,9 +69,21 @@ No cooldown, lock or score thresholds changed. No recoloring/inpainting is used.
 
 The MaixCAM2 handles uppercase command replies, reports unknown pose after boot,
 disconnect or watchdog expiry, and rejects arm motion while the output gate is
-closed. The watchdog blocks MaixCAM arm requests; it does not enforce ESP32 HOLD
-or Uno wheel-off. `arm_protocol.py` formats the D2,D3,D4,D5,D6,D8 newline line
-and keeps gripper width conversion separate. Tests use a mock UART.
+closed. Only the single WebSocket client holding the bearer token from
+`ELIOS_CONTROL_TOKEN` may issue arm commands; the token must be at least 32
+characters. Only its exact `{"cmd":"HEARTBEAT"}` message renews the 1 s
+watchdog, matching the app's 250 ms cadence. Malformed, unknown, invalid, and
+non-owner messages do not renew it. The current Flutter WebSocket client does
+not send this Authorization header, so authenticated arm control remains
+unavailable until separately integrated. The header is sent over the current
+plain `ws://` connection and is not protected from LAN interception.
+
+STATUS leaves `ee_mm` and `at_home` null because pose is only estimated. STOP
+and idle HOLD acknowledge logical command blocking only; HOLD during estimated
+motion is rejected and marks pose unknown. The watchdog blocks MaixCAM arm
+requests; it does not enforce ESP32 HOLD/STOP or Uno wheel-off.
+`arm_protocol.py` formats the D2,D3,D4,D5,D6,D8 newline line and keeps gripper
+width conversion separate. Tests use a mock UART.
 
 ESP32 execution remains owner-owned: UART receive, D7 mirror, joint limits,
 60°/s motion, servo hold/STOP enforcement and ESP32-only boot homing. MaixCAM2

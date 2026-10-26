@@ -3,7 +3,8 @@
 ## In progress
 
 - L2/L4 MaixCAM2 work is on `feat/l2-l4-arm-firmware`, based on `58fd087`.
-- WebSocket command replies, the 1 s arm-command watchdog and UART target formatting are mock tested.
+- Authenticated single-client heartbeats, 1 s watchdog expiry, conservative STATUS, and logical-only STOP/HOLD are mock tested.
+- Current Flutter sends no bearer header; arm control stays unavailable. Plain `ws://` also exposes any configured bearer token on the LAN.
 - Physical output is disabled. No hardware deployment or actuation has been performed.
 - ESP32 and Uno sketches remain owner-owned; see decision 0027 and firmware README.
 
