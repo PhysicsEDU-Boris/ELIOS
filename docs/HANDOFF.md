@@ -1,6 +1,6 @@
 # Handoff
 
-Branch `feat/g2c-home-status-fixes` (base `58fd087`, origin/feature/live-scan). PR pending (by Gemini).
+Branch `feat/g2c-home-status-fixes` (base `58fd087`, origin/feature/live-scan). PR #48 (open, by Gemini).
 
 ## Done (G2c Mac Test Fixes)
 
