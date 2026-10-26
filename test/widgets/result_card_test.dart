@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/scanned_waste.dart';
-import 'package:elio/models/trophy_rules.dart';
 import 'package:elio/providers/robot_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/detection_stabilizer.dart';
