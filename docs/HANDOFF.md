@@ -1,7 +1,7 @@
 # Handoff
 
-- Base `feature/live-scan` at 22ea2e7 (#38 merged); L1 is complete on `feat/l1-fake-maixcam`.
-  #24 stays draft. Never commit Xcode scheme, `Maixcam.txt`, or `docs/module/`.
+- Branch `feat/h1-scan-history` rebased onto `origin/feature/live-scan` (PR #39 merged).
+  Never commit Xcode scheme, `Maixcam.txt`, `docs/module/`.
 - Decisions: 0013–0019 quiz/module; [0020](decisions/0020-lock-rearm-rule.md) re-arm,
   [0021](decisions/0021-manual-driving-orchestration.md) orchestration,
   [0022](decisions/0022-detection-protocol-distance-tags.md) protocol,
@@ -9,6 +9,10 @@
   [0024](decisions/0024-fake-maixcam-sim.md) fake MaixCAM2,
   [0025](decisions/0025-bank-detector-class.md) bank class,
   [0026](decisions/0026-emergency-stop-motion-gate.md) stop + watchdog.
+
+## In progress
+
+- H1 (UI plan U5 + U6): Trophy rules, ScanRecord store, Scan History screen (Figma 100:170).
 
 ## Done (U1 Control screen layout)
 
