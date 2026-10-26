@@ -12,7 +12,8 @@
 protocol of `firmware/maixcam2/main.py`, copied from that file:
 
 - connect, ping/pong, start/stop stream, disconnect_ack;
-- motor/servo are only logged, and set_resolution is ignored;
+- motor moves the simulated base; base/elbow/gripper servo commands drive the simulated arm;
+  set_resolution is ignored;
 - the same frame fields, with detections refreshed every 2nd frame and held in between;
 - `clean_image` and `clean_detections` on detection frames.
 
@@ -52,15 +53,19 @@ and J1 targets that are reached at 60 deg/s. Ten scenarios ship (see the README)
 with `main.py`'s `LABELS` and the app's `ScannedWaste.detectorLabels`. On 24 Oct all three were
 identical: no mismatch.
 
-**Command hook for R1**: since R1, it uses [0023](0023-r1-command-link.md)'s shape, `{"cmd", "seq"}` →
-`{"event", "seq"}`. It answers `STATUS`, `LOCK_DRIVE`, `UNLOCK_DRIVE`, `HOLD` and `STOP`, and
-replies `error: unknown_cmd` to other commands. Before R1, the shape was a placeholder:
+**Command hook for R1**: it uses [0023](0023-r1-command-link.md)'s shape, `{"cmd", "seq"}` →
+`{"event", "seq"}`. `PICK`, `MOVE_TO_BIN` and `DROP` use the simulator IK and joint stepping at
+60 deg/s; they ACK when accepted and send `motion_done` at arrival. A picked card follows the
+gripper and is hidden after DROP. Motor commands move the base; base/elbow servos move their
+mapped arm joints, and gripper commands change its state. A visible target outside IK reach returns
+`error: unreachable`.
+
+The handler also answers `STATUS`, `LOCK_DRIVE`, `UNLOCK_DRIVE`, `HOLD` and `STOP`, and replies
+`error: unknown_cmd` to other commands. Before R1, the shape was a placeholder:
 
 - A handler table for `{"cmd": NAME, "id": n}`, replying `ack` / `motion_done` / `error`.
 - `HOLD` and `J1_SWEEP` are implemented.
-- `PICK`, `MOVE_TO_BIN`, `DROP`, `STOP` and `DRIVE` reply `error: not_implemented`. Their TODOs
-  describe the intended behaviour: IK and 60 deg/s per joint for the arm, and moving the scene for
-  DRIVE.
+- `PICK`, `MOVE_TO_BIN`, `DROP`, `STOP` and `DRIVE` replied `error: not_implemented`.
 
 ## Why
 
@@ -75,6 +80,14 @@ replies `error: unknown_cmd` to other commands. Before R1, the shape was a place
 - No segmentation mask.
 - The real model's misdetections are only approximated by the noise settings.
 - `dist_cm` is exact here. The real camera still needs the calibration in 0022.
+- Wheel speed and track width are fixed estimates; calibrate them against the robot before using
+  simulated drive distance as a measurement.
+
+## Amendment 26 Oct (L1): fake motion
+
+- Added `r1_full_sort`, `r1_b3_sort`, `r1_hand_pauses_arm`, `r1_unreachable` and
+  `r1_position_nudge` scenarios. The command integration and reach rejection are covered by
+  `test_fake_maixcam.py`.
 
 ## Tests
 

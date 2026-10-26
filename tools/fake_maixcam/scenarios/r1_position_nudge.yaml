@@ -1,0 +1,5 @@
+name: r1_position_nudge
+description: An item near the edge of the useful reach for manual base-position nudges.
+duration_s: 60
+items:
+  - {id: bottle, label: Plastic, pos_mm: [-54, -501], size_mm: 120, score: 0.88}

@@ -12,6 +12,9 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- L1 fake MaixCAM2 robot motion: simulator-backed PICK / MOVE_TO_BIN / DROP with IK and 60 deg/s
+  joint stepping, carried-card/gripper behavior, motor-driven base motion, servo-driven arm
+  motion, and five R1 scenarios.
 - E1 emergency stop (decision 0026):
   - A large red STOP button, plus Escape (and space outside text fields). It sends 0023 STOP
     and motor 0,0 (repeated), and R1 takes its safe exit.

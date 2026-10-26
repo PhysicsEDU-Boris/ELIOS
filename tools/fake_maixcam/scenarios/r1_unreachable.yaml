@@ -1,0 +1,5 @@
+name: r1_unreachable
+description: An item outside the arm's reach must return unreachable.
+duration_s: 60
+items:
+  - {id: far, label: Plastic, pos_mm: [-54, -701], size_mm: 120, score: 0.88}

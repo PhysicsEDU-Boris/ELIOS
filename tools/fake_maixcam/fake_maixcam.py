@@ -14,6 +14,7 @@ import asyncio
 import base64
 import hashlib
 import json
+import math
 import random
 import sys
 import time
@@ -36,6 +37,16 @@ JOINT_SPEED_DPS = 60.0
 WATCHDOG_S = 1.0  # decision 0026 b: no app message this long -> wheels 0, arm hold
 HIDDEN_FRACTION = 0.6  # a card covered more than this by nearer cards gets no box  # ESP32 firmware limit, per joint (0021e)
 P1_KEYS = ("track_id", "dist_cm", "lateral_cm")
+# shortcut: fixed wheel speed and track width, calibrate when robot wheel measurements exist.
+DRIVE_MM_PER_PWM_S = 2.0
+WHEEL_TRACK_MM = 250.0
+PICK_MATCH_TOLERANCE_MM = 100.0
+IK_TOLERANCE_MM = 5.0
+BIN_TARGETS = {
+    "organik": (0.0, -150.0, 80.0),
+    "anorganik": (100.0, -150.0, 80.0),
+    "b3": (-100.0, -150.0, 80.0),
+}
 
 
 def load_labels(path=HERE / "labels.yaml"):
@@ -176,8 +187,13 @@ class SimWorld:
         self.cam = cc.SimCalibrationCamera(IMG_W, IMG_H)
         self.angles = np.zeros(5)
         self.target = np.zeros(5)
-        self.actors, self.corners = {}, {}
+        self.actors, self.card_meshes, self.corners, self.world_corners = {}, {}, {}, {}
         self.occlusion = scenario.get("occlusion", True)
+        self.robot_xy = np.zeros(2)
+        self.robot_yaw = 0.0
+        self.motor = (0, 0)
+        self.held_item = None
+        self.gripper_closed = False
         for it in scenario["items"]:
             texture = texture_for(it, seed, images_dir, log)
             (x, y), (w, h) = it["pos_mm"], card_size(it["size_mm"], texture)
@@ -189,7 +205,9 @@ class SimWorld:
             card.active_texture_coordinates = np.array([[0, 0], [1, 0], [1, 1], [0, 1]], float)
             tex = pv.Texture(np.ascontiguousarray(texture))
             self.actors[it["id"]] = self.cam.plotter.add_mesh(card, texture=tex, lighting=False)
-            self.corners[it["id"]] = corners
+            self.card_meshes[it["id"]] = card
+            self.world_corners[it["id"]] = corners.copy()
+            self.corners[it["id"]] = corners.copy()
         self.set_j1(scenario["arm"].get("j1", 0.0), now=True)
         self.cam.set_pose(self.angles)  # project() uses the camera's current pose, so pose it before any render
 
@@ -199,10 +217,103 @@ class SimWorld:
             self.angles[0] = deg
 
     def step(self, dt):
-        """Moves every joint towards its target at JOINT_SPEED_DPS; True when arrived."""
+        """Advance arm joints and differential-drive motion; return arm arrival state."""
+        dt = max(0.0, dt)
+        left, right = self.motor
+        turn = (left - right) * DRIVE_MM_PER_PWM_S * dt / WHEEL_TRACK_MM
+        heading = self.robot_yaw + turn / 2
+        distance = (left + right) / 2 * DRIVE_MM_PER_PWM_S * dt
+        self.robot_xy += distance * np.array([math.sin(heading), -math.cos(heading)])
+        self.robot_yaw += turn
         delta = np.clip(self.target - self.angles, -JOINT_SPEED_DPS * dt, JOINT_SPEED_DPS * dt)
         self.angles += delta
+        self._sync_cards()
         return bool(np.allclose(self.angles, self.target))
+
+    def set_motor(self, left, right):
+        self.motor = (left, right)
+
+    def _world_to_local(self, points):
+        points = np.asarray(points, dtype=float)
+        delta = points[..., :2] - self.robot_xy
+        c, s = math.cos(self.robot_yaw), math.sin(self.robot_yaw)
+        return np.concatenate((np.stack((c * delta[..., 0] + s * delta[..., 1],
+                                         -s * delta[..., 0] + c * delta[..., 1]), axis=-1),
+                               points[..., 2:3]), axis=-1)
+
+    def _local_to_world(self, points):
+        points = np.asarray(points, dtype=float)
+        c, s = math.cos(self.robot_yaw), math.sin(self.robot_yaw)
+        xy = points[..., :2]
+        world = np.stack((c * xy[..., 0] - s * xy[..., 1] + self.robot_xy[0],
+                          s * xy[..., 0] + c * xy[..., 1] + self.robot_xy[1]), axis=-1)
+        return np.concatenate((world, points[..., 2:3]), axis=-1)
+
+    def _sync_cards(self):
+        for item_id, points in self.world_corners.items():
+            if item_id == self.held_item:
+                offsets = self._world_to_local(points) - self._world_to_local(points.mean(axis=0))
+                corners = self.cc.grip_marker_base(self.angles) + offsets
+            else:
+                corners = self._world_to_local(points)
+            self.corners[item_id] = corners
+            mesh = self.card_meshes[item_id]
+            mesh.points[:] = corners
+            mesh.Modified()
+
+    def set_servo(self, part, value):
+        if part == "base":
+            self.target[0] = value - 90
+        elif part == "elbow":
+            self.target[1] = 90 - value
+        elif part == "gripper":
+            self.gripper_closed = value >= 50
+            return True
+        else:
+            return False
+        self.cc.ase.clamp_angles(self.target)
+        return True
+
+    def pick_point(self, item_id):
+        corners = self.corners[item_id]
+        normal = np.cross(corners[1] - corners[0], corners[2] - corners[0])
+        normal /= np.linalg.norm(normal)
+        return corners.mean(axis=0) + normal * 5.0
+
+    def solve_ik(self, point):
+        ase = self.cc.ase
+        angles = self.angles.copy()
+        pitch, roll = ase.desired_global_pitch, ase.desired_global_roll
+        ase.desired_global_pitch = float(sum(angles[1:4]))
+        ase.desired_global_roll = float(angles[4])
+        try:
+            target = np.asarray(point, dtype=float)
+            for _ in range(30):
+                _, _, ee = ase.forward_kinematics(angles)
+                if np.linalg.norm(target - ee) <= IK_TOLERANCE_MM:
+                    return angles
+                next_angles = ase.ik_step(angles, target - ee)
+                if np.allclose(next_angles, angles):
+                    break
+                angles = next_angles
+            _, _, ee = ase.forward_kinematics(angles)
+            return angles if np.linalg.norm(target - ee) <= IK_TOLERANCE_MM else None
+        finally:
+            ase.desired_global_pitch, ase.desired_global_roll = pitch, roll
+
+    def hold_item(self, item_id):
+        self.held_item = item_id
+        self.gripper_closed = True
+        self._sync_cards()
+
+    def release_item(self):
+        item_id = self.held_item
+        if item_id is not None:
+            self.world_corners[item_id] = self._local_to_world(self.corners[item_id])
+        self.held_item = None
+        self.gripper_closed = False
+        self._sync_cards()
+        return item_id
 
     def show(self, item_id, visible):
         self.actors[item_id].SetVisibility(visible)
@@ -312,6 +423,8 @@ class FakeMaixCam:
         self.pending = list(scenario["events"])
         self.motion = None  # (client, command) waiting for motion_done
         self.drive_locked = False
+        self.held_item = None
+        self.held_bin = None
         self.last_app_message = time.monotonic()
         self.watchdog_fired = False
         self.heartbeats, self.heartbeat_window = 0, None  # rate-limited "heartbeat xN/s" line
@@ -323,14 +436,9 @@ class FakeMaixCam:
             "HOLD": self._cmd_hold,
             "STOP": self._cmd_stop,
             "J1_SWEEP": self._cmd_j1_sweep,  # fake only (tests, scenarios): not part of 0023
-            # TODO(R1, 0023): PICK -> IK to the item's floor spot, 60 deg/s per joint, then
-            # close the gripper; ack now, motion_done when the arm arrives, error if unreachable.
-            "PICK": self._cmd_todo,
-            # TODO(R1, 0023): MOVE_TO_BIN -> fixed joint pose per bin (organik/anorganik/B3).
-            "MOVE_TO_BIN": self._cmd_todo,
-            # TODO(R1, 0023): DROP -> open the gripper, hide the carried item.
-            "DROP": self._cmd_todo,
-            # TODO(R1-fw): `motor` while unlocked -> move every item by -(dx, dy) to fake the robot driving.
+            "PICK": self._cmd_pick,
+            "MOVE_TO_BIN": self._cmd_move_to_bin,
+            "DROP": self._cmd_drop,
         }
 
     def _set_visible(self, item, visible):
@@ -430,10 +538,23 @@ class FakeMaixCam:
                         await ws.close()
                         break
                     elif cmd == "motor":
+                        left, right = data.get("left"), data.get("right")
+                        if (not isinstance(left, int) or isinstance(left, bool)
+                                or not isinstance(right, int) or isinstance(right, bool)):
+                            self.log("[WS] invalid motor command ignored")
+                            continue
+                        left, right = max(-100, min(100, left)), max(-100, min(100, right))
                         dropped = " dropped (drive locked)" if self.drive_locked else ""
-                        self.log("[WS] motor left={} right={}{}".format(data.get("left", 0), data.get("right", 0), dropped))
+                        self.log(f"[WS] motor left={left} right={right}{dropped}")
+                        self.world.set_motor(0, 0) if self.drive_locked else self.world.set_motor(left, right)
                     elif cmd == "servo":
-                        self.log("[WS] servo part={} val={}".format(data.get("part", ""), data.get("val", 0)))
+                        part, value = data.get("part"), data.get("val")
+                        if not isinstance(part, str) or not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= 180:
+                            self.log("[WS] invalid servo command ignored")
+                            continue
+                        moved = self.world.set_servo(part, value)
+                        state = "" if moved else " ignored (unknown part)"
+                        self.log(f"[WS] servo part={part} val={value}{state}")
                     elif cmd == "set_resolution":
                         self.log(f"[WS] set_resolution received but ignored — resolution is fixed at {IMG_W}x{IMG_H}")
                     elif cmd in self.handlers and isinstance(data.get("seq"), int):
@@ -453,6 +574,9 @@ class FakeMaixCam:
             self.clients.discard(ws)
             if not self.clients:
                 self.streaming = False
+                self.world.set_motor(0, 0)
+                self.world.target[:] = self.world.angles
+                self.motion = None
             self.log(f"[WS] clients remaining: {len(self.clients)}")
 
     # -- MaixCAM2 watchdog (decision 0026 b, simulated: the fake only logs and holds J1) --
@@ -466,6 +590,7 @@ class FakeMaixCam:
     def _watchdog(self, now):
         if self.clients and not self.watchdog_fired and now - self.last_app_message > WATCHDOG_S:
             self.watchdog_fired = True
+            self.world.set_motor(0, 0)
             self.world.target[:] = self.world.angles  # arm hold: stop where it is, never detach
             self.motion = None
             self.log(f"[Watchdog] no app message for {WATCHDOG_S:g} s: wheels 0 / arm hold")
@@ -480,6 +605,8 @@ class FakeMaixCam:
 
     async def _cmd_drive_lock(self, ws, data):
         self.drive_locked = data["cmd"] == "LOCK_DRIVE"
+        if self.drive_locked:
+            self.world.set_motor(0, 0)
         await self._reply(ws, "ack", data)
 
     def _log_heartbeat(self):
@@ -494,22 +621,101 @@ class FakeMaixCam:
 
     async def _cmd_stop(self, ws, data):
         self.log(f"[WS] STOP seq={data['seq']} -> wheels 0, arm hold")
+        self.world.set_motor(0, 0)
         self.world.target[:] = self.world.angles
         self.motion = None
         await self._reply(ws, "ack", data)
 
     async def _cmd_j1_sweep(self, ws, data):
-        self.world.set_j1(float(data["to"]))
-        self.motion = (ws, data)
-        await self._reply(ws, "ack", data)
+        value = data.get("to")
+        if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value) or abs(value) > 90:
+            await self._reply(ws, "error", data, reason="invalid_target")
+            return
+        target = self.world.angles.copy()
+        target[0] = float(value)
+        await self._begin_motion(ws, data, target)
 
     async def _cmd_hold(self, ws, data):
         self.world.target[:] = self.world.angles
+        self.motion = None
         await self._reply(ws, "ack", data)
         await self._reply(ws, "motion_done", data)
 
-    async def _cmd_todo(self, ws, data):
-        await self._reply(ws, "error", data, reason="not_implemented")
+    async def _begin_motion(self, ws, data, target, on_arrival=None):
+        if self.motion is not None:
+            await self._reply(ws, "error", data, reason="busy")
+            return False
+        self.world.target[:] = target
+        await self._reply(ws, "ack", data)
+        self.motion = (ws, data, on_arrival)
+        return True
+
+    async def _cmd_pick(self, ws, data):
+        if self.motion is not None or self.held_item is not None:
+            await self._reply(ws, "error", data, reason="busy")
+            return
+        visible = [item_id for item_id, item in self.items.items()
+                   if item["on"] and self.world.box(item_id) is not None]
+        if not visible:
+            await self._reply(ws, "error", data, reason="no_object")
+            return
+        dist, lateral = data.get("dist_cm"), data.get("lateral_cm")
+        if any(v is not None and (not isinstance(v, (int, float)) or isinstance(v, bool) or not math.isfinite(v))
+               for v in (dist, lateral)):
+            await self._reply(ws, "error", data, reason="invalid_target")
+            return
+        def mismatch(key):
+            actual = self.world.distance(key)
+            return math.hypot(*[(actual[i] - v) * 10 for i, v in enumerate((dist, lateral)) if v is not None])
+        item_id = (min(visible, key=lambda key: self.world.distance(key)[0])
+                   if dist is None and lateral is None else min(visible, key=mismatch))
+        if any(v is not None for v in (dist, lateral)) and mismatch(item_id) > PICK_MATCH_TOLERANCE_MM:
+            await self._reply(ws, "error", data, reason="no_object")
+            return
+        target = self.world.solve_ik(self.world.pick_point(item_id))
+        if target is None:
+            await self._reply(ws, "error", data, reason="unreachable")
+            return
+
+        def picked():
+            self.held_item = item_id
+            self.held_bin = None
+            self.world.hold_item(item_id)
+            self.log(f"[R1] picked {item_id}")
+
+        await self._begin_motion(ws, data, target, picked)
+
+    async def _cmd_move_to_bin(self, ws, data):
+        bin_name = data.get("bin")
+        if self.motion is not None:
+            await self._reply(ws, "error", data, reason="busy")
+            return
+        if self.held_item is None:
+            await self._reply(ws, "error", data, reason="empty_gripper")
+            return
+        if not isinstance(bin_name, str) or bin_name not in BIN_TARGETS:
+            await self._reply(ws, "error", data, reason="invalid_bin")
+            return
+        target = self.world.solve_ik(BIN_TARGETS[bin_name])
+        if target is None:
+            await self._reply(ws, "error", data, reason="unreachable")
+            return
+        await self._begin_motion(ws, data, target, lambda: setattr(self, "held_bin", bin_name))
+
+    async def _cmd_drop(self, ws, data):
+        if self.motion is not None:
+            await self._reply(ws, "error", data, reason="busy")
+            return
+        if self.held_item is None or self.held_bin is None:
+            await self._reply(ws, "error", data, reason="not_at_bin")
+            return
+        item_id, bin_name = self.held_item, self.held_bin
+        await self._reply(ws, "ack", data)
+        self.world.release_item()
+        self._set_visible(self.items[item_id], False)
+        self.held_item = self.held_bin = None
+        self.log(f"[R1] dropped {item_id} in {bin_name}")
+        await self._reply(ws, "motion_done", data)
 
     # -- frame pusher (main.py ws_frame_pusher) --
 
@@ -525,13 +731,17 @@ class FakeMaixCam:
             last = started
             self._watchdog(started)
             if arrived and self.motion is not None:
-                ws, data = self.motion
+                ws, data, on_arrival = self.motion
                 self.motion = None
                 if not self.link_down():
+                    if on_arrival is not None:
+                        on_arrival()
                     try:
                         await self._reply(ws, "motion_done", data)
                     except websockets.ConnectionClosed:
                         pass
+                else:
+                    self.world.target[:] = self.world.angles
             if self.streaming and self.clients and not self.link_down():
                 frame_id += 1
                 det_count += 1
