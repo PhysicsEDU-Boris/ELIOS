@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/trophy_rules.dart';
 import 'package:elio/services/gemma_quiz_service.dart';
@@ -198,6 +199,65 @@ void main() {
       expect(store.records[3].trophies, 0);
 
       expect(store.totalTrophies, 50); // 20 + 20 + 10 + 0
+    });
+
+    test('saves and reloads records with structured explanations and tables', () async {
+      final store1 = ScanRecordStore(customFile: testFile);
+      await store1.load();
+
+      const exp = QuizExplanation(
+        summary: 'Ringkasan edukasi botol PET',
+        correctAnswerReason: 'Daur ulang mekanik PET efisien',
+        conceptExplanation: 'Termoplastik dapat dilelehkan berulang kali',
+        comparisonRows: [
+          ComparisonRow(
+            bin: 'Daur Ulang',
+            material: 'PET',
+            accepted: 'Botol bersih',
+            isCorrect: true,
+          ),
+        ],
+        learningTakeaway: 'Ingat bilas sebelum buang',
+        sourceTitle: 'Fisika Lingkungan',
+        groundingStatus: GroundingStatus.bankGrounded,
+      );
+
+      final record = ScanRecord(
+        id: 'rec-exp',
+        time: DateTime(2026, 10, 28, 11, 0),
+        itemName: 'Botol Plastik',
+        category: ScanCategory.recyclable,
+        difficulty: QuizDifficulty.easy,
+        questions: const [
+          RecordQuestion(
+            question: 'Termasuk apakah plastik PET?',
+            yourAnswer: 'Termoplastik',
+            rightAnswer: 'Termoplastik',
+            isCorrect: true,
+            trophies: 10,
+            explanation: exp,
+          ),
+        ],
+        trophies: 10,
+      );
+
+      await store1.addRecord(record);
+
+      // Reload in a fresh store instance from the same file
+      final store2 = ScanRecordStore(customFile: testFile);
+      await store2.load();
+
+      expect(store2.records.length, 1);
+      final revived = store2.records.first;
+      expect(revived.id, 'rec-exp');
+      expect(revived.schemaVersion, 2);
+      expect(revived.questions.first.explanation, isNotNull);
+      final revivedExp = revived.questions.first.explanation!;
+      expect(revivedExp.summary, 'Ringkasan edukasi botol PET');
+      expect(revivedExp.correctAnswerReason, 'Daur ulang mekanik PET efisien');
+      expect(revivedExp.comparisonRows.length, 1);
+      expect(revivedExp.comparisonRows.first.isCorrect, isTrue);
+      expect(revivedExp.groundingStatus, GroundingStatus.bankGrounded);
     });
   });
 }

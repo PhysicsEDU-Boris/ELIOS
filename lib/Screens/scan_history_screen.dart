@@ -3,7 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/scan_record.dart';
 import '../services/gemma_quiz_service.dart';
+import '../services/quiz_pdf_service.dart';
 import '../services/scan_record_store.dart';
+import '../widgets/quiz_explanation_overlay.dart';
 
 const _ink = Color(0xFF1C2833);
 const _subLabel = Color(0xFF6B6B6B);
@@ -36,6 +38,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
   late final ScanRecordStore _store;
   ScanCategory? _selectedFilter;
   String? _selectedRecordId;
+  final Set<String> _expandedQuestions = {};
 
   @override
   void initState() {
@@ -178,7 +181,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
           Icon(Icons.check_circle_outline_rounded, size: 14, color: _greenAccent),
           SizedBox(width: 4),
           Text(
-            'Lokal',
+            'Tersimpan lokal',
             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _greenDark),
           ),
         ],
@@ -569,7 +572,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Scanned ${record.time.hour.toString().padLeft(2, '0')}:${record.time.minute.toString().padLeft(2, '0')} · Photo and ${record.totalQuestions} questions synced',
+                          'Scanned ${record.time.hour.toString().padLeft(2, '0')}:${record.time.minute.toString().padLeft(2, '0')} · Foto dan ${record.totalQuestions} soal tersimpan lokal',
                           style: const TextStyle(fontSize: 12, color: _subLabel),
                         ),
                         const SizedBox(height: 10),
@@ -659,6 +662,35 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _ink),
               ),
             ),
+            OutlinedButton.icon(
+              key: const ValueKey('export_pdf_button'),
+              onPressed: () async {
+                try {
+                  await QuizPdfService.shareOrSave(record);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Laporan PDF berhasil diekspor')),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Gagal mengekspor PDF: $e')),
+                    );
+                  }
+                }
+              },
+              icon: const Icon(Icons.picture_as_pdf_rounded, size: 14),
+              label: const Text('Export PDF', style: TextStyle(fontSize: 11)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _greenDark,
+                side: const BorderSide(color: Color(0xFFA3E4D7)),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -679,16 +711,18 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
           final q = entry.value;
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: _buildQuestionCard(idx, q),
+            child: _buildQuestionCard(record, idx, q),
           );
         }),
       ],
     );
   }
 
-  Widget _buildQuestionCard(int index, RecordQuestion q) {
+  Widget _buildQuestionCard(ScanRecord record, int index, RecordQuestion q) {
     final isCorrect = q.isCorrect;
     final stripeColor = isCorrect ? _greenAccent : _redAccent;
+    final expandKey = '${record.id}_$index';
+    final isExpanded = _expandedQuestions.contains(expandKey);
 
     return Container(
       decoration: BoxDecoration(
@@ -835,6 +869,76 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                           ),
                         ],
                       ),
+                      if (q.isEssay && q.essayScore != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(
+                              width: 100,
+                              child: Text(
+                                'SCORE',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _subLabel),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                '${q.essayScore} / 10 · +${q.trophies} Piala',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF7D6608),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton.icon(
+                            key: ValueKey('toggle_explanation_${record.id}_$index'),
+                            onPressed: () {
+                              setState(() {
+                                if (isExpanded) {
+                                  _expandedQuestions.remove(expandKey);
+                                } else {
+                                  _expandedQuestions.add(expandKey);
+                                }
+                              });
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: _greenDark,
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            icon: Icon(
+                              isExpanded ? Icons.expand_less_rounded : Icons.menu_book_rounded,
+                              size: 14,
+                            ),
+                            label: Text(
+                              isExpanded ? 'Tutup Penjelasan' : 'Lihat Penjelasan',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (isExpanded) ...[
+                        const Divider(color: _cardBorder, height: 16),
+                        if (q.explanation != null && !q.explanation!.isUnavailable)
+                          ExplanationBody(explanation: q.explanation!)
+                        else
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              'Penjelasan tidak tersimpan untuk soal ini.',
+                              style: TextStyle(fontSize: 12, color: _subLabel, fontStyle: FontStyle.italic),
+                            ),
+                          ),
+                      ],
                     ],
                   ),
                 ),
