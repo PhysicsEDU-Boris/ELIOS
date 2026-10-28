@@ -13,7 +13,16 @@
 - `QuizPdfService` generates and shares multi-page A4 PDF reports (result card & history).
 - Decision [0031](decisions/0031-quiz-explanation-pdf.md).
 
-## Tests
+## Owner Mac acceptance (2026-10-28, code 1b80900)
+
+- NOT ready to merge: real PDF export throws `PdfTooBigPageException` for a roughly 840-word student essay; pending essay grading instead saves 5/10 (inherited fallback, violates 0031).
+- Analyze and secret scan clean. Full suite: 489 passed, 3 failures (2 known splash tests plus TTS fixture still using old `active` phase).
+- Extra acceptance: 3 passed (800x600 / 844x390 layouts; TTS advance from `explaining`), 2 failed (long PDF, unavailable grading).
+- Existing schema-v1/v2, explanation save/reload, review expansion and short PDF tests pass. Sample PDF readable but has an extra blank trailing page.
+- Combining with fixed G2c 31b86b7 conflicts in this handoff, scan_history_screen.dart and its test, and scan_record_store_test.dart. No merge/rebase performed.
+- Native share/save and deliberate app quit/relaunch persistence remain unverified. No physical robot used. PR remains unmerged.
+
+## Tests reported before acceptance (superseded above)
 
 - `flutter analyze` 0 issues.
 - `flutter test` 490+ passing (only 2 known-stale splash tests in `test/widget_test.dart` fail).
