@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -12,7 +13,13 @@ class ScanRecordStore extends ChangeNotifier {
   ScanRecordStore({File? customFile}) : _customFile = customFile;
 
   static ScanRecordStore? _instance;
-  static ScanRecordStore get instance => _instance ??= ScanRecordStore();
+  static ScanRecordStore get instance {
+    if (_instance == null) {
+      _instance = ScanRecordStore();
+      unawaited(_instance!.load());
+    }
+    return _instance!;
+  }
 
   @visibleForTesting
   static void setInstanceForTesting(ScanRecordStore? store) {
@@ -22,11 +29,43 @@ class ScanRecordStore extends ChangeNotifier {
   final File? _customFile;
   List<ScanRecord> _records = [];
   bool _loaded = false;
+  Future<List<ScanRecord>>? _loadFuture;
+  Future<void>? _pendingOperation;
 
-  List<ScanRecord> get records => List.unmodifiable(_records);
+  Future<T> _synchronized<T>(Future<T> Function() operation) async {
+    while (_pendingOperation != null) {
+      try {
+        await _pendingOperation;
+      } catch (_) {}
+    }
+    final completer = Completer<void>();
+    _pendingOperation = completer.future;
+    try {
+      return await operation();
+    } finally {
+      completer.complete();
+      if (_pendingOperation == completer.future) {
+        _pendingOperation = null;
+      }
+    }
+  }
+
+  List<ScanRecord> get records {
+    if (!_loaded && _loadFuture == null) {
+      unawaited(load());
+    }
+    return List.unmodifiable(_records);
+  }
+
   bool get isLoaded => _loaded;
 
-  int get totalTrophies => _records.fold<int>(0, (sum, r) => sum + r.trophies);
+  int get totalTrophies {
+    if (!_loaded && _loadFuture == null) {
+      unawaited(load());
+    }
+    return _records.fold<int>(0, (sum, r) => sum + r.trophies);
+  }
+
   StudentLevel get userLevel => StudentLevel.forTotal(totalTrophies);
   double get levelProgress => userLevel.progress(totalTrophies);
 
@@ -37,7 +76,24 @@ class ScanRecordStore extends ChangeNotifier {
   }
 
   /// Loads records from disk. If the file does not exist, starts empty.
-  Future<List<ScanRecord>> load() async {
+  Future<List<ScanRecord>> load({bool force = false}) {
+    if (!force && _loaded && _loadFuture == null) {
+      return Future.value(_records);
+    }
+    if (_loadFuture != null) {
+      return _loadFuture!;
+    }
+    _loadFuture = _synchronized(() async {
+      try {
+        return await _doLoad();
+      } finally {
+        _loadFuture = null;
+      }
+    });
+    return _loadFuture!;
+  }
+
+  Future<List<ScanRecord>> _doLoad() async {
     try {
       final file = await _getFile();
       if (!file.existsSync()) {
@@ -58,14 +114,19 @@ class ScanRecordStore extends ChangeNotifier {
     } catch (e) {
       debugPrint('[ScanRecordStore] Load failed: $e');
       _records = [];
+    } finally {
+      _loaded = true;
     }
-    _loaded = true;
     notifyListeners();
     return _records;
   }
 
   /// Persists current records to disk.
-  Future<void> save() async {
+  Future<void> save() {
+    return _synchronized(() => _doSave());
+  }
+
+  Future<void> _doSave() async {
     try {
       final file = await _getFile();
       if (!file.parent.existsSync()) {
@@ -79,17 +140,28 @@ class ScanRecordStore extends ChangeNotifier {
   }
 
   /// Inserts a new record at the top of the list and saves.
-  Future<void> addRecord(ScanRecord record) async {
-    _records.insert(0, record);
-    notifyListeners();
-    await save();
+  /// Fully synchronized to guarantee overlapping writes never race or drop records.
+  Future<void> addRecord(ScanRecord record) {
+    return _synchronized(() async {
+      if (!_loaded) {
+        await _doLoad();
+      }
+      _records.insert(0, record);
+      notifyListeners();
+      await _doSave();
+    });
   }
 
   /// Clears all stored records.
-  Future<void> clearRecords() async {
-    _records.clear();
-    notifyListeners();
-    await save();
+  Future<void> clearRecords() {
+    return _synchronized(() async {
+      if (!_loaded) {
+        await _doLoad();
+      }
+      _records.clear();
+      notifyListeners();
+      await _doSave();
+    });
   }
 
   /// Populates store with the sample records from Figma node 100:170 (for debug mode).

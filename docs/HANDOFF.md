@@ -1,37 +1,22 @@
 # Handoff
 
-- Branch `feat/u4-quiz-explanation-pdf` (base `58fd087`, origin/feature/live-scan).
-- PR open against `feature/live-scan`.
+Branch `feat/u4-quiz-explanation-pdf`, PR #49. Integrated base `c3c7351` (merged PR #48).
 
-## Done (U4 Quiz Explanations, History & PDF)
+## Preserved
 
-- Lifecycle: `Question -> Answer submitted -> Result -> Detailed explanation -> Next question`.
-- MCQ overlay (Figma 96:130) with success/error banners, comparison table, takeaway, and chat.
-- Essay overlay (Figma 96:246) with score, rubric breakdown table, and suggestions.
-- Persistent local schema v2 (`RecordQuestion.explanation`, `ScanRecord.schemaVersion`).
-- History (Figma 100:170) inline "Lihat Penjelasan" expand toggle, "Tersimpan lokal" status.
-- `QuizPdfService` generates and shares multi-page A4 PDF reports (result card & history).
-- Decision [0031](decisions/0031-quiz-explanation-pdf.md).
+- G2c: only matching HOME completion confirms home/resets sliders; STATUS telemetry cannot bypass it.
+- Serialized ScanRecordStore load/add/clear/save, startup preload, local sync text and real difficulty counts.
+- U4: MCQ/essay explanations, schema-v2 saved review, native PDF export; legacy records supported.
 
-## Owner Mac acceptance (2026-10-28, code 1b80900)
+## Acceptance fixes in progress
 
-- NOT ready to merge: real PDF export throws `PdfTooBigPageException` for a roughly 840-word student essay; pending essay grading instead saves 5/10 (inherited fallback, violates 0031).
-- Analyze and secret scan clean. Full suite: 489 passed, 3 failures (2 known splash tests plus TTS fixture still using old `active` phase).
-- Extra acceptance: 3 passed (800x600 / 844x390 layouts; TTS advance from `explaining`), 2 failed (long PDF, unavailable grading).
-- Existing schema-v1/v2, explanation save/reload, review expansion and short PDF tests pass. Sample PDF readable but has an extra blank trailing page.
-- Combining with fixed G2c 31b86b7 conflicts in this handoff, scan_history_screen.dart and its test, and scan_record_store_test.dart. No merge/rebase performed.
-- Signed macOS LIVE_SCAN debug build passed and opened via `open`; native window observed, screenshot capture failed. Native share/save and deliberate history quit/relaunch persistence unverified.
-- PR #48 merged separately; GitHub now reports #49 not mergeable. No physical robot used. PR #49 remains unmerged.
+- Long essay PDF export must paginate instead of throwing; missing essay grading must remain pending.
+- Update stale TTS fixture for the explaining phase; retest merged HOME/history and U4 features.
+- Previous acceptance at 1b80900: 489 passed / 3 failures (2 splash, 1 stale TTS fixture); analyze/secrets clean.
+- Native Mac LIVE_SCAN build/open passed; share/save and deliberate history quit/relaunch still need acceptance.
 
-## Tests reported before acceptance (superseded above)
+## Safety / next
 
-- `flutter analyze` 0 issues.
-- `flutter test` 490+ passing (only 2 known-stale splash tests in `test/widget_test.dart` fail).
-- `./scripts/check-secrets.sh` clean.
-- Unit, widget, lifecycle, PDF, and persistence tests added and passing.
-
-## Next
-
-1. G2c (home/height reset & ee_mm status fixes).
-2. Codex: L2 + L4 firmware in `firmware/maixcam2/main.py`.
-3. L5 R1 student flow on screen, U7 Firebase (deferred), U8 docs.
+- PR #49 stays unmerged; no physical robot actuation. Owner changes in elios-clean remain untouched.
+- Decision 0031: explanations, local review and PDF; 0027/0028/0030: HOME, trophies and records.
+- Firmware/watchdog, calibration and physical arm acceptance remain separate work.

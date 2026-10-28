@@ -580,9 +580,18 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                           spacing: 6,
                           runSpacing: 6,
                           children: [
-                            _buildDifficultyPill('Easy · 1Q', isSelected: record.difficulty == QuizDifficulty.easy),
-                            _buildDifficultyPill('Medium · 2Q', isSelected: record.difficulty == QuizDifficulty.medium),
-                            _buildDifficultyPill('Hard · 3Q', isSelected: record.difficulty == QuizDifficulty.hard),
+                            _buildDifficultyPill(
+                              'Easy · ${record.difficulty == QuizDifficulty.easy ? record.totalQuestions : 1}Q',
+                              isSelected: record.difficulty == QuizDifficulty.easy,
+                            ),
+                            _buildDifficultyPill(
+                              'Medium · ${record.difficulty == QuizDifficulty.medium ? record.totalQuestions : 2}Q',
+                              isSelected: record.difficulty == QuizDifficulty.medium,
+                            ),
+                            _buildDifficultyPill(
+                              'Hard · ${record.difficulty == QuizDifficulty.hard ? record.totalQuestions : 3}Q',
+                              isSelected: record.difficulty == QuizDifficulty.hard,
+                            ),
                           ],
                         ),
                       ],

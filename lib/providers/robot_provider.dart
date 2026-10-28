@@ -51,7 +51,7 @@ class RobotState {
     this.heightValue = 90,
     this.gripperVal = 0,
     this.eeMm,
-    this.atHome,
+    this.atHome = false,
   });
 
   RobotState copyWith({
@@ -62,7 +62,9 @@ class RobotState {
     double? heightValue,
     double? gripperVal,
     List<double>? eeMm,
+    bool clearEeMm = false,
     bool? atHome,
+    bool clearAtHome = false,
   }) {
     return RobotState(
       pwmSpeed: pwmSpeed ?? this.pwmSpeed,
@@ -71,8 +73,8 @@ class RobotState {
       reachValue: reachValue ?? this.reachValue,
       heightValue: heightValue ?? this.heightValue,
       gripperVal: gripperVal ?? this.gripperVal,
-      eeMm: eeMm ?? this.eeMm,
-      atHome: atHome ?? this.atHome,
+      eeMm: clearEeMm ? null : (eeMm ?? this.eeMm),
+      atHome: clearAtHome ? false : (atHome ?? this.atHome),
     );
   }
 }
@@ -107,19 +109,40 @@ class RobotControlNotifier extends Notifier<RobotState> {
   // Slider state (the servo command itself is sent by the gate) ───────────────
 
   void setPwmSpeed(double v) => state = state.copyWith(pwmSpeed: v);
-  void setBaseAngle(double v) => state = state.copyWith(baseAngle: v);
-  void setElbowAngle(double v) => state = state.copyWith(elbowAngle: v);
-  void setReachValue(double v) => state = state.copyWith(reachValue: v);
-  void setHeightValue(double v) => state = state.copyWith(heightValue: v);
-  void setGripperVal(double v) => state = state.copyWith(gripperVal: v);
+  void setBaseAngle(double v) => state = state.copyWith(baseAngle: v, atHome: false);
+  void setElbowAngle(double v) => state = state.copyWith(elbowAngle: v, atHome: false);
+  void setReachValue(double v) => state = state.copyWith(reachValue: v, atHome: false);
+  void setHeightValue(double v) => state = state.copyWith(heightValue: v, atHome: false);
+  void setGripperVal(double v) => state = state.copyWith(gripperVal: v, atHome: false);
 
-  void updateStatus({List<double>? eeMm, bool? atHome}) {
+  void updateStatus({
+    List<double>? eeMm,
+    bool clearEeMm = false,
+    bool? atHome,
+    bool clearAtHome = false,
+  }) {
+    // STATUS reports a commanded target, not verified HOME completion (0027).
+    final effectiveAtHome = clearAtHome || atHome == false ? false : state.atHome;
     state = state.copyWith(
-      eeMm: eeMm ?? state.eeMm,
-      atHome: atHome ?? state.atHome,
-      reachValue: atHome == true ? 90.0 : state.reachValue,
-      heightValue: atHome == true ? 90.0 : state.heightValue,
-      gripperVal: atHome == true ? 0.0 : state.gripperVal,
+      eeMm: eeMm,
+      clearEeMm: clearEeMm,
+      atHome: effectiveAtHome ?? state.atHome,
+    );
+  }
+
+  /// Sets whether the robot is confirmed to be at home pose.
+  void setAtHome(bool atHome) {
+    state = state.copyWith(atHome: atHome);
+  }
+
+  /// Resets arm sliders and gripper to neutral home values (decision 0027/G2c).
+  /// Only call this after verified HOME completion (motion_done).
+  void resetToHome() {
+    state = state.copyWith(
+      reachValue: 90.0,
+      heightValue: 90.0,
+      gripperVal: 0.0,
+      atHome: true,
     );
   }
 

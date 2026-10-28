@@ -71,3 +71,15 @@ The fake was measured against the simulator's tag model and camera. Angles below
 
 HOME is joint-space travel and does not yet define a safe route from a bin. L4 must choose and
 test a safe waypoint before bin-to-home motion is enabled.
+
+
+## G2c acceptance: STATUS does not confirm HOME (2026-10-28)
+
+`at_home:true` in STATUS describes a commanded target, not completion of the
+app's pending HOME sequence. STATUS may refresh/clear EE coordinates and
+invalidate confirmation when `at_home:false`; it must never establish HOME
+confirmation or reset the slider cache. Only the matching successful HOME
+`motion_done`, accepted by MotionGate, calls `RobotControlNotifier.resetToHome()`.
+This also prevents STATUS after STOP, disconnect, rejection or timeout from
+restoring a canceled HOME confirmation. STATUS polling after any motion completion
+remains enabled for EE telemetry, including mismatched completions.
