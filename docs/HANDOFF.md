@@ -20,7 +20,8 @@
 - Extra acceptance: 3 passed (800x600 / 844x390 layouts; TTS advance from `explaining`), 2 failed (long PDF, unavailable grading).
 - Existing schema-v1/v2, explanation save/reload, review expansion and short PDF tests pass. Sample PDF readable but has an extra blank trailing page.
 - Combining with fixed G2c 31b86b7 conflicts in this handoff, scan_history_screen.dart and its test, and scan_record_store_test.dart. No merge/rebase performed.
-- Native share/save and deliberate app quit/relaunch persistence remain unverified. No physical robot used. PR remains unmerged.
+- Signed macOS LIVE_SCAN debug build passed and opened via `open`; native window observed, screenshot capture failed. Native share/save and deliberate history quit/relaunch persistence unverified.
+- PR #48 merged separately; GitHub now reports #49 not mergeable. No physical robot used. PR #49 remains unmerged.
 
 ## Tests reported before acceptance (superseded above)
 
