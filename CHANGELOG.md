@@ -12,6 +12,15 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- U4 quiz explanation overlays, local review history, and PDF export (decision 0031):
+  - Question-by-question explanation lifecycle: `Question -> Answer submitted -> Result -> Detailed explanation -> Next question`.
+  - Full-screen multiple-choice explanation overlay matching Figma node 96:130 with result banner, scrollable explanation page, comparison table, learning takeaways, and companion assistant chat.
+  - Full-screen essay explanation overlay matching Figma node 96:246 with student response, score out of 10, rubric breakdown table (`Table 1. Scoring breakdown`), and improvement feedback.
+  - Backward-compatible persistent schema version 2 storing structured `QuizExplanation` inside `RecordQuestion` in local storage (`scan_records.json`).
+  - Scan History review (Figma node 100:170): inline "Lihat Penjelasan" expand toggle to reopen original saved explanations without re-querying AI models; accurate "Tersimpan lokal" status indicator.
+  - Multi-page A4 PDF export service (`QuizPdfService`): generates professional educational reports with session metadata, question breakdown, comparison tables, and essay rubric breakdowns; accessible via "Export PDF" buttons in quiz result card and history details.
+
+### Added
 - G2b arm HOME, height control and debug overlays (decision 0027):
   - `RobotController.home()` sends `{"cmd":"HOME","seq":n}`; `SimulatedRobot` models 2-second travel to `[0.0, -42.5, 90.0]` and ack/motion_done sequence.
   - Parsed `ee_mm` and `at_home` from `STATUS` reply into `RobotState` and Riverpod `robotControlProvider`.
