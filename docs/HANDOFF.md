@@ -1,7 +1,7 @@
 # Handoff
 
 - Base: `feature/live-scan` at `254da97`; PRs #48 and #49 are merged.
-- U4b branch: `feat/u4b-essay-rubric`; implementation commit `0bbca22`.
+- U4b branch: `feat/u4b-essay-rubric`; implementation commit `0bbca22`; draft PR #51 is open and unmerged.
 - Never commit the Xcode scheme, `Maixcam.txt`, `docs/module/`, `.env*`, Firebase configs, or the Gemma model.
 
 ## U4b — essay rubric
