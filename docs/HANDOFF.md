@@ -2,6 +2,13 @@
 
 Branch `feat/g2c-home-status-fixes` (base `58fd087`, origin/feature/live-scan). PR #48 (open, by Gemini).
 
+## Acceptance follow-up (2026-10-28)
+
+- Fixed simulator-reproduced STATUS bypass: `at_home:true` cannot confirm HOME or reset sliders; only matching HOME `motion_done` does. EE telemetry and false/null clearing remain active.
+- Break-check: mismatched-completion and invalidation regressions failed before the fix and pass after it. Focused HOME/store tests: 15 passed; analyze and secret scan clean.
+- Full suite: 477 passed, only the 2 documented stale splash tests failed.
+- No physical robot used. UI simulator acceptance was not rerun after this fix; fresh history/trophy quit/relaunch persistence remains unverified. Keep PR #48 unmerged pending owner acceptance.
+
 ## Done (G2c Mac Test Fixes & Protocol Hardening)
 
 - Strict HOME completion: reset reach/height/gripper to 90/90/0 and set `atHome: true` only on matching `motion_done`; handle errors, STOP, disconnects, and timeout without claiming home completion.
@@ -36,5 +43,5 @@ Branch `feat/g2c-home-status-fixes` (base `58fd087`, origin/feature/live-scan). 
 
 ## Known open / Tests
 
-- 476 unit/widget tests pass; 2 known stale splash tests (`test/widget_test.dart`) fail.
+- 477 unit/widget tests pass; 2 known stale splash tests (`test/widget_test.dart`) fail.
 - Image identify first token 7–9 s; chat interrupting scan waits up to 8 s (0003).

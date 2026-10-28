@@ -115,6 +115,20 @@ void main() {
       expect(container.read(robotControlProvider).gripperVal, 80.0, reason: 'gripper must NOT be reset on ack');
       expect(container.read(robotControlProvider).atHome, false, reason: 'atHome must NOT be true on ack alone');
 
+      // A mismatched completion still polls STATUS, which must not confirm HOME.
+      transport.replyMotionDone(homeSeq + 100000);
+      transport.replyAck(robot.lastStatusSeq!,
+          eeMm: const [0.0, -42.5, 90.0], atHome: true);
+      await pumpEventQueue();
+      final pending = container.read(robotControlProvider);
+      expect(gate.pendingHomeSeq, homeSeq);
+      expect(pending.eeMm, [0.0, -42.5, 90.0]);
+      expect(pending.reachValue, 140.0);
+      expect(pending.heightValue, 171.0);
+      expect(pending.gripperVal, 80.0);
+      expect(pending.atHome, false,
+          reason: 'STATUS cannot bypass matching HOME completion');
+
       // 4. HOME motion_done arrives -> NOW resets to neutral (90, 90, 0) and marks atHome true
       transport.replyMotionDone(homeSeq);
       await pumpEventQueue();
@@ -338,6 +352,36 @@ void main() {
 
       gate.dispose();
     });
+  });
+
+  test('STATUS cannot confirm HOME after invalidation or overwrite slider cache', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final notifier = container.read(robotControlProvider.notifier);
+    notifier.resetToHome();
+    notifier.updateStatus(atHome: true, eeMm: const [0, -42.5, 90]);
+    expect(container.read(robotControlProvider).atHome, true);
+
+    // These are the invalidation paths used by errors, timeout, STOP and link loss.
+    for (final clearAtHome in [false, true]) {
+      notifier.setReachValue(140);
+      notifier.setHeightValue(171);
+      notifier.setGripperVal(80);
+      notifier.updateStatus(atHome: false, clearAtHome: clearAtHome);
+      notifier.updateStatus(atHome: true, eeMm: const [0, -42.5, 90]);
+      final state = container.read(robotControlProvider);
+      expect(state.atHome, false);
+      expect(state.reachValue, 140);
+      expect(state.heightValue, 171);
+      expect(state.gripperVal, 80);
+      expect(state.eeMm, [0, -42.5, 90]);
+    }
+
+    notifier.resetToHome();
+    notifier.updateStatus(atHome: false);
+    expect(container.read(robotControlProvider).atHome, false);
+    notifier.updateStatus(clearEeMm: true);
+    expect(container.read(robotControlProvider).eeMm, isNull);
   });
 
   group('G2c STATUS after motion_done and debounced drag', () {

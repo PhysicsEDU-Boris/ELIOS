@@ -121,14 +121,12 @@ class RobotControlNotifier extends Notifier<RobotState> {
     bool? atHome,
     bool clearAtHome = false,
   }) {
-    final effectiveAtHome = clearAtHome ? false : atHome;
+    // STATUS reports a commanded target, not verified HOME completion (0027).
+    final effectiveAtHome = clearAtHome || atHome == false ? false : state.atHome;
     state = state.copyWith(
       eeMm: eeMm,
       clearEeMm: clearEeMm,
       atHome: effectiveAtHome ?? state.atHome,
-      reachValue: effectiveAtHome == true ? 90.0 : state.reachValue,
-      heightValue: effectiveAtHome == true ? 90.0 : state.heightValue,
-      gripperVal: effectiveAtHome == true ? 0.0 : state.gripperVal,
     );
   }
 

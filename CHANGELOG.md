@@ -21,6 +21,7 @@ kept outside the repo.
   - Debug overlay displays tag chips for AprilTag IDs 0 and 1 only when detected with distance in mm, and real-time end-effector XYZ coordinates from `ee_mm`.
 
 ### Fixed
+- G2c acceptance fix: STATUS can update EE coordinates or invalidate HOME, but cannot confirm HOME or reset sliders; matching successful HOME completion remains the only confirmation path.
 - G2c: HOME completion semantics, STATUS polling, and ScanRecordStore persistence:
   - Strict HOME completion: slider cache reset (reach=90, height=90, gripper=0) and `atHome: true` only occur upon matching successful `motion_done` sequence. `ack` alone marks accepted but does not claim completion. Handled errors, STOP, disconnects, and timeouts without claiming home completion.
   - Send debounced STATUS requests (~300 ms) after reach/height drag ends and immediately upon `motion_done` to keep `ee_mm` and EE xyz overlay display current; properly cleared stale coordinates on null/unavailable `ee_mm` or link loss.
