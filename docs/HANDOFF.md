@@ -23,8 +23,8 @@
 
 - Debug build from `0bbca22` succeeded at the temporary worktree output with `LIVE_SCAN=true`, `ESSAY_QUESTIONS=true`, `R1=true`, `G1_PICKUP_QUIZ_FLOW=true`; `APP_COMMIT=0bbca22`.
 - Bundle ID and Team ID matched `~/Applications/ELIOS.app`, but `codesign --verify --deep --strict` returned `CSSMERR_TP_NOT_TRUSTED`; the keychain reported zero valid signing identities. The build app was removed without moving or launching it. Existing app remains at `~/Applications/ELIOS.app` (8f0e77c).
-- Inventory found one ELIOS bundle on disk. CUA showed five historical same-ID entries; `NSWorkspace` resolved zero registration URLs before/after the uninstalled build. No old registrations or apps were removed.
-- Existing 2.4 GB runtime model and original build asset were preserved; no model was bundled or downloaded. Temporary plist/scheme copies and empty env placeholders were removed.
+- Full-home inventory found the installed `~/Applications/ELIOS.app` and one pre-existing incomplete 20 MB `ELIOS.app` in Xcode DerivedData (missing `Contents/Info.plist`). CUA showed five historical same-ID entries; `NSWorkspace` resolved zero registration URLs. No apps/registrations were removed.
+- Existing 2.4 GB runtime model, a 2.4 GB `~/ELIO-SANDBOX/models/` copy, the canonical source/build assets, and the `ELIO-DEVELOPMENT` asset were inventoried and left untouched. No model was bundled/downloaded. Temporary plist/scheme copies and empty env placeholders were removed.
 - Real-model essay, localhost fake camera, isolated app-store persistence/relaunch, native PDF picker and PDF-content acceptance remain unrun pending valid signing and a verifiable single ELIOS registration.
 - No sharing recipient selected; no physical robot or firmware contacted. PR #47 stays draft and `ARM_MOTION_ENABLED=false`.
 
