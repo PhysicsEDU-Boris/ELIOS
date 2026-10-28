@@ -13,9 +13,11 @@ import '../providers/app_preferences_provider.dart';
 import '../providers/robot_provider.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../services/gemma_quiz_service.dart';
+import '../services/quiz_pdf_service.dart';
 import '../services/quiz_tts_service.dart';
 import '../services/scan_record_store.dart';
 import '../theme/elio_learning_colors.dart';
+import 'quiz_explanation_overlay.dart';
 
 /// Scan-triggered quiz popup (Figma: "Android Compact · Quiz Popup").
 ///
@@ -59,6 +61,20 @@ class WasteQuizPopup extends ConsumerWidget {
     final state = ref.watch(wasteQuizProvider);
     final active = state.phase != WasteQuizPhase.idle;
     final showCard = active && !state.minimized;
+
+    if (state.phase == WasteQuizPhase.explaining && showCard) {
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: state.question?.type == QuizQuestionType.essay
+                ? QuizEssayExplanationOverlay(onStop: onStop)
+                : QuizExplanationOverlay(onStop: onStop),
+          ),
+          if (showLauncher)
+            const Positioned(right: 16, bottom: 16, child: SafeArea(child: QuizLauncherButton())),
+        ],
+      );
+    }
 
     return Stack(
       children: [
@@ -767,6 +783,37 @@ class _ResultCard extends ConsumerWidget {
                 icon: const Icon(Icons.qr_code_scanner_rounded, size: 16),
                 label: const Text('Scan lagi'),
                 style: FilledButton.styleFrom(backgroundColor: elioPrimary),
+              ),
+              OutlinedButton.icon(
+                key: const Key('result_card_export_pdf_button'),
+                onPressed: () async {
+                  final record = ScanRecord(
+                    id: 'scan-${DateTime.now().millisecondsSinceEpoch}',
+                    time: DateTime.now(),
+                    itemName: itemName,
+                    category: category,
+                    difficulty: state.difficulty,
+                    questions: state.recordedQuestions,
+                    trophies: earnedTrophies,
+                  );
+                  try {
+                    await QuizPdfService.shareOrSave(record);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Laporan PDF berhasil diekspor')),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Gagal mengekspor PDF: $e')),
+                      );
+                    }
+                  }
+                },
+                icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                label: const Text('Export PDF'),
+                style: OutlinedButton.styleFrom(side: const BorderSide(color: elioOutlineVariant)),
               ),
               OutlinedButton(
                 key: const Key('result_card_close_button'),
