@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/chat_message.dart';
+import '../models/quiz_explanation.dart';
 import '../models/scan_record.dart';
 import '../models/scanned_waste.dart';
 import '../services/detection_crop.dart';
@@ -13,13 +14,14 @@ import '../services/detection_stabilizer.dart';
 import '../services/frame_source/frame_source.dart';
 import '../services/gemma_quiz_service.dart';
 import '../services/question_bank.dart';
+import '../services/quiz_explanation_service.dart';
 import '../services/quiz_tts_service.dart';
 import '../services/scan_diagnostics.dart';
 import '../services/scan_record_store.dart';
 import '../services/websocket_service.dart';
 import 'app_preferences_provider.dart';
 
-enum WasteQuizPhase { idle, identifying, confirmingHazard, confirmingMismatch, loadingQuestion, active, finished }
+enum WasteQuizPhase { idle, identifying, confirmingHazard, confirmingMismatch, loadingQuestion, active, explaining, finished }
 
 /// Where the waste-detection label driving the popup quiz comes from.
 /// MaixCAM2 is the real hardware path; phone camera is a debug-only
@@ -72,6 +74,12 @@ class WasteQuizUiState {
   /// The cropped JPEG bytes of the detected waste item.
   final Uint8List? cropBytes;
 
+  /// The structured explanation for the current question (phase: explaining).
+  final QuizExplanation? currentExplanation;
+
+  /// True while [QuizExplanationService] is generating the explanation.
+  final bool explanationLoading;
+
   const WasteQuizUiState({
     this.phase = WasteQuizPhase.idle,
     this.minimized = false,
@@ -94,6 +102,8 @@ class WasteQuizUiState {
     this.questionSource = QuestionSource.bank,
     this.recordedQuestions = const [],
     this.cropBytes,
+    this.currentExplanation,
+    this.explanationLoading = false,
   });
 
   int get totalQuestions => difficulty.questionCount;
@@ -127,6 +137,9 @@ class WasteQuizUiState {
     List<RecordQuestion>? recordedQuestions,
     Uint8List? cropBytes,
     bool clearCropBytes = false,
+    QuizExplanation? currentExplanation,
+    bool clearExplanation = false,
+    bool? explanationLoading,
   }) {
     return WasteQuizUiState(
       phase: phase ?? this.phase,
@@ -150,6 +163,8 @@ class WasteQuizUiState {
       questionSource: questionSource,
       recordedQuestions: recordedQuestions ?? this.recordedQuestions,
       cropBytes: clearCropBytes ? null : (cropBytes ?? this.cropBytes),
+      currentExplanation: clearExplanation ? null : (currentExplanation ?? this.currentExplanation),
+      explanationLoading: explanationLoading ?? this.explanationLoading,
     );
   }
 }
@@ -725,11 +740,15 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       mcAnswered: state.mcAnswered + 1,
       correctCount: state.correctCount + (correct ? 1 : 0),
       recordedQuestions: List.unmodifiable(_recordedQuestions),
+      phase: WasteQuizPhase.explaining,
+      explanationLoading: true,
+      clearExplanation: true,
     );
     final verdict = correct
         ? 'Benar!'
         : 'Kurang tepat. Jawaban yang benar: ${q.options[q.correctIndex]}.';
     _appendAiReply(q.explanation.isEmpty ? verdict : '$verdict ${q.explanation}');
+    unawaited(loadExplanation());
   }
 
   Future<void> submitEssay(String answerText, {int? score}) async {
@@ -750,7 +769,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     );
     if (generation != _generation) return;
 
-    int essayScore;
+    int? essayScore;
     if (score != null) {
       essayScore = score.clamp(0, 10);
     } else if (reply != null) {
@@ -762,26 +781,30 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       } else if (lower.startsWith('kurang tepat')) {
         essayScore = 2;
       } else {
-        essayScore = 5;
+        essayScore = null;
       }
     } else {
-      essayScore = 5;
+      essayScore = null;
     }
-    final isCorrect = essayScore >= 6;
+    final isCorrect = (essayScore ?? 0) >= 6;
     _recordedQuestions.add(RecordQuestion(
       question: q.question,
       yourAnswer: trimmed,
       rightAnswer: q.explanation.isNotEmpty ? q.explanation : 'Sesuai modul materi',
       isCorrect: isCorrect,
-      trophies: essayScore,
+      trophies: essayScore ?? 0,
       isEssay: true,
       essayScore: essayScore,
     ));
     state = state.copyWith(
       correctCount: state.correctCount + (isCorrect ? 1 : 0),
       recordedQuestions: List.unmodifiable(_recordedQuestions),
+      phase: WasteQuizPhase.explaining,
+      explanationLoading: true,
+      clearExplanation: true,
     );
     _appendAiReply(reply ?? 'Jawaban tersimpan, tapi AI belum bisa mengoreksi. ${_aiUnavailableReason()}');
+    unawaited(loadExplanation(essayScore: essayScore, essayGradingReply: reply));
   }
 
   /// Chat is for discussing an answered question; before answering, the
@@ -872,8 +895,40 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   }
 
   void nextQuestion() {
-    if (!state.answered) return;
+    if (state.phase != WasteQuizPhase.explaining) return;
     _advance();
+  }
+
+  /// Loads/generates the explanation for the most-recently-answered question.
+  /// Sets [explanationLoading] while running; updates [currentExplanation] on completion.
+  /// Saves the explanation into the last [RecordQuestion] in [_recordedQuestions].
+  Future<void> loadExplanation({int? essayScore, String? essayGradingReply}) async {
+    final q = state.question;
+    final scan = state.scan;
+    if (q == null || scan == null) {
+      state = state.copyWith(explanationLoading: false);
+      return;
+    }
+    final generation = _generation;
+    final explanation = await QuizExplanationService.generate(
+      question: q,
+      scan: scan,
+      selectedIndex: state.selectedOption,
+      essayAnswer: state.essayAnswer,
+      essayScore: essayScore,
+      essayGradingReply: essayGradingReply,
+    );
+    if (generation != _generation) return; // session changed while generating
+    // Attach explanation to the last recorded question.
+    if (_recordedQuestions.isNotEmpty) {
+      final last = _recordedQuestions.last;
+      _recordedQuestions[_recordedQuestions.length - 1] = last.copyWith(explanation: explanation);
+    }
+    state = state.copyWith(
+      currentExplanation: explanation,
+      explanationLoading: false,
+      recordedQuestions: List.unmodifiable(_recordedQuestions),
+    );
   }
 
   void _advance() {

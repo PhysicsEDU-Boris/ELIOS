@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:elio/Screens/scan_history_screen.dart';
+import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/services/gemma_quiz_service.dart';
 import 'package:elio/services/scan_record_store.dart';
@@ -149,6 +150,106 @@ void main() {
     }
   });
 
+  group('ScanHistoryScreen Explanation expand and PDF export', () {
+    testWidgets('expands question explanation and displays saved explanation content', (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      const exp = QuizExplanation(
+        summary: 'Ponsel adalah limbah B3 karena komponen elektroniknya.',
+        correctAnswerReason: 'Komponen elektronik mengandung timbal dan merkuri.',
+        groundingStatus: GroundingStatus.bankGrounded,
+      );
+
+      final record = ScanRecord(
+        id: 'scan-exp-1',
+        time: DateTime(2026, 10, 28, 10, 0),
+        itemName: 'Smartphone',
+        category: ScanCategory.b3,
+        difficulty: QuizDifficulty.easy,
+        questions: const [
+          RecordQuestion(
+            question: 'Mengapa ponsel termasuk limbah B3?',
+            yourAnswer: 'Mengandung logam berat',
+            rightAnswer: 'Mengandung logam berat',
+            isCorrect: true,
+            trophies: 10,
+            explanation: exp,
+          ),
+        ],
+        trophies: 10,
+      );
+
+      await store.addRecord(record);
+
+      await tester.pumpWidget(createSubject());
+      await tester.pumpAndSettle();
+
+      // Find "Export PDF" button
+      expect(find.byKey(const ValueKey('export_pdf_button')), findsOneWidget);
+
+      // Initially explanation summary is not visible
+      expect(find.text(exp.summary), findsNothing);
+
+      // Find toggle explanation button
+      final toggleBtn = find.byKey(const ValueKey('toggle_explanation_scan-exp-1_1'));
+      expect(toggleBtn, findsOneWidget);
+      expect(find.text('Lihat Penjelasan'), findsOneWidget);
+
+      // Tap to expand
+      await tester.tap(toggleBtn);
+      await tester.pumpAndSettle();
+
+      // Now explanation summary is visible
+      expect(find.text(exp.summary), findsOneWidget);
+      expect(find.text('Tutup Penjelasan'), findsOneWidget);
+
+      // Tap again to collapse
+      await tester.tap(toggleBtn);
+      await tester.pumpAndSettle();
+      expect(find.text(exp.summary), findsNothing);
+      expect(find.text('Lihat Penjelasan'), findsOneWidget);
+    });
+
+    testWidgets('shows explanation-unavailable text when explanation is null', (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final legacyRecord = ScanRecord(
+        id: 'scan-legacy-1',
+        time: DateTime(2026, 10, 20, 10, 0),
+        itemName: 'Botol Kaca',
+        category: ScanCategory.recyclable,
+        difficulty: QuizDifficulty.easy,
+        questions: const [
+          RecordQuestion(
+            question: 'Apakah kaca bisa didaur ulang?',
+            yourAnswer: 'Bisa',
+            rightAnswer: 'Bisa',
+            isCorrect: true,
+            trophies: 10,
+            explanation: null,
+          ),
+        ],
+        trophies: 10,
+      );
+
+      await store.addRecord(legacyRecord);
+
+      await tester.pumpWidget(createSubject());
+      await tester.pumpAndSettle();
+
+      final toggleBtn = find.byKey(const ValueKey('toggle_explanation_scan-legacy-1_1'));
+      expect(toggleBtn, findsOneWidget);
+
+      await tester.tap(toggleBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Penjelasan tidak tersimpan untuk soal ini.'), findsOneWidget);
+    });
+  });
   group('ScanHistoryScreen G2c difficulty pill and local sync text', () {
     testWidgets('shows Tersimpan lokal instead of synced and displays real question count in difficulty pills', (tester) async {
       tester.view.physicalSize = const Size(1024, 768);
@@ -191,7 +292,7 @@ void main() {
       expect(find.text('synced'), findsNothing);
 
       // Detail subtitle shows Tersimpan lokal
-      expect(find.textContaining('Photo and 2 questions · Tersimpan lokal'), findsOneWidget);
+      expect(find.textContaining('Foto dan 2 soal tersimpan lokal'), findsOneWidget);
       expect(find.textContaining('synced'), findsNothing);
 
       // Difficulty pill reflects real question count: 'Easy · 2Q' (detail pill and header)

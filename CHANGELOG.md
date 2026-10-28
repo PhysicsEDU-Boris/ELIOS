@@ -12,6 +12,15 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- U4 quiz explanation overlays, local review history, and PDF export (decision 0031):
+  - Question-by-question explanation lifecycle: `Question -> Answer submitted -> Result -> Detailed explanation -> Next question`.
+  - Full-screen multiple-choice explanation overlay matching Figma node 96:130 with result banner, scrollable explanation page, comparison table, learning takeaways, and companion assistant chat.
+  - Full-screen essay explanation overlay matching Figma node 96:246 with student response, score out of 10, rubric breakdown table (`Table 1. Scoring breakdown`), and improvement feedback.
+  - Backward-compatible persistent schema version 2 storing structured `QuizExplanation` inside `RecordQuestion` in local storage (`scan_records.json`).
+  - Scan History review (Figma node 100:170): inline "Lihat Penjelasan" expand toggle to reopen original saved explanations without re-querying AI models; accurate "Tersimpan lokal" status indicator.
+  - Multi-page A4 PDF export service (`QuizPdfService`): generates professional educational reports with session metadata, question breakdown, comparison tables, and essay rubric breakdowns; accessible via "Export PDF" buttons in quiz result card and history details.
+
+### Added
 - G2b arm HOME, height control and debug overlays (decision 0027):
   - `RobotController.home()` sends `{"cmd":"HOME","seq":n}`; `SimulatedRobot` models 2-second travel to `[0.0, -42.5, 90.0]` and ack/motion_done sequence.
   - Parsed `ee_mm` and `at_home` from `STATUS` reply into `RobotState` and Riverpod `robotControlProvider`.
@@ -21,6 +30,7 @@ kept outside the repo.
   - Debug overlay displays tag chips for AprilTag IDs 0 and 1 only when detected with distance in mm, and real-time end-effector XYZ coordinates from `ee_mm`.
 
 ### Fixed
+- U4 acceptance: paginate long PDF answers/explanations, keep unavailable essay grading pending with zero trophies across review/export, and preserve merged G2c HOME/history fixes.
 - G2c acceptance fix: STATUS can update EE coordinates or invalidate HOME, but cannot confirm HOME or reset sliders; matching successful HOME completion remains the only confirmation path.
 - G2c: HOME completion semantics, STATUS polling, and ScanRecordStore persistence:
   - Strict HOME completion: slider cache reset (reach=90, height=90, gripper=0) and `atHome: true` only occur upon matching successful `motion_done` sequence. `ack` alone marks accepted but does not claim completion. Handled errors, STOP, disconnects, and timeouts without claiming home completion.

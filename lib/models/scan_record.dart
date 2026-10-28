@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/gemma_quiz_service.dart';
+import 'quiz_explanation.dart';
 import 'trophy_rules.dart';
 
 /// Categories displayed in the Scan History filter chips and item badges.
@@ -73,6 +74,12 @@ class RecordQuestion {
   final bool isEssay;
   final int? essayScore;
 
+  bool get gradingPending => isEssay && essayScore == null;
+
+  /// Optional structured explanation saved alongside the answer (schema v2+).
+  /// Null for old records or when explanation generation failed.
+  final QuizExplanation? explanation;
+
   const RecordQuestion({
     required this.question,
     required this.yourAnswer,
@@ -81,7 +88,19 @@ class RecordQuestion {
     int? trophies,
     this.isEssay = false,
     this.essayScore,
+    this.explanation,
   }) : trophies = trophies ?? (isCorrect ? 10 : (essayScore ?? 0));
+
+  RecordQuestion copyWith({QuizExplanation? explanation}) => RecordQuestion(
+        question: question,
+        yourAnswer: yourAnswer,
+        rightAnswer: rightAnswer,
+        isCorrect: isCorrect,
+        trophies: trophies,
+        isEssay: isEssay,
+        essayScore: essayScore,
+        explanation: explanation ?? this.explanation,
+      );
 
   Map<String, dynamic> toJson() => {
         'question': question,
@@ -91,9 +110,11 @@ class RecordQuestion {
         'trophies': trophies,
         'isEssay': isEssay,
         if (essayScore != null) 'essayScore': essayScore,
+        if (explanation != null) 'explanation': explanation!.toJson(),
       };
 
   factory RecordQuestion.fromJson(Map<String, dynamic> json) {
+    final explanationJson = json['explanation'] as Map<String, dynamic>?;
     return RecordQuestion(
       question: json['question'] as String? ?? '',
       yourAnswer: json['yourAnswer'] as String? ?? '',
@@ -102,6 +123,7 @@ class RecordQuestion {
       trophies: (json['trophies'] as num?)?.toInt(),
       isEssay: json['isEssay'] as bool? ?? false,
       essayScore: (json['essayScore'] as num?)?.toInt(),
+      explanation: explanationJson != null ? QuizExplanation.fromJson(explanationJson) : null,
     );
   }
 }
@@ -117,6 +139,10 @@ class ScanRecord {
   final List<RecordQuestion> questions;
   final int trophies;
 
+  /// Schema version for forward-compat. Version 1 = no explanation field.
+  /// Version 2 = explanation added (decision 0031).
+  final int schemaVersion;
+
   ScanRecord({
     required this.id,
     required this.time,
@@ -126,6 +152,7 @@ class ScanRecord {
     this.difficulty = QuizDifficulty.medium,
     required this.questions,
     int? trophies,
+    this.schemaVersion = 2,
   }) : trophies = trophies ?? trophiesFor(questions);
 
   int get correctCount => questions.where((q) => q.isCorrect).length;
@@ -139,6 +166,7 @@ class ScanRecord {
       };
 
   Map<String, dynamic> toJson() => {
+        'schemaVersion': schemaVersion,
         'id': id,
         'time': time.toIso8601String(),
         'itemName': itemName,
@@ -160,6 +188,7 @@ class ScanRecord {
     );
 
     return ScanRecord(
+      schemaVersion: (json['schemaVersion'] as num?)?.toInt() ?? 1,
       id: json['id'] as String? ?? '',
       time: DateTime.tryParse(json['time'] as String? ?? '') ?? DateTime.now(),
       itemName: json['itemName'] as String? ?? 'Unknown Item',
