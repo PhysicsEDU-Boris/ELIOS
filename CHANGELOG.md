@@ -12,6 +12,9 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- U4b essay grading: strict Gemma JSON parsing for the Accuracy /4, Key terms /3,
+  Completeness /2, Clarity /1 rubric; consistent totals drive trophies, saved review,
+  and PDF export, with score-only or pending fallback and no generated rubric rows.
 - U4 quiz explanation overlays, local review history, and PDF export (decision 0031):
   - Question-by-question explanation lifecycle: `Question -> Answer submitted -> Result -> Detailed explanation -> Next question`.
   - Full-screen multiple-choice explanation overlay matching Figma node 96:130 with result banner, scrollable explanation page, comparison table, learning takeaways, and companion assistant chat.

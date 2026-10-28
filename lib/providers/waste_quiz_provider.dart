@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/chat_message.dart';
+import '../models/essay_grade.dart';
 import '../models/quiz_explanation.dart';
 import '../models/scan_record.dart';
 import '../models/scanned_waste.dart';
@@ -754,7 +755,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   Future<void> submitEssay(String answerText, {int? score}) async {
     final trimmed = answerText.trim();
     final q = state.question;
-    if (trimmed.isEmpty || state.sendingChat || q?.type != QuizQuestionType.essay) return;
+    if (trimmed.isEmpty || state.sendingChat || q == null || q.type != QuizQuestionType.essay) {
+      return;
+    }
     final generation = _generation;
     state = state.copyWith(
       essaySubmitted: true,
@@ -762,35 +765,24 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       sendingChat: true,
       messages: [...state.messages, ChatMessage(isUser: true, text: trimmed, caption: 'Jawaban Essay')],
     );
-    final reply = await GemmaQuizService.instance.reviewEssay(
-      question: q!.question,
-      expectedPoints: q.explanation,
-      answer: trimmed,
-    );
+    final reply = score == null
+        ? await GemmaQuizService.instance.reviewEssay(
+            question: q.question,
+            expectedPoints: q.explanation,
+            answer: trimmed,
+          )
+        : null;
     if (generation != _generation) return;
 
-    int? essayScore;
-    if (score != null) {
-      essayScore = score.clamp(0, 10);
-    } else if (reply != null) {
-      final lower = reply.trim().toLowerCase();
-      if (lower.startsWith('benar')) {
-        essayScore = 10;
-      } else if (lower.startsWith('sebagian benar')) {
-        essayScore = 6;
-      } else if (lower.startsWith('kurang tepat')) {
-        essayScore = 2;
-      } else {
-        essayScore = null;
-      }
-    } else {
-      essayScore = null;
-    }
+    final grade = score == null
+        ? EssayGrade.parse(reply)
+        : (score >= 0 && score <= 10 ? EssayGrade(score: score) : null);
+    final essayScore = grade?.score;
     final isCorrect = (essayScore ?? 0) >= 6;
     _recordedQuestions.add(RecordQuestion(
       question: q.question,
       yourAnswer: trimmed,
-      rightAnswer: q.explanation.isNotEmpty ? q.explanation : 'Sesuai modul materi',
+      rightAnswer: q.explanation,
       isCorrect: isCorrect,
       trophies: essayScore ?? 0,
       isEssay: true,
@@ -803,8 +795,14 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       explanationLoading: true,
       clearExplanation: true,
     );
-    _appendAiReply(reply ?? 'Jawaban tersimpan, tapi AI belum bisa mengoreksi. ${_aiUnavailableReason()}');
-    unawaited(loadExplanation(essayScore: essayScore, essayGradingReply: reply));
+    _appendAiReply(grade == null
+        ? 'Jawaban tersimpan, tapi AI belum bisa mengoreksi. ${_aiUnavailableReason()}'
+        : [
+            if (grade.feedback.isNotEmpty) grade.feedback,
+            if (grade.improvement.isNotEmpty) 'Untuk nilai penuh: ${grade.improvement}',
+            if (grade.feedback.isEmpty && grade.improvement.isEmpty) 'Skor: ${grade.score}/10.',
+          ].join(' '));
+    unawaited(loadExplanation(essayGrade: grade));
   }
 
   /// Chat is for discussing an answered question; before answering, the
@@ -902,7 +900,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// Loads/generates the explanation for the most-recently-answered question.
   /// Sets [explanationLoading] while running; updates [currentExplanation] on completion.
   /// Saves the explanation into the last [RecordQuestion] in [_recordedQuestions].
-  Future<void> loadExplanation({int? essayScore, String? essayGradingReply}) async {
+  Future<void> loadExplanation({EssayGrade? essayGrade}) async {
     final q = state.question;
     final scan = state.scan;
     if (q == null || scan == null) {
@@ -914,9 +912,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       question: q,
       scan: scan,
       selectedIndex: state.selectedOption,
-      essayAnswer: state.essayAnswer,
-      essayScore: essayScore,
-      essayGradingReply: essayGradingReply,
+      essayGrade: essayGrade,
     );
     if (generation != _generation) return; // session changed while generating
     // Attach explanation to the last recorded question.
