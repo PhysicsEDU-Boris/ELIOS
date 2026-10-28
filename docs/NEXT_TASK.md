@@ -14,6 +14,7 @@ Implement the smallest complete change:
 4. Break-check the meaningful regressions. Run analyze, full Flutter tests, secrets and focused HOME/store/PDF regressions. Previous baseline: 508 passed, only two documented stale splash failures.
 
 Then test on the owner's Mac:
+- First inventory all existing ELIOS apps/registrations and Gemma 4 E2B copies. Reuse the existing debug app/output and verified model store; do not install/download duplicates. Record each build path/commit/model store and reconcile temporary/older artifacts before finishing. Do not delete pre-existing copies without owner confirmation.
 - Build the normal signed debug app with LIVE_SCAN=true and APP_COMMIT; launch with `open`, never `flutter run`. Preserve shared Keychain signing/auth and remove any temporary Firebase config copy.
 - Use the real local Gemma model with a localhost fake camera, isolated test records, and no physical robot. Verify a graded essay, unavailable/malformed grading, explanation before next question, trophy math, camera continuity, saved review after quit/relaunch, native PDF export and complete PDF contents. Distinguish mocks/harness tests from real-model acceptance. Never select a sharing recipient or send a report unless asked.
 - Computer-use screenshots previously failed with ScreenCaptureKit errors. Prefer CUA; the owner authorized local macOS automation fallback for this local acceptance workflow. Keep actions confined to ELIOS and verify each result.

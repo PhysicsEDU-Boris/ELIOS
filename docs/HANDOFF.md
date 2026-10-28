@@ -39,3 +39,5 @@
 - Existing essay rubric is generic, not the U4 Accuracy 4 / Key terms 3 / Completeness 2 / Clarity 1 parser required by that plan. Do not mark U4 fully complete.
 - Canonical elios-clean stays at cf982ed with owner scheme change, Maixcam.txt and docs/module/; do not reset, clean or overwrite them.
 - Evidence: task workspace `pr49-evidence/FIXED-REPORT.md` and `pr49-evidence/fixed/`.
+
+- Owner reports 4 ELIOS apps and duplicate Gemma 4 E2B copies. Before another build, inventory/reconcile existing apps/models; reuse one debug app/model store and record cleanup (CLAUDE.md). No existing copies were deleted.
