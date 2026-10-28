@@ -195,5 +195,90 @@ void main() {
 
       File(filePath).deleteSync();
     });
+
+    test('generates sample PDF report for inspection', () async {
+      final sampleDir = Directory('/tmp/elio_reports');
+      if (!sampleDir.existsSync()) sampleDir.createSync(recursive: true);
+
+      final record = ScanRecord(
+        id: 'sample-u4-demo',
+        time: DateTime(2026, 10, 28, 14, 30),
+        itemName: 'Botol Plastik PET',
+        category: ScanCategory.recyclable,
+        difficulty: QuizDifficulty.medium,
+        questions: const [
+          RecordQuestion(
+            question: 'Ke aliran pengelolaan mana botol plastik PET seharusnya masuk?',
+            yourAnswer: 'Daur ulang (anorganik)',
+            rightAnswer: 'Daur ulang (anorganik)',
+            isCorrect: true,
+            trophies: 10,
+            explanation: QuizExplanation(
+              summary: 'Botol plastik PET adalah material bernilai daur ulang tinggi.',
+              correctAnswerReason: 'Pabrik daur ulang dapat melelehkan dan mencetak kembali PET menjadi serat atau botol baru.',
+              conceptExplanation: 'Pemilahan di sumber mencegah kontaminasi dari sampah organik dan residu.',
+              comparisonRows: [
+                ComparisonRow(
+                  bin: 'Daur Ulang',
+                  material: 'Plastik PET',
+                  accepted: 'Botol bersih tanpa cairan',
+                  isCorrect: true,
+                ),
+                ComparisonRow(
+                  bin: 'Residu',
+                  material: 'Plastik kotor/tercemar',
+                  accepted: 'Sampah yang tidak bisa didaur ulang',
+                  isCorrect: false,
+                ),
+              ],
+              learningTakeaway: 'Bilas botol sebelum dimasukkan ke tempat sampah daur ulang.',
+              sourceTitle: 'Panduan Pemilahan Sampah ELIO',
+              sourceSection: 'Modul 2.1',
+              groundingStatus: GroundingStatus.bankGrounded,
+            ),
+          ),
+          RecordQuestion(
+            question: 'Jelaskan tahapan daur ulang termoplastik dan penghematan energinya.',
+            yourAnswer: 'Termoplastik dicacah, dicuci, dilelehkan lalu dicetak ulang menjadi produk baru.',
+            rightAnswer: 'Pencacahan, pembersihan kontaminan, ekstrusi leleh, dan granulasi.',
+            isCorrect: true,
+            isEssay: true,
+            essayScore: 9,
+            trophies: 9,
+            explanation: QuizExplanation(
+              summary: 'Jawaban Anda telah dianalisis dan mencakup konsep-konsep kunci.',
+              correctAnswerReason: 'Daur ulang polimer menghemat hingga 70% energi dibanding sintesis monomer baru.',
+              conceptExplanation: 'Termodinamika daur ulang polimer berfokus pada degradasi rantai polimer saat pemanasan ulang.',
+              rubricRows: [
+                RubricRow(
+                  criterion: 'Pemahaman tahapan daur ulang',
+                  maxScore: 6,
+                  awardedScore: 5,
+                  comment: 'Tahapan utama dijelaskan dengan runtut',
+                ),
+                RubricRow(
+                  criterion: 'Analisis termal & energi',
+                  maxScore: 4,
+                  awardedScore: 4,
+                  comment: 'Poin efisiensi energi tepat',
+                ),
+              ],
+              learningTakeaway: 'Daur ulang polimer membutuhkan pemilahan ketat untuk menjaga kemurnian material.',
+              sourceTitle: 'Fisika Lingkungan & Polimer',
+              groundingStatus: GroundingStatus.gemmaUngrounded,
+              essayScore: 9,
+              essayFeedback: 'Sangat baik dan sistematis.',
+            ),
+          ),
+        ],
+        trophies: 19,
+      );
+
+      final samplePath = await QuizPdfService.generateAndSave(record, targetDir: sampleDir);
+      final file = File(samplePath);
+      expect(file.existsSync(), isTrue);
+      expect(file.lengthSync(), greaterThan(2000));
+      // File is left intact at /tmp/elio_reports for report verification
+    });
   });
 }
