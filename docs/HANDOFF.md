@@ -1,6 +1,11 @@
 # Handoff
 
-Branch `feat/u4-quiz-explanation-pdf`, PR #49; integrated `c3c7351` (merged #48).
+## In progress
+
+- Documentation wrap-up on `docs/oct28-wrapup`; application work complete for this session.
+- PR #48 and #49 merged by owner; base `feature/live-scan` now `254da97`. Tested app fix: `8f0e77c`.
+- Next focused task: U4b strict 4/3/2/1 essay rubric + real-model Mac acceptance; prompt in [NEXT_TASK.md](NEXT_TASK.md).
+- Notion project, UI and robot plans updated; U4 strict rubric and full live-camera/AI acceptance remain open.
 
 ## Done
 
@@ -23,7 +28,14 @@ Branch `feat/u4-quiz-explanation-pdf`, PR #49; integrated `c3c7351` (merged #48)
 
 ## Safety / remaining
 
-- PR #49 remains unmerged. Owner history/config untouched; test records kept in a separate acceptance subdirectory.
-- No physical robot/network used. Physical arm/firmware/watchdog/calibration acceptance remains separate.
+- PR #49 is merged. Normal signed app at 8f0e77c rebuilt/launched via open; temporary harness/config removed. Owner history/config untouched; isolated test records retained separately.
+- No physical robot contacted or actuated. PR #47 stays draft/unmerged with motion disabled; authenticated app/protected transport and owner slave/watchdog work remain separate.
 - Full owner-account AI grading and live camera/simulator were not retested for this U4 fix.
 - Decisions 0031 (explanations/PDF), 0027/0028/0030 (HOME/trophies/records).
+
+## References / preserve
+
+- Notion UI plan: https://app.notion.com/p/4049675ed4f381649071ec29838b4f98
+- Existing essay rubric is generic, not the U4 Accuracy 4 / Key terms 3 / Completeness 2 / Clarity 1 parser required by that plan. Do not mark U4 fully complete.
+- Canonical elios-clean stays at cf982ed with owner scheme change, Maixcam.txt and docs/module/; do not reset, clean or overwrite them.
+- Evidence: task workspace `pr49-evidence/FIXED-REPORT.md` and `pr49-evidence/fixed/`.
