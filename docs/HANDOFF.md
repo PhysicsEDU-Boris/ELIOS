@@ -40,4 +40,4 @@
 - Canonical elios-clean stays at cf982ed with owner scheme change, Maixcam.txt and docs/module/; do not reset, clean or overwrite them.
 - Evidence: task workspace `pr49-evidence/FIXED-REPORT.md` and `pr49-evidence/fixed/`.
 
-- Owner reports 4 ELIOS apps and duplicate Gemma 4 E2B copies. Before another build, inventory/reconcile existing apps/models; reuse one debug app/model store and record cleanup (CLAUDE.md). No existing copies were deleted.
+- Cleanup 29 Oct: 3 obsolete bundles moved to recoverable Trash; all stale ELIOS registrations cleared. Sole app moved (not copied) to ~/Applications/ELIOS.app; signature and restart/model reuse verified. Runtime model, original asset, owner data preserved; Trash not emptied. See CLAUDE.md build rule.
