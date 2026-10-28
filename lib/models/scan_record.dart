@@ -74,6 +74,8 @@ class RecordQuestion {
   final bool isEssay;
   final int? essayScore;
 
+  bool get gradingPending => isEssay && essayScore == null;
+
   /// Optional structured explanation saved alongside the answer (schema v2+).
   /// Null for old records or when explanation generation failed.
   final QuizExplanation? explanation;

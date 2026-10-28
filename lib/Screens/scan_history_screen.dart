@@ -729,7 +729,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
 
   Widget _buildQuestionCard(ScanRecord record, int index, RecordQuestion q) {
     final isCorrect = q.isCorrect;
-    final stripeColor = isCorrect ? _greenAccent : _redAccent;
+    final stripeColor = q.gradingPending ? const Color(0xFF7D6608) : isCorrect ? _greenAccent : _redAccent;
     final expandKey = '${record.id}_$index';
     final isExpanded = _expandedQuestions.contains(expandKey);
 
@@ -758,7 +758,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: isCorrect ? _greenDark : const Color(0xFFC0392B),
+                              color: q.gradingPending ? stripeColor : isCorrect ? _greenDark : const Color(0xFFC0392B),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -788,24 +788,24 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: isCorrect ? const Color(0xFFE8F8F5) : const Color(0xFFFDEDEC),
+                                  color: q.gradingPending ? _goldBg : isCorrect ? const Color(0xFFE8F8F5) : const Color(0xFFFDEDEC),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
-                                      isCorrect ? Icons.check_rounded : Icons.close_rounded,
+                                      q.gradingPending ? Icons.hourglass_empty_rounded : isCorrect ? Icons.check_rounded : Icons.close_rounded,
                                       size: 13,
-                                      color: isCorrect ? _greenAccent : _redAccent,
+                                      color: stripeColor,
                                     ),
                                     const SizedBox(width: 3),
                                     Text(
-                                      isCorrect ? 'Correct' : 'Wrong',
+                                      q.gradingPending ? 'Pending' : isCorrect ? 'Correct' : 'Wrong',
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.bold,
-                                        color: isCorrect ? _greenDark : _redAccent,
+                                        color: stripeColor,
                                       ),
                                     ),
                                   ],
@@ -849,7 +849,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: isCorrect ? _greenDark : _redAccent,
+                                color: stripeColor,
                               ),
                             ),
                           ),
@@ -878,7 +878,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                           ),
                         ],
                       ),
-                      if (q.isEssay && q.essayScore != null) ...[
+                      if (q.isEssay) ...[
                         const SizedBox(height: 4),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -892,7 +892,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                             ),
                             Expanded(
                               child: Text(
-                                '${q.essayScore} / 10 · +${q.trophies} Piala',
+                                q.gradingPending ? 'Menunggu penilaian' : '${q.essayScore} / 10 · +${q.trophies} Piala',
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,

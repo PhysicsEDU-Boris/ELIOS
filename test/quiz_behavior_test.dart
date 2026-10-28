@@ -313,7 +313,7 @@ void main() {
       final container = ProviderContainer(overrides: [
         appPreferencesProvider.overrideWith(() => _SeededPrefs(const AppPreferences(skipAllowed: false))),
         wasteQuizProvider.overrideWith(() => _SeededQuiz(WasteQuizUiState(
-              phase: WasteQuizPhase.active,
+              phase: WasteQuizPhase.explaining,
               scan: ScannedWaste.fromLabel('botol plastik'),
               difficulty: QuizDifficulty.medium, // 3 questions: not the last one yet
               questionIndex: 0,

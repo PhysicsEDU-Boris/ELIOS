@@ -271,8 +271,8 @@ class _EssayLeftPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final exp = state.currentExplanation;
-    final essayScore = exp?.essayScore ?? 0;
-    final isCorrect = essayScore >= 6;
+    final essayScore = exp?.essayScore;
+    final isCorrect = (essayScore ?? 0) >= 6;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -298,7 +298,7 @@ class _EssayLeftPanel extends StatelessWidget {
             isEssay: true,
             correctAnswer: '',
             itemName: state.scan?.displayName ?? '',
-            trophies: essayScore,
+            trophies: essayScore ?? 0,
             essayScore: essayScore,
           ),
           const SizedBox(height: 16),
@@ -388,19 +388,23 @@ class _ResultBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isCorrect
+    final pending = isEssay && essayScore == null;
+    final bg = pending ? _elioGreenLight : isCorrect
         ? const Color(0xFF00694C).withValues(alpha: 0.1)
         : _elioIncorrect.withValues(alpha: 0.08);
-    final border = isCorrect
+    final border = pending ? _elioBorder : isCorrect
         ? const Color(0xFF00694C).withValues(alpha: 0.35)
         : _elioIncorrect.withValues(alpha: 0.35);
-    final iconBg = isCorrect ? const Color(0xFF00694C) : _elioIncorrect;
-    final icon = isCorrect ? Icons.emoji_events_rounded : Icons.close_rounded;
+    final iconBg = pending ? _elioSubtext : isCorrect ? const Color(0xFF00694C) : _elioIncorrect;
+    final icon = pending ? Icons.hourglass_empty_rounded : isCorrect ? Icons.emoji_events_rounded : Icons.close_rounded;
 
     final String title;
     final String subtitle;
 
-    if (isEssay) {
+    if (pending) {
+      title = 'Menunggu penilaian';
+      subtitle = 'Jawaban tersimpan. Nilai belum tersedia.';
+    } else if (isEssay) {
       final score = essayScore ?? trophies;
       title = 'Score: $score/10 · +$score Piala';
       subtitle = isCorrect ? 'Jawaban sudah baik!' : 'Perlu diperbaiki pada beberapa poin.';

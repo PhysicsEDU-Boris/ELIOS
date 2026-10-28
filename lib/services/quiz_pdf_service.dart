@@ -171,7 +171,7 @@ class QuizPdfService {
       // Question sections
       for (var i = 0; i < record.questions.length; i++) ...[
         pw.SizedBox(height: 8),
-        _questionSection(i + 1, record.questions[i], record.totalQuestions),
+        ..._questionSection(i + 1, record.questions[i], record.totalQuestions),
       ],
     ];
   }
@@ -190,7 +190,7 @@ class QuizPdfService {
       ['Jumlah Soal', '${record.totalQuestions}'],
       ['Benar', '${record.correctCount} dari ${record.totalQuestions}'],
       ['Piala Diperoleh', '${record.trophies} Piala'],
-      ['Nilai', grade.label],
+      ['Nilai', record.questions.any((q) => q.gradingPending) ? 'Menunggu penilaian' : grade.label],
     ];
 
     return pw.Table(
@@ -215,11 +215,9 @@ class QuizPdfService {
     );
   }
 
-  static pw.Widget _questionSection(int index, RecordQuestion q, int totalQuestions) {
+  static List<pw.Widget> _questionSection(int index, RecordQuestion q, int totalQuestions) {
     final exp = q.explanation;
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-      children: [
+    return [
         // Question header
         pw.Container(
           padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -235,79 +233,64 @@ class QuizPdfService {
         ),
         pw.SizedBox(height: 4),
         // Answers
-        _answerRow('Jawaban Kamu', q.yourAnswer, q.isCorrect ? _correctGreen : _incorrectRed),
-        _answerRow('Jawaban Benar', q.rightAnswer, _correctGreen),
-        if (q.isEssay && q.essayScore != null)
-          _answerRow('Skor Essay', '${q.essayScore} / 10 (+${q.trophies} Piala)', _goldYellow),
+        ..._answerRow('Jawaban Kamu', q.yourAnswer, q.isCorrect ? _correctGreen : _incorrectRed),
+        ..._answerRow('Jawaban Benar', q.rightAnswer, _correctGreen),
+        if (q.isEssay)
+          ..._answerRow('Skor Essay', q.gradingPending ? 'Menunggu penilaian' : '${q.essayScore} / 10 (+${q.trophies} Piala)', _goldYellow),
         pw.SizedBox(height: 6),
         // Explanation section
         if (exp != null && !exp.isUnavailable) ...[
-          _explanationSection(exp),
+          ..._explanationSection(exp),
         ] else ...[
           pw.Text(
             'Penjelasan tidak tersimpan untuk soal ini.',
             style: pw.TextStyle(fontSize: 10, color: _caption, fontStyle: pw.FontStyle.italic),
           ),
         ],
-        pw.Divider(color: _borderGray, height: 16),
-      ],
-    );
+        if (index < totalQuestions) pw.Divider(color: _borderGray, height: 16),
+    ];
   }
 
-  static pw.Widget _answerRow(String label, String value, PdfColor color) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.only(bottom: 2),
-      child: pw.Row(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.SizedBox(
-            width: 110,
-            child: pw.Text(
-              label.toUpperCase(),
-              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _caption),
-            ),
-          ),
-          pw.Expanded(
-            child: pw.Text(value, style: pw.TextStyle(fontSize: 10, color: color, fontWeight: pw.FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
+  // Keep variable-length text directly in MultiPage so it can span pages.
+  static List<pw.Widget> _answerRow(String label, String value, PdfColor color) => [
+    pw.Text(label.toUpperCase(), style: pw.TextStyle(fontSize: 9,
+        fontWeight: pw.FontWeight.bold, color: _caption)),
+    pw.Text(value, overflow: pw.TextOverflow.span,
+        style: pw.TextStyle(fontSize: 10, color: color, fontWeight: pw.FontWeight.bold)),
+    pw.SizedBox(height: 4),
+  ];
 
-  static pw.Widget _explanationSection(QuizExplanation exp) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-      children: [
+  static List<pw.Widget> _explanationSection(QuizExplanation exp) {
+    return [
         pw.Text('Penjelasan',
-            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: _green)),
+            overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: _green)),
         pw.SizedBox(height: 4),
         if (exp.summary.isNotEmpty)
-          pw.Text(exp.summary, style: pw.TextStyle(fontSize: 10, color: _ink)),
+          pw.Text(exp.summary, overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 10, color: _ink)),
         if (exp.correctAnswerReason.isNotEmpty) ...[
           pw.SizedBox(height: 4),
-          pw.Text(exp.correctAnswerReason, style: pw.TextStyle(fontSize: 10, color: _ink)),
+          pw.Text(exp.correctAnswerReason, overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 10, color: _ink)),
         ],
         if (exp.selectedAnswerFeedback.isNotEmpty) ...[
           pw.SizedBox(height: 4),
           pw.Text(exp.selectedAnswerFeedback,
-              style: pw.TextStyle(fontSize: 10, color: _incorrectRed)),
+              overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 10, color: _incorrectRed)),
         ],
         if (exp.conceptExplanation.isNotEmpty) ...[
           pw.SizedBox(height: 4),
-          pw.Text(exp.conceptExplanation, style: pw.TextStyle(fontSize: 10, color: _ink)),
+          pw.Text(exp.conceptExplanation, overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 10, color: _ink)),
         ],
         if (exp.comparisonRows.isNotEmpty) ...[
           pw.SizedBox(height: 6),
           pw.Text('Table 1. Perbandingan Kategori Sampah',
-              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _subtext)),
+              overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _subtext)),
           pw.SizedBox(height: 4),
           _comparisonTable(exp.comparisonRows),
         ],
         if (exp.rubricRows != null && exp.rubricRows!.isNotEmpty) ...[
           pw.SizedBox(height: 6),
           pw.Text('Table 1. Scoring breakdown',
-              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _subtext)),
+              overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _subtext)),
           pw.SizedBox(height: 4),
           _rubricTable(exp.rubricRows!),
         ],
@@ -315,7 +298,7 @@ class QuizPdfService {
           pw.SizedBox(height: 6),
           pw.Text(
             exp.learningTakeaway,
-            style: pw.TextStyle(
+            overflow: pw.TextOverflow.span, style: pw.TextStyle(
                 fontSize: 10, fontStyle: pw.FontStyle.italic, color: _subtext),
           ),
         ],
@@ -323,11 +306,10 @@ class QuizPdfService {
           pw.SizedBox(height: 4),
           pw.Text(
             'Sumber: ${exp.sourceTitle}${exp.sourceSection != null ? ' - ${exp.sourceSection}' : ''}',
-            style: pw.TextStyle(fontSize: 9, color: _caption),
+            overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 9, color: _caption),
           ),
         ],
-      ],
-    );
+    ];
   }
 
   static pw.Widget _comparisonTable(List<ComparisonRow> rows) {

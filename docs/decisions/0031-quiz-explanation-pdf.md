@@ -47,3 +47,18 @@ Students need immediate pedagogical reasoning and educational context immediatel
 - Includes session metadata, score/trophies/grade, question-by-question student answers, correct answers, explanation text, comparison tables, rubric tables, learning takeaways, and headers/footers with page numbers.
 - Filename is sanitized to ASCII alphanumeric characters (`elio_quiz_<item>_<id>.pdf`).
 - Export PDF action is available both on the quiz completion `_ResultCard` and in `ScanHistoryScreen`.
+
+
+## Mac acceptance fixes (2026-10-28)
+
+- Variable-length answers and explanations are top-level spanning PDF text;
+  nested fixed-height rows must not prevent pagination. No trailing divider
+  is added after the final question, avoiding an empty final page.
+- Missing or unrecognized essay grading stays `essayScore:null`, contributes
+  zero trophies, and displays "Menunggu penilaian" in overlay, result, saved
+  history and PDF. No synthetic score or rubric is created. Legacy data keeps
+  its recorded scores; no history rewrite or migration is required.
+- Integrated the merged G2c base while retaining its serialized store, strict
+  HOME completion, real question counts and all regression tests.
+- Native Mac acceptance uses an external temporary harness with production
+  widgets/services and a dedicated test store, preserving the owner's history.

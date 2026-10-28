@@ -37,7 +37,7 @@ class QuizExplanationService {
         return _buildEssayExplanation(
           question: question,
           essayAnswer: essayAnswer ?? '',
-          essayScore: essayScore ?? 0,
+          essayScore: essayScore,
           essayGradingReply: essayGradingReply,
         );
       }
@@ -124,9 +124,18 @@ class QuizExplanationService {
   static QuizExplanation _buildEssayExplanation({
     required GeneratedQuestion question,
     required String essayAnswer,
-    required int essayScore,
+    required int? essayScore,
     String? essayGradingReply,
   }) {
+    if (essayScore == null) {
+      return QuizExplanation(
+        summary: 'Jawaban tersimpan. Menunggu penilaian karena AI belum tersedia.',
+        correctAnswerReason: question.explanation,
+        essayFeedback: 'Menunggu penilaian',
+        referenceAnswer: question.explanation.isEmpty ? null : question.explanation,
+        groundingStatus: GroundingStatus.gemmaUngrounded,
+      );
+    }
     final rubric = _parseRubricFromReply(essayGradingReply, essayScore);
 
     final feedbackSummary = essayGradingReply != null && essayGradingReply.isNotEmpty

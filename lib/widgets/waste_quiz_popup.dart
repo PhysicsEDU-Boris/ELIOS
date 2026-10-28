@@ -615,6 +615,7 @@ class _ResultCard extends ConsumerWidget {
         : trophiesForScores(correctMcCount: state.correctCount);
     final totalQuestions = state.totalQuestions;
     final grade = gradeFor(trophies: earnedTrophies, totalQuestions: totalQuestions);
+    final gradingPending = state.recordedQuestions.any((q) => q.gradingPending);
 
     final store = ScanRecordStore.instance;
     final totalTrophies = store.totalTrophies;
@@ -689,7 +690,7 @@ class _ResultCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  grade.label,
+                  gradingPending ? 'Menunggu penilaian' : grade.label,
                   style: const TextStyle(color: elioPrimary, fontSize: 13, fontWeight: FontWeight.bold),
                 ),
               ),

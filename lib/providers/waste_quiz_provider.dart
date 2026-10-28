@@ -769,7 +769,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     );
     if (generation != _generation) return;
 
-    int essayScore;
+    int? essayScore;
     if (score != null) {
       essayScore = score.clamp(0, 10);
     } else if (reply != null) {
@@ -781,18 +781,18 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       } else if (lower.startsWith('kurang tepat')) {
         essayScore = 2;
       } else {
-        essayScore = 5;
+        essayScore = null;
       }
     } else {
-      essayScore = 5;
+      essayScore = null;
     }
-    final isCorrect = essayScore >= 6;
+    final isCorrect = (essayScore ?? 0) >= 6;
     _recordedQuestions.add(RecordQuestion(
       question: q.question,
       yourAnswer: trimmed,
       rightAnswer: q.explanation.isNotEmpty ? q.explanation : 'Sesuai modul materi',
       isCorrect: isCorrect,
-      trophies: essayScore,
+      trophies: essayScore ?? 0,
       isEssay: true,
       essayScore: essayScore,
     ));
