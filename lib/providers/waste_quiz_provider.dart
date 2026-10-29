@@ -34,7 +34,8 @@ enum WasteQuizSource { maixCam2, phoneCamera }
 const gemmaQuestionsEnabled = defaultQuestionSource == QuestionSource.gemma;
 
 /// Essay questions are off by default: sessions are multiple choice only (decision 0017).
-const essayQuestionsEnabled = bool.fromEnvironment('ESSAY_QUESTIONS');
+// The tester build always asks essays (A1: the essay grade needs measuring).
+const essayQuestionsEnabled = bool.fromEnvironment('ESSAY_QUESTIONS') || testerBuild;
 
 /// Question order within one scan session: alternate the two types, or
 /// multiple choice only when essays are off.
