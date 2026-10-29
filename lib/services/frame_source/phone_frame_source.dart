@@ -245,12 +245,18 @@ class PhoneFrameSource extends FrameSource {
       );
     } else {
       if (_controller != null && _controller!.value.isInitialized) {
+        // previewSize is always sensor-landscape (w > h); CameraPreview rotates
+        // itself, so only swap the box when the device is held upright.
+        final value = _controller!.value;
+        final landscape = (value.lockedCaptureOrientation ?? value.deviceOrientation) == DeviceOrientation.landscapeLeft ||
+            (value.lockedCaptureOrientation ?? value.deviceOrientation) == DeviceOrientation.landscapeRight;
+        final ps = value.previewSize;
         return ClipRect(
           child: FittedBox(
             fit: fit,
             child: SizedBox(
-              width: _controller!.value.previewSize?.height ?? 640,
-              height: _controller!.value.previewSize?.width ?? 480,
+              width: ps == null ? 640 : (landscape ? ps.width : ps.height),
+              height: ps == null ? 480 : (landscape ? ps.height : ps.width),
               child: CameraPreview(_controller!),
             ),
           ),

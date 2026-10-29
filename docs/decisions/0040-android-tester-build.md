@@ -35,10 +35,11 @@ ran is logged. The OpenCL `uses-native-library` entries come from flutter_gemma'
 ## Thermal gate
 
 `PowerManager.currentThermalStatus` is polled every 10 s (tester build) and on each request. At
-SEVERE (3) or worse Gemma pauses: the active request is cancelled, new requests return null, a Gemma
+CRITICAL (4) or worse Gemma pauses: the active request is cancelled, new requests return null, a Gemma
 quiz session uses bank questions with the text "Ponsel terlalu panas ... Soal dari bank; essay dinilai
-nanti", and an essay answer is saved ungraded (pending) with the same reason. Gemma resumes at MODERATE
-or below. The gate check in `_send`/`ensureReady` is synchronous (cached status) so the single-flight
+nanti", and an essay answer is saved ungraded (pending) with the same reason. Gemma resumes at SEVERE
+or below. (Amended 29 Oct after the first phone run: pausing at SEVERE blocked Gemma on a 12 GB phone that
+was still fine. SEVERE is now logged but allowed.) The gate check in `_send`/`ensureReady` is synchronous (cached status) so the single-flight
 slot of 0003 is unchanged.
 
 ## Low-memory kill

@@ -103,36 +103,38 @@ void main() {
   });
 
   group('thermal gate', () {
-    test('pauses at SEVERE, stays paused at SEVERE-1 only until MODERATE, resumes below', () async {
+    test('SEVERE still runs; pauses at CRITICAL, resumes at SEVERE', () async {
       var status = 1;
       final events = <String>[];
       final gate = ThermalGate(read: () async => status, onChange: (s, p) => events.add('$s:$p'));
       expect(await gate.check(), isFalse);
       status = 3;
-      expect(await gate.check(), isTrue);
-      status = 2;
-      expect(await gate.check(), isFalse, reason: 'MODERATE resumes');
+      expect(await gate.check(), isFalse, reason: 'SEVERE is allowed (12 GB phone test, 29 Oct)');
       status = 4;
       expect(await gate.check(), isTrue);
       expect(gate.statusName, 'CRITICAL');
-      expect(events, ['1:false', '3:true', '2:false', '4:true']);
+      status = 3;
+      expect(await gate.check(), isFalse, reason: 'back to SEVERE resumes');
+      status = 5;
+      expect(await gate.check(), isTrue);
+      expect(events, ['1:false', '3:false', '4:true', '3:false', '5:true']);
     });
 
     test('an unreadable status (null) keeps the last decision', () async {
-      int? status = 3;
+      int? status = 4;
       final gate = ThermalGate(read: () async => status);
       expect(await gate.check(), isTrue);
       status = null;
       expect(await gate.check(), isTrue);
     });
 
-    test('hot phone: identify and essay grading get honest text, Gemma is never called', () async {
+    test('critical heat: identify and essay grading get honest text, Gemma is never called', () async {
       var gemmaCalls = 0;
       service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
         gemmaCalls++;
         return 'x';
       };
-      service.thermal = ThermalGate(read: () async => 3);
+      service.thermal = ThermalGate(read: () async => 4);
       await service.refreshBlocked();
       final id = await service.identifyItem(Uint8List.fromList([1]));
       expect(id.item, isNull);
@@ -142,7 +144,7 @@ void main() {
       expect(gemmaCalls, 0);
     });
 
-    test('hot phone in Gemma mode: the quiz uses a bank question and says so', () async {
+    test('critical heat in Gemma mode: the quiz uses a bank question and says so', () async {
       var gemmaCalls = 0;
       service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
         gemmaCalls++;
@@ -165,11 +167,11 @@ void main() {
     });
 
     test('it cools down: Gemma is allowed again', () async {
-      var status = 3;
+      var status = 4;
       service.thermal = ThermalGate(read: () async => status);
       await service.refreshBlocked();
       expect(service.progress.value.status, GemmaStatus.paused);
-      status = 1;
+      status = 3;
       await service.refreshBlocked();
       expect(service.progress.value.status, GemmaStatus.idle);
       expect(service.blockedReason, isNull);

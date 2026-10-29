@@ -73,13 +73,14 @@ PreviousRun classifyPreviousRun({required bool markerLeft, required int? exitRea
   return PreviousRun.clean; // the user swiped the app away (USER_REQUESTED) or it exited itself
 }
 
-/// Pauses Gemma while the phone is hot. Pauses at SEVERE, resumes at MODERATE
-/// or below, so a status hovering at the line doesn't flap.
+/// Pauses Gemma while the phone is hot. Pauses at CRITICAL, resumes at SEVERE
+/// or below, so a status hovering at the line doesn't flap. (First phone test:
+/// SEVERE paused a 12 GB phone that was still fine, so the line moved up.)
 class ThermalGate {
   ThermalGate({Future<int?> Function()? read, this.onChange}) : _read = read ?? DeviceHealth.thermalStatus;
 
-  static const pauseAt = 3;
-  static const resumeAt = 2;
+  static const pauseAt = 4;
+  static const resumeAt = 3;
   static const names = ['NONE', 'LIGHT', 'MODERATE', 'SEVERE', 'CRITICAL', 'EMERGENCY', 'SHUTDOWN'];
 
   final Future<int?> Function() _read;

@@ -283,7 +283,7 @@ class GemmaQuizService {
     final paused = await thermal.check();
     if (paused) {
       if (progress.value.status != GemmaStatus.paused) {
-        TesterLog.instance.log('thermal', 'SEVERE or worse (${thermal.statusName}): Gemma paused');
+        TesterLog.instance.log('thermal', 'CRITICAL or worse (${thermal.statusName}): Gemma paused');
         unawaited(cancel());
         progress.value = const GemmaProgress(GemmaStatus.paused);
       }
