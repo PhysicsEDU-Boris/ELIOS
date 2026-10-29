@@ -44,9 +44,9 @@ void main() {
         const TrackedDetection(label: 'E_Waste', x: 140, y: 40, w: 80, h: 80),
       ));
       expect(crop.details, containsPair('decodedWidth', 80));
-      expect(crop.details, containsPair('left', 48));
+      expect(crop.details, containsPair('left', 50));
       expect(crop.details, containsPair('right', 80));
-      expect(crop.details, containsPair('cropWidth', 32));
+      expect(crop.details, containsPair('cropWidth', 30));
       expect(img.decodeJpg(crop.bytes!)!.getPixel(10, 10).r, greaterThan(240));
       Uint8List? supplied;
       service.mockSendExecute =

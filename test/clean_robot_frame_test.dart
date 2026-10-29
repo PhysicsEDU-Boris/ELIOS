@@ -57,7 +57,7 @@ void main() {
       });
       expect(later.frameId, 43);
       final crop = img.decodeJpg(cropDetection((frame, _box))!)!;
-      expect((crop.width, crop.height), (22, 12));
+      expect((crop.width, crop.height), (20, 10));
       expect(crop.getPixel(5, 5).b, greaterThan(240));
       expect(crop.getPixel(5, 5).r, lessThan(10));
       expect(img.decodeImage(frame.bytes)!.getPixel(5, 5).r, 255);
@@ -83,11 +83,18 @@ void main() {
         w: source.width / 2, h: source.height / 2,
       )));
       final details = crop.details;
-      final expected = img.copyCrop(source,
+      final identify = img.copyCrop(source,
         x: details['left'] as int, y: details['top'] as int,
         width: details['cropWidth'] as int, height: details['cropHeight'] as int);
-      expect(crop.bytes, orderedEquals(img.encodeJpg(expected, quality: 100)));
-      final decoded = img.decodeJpg(crop.bytes!)!;
+      expect(crop.bytes, orderedEquals(img.encodeJpg(identify)));
+      final left = (source.width * .225).floor();
+      final top = (source.height * .225).floor();
+      final right = (source.width * .775).ceil();
+      final bottom = (source.height * .775).ceil();
+      final expected = img.copyCrop(source, x: left, y: top,
+        width: right - left, height: bottom - top);
+      expect(crop.historyBytes, orderedEquals(img.encodeJpg(expected, quality: 100)));
+      final decoded = img.decodeJpg(crop.historyBytes!)!;
       expect(decoded.width, lessThanOrEqualTo(source.width));
       expect(decoded.height, lessThanOrEqualTo(source.height));
       expect(decoded.width, greaterThan(source.width / 2));
@@ -100,6 +107,7 @@ void main() {
     expect(frame.bytes, isNotEmpty);
     expect(frame.detections!.single.label, 'E_Waste');
     expect(cropDetection((frame, _box)), isNull);
+    expect(prepareDetectionCrop((frame, _box)).historyBytes, isNull);
   });
 
   test(

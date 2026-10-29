@@ -12,22 +12,24 @@ and recreated here on 2026-10-29.
 2. `CapturedFrame.fromRobotMessage` accepts the clean JPEG only with protocol 1,
    matching frame/detection IDs and matching frame dimensions. Annotated preview
    bytes remain separate. Missing clean data never becomes a preview-image crop.
-3. `prepareDetectionCrop` decodes `frame.cleanBytes`, maps the locked detection
-   box from frame metadata coordinates into actual decoded pixel coordinates,
-   and clips to the image edges. Previously this used the exact detection box;
-   now it includes 5% padding on each side. There is no resize or upscaling.
-   Output dimensions are the clamped right-minus-left and bottom-minus-top,
-   with outward pixel rounding. JPEG quality was the image library default of
-   100; it is now explicitly 100. No mask colour, pixel painting or halo removal
-   is performed.
-4. `WasteQuizNotifier._cropThenIdentify` assigns those bytes to `_cropBytes`
-   and submits the same crop to identification. The `*-identify.jpg` diagnostic
-   is the submitted image. `_finish` writes `_cropBytes` unchanged into
-   the application Documents `scans/scan_<timestamp>.jpg` and puts that absolute
-   path into `ScanRecord.cropPhotoPath`. The JSON store keeps the path, not the
-   image. Device-camera input is retained as supplied, without recompression;
-   a `ponytail:` marker records the lack of a paired clean frame for that path.
-   Existing records and JPEG files are not migrated or rewritten.
+3. `prepareDetectionCrop` decodes `frame.cleanBytes` once and maps the locked
+   detection box into actual decoded pixel coordinates. Identification keeps
+   the original exact box, outward rounding, edge clipping and JPEG encoding
+   call/settings (the library default is 100). Its diagnostics still describe
+   that unpadded crop. A separate `historyBytes` crop adds 5% padding on each side,
+   clips to the frame edges and explicitly encodes at quality 100. Neither crop
+   is resized or upscaled. No mask colour or pixel painting is performed.
+4. `WasteQuizNotifier._cropThenIdentify` keeps identification bytes in `_cropBytes`
+   and submits only those bytes to identification and the `*-identify.jpg`
+   diagnostic. `_historyPhotoBytes` keeps the separate padded photo. `_finish`
+   prefers that photo, falling back to the supplied identification/device crop,
+   and writes it unchanged into Documents `scans/scan_<timestamp>.jpg`.
+   `ScanRecord.cropPhotoPath` references that file; the JSON store contains the
+   path, not the image. Device-camera input remains as supplied, without further
+   cropping or recompression. The `ponytail:` marker records the fallback limit.
+   Both photo variables reset on new sessions and dismissal; stale asynchronous
+   crop results are discarded before assigning either. Existing records and
+   JPEG files are not migrated or rewritten. See decision `0070-history-crop.md`.
 
 ## Display and PDF
 
@@ -46,26 +48,26 @@ and recreated here on 2026-10-29.
 
 ## Verification
 
-90 tests pass across:
+Revision validation (2026-10-29):
 
-- `test/clean_robot_frame_test.dart`
-- `test/m2c_identification_test.dart`
-- `test/scan_diagnostics_test.dart`
-- `test/screens/scan_history_screen_test.dart`
-- `test/services/quiz_pdf_service_test.dart`
-- `test/services/scan_record_store_test.dart`
-- `test/quiz_export_acceptance_test.dart`
+- `flutter analyze --no-pub`: no issues across the whole repository.
+- `flutter test --no-pub --reporter expanded`: 545 passed, 2 failed. The failures
+  are the two stale splash/login placeholder assertions in `test/widget_test.dart`
+  (`ELIO`, `Login — coming soon`, `Home — coming soon`). Both independently
+  reproduce on untouched base `b842ce2`; those unrelated tests were not edited.
+- Identification expectations are restored to the original sizes (20x10, 10x5,
+  and diagnostic width 30/left 50). Byte checks compare against the original
+  unpadded JPEG encoding call. Separate History tests check padding, exact
+  quality-100 encoding, clean pixels and no upscaling for portrait/landscape/tiny
+  images. A temporary-store integration test confirms identification submits
+  20x10 while the completed scan persists the separate 22x12 photo.
+- History layout tests cover 1366x768, 770x553 and 390x844 with portrait,
+  landscape, tiny, missing, corrupt and legacy images. PDF tests retain original
+  JPEG bytes, pending labels and the end of a multipage essay. Seed-preservation
+  regressions remain intact. All test stores, diagnostic outputs and photo files
+  are temporary; the owner's real history was never opened or modified.
+- Secret scan runs on the staged revision and the complete PR commit range.
 
-New checks cover portrait, landscape and tiny native crops; clean-pixel
-provenance, padded bounds and exact quality-100 encoding; all three requested
-viewports (1366x768, 770x553, 390x844); missing, overwritten/corrupt and legacy
-photo paths; original JPEG embedding; and a photo with a long pending essay
-that spans pages and retains its final text and both pending-grade labels.
-All history stores and report output used by tests are temporary. The older
-PDF sample test also now uses its test's temporary directory and cleans up.
-The owner's real history file was never opened or modified.
-
-Static analysis of all nine changed Dart files reports no issues.
 Synthetic portrait, landscape, tiny and missing-photo PDFs were rendered and
 visually inspected using PDFKit. The two-page essay also retained its final
 text under independent PDFKit extraction. Review fixtures were generated under
@@ -90,12 +92,13 @@ Lane D changed exactly these production files for this task:
 
 - `lib/Screens/scan_history_screen.dart`: contained thumbnails, larger detail
   photo, decode-error placeholder and narrow detail-title bounds.
-- `lib/services/detection_crop.dart`: robot paired-clean-frame crop padding
-  and explicit quality 100.
+- `lib/services/detection_crop.dart`: original unpadded identification bytes
+  plus a separate padded quality-100 History photo from the same clean frame.
 - `lib/services/quiz_pdf_service.dart`: original crop embedded beside metadata
   with aspect preserved and an invalid/missing-image placeholder.
-- `lib/providers/waste_quiz_provider.dart`: one `ponytail:` comment in `_finish`
-  documenting preservation of supplied photos; no executable change.
+- `lib/providers/waste_quiz_provider.dart`: separate `_historyPhotoBytes`,
+  assignment after the stale-result guard, session resets, and `_finish` saving
+  the History photo with a supplied-crop fallback.
 
 Lane A's photo capture/crop path, inspected at `39009a2` on
 `feat/a1-android-test-apk`, changes these production files:
@@ -112,8 +115,11 @@ Lane A's photo capture/crop path, inspected at `39009a2` on
   `startForLabel` for no-model History records, among other Lane A changes.
 
 The only shared production file is `lib/providers/waste_quiz_provider.dart`.
-D adds only a comment in `_finish`; A's photo change is in `startForLabel`.
-These are separate hunks. D does not recrop phone photos: its crop helper is
-used on the robot-lock path, while History/PDF render either path's saved
-bytes. No Lane A files or commits were merged into D. This overlap is also
-recorded in the Lane D PR description.
+D now changes `_cropThenIdentify`, `_finish`, device/session initialization,
+`startForLabel` and dismissal to keep/reset the separate History photo. A changes
+`startForLabel` to preserve a supplied phone photo. That function needs integration
+review when merging the lanes: preserve A's `_cropBytes = photo` and clear D's
+`_historyPhotoBytes` so `_finish` falls back to the supplied phone photo. D does
+not recrop phone photos; its crop helper runs on robot locks. No Lane A code was
+merged into D. The PR description records this overlap and the current validation
+limits.

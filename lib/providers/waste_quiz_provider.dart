@@ -230,6 +230,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   // The cropped JPEG bytes of the current waste item.
   Uint8List? _cropBytes;
+  Uint8List? _historyPhotoBytes;
 
   @override
   WasteQuizUiState build() => const WasteQuizUiState();
@@ -278,6 +279,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _askedQuestions.clear();
     _recordedQuestions.clear();
     _cropBytes = imageBytes;
+    _historyPhotoBytes = imageBytes;
     _bankQueues = null;
     _usedAngles.clear();
     _cancelPrefetch();
@@ -295,6 +297,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _askedQuestions.clear();
     _recordedQuestions.clear();
     _cropBytes = null;
+    _historyPhotoBytes = null;
     _bankQueues = null;
     _usedAngles.clear();
     _cancelPrefetch();
@@ -319,7 +322,6 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final timing = kDebugMode ? (Stopwatch()..start()) : null;
     final crop = await compute(prepareDetectionCrop, (frame, detection));
     final bytes = crop.bytes;
-    if (bytes != null) _cropBytes = bytes;
     diagnostics?.event('crop_complete', {...crop.details, 'cropPreparationMs': timing?.elapsedMilliseconds,
       'valid': bytes != null, 'stale': generation != _generation});
     if (generation != _generation) return;
@@ -330,6 +332,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
               : 'Foto asli tanpa anotasi belum tersedia. Perbarui firmware kamera, lalu scan lagi.');
       return;
     }
+    _cropBytes = bytes;
+    _historyPhotoBytes = crop.historyBytes ?? bytes;
     await _identifyThenQuiz(bytes, generation, detectorLabel: detection.label,
         detectorScore: detection.score, frameId: frame.frameId, diagnostics: diagnostics);
   }
@@ -408,6 +412,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _lastLabel = label;
     _lastShownAt = DateTime.now();
     _cropBytes = null;
+    _historyPhotoBytes = null;
     _recordedQuestions.clear();
     GemmaQuizService.instance.cancel();
     _startSession(ScannedWaste.fromLabel(label));
@@ -939,14 +944,15 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final sessionTrophies = _recordedQuestions.fold<int>(0, (sum, q) => sum + q.trophies);
 
     String? photoPath;
+    final photoBytes = _historyPhotoBytes ?? _cropBytes;
     // ponytail: legacy/device crops lack a paired clean frame; keep their bytes until recaptured.
-    if (_cropBytes != null) {
+    if (photoBytes != null) {
       try {
         final dir = await getApplicationDocumentsDirectory();
         final scansDir = Directory('${dir.path}/scans');
         if (!scansDir.existsSync()) scansDir.createSync(recursive: true);
         final file = File('${scansDir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.jpg');
-        file.writeAsBytesSync(_cropBytes!, flush: true);
+        file.writeAsBytesSync(photoBytes, flush: true);
         photoPath = file.path;
       } catch (e) {
         debugPrint('[WasteQuiz] Failed to save crop photo: $e');
@@ -1025,6 +1031,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     GemmaQuizService.instance.cancel();
     unawaited(QuizTtsService.instance.stop());
     _cropBytes = null;
+    _historyPhotoBytes = null;
     _recordedQuestions.clear();
     state = WasteQuizUiState(voiceOn: state.voiceOn);
   }
