@@ -1,34 +1,34 @@
 # Handoff
 
-- Base: `feature/live-scan` at `254da97`; PRs #48 and #49 are merged.
-- U4b branch: `feat/u4b-essay-rubric`; implementation commit `0bbca22`; draft PR #51 is open and unmerged.
-- Never commit the Xcode scheme, `Maixcam.txt`, `docs/module/`, `.env*`, Firebase configs, or the Gemma model.
+- Branch `feat/u4b-essay-rubric`; draft PR #51 targets `feature/live-scan`, unmerged. Base `254da97` includes #48/#49.
+- Canonical `~/GITHUB/ELIO/elios-clean` retains the owner's dirty scheme, `Maixcam.txt`, and `docs/module/`.
+- Persistent worktree: `~/Documents/ChatGPT/ELIOS 2/u4b-essay-rubric`; evidence in sibling `u4b-native-evidence/`.
 
-## U4b — essay rubric
+## U4b implementation
 
-- Gemma is prompted for JSON with Accuracy /4, Key terms /3, Completeness /2, Clarity /1, total /10, short feedback, and one improvement suggestion.
-- `EssayGrade` validates integer types, limits, total and sum. A valid total with an unusable rubric stays score-only; malformed or inconsistent results stay pending with zero trophies.
-- The same validated score and rubric feed the overlay, trophy count, saved `QuizExplanation`, History and PDF. Synthetic rubric rows and essay source/AI claims are removed; old saved records remain compatible.
-- Decision 0031 and CHANGELOG updated. Full owner-account/local-camera acceptance is still required before U4 is complete.
+- Strict JSON grading: Accuracy /4, Key terms /3, Completeness /2, Clarity /1; integer total /10 must equal the sum.
+- Valid total with unusable rubric is score-only; malformed/inconsistent total stays pending, null score, zero trophies. No fabricated rows or essay source attribution.
+- Real model initially returned a word array for `keyTerms`; prompt now explicitly requires an integer. Completion summary now includes essay questions in its denominator.
+- Overlay, trophies, saved explanation and PDF reuse the same validated result; legacy history and #49 pagination/pending fixes retained.
+- Debug sample insertion now preserves existing unloaded history and skips duplicate IDs, with serialized writes and a regression test.
 
-## Validation
+## Native evidence / incident
 
-- `flutter analyze`: clean. `scripts/check-secrets.sh`: clean.
-- Focused rubric/lifecycle/overlay/store/PDF/HOME tests: 45 passed.
-- Full Flutter suite: 515 passed; only the 2 documented stale splash tests failed.
-- Tests cover complete/partial rubrics, malformed replies, criterion/total bounds, inconsistent sums, score-only fallback, unavailable model, and result persistence/PDF generation.
-- #49 pending-grade and PDF pagination fixes remain unchanged.
+- Real Gemma native harness returned 4/4 + 2/3 + 2/2 + 1/1 = 9/10, +9 trophies; four isolated records totalled 17 trophies and survived quit/relaunch.
+- Earlier real 8/10 response correctly stayed score-only. Malformed/unavailable responses were injected harness cases, both pending/zero trophies.
+- Actual saved rubric PDF includes all four criteria, score, answer, feedback and suggestion. Native sharing picker opened and was cancelled without selecting a recipient. Long PDF includes both boundary markers across two pages.
+- Normal app connected only to localhost simulator; camera advanced F95 to F3917 at ~9.9 FPS across History opening/closing. No robot movement controls used.
+- **Acceptance incident:** an unlabeled History control was mistakenly clicked and seeded debug samples into the normal owner store, replacing its one pre-existing record (Hard, five questions, 10 trophies). Exact original JSON was not recovered from heap, local files or snapshots. Four debug samples remain; original crop remains. Do not claim owner history was preserved or acceptance fully complete.
+- Recovery evidence and the data-preservation regression are in the evidence folder. Do not replace missing original answers with guesses. Owner backup/review is needed for restoration.
 
-## Mac build / acceptance
+## Build / verification
 
-- Debug build from `0bbca22` succeeded at the temporary worktree output with `LIVE_SCAN=true`, `ESSAY_QUESTIONS=true`, `R1=true`, `G1_PICKUP_QUIZ_FLOW=true`; `APP_COMMIT=0bbca22`.
-- Bundle ID and Team ID matched `~/Applications/ELIOS.app`, but `codesign --verify --deep --strict` returned `CSSMERR_TP_NOT_TRUSTED`; the keychain reported zero valid signing identities. The build app was removed without moving or launching it. Existing app remains at `~/Applications/ELIOS.app` (8f0e77c).
-- Full-home inventory found the installed `~/Applications/ELIOS.app` and one pre-existing incomplete 20 MB `ELIOS.app` in Xcode DerivedData (missing `Contents/Info.plist`). CUA showed five historical same-ID entries; `NSWorkspace` resolved zero registration URLs. No apps/registrations were removed.
-- Existing 2.4 GB runtime model, a 2.4 GB `~/ELIO-SANDBOX/models/` copy, the canonical source/build assets, and the `ELIO-DEVELOPMENT` asset were inventoried and left untouched. No model was bundled/downloaded. Temporary plist/scheme copies and empty env placeholders were removed.
-- Real-model essay, localhost fake camera, isolated app-store persistence/relaunch, native PDF picker and PDF-content acceptance remain unrun pending valid signing and a verifiable single ELIOS registration.
-- No sharing recipient selected; no physical robot or firmware contacted. PR #47 stays draft and `ARM_MOTION_ENABLED=false`.
-
-## Preserve
-
-- Canonical `/Users/macbookairm12020/GITHUB/ELIO/elios-clean` remains dirty only in the owner's scheme, `Maixcam.txt`, and `docs/module/`; do not overwrite or clean it.
-- Decision 0031 defines the U4 overlay/history/PDF; decision 0027/0028/0030 cover HOME, trophies and saved records.
+- Earlier invalid-signature/launch results were sandbox artifacts: elevated verification finds one valid Apple Development identity and signatures pass. `open` and CUA work.
+- Documents File Provider added forbidden Finder metadata to generated apps; build output moved to `~/Library/Caches/elios-u4b-build-20261029`. Generated module caches were regenerated after ASTReader crashes; missing generated Flutter engine restored from intact local SDK cache.
+- Existing runtime model remains `~/Library/Containers/E798601C-A67E-46BF-AB3D-AE1A58572F44/Data/Documents/gemma-4-E2B-it.litertlm`; model install logs explicitly skip download. Pre-existing model copies and Trash bundles untouched.
+- Completed native builds were moved to the retained `~/Applications/ELIOS.app`; generated/Trash registrations unregistered, one installed registration verified. Trash bundles were not deleted.
+- Validation before seed fix: analyze clean; full 516 passed with only two stale splash failures; focused 74 passed; summary break-check fails old behavior. Seed regression also fails old destructive behavior.
+- Final seed-fix validation: analyze clean, full 517 passed / two stale splash failures; secret scan clean. Seed-preservation break-check fails the old behavior.
+- Final normal signed app built from `6d67f30` with LIVE_SCAN=true, APP_COMMIT=6d67f30, R1/G1_PICKUP_QUIZ_FLOW/ESSAY_QUESTIONS=true; moved to `~/Applications/ELIOS.app`, verified after moving and launched with `open`. One ELIOS registration verified.
+- Temporary Firebase config, env placeholders, harness entry and build symlink removed; worktree scheme restored. Local cache retains compiled dependencies, no duplicate app bundle. Never commit config/model assets.
+- No Firebase sync, Figma or firmware changes. PR #47 remains draft/unmerged; `ARM_MOTION_ENABLED=false`; physical/authenticated firmware validation remains owner work.
