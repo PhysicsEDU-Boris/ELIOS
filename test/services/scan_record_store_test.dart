@@ -7,6 +7,24 @@ import 'package:elio/services/gemma_quiz_service.dart';
 import 'package:elio/services/scan_record_store.dart';
 
 void main() {
+  test('debug samples preserve existing unloaded history and are idempotent', () async {
+    final dir = await Directory.systemTemp.createTemp('seed-preserve-');
+    addTearDown(() => dir.delete(recursive: true));
+    final file = File('${dir.path}/records.json');
+    final original = ScanRecord(
+      id: 'owner-record', time: DateTime(2026), itemName: 'Original item',
+      category: ScanCategory.recyclable, difficulty: QuizDifficulty.easy,
+      questions: const [], trophies: 10,
+    );
+    await ScanRecordStore(customFile: file).addRecord(original);
+    final store = ScanRecordStore(customFile: file);
+    await store.seedFigmaSampleRecords();
+    await store.seedFigmaSampleRecords();
+    final saved = await ScanRecordStore(customFile: file).load();
+    expect(saved, hasLength(5));
+    expect(saved.singleWhere((r) => r.id == original.id).toJson(), original.toJson());
+  });
+
   group('ScanRecord JSON serialization', () {
     test('serializes and deserializes cleanly', () {
       final now = DateTime(2026, 10, 26, 14, 30);

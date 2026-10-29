@@ -64,3 +64,5 @@ Students need immediate pedagogical reasoning and educational context immediatel
   HOME completion, real question counts and all regression tests.
 - Native Mac acceptance uses an external temporary harness with production
   widgets/services and a dedicated test store, preserving the owner's history.
+
+- Debug sample insertion must load and preserve existing history, append only missing sample IDs, and serialize mutations with ordinary record writes. It must never replace the owner’s records.
