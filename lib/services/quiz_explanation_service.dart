@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../models/essay_grade.dart';
 import '../models/quiz_explanation.dart';
 import '../models/scanned_waste.dart';
 import '../services/gemma_quiz_service.dart';
@@ -21,24 +22,18 @@ class QuizExplanationService {
   /// [question] — the [GeneratedQuestion] that was shown.
   /// [selectedIndex] — the option index chosen (null for essay / skipped).
   /// [scan] — the [ScannedWaste] that triggered the quiz session.
-  /// [essayAnswer] — raw text answer for essay questions.
-  /// [essayScore] — graded score 0-10 for essay; null for MC.
-  /// [essayGradingReply] — Gemma's raw essay-grading reply (for rubric parsing).
+  /// [essayGrade] — validated Gemma grade; null when grading is unavailable.
   static Future<QuizExplanation> generate({
     required GeneratedQuestion question,
     required ScannedWaste scan,
     int? selectedIndex,
-    String? essayAnswer,
-    int? essayScore,
-    String? essayGradingReply,
+    EssayGrade? essayGrade,
   }) async {
     try {
       if (question.type == QuizQuestionType.essay) {
         return _buildEssayExplanation(
           question: question,
-          essayAnswer: essayAnswer ?? '',
-          essayScore: essayScore,
-          essayGradingReply: essayGradingReply,
+          essayGrade: essayGrade,
         );
       }
       return _buildMcqExplanation(
@@ -123,46 +118,30 @@ class QuizExplanationService {
 
   static QuizExplanation _buildEssayExplanation({
     required GeneratedQuestion question,
-    required String essayAnswer,
-    required int? essayScore,
-    String? essayGradingReply,
+    required EssayGrade? essayGrade,
   }) {
-    if (essayScore == null) {
-      return QuizExplanation(
+    if (essayGrade == null) {
+      return const QuizExplanation(
         summary: 'Jawaban tersimpan. Menunggu penilaian karena AI belum tersedia.',
-        correctAnswerReason: question.explanation,
+        correctAnswerReason: '',
         essayFeedback: 'Menunggu penilaian',
-        referenceAnswer: question.explanation.isEmpty ? null : question.explanation,
         groundingStatus: GroundingStatus.gemmaUngrounded,
       );
     }
-    final rubric = _parseRubricFromReply(essayGradingReply, essayScore);
-
-    final feedbackSummary = essayGradingReply != null && essayGradingReply.isNotEmpty
-        ? essayGradingReply
-        : essayScore >= 8
-            ? 'Jawaban kamu sangat baik dan mencakup poin-poin utama dengan tepat.'
-            : essayScore >= 6
-                ? 'Jawaban kamu sudah benar secara umum, namun ada beberapa poin yang bisa diperdalam.'
-                : essayScore >= 4
-                    ? 'Jawaban kamu menunjukkan pemahaman sebagian. Pelajari lagi konsep utamanya.'
-                    : 'Jawaban kamu belum tepat. Simak penjelasan di bawah untuk panduan yang benar.';
-
     final expectedPoints = question.explanation;
-
+    final feedback = essayGrade.feedback.isNotEmpty
+        ? essayGrade.feedback
+        : 'Skor: ${essayGrade.score}/10.';
     return QuizExplanation(
-      summary: feedbackSummary,
-      correctAnswerReason: expectedPoints.isNotEmpty ? expectedPoints : 'Lihat panduan penilaian di atas.',
-      selectedAnswerFeedback: essayScore < 6 ? 'Jawaban perlu diperbaiki pada beberapa poin.' : '',
-      conceptExplanation: 'Essay ini menguji kemampuan kamu menganalisis dan menjelaskan '
-          'konsep pengelolaan sampah secara menyeluruh.',
-      learningTakeaway: 'Perbanyak latihan menulis penjelasan yang sistematis dan berbasis fakta.',
+      summary: feedback,
+      correctAnswerReason: '',
+      learningTakeaway: essayGrade.improvement.isEmpty
+          ? ''
+          : 'Untuk nilai penuh: ${essayGrade.improvement}',
       groundingStatus: GroundingStatus.gemmaUngrounded,
-      sourceTitle: 'Gemma AI',
-      sourceSection: 'Graded by AI Gemma',
-      essayScore: essayScore,
-      essayFeedback: feedbackSummary,
-      rubricRows: rubric,
+      essayScore: essayGrade.score,
+      essayFeedback: feedback,
+      rubricRows: essayGrade.rubricRows.isEmpty ? null : essayGrade.rubricRows,
       referenceAnswer: expectedPoints.isNotEmpty ? expectedPoints : null,
     );
   }
@@ -170,37 +149,6 @@ class QuizExplanationService {
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
-
-  static List<RubricRow> _parseRubricFromReply(String? reply, int totalScore) {
-    // Attempt to extract a simple rubric from the Gemma reply; fall back to
-    // a generic two-criterion breakdown.
-    if (reply == null || reply.isEmpty) {
-      return [
-        RubricRow(
-          criterion: 'Ketepatan konsep',
-          maxScore: 6,
-          awardedScore: (totalScore * 0.6).round().clamp(0, 6),
-          comment: '',
-        ),
-        RubricRow(
-          criterion: 'Kelengkapan penjelasan',
-          maxScore: 4,
-          awardedScore: (totalScore * 0.4).round().clamp(0, 4),
-          comment: '',
-        ),
-      ];
-    }
-
-    // Basic fallback: single criterion with total awarded.
-    return [
-      RubricRow(
-        criterion: 'Penilaian keseluruhan',
-        maxScore: 10,
-        awardedScore: totalScore,
-        comment: reply.length > 120 ? '${reply.substring(0, 120)}…' : reply,
-      ),
-    ];
-  }
 
   static List<ComparisonRow> _buildComparisonRows(String categoryId, String itemName) {
     return [

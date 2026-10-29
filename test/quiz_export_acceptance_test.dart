@@ -113,6 +113,38 @@ void main() {
     );
   });
 
+  test('essay completion summary counts the essay question', () async {
+    final dir = await Directory.systemTemp.createTemp('essay-summary-');
+    final store = ScanRecordStore(customFile: File('${dir.path}/records.json'));
+    ScanRecordStore.setInstanceForTesting(store);
+    addTearDown(() async {
+      ScanRecordStore.setInstanceForTesting(null);
+      await dir.delete(recursive: true);
+    });
+    final container = ProviderContainer(overrides: [
+      wasteQuizProvider.overrideWith(() => SeededQuiz(WasteQuizUiState(
+        phase: WasteQuizPhase.active,
+        scan: ScannedWaste.fromLabel('botol plastik'),
+        difficulty: QuizDifficulty.easy,
+        voiceOn: false,
+        question: const GeneratedQuestion(
+          type: QuizQuestionType.essay,
+          question: 'Jelaskan daur ulang plastik.',
+        ),
+      ))),
+    ]);
+    addTearDown(container.dispose);
+    final notifier = container.read(wasteQuizProvider.notifier);
+    await notifier.submitEssay('Dipilah lalu didaur ulang.', score: 8);
+    await pumpEventQueue();
+    notifier.nextQuestion();
+    await pumpEventQueue(times: 50);
+    final state = container.read(wasteQuizProvider);
+    expect(state.phase, WasteQuizPhase.finished);
+    expect(state.messages.last.text, contains('Jawaban benar: 1 dari 1.'));
+    expect(store.totalTrophies, 8);
+  });
+
   test('new explanation phase still stops TTS before next question', () async {
     var stops = 0;
     QuizTtsService.instance.mockStop = () async => stops++;

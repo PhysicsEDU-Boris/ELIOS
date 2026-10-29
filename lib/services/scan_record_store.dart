@@ -266,8 +266,15 @@ class ScanRecordStore extends ChangeNotifier {
       ),
     ];
 
-    _records = samples;
-    notifyListeners();
-    await save();
+    await _synchronized(() async {
+      if (!_loaded) await _doLoad();
+      for (final sample in samples) {
+        if (!_records.any((record) => record.id == sample.id)) {
+          _records.add(sample);
+        }
+      }
+      notifyListeners();
+      await _doSave();
+    });
   }
 }
