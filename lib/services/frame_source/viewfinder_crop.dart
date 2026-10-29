@@ -23,7 +23,8 @@ Uint8List _crop((Uint8List, double, double, double, double, double) a) {
 
 /// [jpeg] shrunk so its longest side is at most [maxSide]; the same bytes when
 /// it is already small enough or cannot be decoded.
-Future<Uint8List> downscaleJpeg(Uint8List jpeg, {required int maxSide}) => compute(_downscale, (jpeg, maxSide));
+Future<Uint8List> downscaleJpeg(Uint8List jpeg, {required int maxSide}) =>
+    jpeg.isEmpty ? Future.value(jpeg) : compute(_downscale, (jpeg, maxSide));
 
 Uint8List _downscale((Uint8List, int) a) {
   final (jpeg, maxSide) = a;
