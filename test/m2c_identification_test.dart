@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:elio/models/scanned_waste.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:elio/services/scan_record_store.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/detection_crop.dart';
 import 'package:elio/services/detection_stabilizer.dart';
@@ -156,6 +159,50 @@ void main() {
       expect(c.read(wasteQuizProvider).scan?.displayName, 'Kaleng aluminium');
       expect(c.read(wasteQuizProvider).scan?.material, 'aluminium');
       expect(images.where((image) => image != null), hasLength(1));
+    });
+
+    test('identification keeps the original crop while History saves the padded photo', () async {
+      final root = await Directory.systemTemp.createTemp('d1-split-photo-');
+      const channel = MethodChannel('plugins.flutter.io/path_provider');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (_) async => root.path);
+      final store = ScanRecordStore(customFile: File('${root.path}/records.json'));
+      ScanRecordStore.setInstanceForTesting(store);
+      addTearDown(() async {
+        quiz.dismiss();
+        await service.cancel();
+        await pumpEventQueue();
+        ScanRecordStore.setInstanceForTesting(null);
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null);
+        await root.delete(recursive: true);
+      });
+      final frame = _frame();
+      quiz.onRobotLocked(frame, _box);
+      await _until(() => images.isNotEmpty);
+      final submitted = images.single!;
+      final source = img.decodeImage(frame.cleanBytes!)!;
+      expect(submitted, orderedEquals(img.encodeJpg(
+        img.copyCrop(source, x: 10, y: 5, width: 20, height: 10))));
+      identify.complete('{"item":"botol plastik","material":"plastik","category":"anorganik"}');
+      await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
+      quiz.state = quiz.state.copyWith(
+        difficulty: QuizDifficulty.easy, questionIndex: 0,
+        question: const GeneratedQuestion(
+          type: QuizQuestionType.multipleChoice, question: 'Pilah botol?',
+          options: ['Daur ulang', 'Bakar'], correctIndex: 0,
+        ),
+      );
+      quiz.selectOption(0);
+      quiz.nextQuestion();
+      await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.finished);
+      final photo = File(store.records.single.cropPhotoPath!);
+      expect(photo.path, startsWith('${root.path}/scans/'));
+      final saved = photo.readAsBytesSync();
+      expect(saved, orderedEquals(prepareDetectionCrop((frame, _box)).historyBytes!));
+      final decoded = img.decodeJpg(saved)!;
+      expect((decoded.width, decoded.height), (22, 12));
+      expect(c.read(wasteQuizProvider).cropBytes, orderedEquals(submitted));
     });
 
     for (final detectorHazard in [true, false]) {

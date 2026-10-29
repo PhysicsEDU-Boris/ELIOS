@@ -11,7 +11,7 @@ Uint8List? cropDetection((CapturedFrame, TrackedDetection) input) {
   return prepareDetectionCrop(input).bytes;
 }
 
-({Uint8List? bytes, Map<String, Object?> details}) prepareDetectionCrop(
+({Uint8List? bytes, Uint8List? historyBytes, Map<String, Object?> details}) prepareDetectionCrop(
   (CapturedFrame, TrackedDetection) input,
 ) {
   final (frame, box) = input;
@@ -22,11 +22,11 @@ Uint8List? cropDetection((CapturedFrame, TrackedDetection) input) {
       ![box.x, box.y, box.w, box.h].every((v) => v.isFinite) ||
       box.w <= 0 ||
       box.h <= 0) {
-    return (bytes: null, details: details);
+    return (bytes: null, historyBytes: null, details: details);
   }
   try {
     final image = img.decodeImage(frame.cleanBytes!);
-    if (image == null) return (bytes: null, details: details);
+    if (image == null) return (bytes: null, historyBytes: null, details: details);
     details.addAll({
       'decodedWidth': image.width,
       'decodedHeight': image.height,
@@ -40,7 +40,7 @@ Uint8List? cropDetection((CapturedFrame, TrackedDetection) input) {
     final top = ((box.y - box.h / 2) * sy).floor().clamp(0, image.height);
     final right = ((box.x + box.w / 2) * sx).ceil().clamp(0, image.width);
     final bottom = ((box.y + box.h / 2) * sy).ceil().clamp(0, image.height);
-    if (right <= left || bottom <= top) return (bytes: null, details: details);
+    if (right <= left || bottom <= top) return (bytes: null, historyBytes: null, details: details);
     details.addAll({
       'scaleX': sx,
       'scaleY': sy,
@@ -51,7 +51,18 @@ Uint8List? cropDetection((CapturedFrame, TrackedDetection) input) {
       'cropWidth': right - left,
       'cropHeight': bottom - top,
     });
+    // History gets its own padded crop; identification bounds and encoding stay unchanged.
+    final photoLeft = ((box.x - box.w * .55) * sx).floor().clamp(0, image.width);
+    final photoTop = ((box.y - box.h * .55) * sy).floor().clamp(0, image.height);
+    final photoRight = ((box.x + box.w * .55) * sx).ceil().clamp(0, image.width);
+    final photoBottom = ((box.y + box.h * .55) * sy).ceil().clamp(0, image.height);
+    final historyBytes = Uint8List.fromList(img.encodeJpg(
+      img.copyCrop(image, x: photoLeft, y: photoTop,
+        width: photoRight - photoLeft, height: photoBottom - photoTop),
+      quality: 100,
+    ));
     return (
+      historyBytes: historyBytes,
       bytes: Uint8List.fromList(
         img.encodeJpg(
           img.copyCrop(
@@ -66,6 +77,6 @@ Uint8List? cropDetection((CapturedFrame, TrackedDetection) input) {
       details: details,
     );
   } catch (_) {
-    return (bytes: null, details: details);
+    return (bytes: null, historyBytes: null, details: details);
   }
 }

@@ -66,11 +66,48 @@ void main() {
     },
   );
 
+  for (final dimensions in [(80, 160), (160, 80), (2, 1)]) {
+    test('padded $dimensions crop keeps clean pixels at native size and quality 100', () {
+      final source = img.Image(width: dimensions.$1, height: dimensions.$2);
+      for (final pixel in source) {
+        pixel.setRgb(pixel.x % 256, pixel.y % 256, 180);
+      }
+      final frame = CapturedFrame(
+        bytes: _pixels(255, 0, 0),
+        cleanBytes: Uint8List.fromList(img.encodePng(source)),
+        frameId: 5, detectionFrameId: 5,
+        width: source.width, height: source.height, timestamp: DateTime(2026),
+      );
+      final crop = prepareDetectionCrop((frame, TrackedDetection(
+        label: 'Plastic', x: source.width / 2, y: source.height / 2,
+        w: source.width / 2, h: source.height / 2,
+      )));
+      final details = crop.details;
+      final identify = img.copyCrop(source,
+        x: details['left'] as int, y: details['top'] as int,
+        width: details['cropWidth'] as int, height: details['cropHeight'] as int);
+      expect(crop.bytes, orderedEquals(img.encodeJpg(identify)));
+      final left = (source.width * .225).floor();
+      final top = (source.height * .225).floor();
+      final right = (source.width * .775).ceil();
+      final bottom = (source.height * .775).ceil();
+      final expected = img.copyCrop(source, x: left, y: top,
+        width: right - left, height: bottom - top);
+      expect(crop.historyBytes, orderedEquals(img.encodeJpg(expected, quality: 100)));
+      final decoded = img.decodeJpg(crop.historyBytes!)!;
+      expect(decoded.width, lessThanOrEqualTo(source.width));
+      expect(decoded.height, lessThanOrEqualTo(source.height));
+      expect(decoded.width, greaterThan(source.width / 2));
+      expect(decoded.height, greaterThan(source.height / 2));
+    });
+  }
+
   test('legacy firmware keeps preview but cannot supply a vision crop', () {
     final frame = _parse({});
     expect(frame.bytes, isNotEmpty);
     expect(frame.detections!.single.label, 'E_Waste');
     expect(cropDetection((frame, _box)), isNull);
+    expect(prepareDetectionCrop((frame, _box)).historyBytes, isNull);
   });
 
   test(

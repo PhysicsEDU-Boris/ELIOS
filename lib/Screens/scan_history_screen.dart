@@ -334,8 +334,9 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                   icon: const Icon(Icons.arrow_back_rounded, size: 18, color: _greenDark),
                   label: const Text('Back to list', style: TextStyle(color: _greenDark, fontWeight: FontWeight.w600)),
                 ),
-                const Spacer(),
-                Text(active.itemName, style: const TextStyle(fontWeight: FontWeight.bold, color: _ink)),
+                Expanded(child: Text(active.itemName, textAlign: TextAlign.end,
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: _ink))),
               ],
             ),
           ),
@@ -534,6 +535,8 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
       key: const ValueKey('detail_list_view'),
       padding: const EdgeInsets.all(16),
       children: [
+        Center(child: _buildPhotoThumbnail(record.cropPhotoPath, size: 180)),
+        const SizedBox(height: 12),
         // Detail summary card
         Container(
           padding: const EdgeInsets.all(16),
@@ -548,8 +551,6 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
               final headerInfo = Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildPhotoThumbnail(record.cropPhotoPath, size: isCardWide ? 76 : 60),
-                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -960,29 +961,25 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
   }
 
   Widget _buildPhotoThumbnail(String? path, {required double size}) {
-    if (path != null && File(path).existsSync()) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.file(File(path), width: size, height: size, fit: BoxFit.cover),
-      );
-    }
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
+    const placeholder = Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.photo_outlined, size: 24, color: Color(0xFF7F8C8D)),
+        SizedBox(height: 2),
+        Text('PHOTO', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold,
+            color: Color(0xFF7F8C8D))),
+      ],
+    );
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: size,
+        height: size,
         color: const Color(0xFFEAECEE),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.photo_outlined, size: 24, color: Color(0xFF7F8C8D)),
-          SizedBox(height: 2),
-          Text(
-            'PHOTO',
-            style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF7F8C8D)),
-          ),
-        ],
+        child: path == null
+            ? placeholder
+            : Image.file(File(path), fit: BoxFit.contain,
+                errorBuilder: (_, error, stack) => placeholder),
       ),
     );
   }

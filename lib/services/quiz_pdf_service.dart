@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -72,7 +73,7 @@ class QuizPdfService {
     final doc = pw.Document();
 
     // Build page list — one content page + question sections.
-    final allWidgets = _buildContent(record);
+    final allWidgets = _buildContent(record, await _loadCrop(record.cropPhotoPath));
 
     doc.addPage(
       pw.MultiPage(
@@ -160,13 +161,39 @@ class QuizPdfService {
   // Content
   // ---------------------------------------------------------------------------
 
-  static List<pw.Widget> _buildContent(ScanRecord record) {
+  static Future<pw.MemoryImage?> _loadCrop(String? path) async {
+    if (path == null) return null;
+    try {
+      final bytes = await File(path).readAsBytes();
+      if (img.decodeImage(bytes) == null) return null;
+      return pw.MemoryImage(bytes);
+    } catch (_) {
+      return null; // Old records may point to missing or unreadable photos.
+    }
+  }
+
+  static List<pw.Widget> _buildContent(ScanRecord record, pw.MemoryImage? crop) {
     final grade = gradeFor(trophies: record.trophies, totalQuestions: record.totalQuestions);
     return [
       // Session metadata table
       _sectionTitle('Informasi Sesi'),
       pw.SizedBox(height: 4),
-      _metadataTable(record, grade),
+      pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Container(
+            width: 120,
+            height: 120,
+            color: PdfColor.fromHex('EAECEE'),
+            alignment: pw.Alignment.center,
+            child: crop == null
+                ? pw.Text('PHOTO', style: pw.TextStyle(fontSize: 10, color: _caption))
+                : pw.Image(crop, width: 120, height: 120, fit: pw.BoxFit.contain),
+          ),
+          pw.SizedBox(width: 12),
+          pw.Expanded(child: _metadataTable(record, grade)),
+        ],
+      ),
       pw.SizedBox(height: 16),
       // Question sections
       for (var i = 0; i < record.questions.length; i++) ...[
