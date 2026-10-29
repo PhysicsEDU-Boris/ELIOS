@@ -112,11 +112,15 @@ Matches: kaleng aluminium, kaleng minuman, kaleng soda, kaleng, aluminium, alumi
 
 ## kardus (paper_family)
 
+Key-check follow-up: `kardus-mc-01` keeps the causal key and uses three causal distractors.
+Proof is in chunk `1.3`, PDF pp. 6–7: p. 7, “Kertas dan karton berasal dari serat tumbuhan sehingga dapat terurai”;
+p. 6, “Sampah organik adalah sampah yang berasal dari makhluk hidup (hewan dan tumbuhan) dan dapat terurai secara alami oleh mikroorganisme dalam jangka waktu tertentu.”
+
 Matches: kardus, kotak kardus, dus, kardus bekas, karton gelombang, cardboard, kertas karton. Never when: susu, jus, minuman, tetra.
 
 | id | lvl | question | correct | wrong 1 | wrong 2 | wrong 3 | quote (proof) | p. | A | E | R |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| mc-01 | Mudah | Mengapa kardus polos tanpa lapisan plastik atau aluminium foil dapat terurai secara alami? | Karena berasal dari serat tumbuhan yang dapat diuraikan mikroorganisme | Sampah B3 yang beracun | Sampah non-organik dari bahan sintetis | Sampah yang mengandung merkuri | Kertas dan karton tanpa lapisan plastik, kardus polos tanpa lapisan aluminium foil, kayu tipis, dan bambu. | 7 | A |  |  |
+| mc-01 | Mudah | Mengapa kardus polos tanpa lapisan plastik atau aluminium foil dapat terurai secara alami? | Karena berasal dari serat tumbuhan yang dapat diuraikan mikroorganisme | Karena mengandung merkuri yang mempercepat penguraian | Karena terbuat dari bahan sintetis yang mudah diuraikan mikroorganisme | Karena lapisan aluminium foil membantu mikroorganisme menguraikannya | Kertas dan karton berasal dari serat tumbuhan sehingga dapat terurai | 7 | A |  |  |
 | mc-02 | Sedang | Mengapa kardus bekas dalam pemilahan sehari-hari sering ditaruh di kelompok anorganik daur ulang? | Karena lebih bernilai bila didaur ulang menjadi kertas baru | Karena kardus tidak dapat terurai | Karena kardus mengandung bahan berbahaya | Karena kardus tertarik magnet | Kertas dan karton berasal dari serat tumbuhan sehingga dapat terurai, tetapi di sistem pemilahan sehari-hari sering ditaruh pada kelompok anorganik daur ulang karena lebih bernilai bila didaur ulang menjadi kertas baru (lihat Bab 4). | 7 | A |  |  |
 | mc-03 | Sedang | Kardus yang berlapis plastik atau berminyak, bagaimana? | Tidak cocok dikomposkan | Lebih cepat terurai daripada kardus polos | Termasuk sampah B3 | Harus dibakar di halaman | Kertas berlapis plastik, berminyak, atau berlaminasi (misalnya kemasan karton minuman, lihat 4.6) tidak cocok dikomposkan. | 7 | A |  |  |
 | mc-04 | Sulit | Mengapa kardus bekas tidak dapat didaur ulang tanpa batas? | Serat selulosanya memendek setiap kali didaur ulang | Tintanya tidak dapat dihilangkan | Kardus harus dilebur pada suhu tinggi seperti logam | Kardus termasuk B3 sehingga tidak boleh didaur ulang | Serat selulosa kertas memendek setiap kali didaur ulang, sehingga kertas dapat didaur ulang sekitar 5-7 kali (Arief, 2016). | 21 | A |  |  |

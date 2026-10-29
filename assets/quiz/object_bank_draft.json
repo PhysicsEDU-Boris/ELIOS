@@ -1137,14 +1137,14 @@
           "question": "Mengapa kardus polos tanpa lapisan plastik atau aluminium foil dapat terurai secara alami?",
           "correct": "Karena berasal dari serat tumbuhan yang dapat diuraikan mikroorganisme",
           "wrong": [
-            "Sampah B3 yang beracun",
-            "Sampah non-organik dari bahan sintetis",
-            "Sampah yang mengandung merkuri"
+            "Karena mengandung merkuri yang mempercepat penguraian",
+            "Karena terbuat dari bahan sintetis yang mudah diuraikan mikroorganisme",
+            "Karena lapisan aluminium foil membantu mikroorganisme menguraikannya"
           ],
           "explanation": "Kardus polos berasal dari serat tumbuhan yang dapat terurai secara alami; dalam pemilahan sehari-hari, kardus bersih lebih bernilai bila didaur ulang menjadi kertas baru.",
           "sourceChunk": "1.3",
           "pdfPage": 7,
-          "quote": "Kertas dan karton tanpa lapisan plastik, kardus polos tanpa lapisan aluminium foil, kayu tipis, dan bambu.",
+          "quote": "Kertas dan karton berasal dari serat tumbuhan sehingga dapat terurai",
           "status": "accepted"
         },
         {
