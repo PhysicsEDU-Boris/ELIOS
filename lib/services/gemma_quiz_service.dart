@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import '../models/scanned_waste.dart';
 import '../providers/app_preferences_provider.dart' show testerBuild;
 import 'device_health.dart';
+import 'frame_source/viewfinder_crop.dart' show downscaleJpeg;
 import 'scan_diagnostics.dart';
 import 'tester_log.dart';
 
@@ -450,9 +451,27 @@ class GemmaQuizService {
   }
 
   /// Prepares and loads in the background so the first quiz is fast.
-  /// Not in the tester build: Gemma loads on the first request or the tester's tap.
-  void warmUp({bool vision = false}) {
-    if (!testerBuild) unawaited(ensureReady(vision: vision));
+  /// The tester build never preloads at launch: Gemma loads on the first request,
+  /// the tester's tap, or (E1) when the phone scan screen opens with
+  /// [scanScreen] and the model file is there.
+  void warmUp({bool vision = false, bool scanScreen = false, bool tester = testerBuild}) {
+    if (!tester) {
+      unawaited(ensureReady(vision: vision));
+    } else if (scanScreen) {
+      unawaited(_warmUpIfPresent(vision));
+    }
+  }
+
+  /// A missing file, a hot phone, a killed run or an already loaded or loading
+  /// model all leave things as they are; ensureReady joins an in-flight load.
+  Future<void> _warmUpIfPresent(bool vision) async {
+    try {
+      if (_blockedNow || (_chat != null && (_loadedWithVision || !vision)) || await modelMissing()) return;
+      TesterLog.instance.log('gemma', 'background load from the scan screen');
+      await ensureReady(vision: vision);
+    } catch (e) {
+      TesterLog.instance.log('gemma', 'background load skipped: $e');
+    }
   }
 
   Future<bool> _initialize(bool vision) async {
@@ -548,16 +567,24 @@ class GemmaQuizService {
     var finished = false;
     Future<void> run() async {
       try {
+        // After the slot is claimed (decision 0003), so the caller is never delayed by it.
+        Uint8List? photo;
+        if (imageBytes != null) {
+          final scaleClock = Stopwatch()..start();
+          photo = await downscaleJpeg(imageBytes, maxSide: identifyMaxSide);
+          TesterLog.instance.log('gemma', 'photo ${imageBytes.length}B -> ${photo.length}B '
+              'in ${scaleClock.elapsedMilliseconds}ms (max side $identifyMaxSide)');
+        }
         if (mockSendExecute != null) {
            await mockBeforeSubmit?.call();
            if (cancelledBeforeSubmit()) return;
            diagnostics?.event('vision_mock');
-           if (imageBytes != null) diagnostics?.image(imageBytes);
-           final res = await mockSendExecute!(prompt, imageBytes: imageBytes, fresh: fresh, isUser: isUser, onToken: onToken);
+           if (photo != null) diagnostics?.image(photo);
+           final res = await mockSendExecute!(prompt, imageBytes: photo, fresh: fresh, isUser: isUser, onToken: onToken);
            if (!completer.isCompleted) completer.complete(res);
            return;
         }
-        if (!await ensureReady(vision: imageBytes != null)) {
+        if (!await ensureReady(vision: photo != null)) {
           if (!completer.isCompleted) completer.complete(null);
           return;
         }
@@ -566,7 +593,7 @@ class GemmaQuizService {
           if (!completer.isCompleted) completer.complete(null);
           return;
         }
-        if (imageBytes != null && !_loadedWithVision) {
+        if (photo != null && !_loadedWithVision) {
           _log('photo request but the image encoder is not available');
           if (!completer.isCompleted) completer.complete(null);
           return;
@@ -574,14 +601,16 @@ class GemmaQuizService {
         if (fresh) await chat.clearHistory();
         if (cancelledBeforeSubmit()) return;
         final sw = Stopwatch()..start();
-        if (imageBytes != null) {
-          diagnostics?.event('vision_submit', {'requestId': '${diagnostics.id}/identify', 'bytes': imageBytes.length});
-          diagnostics?.image(imageBytes);
+        if (photo != null) {
+          diagnostics?.event('vision_submit', {'requestId': '${diagnostics.id}/identify', 'bytes': photo.length});
+          diagnostics?.image(photo);
         }
-        await chat.addQueryChunk(imageBytes == null
+        final queryClock = Stopwatch()..start();
+        await chat.addQueryChunk(photo == null
             ? Message.text(text: prompt, isUser: true)
-            : Message.withImage(text: prompt, imageBytes: imageBytes, isUser: true));
-            
+            : Message.withImage(text: prompt, imageBytes: photo, isUser: true));
+        final queryMs = queryClock.elapsedMilliseconds;
+
         // Awaited to the end (not just listened to), so run() finishing
         // means the native generation is over -- the slot waits for that.
         String fullText = '';
@@ -598,8 +627,8 @@ class GemmaQuizService {
         final total = sw.elapsedMilliseconds;
         _log('generated ${fullText.length} chars (first token: ${firstTokenMs ?? 0}ms, total: ${total}ms)');
         lastFirstTokenMs.value = firstTokenMs;
-        TesterLog.instance.log('gemma', 'request firstTokenMs=${firstTokenMs ?? '-'} totalMs=$total chars=${fullText.length} '
-            'image=${imageBytes != null}');
+        TesterLog.instance.log('gemma', 'request queryMs=$queryMs firstTokenMs=${firstTokenMs ?? '-'} totalMs=$total chars=${fullText.length} '
+            'image=${photo != null}');
         unawaited(TesterLog.instance.snapshot('request'));
         if (!completer.isCompleted) completer.complete(fullText.isEmpty ? null : fullText.trim());
       } catch (e) {
@@ -753,15 +782,21 @@ class GemmaQuizService {
     }
   }
 
+  /// Longest side, in pixels, of the photo sent to Gemma (the History photo
+  /// stays full size). ponytail: 512 is a first guess, not measured on the
+  /// phone yet; compare `[gemma] identify ms=` between builds.
+  @visibleForTesting
+  static int identifyMaxSide = 512;
+
   /// Step 1 of a photo scan: name the object, with nothing else in the
   /// prompt to bias it. Loads the image encoder if needed.
   Future<PhotoIdentification> identifyItem(Uint8List imageBytes, {ScanDiagnostics? diagnostics}) async {
+    // E1: shorter, and no can among the examples (a battery was named a can).
     const prompt =
-        'Lihat foto ini dan sebutkan benda utama di dalamnya secara spesifik, '
-        'misalnya "ponsel", "kardus", "kaleng aluminium", "botol plastik PET", '
-        '"kulit pisang", "baterai", atau "kertas". Jika foto tidak jelas, tulis "tidak jelas". '
-        'Balas HANYA JSON: {"item": "nama benda singkat", "material": "bahan utama", '
-        '"category": "organik" atau "anorganik" atau "B3" atau "residu"}.';
+        'Sebutkan benda utama di foto, spesifik: "ponsel", "baterai", "kardus", '
+        '"botol plastik PET", "kulit pisang", "kertas". Jika tidak jelas tulis "tidak jelas". '
+        'Balas HANYA JSON: {"item": "nama singkat", "material": "bahan", '
+        '"category": "organik"|"anorganik"|"B3"|"residu"}.';
     final timing = diagnostics == null ? null : (Stopwatch()..start());
     final identifyClock = Stopwatch()..start();
     final loadsBefore = _loadCount;

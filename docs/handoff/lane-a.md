@@ -35,3 +35,23 @@ Status: working on one phone, owner accepted it as "fine for now" on 29 Oct. Loc
 - Photo-only identify needs the model; without it the user picks from 4 sample items.
 - Sample sizes are small (one phone, few runs). The 12 GB figure is this phone only.
 - Decision 0040 and CHANGELOG are updated; nothing pushed, no PR, Mac app untouched.
+
+## E1 identify speed, "Bukan ini?" picker, background load (branch `feat/e1-identify-speed`, stacked on A1, draft PR base `feat/a1-android-test-apk`)
+
+Decision 0041. Status: code and tests done; NO phone was connected, so no timing was measured on a device.
+
+### What changed
+- Identify: photo capped at 512 px long side for Gemma only (History keeps the full crop); shorter prompt; "kaleng aluminium" removed from the examples. The resize is inside `_executeSend` after the slot is claimed (an earlier version awaited it before `_send` and broke the single-flight tests of decision 0003).
+- Log: `[gemma] photo A B -> C B in N ms (max side 512)`, `request queryMs=... firstTokenMs=...`. Compare these with the A1 numbers above.
+- "Bukan ini?" chip beside "Terdeteksi": 13 bank objects, quiz restarts for the pick, photo stays the History photo, B3 pick shows the hazard card. Available until the first question is answered.
+- Background load: `warmUp(scanScreen: true)` from the phone scan screen, tester build, only when the model file exists and Gemma is not paused or killed. No launch preload.
+
+### Verified here
+- New `test/e1_identify_test.dart` (10 tests); break-checked: old warm-up, old identify (full photo, can prompt) and a disabled `correctItem` each fail their test.
+- `flutter analyze` and secret scan clean; full-suite result in the PR description.
+
+### Not measured / open
+- Identify seconds on the phone. The crop is small already, so the 512 cap may do little; if `photo A -> B` has A = B and identify ms is unchanged, the vision encoder is the cost.
+- Whether dropping the can example stops battery-as-can: needs a few scans of small objects.
+- Background load vs. a scan started during the load (it should wait, not start a second load): covered by the single-flight test, not seen on a device.
+- Test steps on the phone: install the new APK, push no model (already there), open the scan screen and watch the state change to Memuat then Siap before pressing the shutter; scan a battery; tap "Bukan ini?"; pull `elio_tester.log` and read the lines above.

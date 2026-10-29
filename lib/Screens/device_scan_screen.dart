@@ -51,7 +51,7 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
     });
     // No robot video here, so it's safe to load the model (with the image
     // encoder, since scans are photos) while the user frames the shot.
-    GemmaQuizService.instance.warmUp(vision: true);
+    GemmaQuizService.instance.warmUp(vision: true, scanScreen: true);
     _source.initialize();
   }
 

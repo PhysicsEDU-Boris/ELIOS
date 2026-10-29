@@ -40,3 +40,4 @@
 - Back up and read-verify owner records before any test; prove a separate test store is active before interacting. Never seed or reset the owner profile. Preserve the unresolved original-record incident.
 - Reuse the signed retained app, verified model store and local build cache. Test MCQ explanation → next question, essay rubric during live frames, trophy math, relaunch and complete native PDF. No physical robot or recipient selection.
 - A1 Android tester APK: see `docs/handoff/lane-a.md` and decision 0040.
+- E1 (draft PR on `feat/a1-android-test-apk`): faster identify, "Bukan ini?" picker, background Gemma load; decision 0041, notes in `docs/handoff/lane-a.md`. Phone timings not measured.
