@@ -795,6 +795,7 @@ class GemmaQuizService {
       );
     }
     _log('photo identified as "$item"');
+    TesterLog.instance.log('gemma', 'identified item="$item" material="${map?['material']}" category="${map?['category']}" photo=${imageBytes.length}B');
     return PhotoIdentification(
       item: item,
       material: map?['material'] is String ? (map!['material'] as String).trim() : null,

@@ -1,6 +1,6 @@
 # 0040: Android tester build (A1)
 
-- Status: Accepted (app side; phone numbers not yet measured)
+- Status: Accepted (measured on one phone, 29 Oct; see docs/handoff/lane-a.md)
 - Date: 2026-10-29
 - Amends: 0018 (the question source switch was debug-only; a tester build now shows it too).
 - Code: `lib/providers/app_preferences_provider.dart` (`testerBuild`), `lib/services/gemma_quiz_service.dart`,
