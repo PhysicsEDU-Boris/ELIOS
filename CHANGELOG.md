@@ -12,6 +12,7 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- U4b native acceptance: clarify that keyTerms is an integer score, and include essay questions in the completion-message denominator.
 - U4b essay grading: strict Gemma JSON parsing for the Accuracy /4, Key terms /3,
   Completeness /2, Clarity /1 rubric; consistent totals drive trophies, saved review,
   and PDF export, with score-only or pending fallback and no generated rubric rows.

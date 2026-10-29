@@ -984,8 +984,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       cropBytes: _cropBytes,
     );
     final skipped = state.skippedCount > 0 ? ' ${state.skippedCount} soal dilewati.' : '';
-    _appendAiReply('Sesi selesai! Pilihan ganda benar: '
-        '${state.correctCount} dari ${state.mcAnswered}.$skipped Scan sampah lain untuk soal baru.');
+    _appendAiReply('Sesi selesai! Jawaban benar: '
+        '${state.correctCount} dari ${state.totalQuestions}.$skipped Scan sampah lain untuk soal baru.');
   }
 
   void logRescanTapped() {

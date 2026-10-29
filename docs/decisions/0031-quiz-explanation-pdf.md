@@ -35,6 +35,7 @@ Students need immediate pedagogical reasoning and educational context immediatel
 - Essay explanations show student response, score out of 10, summary feedback, and scoring breakdown rubric table (`Table 1. Scoring breakdown`).
 - When graded, score out of 10 contributes directly to trophies per decision 0028.
 - If grading is unavailable, feedback is clearly labeled as awaiting evaluation rather than fabricating authoritative scores.
+- Native acceptance found Gemma can return a word list for `keyTerms`; the prompt explicitly requires its integer score. Such lists remain score-only, never converted into invented scores. Session completion counts essay questions as well as multiple-choice questions.
 - U4b uses Gemma's JSON rubric: Accuracy /4, Key terms /3, Completeness /2, Clarity /1. The integer total must be 0–10 and equal the four integer criterion scores. Invalid or inconsistent grading stays pending; a valid total without a complete valid rubric is score-only. No synthetic rubric rows or AI/source attribution are displayed.
 
 ### 4. Scan History Integration

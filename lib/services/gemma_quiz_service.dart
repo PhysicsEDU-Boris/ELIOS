@@ -795,6 +795,8 @@ class GemmaQuizService {
         'keyTerms (maksimum 3), completeness (maksimum 2), clarity (maksimum 1), '
         'dan total (jumlah keempat nilai, maksimum 10), serta string feedback singkat '
         'dan string improvement berisi satu saran perbaikan. Jangan menambah markdown.\n'
+        'Kelima skor wajib berupa angka bulat. keyTerms adalah skor 0 sampai 3, bukan daftar kata.\n'
+        'Gunakan tepat kunci accuracy, keyTerms, completeness, clarity, total, feedback, improvement.\n'
         'Soal essay: "$question"\n'
         '${expectedPoints.isEmpty ? '' : 'Poin jawaban yang diharapkan: $expectedPoints\n'}'
         'Jawaban mahasiswa: "$answer"';

@@ -38,6 +38,11 @@ void main() {
       )!;
       expect(grade.score, 7);
       expect(grade.rubricRows, isEmpty);
+      final wordList = EssayGrade.parse(
+        '{"accuracy":4,"keyTerms":["pilah","cuci"],"completeness":1,"clarity":1,"total":8}',
+      )!;
+      expect(wordList.score, 8);
+      expect(wordList.rubricRows, isEmpty);
     });
 
     test('rejects malformed replies and out-of-range totals or criteria', () {
