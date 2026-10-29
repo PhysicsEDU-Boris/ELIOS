@@ -141,6 +141,8 @@ void main() {
       expect(shown.map((q) => q.bankId).take(4), ['botol_plastik-mc-01', 'botol_plastik-mc-02', 'botol_plastik-mc-03',
         'botol_plastik-mc-04']);
       expect(shown.last.bankId, startsWith('plastic-mc-'));
+      expect(shown.last.question,
+          'Kemasan plastik bekas sulit terurai di lingkungan. Sifat bahan apa yang menyebabkan hal itu?');
       expect(shown.map((q) => q.question).toSet(), hasLength(5));
       expect(prompts, isEmpty, reason: 'no request of any kind for a label scan');
     });

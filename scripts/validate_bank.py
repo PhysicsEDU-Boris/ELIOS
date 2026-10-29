@@ -40,7 +40,7 @@ TETRA_BANNED = (r'\d+\s*%', 'Tetra Pak percentages (approximate, company-sourced
 PAPER_FLAT = (r'\b(kertas|karton|kardus)\b (adalah|termasuk|merupakan) (sampah )?anorganik',
               'paper/cardboard stated flatly as anorganik')
 # A question reads as a question about the object, not about a text the student never saw.
-SOURCE_WORDING = r'kutipan|passage|modul kuliah'
+SOURCE_WORDING = r'kutipan|passage|menurut modul|modul kuliah'
 UNIT = re.compile(r'\d+(?:[.,]\d+)?(?:\s*-\s*\d+(?:[.,]\d+)?)?\s*(°C|%|kWh|MJ|J\b|g/cm3|mg/kg|atm|kali\b|tahun\b|hari\b|menit\b|kg\b|ton\b)')
 OBJECT_MIN_MC, OBJECT_ESSAYS = 3, 1
 
@@ -173,7 +173,7 @@ def validate_objects(obank, chunks):
             if item.get('id') in seen_ids:
                 errors.append(f'{item.get("id")}: duplicate id')
             seen_ids.add(item.get('id'))
-            if item.get('object') != name or item.get('difficulty') not in DIFFICULTIES or item.get('status') != 'draft':
+            if item.get('object') != name or item.get('difficulty') not in DIFFICULTIES or item.get('status') not in ('draft', 'accepted'):
                 errors.append(f'{item.get("id")}: bad object, difficulty or status')
             errors += check_item({**item, 'pool': o.get('pool')}, chunks, mq)
         mcs = [i for i in items if i.get('type') == 'mc']
@@ -202,7 +202,7 @@ def validate(bank, chunks, labels):
         if iid in seen:
             errors.append(f'{iid}: duplicate id')
         seen.add(iid)
-        if item.get('pool') not in POOLS or item.get('difficulty') not in DIFFICULTIES or item.get('status') != 'draft':
+        if item.get('pool') not in POOLS or item.get('difficulty') not in DIFFICULTIES or item.get('status') not in ('draft', 'accepted'):
             errors.append(f'{iid}: bad pool, difficulty or status')
         errors += check_item(item, chunks, module_questions)
 

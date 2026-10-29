@@ -1,5 +1,5 @@
 {
-  "status": "draft",
+  "status": "accepted",
   "schemaNote": "decision 0017: per-object questions; mc follows decision 0013 (correct + wrong[3]); every quote is verbatim in its sourceChunk text or in one of its PDF-verified table rows (assets/module/module_chunks.json)",
   "chunksFile": "assets/module/module_chunks.json",
   "objects": [
@@ -34,7 +34,7 @@
           "sourceChunk": "1.4",
           "pdfPage": 7,
           "quote": "Perangkat elektronik rusak (e-waste) mengandung logam, tetapi juga mengandung bahan berbahaya sehingga dibahas sebagai sampah B3 di Bab 2.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "ponsel-mc-02",
@@ -52,7 +52,7 @@
           "sourceChunk": "4.7",
           "pdfPage": 22,
           "quote": "Serahkan ke titik pengumpulan e-waste; hapus data pribadi lebih dulu",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "ponsel-mc-03",
@@ -70,7 +70,7 @@
           "sourceChunk": "2.7",
           "pdfPage": 14,
           "quote": "Baterai rusak atau tertekan dapat terbakar (thermal runaway); sering memicu kebakaran di truk sampah dan TPA.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "ponsel-mc-04",
@@ -88,7 +88,7 @@
           "sourceChunk": "4.7",
           "pdfPage": 22,
           "quote": "Tembaga, aluminium, emas, perak dan logam lain",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "ponsel-essay-01",
@@ -124,7 +124,7 @@
               "quote": "B3 yang terbuang bersama sampah biasa menumpuk di TPA, lalu lindi (cairan rembesan) membawa logam berat ke tanah dan air tanah."
             }
           ],
-          "status": "draft"
+          "status": "accepted"
         }
       ]
     },
@@ -156,7 +156,7 @@
           "sourceChunk": "4.7",
           "pdfPage": 22,
           "quote": "Serahkan ke titik pengumpulan e-waste; hapus data pribadi lebih dulu",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "laptop-mc-02",
@@ -174,7 +174,7 @@
           "sourceChunk": "2.7",
           "pdfPage": 14,
           "quote": "Pembakaran terbuka sampah bercampur B3 melepas asap beracun, logam berat, dan dioksin ke udara.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "laptop-mc-03",
@@ -192,14 +192,14 @@
           "sourceChunk": "2.6",
           "pdfPage": 13,
           "quote": "Timbal, merkuri, kadmium, bahan penghambat api, baterai di dalamnya.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "laptop-mc-04",
           "object": "laptop",
           "type": "mc",
           "difficulty": "Sulit",
-          "question": "Seorang teknisi membakar kabel laptop bekas dan merendam papan sirkuitnya dengan asam untuk mengambil logamnya. Bagaimana modul menilai cara ini?",
+          "question": "Seorang teknisi membakar kabel laptop bekas dan merendam papan sirkuitnya dengan asam untuk mengambil logamnya. Mengapa cara ini berbahaya?",
           "correct": "Sangat berbahaya bagi pekerja dan lingkungan; daur ulang B3 hanya boleh oleh fasilitas berizin",
           "wrong": [
             "Dianjurkan karena termasuk recycle dalam prinsip 3R",
@@ -210,7 +210,7 @@
           "sourceChunk": "2.9",
           "pdfPage": 15,
           "quote": "Daur ulang e-waste secara informal (membakar kabel, merendam papan sirkuit dengan asam) sangat berbahaya bagi pekerja dan lingkungan.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "laptop-essay-01",
@@ -246,7 +246,7 @@
               "quote": "Daur ulang e-waste secara informal (membakar kabel, merendam papan sirkuit dengan asam) sangat berbahaya bagi pekerja dan lingkungan."
             }
           ],
-          "status": "draft"
+          "status": "accepted"
         }
       ]
     },
@@ -288,14 +288,14 @@
           "sourceChunk": "2.6",
           "pdfPage": 13,
           "quote": "Elektronik rusak (e-waste): ponsel, charger, papan sirkuit, TV — Zat atau bahaya utama: Timbal, merkuri, kadmium, bahan penghambat api, baterai di dalamnya — Karakteristik terkait: Beracun",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "perangkat_elektronik-mc-02",
           "object": "perangkat_elektronik",
           "type": "mc",
           "difficulty": "Sedang",
-          "question": "Karakteristik B3 apa yang dikaitkan modul dengan perangkat elektronik rusak?",
+          "question": "Karakteristik B3 apa yang dimiliki perangkat elektronik rusak?",
           "correct": "Beracun",
           "wrong": [
             "Infeksius",
@@ -306,7 +306,7 @@
           "sourceChunk": "2.6",
           "pdfPage": 13,
           "quote": "Elektronik rusak (e-waste): ponsel, charger, papan sirkuit, TV — Zat atau bahaya utama: Timbal, merkuri, kadmium, bahan penghambat api, baterai di dalamnya — Karakteristik terkait: Beracun",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "perangkat_elektronik-mc-03",
@@ -324,7 +324,7 @@
           "sourceChunk": "2.7",
           "pdfPage": 14,
           "quote": "B3 yang terbuang bersama sampah biasa menumpuk di TPA, lalu lindi (cairan rembesan) membawa logam berat ke tanah dan air tanah.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "perangkat_elektronik-mc-04",
@@ -342,14 +342,14 @@
           "sourceChunk": "2.9",
           "pdfPage": 15,
           "quote": "2. Pakai ulang (reuse) — Tindakan: Perpanjang umur pakai — Contoh: Perbaiki elektronik, gunakan baterai isi ulang berulang kali, berbagi sisa cat yang masih layak.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "perangkat_elektronik-essay-01",
           "object": "perangkat_elektronik",
           "type": "essay",
           "difficulty": "Sulit",
-          "question": "Jelaskan urutan pengelolaan yang dianjurkan modul untuk perangkat elektronik rusak, dari mencegah sampai menimbun.",
+          "question": "Jelaskan urutan pengelolaan yang dianjurkan untuk perangkat elektronik rusak, dari mencegah sampai menimbun.",
           "sourceChunk": "2.9",
           "pdfPage": 15,
           "rubricPoints": [
@@ -378,7 +378,7 @@
               "quote": "5. Penimbunan terkontrol — Tindakan: Pilihan terakhir di fasilitas khusus — Contoh: Landfill khusus B3 dengan lapisan pelindung dan pemantauan."
             }
           ],
-          "status": "draft"
+          "status": "accepted"
         }
       ]
     },
@@ -412,7 +412,7 @@
           "sourceChunk": "2.6",
           "pdfPage": 13,
           "quote": "Kumpulkan dalam wadah kering tertutup; tutup kutub baterai litium dengan selotip; jangan dibakar atau dibongkar.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "baterai-mc-02",
@@ -430,14 +430,14 @@
           "sourceChunk": "2.6",
           "pdfPage": 13,
           "quote": "Logam berat (mis. kadmium pada Ni-Cd), elektrolit; baterai litium dapat terbakar jika rusak atau korslet.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "baterai-mc-03",
           "object": "baterai",
           "type": "mc",
           "difficulty": "Sedang",
-          "question": "Karakteristik B3 apa yang dimiliki baterai bekas menurut modul?",
+          "question": "Karakteristik B3 apa yang dimiliki baterai bekas?",
           "correct": "Beracun, korosif, dan mudah menyala",
           "wrong": [
             "Infeksius saja",
@@ -448,7 +448,7 @@
           "sourceChunk": "2.6",
           "pdfPage": 13,
           "quote": "Baterai bekas (alkaline, Ni-Cd, litium) — Zat atau bahaya utama: Logam berat (mis. kadmium pada Ni-Cd), elektrolit; baterai litium dapat terbakar jika rusak atau korslet — Karakteristik terkait: Beracun, korosif, mudah menyala",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "baterai-mc-04",
@@ -466,7 +466,7 @@
           "sourceChunk": "4.7",
           "pdfPage": 22,
           "quote": "Logam seperti nikel, kobalt, mangan, seng (tergantung jenis)",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "baterai-essay-01",
@@ -502,7 +502,7 @@
               "quote": "Kumpulkan dalam wadah kering tertutup dan serahkan ke titik pengumpulan B3 atau e-waste, dinas lingkungan hidup, atau program take-back produsen."
             }
           ],
-          "status": "draft"
+          "status": "accepted"
         }
       ],
       "note": "Aki kendaraan has its own row in 2.6/4.7 (hand to a workshop); not added as an object yet (not in the logs)."
@@ -538,14 +538,14 @@
           "sourceChunk": "1.4",
           "pdfPage": 7,
           "quote": "Lampu bohlam pijar biasa terbuat dari kaca dan kawat logam, tetapi lampu TL, neon, dan lampu hemat energi (CFL) mengandung merkuri sehingga termasuk sampah B3 (Bab 2).",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "lampu_tl_cfl-mc-02",
           "object": "lampu_tl_cfl",
           "type": "mc",
           "difficulty": "Sedang",
-          "question": "Lampu mana yang menurut modul tidak termasuk sampah B3?",
+          "question": "Lampu mana yang tidak termasuk sampah B3?",
           "correct": "Lampu bohlam pijar biasa",
           "wrong": [
             "Lampu TL",
@@ -556,7 +556,7 @@
           "sourceChunk": "1.4",
           "pdfPage": 7,
           "quote": "Lampu bohlam pijar biasa terbuat dari kaca dan kawat logam, tetapi lampu TL, neon, dan lampu hemat energi (CFL) mengandung merkuri sehingga termasuk sampah B3 (Bab 2).",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "lampu_tl_cfl-mc-03",
@@ -574,14 +574,14 @@
           "sourceChunk": "2.6",
           "pdfPage": 13,
           "quote": "Simpan utuh dalam kemasan asli atau kardus; jangan dibuang bersama sampah biasa.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "lampu_tl_cfl-mc-04",
           "object": "lampu_tl_cfl",
           "type": "mc",
           "difficulty": "Sulit",
-          "question": "Lampu CFL pecah di kamar kos. Langkah pertama mana yang sesuai modul?",
+          "question": "Lampu CFL pecah di kamar kos. Langkah pertama mana yang aman?",
           "correct": "Menjauhkan orang dan hewan, membuka jendela, dan keluar ruangan sekitar 10-15 menit",
           "wrong": [
             "Menyapu pecahan lalu membuangnya ke sampah kaca biasa",
@@ -592,7 +592,7 @@
           "sourceChunk": "2.8",
           "pdfPage": 15,
           "quote": "Jauhkan anak-anak dan hewan peliharaan; buka jendela dan keluar dari ruangan sekitar 10 sampai 15 menit.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "lampu_tl_cfl-essay-01",
@@ -628,7 +628,7 @@
               "quote": "3. Masukkan semua pecahan ke wadah tertutup (misalnya toples kaca bertutup) dan perlakukan sebagai sampah B3."
             }
           ],
-          "status": "draft"
+          "status": "accepted"
         }
       ],
       "note": "\"lampu\" alone also maps here; question 2 covers the incandescent exception. LED is mentioned only in 2.9 (mercury-free)."
@@ -663,7 +663,7 @@
           "sourceChunk": "1.4",
           "pdfPage": 7,
           "quote": "Botol plastik minuman (PET), kantong kresek, sedotan dan peralatan makan sekali pakai.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "botol_plastik-mc-02",
@@ -681,7 +681,7 @@
           "sourceChunk": "4.2",
           "pdfPage": 20,
           "quote": "1. Pengumpulan dan pemilahan berdasarkan kode jenis resin (1 = PET, 2 = HDPE, dan seterusnya).",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "botol_plastik-mc-03",
@@ -699,7 +699,7 @@
           "sourceChunk": "6.1",
           "pdfPage": 26,
           "quote": "Jawab: HDPE (0,95 < 1,00) mengapung dan diambil dari permukaan; PET (1,38 > 1,00) tenggelam dan diambil dari dasar.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "botol_plastik-mc-04",
@@ -717,7 +717,7 @@
           "sourceChunk": "4.2",
           "pdfPage": 20,
           "quote": "4. Peleburan pada suhu tinggi (sekitar 200-300°C).",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "botol_plastik-essay-01",
@@ -753,7 +753,7 @@
               "quote": "5. Pembentukan pelet plastik daur ulang."
             }
           ],
-          "status": "draft"
+          "status": "accepted"
         }
       ],
       "notIf": [
@@ -789,7 +789,7 @@
           "sourceChunk": "1.4",
           "pdfPage": 7,
           "quote": "Sampah non-organik berasal dari bahan sintetis atau bahan anorganis yang tidak dapat atau sangat sulit diuraikan mikroorganisme.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "gelas_plastik-mc-02",
@@ -807,14 +807,14 @@
           "sourceChunk": "4.1",
           "pdfPage": 20,
           "quote": "Urutan menunjukkan prioritas: Reduce lebih utama daripada Reuse, dan Reuse lebih utama daripada Recycle.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "gelas_plastik-mc-03",
           "object": "gelas_plastik",
           "type": "mc",
           "difficulty": "Sulit",
-          "question": "Tindakan individu mana yang dianjurkan modul terkait gelas plastik sekali pakai?",
+          "question": "Tindakan individu mana yang dianjurkan terkait gelas plastik sekali pakai?",
           "correct": "Menghindari plastik sekali pakai dan memilih produk ramah lingkungan",
           "wrong": [
             "Membuang gelas plastik bersama sampah organik",
@@ -825,7 +825,7 @@
           "sourceChunk": "5.2",
           "pdfPage": 24,
           "quote": "Menghindari plastik sekali pakai dan memilih produk ramah lingkungan.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "gelas_plastik-essay-01",
@@ -855,7 +855,7 @@
               "quote": "Menghindari plastik sekali pakai dan memilih produk ramah lingkungan."
             }
           ],
-          "status": "draft"
+          "status": "accepted"
         }
       ],
       "note": "Thin: the module names \"gelas sekali pakai\" only in the 4.2 resin table (not converted), so 3 MC."
@@ -891,7 +891,7 @@
           "sourceChunk": "1.6",
           "pdfPage": 8,
           "quote": "Non-organik (anorganik) — Ciri utama: Sintetis atau mineral, tidak mudah terurai — Contoh: Botol plastik, kaleng, kaca",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "toples_kaca-mc-02",
@@ -909,7 +909,7 @@
           "sourceChunk": "4.5",
           "pdfPage": 21,
           "quote": "Kaca: dipilah menurut warna, dicuci, dihancurkan (cullet), dilebur, dan dibentuk ulang.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "toples_kaca-mc-03",
@@ -927,7 +927,7 @@
           "sourceChunk": "4.5",
           "pdfPage": 21,
           "quote": "Kaca dapat didaur ulang berkali-kali tanpa kehilangan mutu; botol utuh lebih baik dipakai ulang (reuse).",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "toples_kaca-mc-04",
@@ -945,7 +945,7 @@
           "sourceChunk": "4.5",
           "pdfPage": 21,
           "quote": "Kaca dapat didaur ulang berkali-kali tanpa kehilangan mutu; botol utuh lebih baik dipakai ulang (reuse).",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "toples_kaca-essay-01",
@@ -975,7 +975,7 @@
               "quote": "Urutan menunjukkan prioritas: Reduce lebih utama daripada Reuse, dan Reuse lebih utama daripada Recycle."
             }
           ],
-          "status": "draft"
+          "status": "accepted"
         }
       ],
       "notIf": [
@@ -1015,7 +1015,7 @@
           "sourceChunk": "4.4",
           "pdfPage": 21,
           "quote": "Daur ulang logam, khususnya aluminium, sangat hemat energi: mendaur ulang aluminium hanya memerlukan sekitar 5% energi dibanding membuatnya dari bijih bauksit (Tchobanoglous dkk., 1993).",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kaleng_aluminium-mc-02",
@@ -1033,7 +1033,7 @@
           "sourceChunk": "6.8",
           "pdfPage": 27,
           "quote": "Logam feromagnetik (besi, baja) tertarik magnet, sedangkan aluminium, tembaga, kaca, dan plastik tidak.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kaleng_aluminium-mc-03",
@@ -1051,7 +1051,7 @@
           "sourceChunk": "4.4",
           "pdfPage": 21,
           "quote": "3. Peleburan di tanur: aluminium sekitar 660°C, besi sekitar 1538°C.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kaleng_aluminium-mc-04",
@@ -1069,7 +1069,7 @@
           "sourceChunk": "6.2",
           "pdfPage": 26,
           "quote": "Ini hanya energi minimum untuk meleburkan; tanur nyata memerlukan lebih banyak karena rugi panas.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kaleng_aluminium-essay-01",
@@ -1105,7 +1105,7 @@
               "quote": "Logam feromagnetik (besi, baja) tertarik magnet, sedangkan aluminium, tembaga, kaca, dan plastik tidak."
             }
           ],
-          "status": "draft"
+          "status": "accepted"
         }
       ],
       "notIf": [
@@ -1134,18 +1134,18 @@
           "object": "kardus",
           "type": "mc",
           "difficulty": "Mudah",
-          "question": "Kardus polos tanpa lapisan aluminium foil termasuk produk apa menurut modul?",
-          "correct": "Produk organik yang dapat terurai",
+          "question": "Mengapa kardus polos tanpa lapisan plastik atau aluminium foil dapat terurai secara alami?",
+          "correct": "Karena berasal dari serat tumbuhan yang dapat diuraikan mikroorganisme",
           "wrong": [
-            "Sampah B3 yang beracun",
-            "Sampah non-organik dari bahan sintetis",
-            "Sampah yang mengandung merkuri"
+            "Karena mengandung merkuri yang mempercepat penguraian",
+            "Karena terbuat dari bahan sintetis yang mudah diuraikan mikroorganisme",
+            "Karena lapisan aluminium foil membantu mikroorganisme menguraikannya"
           ],
-          "explanation": "Modul memasukkan kardus polos tanpa lapisan aluminium foil ke dalam produk organik yang dapat terurai.",
+          "explanation": "Kardus polos berasal dari serat tumbuhan yang dapat terurai secara alami; dalam pemilahan sehari-hari, kardus bersih lebih bernilai bila didaur ulang menjadi kertas baru.",
           "sourceChunk": "1.3",
           "pdfPage": 7,
-          "quote": "Kertas dan karton tanpa lapisan plastik, kardus polos tanpa lapisan aluminium foil, kayu tipis, dan bambu.",
-          "status": "draft"
+          "quote": "Kertas dan karton berasal dari serat tumbuhan sehingga dapat terurai",
+          "status": "accepted"
         },
         {
           "id": "kardus-mc-02",
@@ -1163,14 +1163,14 @@
           "sourceChunk": "1.3",
           "pdfPage": 7,
           "quote": "Kertas dan karton berasal dari serat tumbuhan sehingga dapat terurai, tetapi di sistem pemilahan sehari-hari sering ditaruh pada kelompok anorganik daur ulang karena lebih bernilai bila didaur ulang menjadi kertas baru (lihat Bab 4).",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kardus-mc-03",
           "object": "kardus",
           "type": "mc",
           "difficulty": "Sedang",
-          "question": "Kardus yang berlapis plastik atau berminyak, bagaimana menurut modul?",
+          "question": "Kardus yang berlapis plastik atau berminyak, bagaimana?",
           "correct": "Tidak cocok dikomposkan",
           "wrong": [
             "Lebih cepat terurai daripada kardus polos",
@@ -1181,7 +1181,7 @@
           "sourceChunk": "1.3",
           "pdfPage": 7,
           "quote": "Kertas berlapis plastik, berminyak, atau berlaminasi (misalnya kemasan karton minuman, lihat 4.6) tidak cocok dikomposkan.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kardus-mc-04",
@@ -1199,7 +1199,7 @@
           "sourceChunk": "4.3",
           "pdfPage": 21,
           "quote": "Serat selulosa kertas memendek setiap kali didaur ulang, sehingga kertas dapat didaur ulang sekitar 5-7 kali (Arief, 2016).",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kardus-essay-01",
@@ -1235,7 +1235,7 @@
               "quote": "Serat selulosa kertas memendek setiap kali didaur ulang, sehingga kertas dapat didaur ulang sekitar 5-7 kali (Arief, 2016)."
             }
           ],
-          "status": "draft"
+          "status": "accepted"
         }
       ],
       "notIf": [
@@ -1275,7 +1275,7 @@
           "sourceChunk": "9.qa",
           "pdfPage": 34,
           "quote": "Kertas berasal dari serat tumbuhan sehingga bersifat dapat terurai, namun dalam pemilahan sehari-hari sering dimasukkan ke anorganik daur ulang karena lebih bernilai didaur ulang menjadi kertas.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kertas-mc-02",
@@ -1293,14 +1293,14 @@
           "sourceChunk": "4.3",
           "pdfPage": 21,
           "quote": "3. Penghilangan tinta (de-inking).",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kertas-mc-03",
           "object": "kertas",
           "type": "mc",
           "difficulty": "Sedang",
-          "question": "Sekitar berapa kali kertas bekas dapat didaur ulang menurut modul?",
+          "question": "Sekitar berapa kali kertas bekas dapat didaur ulang?",
           "correct": "Sekitar 5-7 kali",
           "wrong": [
             "Sekitar 1 kali",
@@ -1311,14 +1311,14 @@
           "sourceChunk": "4.3",
           "pdfPage": 21,
           "quote": "Serat selulosa kertas memendek setiap kali didaur ulang, sehingga kertas dapat didaur ulang sekitar 5-7 kali (Arief, 2016).",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kertas-mc-04",
           "object": "kertas",
           "type": "mc",
           "difficulty": "Sulit",
-          "question": "Kertas bekas pembungkus gorengan yang berminyak, bagaimana pengolahannya menurut modul?",
+          "question": "Kertas bekas pembungkus gorengan yang berminyak, bagaimana pengolahannya?",
           "correct": "Tidak cocok dikomposkan, berbeda dengan kertas polos",
           "wrong": [
             "Cocok untuk vermikompos karena minyak membantu cacing",
@@ -1329,7 +1329,7 @@
           "sourceChunk": "1.3",
           "pdfPage": 7,
           "quote": "Kertas berlapis plastik, berminyak, atau berlaminasi (misalnya kemasan karton minuman, lihat 4.6) tidak cocok dikomposkan.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kertas-essay-01",
@@ -1359,7 +1359,7 @@
               "quote": "3. Penghilangan tinta (de-inking)."
             }
           ],
-          "status": "draft"
+          "status": "accepted"
         }
       ],
       "notIf": [
@@ -1405,7 +1405,7 @@
           "sourceChunk": "1.3",
           "pdfPage": 6,
           "quote": "Kulit buah: kulit pisang, kulit jeruk, kulit melon.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kulit_pisang-mc-02",
@@ -1423,7 +1423,7 @@
           "sourceChunk": "3.4",
           "pdfPage": 18,
           "quote": "Hasil akhirnya kascing (bekas cacing) yang kaya unsur hara dan lebih cepat diserap tanaman (Damanhuri dan Padmi, 2010, hal. 92-97).",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kulit_pisang-mc-03",
@@ -1441,7 +1441,7 @@
           "sourceChunk": "3.4",
           "pdfPage": 18,
           "quote": "Hindari: daging, produk susu, makanan berminyak, dan bahan berbau menyengat.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kulit_pisang-mc-04",
@@ -1459,7 +1459,7 @@
           "sourceChunk": "3.3",
           "pdfPage": 18,
           "quote": "Biogas dihasilkan dari fermentasi anaerobik bahan organik oleh bakteri metanogen.",
-          "status": "draft"
+          "status": "accepted"
         },
         {
           "id": "kulit_pisang-essay-01",
@@ -1489,7 +1489,7 @@
               "quote": "Biogas dihasilkan dari fermentasi anaerobik bahan organik oleh bakteri metanogen."
             }
           ],
-          "status": "draft"
+          "status": "accepted"
         }
       ]
     },
@@ -1524,7 +1524,7 @@
           "sourceChunk": "4.6",
           "pdfPage": 21,
           "quote": "Kemasan karton minuman, misalnya kotak susu atau jus (sering dikenal dengan merek Tetra Pak), adalah kemasan berlapis (multilayer).",
-          "status": "draft",
+          "status": "accepted",
           "sourceQuality": "company_sourced"
         },
         {
@@ -1543,7 +1543,7 @@
           "sourceChunk": "4.6",
           "pdfPage": 22,
           "quote": "Kemasan karton minuman bekas termasuk sampah non-organik yang dapat didaur ulang meskipun sebagian besar bahannya kertas, karena berlapis plastik dan aluminium sehingga tidak dapat dikomposkan.",
-          "status": "draft",
+          "status": "accepted",
           "sourceQuality": "company_sourced"
         },
         {
@@ -1562,7 +1562,7 @@
           "sourceChunk": "4.6",
           "pdfPage": 21,
           "quote": "Lapisan plastik dan aluminium menjaga isi minuman tetap awet dan tidak bocor.",
-          "status": "draft",
+          "status": "accepted",
           "sourceQuality": "company_sourced"
         },
         {
@@ -1581,7 +1581,7 @@
           "sourceChunk": "4.6",
           "pdfPage": 22,
           "quote": "2. Pulping: karton dicampur dengan air di mesin pulper sehingga serat kertas terlepas dari lapisan plastik dan aluminium.",
-          "status": "draft",
+          "status": "accepted",
           "sourceQuality": "company_sourced"
         },
         {
@@ -1589,7 +1589,7 @@
           "object": "kotak_susu",
           "type": "essay",
           "difficulty": "Sulit",
-          "question": "Uraikan alur daur ulang kotak susu bekas seperti yang dikutip modul dari Tetra Pak Indonesia.",
+          "question": "Uraikan alur daur ulang kotak susu bekas di fasilitas pemisahan serat dan lapisan PolyAl.",
           "sourceChunk": "4.6",
           "pdfPage": 22,
           "rubricPoints": [
@@ -1618,7 +1618,7 @@
               "quote": "5. Produk: serat kertas menjadi produk kertas; PolyAl menjadi antara lain lembar atap gelombang."
             }
           ],
-          "status": "draft",
+          "status": "accepted",
           "sourceQuality": "company_sourced"
         }
       ],

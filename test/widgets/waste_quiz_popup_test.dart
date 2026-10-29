@@ -129,6 +129,13 @@ Future<void> _pump(WidgetTester tester, Size size, WasteQuizUiState state, {doub
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
+  testWidgets('level chip names the session while bank items start Mudah-first', (tester) async {
+    await _pump(tester, const Size(760, 360), WasteQuizUiState(
+      phase: WasteQuizPhase.active, scan: _scan, question: _mcQuestion, difficulty: QuizDifficulty.hard,
+    ));
+    expect(find.text('Soal 1/5 · Sesi Sulit'), findsOneWidget);
+  });
+
   testWidgets('identification shows Looking and no quiz answers', (tester) async {
     await _pump(tester, const Size(760, 360), _states['identifying']!);
     expect(find.text('Looking…'), findsOneWidget);

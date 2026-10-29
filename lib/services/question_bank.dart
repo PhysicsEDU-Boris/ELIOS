@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/services.dart' show rootBundle;
 
 import '../models/scanned_waste.dart';
@@ -148,7 +149,8 @@ class QuestionBank {
 
   /// This session's questions of [type], in serving order: the object's own,
   /// then its pool's (the object's pool when matched). Options are shuffled.
-  List<GeneratedQuestion> questionsFor(ScannedWaste scan, QuizQuestionType type, {Random? random}) {
+  /// Drafts are available only in debug; other statuses are never served.
+  List<GeneratedQuestion> questionsFor(ScannedWaste scan, QuizQuestionType type, {Random? random, bool includeDrafts = kDebugMode}) {
     final rng = random ?? Random();
     final chosen = selection(scan);
     final object = _objects.where((o) => o.name == chosen.object).firstOrNull;
@@ -156,7 +158,8 @@ class QuestionBank {
     final items = [
       ...?object?.items,
       ...?_pools[chosen.pool],
-    ].where((i) => i['type'] == kind);
+    ].where((i) => i['type'] == kind &&
+        (i['status'] == 'accepted' || (kDebugMode && includeDrafts && i['status'] == 'draft')));
     return [for (final i in items) _toQuestion(i, type, rng)];
   }
 
