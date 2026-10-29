@@ -57,7 +57,7 @@ void main() {
       });
       expect(later.frameId, 43);
       final crop = img.decodeJpg(cropDetection((frame, _box))!)!;
-      expect((crop.width, crop.height), (20, 10));
+      expect((crop.width, crop.height), (22, 12));
       expect(crop.getPixel(5, 5).b, greaterThan(240));
       expect(crop.getPixel(5, 5).r, lessThan(10));
       expect(img.decodeImage(frame.bytes)!.getPixel(5, 5).r, 255);
@@ -65,6 +65,35 @@ void main() {
       expect(frame.firmwareSha256, 'test-firmware');
     },
   );
+
+  for (final dimensions in [(80, 160), (160, 80), (2, 1)]) {
+    test('padded $dimensions crop keeps clean pixels at native size and quality 100', () {
+      final source = img.Image(width: dimensions.$1, height: dimensions.$2);
+      for (final pixel in source) {
+        pixel.setRgb(pixel.x % 256, pixel.y % 256, 180);
+      }
+      final frame = CapturedFrame(
+        bytes: _pixels(255, 0, 0),
+        cleanBytes: Uint8List.fromList(img.encodePng(source)),
+        frameId: 5, detectionFrameId: 5,
+        width: source.width, height: source.height, timestamp: DateTime(2026),
+      );
+      final crop = prepareDetectionCrop((frame, TrackedDetection(
+        label: 'Plastic', x: source.width / 2, y: source.height / 2,
+        w: source.width / 2, h: source.height / 2,
+      )));
+      final details = crop.details;
+      final expected = img.copyCrop(source,
+        x: details['left'] as int, y: details['top'] as int,
+        width: details['cropWidth'] as int, height: details['cropHeight'] as int);
+      expect(crop.bytes, orderedEquals(img.encodeJpg(expected, quality: 100)));
+      final decoded = img.decodeJpg(crop.bytes!)!;
+      expect(decoded.width, lessThanOrEqualTo(source.width));
+      expect(decoded.height, lessThanOrEqualTo(source.height));
+      expect(decoded.width, greaterThan(source.width / 2));
+      expect(decoded.height, greaterThan(source.height / 2));
+    });
+  }
 
   test('legacy firmware keeps preview but cannot supply a vision crop', () {
     final frame = _parse({});

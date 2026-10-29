@@ -939,6 +939,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final sessionTrophies = _recordedQuestions.fold<int>(0, (sum, q) => sum + q.trophies);
 
     String? photoPath;
+    // ponytail: legacy/device crops lack a paired clean frame; keep their bytes until recaptured.
     if (_cropBytes != null) {
       try {
         final dir = await getApplicationDocumentsDirectory();

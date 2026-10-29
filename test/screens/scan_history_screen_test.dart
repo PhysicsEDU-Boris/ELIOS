@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:image/image.dart' as img;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:elio/Screens/scan_history_screen.dart';
@@ -40,6 +41,70 @@ void main() {
         onClose: onClose,
       ),
     );
+  }
+
+  for (final size in [const Size(1366, 768), const Size(770, 553), const Size(390, 844)]) {
+    for (final shape in ['portrait', 'landscape', 'tiny', 'missing', 'unreadable', 'legacy']) {
+      testWidgets('$size $shape crop is contained in list and detail', (tester) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final file = File('${tempDir.path}/$shape.jpg');
+        final dimensions = switch (shape) {
+          'portrait' => (90, 240),
+          'tiny' => (2, 1),
+          _ => (380, 270),
+        };
+        final valid = ['portrait', 'landscape', 'tiny'].contains(shape);
+        if (valid) {
+          file.writeAsBytesSync(img.encodeJpg(img.fill(
+            img.Image(width: dimensions.$1, height: dimensions.$2),
+            color: img.ColorRgb8(40, 100, 180),
+          )));
+        } else if (shape == 'unreadable') {
+          file.writeAsStringSync('overwritten image');
+        }
+        await store.addRecord(ScanRecord(
+          id: 'crop', time: DateTime(2026), itemName: 'Crop item',
+          category: ScanCategory.recyclable,
+          cropPhotoPath: shape == 'legacy' ? null : file.path,
+          questions: const [],
+        ));
+        await tester.runAsync(() async {
+          await tester.pumpWidget(createSubject());
+          if (shape != 'legacy') {
+            await precacheImage(FileImage(file),
+              tester.element(find.byType(ScanHistoryScreen)), onError: (_, stack) {});
+          }
+        });
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        if (valid) {
+          final image = tester.widget<Image>(find.byType(Image).first);
+          expect(image.fit, BoxFit.contain);
+          expect(tester.getSize(find.byType(Image).first), const Size(56, 56));
+          final raw = tester.widgetList<RawImage>(find.byType(RawImage)).first;
+          expect((raw.image!.width, raw.image!.height), dimensions);
+        } else {
+          expect(find.text('PHOTO'), findsWidgets);
+        }
+        await tester.tap(find.byKey(const ValueKey('record_tile_crop')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('detail_list_view')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        if (valid) {
+          final images = tester.widgetList<Image>(find.byType(Image));
+          expect(images.every((image) => image.fit == BoxFit.contain), isTrue);
+          final detailImage = find.descendant(
+            of: find.byKey(const ValueKey('detail_list_view')), matching: find.byType(Image));
+          expect(tester.getSize(detailImage), const Size(180, 180));
+        } else {
+          expect(find.text('PHOTO'), findsWidgets);
+        }
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+    }
   }
 
   group('ScanHistoryScreen empty state', () {
@@ -125,7 +190,9 @@ void main() {
         if (width < 750) {
           final backBtn = find.text('Back to list');
           expect(backBtn, findsOneWidget);
-          // Question details are visible
+          // Scroll past the larger crop and summary to the question details.
+          await tester.drag(find.byKey(const ValueKey('detail_list_view')), const Offset(0, -300));
+          await tester.pumpAndSettle();
           expect(find.text('Which waste category does a used phone belong to?'), findsOneWidget);
           // Tap back to return to list
           await tester.tap(backBtn);

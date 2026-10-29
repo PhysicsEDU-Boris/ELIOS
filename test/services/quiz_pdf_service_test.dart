@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:image/image.dart' as img;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scan_record.dart';
@@ -21,6 +23,72 @@ void main() {
   });
 
   group('QuizPdfService', () {
+    for (final dimensions in [(90, 240), (380, 270), (2, 1)]) {
+      test('PDF embeds native $dimensions crop beside item', () async {
+        final crop = File('${tempDir.path}/crop.jpg');
+        crop.writeAsBytesSync(img.encodeJpg(img.fill(
+          img.Image(width: dimensions.$1, height: dimensions.$2),
+          color: img.ColorRgb8(40, 100, 180),
+        )));
+        final record = ScanRecord(
+          id: 'photo', time: DateTime(2026), itemName: 'Crop item',
+          category: ScanCategory.recyclable, cropPhotoPath: crop.path,
+          questions: const [],
+        );
+        final bytes = await QuizPdfService.generatePdfBytes(record);
+        final pdf = latin1.decode(bytes);
+        expect(pdf, matches(RegExp(r'/Subtype\s*/Image')));
+        expect(pdf, contains('/Width ${dimensions.$1}'));
+        expect(pdf, contains('/Height ${dimensions.$2}'));
+        expect(pdf, contains(latin1.decode(crop.readAsBytesSync())));
+      });
+    }
+
+    test('crop keeps long pending essay paginated and ungraded', () async {
+      final crop = File('${tempDir.path}/crop.jpg')
+        ..writeAsBytesSync(img.encodeJpg(img.Image(width: 380, height: 270)));
+      final record = ScanRecord(
+        id: 'long-pending', time: DateTime(2026), itemName: 'Botol Plastik',
+        category: ScanCategory.recyclable, cropPhotoPath: crop.path,
+        questions: [RecordQuestion(
+          question: 'Jelaskan proses daur ulang plastik.',
+          yourAnswer: '${List.filled(120, "Plastik dipilah, dicuci, dicacah dan diolah kembali.").join(" ")} ESSAY_END',
+          rightAnswer: 'Pilah, cuci, cacah dan proses ulang.',
+          isCorrect: false, isEssay: true,
+        )],
+      );
+      final pdf = latin1.decode(await QuizPdfService.generatePdfBytes(record));
+      expect(RegExp(r'/Type/Page\b').allMatches(pdf).length, greaterThan(1));
+      expect(pdf, matches(RegExp(r'/Subtype\s*/Image')));
+      final content = RegExp(r'stream\n(.*?)\nendstream', dotAll: true)
+          .allMatches(pdf).map((match) {
+        try {
+          return latin1.decode(zlib.decode(latin1.encode(match[1]!)));
+        } catch (_) {
+          return ''; // JPEG streams are not page text.
+        }
+      }).join();
+      final text = RegExp(r'\[\((.*?)\)\]TJ').allMatches(content)
+          .map((match) => match[1]).join(' ');
+      expect('Menunggu penilaian'.allMatches(text), hasLength(2));
+      expect(content, contains('ESSAY_END'));
+    });
+
+    for (final missing in [true, false]) {
+      test('PDF tolerates ${missing ? "missing" : "unreadable"} crop', () async {
+        final crop = File('${tempDir.path}/old.jpg');
+        if (!missing) crop.writeAsStringSync('overwritten image');
+        final record = ScanRecord(
+          id: 'old-photo', time: DateTime(2026), itemName: 'Old item',
+          category: ScanCategory.recyclable, cropPhotoPath: crop.path,
+          questions: const [],
+        );
+        final bytes = await QuizPdfService.generatePdfBytes(record);
+        expect(latin1.decode(bytes), startsWith('%PDF-'));
+        expect(latin1.decode(bytes), isNot(matches(RegExp(r'/Subtype\s*/Image'))));
+      });
+    }
+
     test('generates valid PDF bytes for MCQ record with explanations', () async {
       final record = ScanRecord(
         id: 'test-mcq-1',
@@ -197,8 +265,7 @@ void main() {
     });
 
     test('generates sample PDF report for inspection', () async {
-      final sampleDir = Directory('/tmp/elio_reports');
-      if (!sampleDir.existsSync()) sampleDir.createSync(recursive: true);
+      final sampleDir = tempDir;
 
       final record = ScanRecord(
         id: 'sample-u4-demo',
@@ -278,7 +345,7 @@ void main() {
       final file = File(samplePath);
       expect(file.existsSync(), isTrue);
       expect(file.lengthSync(), greaterThan(2000));
-      // File is left intact at /tmp/elio_reports for report verification
+      // The report is removed with the temporary test directory.
     });
   });
 }

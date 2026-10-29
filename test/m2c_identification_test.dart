@@ -75,10 +75,10 @@ void main() {
     () {
       final frame = _frame();
       final cropped = img.decodeImage(cropDetection((frame, _box))!)!;
-      expect((cropped.width, cropped.height), (20, 10));
+      expect((cropped.width, cropped.height), (22, 12));
       const edge = TrackedDetection(label: 'Plastic', x: 0, y: 0, w: 40, h: 20);
       final clipped = img.decodeImage(cropDetection((frame, edge))!)!;
-      expect((clipped.width, clipped.height), (10, 5));
+      expect((clipped.width, clipped.height), (11, 6));
       expect(cropDetection((_frame(width: 0), _box)), isNull);
       expect(cropDetection((_frame(bytes: Uint8List(0)), _box)), isNull);
       for (final box in const [
@@ -146,7 +146,7 @@ void main() {
       expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.identifying);
       await _until(() => images.isNotEmpty);
       final crop = img.decodeImage(images.single!)!;
-      expect((crop.width, crop.height), (20, 10));
+      expect((crop.width, crop.height), (22, 12));
       identify.complete(
         '{"item":"kaleng aluminium","material":"aluminium","category":"anorganik"}',
       );

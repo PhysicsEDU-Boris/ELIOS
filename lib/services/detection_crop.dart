@@ -36,10 +36,11 @@ Uint8List? cropDetection((CapturedFrame, TrackedDetection) input) {
     });
     final sx = image.width / frame.width;
     final sy = image.height / frame.height;
-    final left = ((box.x - box.w / 2) * sx).floor().clamp(0, image.width);
-    final top = ((box.y - box.h / 2) * sy).floor().clamp(0, image.height);
-    final right = ((box.x + box.w / 2) * sx).ceil().clamp(0, image.width);
-    final bottom = ((box.y + box.h / 2) * sy).ceil().clamp(0, image.height);
+    // Keep a 5% margin on each side, using only original clean-frame pixels.
+    final left = ((box.x - box.w * .55) * sx).floor().clamp(0, image.width);
+    final top = ((box.y - box.h * .55) * sy).floor().clamp(0, image.height);
+    final right = ((box.x + box.w * .55) * sx).ceil().clamp(0, image.width);
+    final bottom = ((box.y + box.h * .55) * sy).ceil().clamp(0, image.height);
     if (right <= left || bottom <= top) return (bytes: null, details: details);
     details.addAll({
       'scaleX': sx,
@@ -61,6 +62,7 @@ Uint8List? cropDetection((CapturedFrame, TrackedDetection) input) {
             width: right - left,
             height: bottom - top,
           ),
+          quality: 100,
         ),
       ),
       details: details,
