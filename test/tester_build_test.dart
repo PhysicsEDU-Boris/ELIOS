@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/device_health.dart';
+import 'package:elio/services/frame_source/viewfinder_crop.dart';
 import 'package:elio/services/frame_source/yuv_jpeg.dart';
 import 'package:elio/services/gemma_quiz_service.dart';
 import 'package:elio/services/tester_log.dart';
@@ -217,6 +218,18 @@ void main() {
       expect(log.read(), isNot(contains('ignored')));
       log.enabled = testerBuild;
     });
+  });
+
+  test('the viewfinder crop keeps the centre box of a cover-fitted preview', () async {
+    final src = img.Image(width: 1280, height: 720);
+    img.fill(src, color: img.ColorRgb8(0, 0, 255));
+    img.fillRect(src, x1: 540, y1: 310, x2: 740, y2: 410, color: img.ColorRgb8(255, 0, 0)); // centre mark
+    final jpeg = Uint8List.fromList(img.encodeJpg(src, quality: 95));
+    // panel 640x360 (scale 0.5): a 260x200 box is 520x400 image px, +20% margin = 624x480.
+    final out = img.decodeJpg(await cropToViewfinder(jpeg, panel: const Size(640, 360), box: const Size(260, 200)))!;
+    expect((out.width, out.height), (624, 480));
+    expect(out.getPixel(312, 240).r, greaterThan(200), reason: 'the centre mark is in the middle of the crop');
+    expect(out.getPixel(2, 2).b, greaterThan(200));
   });
 
   group('YUV photo', () {

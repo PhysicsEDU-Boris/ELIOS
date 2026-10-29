@@ -14,5 +14,6 @@
   - App PSS 2.3-2.4 GB after load, 3.3-3.7 GB while answering; phone free RAM 2.3-2.6 GB.
   - Thermal went NONE to LIGHT to MODERATE to SEVERE within a few questions and Gemma kept working. Pausing at SEVERE was too strict (blocked a healthy 12 GB phone), so the pause is now CRITICAL (resume at SEVERE). CRITICAL was never reached.
   - Fixed after the run: ControlScreen.dispose `ref` error, landscape preview box, essays on in the tester build.
-  - Open: Gemma sometimes misnames the object (a battery came back as "kaleng minuman"); PDF export and photo rotation not confirmed from the log. Sample size is small (3 loads, 3 identifies, 1 essay).
+  - Misnaming cause (screenshots, 29 Oct): photo upright, but the object was small in a wide frame (box, floor tiles) and the full frame went to Gemma and History. The capture is now cropped to the viewfinder box (+20% margin); retest pending.
+- Open: Gemma sometimes misnames the object (a battery came back as "kaleng minuman"); PDF export and photo rotation not confirmed from the log. Sample size is small (3 loads, 3 identifies, 1 essay).
 - Next: owner installs and runs the checklist in the A1 report, then pulls `elio_tester.log`.

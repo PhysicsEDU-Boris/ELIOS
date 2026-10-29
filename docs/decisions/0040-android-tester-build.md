@@ -72,3 +72,7 @@ The APK is signed with the debug key (existing `build.gradle.kts`), fine for sid
 store. Firebase client config is read from `.env.*` assets and `google-services.json`; they are copied in
 for the build and removed afterwards, never committed. The APK contains that client config, so do not
 share the file publicly.
+
+## Viewfinder crop (29 Oct)
+
+The phone photo is cropped to the on-screen box (centre, +20% margin, mapped through the cover-fit of the preview) before Gemma and Scan History see it. Reason: a battery photographed small in a wide frame was named "kaleng aluminium" or "rol film". `cropToViewfinder` is unit-tested; its effect on naming is not yet measured.
