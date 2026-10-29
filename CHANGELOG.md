@@ -12,6 +12,7 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
+- Android tester build (decision 0040, A1): `--dart-define=TESTER_BUILD=true` shows a Bank/Gemma source switch and a log panel; the model is sideloaded with adb push (not in the APK); lazy Gemma load; thermal gate at SEVERE; system-kill notice on relaunch; phone camera reads the YUV image stream and encodes JPEG in an isolate.
 - Debug history seeding now preserves existing disk records and avoids duplicate samples.
 - U4b native acceptance: clarify that keyTerms is an integer score, and include essay questions in the completion-message denominator.
 - U4b essay grading: strict Gemma JSON parsing for the Accuracy /4, Key terms /3,

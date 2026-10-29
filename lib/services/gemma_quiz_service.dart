@@ -8,9 +8,14 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/scanned_waste.dart';
+import '../providers/app_preferences_provider.dart' show testerBuild;
+import 'device_health.dart';
 import 'scan_diagnostics.dart';
+import 'tester_log.dart';
 
-enum GemmaStatus { idle, installing, loading, ready, error }
+/// `idle` is "not loaded". `missing`, `paused` and `killed` are the tester
+/// states of decision 0040: no model file, hot phone, system killed Gemma.
+enum GemmaStatus { idle, installing, loading, ready, error, missing, paused, killed }
 
 enum QuizQuestionType { multipleChoice, essay }
 
@@ -205,6 +210,105 @@ class GemmaQuizService {
   bool get isReady => _chat != null;
   bool get isPrepared => _prepared;
 
+  /// Android has no bundled model: it is pushed with adb into the app's external
+  /// files dir (decision 0040). Tests set this to a temp dir to exercise that path.
+  @visibleForTesting
+  Directory? sideloadDirOverride;
+
+  bool get _sideload => sideloadDirOverride != null || (!kIsWeb && Platform.isAndroid);
+
+  Future<File?> _sideloadedModel() async {
+    if (!_sideload) return null;
+    final dir = sideloadDirOverride ?? await getExternalStorageDirectory();
+    return dir == null ? null : File('${dir.path}/$modelFileName');
+  }
+
+  /// Where the tester pushes the model, for the "Model belum ada" text.
+  Future<String?> get sideloadModelPath async => (await _sideloadedModel())?.path;
+
+  /// True when this platform expects a pushed model and the file isn't there.
+  Future<bool> modelMissing() async {
+    final f = await _sideloadedModel();
+    return f != null && !f.existsSync();
+  }
+
+  ThermalGate thermal = ThermalGate();
+  bool _killedByPrevious = false;
+  int _loadCount = 0;
+
+  /// Why Gemma must not run right now (tester states), or null. Callers fall
+  /// back to the bank and a pending essay grade, and show this text.
+  String? get blockedReason => switch (progress.value.status) {
+        GemmaStatus.killed => 'Gemma dihentikan sistem, mode bank aktif.',
+        GemmaStatus.paused => 'Ponsel terlalu panas (${thermal.statusName}), Gemma dijeda. Soal dari bank; essay dinilai nanti.',
+        GemmaStatus.missing => progress.value.error,
+        _ => null,
+      };
+
+  File get _marker => File('${(sideloadDirOverride ?? Directory.systemTemp).path}/gemma_active.marker');
+
+  Future<File> _markerFile() async => sideloadDirOverride != null
+      ? _marker
+      : File('${(await getApplicationSupportDirectory()).path}/gemma_active.marker');
+
+  /// Run once at launch (tester build): a marker left by a Gemma run means the
+  /// process died while Gemma was loaded; do not retry silently.
+  Future<void> checkPreviousRun() async {
+    try {
+      final marker = await _markerFile();
+      final left = marker.existsSync();
+      if (left) marker.deleteSync();
+      final reason = left && !kIsWeb && Platform.isAndroid ? await DeviceHealth.lastExitReason() : null;
+      final run = classifyPreviousRun(markerLeft: left, exitReason: reason);
+      TesterLog.instance.log('gemma', 'previous run: marker=$left exitReason=$reason -> ${run.name}');
+      if (run == PreviousRun.clean) return;
+      _killedByPrevious = true;
+      progress.value = GemmaProgress(GemmaStatus.killed,
+          error: run == PreviousRun.nativeCrash
+              ? 'Gemma crash saat berjalan, mode bank aktif.'
+              : 'Gemma dihentikan sistem, mode bank aktif.');
+    } catch (e) {
+      TesterLog.instance.log('gemma', 'previous-run check failed: $e');
+    }
+  }
+
+  /// The tester explicitly asks to try Gemma again after a kill.
+  void clearKilled() {
+    _killedByPrevious = false;
+    if (progress.value.status == GemmaStatus.killed) progress.value = const GemmaProgress(GemmaStatus.idle);
+  }
+
+  /// Reads the thermal status; true while Gemma must stay paused.
+  Future<bool> _thermalBlocked() async {
+    final paused = await thermal.check();
+    if (paused) {
+      if (progress.value.status != GemmaStatus.paused) {
+        TesterLog.instance.log('thermal', 'SEVERE or worse (${thermal.statusName}): Gemma paused');
+        unawaited(cancel());
+        progress.value = const GemmaProgress(GemmaStatus.paused);
+      }
+    } else if (progress.value.status == GemmaStatus.paused) {
+      TesterLog.instance.log('thermal', 'cooled to ${thermal.statusName}: Gemma allowed again');
+      progress.value = GemmaProgress(_chat != null ? GemmaStatus.ready : GemmaStatus.idle);
+    }
+    return paused;
+  }
+
+  /// Refreshes [blockedReason] (reads the thermal status) before a decision.
+  Future<void> refreshBlocked() => _thermalBlocked();
+
+  bool get _blockedNow => thermal.paused || _killedByPrevious;
+
+  Future<bool> _blocked() async => await _thermalBlocked() || _killedByPrevious;
+
+  Timer? _thermalWatch;
+
+  /// Tester build: re-reads the thermal status every 10 s while the app runs,
+  /// so the synchronous gate above sees a hot phone before the next request.
+  void startThermalWatch() {
+    _thermalWatch ??= Timer.periodic(const Duration(seconds: 10), (_) => _thermalBlocked());
+  }
+
   void _log(String msg) => debugPrint('$_tag $msg');
 
   /// One-time copy of the bundled model out of the APK into app storage
@@ -220,13 +324,29 @@ class GemmaQuizService {
     final sw = Stopwatch()..start();
     try {
       if (_chat == null) progress.value = const GemmaProgress(GemmaStatus.installing);
-      final bundled = _bundledModelPath();
+      final sideloaded = await _sideloadedModel();
+      if (sideloaded != null) {
+        if (!sideloaded.existsSync()) {
+          TesterLog.instance.log('gemma', 'model file missing: ${sideloaded.path}');
+          progress.value = GemmaProgress(GemmaStatus.missing,
+              error: 'Model belum ada. Salin $modelFileName ke ${sideloaded.path} dengan adb push. '
+                  'Mode bank tetap bisa dipakai.');
+          return false;
+        }
+        final size = sideloaded.lengthSync();
+        if (size < _modelBytes) {
+          progress.value = GemmaProgress(GemmaStatus.error,
+              error: 'Model belum lengkap (${size >> 20} MB dari ${_modelBytes >> 20} MB). Ulangi adb push.');
+          return false;
+        }
+      }
+      final bundled = sideloaded?.path ?? _bundledModelPath();
       if (bundled != null) {
         // macOS/iOS: the model is already a plain file inside the app bundle,
         // so register it in place — no copy, ready in about a second. Drop
         // any record left by an earlier copy-based install so the plugin
         // can't keep loading a stale (possibly half-copied) duplicate.
-        for (final id in await FlutterGemma.listInstalledModels()) {
+        for (final id in sideloaded != null ? const <String>[] : await FlutterGemma.listInstalledModels()) {
           if (id.contains('gemma-4-E2B-it')) {
             try {
               await FlutterGemma.uninstallModel(id);
@@ -257,6 +377,7 @@ class GemmaQuizService {
       _prepared = true;
       if (_chat == null) progress.value = const GemmaProgress(GemmaStatus.idle);
       _log('model prepared (${bundled != null ? 'in place' : 'copied'}, ${sw.elapsed.inSeconds}s)');
+      TesterLog.instance.log('gemma', 'model registered in place ${bundled ?? ''} in ${sw.elapsedMilliseconds}ms');
       return true;
     } catch (e) {
       _log('prepare failed: $e');
@@ -317,6 +438,7 @@ class GemmaQuizService {
   /// use text only to keep memory use lower.
   /// Switching to vision when a text-only model is loaded triggers a reload.
   Future<bool> ensureReady({bool vision = false}) async {
+    if (_blockedNow) return false;
     if (_chat != null && (_loadedWithVision || !vision)) return true;
     final pending = _readyFuture;
     if (pending != null) {
@@ -328,14 +450,23 @@ class GemmaQuizService {
   }
 
   /// Prepares and loads in the background so the first quiz is fast.
-  void warmUp({bool vision = false}) => unawaited(ensureReady(vision: vision));
+  /// Not in the tester build: Gemma loads on the first request or the tester's tap.
+  void warmUp({bool vision = false}) {
+    if (!testerBuild) unawaited(ensureReady(vision: vision));
+  }
 
   Future<bool> _initialize(bool vision) async {
     final sw = Stopwatch()..start();
     try {
       if (!await prepare()) return false;
+      if (await _blocked()) return false; // a hot phone must not start a load (decision 0040)
 
       progress.value = const GemmaProgress(GemmaStatus.loading);
+      TesterLog.instance.log('gemma', 'load start vision=$vision');
+      unawaited(TesterLog.instance.snapshot('before load'));
+      try {
+        (await _markerFile()).writeAsStringSync(DateTime.now().toIso8601String());
+      } catch (_) {}
       final attempts = [
         (PreferredBackend.gpu, vision),
         (PreferredBackend.cpu, vision),
@@ -369,15 +500,21 @@ class GemmaQuizService {
           _log('model ready on ${model.activeBackend ?? backend} '
               '(image=$image) in ${sw.elapsed.inSeconds}s');
           progress.value = const GemmaProgress(GemmaStatus.ready);
+          _loadCount++;
+          TesterLog.instance.log('gemma', 'load ms=${sw.elapsedMilliseconds} backend=${model.activeBackend ?? backend} '
+              'requested=$backend image=$image');
+          unawaited(TesterLog.instance.snapshot('after load'));
           return true;
         } catch (e) {
           lastError = e;
           _log('load failed on $backend (image=$image): $e');
+          TesterLog.instance.log('gemma', 'load failed on $backend (image=$image) after ${sw.elapsedMilliseconds}ms: $e');
         }
       }
       throw lastError ?? StateError('model failed to load');
     } catch (e) {
       _log('initialize failed: $e');
+      TesterLog.instance.log('gemma', 'initialize failed: $e');
       progress.value = GemmaProgress(GemmaStatus.error, error: '$e');
       return false;
     }
@@ -461,9 +598,13 @@ class GemmaQuizService {
         final total = sw.elapsedMilliseconds;
         _log('generated ${fullText.length} chars (first token: ${firstTokenMs ?? 0}ms, total: ${total}ms)');
         lastFirstTokenMs.value = firstTokenMs;
+        TesterLog.instance.log('gemma', 'request firstTokenMs=${firstTokenMs ?? '-'} totalMs=$total chars=${fullText.length} '
+            'image=${imageBytes != null}');
+        unawaited(TesterLog.instance.snapshot('request'));
         if (!completer.isCompleted) completer.complete(fullText.isEmpty ? null : fullText.trim());
       } catch (e) {
         _log('generation failed: $e');
+        TesterLog.instance.log('gemma', 'generation failed: $e');
         if (!completer.isCompleted) completer.complete(null);
       } finally {
         finished = true;
@@ -477,6 +618,7 @@ class GemmaQuizService {
     } catch (e) {
       if (e is TimeoutException) {
         _log('generation timeout');
+        TesterLog.instance.log('gemma', 'generation timeout');
         if (!completer.isCompleted) completer.complete(null); // never submit after giving up
         await _stopGeneration();
       }
@@ -508,6 +650,10 @@ class GemmaQuizService {
   }
 
   Future<String?> _send(String prompt, {Uint8List? imageBytes, bool fresh = false, bool isUser = false, void Function(String)? onToken, ScanDiagnostics? diagnostics}) async {
+    // Synchronous on purpose: the single-flight slot below must be claimed in
+    // the same turn. The cached thermal status is refreshed in the background.
+    unawaited(_thermalBlocked());
+    if (_blockedNow) return null;
     if (_activeCompleter != null) {
       if (!isUser) {
         _log('slot busy, rejecting scan request');
@@ -617,6 +763,8 @@ class GemmaQuizService {
         'Balas HANYA JSON: {"item": "nama benda singkat", "material": "bahan utama", '
         '"category": "organik" atau "anorganik" atau "B3" atau "residu"}.';
     final timing = diagnostics == null ? null : (Stopwatch()..start());
+    final identifyClock = Stopwatch()..start();
+    final loadsBefore = _loadCount;
     int? firstTokenMs;
     diagnostics?.event('identify_request', {'requestId': '${diagnostics.id}/identify'});
     final raw = await _send(prompt, imageBytes: imageBytes, fresh: true, isUser: false,
@@ -627,9 +775,13 @@ class GemmaQuizService {
       });
     diagnostics?.event('identify_complete', {'requestMs': timing?.elapsedMilliseconds,
       'firstTokenMs': firstTokenMs, 'rawJson': raw});
+    TesterLog.instance.log('gemma', 'identify ms=${identifyClock.elapsedMilliseconds}'
+        '${_loadCount != loadsBefore ? ' (includes the model load)' : ''} ok=${raw != null && raw != 'BUSY' && raw != 'CANCELLED'}');
     if (raw == 'BUSY') return const PhotoIdentification.failed('busy');
     if (raw == 'CANCELLED') return const PhotoIdentification.failed('cancelled');
     if (raw == null) {
+      final blocked = blockedReason;
+      if (blocked != null) return PhotoIdentification.failed(blocked);
       return PhotoIdentification.failed(_chat != null && !_loadedWithVision
           ? 'AI di perangkat ini tidak bisa membaca foto (model gambar gagal dimuat). '
               'Pakai "Uji tanpa kamera" atau mode MaixCAM2.'
@@ -800,7 +952,11 @@ class GemmaQuizService {
         'Soal essay: "$question"\n'
         '${expectedPoints.isEmpty ? '' : 'Poin jawaban yang diharapkan: $expectedPoints\n'}'
         'Jawaban mahasiswa: "$answer"';
+    final essayClock = Stopwatch()..start();
+    final loadsBefore = _loadCount;
     final raw = await _send(prompt, fresh: true, isUser: true);
+    TesterLog.instance.log('gemma', 'essay-grade ms=${essayClock.elapsedMilliseconds}'
+        '${_loadCount != loadsBefore ? ' (includes the model load)' : ''} ok=${raw != null && raw != 'BUSY' && raw != 'CANCELLED'}');
     if (raw == null || raw == 'BUSY' || raw == 'CANCELLED') {
       return null;
     }
@@ -897,6 +1053,11 @@ class GemmaQuizService {
       await _readyFuture;
     } catch (_) {}
     await _closeModel();
+    try {
+      final marker = await _markerFile();
+      if (marker.existsSync()) marker.deleteSync();
+    } catch (_) {}
+    if (progress.value.status == GemmaStatus.paused || progress.value.status == GemmaStatus.killed) return;
     progress.value = GemmaProgress(_prepared ? GemmaStatus.idle : progress.value.status);
   }
 }

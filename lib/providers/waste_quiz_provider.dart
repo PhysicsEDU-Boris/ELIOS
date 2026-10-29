@@ -123,6 +123,7 @@ class WasteQuizUiState {
     int? questionIndex,
     GeneratedQuestion? question,
     bool? isFallback,
+    QuestionSource? questionSource,
     int? selectedOption,
     bool clearSelection = false,
     bool? essaySubmitted,
@@ -161,7 +162,7 @@ class WasteQuizUiState {
       voiceOn: voiceOn ?? this.voiceOn,
       notice: notice ?? this.notice,
       mismatchDetector: mismatchDetector ?? this.mismatchDetector,
-      questionSource: questionSource,
+      questionSource: questionSource ?? this.questionSource,
       recordedQuestions: recordedQuestions ?? this.recordedQuestions,
       cropBytes: clearCropBytes ? null : (cropBytes ?? this.cropBytes),
       currentExplanation: clearExplanation ? null : (currentExplanation ?? this.currentExplanation),
@@ -407,12 +408,13 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   }
 
   /// Starts a quiz for a known label without any camera (test mode).
-  void startForLabel(String label) {
+  /// [photo] is a captured shot kept for Scan History when the model can't name it.
+  void startForLabel(String label, {Uint8List? photo}) {
     if (state.phase != WasteQuizPhase.idle) return;
     _lastLabel = label;
     _lastShownAt = DateTime.now();
-    _cropBytes = null;
-    _historyPhotoBytes = null;
+    _cropBytes = photo;
+    _historyPhotoBytes = photo; // the retained phone shot is also the History photo (D1 + A1)
     _recordedQuestions.clear();
     GemmaQuizService.instance.cancel();
     _startSession(ScannedWaste.fromLabel(label));
@@ -450,6 +452,14 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       sendingChat: false,
     );
 
+    // Gemma mode with Gemma blocked (hot phone, killed, no model): questions
+    // come from the bank, said out loud, not silently (decision 0040).
+    String? bankNotice;
+    if (_gemma) {
+      bankNotice = GemmaQuizService.instance.blockedReason;
+      if (bankNotice != null) _sessionSource = QuestionSource.bank;
+    }
+
     final diagnostics = _diagnostics;
     diagnostics?.event('question_request', {'requestId': '${diagnostics.id}/question-${index + 1}'});
     final sw = kDebugMode ? (Stopwatch()..start()) : null;
@@ -483,15 +493,17 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       return;
     }
     _askedQuestions.add(question.question);
-    final intro = generated == null
-        ? _fallbackIntro()
-        : type == QuizQuestionType.multipleChoice
-            ? 'Pilih satu jawaban dulu. Setelah itu kamu bisa bertanya apa saja tentang soal ini.'
-            : 'Tulis jawabanmu lalu kirim. Setelah dikoreksi, kamu bisa bertanya lebih lanjut.';
+    final intro = bankNotice ??
+        (generated == null
+            ? _fallbackIntro()
+            : type == QuizQuestionType.multipleChoice
+                ? 'Pilih satu jawaban dulu. Setelah itu kamu bisa bertanya apa saja tentang soal ini.'
+                : 'Tulis jawabanmu lalu kirim. Setelah dikoreksi, kamu bisa bertanya lebih lanjut.');
     state = state.copyWith(
       phase: WasteQuizPhase.active,
       question: question,
       isFallback: generated == null,
+      questionSource: _sessionSource,
       messages: [...state.messages, ChatMessage(isUser: false, text: intro)],
     );
     diagnostics?.event('question_shown', {'question': index + 1, 'totalLockToQuestionMs': diagnostics.clock.elapsedMilliseconds});
@@ -865,7 +877,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// Short, specific reason shown when the AI couldn't answer.
   String _aiUnavailableReason() {
     final p = GemmaQuizService.instance.progress.value;
-    return switch (p.status) {
+    return GemmaQuizService.instance.blockedReason ?? switch (p.status) {
       GemmaStatus.error => p.error ?? 'Buka Pengaturan Koneksi untuk menyiapkan ulang AI.',
       GemmaStatus.installing || GemmaStatus.loading => 'AI masih disiapkan, coba lagi sebentar lagi.',
       _ => 'Coba lagi.',

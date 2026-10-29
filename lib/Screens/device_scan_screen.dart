@@ -60,6 +60,10 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
     try {
       final frame = await _source.capture();
       if (frame == null) throw StateError('kamera tidak mengembalikan foto');
+      if (await GemmaQuizService.instance.modelMissing()) {
+        await _pickItemWithoutModel(frame.bytes);
+        return;
+      }
       _quiz.onPhotoCaptured(frame.bytes);
     } catch (e) {
       if (mounted) {
@@ -68,6 +72,26 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
     } finally {
       if (mounted) setState(() => _capturing = false);
     }
+  }
+
+  /// No model file: the photo can't be named, so the user picks the item and
+  /// the photo still goes to Scan History. The quiz uses the bank.
+  Future<void> _pickItemWithoutModel(Uint8List photo) async {
+    if (!mounted) return;
+    final label = await showDialog<String>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Model belum ada'),
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+            child: Text('Pilih bendanya. Foto tetap disimpan di riwayat, soal dari bank.'),
+          ),
+          for (final l in _sampleLabels) SimpleDialogOption(onPressed: () => Navigator.pop(context, l), child: Text(l)),
+        ],
+      ),
+    );
+    if (label != null) _quiz.startForLabel(label, photo: photo);
   }
 
   @override
@@ -258,7 +282,10 @@ class _AiStatusChip extends StatelessWidget {
           GemmaStatus.loading => ('AI: memuat model…', elioWarning),
           GemmaStatus.ready => ('AI offline · Siap', elioOk),
           GemmaStatus.error => ('AI belum siap', elioDanger),
-          GemmaStatus.idle => ('AI offline', elioOutline),
+          GemmaStatus.missing => ('Model belum ada · mode bank', elioWarning),
+          GemmaStatus.paused => ('Ponsel panas · Gemma dijeda', elioWarning),
+          GemmaStatus.killed => ('Gemma dihentikan sistem · mode bank', elioDanger),
+          GemmaStatus.idle => ('AI belum dimuat', elioOutline),
         };
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
