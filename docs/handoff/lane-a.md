@@ -2,18 +2,36 @@
 
 ## A1 Android tester APK (branch `feat/a1-android-test-apk`, from `origin/feature/live-scan` b842ce2)
 
-- Built: arm64 release APK, `--dart-define=TESTER_BUILD=true`, 170.4 MB, sha256 `0978e5c134c8a46a48794c7843393d16eed20c4242f9d2d570e27591f2165c4c`, at `build/app/outputs/flutter-apk/app-release.apk` in the worktree `~/GITHUB/ELIO/elios-a1-android-apk`. Debug-signed. Contains the Firebase client config: do not share publicly.
-- Decision 0040 (amends 0018). Model is NOT in the APK: push it to `/sdcard/Android/data/com.boris.elio/files/gemma-4-E2B-it.litertlm` (launch the app once first so the folder exists).
-- Done: Bank/Gemma switch (tester only), "Model belum ada" state, lazy load, GPU then CPU with backend logged, thermal gate at CRITICAL (was SEVERE, loosened 29 Oct), kill notice on relaunch, in-app log (share/copy/view/clear), Android camera via YUV image stream + isolate JPEG.
-- Verified here: analyze clean; 534 tests pass, only the 2 known splash failures; secret scan clean; new tests break against the old behaviour.
-- NOT verified (no phone): load ms, first-token ms, identify ms, essay-grade ms, GPU vs CPU on the Mali, real RAM, whether `fromFile` on the external dir loads natively, real lmkd kill code, thermal on a real device, JPEG rotation and the camera stream on the Edge 60 Fusion.
-- Phone run, 29 Oct, Motorola Edge 60 Fusion (11.4 GB RAM, Android 15), tester build, GPU backend (no CPU fallback, no crash, no kill, lowMemory never true):
-  - Gemma load 49.6 s cold after launch, 5.5 s when the file was cached.
-  - Photo identify: first token 17.7-22.3 s, request 23.4-27.1 s (whole step 29-74 s when it includes the load).
-  - Question text: first token 2.0-4.2 s, total 20-41 s. Essay grade: first token 2.7 s, total 23.3 s (one sample).
-  - App PSS 2.3-2.4 GB after load, 3.3-3.7 GB while answering; phone free RAM 2.3-2.6 GB.
-  - Thermal went NONE to LIGHT to MODERATE to SEVERE within a few questions and Gemma kept working. Pausing at SEVERE was too strict (blocked a healthy 12 GB phone), so the pause is now CRITICAL (resume at SEVERE). CRITICAL was never reached.
-  - Fixed after the run: ControlScreen.dispose `ref` error, landscape preview box, essays on in the tester build.
-  - Misnaming cause (screenshots, 29 Oct): photo upright, but the object was small in a wide frame (box, floor tiles) and the full frame went to Gemma and History. The capture is now cropped to the viewfinder box (+20% margin); retest pending.
-- Open: Gemma sometimes misnames the object (a battery came back as "kaleng minuman"); PDF export and photo rotation not confirmed from the log. Sample size is small (3 loads, 3 identifies, 1 essay).
-- Next: owner installs and runs the checklist in the A1 report, then pulls `elio_tester.log`.
+Status: working on one phone, owner accepted it as "fine for now" on 29 Oct. Local commits only, not pushed, no PR. Decision 0040 (amends 0018).
+
+### Build
+- arm64 release, `--dart-define=TESTER_BUILD=true`, debug-signed. Last APK: 170,506,639 bytes, sha256 `17952863a81e0a51e7a665fc3446d31f66f53f02230636c46125464e44f74437`, in the worktree `~/GITHUB/ELIO/elios-a1-android-apk/build/app/outputs/flutter-apk/app-release.apk` (commit e4183b5).
+- The build needs gitignored files copied in and removed afterwards: `.env.dev`, `.env.prod`, `.env.android.*`, `android/app/google-services.json`. The APK embeds the Firebase client config: do not share it publicly.
+- Install: `adb install -r <apk>`. Model (not in the APK, 2,588,147,712 bytes): `adb push gemma-4-E2B-it.litertlm /sdcard/Android/data/com.boris.elio/files/` after launching the app once. Log: `adb pull /sdcard/Android/data/com.boris.elio/files/elio_tester.log`.
+
+### What it does
+- Tester build only: "Sumber soal: Bank / Gemma" switch and log panel (Settings > AI Offline). Normal release stays bank-only. Essay questions are always on in the tester build.
+- Model read from the external files dir with `.fromFile()` (registered in place, works on Android). No file: "Model belum ada", bank mode and manual item pick still work (photo kept for History).
+- Lazy load (no preload), GPU first then CPU, backend logged. States: not loaded, loading, ready, failed, plus missing, paused, killed.
+- Thermal gate pauses Gemma at CRITICAL (resumes at SEVERE). Paused: bank questions with honest text, essay saved ungraded. Low-memory kill marker shows "Gemma dihentikan sistem, mode bank aktif." on relaunch (not seen in practice).
+- Camera: Android uses the YUV image stream only, JPEG in an isolate; photo cropped to the viewfinder box (+20% margin) before Gemma and History.
+- Log: load, first-token, identify, essay-grade ms, memory, thermal, identified item/material/category, errors. Share/copy/view/clear in the app.
+
+### Measured on Motorola Edge 60 Fusion (11.4 GB RAM, Android 15), GPU backend
+- Load: 4.3-5.6 s with the file cached, 41-50 s on a cold launch. No CPU fallback.
+- Identify (photo): first token 17.7-22.3 s, request 23-27 s. Slow; the owner called the wait too long.
+- Question text: first token 2.0-4.2 s, total 20-41 s.
+- Essay grade: 18.4-23.3 s total (4 samples), all usable.
+- App PSS 2.3-2.4 GB after load, 3.3-3.7 GB answering; free RAM 2.3-2.6 GB; `lowMemory` never true. No crash, no kill.
+- Thermal went NONE to SEVERE within a few questions and Gemma kept working. Pausing at SEVERE blocked a healthy phone, hence CRITICAL. CRITICAL never reached.
+
+### Verified here
+- analyze clean; 535 tests pass, only the 2 known splash failures; secret scan clean; new tests fail on the old behaviour.
+- Fixed after phone runs: `ref` used in `ControlScreen.dispose`, preview box in landscape, essays on, photo crop.
+
+### Open
+- Naming is unreliable: a battery was called "kaleng minuman/aluminium", "rol film" or "kertas"; Gemma's category for it was often "anorganik" (History still showed B3 because the app maps the name). Cause was a small object in a wide frame; the crop was added, effect unclear (3 scans, objects not recorded). Next lever if needed: remove "kaleng aluminium" from the identify prompt examples.
+- Not seen in a log: PDF export success, a real low-memory kill, CPU fallback, a CRITICAL pause.
+- Photo-only identify needs the model; without it the user picks from 4 sample items.
+- Sample sizes are small (one phone, few runs). The 12 GB figure is this phone only.
+- Decision 0040 and CHANGELOG are updated; nothing pushed, no PR, Mac app untouched.
