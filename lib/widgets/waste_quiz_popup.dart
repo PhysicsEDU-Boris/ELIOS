@@ -406,7 +406,7 @@ class _QuestionPanel extends ConsumerWidget {
                   runSpacing: 6,
                   children: [
                     _Chip(
-                      label: 'Soal ${state.questionIndex + 1}/${state.totalQuestions} · '
+                      label: 'Soal ${state.questionIndex + 1}/${state.totalQuestions} · Sesi '
                           '${switch (state.difficulty) {
                         QuizDifficulty.easy => 'Mudah',
                         QuizDifficulty.medium => 'Sedang',

@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+"""Check both bundled banks; exit non-zero on any integrity failure."""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts'))
+import validate_bank as vb
+
+
+def check(bank, objects, chunks, labels):
+    errors = vb.validate(bank, chunks, labels) + vb.validate_objects(objects, chunks)
+    seen = {}
+    items = bank['items'] + [i for o in objects['objects'] for i in o['items']]
+    for item in items:
+        iid = item['id']
+        question = ' '.join(vb.norm(item['question']))
+        if not question:
+            errors.append(f'{iid}: empty question')
+        if question in seen:
+            errors.append(f'{iid}: duplicate question text with {seen[question]}')
+        seen[question] = iid
+        # The shared validator checks correct + wrong[3]; runtime tests check shuffled indices.
+        if item['type'] == 'mc':
+            if not isinstance(item.get('explanation'), str) or not item['explanation'].strip():
+                errors.append(f'{iid}: missing explanation')
+        else:
+            # Essays use rubric points as their explanation and source references.
+            if not all(p.get('point', '').strip() for p in item.get('rubricPoints', [])):
+                errors.append(f'{iid}: empty rubric explanation')
+    return errors
+
+
+def main():
+    try:
+        bank, chunks, labels = vb.load()
+        errors = check(bank, vb.load_objects(), chunks, labels)
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+        print(f'Bank check failed: {error}', file=sys.stderr)
+        return 1
+    for error in errors:
+        print(error, file=sys.stderr)
+    print(f'Bank check: {len(errors)} problems')
+    return 1 if errors else 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
