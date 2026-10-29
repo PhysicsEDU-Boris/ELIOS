@@ -1,6 +1,5 @@
 // Tester build (decision 0040): source switch, no-model state, thermal gate, kill detection, YUV photo.
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
@@ -8,9 +7,11 @@ import 'package:elio/services/device_health.dart';
 import 'package:elio/services/frame_source/viewfinder_crop.dart';
 import 'package:elio/services/frame_source/yuv_jpeg.dart';
 import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/scan_record_store.dart';
 import 'package:elio/services/tester_log.dart';
 import 'package:elio/widgets/tester_panel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
@@ -101,6 +102,40 @@ void main() {
       expect(s.cropBytes, [1, 2, 3], reason: 'the captured photo is kept for Scan History');
       expect(gemmaCalls, 0);
     });
+  });
+
+  test('a retained phone photo is saved as the History photo (D1 + A1 overlap)', () async {
+    final root = await Directory.systemTemp.createTemp('a1-history-photo-');
+    const channel = MethodChannel('plugins.flutter.io/path_provider');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (_) async => root.path);
+    final store = ScanRecordStore(customFile: File('${root.path}/records.json'));
+    ScanRecordStore.setInstanceForTesting(store);
+    addTearDown(() async {
+      ScanRecordStore.setInstanceForTesting(null);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
+      await root.delete(recursive: true);
+    });
+    final photo = Uint8List.fromList(img.encodeJpg(img.Image(width: 8, height: 6)));
+    final c = ProviderContainer();
+    addTearDown(c.dispose);
+    final quiz = c.read(wasteQuizProvider.notifier);
+    quiz.startForLabel('botol plastik', photo: photo);
+    for (var i = 0; i < 200 && c.read(wasteQuizProvider).phase != WasteQuizPhase.active; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
+    quiz.state = quiz.state.copyWith(
+      difficulty: QuizDifficulty.easy,
+      questionIndex: 0,
+      question: const GeneratedQuestion(
+          type: QuizQuestionType.multipleChoice, question: 'Pilah botol?', options: ['Daur ulang', 'Bakar'], correctIndex: 0),
+    );
+    quiz.selectOption(0);
+    quiz.nextQuestion();
+    for (var i = 0; i < 400 && c.read(wasteQuizProvider).phase != WasteQuizPhase.finished; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
+    expect(File(store.records.single.cropPhotoPath!).readAsBytesSync(), orderedEquals(photo));
   });
 
   group('thermal gate', () {
