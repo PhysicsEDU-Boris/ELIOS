@@ -136,6 +136,8 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 5));
     }
     expect(File(store.records.single.cropPhotoPath!).readAsBytesSync(), orderedEquals(photo));
+    expect(c.read(wasteQuizProvider).historyPhotoPath, store.records.single.cropPhotoPath,
+        reason: 'the result card PDF embeds the saved History photo');
   });
 
   group('thermal gate', () {

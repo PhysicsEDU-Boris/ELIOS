@@ -76,6 +76,9 @@ class WasteQuizUiState {
   /// The cropped JPEG bytes of the detected waste item.
   final Uint8List? cropBytes;
 
+  /// The photo file saved to Scan History for this session, so the result card's PDF can embed it.
+  final String? historyPhotoPath;
+
   /// The structured explanation for the current question (phase: explaining).
   final QuizExplanation? currentExplanation;
 
@@ -104,6 +107,7 @@ class WasteQuizUiState {
     this.questionSource = QuestionSource.bank,
     this.recordedQuestions = const [],
     this.cropBytes,
+    this.historyPhotoPath,
     this.currentExplanation,
     this.explanationLoading = false,
   });
@@ -139,6 +143,7 @@ class WasteQuizUiState {
     String? mismatchDetector,
     List<RecordQuestion>? recordedQuestions,
     Uint8List? cropBytes,
+    String? historyPhotoPath,
     bool clearCropBytes = false,
     QuizExplanation? currentExplanation,
     bool clearExplanation = false,
@@ -166,6 +171,7 @@ class WasteQuizUiState {
       questionSource: questionSource ?? this.questionSource,
       recordedQuestions: recordedQuestions ?? this.recordedQuestions,
       cropBytes: clearCropBytes ? null : (cropBytes ?? this.cropBytes),
+      historyPhotoPath: historyPhotoPath ?? this.historyPhotoPath,
       currentExplanation: clearExplanation ? null : (currentExplanation ?? this.currentExplanation),
       explanationLoading: explanationLoading ?? this.explanationLoading,
     );
@@ -1002,6 +1008,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       phase: WasteQuizPhase.finished,
       recordedQuestions: List.unmodifiable(_recordedQuestions),
       cropBytes: _cropBytes,
+      historyPhotoPath: photoPath,
     );
     final skipped = state.skippedCount > 0 ? ' ${state.skippedCount} soal dilewati.' : '';
     _appendAiReply('Sesi selesai! Jawaban benar: '
