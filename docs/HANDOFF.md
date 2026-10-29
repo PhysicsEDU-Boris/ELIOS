@@ -1,6 +1,6 @@
 # Handoff
 
-- Branch `feat/u4b-essay-rubric`; draft PR #51 targets `feature/live-scan`, unmerged. Base `254da97` includes #48/#49.
+- U4b branch `feat/u4b-essay-rubric`, PR #51 targets `feature/live-scan`; owner authorized merge on 29 Oct after final review. Base `254da97` includes #48/#49. Resolve the verified merge SHA from GitHub before starting the next task.
 - Canonical `~/GITHUB/ELIO/elios-clean` retains the owner's dirty scheme, `Maixcam.txt`, and `docs/module/`.
 - Persistent worktree: `~/Documents/ChatGPT/ELIOS 2/u4b-essay-rubric`; evidence in sibling `u4b-native-evidence/`.
 
@@ -32,3 +32,10 @@
 - Final normal signed app built from `6d67f30` with LIVE_SCAN=true, APP_COMMIT=6d67f30, R1/G1_PICKUP_QUIZ_FLOW/ESSAY_QUESTIONS=true; moved to `~/Applications/ELIOS.app`, verified after moving and launched with `open`. One ELIOS registration verified.
 - Temporary Firebase config, env placeholders, harness entry and build symlink removed; worktree scheme restored. Local cache retains compiled dependencies, no duplicate app bundle. Never commit config/model assets.
 - No Firebase sync, Figma or firmware changes. PR #47 remains draft/unmerged; `ARM_MOTION_ENABLED=false`; physical/authenticated firmware validation remains owner work.
+
+## Next task — U4c native acceptance
+
+- Final review found no code blocker; GitHub reported mergeable/CLEAN and no hosted status checks. Local evidence above remains the validation basis.
+- Follow the updated Notion UI plan: finish combined real-Gemma/localhost-camera multi-question acceptance before U7 Firebase sync, then U8 documentation/Figma.
+- Back up and read-verify owner records before any test; prove a separate test store is active before interacting. Never seed or reset the owner profile. Preserve the unresolved original-record incident.
+- Reuse the signed retained app, verified model store and local build cache. Test MCQ explanation → next question, essay rubric during live frames, trophy math, relaunch and complete native PDF. No physical robot or recipient selection.
