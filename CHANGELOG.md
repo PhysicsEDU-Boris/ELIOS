@@ -12,8 +12,10 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Added
-- E1 (decision 0041): "Bukan ini?" picker to correct a misnamed object (quiz and History use the corrected item, the photo is kept, B3 still asks for confirmation); Gemma loads in the background when the phone scan screen opens in the tester build; the identify photo is capped at 512 px, the prompt is shorter and drops the can example; the tester log adds the photo size and `queryMs`.
-- Android tester build (decision 0040, A1): `--dart-define=TESTER_BUILD=true` shows a Bank/Gemma source switch and a log panel; the model is sideloaded with adb push (not in the APK); lazy Gemma load; thermal gate at SEVERE; system-kill notice on relaunch; phone camera reads the YUV image stream and encodes JPEG in an isolate.
+- E1 (decision 0041): "Bukan ini?" picker to correct a misnamed object (quiz and History use the corrected item, the photo is kept, B3 still asks for confirmation); Gemma loads in the background when the phone scan screen opens in the tester build; the tester build keeps the model loaded after the scan screen closes (about 1.6 GB); the identify photo is capped at 512 px, the prompt is shorter and drops the can example; the tester log adds the photo size and `queryMs`.
+- Accepted-only question banks (decision 0060, PR #53): release and profile builds serve accepted items only; debug builds also serve drafts. Rejected, missing and unknown statuses are never served; bundled assets still contain all statuses.
+- Separate History/PDF photo crop (decision 0070, PR #52): use the paired clean frame with a 5% margin per side, native pixels and JPEG quality 100. The identification crop is unchanged; existing supplied crops are retained when a separate clean photo is unavailable, and legacy photos are not rewritten.
+- Android tester build (decision 0040, A1): `--dart-define=TESTER_BUILD=true` shows a Bank/Gemma source switch and a log panel; the model is sideloaded with adb push (not in the APK); lazy Gemma load; thermal gate pauses at CRITICAL; system-kill notice on relaunch; phone camera reads the YUV image stream and encodes JPEG in an isolate.
 - Debug history seeding now preserves existing disk records and avoids duplicate samples.
 - U4b native acceptance: clarify that keyTerms is an integer score, and include essay questions in the completion-message denominator.
 - U4b essay grading: strict Gemma JSON parsing for the Accuracy /4, Key terms /3,
