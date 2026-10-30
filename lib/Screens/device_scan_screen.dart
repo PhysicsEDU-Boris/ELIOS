@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../providers/waste_quiz_provider.dart';
 import '../services/frame_source/phone_frame_source.dart';
+import '../services/frame_source/viewfinder_crop.dart';
 import '../services/gemma_quiz_service.dart';
 import '../theme/elio_learning_colors.dart';
 import '../widgets/desktop_viewport.dart';
@@ -23,6 +24,10 @@ class DeviceScanScreen extends ConsumerStatefulWidget {
 
 class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
   static const _sampleLabels = ['Botol plastik', 'Kulit pisang', 'Kaleng minuman', 'Baterai bekas'];
+
+  static const _sidebarWidth = 240.0;
+  static const _boxWidth = 260.0;
+  static const _boxHeight = 200.0;
 
   final PhoneFrameSource _source = PhoneFrameSource();
   bool _capturing = false;
@@ -56,11 +61,20 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
 
   Future<void> _capture() async {
     if (!_source.isInitialized || _capturing) return;
+    final screen = MediaQuery.sizeOf(context);
     setState(() => _capturing = true);
     try {
       final frame = await _source.capture();
       if (frame == null) throw StateError('kamera tidak mengembalikan foto');
-      _quiz.onPhotoCaptured(frame.bytes);
+      // Gemma and Scan History get only what is inside the viewfinder box: a
+      // small battery in a wide frame was misread as a can (A1 phone test).
+      final photo = await cropToViewfinder(frame.bytes,
+          panel: Size(screen.width - _sidebarWidth, screen.height), box: const Size(_boxWidth, _boxHeight));
+      if (await GemmaQuizService.instance.modelMissing()) {
+        await _pickItemWithoutModel(photo);
+        return;
+      }
+      _quiz.onPhotoCaptured(photo);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memotret: $e')));
@@ -68,6 +82,26 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
     } finally {
       if (mounted) setState(() => _capturing = false);
     }
+  }
+
+  /// No model file: the photo can't be named, so the user picks the item and
+  /// the photo still goes to Scan History. The quiz uses the bank.
+  Future<void> _pickItemWithoutModel(Uint8List photo) async {
+    if (!mounted) return;
+    final label = await showDialog<String>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Model belum ada'),
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+            child: Text('Pilih bendanya. Foto tetap disimpan di riwayat, soal dari bank.'),
+          ),
+          for (final l in _sampleLabels) SimpleDialogOption(onPressed: () => Navigator.pop(context, l), child: Text(l)),
+        ],
+      ),
+    );
+    if (label != null) _quiz.startForLabel(label, photo: photo);
   }
 
   @override
@@ -135,8 +169,8 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
                             )
                           : !_source.isInitialized
                               ? const CircularProgressIndicator(color: Colors.white)
-                              : const IgnorePointer(
-                                  child: SizedBox(width: 260, height: 200, child: CustomPaint(painter: _ViewfinderPainter())),
+                              : IgnorePointer(
+                                  child: SizedBox(width: _boxWidth, height: _boxHeight, child: CustomPaint(painter: _ViewfinderPainter())),
                                 ),
                     ),
                     Positioned(
@@ -258,7 +292,10 @@ class _AiStatusChip extends StatelessWidget {
           GemmaStatus.loading => ('AI: memuat model…', elioWarning),
           GemmaStatus.ready => ('AI offline · Siap', elioOk),
           GemmaStatus.error => ('AI belum siap', elioDanger),
-          GemmaStatus.idle => ('AI offline', elioOutline),
+          GemmaStatus.missing => ('Model belum ada · mode bank', elioWarning),
+          GemmaStatus.paused => ('Ponsel panas · Gemma dijeda', elioWarning),
+          GemmaStatus.killed => ('Gemma dihentikan sistem · mode bank', elioDanger),
+          GemmaStatus.idle => ('AI belum dimuat', elioOutline),
         };
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),

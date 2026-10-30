@@ -55,6 +55,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   StreamSubscription<CapturedFrame>? _frameSubscription;
   ProviderSubscription<AsyncValue<String>>? _statusSubscription;
   late final RobotControlNotifier _robotNotifier;
+  // Read once: `ref` can't be used inside dispose() (A1 phone log, 29 Oct).
+  late final WasteQuizNotifier _quizNotifier;
+  late final StateController<bool> _dropPending;
   bool? _lastLoggedRobotControlsEnabled;
   int _frameCount = 0;
   int _fpsFrameCount = 0;
@@ -89,6 +92,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     super.initState();
     _enterLandscapeFullscreen();
     _robotNotifier = ref.read(robotControlProvider.notifier);
+    _quizNotifier = ref.read(wasteQuizProvider.notifier);
+    _dropPending = ref.read(r1DropPendingProvider.notifier);
 
     setDesktopLandscape(true);
 
@@ -348,7 +353,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _r1Ticker?.cancel();
     _robotReplies?.cancel();
     _statusDebounceTimer?.cancel();
-    ref.read(r1DropPendingProvider.notifier).state = false;
+    _dropPending.state = false;
     HardwareKeyboard.instance.removeHandler(_onKey);
     WidgetsBinding.instance.removeObserver(this);
     _gate.dispose(); // motor 0,0, heartbeat off
@@ -359,7 +364,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _robotNotifier.stopStream();
 
     // Dismiss quiz if it was left open so it doesn't block future scans.
-    ref.read(wasteQuizProvider.notifier).dismiss();
+    _quizNotifier.dismiss();
 
     debugPrint('[Control] Leaving robot control, disconnecting WebSocket');
     unawaited(_robotNotifier.disconnect());

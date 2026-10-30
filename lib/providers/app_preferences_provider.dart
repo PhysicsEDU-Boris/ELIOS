@@ -12,9 +12,13 @@ enum QuestionSource { bank, gemma }
 const defaultQuestionSource =
     bool.fromEnvironment('GEMMA_QUESTIONS') ? QuestionSource.gemma : QuestionSource.bank;
 
-/// The source a quiz session uses: the debug switch in debug builds, always
-/// the bank in release builds (the switch is not shown there).
-QuestionSource effectiveQuestionSource(QuestionSource chosen, {bool debug = kDebugMode}) =>
+/// `--dart-define=TESTER_BUILD=true`: a release-mode build for sideloaded phone
+/// testing. It shows the source switch and the tester log panel (decision 0040).
+const testerBuild = bool.fromEnvironment('TESTER_BUILD');
+
+/// The source a quiz session uses: the switch in debug and tester builds, always
+/// the bank in a normal release build (the switch is not shown there).
+QuestionSource effectiveQuestionSource(QuestionSource chosen, {bool debug = kDebugMode || testerBuild}) =>
     debug ? chosen : QuestionSource.bank;
 
 /// UI-only application preferences (not device connection related),

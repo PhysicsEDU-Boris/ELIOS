@@ -12,6 +12,8 @@ import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
 
 import 'firebase_options_loader.dart';
+import 'providers/app_preferences_provider.dart' show testerBuild;
+import 'services/tester_log.dart';
 import 'services/gemma_quiz_service.dart';
 import 'services/scan_record_store.dart';
 import 'widgets/desktop_viewport.dart';
@@ -24,6 +26,21 @@ void main() async {
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   const envName = String.fromEnvironment('ELIO_ENV', defaultValue: 'dev');
+
+  if (testerBuild) {
+    await TesterLog.instance.init();
+    final previous = FlutterError.onError;
+    FlutterError.onError = (details) {
+      TesterLog.instance.log('error', '${details.exceptionAsString()}\n${details.stack}');
+      previous?.call(details);
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      TesterLog.instance.log('error', 'uncaught $error\n$stack');
+      return false;
+    };
+    await GemmaQuizService.instance.checkPreviousRun();
+    GemmaQuizService.instance.startThermalWatch();
+  }
 
   try {
     // Load platform-specific Firebase config from env files.
@@ -63,7 +80,8 @@ void main() async {
       await FlutterGemma.initialize(inferenceEngines: const [LiteRtLmEngine()]);
       // One-time, offline copy of the bundled model, in the background at
       // launch so it is done before the user drives the robot or scans.
-      unawaited(GemmaQuizService.instance.prepare());
+      // The tester build loads Gemma lazily instead (decision 0040).
+      if (!testerBuild) unawaited(GemmaQuizService.instance.prepare());
     } catch (error) {
       debugPrint('FlutterGemma.initialize failed: $error');
     }

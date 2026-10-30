@@ -13,6 +13,7 @@ import '../providers/esp_config_provider.dart';
 import '../providers/robot_provider.dart';
 import '../services/gemma_quiz_service.dart';
 import '../utils/system_ui.dart';
+import '../widgets/tester_panel.dart';
 import 'control_screen.dart';
 import 'device_scan_screen.dart';
 
@@ -1747,6 +1748,9 @@ class _OfflineAiCard extends StatelessWidget {
                 GemmaStatus.loading => ('Memuat AI ke memori…', amber),
                 GemmaStatus.ready => ('Siap — AI sedang aktif', primaryColor),
                 GemmaStatus.error => (p.error ?? 'AI gagal disiapkan', red),
+                GemmaStatus.missing => (p.error ?? 'Model belum ada. Mode bank aktif.', amber),
+                GemmaStatus.paused => (service.blockedReason ?? 'Gemma dijeda', amber),
+                GemmaStatus.killed => (p.error ?? 'Gemma dihentikan sistem, mode bank aktif.', red),
                 GemmaStatus.idle when service.isPrepared => ('Siap dipakai — tidak butuh internet', primaryColor),
                 GemmaStatus.idle => ('Belum disiapkan', textSecondary),
               };
@@ -1804,10 +1808,11 @@ class _OfflineAiCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Model AI sudah ikut terpasang bersama aplikasi. Di Android, persiapan pertama '
-            'menyalinnya ke penyimpanan (±2,4 GB, 1–3 menit, sekali saja). Tidak butuh internet.',
+            'Di Mac, model AI ikut terpasang bersama aplikasi. Di Android, model tidak ikut dalam APK: '
+            'salin file model ke folder aplikasi dengan adb push. Tidak butuh internet.',
             style: GoogleFonts.inter(color: textSecondary, fontSize: 11, height: 1.35, fontWeight: FontWeight.w600),
           ),
+          if (testerBuild) const TesterPanel(),
         ],
       ),
     );

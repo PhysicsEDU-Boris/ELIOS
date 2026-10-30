@@ -793,6 +793,7 @@ class _ResultCard extends ConsumerWidget {
                     time: DateTime.now(),
                     itemName: itemName,
                     category: category,
+                    cropPhotoPath: state.historyPhotoPath,
                     difficulty: state.difficulty,
                     questions: state.recordedQuestions,
                     trophies: earnedTrophies,

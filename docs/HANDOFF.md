@@ -39,3 +39,4 @@
 - Follow the updated Notion UI plan: finish combined real-Gemma/localhost-camera multi-question acceptance before U7 Firebase sync, then U8 documentation/Figma.
 - Back up and read-verify owner records before any test; prove a separate test store is active before interacting. Never seed or reset the owner profile. Preserve the unresolved original-record incident.
 - Reuse the signed retained app, verified model store and local build cache. Test MCQ explanation → next question, essay rubric during live frames, trophy math, relaunch and complete native PDF. No physical robot or recipient selection.
+- A1 Android tester APK: see `docs/handoff/lane-a.md` and decision 0040.
