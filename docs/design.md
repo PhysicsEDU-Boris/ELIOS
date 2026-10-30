@@ -283,7 +283,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 
 # ELIOS addendum (31 Oct 2026). The text above is the owner's DevLog file, unchanged.
 
-Status: DRAFT, pending owner OK. DevLog (designmd.ai/chef/devlog, MIT, v1) defines DARK only; the site's Light/Dark switch only changes its preview. The light mode below is DERIVED from the same hues (Tailwind slate/green/amber/cyan/red) and contrast-checked on 31 Oct 2026.
+Status: accepted by the owner on 31 Oct 2026. DevLog (designmd.ai/chef/devlog, MIT, v1) defines DARK only; the site's Light/Dark switch only changes its preview. The light mode below is DERIVED from the same hues (Tailwind slate/green/amber/cyan/red) and contrast-checked on 31 Oct 2026.
 
 ## Mode rule
 - Both modes ship. Default: follow the system setting (ThemeMode.system). A manual switch in Settings is a later task.
@@ -318,7 +318,7 @@ Status: DRAFT, pending owner OK. DevLog (designmd.ai/chef/devlog, MIT, v1) defin
 - Input border `#334155` (1.72:1) and checkbox/radio border `#475569` (2.36:1) need 3:1: use about `#64748B`.
 - Quiz answer fills (`#E21B3C`, `#1368CE`, `#26890C`, `#D89E00`) stay a fixed four-hue set in both modes: white text on red, blue and green (4.71, 5.39, 4.50:1); `#0F172A` text on yellow (7.49:1; white is 2.38:1).
 
-## Not in the DevLog file (to define in the foundation PR)
+## Not in the DevLog file (defined in the foundation PR, see "Defined here" and "Light mode notes" below; still open: manual mode switch, Settings screen styles)
 - Disabled, selected-list, snackbar, dialog, bottom-sheet, tab bar, app bar and switch styles; extend from the tokens and record them here.
 
 ---

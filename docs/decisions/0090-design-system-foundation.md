@@ -14,3 +14,4 @@ Status: accepted for the foundation PR; screen adoption is a later task.
 
 ## Not done
 The manual light/dark switch in Settings, `google_fonts` removal from existing screens (`GoogleFonts.config.allowRuntimeFetching` is not set in this PR because the screens that use the package are out of scope), any screen adoption.
+`google_fonts` is replaced file by file by the screen lanes (S1 to S3), each in the files it owns.

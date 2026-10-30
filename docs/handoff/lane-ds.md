@@ -15,8 +15,7 @@
 `ElioDarkTheme.wrap(const MyScreen())`; wrap fields or cards in `ElioGlowBox` for the hover/focus glow.
 
 ## Open
-- Owner OK on the addendum (still marked DRAFT).
 - Light card has no faint shadow (border only); see design.md.
 - `google_fonts` is still used by ~10 screens and fetches at runtime (offline on the robot). Needs its own task: bundle-based replacement or `allowRuntimeFetching = false`.
 - Checkbox/radio render at 18 dp, not 16.
-- Tests: 39 new in `test/theme`. Full suite: 617 pass, 2 known splash failures.
+- Tests: 50 new in `test/theme`. Full suite: 628 pass + the 2 known splash failures.
