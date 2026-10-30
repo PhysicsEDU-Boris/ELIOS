@@ -783,8 +783,9 @@ class GemmaQuizService {
   }
 
   /// Longest side, in pixels, of the photo sent to Gemma (the History photo
-  /// stays full size). ponytail: 512 is a first guess, not measured on the
-  /// phone yet; compare `[gemma] identify ms=` between builds.
+  /// stays full size). Phone test 30 Oct (3 objects, 1 round each): first token
+  /// 18.4 s at 512, 18.1 s at 384, 17.1 s at 256, so the photo size barely matters;
+  /// ponytail: 3 scans per size cannot show an accuracy difference, retest if naming drops.
   @visibleForTesting
   // `--dart-define=IDENTIFY_MAX_SIDE=384` builds the 512/384/256 phone comparison without code edits.
   static int identifyMaxSide = const int.fromEnvironment('IDENTIFY_MAX_SIDE', defaultValue: 512);

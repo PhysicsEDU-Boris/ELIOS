@@ -55,3 +55,12 @@ Decision 0041. Status: code and tests done; NO phone was connected, so no timing
 - Whether dropping the can example stops battery-as-can: needs a few scans of small objects.
 - Background load vs. a scan started during the load (it should wait, not start a second load): covered by the single-flight test, not seen on a device.
 - Test steps on the phone: install the new APK, push no model (already there), open the scan screen and watch the state change to Memuat then Siap before pressing the shutter; scan a battery; tap "Bukan ini?"; pull `elio_tester.log` and read the lines above.
+
+## E1 photo-size test (30 Oct, Edge 60 Fusion, GPU, 3 objects x 1 round per size)
+| Max side | Photo A->B bytes (avg) | queryMs | First token (avg) | Total request (avg) | Named |
+|---|---|---|---|---|---|
+| 512 | 78k -> 62k | 0 | 18.4 s (17.8, 19.0, 18.6) | 24.8 s | laptop, kaleng minuman, susu |
+| 384 | 73k -> 38k | 0 | 18.1 s (18.2, 17.9, 18.3) | 24.3 s | laptop, cup, milk tea |
+| 256 | 69k -> 19k | 0 | 17.1 s (16.7, 17.8, 16.7) | 23.6 s | laptop, cup, botol plastik PET |
+- Result: shrinking the photo 3x cuts the first token by about 1.3 s (7%), within the 1.2 s spread between scans at one size. Decision: keep 512 (`IDENTIFY_MAX_SIDE` default). Photo size does not matter for speed; the image encoder cost dominates and `queryMs` is 0.
+- Accuracy not judged: the owner did not give ground truth for the objects, only 3 scans per size. At 384 and 256 two names came back in English ("cup", "milk tea").
