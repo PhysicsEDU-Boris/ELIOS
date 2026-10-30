@@ -1,6 +1,6 @@
 # 0041: Faster photo identify, "Bukan ini?" picker, background Gemma load (E1)
 
-- Status: Accepted (app and tests; phone timings NOT measured, see below)
+- Status: Accepted (app, tests and phone check on 30-31 Oct; E battery naming inconclusive, see Consequences)
 - Date: 2026-10-29
 - Amends: 0040 (the tester build no longer waits for the first request to load Gemma on the phone scan screen).
 - Code: `lib/services/gemma_quiz_service.dart` (`identifyItem`, `warmUp`, `identifyMaxSide`),
@@ -34,14 +34,22 @@ scan also paid for the load.
 3. Background load. `warmUp(scanScreen: true)` is called when the phone scan screen opens. In the tester build it
    loads only if the model file exists, Gemma is not blocked (hot, killed) and nothing is loaded or loading;
    `ensureReady` joins an in-flight load, so a scan during the load waits for it and does not start a second one.
+   Phone check: leaving the scan screen used to free the model, so reopening reloaded it (7.6 s). In the tester build the
+   scan screen now only cancels a running generation and keeps the model loaded (about 1.6 GB held until the app closes);
+   the Control screen still frees it.
    No file: nothing happens and "Model belum ada" still comes from the scan. No preload at app launch. Non-tester
    builds behave as before.
 
 ## Consequences
 
-- Phone effect of 1 is unmeasured. The crop is already small (22-30 KB), so the cap may change little; if
-  `photo A -> B` shows A = B and identify ms does not move, the time is the vision encoder itself and the next
-  lever is the encoder's own token budget or a smaller model, not the photo. Compare `identify ms=`, `queryMs=`
-  and `first token` between the A1 and E1 builds.
+- Measured (Edge 60 Fusion, GPU): photo size does not change identify speed. 512/384/256 px gave 24.8/24.3/23.6 s
+  (first token 18.4/18.1/17.1 s, `queryMs=0`), so 512 stays; the vision encoder dominates. With the shorter prompt,
+  identify was 19.8-23.9 s per request (A1: 23-27 s).
+- Picker verified on the phone (non-B3 and B3): quiz restarts, chip disappears after the first answer, the hazard card
+  precedes the B3 questions, History keeps the original photo. Not verified: the photo inside the exported PDF.
+- Background load verified: one load, Memuat -> Siap, a scan during the load waits for it (one load, no error).
+- Battery naming after dropping the can example: 1 of 3 scans named a battery, 1 "benda tak dikenal", 1 unnamed; never
+  a can. Too few scans (one blurred) to say the prompt helped.
 - A wrongly named B3 item stays a hazard risk only until the user taps "Bukan ini?"; nothing is auto-corrected.
 - Picking an item without a bank object is not possible (13 bank objects only).
+- The tester build holds the model in RAM after the scan screen closes.

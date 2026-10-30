@@ -38,7 +38,7 @@ Status: working on one phone, owner accepted it as "fine for now" on 29 Oct. Loc
 
 ## E1 identify speed, "Bukan ini?" picker, background load (branch `feat/e1-identify-speed`, stacked on A1, draft PR base `feat/a1-android-test-apk`)
 
-Decision 0041. Status: code and tests done; NO phone was connected, so no timing was measured on a device.
+Decision 0041. Status: code and tests done; phone-checked on the Edge 60 Fusion on 30-31 Oct (table below).
 
 ### What changed
 - Identify: photo capped at 512 px long side for Gemma only (History keeps the full crop); shorter prompt; "kaleng aluminium" removed from the examples. The resize is inside `_executeSend` after the slot is claimed (an earlier version awaited it before `_send` and broke the single-flight tests of decision 0003).
@@ -50,11 +50,16 @@ Decision 0041. Status: code and tests done; NO phone was connected, so no timing
 - New `test/e1_identify_test.dart` (10 tests); break-checked: old warm-up, old identify (full photo, can prompt) and a disabled `correctItem` each fail their test.
 - `flutter analyze` and secret scan clean; full-suite result in the PR description.
 
-### Not measured / open
-- Identify seconds on the phone. The crop is small already, so the 512 cap may do little; if `photo A -> B` has A = B and identify ms is unchanged, the vision encoder is the cost.
-- Whether dropping the can example stops battery-as-can: needs a few scans of small objects.
-- Background load vs. a scan started during the load (it should wait, not start a second load): covered by the single-flight test, not seen on a device.
-- Test steps on the phone: install the new APK, push no model (already there), open the scan screen and watch the state change to Memuat then Siap before pressing the shutter; scan a battery; tap "Bukan ini?"; pull `elio_tester.log` and read the lines above.
+### Phone check (30-31 Oct, Edge 60 Fusion, GPU, tester APK, 512 px)
+| Check | Result | Measured |
+|---|---|---|
+| A. Background load, cold | Pass after one fix | Memuat -> Siap, one `background load` line and one load (9.9 s). First build freed the model when the scan screen closed, so reopening reloaded it (7.6 s); the scan screen now keeps the model loaded in the tester build. Leaving the Control screen still frees it (D reloaded: 12.5 s). |
+| B. Shutter during load | Pass | One load (5.9 s), no second load, no error. Load start to identify end 29.8 s (identify 27.4 s incl. load; first token 18.9 s). |
+| C. Picker, non-B3 | Pass | `item corrected "Kertas" -> "botol plastik"`; quiz restarted with that object's questions; chip gone after the first answer; History shows the picked name and the original photo. PDF export ran ("berhasil diekspor"); the photo inside the PDF was NOT inspected (share sheet only). |
+| D. Picker, B3 | Pass | `item corrected "Kertas" -> "baterai"`; hazard card before any question; History shows "Baterai", B3, original photo. |
+| E. Battery naming, 3 scans, no picker | Not conclusive | "benda tak dikenal" (frame blurred, battery moving), "baterai", then no name (`ok=true` but the app showed "belum dikenali"). 1 of 3 named a battery; never "kaleng". |
+- Identify with the 512 px photo: first token 14.9-18.9 s, request 19.8-23.9 s over B, D and E (A1 build: 17.7-22.3 s first token, 23-27 s request). Photo 28-39 KB -> 22-31 KB; `queryMs=0`.
+- Limits: one phone, scan 1 of E was taken while the battery moved, question source was Bank (essays saved ungraded), the raw Gemma reply is not in the log (scan 3's text is unknown).
 
 ## E1 photo-size test (30 Oct, Edge 60 Fusion, GPU, 3 objects x 1 round per size)
 | Max side | Photo A->B bytes (avg) | queryMs | First token (avg) | Total request (avg) | Named |
