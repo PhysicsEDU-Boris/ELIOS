@@ -786,7 +786,8 @@ class GemmaQuizService {
   /// stays full size). ponytail: 512 is a first guess, not measured on the
   /// phone yet; compare `[gemma] identify ms=` between builds.
   @visibleForTesting
-  static int identifyMaxSide = 512;
+  // `--dart-define=IDENTIFY_MAX_SIDE=384` builds the 512/384/256 phone comparison without code edits.
+  static int identifyMaxSide = const int.fromEnvironment('IDENTIFY_MAX_SIDE', defaultValue: 512);
 
   /// Step 1 of a photo scan: name the object, with nothing else in the
   /// prompt to bias it. Loads the image encoder if needed.
