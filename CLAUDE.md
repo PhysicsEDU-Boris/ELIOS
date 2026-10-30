@@ -42,6 +42,15 @@ Permanent rules for working in this repo (PhysicsEDU-Boris/ELIOS).
   with `open` — not `flutter run` from the IDE (breaks Local Network
   permission).
 
+## Local debug app and model hygiene
+
+- On the owner's Mac, the sole retained debug app is `~/Applications/ELIOS.app` (8f0e77c, verified 29 Oct 2026). Replace this same app; do not leave another registered worktree build. Move the final bundle rather than copying it, then verify one ELIOS registration. Keep the existing runtime model and original build asset.
+- Before every Mac build, inventory existing ELIOS bundles/LaunchServices registrations and Gemma model stores; record which app path, bundle ID, APP_COMMIT and model copy are in use.
+- Reuse the owner's existing debug app/output and verified model store where possible. An isolated source worktree does not justify another installed/registered app or a duplicate model download.
+- If a separate test bundle is necessary, record its purpose and cleanup plan first. At task end, stop test processes, restore the normal app entry point, reconcile task-created registrations/bundles, and report exactly which app/model is kept and what older copies remain.
+- Never silently leave old debug apps or model copies behind. Do not delete owner/pre-existing apps, models or data without confirming which copies to keep; remove only verified disposable artifacts created by the current task.
+- Update the local build notes and HANDOFF after every build, including signing/Keychain or model-location changes. Do not commit model files, credentials or private configuration.
+
 ## Workflow
 
 - Find code with CodeGraph (`codegraph_explore` / `codegraph explore`), not
