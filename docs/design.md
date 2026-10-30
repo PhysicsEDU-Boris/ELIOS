@@ -325,9 +325,11 @@ Status: DRAFT, pending owner OK. DevLog (designmd.ai/chef/devlog, MIT, v1) defin
 
 # Deviations from the owner file (task DS, dark theme)
 
-Scope of this PR: the dark theme only (`ElioDarkTheme`). The light tokens above are
-documented but not built here. The theme is scoped: `MaterialApp.theme` in `main.dart`
-is unchanged.
+Scope of this PR: dark (`ElioDarkTheme`) and light (`ElioLightTheme`), both explicit
+`ThemeData`, tokens as `ElioTokens.dark` / `ElioTokens.light` (same field names).
+`ElioTheme.wrap(child)` picks one from the platform brightness. The theme is scoped:
+`MaterialApp.theme` in `main.dart` is unchanged. The light set is the addendum's, unchanged;
+every light text pair reaches 4.5:1 and every form border 3:1, so it has no deviations.
 
 Ratios are WCAG 2.x, measured by `test/theme/elio_tokens_test.dart`.
 
@@ -360,3 +362,12 @@ Not yet verified against screens: nothing consumes the theme.
 JetBrains Mono and Inter are bundled as variable TTFs in `assets/fonts/` with their OFL
 texts (OFL-JetBrainsMono.txt, OFL-Inter.txt). Weights are set with `FontVariation('wght')`.
 The robot runs offline, so no runtime font fetching.
+
+## Light mode notes
+
+Light buttons: primary and destructive keep their fill; destructive text is white on `#DC2626`
+(hover `#B91C1C`, active `#991B1B`). Checkbox and radio use `#15803D` (Primary text) for the
+selected and hover border, because the `#4ADE80` fill is under 3:1 on white. Focus is the addendum
+ring and halo (`ElioLightEffects.focus`, drawn by `ElioGlowBox`); hover is a fill change, no glow.
+Tooltip has no shadow. Cards are border-only: the faint `0 1px 2px` card shadow is exposed as
+`ElioLightEffects.card` but cannot be set through `CardThemeData` without Material elevation.

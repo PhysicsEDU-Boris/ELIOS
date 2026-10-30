@@ -116,6 +116,66 @@ abstract final class ElioTokens {
   static const disabledOpacity = 0.35;
   static const disabledInputOpacity = 0.4;
   static const tooltipMaxWidth = 260.0;
+
+  static const dark = ElioPalette(
+    isDark: true,
+    background: background,
+    surface: surface,
+    surfaceRaised: surfaceRaised,
+    field: background,
+    textPrimary: textPrimary,
+    textSecondary: textSecondary,
+    textTertiary: textTertiary,
+    borderSubtle: borderSubtle,
+    borderMedium: borderMedium,
+    borderStrong: borderStrong,
+    formBorder: formBorder,
+    primary: primary,
+    primaryText: primary,
+    onPrimary: background,
+    primaryHover: primaryHover,
+    primaryActive: primaryActive,
+    secondaryText: secondary,
+    tertiaryText: tertiary,
+    error: error,
+    errorText: error,
+    onError: background,
+    destructiveHover: destructiveHover,
+    destructiveActive: destructiveActive,
+    tooltipBg: textPrimary,
+    tooltipText: background,
+  );
+
+  // Derived light set (docs/design.md addendum). Borders subtle/medium/strong
+  // are decorative only; inputs, checkbox and radio use formBorder.
+  static const light = ElioPalette(
+    isDark: false,
+    background: Color(0xFFF8FAFC),
+    surface: Color(0xFFFFFFFF),
+    surfaceRaised: Color(0xFFF1F5F9),
+    field: Color(0xFFFFFFFF),
+    textPrimary: Color(0xFF0F172A),
+    textSecondary: Color(0xFF475569),
+    textTertiary: Color(0xFF64748B),
+    borderSubtle: Color(0xFFE2E8F0),
+    borderMedium: Color(0xFFCBD5E1),
+    borderStrong: Color(0xFF94A3B8),
+    formBorder: Color(0xFF64748B),
+    primary: Color(0xFF4ADE80),
+    primaryText: Color(0xFF15803D),
+    onPrimary: Color(0xFF0F172A),
+    primaryHover: Color(0xFF22C55E),
+    primaryActive: Color(0xFF16A34A),
+    secondaryText: Color(0xFFB45309),
+    tertiaryText: Color(0xFF0E7490),
+    error: Color(0xFFDC2626),
+    errorText: Color(0xFFB91C1C),
+    onError: Color(0xFFFFFFFF),
+    destructiveHover: Color(0xFFB91C1C),
+    destructiveActive: Color(0xFF991B1B),
+    tooltipBg: Color(0xFF0F172A),
+    tooltipText: Color(0xFFF1F5F9),
+  );
 }
 
 /// Glow = BoxShadow, never Material elevation. Use only on hover, focus and
@@ -147,5 +207,67 @@ abstract final class ElioGlow {
         color: const Color(0xFF000000).withValues(alpha: 0.5),
         blurRadius: 48,
         offset: const Offset(0, 24)),
+  ];
+}
+
+/// One mode's colours, same field names in both sets: [ElioTokens.dark] and
+/// [ElioTokens.light]. Light values are the derived set in the docs/design.md
+/// addendum. `primary` is the fill (buttons); `primaryText` is for text, links,
+/// icons and focus on this mode's surfaces.
+class ElioPalette {
+  const ElioPalette({
+    required this.isDark,
+    required this.background,
+    required this.surface,
+    required this.surfaceRaised,
+    required this.field,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.textTertiary,
+    required this.borderSubtle,
+    required this.borderMedium,
+    required this.borderStrong,
+    required this.formBorder,
+    required this.primary,
+    required this.primaryText,
+    required this.onPrimary,
+    required this.primaryHover,
+    required this.primaryActive,
+    required this.secondaryText,
+    required this.tertiaryText,
+    required this.error,
+    required this.errorText,
+    required this.onError,
+    required this.destructiveHover,
+    required this.destructiveActive,
+    required this.tooltipBg,
+    required this.tooltipText,
+  });
+
+  final bool isDark;
+  final Color background, surface, surfaceRaised;
+
+  /// Input, checkbox and radio fill.
+  final Color field;
+  final Color textPrimary, textSecondary, textTertiary;
+  final Color borderSubtle, borderMedium, borderStrong, formBorder;
+  final Color primary, primaryText, onPrimary, primaryHover, primaryActive;
+  final Color secondaryText, tertiaryText;
+  final Color error, errorText, onError, destructiveHover, destructiveActive;
+  final Color tooltipBg, tooltipText;
+}
+
+/// Light mode effects (addendum): no green glow on white. Focus = 2 dp ring
+/// `#15803D` plus a 4 dp `rgba(22,163,74,0.25)` halo. Hover = raised fill.
+abstract final class ElioLightEffects {
+  static const focus = [
+    BoxShadow(color: Color(0x4016A34A), spreadRadius: 6),
+    BoxShadow(color: Color(0xFF15803D), spreadRadius: 2),
+  ];
+  static const card = [
+    BoxShadow(color: Color(0x0F0F172A), blurRadius: 2, offset: Offset(0, 1)),
+  ];
+  static const overlay = [
+    BoxShadow(color: Color(0x1F0F172A), blurRadius: 24, offset: Offset(0, 8)),
   ];
 }

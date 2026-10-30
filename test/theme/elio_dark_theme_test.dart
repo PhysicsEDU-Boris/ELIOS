@@ -239,6 +239,8 @@ void main() {
     expect(main, contains('ColorScheme.fromSeed(seedColor: const Color(0xFF0F6E56))'));
     expect(main, isNot(contains('elio_dark_theme')));
     expect(main, isNot(contains('ElioDarkTheme')));
+    expect(main, isNot(contains('ElioTheme')));
+    expect(main, isNot(contains('ElioLightTheme')));
   });
 
   test('fonts are bundled and declared, no runtime fetching', () {
