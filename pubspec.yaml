@@ -80,6 +80,14 @@ flutter:
     - assets/module/
     - assets/quiz/
 
+  fonts:
+    - family: JetBrains Mono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Variable.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Variable.ttf
+
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
