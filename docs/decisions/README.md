@@ -36,3 +36,4 @@ their status changed.
 | [0028](0028-trophy-rules-and-scan-history.md) | Trophy rules, student levels, and local scan history (H1) | Accepted |
 | [0030](0030-result-card-and-scan-history.md) | Result card, trophies, "Scan lagi", and saving into Scan History (U2) | Accepted |
 | [0040](0040-android-tester-build.md) | Android tester build: Bank/Gemma switch in tester builds only, sideloaded model, lazy load, thermal gate, kill notice, phone log, YUV stream (A1); amends 0018 | Accepted (app; phone numbers pending) |
+| [0041](0041-identify-speed-picker-warmup.md) | Faster photo identify (smaller photo, shorter prompt), "Bukan ini?" picker, background Gemma load on the scan screen (E1); amends 0040 | Accepted (phone timings pending) |

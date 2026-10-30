@@ -19,6 +19,7 @@ import '../services/quiz_explanation_service.dart';
 import '../services/quiz_tts_service.dart';
 import '../services/scan_diagnostics.dart';
 import '../services/scan_record_store.dart';
+import '../services/tester_log.dart';
 import '../services/websocket_service.dart';
 import 'app_preferences_provider.dart';
 
@@ -117,6 +118,19 @@ class WasteQuizUiState {
   bool get answered => question?.type == QuizQuestionType.multipleChoice
       ? selectedOption != null
       : essaySubmitted;
+
+  /// "Bukan ini?" is offered from the moment the object is named until the
+  /// first question is answered.
+  bool get canCorrectItem =>
+      scan != null &&
+      questionIndex == 0 &&
+      !answered &&
+      const {
+        WasteQuizPhase.confirmingHazard,
+        WasteQuizPhase.confirmingMismatch,
+        WasteQuizPhase.loadingQuestion,
+        WasteQuizPhase.active,
+      }.contains(phase);
 
   bool get isLastQuestion => questionIndex >= totalQuestions - 1;
 
@@ -395,6 +409,20 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       return;
     }
     _loadQuestion(0);
+  }
+
+  /// The user says the named object is wrong and picks the right one: the quiz
+  /// restarts for it (hazard rules apply to the new item), the photo stays
+  /// the History photo.
+  void correctItem(String label, {String? category}) {
+    if (!state.canCorrectItem) return;
+    TesterLog.instance.log('scan', 'item corrected "${state.scan!.displayName}" -> "$label"');
+    _diagnostics?.event('item_corrected', {'from': state.scan!.displayName, 'to': label});
+    _generation++;
+    _detectorChoice = null;
+    GemmaQuizService.instance.cancel();
+    unawaited(QuizTtsService.instance.stop());
+    _startSession(ScannedWaste.fromLabel(label, categoryHint: category));
   }
 
   void confirmHazard() {

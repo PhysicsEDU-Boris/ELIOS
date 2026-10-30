@@ -47,6 +47,13 @@ class QuestionBank {
   final Map<String, List<Map<String, dynamic>>> _pools;
   final Map<String, String> _labelPools;
 
+  /// What the "Bukan ini?" picker offers: each bank object by its main name,
+  /// with the bin its detector class implies (null when it has none).
+  List<({String name, String? category})> get pickerItems => [
+        for (final o in _objects)
+          (name: o.synonyms.first, category: o.label == null ? null : ScannedWaste.detectorCategory(o.label!)),
+      ];
+
   static String normalize(String s) =>
       ' ${s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9 ]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim()} ';
 

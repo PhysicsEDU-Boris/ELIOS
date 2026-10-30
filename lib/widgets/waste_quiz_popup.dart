@@ -13,6 +13,7 @@ import '../providers/app_preferences_provider.dart';
 import '../providers/robot_provider.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../services/gemma_quiz_service.dart';
+import '../services/question_bank.dart';
 import '../services/quiz_pdf_service.dart';
 import '../services/quiz_tts_service.dart';
 import '../services/scan_record_store.dart';
@@ -420,6 +421,12 @@ class _QuestionPanel extends ConsumerWidget {
                       bg: elioTertiaryContainer,
                       fg: Colors.white,
                     ),
+                    if (state.canCorrectItem)
+                      ActionChip(
+                        label: const Text('Bukan ini?'),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => _pickCorrectItem(context, notifier),
+                      ),
                     _Chip(
                       // The shown question's own type: with essays off, every index is multiple choice.
                       label: (state.question?.type ?? questionTypeFor(state.questionIndex)) ==
@@ -1436,6 +1443,23 @@ class _Chip extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "Bukan ini?": the user picks the right object from the question bank's list.
+Future<void> _pickCorrectItem(BuildContext context, WasteQuizNotifier notifier) async {
+  final bank = await QuestionBank.load();
+  if (!context.mounted) return;
+  final picked = await showDialog<({String name, String? category})>(
+    context: context,
+    builder: (context) => SimpleDialog(
+      title: const Text('Benda apa ini?'),
+      children: [
+        for (final item in bank.pickerItems)
+          SimpleDialogOption(onPressed: () => Navigator.pop(context, item), child: Text(item.name)),
+      ],
+    ),
+  );
+  if (picked != null) notifier.correctItem(picked.name, category: picked.category);
 }
 
 /// Detector and Gemma disagree on the bin: nothing runs until the user picks.

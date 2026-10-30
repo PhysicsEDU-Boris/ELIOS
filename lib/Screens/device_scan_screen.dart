@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../providers/app_preferences_provider.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../services/frame_source/phone_frame_source.dart';
 import '../services/frame_source/viewfinder_crop.dart';
@@ -51,7 +52,7 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
     });
     // No robot video here, so it's safe to load the model (with the image
     // encoder, since scans are photos) while the user frames the shot.
-    GemmaQuizService.instance.warmUp(vision: true);
+    GemmaQuizService.instance.warmUp(vision: true, scanScreen: true);
     _source.initialize();
   }
 
@@ -109,7 +110,13 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
     _source.removeListener(_onSourceChanged);
     _source.dispose();
     Future.microtask(_quiz.dismiss);
-    unawaited(GemmaQuizService.instance.dispose());
+    // Tester build keeps the model loaded so reopening the screen does not reload it (E1);
+    // it stops any running generation but holds ~1.6 GB until the app closes.
+    if (testerBuild) {
+      unawaited(GemmaQuizService.instance.cancel());
+    } else {
+      unawaited(GemmaQuizService.instance.dispose());
+    }
     setDesktopLandscape(false);
     unawaited(SystemChrome.setPreferredOrientations(const [DeviceOrientation.portraitUp]));
     unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
