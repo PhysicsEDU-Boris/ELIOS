@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/elio_theme_mode_provider.dart';
 import '../theme/elio_tokens.dart';
 import 'auth/auth_widgets.dart' show authPalette;
+import 'splash/elio_leaf.dart' show ElioMark;
 
 const _minTap = 48.0;
 
@@ -55,15 +56,7 @@ class ElioSidebar extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: p.primary,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(Icons.smart_toy_outlined, color: p.onPrimary),
-                    ),
+                    ElioMark(size: 40, color: p.primaryText),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(

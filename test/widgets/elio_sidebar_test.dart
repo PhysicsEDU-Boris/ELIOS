@@ -4,6 +4,7 @@ import 'dart:ui' show ImageByteFormat, Tristate;
 import 'package:elio/providers/elio_theme_mode_provider.dart';
 import 'package:elio/theme/elio_theme.dart';
 import 'package:elio/widgets/elio_sidebar.dart';
+import 'package:elio/widgets/splash/elio_leaf.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -68,6 +69,7 @@ void main() {
     testWidgets('${b.name}: items, footer and actions', (t) async {
       final calls = await _pump(t, brightness: b);
       expect(t.takeException(), isNull);
+      expect(find.byType(ElioMark), findsOneWidget);
       for (final s in [
         'ELIOS',
         'NAVIGATE',
