@@ -22,3 +22,7 @@
 - Complete real-Gemma/localhost-camera multi-question acceptance: MCQ explanation → next question, essay rubric during live frames, trophy math, quit/relaunch, saved review and complete native PDF export.
 - Follow `CLAUDE.md` Mac build hygiene: reuse the retained app/model, inventory before building and verify one app registration afterwards. No physical robot movement or sharing recipient selection.
 - Overall queue: U4c combined native acceptance, then U7 Firebase sync, then U8 documentation/Figma. See [NEXT_TASK.md](NEXT_TASK.md).
+
+## Design file font (decision 0091, draft)
+
+- `docs/design.md` now specifies Google Sans Flex and Google Sans Code and a new Status Chip. The app code is unchanged (still JetBrains Mono, Inter, Sora, Manrope). Radii now follow the M3 scale with continuous corners. Check the font licences before bundling.

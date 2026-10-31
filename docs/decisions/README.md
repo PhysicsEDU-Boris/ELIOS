@@ -39,3 +39,4 @@ their status changed.
 | [0041](0041-identify-speed-picker-warmup.md) | Faster photo identify (smaller photo, shorter prompt), "Bukan ini?" picker, background Gemma load on the scan screen (E1); amends 0040 | Accepted (phone timings pending) |
 | [0060](0060-bank-accepted-only.md) | Owner acceptance and accepted-only bank serving | Accepted |
 | [0070](0070-history-crop.md) | Separate History photos from identification crops | Accepted |
+| [0091](0091-google-sans-flex-font.md) | Design file font change to Google Sans Flex / Google Sans Code, new status chip spec (design only, amends 0090) | Draft |
