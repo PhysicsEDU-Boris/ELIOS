@@ -13,6 +13,7 @@ import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
 
 import 'firebase_options_loader.dart';
 import 'providers/app_preferences_provider.dart' show testerBuild;
+import 'providers/elio_theme_mode_provider.dart' show startupModeOverrides;
 import 'services/tester_log.dart';
 import 'services/gemma_quiz_service.dart';
 import 'services/scan_record_store.dart';
@@ -30,7 +31,10 @@ void main() async {
     await TesterLog.instance.init();
     final previous = FlutterError.onError;
     FlutterError.onError = (details) {
-      TesterLog.instance.log('error', '${details.exceptionAsString()}\n${details.stack}');
+      TesterLog.instance.log(
+        'error',
+        '${details.exceptionAsString()}\n${details.stack}',
+      );
       previous?.call(details);
     };
     PlatformDispatcher.instance.onError = (error, stack) {
@@ -88,7 +92,7 @@ void main() async {
     // Preload scan records from disk so trophies and history are immediately available.
     unawaited(ScanRecordStore.instance.load());
 
-    runApp(const ElioApp());
+    runApp(ElioApp(overrides: await startupModeOverrides()));
   } catch (error, stackTrace) {
     debugPrint('Startup failed: $error');
     debugPrintStack(stackTrace: stackTrace);
@@ -107,11 +111,13 @@ void main() async {
 
 class ElioApp extends StatelessWidget {
   final FirebaseAuth? auth;
-  const ElioApp({super.key, this.auth});
+  final List<Override> overrides;
+  const ElioApp({super.key, this.auth, this.overrides = const []});
 
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
+      overrides: overrides,
       child: MaterialApp(
         title: 'ELIOS',
         debugShowCheckedModeBanner: false,
