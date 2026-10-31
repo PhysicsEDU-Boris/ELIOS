@@ -51,6 +51,7 @@ Future<RouteSpy> pumpAt(
   double textScale = 1.0,
   bool disableAnimations = false,
   EdgeInsets viewInsets = EdgeInsets.zero,
+  List<Override> overrides = const [],
 }) async {
   tester.view
     ..physicalSize = size
@@ -71,6 +72,7 @@ Future<RouteSpy> pumpAt(
     ProviderScope(
       key: UniqueKey(),
       overrides: [
+        ...overrides,
         elioThemeModeProvider.overrideWith(
           () => _ChosenThemeMode(
             brightness == Brightness.dark
