@@ -656,15 +656,19 @@ class _ElioRobot3DViewerState extends State<_ElioRobot3DViewer> {
             if (useStage)
               _RotatingRobotStage(height: widget.height)
             else ...[
-              ExcludeSemantics(
-                child: Flutter3DViewer(
-                  controller: _controller,
-                  src: 'assets/models/robot-elio.glb',
-                  enableTouch: true,
-                  activeGestureInterceptor: true,
-                  progressBarColor: p.primaryText,
-                  onLoad: _handleLoad,
-                  onError: _handleError,
+              // Bottom inset keeps the real model clear of the "DRAG TO ROTATE" label.
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: ExcludeSemantics(
+                  child: Flutter3DViewer(
+                    controller: _controller,
+                    src: 'assets/models/robot-elio.glb',
+                    enableTouch: true,
+                    activeGestureInterceptor: true,
+                    progressBarColor: p.primaryText,
+                    onLoad: _handleLoad,
+                    onError: _handleError,
+                  ),
                 ),
               ),
               if (!_isLoaded)
