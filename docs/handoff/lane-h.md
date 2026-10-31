@@ -30,3 +30,8 @@ Tests need empty local `.env.dev` and `.env.prod` (git-ignored).
 ## Open
 - Sheets and the notification dialog keep the legacy look.
 - Phone feel and the real 3D viewer are not checked here.
+
+## Visual check (phase 3)
+- A. PNGs from tests: `H1_RENDER=1 flutter test test/screens/home_screen_test.dart` writes 9 files to `docs/test-results/h1-home/` (phone light/dark activity and empty, loading, light/dark at text scale 1.3, desktop 1280 light/dark). Compared with Figma 243:2359, 243:2556, 245:2358. One round of fixes: Learning and Quiz Avg cards now have equal height (the Learning subtitle wrapped); locked achievement icon is grey, not green.
+- Still different from Figma: headings and UI text use JetBrains Mono / Inter (the tokens) until DS2 bundles Google Sans Flex; Material icons instead of the Figma outline set; desktop has no sidebar; the real 3D robot is replaced by the static stage in renders.
+- B. Native Mac check: skipped. Precondition 2 failed: no documented isolated test store (HOME or container override) exists in `docs/handoff`, `docs/NEXT_TASK.md` or `CLAUDE.md`, so the app was not built or launched and owner data was not touched. No phone work either (task rule).
