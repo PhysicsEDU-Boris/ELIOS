@@ -23,10 +23,12 @@ import '../models/waste_category.dart';
 import '../providers/app_notification_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/learning_progress_provider.dart';
+import '../providers/elio_theme_mode_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../services/elearning_content_service.dart';
 import '../theme/elio_theme.dart';
 import '../theme/elio_tokens.dart';
+import '../widgets/app_notification_widgets.dart';
 import '../widgets/auth/auth_widgets.dart';
 import '../widgets/elio_colors.dart';
 import 'tabs/elearning/quiz_review_page.dart';
@@ -1642,121 +1644,6 @@ class _QuizHistoryTile extends StatelessWidget {
   }
 }
 
-class _NotificationTile extends StatelessWidget {
-  final AppNotification item;
-  final VoidCallback? onAction;
-
-  const _NotificationTile({required this.item, this.onAction});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _notificationColor(item.type);
-    final actionLabel = item.actionLabel ?? _notificationActionLabel(item);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 13),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(_notificationIcon(item.type), color: color, size: 21),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.title,
-                  style: GoogleFonts.manrope(
-                    color: _ink,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${item.message} • ${_relativeTime(item.createdAt)}',
-                  style: GoogleFonts.manrope(
-                    color: _muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    height: 1.35,
-                  ),
-                ),
-                if (actionLabel != null && onAction != null) ...[
-                  const SizedBox(height: 8),
-                  OutlinedButton(
-                    onPressed: onAction,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: elioGreen,
-                      visualDensity: VisualDensity.compact,
-                      textStyle: GoogleFonts.manrope(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    child: Text(actionLabel),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NotificationsEmptyState extends StatelessWidget {
-  const _NotificationsEmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4F7F5),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _border),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.notifications_none_rounded, color: _muted, size: 30),
-          const SizedBox(height: 10),
-          Text(
-            'No notifications right now.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.manrope(
-              color: _ink,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Learning reminders, quiz review updates, and progress alerts will appear here.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.manrope(
-              color: _muted,
-              fontSize: 11,
-              height: 1.4,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ProgressSheetEmptyMessage extends StatelessWidget {
   final String message;
 
@@ -2616,12 +2503,16 @@ void _showNotificationsSheet({
   required VoidCallback onOpenLearning,
 }) {
   final rootContext = context;
+  final dark =
+      ProviderScope.containerOf(context).read(elioThemeModeProvider) ==
+      ElioThemeMode.dark;
 
   showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Dismiss notifications',
-    barrierColor: Colors.black.withValues(alpha: 0.18),
+    // Figma scrim: black 32 % light, 56 % dark.
+    barrierColor: Colors.black.withValues(alpha: dark ? 0.56 : 0.32),
     transitionDuration: const Duration(milliseconds: 260),
     pageBuilder: (dialogContext, animation, secondaryAnimation) {
       return const SizedBox.shrink();
@@ -2645,191 +2536,174 @@ void _showNotificationsSheet({
               opacity: curved,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-                child: Material(
-                  color: Colors.transparent,
-                  child: Consumer(
-                    builder: (context, ref, _) {
-                      final items = ref.watch(appNotificationProvider);
-                      final notificationNotifier = ref.read(
-                        appNotificationProvider.notifier,
-                      );
+                child: ElioTheme.wrap(
+                  Material(
+                    type: MaterialType.transparency,
+                    child: Consumer(
+                      builder: (context, ref, _) {
+                        final p = authPalette(context);
+                        final items = ref.watch(appNotificationProvider);
+                        final notifier = ref.read(
+                          appNotificationProvider.notifier,
+                        );
+                        final unread = items.where((n) => !n.read).toList();
+                        final earlier = items.where((n) => n.read).toList();
 
-                      return Container(
-                        constraints: BoxConstraints(
-                          maxWidth: 720,
-                          maxHeight:
-                              MediaQuery.of(dialogContext).size.height * 0.78,
-                        ),
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(22),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.14),
-                              blurRadius: 24,
-                              offset: const Offset(0, 12),
+                        Widget tile(AppNotification n) {
+                          final label = _notificationActionLabel(n);
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: ElioNotificationItem(
+                              item: n,
+                              timeLabel: _relativeTime(n.createdAt),
+                              actionLabel: label,
+                              onAction: label == null
+                                  ? null
+                                  : () => _openNotificationAction(
+                                      rootContext: rootContext,
+                                      sheetContext: dialogContext,
+                                      ref: ref,
+                                      notification: n,
+                                      onOpenLearning: onOpenLearning,
+                                    ),
                             ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
+                          );
+                        }
+
+                        Widget group(
+                          String title,
+                          List<AppNotification> list,
+                        ) => Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Center(
-                              child: Container(
-                                width: 42,
-                                height: 4,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFD8DEDB),
-                                  borderRadius: BorderRadius.circular(99),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Text(
+                                title,
+                                style: ElioTokens.overline.copyWith(
+                                  color: p.textSecondary,
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Notifications',
-                                    style: GoogleFonts.sora(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w700,
-                                      color: _ink,
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () =>
-                                      Navigator.of(dialogContext).pop(),
-                                  icon: const Icon(
-                                    Icons.close_rounded,
-                                    size: 20,
-                                  ),
-                                  visualDensity: VisualDensity.compact,
-                                  tooltip: 'Close notifications',
-                                ),
-                              ],
+                            for (final n in list) tile(n),
+                          ],
+                        );
+
+                        final empty = items.isEmpty;
+                        return Container(
+                          constraints: BoxConstraints(
+                            maxWidth: 720,
+                            maxHeight:
+                                MediaQuery.of(dialogContext).size.height * 0.88,
+                          ),
+                          padding: const EdgeInsets.all(16),
+                          decoration: ShapeDecoration(
+                            color: p.surface,
+                            shape: RoundedSuperellipseBorder(
+                              borderRadius: BorderRadius.circular(28),
+                              side: BorderSide(color: p.borderMedium),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Learning updates and reminders from ELIO.',
-                              style: GoogleFonts.manrope(
-                                fontSize: 11,
-                                height: 1.4,
-                                color: _muted,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Flexible(
-                              child: SingleChildScrollView(
-                                child: items.isEmpty
-                                    ? const _NotificationsEmptyState()
-                                    : Column(
-                                        children: [
-                                          for (
-                                            var i = 0;
-                                            i < items.length;
-                                            i++
-                                          ) ...[
-                                            _NotificationTile(
-                                              item: items[i],
-                                              onAction:
-                                                  _notificationActionLabel(
-                                                        items[i],
-                                                      ) ==
-                                                      null
-                                                  ? null
-                                                  : () =>
-                                                        _openNotificationAction(
-                                                          rootContext:
-                                                              rootContext,
-                                                          sheetContext:
-                                                              dialogContext,
-                                                          ref: ref,
-                                                          notification:
-                                                              items[i],
-                                                          onOpenLearning:
-                                                              onOpenLearning,
-                                                        ),
-                                            ),
-                                            if (i != items.length - 1)
-                                              const Divider(
-                                                height: 1,
-                                                color: _border,
-                                              ),
-                                          ],
-                                        ],
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            if (items.isNotEmpty) ...[
+                            shadows: ElioGlow.overlay,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
-                                    child: OutlinedButton(
-                                      onPressed:
-                                          notificationNotifier.markAllRead,
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: elioGreen,
-                                        visualDensity: VisualDensity.compact,
-                                      ),
-                                      child: Text(
-                                        'Mark all read',
-                                        style: GoogleFonts.manrope(
-                                          fontWeight: FontWeight.w800,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Semantics(
+                                          header: true,
+                                          child: Text(
+                                            'Notifications',
+                                            style: ElioTokens.subhead.copyWith(
+                                              color: p.textPrimary,
+                                            ),
+                                          ),
                                         ),
-                                      ),
+                                        Text(
+                                          'Learning updates and reminders from ELIO.',
+                                          style: ElioTokens.bodySmall.copyWith(
+                                            color: p.textSecondary,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      onPressed: notificationNotifier.clearAll,
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: const Color(
-                                          0xFFBA1A1A,
-                                        ),
-                                        visualDensity: VisualDensity.compact,
-                                      ),
-                                      child: Text(
-                                        'Clear all',
-                                        style: GoogleFonts.manrope(
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
+                                  IconButton(
+                                    onPressed: () =>
+                                        Navigator.of(dialogContext).pop(),
+                                    tooltip: 'Close notifications',
+                                    constraints: const BoxConstraints.tightFor(
+                                      width: 48,
+                                      height: 48,
+                                    ),
+                                    icon: Icon(
+                                      Icons.close_rounded,
+                                      size: 22,
+                                      color: p.textSecondary,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 10),
-                            ],
-                            SizedBox(
-                              width: double.infinity,
-                              child: FilledButton.icon(
-                                onPressed: () =>
-                                    Navigator.of(dialogContext).pop(),
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: elioGreen,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  OutlinedButton.icon(
+                                    onPressed: empty
+                                        ? null
+                                        : notifier.markAllRead,
+                                    style: _panelPill(p.textPrimary, p),
+                                    icon: const Icon(
+                                      Icons.done_all_rounded,
+                                      size: 18,
+                                    ),
+                                    label: const Text('Mark all read'),
                                   ),
-                                ),
-                                icon: const Icon(Icons.check_rounded, size: 18),
-                                label: Text(
-                                  'Done',
-                                  style: GoogleFonts.manrope(
-                                    fontWeight: FontWeight.w800,
+                                  const SizedBox(width: 8),
+                                  OutlinedButton(
+                                    onPressed: empty ? null : notifier.clearAll,
+                                    style: _panelPill(p.errorText, p),
+                                    child: const Text('Clear all'),
                                   ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Flexible(
+                                child: SingleChildScrollView(
+                                  child: empty
+                                      ? const _NotificationsEmptyState()
+                                      : Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            if (unread.isNotEmpty)
+                                              group(
+                                                'NEW · ${unread.length}',
+                                                unread,
+                                              ),
+                                            if (earlier.isNotEmpty)
+                                              group('EARLIER', earlier),
+                                          ],
+                                        ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                              const SizedBox(height: 8),
+                              AuthPrimaryButton(
+                                label: 'Done',
+                                onPressed: () =>
+                                    Navigator.of(dialogContext).pop(),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -2839,6 +2713,66 @@ void _showNotificationsSheet({
       );
     },
   );
+}
+
+ButtonStyle _panelPill(Color color, ElioPalette p) => OutlinedButton.styleFrom(
+  foregroundColor: color,
+  minimumSize: const Size(48, 48),
+  padding: const EdgeInsets.symmetric(horizontal: 16),
+  shape: const StadiumBorder(),
+  side: BorderSide(color: p.borderMedium),
+  textStyle: ElioTokens.button,
+);
+
+class _NotificationsEmptyState extends StatelessWidget {
+  const _NotificationsEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: ShapeDecoration(
+        color: p.background,
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: p.borderSubtle),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: ShapeDecoration(
+              color: p.surfaceRaised,
+              shape: RoundedSuperellipseBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: Icon(
+              Icons.notifications_none_rounded,
+              color: p.textSecondary,
+              size: 24,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'No notifications right now.',
+            textAlign: TextAlign.center,
+            style: ElioTokens.button.copyWith(color: p.textPrimary),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Learning reminders, quiz review updates, and progress alerts will appear here.',
+            textAlign: TextAlign.center,
+            style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 void _openNotificationAction({
@@ -2881,42 +2815,6 @@ String? _notificationActionLabel(AppNotification notification) {
       return 'Open Config';
     default:
       return null;
-  }
-}
-
-IconData _notificationIcon(AppNotificationType type) {
-  switch (type) {
-    case AppNotificationType.success:
-      return Icons.check_circle_outline_rounded;
-    case AppNotificationType.warning:
-      return Icons.warning_amber_rounded;
-    case AppNotificationType.error:
-      return Icons.error_outline_rounded;
-    case AppNotificationType.robot:
-      return Icons.smart_toy_outlined;
-    case AppNotificationType.learning:
-      return Icons.menu_book_outlined;
-    case AppNotificationType.quiz:
-      return Icons.fact_check_outlined;
-    case AppNotificationType.info:
-      return Icons.info_outline_rounded;
-  }
-}
-
-Color _notificationColor(AppNotificationType type) {
-  switch (type) {
-    case AppNotificationType.success:
-    case AppNotificationType.robot:
-    case AppNotificationType.learning:
-      return elioGreen;
-    case AppNotificationType.warning:
-      return _amber;
-    case AppNotificationType.error:
-      return const Color(0xFFBA1A1A);
-    case AppNotificationType.quiz:
-      return _cyan;
-    case AppNotificationType.info:
-      return elioGreen;
   }
 }
 

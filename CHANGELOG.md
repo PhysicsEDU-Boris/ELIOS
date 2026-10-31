@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- Notification alert banner and notifications panel restyled to the H2 Figma design in light and dark (groups, unread dot, disabled actions when empty); behaviour unchanged (decision 0150).
+
 - Home screen restyled to the H1 Figma design in light and dark (tokens, 48 dp targets, two columns from 840 dp); behaviour unchanged (decision 0140).
 
 ### Changed

@@ -3,9 +3,11 @@ import 'dart:io';
 import 'dart:ui' show ImageByteFormat;
 
 import 'package:elio/Screens/home_screen.dart';
+import 'package:elio/models/app_notification.dart';
 import 'package:elio/models/guide_lesson.dart';
 import 'package:elio/models/learning_progress.dart';
 import 'package:elio/models/video_lesson.dart';
+import 'package:elio/providers/app_notification_provider.dart';
 import 'package:elio/providers/auth_provider.dart';
 import 'package:elio/providers/learning_progress_provider.dart';
 import 'package:elio/providers/navigation_provider.dart';
@@ -328,6 +330,114 @@ void main() {
       findsOneWidget,
     );
     handle.dispose();
+  });
+
+  // H2 notifications panel (Figma 259:2654 / 259:2805 / 259:2764 / 259:2915).
+  void pushTwo(ProviderContainer c) {
+    final n = c.read(appNotificationProvider.notifier);
+    n.push(
+      type: AppNotificationType.warning,
+      title: 'ELIO disconnected',
+      message: 'Robot connection was lost. Check the device or network.',
+      routeHint: 'robot',
+    );
+    n.markAllRead();
+    n.push(
+      type: AppNotificationType.quiz,
+      title: 'Quiz review ready',
+      message: 'Review your answers from Waste sorting quiz.',
+      routeHint: 'quizReview',
+    );
+    n.push(
+      type: AppNotificationType.robot,
+      title: 'ELIO connected',
+      message: 'Robot connection is ready.',
+      routeHint: 'robot',
+    );
+  }
+
+  for (final b in Brightness.values) {
+    for (final (name, size, scale) in [
+      ('phone', const Size(390, 844), 1.0),
+      ('360 at 1.3x', const Size(360, 740), 1.3),
+      ('desktop', const Size(1280, 800), 1.0),
+    ]) {
+      testWidgets('${b.name} $name: notifications panel with items', (t) async {
+        await _pump(
+          t,
+          state: _State.empty,
+          brightness: b,
+          size: size,
+          textScale: scale,
+        );
+        final c = ProviderScope.containerOf(t.element(find.byType(HomeScreen)));
+        pushTwo(c);
+        await t.pump();
+        await t.tap(find.byTooltip('Open notifications'));
+        await t.pumpAndSettle();
+        expect(find.text('NEW · 2'), findsOneWidget);
+        expect(find.text('EARLIER'), findsOneWidget);
+        expect(find.text('Open Config'), findsWidgets);
+        expect(find.text('Open Learning'), findsOneWidget);
+        expect(t.takeException(), isNull);
+        for (final f in [
+          find.byTooltip('Close notifications'),
+          find.widgetWithText(OutlinedButton, 'Clear all'),
+          find.widgetWithText(FilledButton, 'Done'),
+        ]) {
+          expect(t.getSize(f).height, greaterThanOrEqualTo(48), reason: '$f');
+        }
+      });
+    }
+
+    testWidgets('${b.name}: empty panel has disabled actions', (t) async {
+      await _pump(t, state: _State.empty, brightness: b);
+      await t.tap(find.byTooltip('Open notifications'));
+      await t.pumpAndSettle();
+      expect(find.text('No notifications right now.'), findsOneWidget);
+      expect(
+        t
+            .widget<OutlinedButton>(
+              find.widgetWithText(OutlinedButton, 'Clear all'),
+            )
+            .onPressed,
+        isNull,
+      );
+      await t.tap(find.widgetWithText(FilledButton, 'Done'));
+      await t.pumpAndSettle();
+      expect(find.text('No notifications right now.'), findsNothing);
+    });
+  }
+
+  testWidgets('panel: mark all read, open action, clear all', (t) async {
+    final calls = await _pump(
+      t,
+      state: _State.empty,
+      size: const Size(390, 1000),
+    );
+    final c = ProviderScope.containerOf(t.element(find.byType(HomeScreen)));
+    pushTwo(c);
+    await t.pump();
+    await t.tap(find.byTooltip('Open notifications'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Mark all read'));
+    await t.pump();
+    expect(find.text('NEW · 2'), findsNothing);
+    expect(c.read(unreadNotificationCountProvider), 0);
+    await t.tap(find.text('Open Learning'));
+    await t.pumpAndSettle();
+    expect(calls.learning, 1);
+    expect(find.text('Open Learning'), findsNothing);
+    await t.tap(find.byTooltip('Open notifications'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Open Config').first);
+    await t.pumpAndSettle();
+    expect(c.read(navigationIndexProvider), 2);
+    await t.tap(find.byTooltip('Open notifications'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Clear all'));
+    await t.pump();
+    expect(find.text('No notifications right now.'), findsOneWidget);
   });
 
   const shots = [
