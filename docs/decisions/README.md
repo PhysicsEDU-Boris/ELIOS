@@ -36,7 +36,12 @@ their status changed.
 | [0028](0028-trophy-rules-and-scan-history.md) | Trophy rules, student levels, and local scan history (H1) | Accepted |
 | [0030](0030-result-card-and-scan-history.md) | Result card, trophies, "Scan lagi", and saving into Scan History (U2) | Accepted |
 | [0040](0040-android-tester-build.md) | Android tester build: Bank/Gemma switch in tester builds only, sideloaded model, lazy load, thermal gate, kill notice, phone log, YUV stream (A1); amends 0018 | Accepted (phone-verified on the Edge 60 Fusion) |
-| [0041](0041-identify-speed-picker-warmup.md) | Faster photo identify (smaller photo, shorter prompt), "Bukan ini?" picker, background Gemma load on the scan screen (E1); amends 0040 | Accepted (phone timings pending) |
+| [0041](0041-identify-speed-picker-warmup.md) | Faster photo identify (smaller photo, shorter prompt), "Bukan ini?" picker, background Gemma load on the scan screen (E1); amends 0040 | Accepted (phone-verified; timings in [lane-a](../handoff/lane-a.md)) |
 | [0060](0060-bank-accepted-only.md) | Owner acceptance and accepted-only bank serving | Accepted |
 | [0070](0070-history-crop.md) | Separate History photos from identification crops | Accepted |
+| [0090](0090-design-system-foundation.md) | Design-system foundation, dark and light tokens, scoped adoption | Accepted (PR #57) |
 | [0091](0091-google-sans-flex-font.md) | Design file font change to Google Sans Flex / Google Sans Code, new status chip spec (design only, amends 0090) | Draft |
+
+| [0100](0100-u9-splash-login.md) | Splash "Growth v2" and login screens from the approved Figma (U9) | Accepted (PR #59) |
+| [0110](0110-option-b-app-icon.md) | Option B app icon and native F0 launch screens (I1); light Android icon is primary | Accepted (PR #58, #64) |
+| [0130](0130-theme-mode.md) | User-selected display mode, light by default (T1) | Accepted (PR #61) |

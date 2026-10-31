@@ -1,28 +1,24 @@
-# Handoff — 31 Oct 2026
+# Handoff — 31 Oct 2026 (evening)
 
-- Base: `feature/live-scan` at `ae67416`.
-- Merged: #51 U4b essay rubric; #53 banks (decision 0060); #52 History/PDF crops (0070); #54 Android tester build (0040); #55 E1 (0041), with the "Bukan ini?" picker and background load phone-verified.
-- Open PRs: #50 docs wrap-up (content carried into this docs sync); #47 firmware (motion disabled, `ARM_MOTION_ENABLED=false`); #24 (latency gate failed).
+- Base: `feature/live-scan` at `f6179aa` (merge of #64).
+- Merged today: #57 design-system foundation (0090); #59 U9 splash and login (0100); #60 design file font and shape scale (0091); #61 T1 light default and display mode (0130); #58 Option B icon (0110); #64 light Android icon as primary. Earlier: #51 U4b, #52 History crops (0070), #53 banks (0060), #54 tester build (0040), #55 E1 (0041), #56 docs sync.
+- Open PRs: #62 P1 phone check of U9 (docs only, branch `test/p1-u9-phone-check`); #50 docs wrap-up (older content is carried here); #47 firmware (motion disabled, `ARM_MOTION_ENABLED=false`); #24 (latency gate failed).
 
-## Phone evidence — Edge 60 Fusion, GPU
+## Design system state
 
-- Load: 4.3–9.2 s cached or 41–50 s cold; identify: 19.8–23.9 s with the shorter prompt; questions: 20–41 s; essay grading: 16.5–25.4 s; memory: 3.3–3.7 GB.
-- Thermal gate pauses at CRITICAL.
-- The tester build keeps Gemma loaded after the scan screen closes (about 1.6 GB held until the app closes).
-- Photo-size test: 512/384/256 px gave 24.8/24.3/23.6 s. Photo size does not change identify time in this test.
-- See [Lane A handoff](handoff/lane-a.md) for details; its earlier measurements and pre-PR status predate the summary above.
+- App is light by default; dark is a user option behind `DARK_MODE_OPTION` or `TESTER_BUILD` (0130). Only splash and login use the new tokens; legacy screens keep their look until the S-lane.
+- `docs/design.md` specifies Google Sans Flex and Google Sans Code and the M3 corner scale (0091). The code still bundles Inter and JetBrains Mono, so 2 tests in `test/theme/elio_tokens_test.dart` fail on the base. DS2 (decision 0120) is the fix, pending a font licence check.
+- `google_fonts` is still used by about 10 legacy screens and fetches at runtime (the robot is offline). Screen lanes remove it.
+
+## Phone evidence
+
+- E1 timings are in [lane-a.md](handoff/lane-a.md) (Edge 60 Fusion, GPU): identify first token 14.9-18.9 s, request 19.8-23.9 s; load 4.3-9.2 s cached, 41-50 s cold.
+- P1 (#62, see its lane-p.md) found U9 issues for U9b: stale validation errors after the Sign in/Sign up toggle, a guest session dropped on later launches, landscape inset, heavy light-mode focus ring.
 
 ## Owner data incident
 
-- The 29 Oct owner History record was overwritten and is still unrecovered. Do not invent or reconstruct its missing answers from guesses.
+- The 29 Oct owner History record was overwritten and is still unrecovered. Do not invent or reconstruct its missing answers.
 
-## Next task — U4c combined native acceptance
+## Next
 
-- Back up the owner's records and read-verify the backup first. Prove a separate test store is active before interacting; never seed or reset the owner store.
-- Complete real-Gemma/localhost-camera multi-question acceptance: MCQ explanation → next question, essay rubric during live frames, trophy math, quit/relaunch, saved review and complete native PDF export.
-- Follow `CLAUDE.md` Mac build hygiene: reuse the retained app/model, inventory before building and verify one app registration afterwards. No physical robot movement or sharing recipient selection.
-- Overall queue: U4c combined native acceptance, then U7 Firebase sync, then U8 documentation/Figma. See [NEXT_TASK.md](NEXT_TASK.md).
-
-## Design file font (decision 0091, draft)
-
-- `docs/design.md` now specifies Google Sans Flex and Google Sans Code and a new Status Chip. The app code is unchanged (still JetBrains Mono, Inter, Sora, Manrope). Radii now follow the M3 scale with continuous corners. Check the font licences before bundling.
+- See [NEXT_TASK.md](NEXT_TASK.md): DS2, then U9b, then the S-lane restyle, then U4c native acceptance, U7, U8 and the robot lane.
