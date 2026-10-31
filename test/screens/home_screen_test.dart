@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui' show ImageByteFormat;
 
 import 'package:elio/Screens/home_screen.dart';
 import 'package:elio/models/guide_lesson.dart';
@@ -10,6 +12,7 @@ import 'package:elio/providers/navigation_provider.dart';
 import 'package:elio/services/elearning_content_service.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -96,6 +99,27 @@ LearningProgress _withActivity() {
 
 enum _State { empty, activity, loading }
 
+Widget _maybeShot(bool shot, Widget child) =>
+    shot ? RepaintBoundary(key: const Key('shot'), child: child) : child;
+
+/// PNG renders for docs/test-results/h1-home (run with H1_RENDER=1):
+///   H1_RENDER=1 flutter test test/screens/home_screen_test.dart
+final _render = Platform.environment['H1_RENDER'] == '1';
+const _out = 'docs/test-results/h1-home';
+
+Future<void> _png(WidgetTester t, String name) async {
+  final boundary = t.renderObject<RenderRepaintBoundary>(
+    find.byKey(const Key('shot')),
+  );
+  await t.runAsync(() async {
+    final image = await boundary.toImage();
+    final bytes = await image.toByteData(format: ImageByteFormat.png);
+    File('$_out/$name.png')
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(bytes!.buffer.asUint8List());
+  });
+}
+
 class _Calls {
   int drawer = 0, learning = 0;
 }
@@ -106,6 +130,7 @@ Future<_Calls> _pump(
   Brightness brightness = Brightness.light,
   Size size = const Size(390, 844),
   double textScale = 1,
+  bool shot = false,
 }) async {
   homeContentServiceForTest = _FakeContent();
   homeStaticRobotForTest = true;
@@ -116,10 +141,13 @@ Future<_Calls> _pump(
   final calls = _Calls();
   await pumpAt(
     t,
-    HomeScreen(
-      auth: MockFirebaseAuth(),
-      onOpenDrawer: () => calls.drawer++,
-      onOpenLearning: () => calls.learning++,
+    _maybeShot(
+      shot,
+      HomeScreen(
+        auth: MockFirebaseAuth(),
+        onOpenDrawer: () => calls.drawer++,
+        onOpenLearning: () => calls.learning++,
+      ),
     ),
     size: size,
     brightness: brightness,
@@ -301,4 +329,71 @@ void main() {
     );
     handle.dispose();
   });
+
+  const shots = [
+    (
+      'phone-light-activity',
+      _State.activity,
+      Brightness.light,
+      Size(390, 2222),
+      1.0,
+    ),
+    (
+      'phone-dark-activity',
+      _State.activity,
+      Brightness.dark,
+      Size(390, 2222),
+      1.0,
+    ),
+    ('phone-light-empty', _State.empty, Brightness.light, Size(390, 2192), 1.0),
+    ('phone-dark-empty', _State.empty, Brightness.dark, Size(390, 2192), 1.0),
+    (
+      'phone-light-loading',
+      _State.loading,
+      Brightness.light,
+      Size(390, 844),
+      1.0,
+    ),
+    (
+      'phone-light-activity-x1.3',
+      _State.activity,
+      Brightness.light,
+      Size(390, 3000),
+      1.3,
+    ),
+    (
+      'phone-dark-activity-x1.3',
+      _State.activity,
+      Brightness.dark,
+      Size(390, 3000),
+      1.3,
+    ),
+    (
+      'desktop-light-activity',
+      _State.activity,
+      Brightness.light,
+      Size(1280, 900),
+      1.0,
+    ),
+    (
+      'desktop-dark-activity',
+      _State.activity,
+      Brightness.dark,
+      Size(1280, 900),
+      1.0,
+    ),
+  ];
+  for (final (name, state, b, size, scale) in shots) {
+    testWidgets('render $name', (t) async {
+      await _pump(
+        t,
+        state: state,
+        brightness: b,
+        size: size,
+        textScale: scale,
+        shot: true,
+      );
+      await _png(t, name);
+    }, skip: !_render);
+  }
 }

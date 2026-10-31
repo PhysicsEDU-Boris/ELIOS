@@ -129,10 +129,12 @@ class _Card extends StatelessWidget {
 }
 
 class _IconTile extends StatelessWidget {
-  const _IconTile(this.icon, {this.size = 40});
+  const _IconTile(this.icon, {this.size = 40, this.color});
 
   final IconData icon;
   final double size;
+  final Color? color;
+
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context);
@@ -145,7 +147,7 @@ class _IconTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(_radiusM),
         ),
       ),
-      child: Icon(icon, size: size * 0.5, color: p.primaryText),
+      child: Icon(icon, size: size * 0.5, color: color ?? p.primaryText),
     );
   }
 }
@@ -936,60 +938,61 @@ class _ProgressGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cardWidth = (constraints.maxWidth - 8) / 2;
-        return Wrap(
-          spacing: 8,
-          runSpacing: 8,
+        return Column(
           children: [
-            SizedBox(
-              width: cardWidth,
-              child: _ProgressCard(
-                icon: Icons.menu_book_outlined,
-                label: 'Learning',
-                value: data.learningItemsValue,
-                subtitle: data.completedLearningItems == 0
-                    ? 'No learning completed yet'
-                    : '${data.completedLearningItems} learning items completed',
-                onTap: () => _showLearningProgressSheet(
-                  context: context,
-                  data: data,
-                  onOpenLearning: onOpenLearning,
-                ),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _ProgressCard(
+                      icon: Icons.menu_book_outlined,
+                      label: 'Learning',
+                      value: data.learningItemsValue,
+                      subtitle: data.completedLearningItems == 0
+                          ? 'No learning completed yet'
+                          : '${data.completedLearningItems} learning items completed',
+                      onTap: () => _showLearningProgressSheet(
+                        context: context,
+                        data: data,
+                        onOpenLearning: onOpenLearning,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _ProgressCard(
+                      icon: Icons.check_rounded,
+                      label: 'Quiz Avg',
+                      value: data.quizValue,
+                      subtitle: data.quizAttemptCount == 0
+                          ? 'No quiz attempts yet'
+                          : '${data.quizAttemptCount} quiz attempts',
+                      onTap: () => _showQuizProgressSheet(
+                        context: context,
+                        data: data,
+                        onOpenLearning: onOpenLearning,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            SizedBox(
-              width: cardWidth,
-              child: _ProgressCard(
-                icon: Icons.check_rounded,
-                label: 'Quiz Avg',
-                value: data.quizValue,
-                subtitle: data.quizAttemptCount == 0
-                    ? 'No quiz attempts yet'
-                    : '${data.quizAttemptCount} quiz attempts',
-                onTap: () => _showQuizProgressSheet(
-                  context: context,
-                  data: data,
-                  onOpenLearning: onOpenLearning,
-                ),
-              ),
-            ),
-            SizedBox(
-              width: constraints.maxWidth,
-              child: _ProgressCard(
-                icon: Icons.explore_outlined,
-                label: 'Current Module',
-                value: data.currentModule,
-                subtitle: data.currentModule == 'Not started'
-                    ? 'Start your first learning module'
-                    : data.currentTimestamp == null
-                    ? 'Continue this learning module'
-                    : 'Last opened ${_relativeTime(data.currentTimestamp!)}',
-                valueOnTop: false,
-                onTap: () => _showCurrentModuleSheet(
-                  context: context,
-                  data: data,
-                  onOpenLearning: onOpenLearning,
-                ),
+            const SizedBox(height: 8),
+            _ProgressCard(
+              icon: Icons.explore_outlined,
+              label: 'Current Module',
+              value: data.currentModule,
+              subtitle: data.currentModule == 'Not started'
+                  ? 'Start your first learning module'
+                  : data.currentTimestamp == null
+                  ? 'Continue this learning module'
+                  : 'Last opened ${_relativeTime(data.currentTimestamp!)}',
+              valueOnTop: false,
+              onTap: () => _showCurrentModuleSheet(
+                context: context,
+                data: data,
+                onOpenLearning: onOpenLearning,
               ),
             ),
           ],
@@ -1194,7 +1197,10 @@ class _AchievementCard extends StatelessWidget {
       child: ExcludeSemantics(
         child: Row(
           children: [
-            _IconTile(unlocked ? achievement.icon : Icons.lock_outline_rounded),
+            _IconTile(
+              unlocked ? achievement.icon : Icons.lock_outline_rounded,
+              color: unlocked ? null : authPalette(context).textSecondary,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
