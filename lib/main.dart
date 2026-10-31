@@ -18,8 +18,7 @@ import 'services/gemma_quiz_service.dart';
 import 'services/scan_record_store.dart';
 import 'widgets/desktop_viewport.dart';
 import 'utils/system_ui.dart';
-import 'Screens/home_shell.dart';
-import 'Screens/login_screen.dart';
+import 'Screens/splash_screen.dart';
 
 void main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -121,33 +120,8 @@ class ElioApp extends StatelessWidget {
           useMaterial3: true,
         ),
         builder: (context, child) => DesktopViewport(child: child!),
-        home: _AuthGate(auth: auth ?? FirebaseAuth.instance),
+        home: SplashScreen(auth: auth ?? FirebaseAuth.instance),
       ),
-    );
-  }
-}
-
-class _AuthGate extends StatelessWidget {
-  final FirebaseAuth auth;
-
-  const _AuthGate({required this.auth});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: auth.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (snapshot.hasData) {
-          return HomeShell(auth: auth);
-        }
-        return LoginScreen(auth: auth);
-      },
     );
   }
 }
