@@ -3,7 +3,7 @@
 - Branch: `feat/i1-app-icon`; base `feature/live-scan` d201cfb. Decision 0110.
 - CodeGraph re-indexed in the source checkout; this clean worktree has no index.
 - Clean dedicated worktree: `/Users/macbookairm12020/.codex/worktrees/i1-app-icon/elios-clean`.
-- Only owned resources, launcher-generator section and lane/decision docs change.
+- Only owned resources, launcher/splash generator sections and lane/decision docs change.
 - Original `ELIO_ICON.png` and `elio_leaf_loop.svg` remain: Flutter still references them.
 - No Mac app build/run/registration; U4c owns that work.
 
@@ -20,14 +20,33 @@ All source exports below live in `assets/icon/option-b/` at full node size.
 | 199:931 | android-monochrome | transparent → drawable-*/ic_launcher_monochrome.png, mipmap-anydpi-v33/launcher_icon.xml |
 | 199:936 / 199:943 | guide-dark / guide-light | source guides only |
 | 199:950 | legibility | source review only |
-| 208:800 / 208:1172 | splash-f0-dark / splash-f0-light | native night/default background + seed: Android android12splash/splash PNGs; iOS LaunchBackground/LaunchImage |
+| 208:800 / 208:1172 | splash-f0-dark / splash-f0-light | light only → Android android12splash/splash PNGs and iOS LaunchBackground/LaunchImage; dark source retained for provenance |
 
 Transparent outputs are derived from the exported frame's SVG group and filters,
 removing the exporter-included parent section only. Raw full-size exports remain.
 Android uses dark foreground on navy in both modes: bright leaf/cursor contrast
 is stable on its fixed background. The monochrome alpha layer enables themed icons.
 
-## Verification
+## Light-only follow-up (31 Oct 2026)
+
+Native launch screens are light only: light is the primary/default mode; dark is
+chosen inside the app. Removed 15 Android night launch resources and 4 iOS dark
+launch PNGs plus their catalog entries. Before deletion, references were checked:
+AndroidManifest uses the shared LaunchTheme/NormalTheme names, which still resolve
+to the light defaults; launch XML uses unqualified drawable/color names, which
+also resolve to retained defaults. No explicit night-path references remain.
+iOS AppIcon dark/tinted appearances and flutter_launcher_icons are unchanged.
+The native-splash config is light and color-only; committed resources include the
+F0 seed. The generator is not part of the build and would replace seed art if run.
+
+Follow-up verification: Android arm64 debug APK build passed (no install); iOS
+and macOS actool checks passed. Compiled iOS catalog has default-only launch
+renditions and preserved dark/tintable icons. Light F0 composition is an exact
+pixel match. Secret scan and whitespace checks passed; ponytail markers unchanged.
+Analyze/full suite were not rerun for this resource-only follow-up; original
+results are below. Temporary private config copies and root build output removed.
+
+## Original verification
 
 - `flutter analyze`: one pre-existing info at `test/question_bank_integrity_test.dart:104`
   (`curly_braces_in_flow_control_structures`); no Dart changes.
@@ -37,7 +56,8 @@ is stable on its fixed background. The monochrome alpha layer enables themed ico
   No application bundle was built. Every referenced PNG exists and matches its size.
 - PNG integrity, dark/light background RGB and transparent mask corners: pass.
   iOS launch composition exactly matches both 3x F0 exports at the reference size.
-  Compiled catalog confirms default/dark/tintable icon renditions and dark launch assets.
+  Original compiled catalog confirmed default/dark/tintable icons; dark launch assets
+  were subsequently removed by the owner’s light-only decision.
 - `flutter build apk --debug --target-platform android-arm64`: pass (446.4s), no install.
   APK ZIP integrity and arm64 native-library presence also pass.
   Task-created private config copies and disposable root build output removed afterward.
@@ -48,7 +68,7 @@ is stable on its fixed background. The monochrome alpha layer enables themed ico
 
 - Native backgrounds match the new F0; base d201cfb still has the old Flutter splash.
   U9's Flutter change is needed to eliminate that remaining transition mismatch.
-- Do not rerun the old `flutter_native_splash` pubspec block over these resources.
+- Do not regenerate committed seed artwork from the color-only native-splash block.
 - Review previews `assets/icon/option-b/preview-{48,96,192}.png`.
 - Real phone launcher/themed mask, Mac Dock and iOS dark/tinted appearance remain
   device checks; catalog compilation does not prove their runtime appearance.

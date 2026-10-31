@@ -99,11 +99,9 @@ flutter_launcher_icons:
   adaptive_icon_foreground_inset: 0
 
 flutter_native_splash:
-  color: "#1D9E75"
-  image: "assets/icon/ELIO_ICON.png"
+  # The launch resources are committed; the generator is not part of the build.
+  color: "#F8FAFC"
   android_12:
-    color: "#1D9E75"
-    image: "assets/icon/ELIO_ICON.png"
-    branding_mode: "contain"
+    color: "#F8FAFC"
   ios: true
   web: false

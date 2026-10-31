@@ -26,17 +26,19 @@ the named frame group and original filter definitions; `*-transparent.png`
 rasterizes that group without altering its paths, coordinates or effects.
 The Android monochrome mask and macOS margins must have zero-alpha corners.
 
-Native launch backgrounds use F0 dark 208:800 (`#0F172A`) and light 208:1172
+Owner decision, 31 Oct 2026: native launch screens are light only because light
+is the primary/default app mode; dark is an in-app choice. Use F0 light 208:1172
 (`#F8FAFC`). The original 10dp seed pixels are retained at viewport centre +22.5dp.
 Android 12 uses a transparent 288dp canvas; older Android and the existing iOS
-centred LaunchImage view use a transparent 390x844dp canvas. iOS LaunchBackground
-and LaunchImage have dark appearance entries; Android uses night resources.
+centred LaunchImage view use a transparent 390x844dp canvas. Android night launch
+resources and iOS dark launch appearances are removed. OS icon appearances remain.
 The existing storyboard and all Dart files remain untouched.
 
 Integration dependency: d201cfb still renders the previous Flutter splash.
 U9 must supply the new Flutter F0 before the native-to-Flutter transition matches.
-The pubspec native-splash generator block is outside I1 ownership and still
-contains old artwork/colors: do not regenerate it over these resources.
+The owner-authorized native-splash generator block is light only and color-only.
+The launch resources are committed; the generator is not part of the build.
+Running the generator manually would replace the committed seed artwork.
 The launcher generator alone cannot reproduce API 33 monochrome, Apple appearances
 or macOS exports; retain the checked-in native catalogs/resources.
 
