@@ -10,6 +10,11 @@ Status: accepted for the U9 PR.
 - Forgot password is now a mode of the screen (Figma). Sending still uses the old checks and the old snackbar texts; the success banner is added.
 - Behaviour unchanged: email-or-username sign in, sign up (Full Name, Email, Password), Google, guest, error mapping, every error and snackbar text, constructor signatures.
 
+## Synced with design.md / Figma of 31 Oct (decision 0091)
+- Shapes follow the new scale: buttons, links and the focus ring are pills; inputs and banners are `radius/m` 12 (banners use `RoundedSuperellipseBorder`; Flutter's `OutlineInputBorder` has no continuous variant, so inputs are plain rounded). The phone brand "ELIOS" is the Subhead token (600).
+- Splash letter slots are the measured advance of each letter (Figma: E 22, L 21, I 12, O 30, S 22), so the wordmark works with a proportional font.
+- Fonts are NOT changed: Google Sans Flex is not bundled (`pubspec.yaml` and `assets/` are out of this lane and the licence is unchecked), so the screens still render Inter and JetBrains Mono through the tokens. When the font task lands, the screens follow with no edit.
+
 ## Not done / follow-ups
 - Snackbars show in the Home scaffold after the route change and keep the app theme (`ponytail:` in `login_screen.dart`).
 - Contrast: light primary fill on bg is 1.67:1 (button boundary only, label is 10.25:1) and `border/medium` is decorative, as the Figma contrast page records. Tokens were not changed.

@@ -6,6 +6,10 @@ import '../../theme/elio_dark_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../splash/elio_leaf.dart';
 
+// Design file 0091: radius/m for inputs and banners, Full (pill) for buttons and links.
+const _radiusM = 12.0;
+const _pill = StadiumBorder();
+
 /// The palette of the [ElioTheme.wrap] ancestor (dark or light).
 ElioPalette authPalette(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
@@ -61,7 +65,7 @@ class AuthField extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = authPalette(context);
     OutlineInputBorder border(Color c, double w) => OutlineInputBorder(
-      borderRadius: BorderRadius.circular(ElioTokens.radiusSmall),
+      borderRadius: BorderRadius.circular(_radiusM),
       borderSide: BorderSide(color: c, width: w),
     );
     final errorBorder = hasError ? border(p.errorText, 2) : null;
@@ -113,7 +117,7 @@ class AuthField extends StatelessWidget {
             const SizedBox(height: 6),
             DecoratedBox(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(ElioTokens.radiusSmall),
+                borderRadius: BorderRadius.circular(_radiusM),
                 boxShadow: hasError
                     ? [
                         BoxShadow(
@@ -124,6 +128,7 @@ class AuthField extends StatelessWidget {
                     : null,
               ),
               child: ElioGlowBox(
+                radius: _radiusM,
                 onFocusGlow: hasError ? const [] : null,
                 child: field,
               ),
@@ -184,10 +189,12 @@ class AuthBanner extends StatelessWidget {
           horizontal: ElioTokens.space16,
           vertical: 12,
         ),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: tint.withValues(alpha: fill),
-          border: Border.all(color: tint.withValues(alpha: edge)),
-          borderRadius: BorderRadius.circular(ElioTokens.radiusSmall),
+          shape: RoundedSuperellipseBorder(
+            borderRadius: BorderRadius.circular(_radiusM),
+            side: BorderSide(color: tint.withValues(alpha: edge)),
+          ),
         ),
         child: Row(
           children: [
@@ -229,12 +236,16 @@ class AuthPrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = authPalette(context);
     return ElioGlowBox(
+      radius: 9999,
       glow: p.isDark ? ElioGlow.buttonHover : const [],
       onFocusGlow: _ring(p),
       child: FilledButton(
         onPressed: loading ? null : onPressed,
-        style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48))
-            .copyWith(
+        style:
+            FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              shape: _pill,
+            ).copyWith(
               backgroundColor: loading
                   ? WidgetStatePropertyAll(p.primary)
                   : null,
@@ -277,10 +288,14 @@ class AuthSecondaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = authPalette(context);
     return ElioGlowBox(
+      radius: 9999,
       onFocusGlow: _ring(p),
       child: OutlinedButton(
         onPressed: onPressed,
-        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(48),
+          shape: _pill,
+        ),
         child: google
             ? Row(
                 mainAxisSize: MainAxisSize.min,
@@ -323,11 +338,13 @@ class AuthLink extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = authPalette(context);
     return ElioGlowBox(
+      radius: 9999,
       glow: const [],
       onFocusGlow: _ring(p),
       child: TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
+          shape: _pill,
           foregroundColor: p.primaryText,
           disabledForegroundColor: dimWhenDisabled
               ? p.primaryText.withValues(alpha: ElioTokens.disabledOpacity)
@@ -370,7 +387,7 @@ class AuthDivider extends StatelessWidget {
   }
 }
 
-/// ELIOS wordmark: Display 36 on the desktop panel, Subhead 20 (bold) on phones.
+/// ELIOS wordmark: Display 36 on the desktop panel, Subhead 20 on phones.
 TextStyle authBrandStyle(ElioPalette p, {required bool large}) =>
     (large
             ? ElioTokens.display

@@ -17,8 +17,7 @@ abstract final class SplashGrowthSpec {
 
   static const word = 'ELIOS';
   static const tagline = 'Environment Learning Intelligent Object Sorter';
-  // ponytail: slot width is the Figma value (word width / 5); measure the text if the wordmark font or size changes.
-  static const slotWidth = 21.2, slotHeight = 46.0;
+  static const slotHeight = 46.0;
 }
 
 double _seg(double t, int from, int ms, Curve c) =>
@@ -42,7 +41,25 @@ class SplashGrowth extends StatelessWidget {
     final noScale = MediaQuery.of(
       context,
     ).copyWith(textScaler: TextScaler.noScaling);
-    final wordLeft = cx - SplashGrowthSpec.slotWidth * 5 / 2;
+    // The wordmark font is proportional (Figma: E 22, L 21, I 12, O 30, S 22 in
+    // Google Sans Flex), so each slot is the measured advance of its letter.
+    final style = ElioTokens.display.copyWith(color: p.textPrimary);
+    final widths = [
+      for (final l in SplashGrowthSpec.word.split(''))
+        (TextPainter(
+          text: TextSpan(text: l, style: style),
+          textDirection: TextDirection.ltr,
+          textScaler: TextScaler.noScaling,
+        )..layout()).width.ceilToDouble(),
+    ];
+    final lefts = [
+      for (
+        var i = 0, x = cx - widths.reduce((a, b) => a + b) / 2;
+        i < 5;
+        x += widths[i], i++
+      )
+        x,
+    ];
 
     return MediaQuery(
       data: noScale,
@@ -56,11 +73,11 @@ class SplashGrowth extends StatelessWidget {
               ),
               for (var i = 0; i < 5; i++)
                 Positioned(
-                  left: wordLeft + i * SplashGrowthSpec.slotWidth,
+                  left: lefts[i],
                   top: lettersTop,
-                  width: SplashGrowthSpec.slotWidth,
+                  width: widths[i],
                   height: SplashGrowthSpec.slotHeight,
-                  child: _letter(i),
+                  child: _letter(i, style),
                 ),
               Positioned(
                 left: 0,
@@ -89,7 +106,7 @@ class SplashGrowth extends StatelessWidget {
     Curves.easeInOut,
   );
 
-  Widget _letter(int i) {
+  Widget _letter(int i, TextStyle style) {
     final e = _seg(
       t,
       SplashGrowthSpec.textStart + i * SplashGrowthSpec.letterMs,
@@ -108,7 +125,7 @@ class SplashGrowth extends StatelessWidget {
             child: Text(
               SplashGrowthSpec.word[i],
               softWrap: false,
-              style: ElioTokens.display.copyWith(color: palette.textPrimary),
+              style: style,
             ),
           ),
         ),

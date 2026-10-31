@@ -6,7 +6,7 @@
 - "forgot" is the form before sending; "error" is a wrong password from a fake auth; "loading" is a held fake sign-in. No real Firebase or Google call was made.
 
 ## Compared with Figma `get_screenshot` / design context (by eye)
-Compared pair by pair: phone dark sign in, sign up, forgot, error, loading (196:689, 747, 811, 842, 908); desktop dark sign in (196:1249); desktop light sign in (196:1544); splash dark phone F2, F7, F11 (208:860, 1010, 1130); light F11 (208:1502); reduced motion desktop dark (214:1160). Positions match within 1 to 3 px. Not compared one by one: the remaining light and desktop variants of sign up, forgot, error and loading (same code path, token swap only), and splash desktop F0 and F7.
+Re-synced 31 Oct with the updated Figma (pills, radius 12, Google Sans Flex): checked phone dark error (196:842) and splash F11 (208:1130) again. Compared pair by pair earlier: phone dark sign in, sign up, forgot, error, loading (196:689, 747, 811, 842, 908); desktop dark sign in (196:1249); desktop light sign in (196:1544); splash dark phone F2, F7, F11 (208:860, 1010, 1130); light F11 (208:1502); reduced motion desktop dark (214:1160). Positions match within 1 to 3 px. Not compared one by one: the remaining light and desktop variants of sign up, forgot, error and loading (same code path, token swap only), and splash desktop F0 and F7.
 
 ## Visible differences
 1. Icons (mail, lock, eye, user, alert, check) are Material outline icons; Figma has its own SVG icons.
@@ -15,7 +15,8 @@ Compared pair by pair: phone dark sign in, sign up, forgot, error, loading (196:
 4. Desktop is Figma's split layout (520 dp brand panel plus 400 dp form column), not a "centred card" as the brief and the Notion page say. Frame 196:1249 shows the split layout, so the code follows the frame. Below 900 dp width the phone layout is used.
 5. Splash F3: Figma resets stem and buds to their starting size. The code keeps them at full size while they fade out (the spec says "fade out").
 6. Light success banner border (35 % of the green) is assumed; Figma's value was not in the context I read. Error banner values come from Figma.
-7. Brand "ELIOS" on phone uses weight 700 (Figma Bold); the `subhead` token is 600.
+7. Fonts: Figma now uses Google Sans Flex; the code renders Inter and JetBrains Mono (font not bundled yet, decision 0091). Glyph shapes and widths differ; the Figma and render layouts still line up because slots are measured.
+8. Input outlines are plain rounded 12; Figma smooths corners at 60%. Banners use a superellipse.
 
 ## Differences from the old screens (strings and behaviour)
 - Wordmark ELIO to ELIOS (splash, login, "Sign in to control ELIOS", "Join ELIOS to start sorting"). Old subtitle "Smart Waste Sorting Robot" removed from both screens; splash tagline is now "Environment Learning Intelligent Object Sorter".

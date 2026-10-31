@@ -4,6 +4,8 @@
 - U9 splash and login: branch `feat/u9-splash-login` from `feature/live-scan` d201cfb, draft PR. Decision 0100.
 - Code done and tested; waiting for review. Not done: device feel check, native launch screen, a real sign-in.
 
+- Synced with design.md 0091 (pills, radius 12, per-letter splash slots). Fonts still Inter/JetBrains until the font task bundles Google Sans Flex.
+
 ## What is here
 - `lib/Screens/splash_screen.dart` plus `lib/widgets/splash/` (`elio_leaf.dart` painter, `splash_growth.dart` timeline).
 - `lib/Screens/login_screen.dart` plus `lib/widgets/auth/auth_widgets.dart` (field, banner, buttons, link, divider, brand panel).
