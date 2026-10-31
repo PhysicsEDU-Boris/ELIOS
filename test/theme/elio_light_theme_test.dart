@@ -155,8 +155,23 @@ void main() {
     await g.removePointer();
   });
 
+  testWidgets('ElioTheme.wrap is light by default, even on a dark phone', (tester) async {
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    late ThemeData t;
+    await tester.pumpWidget(MaterialApp(
+      home: ElioTheme.wrap(Builder(builder: (c) {
+        t = Theme.of(c);
+        return const SizedBox();
+      })),
+    ));
+    expect(t.brightness, Brightness.light);
+  });
+
   for (final mode in [Brightness.dark, Brightness.light]) {
-    testWidgets('ElioTheme.wrap follows the platform brightness: $mode', (tester) async {
+    testWidgets('ElioTheme.wrap in system mode follows the platform brightness: $mode', (tester) async {
+      ElioTheme.mode = ThemeMode.system;
+      addTearDown(() => ElioTheme.mode = ThemeMode.light);
       tester.platformDispatcher.platformBrightnessTestValue = mode;
       addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
       late ThemeData t;

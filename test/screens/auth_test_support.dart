@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:elio/Screens/home_shell.dart';
+import 'package:elio/theme/elio_theme.dart';
 import 'package:elio/Screens/login_screen.dart';
 
 /// Records which page a replacement route would show, without building it:
@@ -42,6 +43,7 @@ Future<RouteSpy> pumpAt(
   bool disableAnimations = false,
   EdgeInsets viewInsets = EdgeInsets.zero,
 }) async {
+  ElioTheme.mode = ThemeMode.system; // tests pick light or dark with [brightness]
   tester.view
     ..physicalSize = size
     ..devicePixelRatio = 1;
@@ -52,6 +54,7 @@ Future<RouteSpy> pumpAt(
       disableAnimations: disableAnimations,
     );
   addTearDown(() {
+    ElioTheme.mode = ThemeMode.light;
     tester.view.reset();
     tester.platformDispatcher.clearAllTestValues();
   });
