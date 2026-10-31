@@ -13,10 +13,10 @@ All source exports below live in `assets/icon/option-b/` at full node size.
 
 | Node | Source stem | Installed use |
 |---|---|---|
-| 199:889 / 199:894 | master-dark / master-light | dark → Android legacy mipmap launcher_icon + ic_launcher; 48/96/192 previews |
+| 199:889 / 199:894 | master-dark / master-light | light → Android legacy mipmap launcher_icon + ic_launcher (dark was first, superseded); 48/96/192 previews |
 | 199:899 / 199:904 | ios-dark / ios-light | iOS AppIcon dark / any and legacy device sizes; tinted is grayscale dark |
 | 199:909 / 199:915 | macos-dark / macos-light | dark transparent → macOS app_icon_16…1024; light retained |
-| 199:921 / 199:926 | android-foreground-dark / android-foreground-light | dark transparent → drawable-*/ic_launcher_foreground.png; light retained |
+| 199:921 / 199:926 | android-foreground-dark / android-foreground-light | light transparent → drawable-*/ic_launcher_foreground.png on `#F8FAFC`; dark retained |
 | 199:931 | android-monochrome | transparent → drawable-*/ic_launcher_monochrome.png, mipmap-anydpi-v33/launcher_icon.xml |
 | 199:936 / 199:943 | guide-dark / guide-light | source guides only |
 | 199:950 | legibility | source review only |
@@ -24,8 +24,21 @@ All source exports below live in `assets/icon/option-b/` at full node size.
 
 Transparent outputs are derived from the exported frame's SVG group and filters,
 removing the exporter-included parent section only. Raw full-size exports remain.
-Android uses dark foreground on navy in both modes: bright leaf/cursor contrast
-is stable on its fixed background. The monochrome alpha layer enables themed icons.
+Android uses the light foreground on `#F8FAFC` in both modes (light icon is primary,
+owner decision 31 Oct 2026; it replaced the dark foreground on navy). The monochrome alpha layer enables themed icons.
+
+## Light icon is primary (31 Oct 2026)
+
+Android launcher icons switched to the light variants: foreground 199:926 on
+`#F8FAFC`, legacy PNGs from master-light, `flutter_launcher_icons` config updated.
+iOS (any/dark/tinted) and macOS (dark) are unchanged.
+
+Phone check (Edge 60 Fusion, release APK sha256 `438c5ac9052784a07c955d669d73d06dc3208bc5e578cdcf7ef093feabbe54c4`,
+installed over the app, no data clear): launcher drawer grid shows a white tile with
+the green leaf and cursor, centred, not cropped, same size as neighbours. Themed icons
+(Personalisasikan > Warna > Ikon bertema, beta) show the monochrome leaf and cursor on
+a blue tile, centred. I turned the toggle on to look and back off afterwards (it was
+off). Screenshots: `docs/test-results/i1-light-icon/`. Not checked: iOS and macOS.
 
 ## Light-only follow-up (31 Oct 2026)
 
