@@ -7,12 +7,12 @@ page U9 Entry flow, section 199:888. Notion source:
 https://app.notion.com/p/40a9675ed4f381bd9e75fdfbddece1e0.
 Figma was read only.
 
-Android uses dark foreground 199:921 on `#0F172A`. The bright `#4ADE80`
-mark has strong contrast against its own navy background in either system theme;
-Android does not switch launcher artwork with brightness. The 432px foreground
+Android uses the light foreground 199:926 on `#F8FAFC` (owner decision, 31 Oct 2026:
+the light icon is primary, as the light theme is). The dark foreground 199:921 on `#0F172A`
+shipped first and is superseded; its exports stay in `assets/icon/option-b/`. The 432px foreground
 maps to 108dp, preserving the design's padding (no extra generator inset).
 199:931 supplies the monochrome alpha mask in the API 33 adaptive icon resource.
-API 26 keeps the two-layer resource; legacy launcher PNGs use master dark.
+API 26 keeps the two-layer resource; legacy launcher PNGs use master light.
 
 The iOS catalog retains legacy device sizes from the unrounded light frame,
 and adds 1024px universal any/light, dark and grayscale tinted appearances.

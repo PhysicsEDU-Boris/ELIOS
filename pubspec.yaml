@@ -91,11 +91,11 @@ flutter:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/icon/option-b/master-dark.png"
+  image_path: "assets/icon/option-b/master-light.png"
   image_path_ios: "assets/icon/option-b/ios-light.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#0F172A"
-  adaptive_icon_foreground: "assets/icon/option-b/android-foreground-dark-transparent.png"
+  adaptive_icon_background: "#F8FAFC"
+  adaptive_icon_foreground: "assets/icon/option-b/android-foreground-light-transparent.png"
   adaptive_icon_foreground_inset: 0
 
 flutter_native_splash:
