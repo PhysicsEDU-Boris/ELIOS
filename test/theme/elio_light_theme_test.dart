@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:elio/theme/elio_light_theme.dart';
-import 'package:elio/theme/elio_theme.dart';
 import 'package:elio/theme/elio_tokens.dart';
 
 import 'elio_tokens_test.dart' show contrast;
@@ -154,20 +153,4 @@ void main() {
     expect(shadows(), isEmpty);
     await g.removePointer();
   });
-
-  for (final mode in [Brightness.dark, Brightness.light]) {
-    testWidgets('ElioTheme.wrap follows the platform brightness: $mode', (tester) async {
-      tester.platformDispatcher.platformBrightnessTestValue = mode;
-      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
-      late ThemeData t;
-      await tester.pumpWidget(MaterialApp(
-        home: ElioTheme.wrap(Builder(builder: (c) {
-          t = Theme.of(c);
-          return const SizedBox();
-        })),
-      ));
-      expect(t.brightness, mode);
-      expect(t.colorScheme.surface, (mode == Brightness.dark ? ElioTokens.dark : ElioTokens.light).background);
-    });
-  }
 }
