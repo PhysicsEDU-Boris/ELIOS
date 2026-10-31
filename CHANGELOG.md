@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- Android: the launch screen, the first Flutter frame and the launcher icon follow the in-app dark mode (decision 0160).
+
 - Home screen restyled to the H1 Figma design in light and dark (tokens, 48 dp targets, two columns from 840 dp); behaviour unchanged (decision 0140).
 
 ### Changed
