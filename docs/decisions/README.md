@@ -41,7 +41,6 @@ their status changed.
 | [0070](0070-history-crop.md) | Separate History photos from identification crops | Accepted |
 | [0090](0090-design-system-foundation.md) | Design-system foundation, dark and light tokens, scoped adoption | Accepted (PR #57) |
 | [0091](0091-google-sans-flex-font.md) | Design file font change to Google Sans Flex / Google Sans Code, new status chip spec (design only, amends 0090) | Draft |
-
 | [0100](0100-u9-splash-login.md) | Splash "Growth v2" and login screens from the approved Figma (U9) | Accepted (PR #59) |
 | [0110](0110-option-b-app-icon.md) | Option B app icon and native F0 launch screens (I1); light Android icon is primary | Accepted (PR #58, #64) |
 | [0130](0130-theme-mode.md) | User-selected display mode, light by default (T1) | Accepted (PR #61) |
