@@ -1,10 +1,10 @@
 # DevLog
 
-Technical, monospaced, terminal-inspired.
+Technical, terminal-inspired.
 
 ## Overview
 
-DevLog is a dark-mode design system built for developer blogs and technical writing platforms. It channels the aesthetic of a well-configured terminal — green on dark, monospaced headings, and soft glowing accents that feel like phosphor on glass. Code blocks are first-class citizens here, and every typographic choice serves readability under sustained technical reading. The density is standard, giving code snippets and prose equal breathing room.
+DevLog is a dark-mode design system built for developer blogs and technical writing platforms. It channels the aesthetic of a well-configured terminal — green on dark, clean geometric headings (Google Sans Flex), and soft glowing accents that feel like phosphor on glass. Code blocks are first-class citizens here, and every typographic choice serves readability under sustained technical reading. The density is standard, giving code snippets and prose equal breathing room.
 
 ## Colors
 
@@ -55,23 +55,23 @@ DevLog is a dark-mode design system built for developer blogs and technical writ
 
 | Role             | Font                                                     |
 |------------------|----------------------------------------------------------|
-| Display/Headings | JetBrains Mono, 'Fira Code', 'Cascadia Code', monospace |
-| UI/Body          | Inter, -apple-system, 'Segoe UI', Helvetica, sans-serif |
-| Mono/Code        | JetBrains Mono, 'Fira Code', Consolas, monospace        |
+| Display/Headings | Google Sans Flex, 'Google Sans', Inter, sans-serif |
+| UI/Body          | Google Sans Flex, 'Google Sans', -apple-system, 'Segoe UI', Helvetica, sans-serif |
+| Mono/Code        | Google Sans Code, Consolas, monospace |
 
 ### Type Scale
 
 | Level        | Font           | Size   | Weight | Line Height | Letter Spacing | Usage                        |
 |--------------|----------------|--------|--------|-------------|----------------|------------------------------|
-| Display      | JetBrains Mono | 36px   | 700    | 1.2         | -0.02em        | Hero titles, landing headers |
-| Headline     | JetBrains Mono | 28px   | 700    | 1.3         | -0.01em        | Post titles                  |
-| Subhead      | JetBrains Mono | 20px   | 600    | 1.4         | 0              | Section headings             |
-| Body Large   | Inter          | 18px   | 400    | 1.7         | 0              | Lead paragraphs, intros      |
-| Body         | Inter          | 16px   | 400    | 1.7         | 0              | Default reading text         |
-| Body Small   | Inter          | 14px   | 400    | 1.6         | 0              | Sidebar, supplementary text  |
-| Caption      | Inter          | 12px   | 500    | 1.5         | 0.01em         | Timestamps, file paths       |
-| Overline     | JetBrains Mono | 11px   | 600    | 1.4         | 0.1em          | Category tags, labels        |
-| Code         | JetBrains Mono | 14px   | 400    | 1.65        | 0              | Inline code, code blocks     |
+| Display      | Google Sans Flex | 36px   | 700    | 1.2         | -0.02em        | Hero titles, landing headers |
+| Headline     | Google Sans Flex | 28px   | 700    | 1.3         | -0.01em        | Post titles                  |
+| Subhead      | Google Sans Flex | 20px   | 600    | 1.4         | 0              | Section headings             |
+| Body Large   | Google Sans Flex | 18px   | 400    | 1.7         | 0              | Lead paragraphs, intros      |
+| Body         | Google Sans Flex | 16px   | 400    | 1.7         | 0              | Default reading text         |
+| Body Small   | Google Sans Flex | 14px   | 400    | 1.6         | 0              | Sidebar, supplementary text  |
+| Caption      | Google Sans Flex | 12px   | 500    | 1.5         | 0.01em         | Timestamps, file paths       |
+| Overline     | Google Sans Flex | 11px   | 600    | 1.4         | 0.1em          | Category tags, labels        |
+| Code         | Google Sans Code | 14px | 400    | 1.65        | 0              | Inline code, code blocks     |
 
 ## Spacing
 
@@ -123,7 +123,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 - Text: `#0F172A`
 - Border: `1px solid #4ADE80`
 - Padding: 8px 20px
-- Font: Inter, 14px, weight 600
+- Font: Google Sans Flex, 14px, weight 600
 - Radius: 4px
 - Hover: Background `#22C55E`, shadow `0 0 16px rgba(74, 222, 128, 0.2)`
 - Active: Background `#16A34A`
@@ -133,7 +133,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 - Text: `#F1F5F9`
 - Border: `1px solid #334155`
 - Padding: 8px 20px
-- Font: Inter, 14px, weight 600
+- Font: Google Sans Flex, 14px, weight 600
 - Radius: 4px
 - Hover: Background `#334155`, border `#475569`
 - Active: Background `#475569`
@@ -143,7 +143,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 - Text: `#94A3B8`
 - Border: none
 - Padding: 8px 20px
-- Font: Inter, 14px, weight 600
+- Font: Google Sans Flex, 14px, weight 600
 - Radius: 4px
 - Hover: Background `#1E293B`, text `#F1F5F9`
 - Active: Background `#334155`
@@ -153,7 +153,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 - Text: `#0F172A`
 - Border: `1px solid #F87171`
 - Padding: 8px 20px
-- Font: Inter, 14px, weight 600
+- Font: Google Sans Flex, 14px, weight 600
 - Radius: 4px
 - Hover: Background `#EF4444`, shadow `0 0 16px rgba(248, 113, 113, 0.2)`
 - Active: Background `#DC2626`
@@ -187,16 +187,16 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 - Border: `1px solid #334155`
 - Radius: 4px
 - Padding: 8px 14px
-- Font: Inter, 14px, weight 400
+- Font: Google Sans Flex, 14px, weight 400
 - Text color: `#F1F5F9`
 - Placeholder color: `#64748B`
 - Focus: Border `#4ADE80`, shadow `0 0 12px rgba(74, 222, 128, 0.15)`
 - Error: Border `#F87171`, shadow `0 0 12px rgba(248, 113, 113, 0.15)`
 - Disabled: Background `#1E293B`, opacity 0.4
 
-**Label:** Inter, 12px, weight 600, color `#94A3B8`, margin-bottom 6px.
+**Label:** Google Sans Flex, 12px, weight 600, color `#94A3B8`, margin-bottom 6px.
 
-**Helper Text:** Inter, 12px, weight 400, color `#64748B`, margin-top 4px. Error helper color `#F87171`.
+**Helper Text:** Google Sans Flex, 12px, weight 400, color `#64748B`, margin-top 4px. Error helper color `#F87171`.
 
 ### Chips
 
@@ -205,24 +205,25 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 - Border: `1px solid #334155`
 - Radius: 4px
 - Padding: 4px 12px
-- Font: JetBrains Mono, 12px, weight 500
+- Font: Google Sans Flex, 12px, weight 500
 - Text: `#94A3B8`
 - Selected: Background `#4ADE80`, text `#0F172A`, border `#4ADE80`
 
-**Status Chip**
-- Padding: 4px 10px
-- Font: JetBrains Mono, 11px, weight 600, uppercase
-- Radius: 4px
-- Success: Background `rgba(74, 222, 128, 0.12)`, text `#4ADE80`, border `1px solid rgba(74, 222, 128, 0.25)`
-- Warning: Background `rgba(251, 191, 36, 0.12)`, text `#FBBF24`, border `1px solid rgba(251, 191, 36, 0.25)`
-- Error: Background `rgba(248, 113, 113, 0.12)`, text `#F87171`, border `1px solid rgba(248, 113, 113, 0.25)`
+**Status Chip** (MUI-style: pill, sentence case, leading icon)
+- Shape: Radius Full (pill). Label: Google Sans Flex, 12px, weight 500, sentence case (no uppercase).
+- Sizes: Small 24px high (padding 0 10px 0 8px, icon 16px, gap 4px). Medium 32px high (padding 0 12px 0 10px, icon 18px, gap 6px).
+- Leading icon, one shape per status so colour is never the only cue: Success check-circle, Warning triangle-alert, Error alert-circle, Info info-circle.
+- Variant Filled: tinted background, no border. Variant Outlined: transparent background, 1px border in the text colour.
+- Text and icon colour: Success `#4ADE80` (light `#15803D`), Warning `#FBBF24` (light `#B45309`), Error `#F87171` (light `#B91C1C`), Info `#22D3EE` (light `#0E7490`).
+- Filled tint: dark 12% of the text colour. Light 6% success, 4% warning, 8% error, 6% info (12% fails 4.5:1 on light).
+- Not interactive: no hover or focus state. If a chip becomes clickable, use Filter Chip behaviour.
 
 ### Lists
 
 **Default List Item**
 - Padding: 12px 16px
 - Border bottom: `1px solid #1E293B`
-- Font: Inter, 14px, weight 400
+- Font: Google Sans Flex, 14px, weight 400
 - Text: `#F1F5F9`
 - Secondary text: `#64748B`, 12px
 - Hover: Background `#1E293B`
@@ -240,7 +241,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 - Hover: Border `#4ADE80`, shadow `0 0 8px rgba(74, 222, 128, 0.1)`
 - Focus: Shadow `0 0 0 2px #0F172A, 0 0 0 4px #4ADE80`
 - Disabled: Opacity 0.35
-- Label: Inter, 14px, weight 400, color `#F1F5F9`, margin-left 8px
+- Label: Google Sans Flex, 14px, weight 400, color `#F1F5F9`, margin-left 8px
 
 ### Radio Buttons
 
@@ -252,13 +253,13 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 - Hover: Border `#4ADE80`, shadow `0 0 8px rgba(74, 222, 128, 0.1)`
 - Focus: Shadow `0 0 0 2px #0F172A, 0 0 0 4px #4ADE80`
 - Disabled: Opacity 0.35
-- Label: Inter, 14px, weight 400, color `#F1F5F9`, margin-left 8px
+- Label: Google Sans Flex, 14px, weight 400, color `#F1F5F9`, margin-left 8px
 
 ### Tooltips
 
 - Background: `#F1F5F9`
 - Text: `#0F172A`
-- Font: Inter, 12px, weight 500
+- Font: Google Sans Flex, 12px, weight 500
 - Padding: 6px 12px
 - Radius: 4px
 - Max width: 260px
@@ -268,7 +269,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 
 ## Do's and Don'ts
 
-1. **Do** use JetBrains Mono for all headings and code — consistency with the terminal aesthetic is key.
+1. **Do** use Google Sans Flex for all headings and UI text and Google Sans Code for code — one family keeps the terminal aesthetic clean.
 2. **Do** give code blocks generous padding (24px) and distinguish them clearly with `#1E293B` backgrounds.
 3. **Do** use the green glow sparingly — reserve it for hover, focus, and active states only.
 4. **Don't** use light backgrounds; the dark navy-black `#0F172A` is the foundation. Never invert it.
@@ -351,17 +352,23 @@ Extended from the tokens, dark only. Disabled = opacity 0.35 (buttons, checkbox,
 Primary, Success/Error never used as the fill. Dialog and bottom sheet = Surface, radius
 Large (8) / Large top corners, overlay shadow from the Shadows table. App bar = Background,
 no elevation. Tab bar = Primary indicator, Text Secondary unselected. Switch = Primary track
-when on, Border Strong off. Material text roles: `bodyLarge` = Body Small (Inter 14), because Material 3 reads TextField
-input text from it and the input spec is Inter 14; the Body Large token (18) sits on
+when on, Border Strong off. Material text roles: `bodyLarge` = Body Small (Google Sans Flex 14), because Material 3 reads TextField
+input text from it and the input spec is Google Sans Flex 14; the Body Large token (18) sits on
 `titleMedium`. Checkbox and radio render at Material's 18 dp, not 16 (not themeable).
 Glow comes from `ElioGlowBox` (hover, focus-within), not from Material elevation.
 Not yet verified against screens: nothing consumes the theme.
 
 ## Fonts
 
-JetBrains Mono and Inter are bundled as variable TTFs in `assets/fonts/` with their OFL
-texts (OFL-JetBrainsMono.txt, OFL-Inter.txt). Weights are set with `FontVariation('wght')`.
-The robot runs offline, so no runtime font fetching.
+Changed from JetBrains Mono + Inter to Google Sans Flex (headings and UI text) and Google Sans Code
+(code only). Google Sans Flex is proportional, so the Display, Headline and Overline roles are no
+longer monospaced. Status: DRAFT, design only. The Flutter app still bundles JetBrains Mono and
+Inter (`assets/fonts/`, `pubspec.yaml`) and `home_screen.dart` still uses Sora and Manrope through
+`google_fonts`; none of that has changed. When implemented, bundle Google Sans Flex and Google Sans
+Code as variable TTFs with their licence texts (check the licence first), set weights with
+`FontVariation('wght')`, and keep no runtime font fetching (the robot runs offline).
+Figma has no SemiBold for JetBrains Mono, which is why the old Subhead and Overline were Bold;
+Google Sans Flex has SemiBold.
 
 ## Light mode notes
 
