@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- Home screen restyled to the H1 Figma design in light and dark (tokens, 48 dp targets, two columns from 840 dp); behaviour unchanged (decision 0140).
+
 ### Changed
 - Design file font (decision 0091, draft): `docs/design.md` switches from JetBrains Mono and Inter to Google Sans Flex (headings, UI) and Google Sans Code (code), and the Status Chip is redefined in the MUI style. The corner radii follow the Material 3 scale with continuous corners (buttons and chips pill, inputs 12, cards 16, dialogs 28). Design only; the app still bundles the old fonts and uses the old 4px radii.
 

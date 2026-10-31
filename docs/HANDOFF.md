@@ -26,3 +26,8 @@
 ## Design file font (decision 0091, draft)
 
 - `docs/design.md` now specifies Google Sans Flex and Google Sans Code and a new Status Chip. The app code is unchanged (still JetBrains Mono, Inter, Sora, Manrope). Radii now follow the M3 scale with continuous corners. Check the font licences before bundling.
+
+## H1 home screen (31 Oct, draft PR #67)
+
+- `lib/Screens/home_screen.dart` restyled to Figma 243:2358 (light and dark, tokens only, 48 dp targets, two columns from 840 dp); behaviour unchanged. Decision 0140, details in [lane-h.md](handoff/lane-h.md).
+- Not checked: real 3D viewer, phone feel, native Mac window (no isolated test store documented, so the app was not launched).

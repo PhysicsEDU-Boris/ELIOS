@@ -1,3 +1,11 @@
+// Home screen restyle H1 (decision 0140). Figma file J2jSbARJSyJCStNFeWkWDj,
+// page "H1 Home screen" 243:2358:
+//   243:2359 Phone / Light / With activity     243:2556 Phone / Dark / With activity
+//   243:2753 Phone / Light / First launch      245:2358 Desktop 1280 / Light
+//   245:2446 spec frame
+// Look and layout only: every action, route, provider and data flow is as
+// before. The bottom sheets and dialogs below stay on the legacy look (they
+// are re-themed with their own screens), see [_legacyTheme].
 import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -17,10 +25,13 @@ import '../providers/auth_provider.dart';
 import '../providers/learning_progress_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../services/elearning_content_service.dart';
+import '../theme/elio_theme.dart';
+import '../theme/elio_tokens.dart';
+import '../widgets/auth/auth_widgets.dart';
 import '../widgets/elio_colors.dart';
 import 'tabs/elearning/quiz_review_page.dart';
 
-const _background = Color(0xFFF8FAF9);
+// Legacy colours: only the bottom sheets and dialogs below still use these.
 const _ink = Color(0xFF191C1C);
 const _muted = Color(0xFF6D7A73);
 const _border = Color(0xFFE4EAE6);
@@ -28,7 +39,118 @@ const _cyan = Color(0xFF00647C);
 const _amber = Color(0xFFBA7517);
 const _trackedLearningModuleIds = ['organic', 'inorganic', 'hazardous'];
 
-final _elearningContentService = ElearningContentService();
+// Design file 0091 shape scale.
+const _radiusL = 16.0;
+const _radiusM = 12.0;
+const _minTap = 48.0;
+const _wideBreakpoint = 840.0;
+const _maxContentWidth = 1040.0;
+
+ElearningContentService? _contentServiceOverride;
+ElearningContentService get _elearningContentService =>
+    _contentServiceOverride ??= ElearningContentService();
+
+/// Test seams: Firestore and the WebView-based 3D viewer cannot run in widget tests.
+@visibleForTesting
+set homeContentServiceForTest(ElearningContentService? service) =>
+    _contentServiceOverride = service;
+
+@visibleForTesting
+bool homeStaticRobotForTest = false;
+
+/// The app theme (not the [ElioTheme.wrap] one) for sheets and dialogs that
+/// still use the legacy look; they are launched from inside the wrapped screen.
+Widget _legacyTheme(BuildContext context, Widget child) =>
+    Theme(data: Theme.of(Navigator.of(context).context), child: child);
+
+ShapeBorder _shape(ElioPalette p, double radius, {Color? side}) =>
+    RoundedSuperellipseBorder(
+      borderRadius: BorderRadius.circular(radius),
+      side: BorderSide(color: side ?? p.borderMedium),
+    );
+
+TextStyle _title(ElioPalette p, double size) => ElioTokens.subhead.copyWith(
+  fontSize: size,
+  height: 1.3,
+  color: p.textPrimary,
+);
+
+TextStyle _small(ElioPalette p, {Color? color, FontWeight? weight}) =>
+    ElioTokens.bodySmall.copyWith(
+      fontSize: 13,
+      height: 1.4,
+      color: color ?? p.textSecondary,
+      fontWeight: weight,
+    );
+
+TextStyle _overline(ElioPalette p) =>
+    ElioTokens.overline.copyWith(color: p.primaryText);
+
+/// Surface card with the design-system border; tappable cards get an ink
+/// ripple clipped to the same continuous shape.
+class _Card extends StatelessWidget {
+  const _Card({
+    required this.child,
+    this.onTap,
+    this.padding = const EdgeInsets.all(16),
+    this.radius = _radiusL,
+    this.semanticsLabel,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final EdgeInsetsGeometry padding;
+  final double radius;
+  final String? semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
+    final shape = _shape(p, radius);
+    final body = Padding(padding: padding, child: child);
+    return Semantics(
+      container: true,
+      button: onTap != null,
+      label: semanticsLabel,
+      child: Material(
+        color: p.surface,
+        shape: shape,
+        clipBehavior: Clip.antiAlias,
+        child: onTap == null
+            ? SizedBox(width: double.infinity, child: body)
+            : InkWell(
+                onTap: onTap,
+                customBorder: shape,
+                child: SizedBox(width: double.infinity, child: body),
+              ),
+      ),
+    );
+  }
+}
+
+class _IconTile extends StatelessWidget {
+  const _IconTile(this.icon, {this.size = 40, this.color});
+
+  final IconData icon;
+  final double size;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
+    return Container(
+      width: size,
+      height: size,
+      decoration: ShapeDecoration(
+        color: p.surfaceRaised,
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(_radiusM),
+        ),
+      ),
+      child: Icon(icon, size: size * 0.5, color: color ?? p.primaryText),
+    );
+  }
+}
 
 class HomeScreen extends ConsumerWidget {
   final FirebaseAuth auth;
@@ -98,53 +220,80 @@ class HomeScreen extends ConsumerWidget {
               onOpenLearning();
             }
 
-            return Scaffold(
-              backgroundColor: _background,
-              body: SafeArea(
-                child: RefreshIndicator(
-                  color: elioGreen,
-                  onRefresh: () => ref.refresh(learningProgressProvider.future),
-                  child: CustomScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 28),
-                        sliver: SliverList.list(
-                          children: [
-                            _TopBar(
-                              name: _displayNameFor(user),
-                              photoUrl: user?.photoURL,
-                              onMenuPressed: onOpenDrawer,
-                              unreadNotificationCount: unreadNotifications,
-                              onNotificationsPressed: () =>
-                                  _showNotificationsSheet(
-                                    context: context,
-                                    onOpenLearning: onOpenLearning,
+            return ElioTheme.wrap(
+              Builder(
+                builder: (context) {
+                  final p = authPalette(context);
+                  return Scaffold(
+                    backgroundColor: p.background,
+                    body: SafeArea(
+                      child: RefreshIndicator(
+                        color: p.primaryText,
+                        onRefresh: () =>
+                            ref.refresh(learningProgressProvider.future),
+                        child: CustomScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          slivers: [
+                            SliverToBoxAdapter(
+                              child: Center(
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: _maxContentWidth,
                                   ),
-                            ),
-                            const SizedBox(height: 14),
-                            _Dashboard(
-                              data: dashboard,
-                              isGuest: user?.isAnonymous ?? true,
-                              isLoading: isLoading,
-                              hasProgressError: hasError,
-                              onRetry: () =>
-                                  ref.invalidate(learningProgressProvider),
-                              onOpenLearning: onOpenLearning,
-                              onResumeLearningItem: openResumeItem,
-                              onSelectTab: (index) {
-                                ref
-                                        .read(navigationIndexProvider.notifier)
-                                        .state =
-                                    index;
-                              },
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      8,
+                                      16,
+                                      32,
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        _TopBar(
+                                          name: _displayNameFor(user),
+                                          photoUrl: user?.photoURL,
+                                          onMenuPressed: onOpenDrawer,
+                                          unreadNotificationCount:
+                                              unreadNotifications,
+                                          onNotificationsPressed: () =>
+                                              _showNotificationsSheet(
+                                                context: context,
+                                                onOpenLearning: onOpenLearning,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        _Dashboard(
+                                          data: dashboard,
+                                          isGuest: user?.isAnonymous ?? true,
+                                          isLoading: isLoading,
+                                          hasProgressError: hasError,
+                                          onRetry: () => ref.invalidate(
+                                            learningProgressProvider,
+                                          ),
+                                          onOpenLearning: onOpenLearning,
+                                          onResumeLearningItem: openResumeItem,
+                                          onSelectTab: (index) {
+                                            ref
+                                                    .read(
+                                                      navigationIndexProvider
+                                                          .notifier,
+                                                    )
+                                                    .state =
+                                                index;
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               ),
             );
           },
@@ -186,54 +335,133 @@ class _Dashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (hasProgressError) ...[
-          _ProgressWarning(onRetry: onRetry),
-          const SizedBox(height: 12),
-        ],
-        _HeroCard(data: data),
-        if (isLoading) ...[
-          const SizedBox(height: 10),
-          const LinearProgressIndicator(
-            minHeight: 3,
-            backgroundColor: Color(0xFFE6E9E8),
-            valueColor: AlwaysStoppedAnimation(elioGreen),
-          ),
-        ],
-        const SizedBox(height: 22),
-        const _SectionHeader(title: 'Continue Learning'),
-        const SizedBox(height: 10),
-        _ContinueLearningCard(
-          data: data,
-          onTap: onOpenLearning,
-          onResumeLearningItem: onResumeLearningItem,
-        ),
-        const SizedBox(height: 22),
-        _SectionHeader(
-          title: 'Your Progress',
-          actionLabel: 'View learning',
-          onActionTap: onOpenLearning,
-        ),
-        const SizedBox(height: 10),
-        _ProgressGrid(data: data, onOpenLearning: onOpenLearning),
-        const SizedBox(height: 22),
-        const _InsightCard(),
-        const SizedBox(height: 22),
-        const _SectionHeader(title: 'Achievements'),
-        const SizedBox(height: 10),
-        _AchievementList(data: data),
-        const SizedBox(height: 22),
-        const _SectionHeader(title: 'Recent Activity'),
-        const SizedBox(height: 6),
-        _RecentActivityList(activities: data.activities),
-        const SizedBox(height: 22),
-        const _SectionHeader(title: 'Quick Actions'),
-        const SizedBox(height: 10),
-        _QuickActions(onOpenLearning: onOpenLearning, onSelectTab: onSelectTab),
-        if (isGuest) ...[const SizedBox(height: 20), const _GuestBanner()],
-      ],
+    final hero = _HeroCard(data: data);
+    final loading = isLoading
+        ? Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Semantics(
+              label: 'Loading progress',
+              child: const _Bar(value: null),
+            ),
+          )
+        : const SizedBox.shrink();
+    final continueCard = _ContinueLearningCard(
+      data: data,
+      onTap: onOpenLearning,
+      onResumeLearningItem: onResumeLearningItem,
+    );
+    final progress = <Widget>[
+      _SectionHeader(
+        title: 'Your Progress',
+        actionLabel: 'View learning',
+        onActionTap: onOpenLearning,
+      ),
+      const SizedBox(height: 8),
+      _ProgressGrid(data: data, onOpenLearning: onOpenLearning),
+    ];
+    final insight = const _InsightCard();
+    final achievements = <Widget>[
+      const _SectionHeader(title: 'Achievements'),
+      const SizedBox(height: 8),
+      _AchievementList(data: data),
+    ];
+    final recent = <Widget>[
+      const _SectionHeader(title: 'Recent Activity'),
+      const SizedBox(height: 8),
+      _RecentActivityList(activities: data.activities),
+    ];
+    final quick = <Widget>[
+      const _SectionHeader(title: 'Quick Actions'),
+      const SizedBox(height: 8),
+      _QuickActions(onOpenLearning: onOpenLearning, onSelectTab: onSelectTab),
+    ];
+    const gap = SizedBox(height: 24);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= _wideBreakpoint - 32;
+        final left = <Widget>[
+          if (hasProgressError) ...[
+            _ProgressWarning(onRetry: onRetry),
+            const SizedBox(height: 12),
+          ],
+          hero,
+          loading,
+          const SizedBox(height: 16),
+          continueCard,
+          gap,
+          ...progress,
+          if (wide) ...[gap, ...recent],
+        ];
+        final right = <Widget>[
+          if (!wide) gap,
+          insight,
+          gap,
+          ...achievements,
+          if (!wide) ...[gap, ...recent],
+          gap,
+          ...quick,
+        ];
+        final guest = isGuest
+            ? const Padding(
+                padding: EdgeInsets.only(top: 24),
+                child: _GuestBanner(),
+              )
+            : const SizedBox.shrink();
+
+        if (!wide) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [...left, ...right, guest],
+          );
+        }
+        return Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: left,
+                  ),
+                ),
+                const SizedBox(width: 24),
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: right,
+                  ),
+                ),
+              ],
+            ),
+            guest,
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _Bar extends StatelessWidget {
+  const _Bar({required this.value});
+
+  /// Null shows the indeterminate loading bar.
+  final double? value;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(ElioTokens.radiusFull),
+      child: LinearProgressIndicator(
+        value: value,
+        minHeight: 6,
+        backgroundColor: p.surfaceRaised,
+        valueColor: AlwaysStoppedAnimation(p.primary),
+      ),
     );
   }
 }
@@ -255,28 +483,32 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = authPalette(context);
+    final badgeLabel = unreadNotificationCount > 9
+        ? '9+'
+        : '$unreadNotificationCount';
     return Row(
       children: [
         IconButton(
           onPressed: onMenuPressed,
           tooltip: 'Open navigation menu',
-          style: IconButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: _ink,
-            side: const BorderSide(color: _border),
+          constraints: const BoxConstraints.tightFor(
+            width: _minTap,
+            height: _minTap,
           ),
-          icon: const Icon(Icons.menu_rounded, size: 21),
+          style: IconButton.styleFrom(foregroundColor: p.textPrimary),
+          icon: const Icon(Icons.menu_rounded, size: 24),
         ),
-        const SizedBox(width: 9),
+        const SizedBox(width: 8),
         CircleAvatar(
           radius: 20,
-          backgroundColor: elioGreen.withValues(alpha: 0.1),
+          backgroundColor: p.surfaceRaised,
           backgroundImage: photoUrl == null ? null : NetworkImage(photoUrl!),
           child: photoUrl == null
-              ? const Icon(Icons.person_rounded, color: elioGreen)
+              ? Icon(Icons.person_outline_rounded, color: p.primaryText)
               : null,
         ),
-        const SizedBox(width: 11),
+        const SizedBox(width: 8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,19 +517,13 @@ class _TopBar extends StatelessWidget {
                 'Hello, $name',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.sora(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: _ink,
-                ),
+                style: _title(p, 18),
               ),
               Text(
                 'Ready to learn with ELIO?',
-                style: GoogleFonts.manrope(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: _muted,
-                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: _small(p),
               ),
             ],
           ),
@@ -308,37 +534,37 @@ class _TopBar extends StatelessWidget {
             IconButton(
               onPressed: onNotificationsPressed,
               tooltip: 'Open notifications',
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: _ink,
-                side: const BorderSide(color: _border),
+              constraints: const BoxConstraints.tightFor(
+                width: _minTap,
+                height: _minTap,
               ),
-              icon: const Icon(Icons.notifications_none_rounded, size: 21),
+              style: IconButton.styleFrom(foregroundColor: p.textPrimary),
+              icon: const Icon(Icons.notifications_none_rounded, size: 24),
             ),
             if (unreadNotificationCount > 0)
               Positioned(
-                right: -1,
-                top: -1,
-                child: Container(
-                  constraints: const BoxConstraints(minWidth: 18),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFBA1A1A),
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: Colors.white, width: 1.5),
-                  ),
-                  child: Text(
-                    unreadNotificationCount > 9
-                        ? '9+'
-                        : '$unreadNotificationCount',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.manrope(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
+                right: 4,
+                top: 4,
+                child: ExcludeSemantics(
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: p.isDark ? p.error : p.errorText,
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(color: p.background, width: 1.5),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      badgeLabel,
+                      style: ElioTokens.label.copyWith(
+                        color: p.isDark ? p.onError : Colors.white,
+                        fontSize: 10,
+                        height: 1.2,
+                      ),
                     ),
                   ),
                 ),
@@ -357,99 +583,21 @@ class _HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _border),
-      ),
+    return _Card(
+      radius: 28,
+      padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 10, 16),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 330;
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text.rich(
-                            TextSpan(
-                              children: [
-                                const TextSpan(text: 'Welcome\nto '),
-                                TextSpan(
-                                  text: 'ELIO',
-                                  style: GoogleFonts.sora(color: elioGreen),
-                                ),
-                              ],
-                            ),
-                            style: GoogleFonts.sora(
-                              fontSize: compact ? 20 : 22,
-                              height: 1.12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: -0.5,
-                              color: _ink,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Learn Environmental Physics through Robotics, AI & Smart Waste Sorting.',
-                            style: GoogleFonts.manrope(
-                              fontSize: compact ? 10 : 11,
-                              height: 1.55,
-                              color: const Color(0xFF3D4943),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(99),
-                                  child: LinearProgressIndicator(
-                                    value: data.overallProgress,
-                                    minHeight: 5,
-                                    backgroundColor: const Color(0xFFE6E9E8),
-                                    valueColor: const AlwaysStoppedAnimation(
-                                      elioGreen,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${data.progressPercent}%',
-                                style: GoogleFonts.manrope(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  color: elioGreen,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: compact ? 6 : 12),
-                    _ElioRobot3DViewer(size: compact ? 126 : 144),
-                  ],
-                );
-              },
-            ),
-          ),
-          Container(
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: _border)),
-            ),
+          const _ElioRobot3DViewer(height: 160),
+          const SizedBox(height: 12),
+          IntrinsicHeight(
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _HeroStat(label: 'Learning', value: data.learningItemsValue),
+                const SizedBox(width: 8),
                 _HeroStat(label: 'Quiz Avg', value: data.quizValue),
+                const SizedBox(width: 8),
                 _HeroStat(label: 'Current', value: data.currentShortLabel),
               ],
             ),
@@ -461,9 +609,9 @@ class _HeroCard extends StatelessWidget {
 }
 
 class _ElioRobot3DViewer extends StatefulWidget {
-  final double size;
+  final double height;
 
-  const _ElioRobot3DViewer({required this.size});
+  const _ElioRobot3DViewer({required this.height});
 
   @override
   State<_ElioRobot3DViewer> createState() => _ElioRobot3DViewerState();
@@ -488,86 +636,74 @@ class _ElioRobot3DViewerState extends State<_ElioRobot3DViewer> {
 
   @override
   Widget build(BuildContext context) {
-    if (_hasError) {
-      return _RotatingRobotStage(size: widget.size);
-    }
-
-    return SizedBox(
-      width: widget.size,
-      height: widget.size + 18,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: widget.size,
-            height: widget.size,
-            decoration: const BoxDecoration(
-              color: Color(0xFFEDF4F0),
-              shape: BoxShape.circle,
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Flutter3DViewer(
-              controller: _controller,
-              src: 'assets/models/robot-elio.glb',
-              enableTouch: true,
-              activeGestureInterceptor: true,
-              progressBarColor: elioGreen,
-              onLoad: _handleLoad,
-              onError: _handleError,
-            ),
-          ),
-          if (!_isLoaded)
-            IgnorePointer(
-              child: Container(
-                width: widget.size,
-                height: widget.size,
-                decoration: const BoxDecoration(
-                  color: Color(0x99EDF4F0),
-                  shape: BoxShape.circle,
+    final p = authPalette(context);
+    final useStage = _hasError || homeStaticRobotForTest;
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: 'ELIO robot 3D viewer. Drag to rotate.',
+      child: Container(
+        height: widget.height,
+        width: double.infinity,
+        clipBehavior: Clip.antiAlias,
+        decoration: ShapeDecoration(
+          color: p.background,
+          shape: _shape(p, _radiusL, side: p.borderSubtle),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (useStage)
+              _RotatingRobotStage(height: widget.height)
+            else ...[
+              ExcludeSemantics(
+                child: Flutter3DViewer(
+                  controller: _controller,
+                  src: 'assets/models/robot-elio.glb',
+                  enableTouch: true,
+                  activeGestureInterceptor: true,
+                  progressBarColor: p.primaryText,
+                  onLoad: _handleLoad,
+                  onError: _handleError,
                 ),
-                alignment: Alignment.center,
-                child: const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: elioGreen,
+              ),
+              if (!_isLoaded)
+                IgnorePointer(
+                  child: Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: p.primaryText,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+            Positioned(
+              bottom: 8,
+              child: IgnorePointer(
+                child: Text(
+                  'DRAG TO ROTATE',
+                  style: ElioTokens.overline.copyWith(
+                    fontSize: 10,
+                    color: p.textSecondary,
                   ),
                 ),
               ),
             ),
-          Positioned(
-            bottom: 0,
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.swipe_rounded,
-                  size: 11,
-                  color: Color(0x7300684C),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'DRAG TO ROTATE',
-                  style: GoogleFonts.manrope(
-                    fontSize: 8,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
-                    color: const Color(0x7300684C),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
 class _RotatingRobotStage extends StatefulWidget {
-  final double size;
+  final double height;
 
-  const _RotatingRobotStage({required this.size});
+  const _RotatingRobotStage({required this.height});
 
   @override
   State<_RotatingRobotStage> createState() => _RotatingRobotStageState();
@@ -578,97 +714,35 @@ class _RotatingRobotStageState extends State<_RotatingRobotStage> {
 
   @override
   Widget build(BuildContext context) {
+    final p = authPalette(context);
+    final h = widget.height;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onHorizontalDragUpdate: (details) {
         setState(() => _angle += details.delta.dx * 0.018);
       },
-      child: SizedBox(
-        width: widget.size,
-        height: widget.size + 18,
-        child: Stack(
+      child: Center(
+        child: Transform(
           alignment: Alignment.center,
-          children: [
-            Container(
-              width: widget.size,
-              height: widget.size,
-              decoration: const BoxDecoration(
-                color: Color(0xFFEDF4F0),
-                shape: BoxShape.circle,
-              ),
+          transform: Matrix4.identity()
+            ..setEntry(3, 2, 0.0015)
+            ..rotateY(_angle)
+            ..rotateZ(math.sin(_angle) * 0.04),
+          child: Container(
+            width: h * 0.62,
+            height: h * 0.5,
+            decoration: ShapeDecoration(
+              color: p.surface,
+              shape: _shape(p, _radiusL, side: p.borderStrong),
             ),
-            Transform(
-              alignment: Alignment.center,
-              transform: Matrix4.identity()
-                ..setEntry(3, 2, 0.0015)
-                ..rotateY(_angle)
-                ..rotateZ(math.sin(_angle) * 0.04),
-              child: Container(
-                width: widget.size * 0.58,
-                height: widget.size * 0.64,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: elioGreen.withValues(alpha: 0.13)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: elioGreen.withValues(alpha: 0.12),
-                      blurRadius: 16,
-                      offset: const Offset(0, 9),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: widget.size * 0.36,
-                      height: widget.size * 0.25,
-                      decoration: BoxDecoration(
-                        color: elioGreen,
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: const [_RobotEye(), _RobotEye()],
-                      ),
-                    ),
-                    const SizedBox(height: 7),
-                    Container(
-                      width: widget.size * 0.32,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF86F8C9),
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _RobotEye(color: p.primary),
+                _RobotEye(color: p.primary),
+              ],
             ),
-            Positioned(
-              bottom: 0,
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.swipe_rounded,
-                    size: 11,
-                    color: Color(0x7300684C),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'DRAG TO ROTATE',
-                    style: GoogleFonts.manrope(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
-                      color: const Color(0x7300684C),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -676,17 +750,16 @@ class _RotatingRobotStageState extends State<_RotatingRobotStage> {
 }
 
 class _RobotEye extends StatelessWidget {
-  const _RobotEye();
+  const _RobotEye({required this.color});
+
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 9,
-      height: 9,
-      decoration: const BoxDecoration(
-        color: Color(0xFF86F8C9),
-        shape: BoxShape.circle,
-      ),
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
@@ -699,35 +772,25 @@ class _HeroStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = authPalette(context);
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 11),
-        decoration: const BoxDecoration(
-          border: Border(left: BorderSide(color: _border)),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: ShapeDecoration(
+          color: p.surface,
+          shape: _shape(p, _radiusM, side: p.borderSubtle),
         ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.sora(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: _ink,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label.toUpperCase(),
-              style: GoogleFonts.manrope(
-                fontSize: 8,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.7,
-                color: _muted,
-              ),
-            ),
-          ],
+        child: Semantics(
+          container: true,
+          label: '$label $value',
+          excludeSemantics: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(value, style: _title(p, 16).copyWith(height: 1.25)),
+              Text(label, style: _small(p).copyWith(fontSize: 12)),
+            ],
+          ),
         ),
       ),
     );
@@ -741,40 +804,41 @@ class _ProgressWarning extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(13, 10, 8, 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF5E8),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _amber.withValues(alpha: 0.24)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.warning_amber_rounded, color: _amber, size: 19),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Text(
-              'Progress could not be loaded. Showing local empty state.',
-              style: GoogleFonts.manrope(
-                fontSize: 10,
-                height: 1.35,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF7A511C),
+    final p = authPalette(context);
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
+        decoration: ShapeDecoration(
+          color: p.secondaryText.withValues(alpha: p.isDark ? 0.12 : 0.04),
+          shape: _shape(
+            p,
+            _radiusM,
+            side: p.secondaryText.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: p.secondaryText, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Progress could not be loaded. Showing local empty state.',
+                style: _small(p, color: p.textPrimary),
               ),
             ),
-          ),
-          TextButton(
-            onPressed: onRetry,
-            style: TextButton.styleFrom(
-              foregroundColor: _amber,
-              minimumSize: Size.zero,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            TextButton(
+              onPressed: onRetry,
+              style: TextButton.styleFrom(
+                foregroundColor: p.secondaryText,
+                minimumSize: const Size(_minTap, _minTap),
+              ),
+              child: const Text('Retry'),
             ),
-            child: const Text('Retry'),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -793,6 +857,7 @@ class _ContinueLearningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = authPalette(context);
     final item = data.continueItem;
     final hasResumeItem = item != null;
     final resumeItem = item;
@@ -809,58 +874,40 @@ class _ContinueLearningCard extends StatelessWidget {
         ? '${_activityTypeLabel(resumeItem!.type)} · ${resumeItem.subtitle}'
         : null;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: elioGreen,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: elioGreen.withValues(alpha: 0.15),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+    return _Card(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: GoogleFonts.manrope(
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1,
-              color: Colors.white.withValues(alpha: 0.65),
-            ),
-          ),
-          const SizedBox(height: 7),
+          Text(label, style: _overline(p)),
+          const SizedBox(height: 8),
           Text(
             title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.sora(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
+            style: _title(p, 20),
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 5),
+            const SizedBox(height: 4),
             Text(
               subtitle,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.manrope(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Colors.white.withValues(alpha: 0.75),
-              ),
+              style: _small(p, color: p.textPrimary),
             ),
           ],
-          const SizedBox(height: 14),
-          FilledButton.icon(
+          const SizedBox(height: 12),
+          Semantics(
+            label: 'Overall progress ${data.progressPercent}%',
+            child: _Bar(value: data.overallProgress),
+          ),
+          const SizedBox(height: 16),
+          AuthPrimaryButton(
+            label: hasResumeItem
+                ? 'Continue'
+                : hasStarted
+                ? 'Continue Module'
+                : 'Start Module 1',
             onPressed: () {
               if (data.unfinishedItems.isEmpty) {
                 onTap();
@@ -874,21 +921,6 @@ class _ContinueLearningCard extends StatelessWidget {
                 onSelectItem: onResumeLearningItem,
               );
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: elioGreen,
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-              minimumSize: Size.zero,
-            ),
-            icon: const Icon(Icons.play_arrow_rounded, size: 17),
-            label: Text(
-              hasResumeItem
-                  ? 'Continue'
-                  : hasStarted
-                  ? 'Continue Module'
-                  : 'Start Module 1',
-              style: GoogleFonts.manrope(fontWeight: FontWeight.w800),
-            ),
           ),
         ],
       ),
@@ -906,66 +938,61 @@ class _ProgressGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cardWidth = (constraints.maxWidth - 10) / 2;
-        return Wrap(
-          spacing: 10,
-          runSpacing: 10,
+        return Column(
           children: [
-            SizedBox(
-              width: cardWidth,
-              child: _ProgressCard(
-                icon: Icons.menu_book_rounded,
-                iconColor: elioGreen,
-                iconBackground: elioGreen.withValues(alpha: 0.08),
-                label: 'Learning',
-                value: data.learningItemsValue,
-                subtitle: data.completedLearningItems == 0
-                    ? 'No learning completed yet'
-                    : '${data.completedLearningItems} learning items completed',
-                onTap: () => _showLearningProgressSheet(
-                  context: context,
-                  data: data,
-                  onOpenLearning: onOpenLearning,
-                ),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _ProgressCard(
+                      icon: Icons.menu_book_outlined,
+                      label: 'Learning',
+                      value: data.learningItemsValue,
+                      subtitle: data.completedLearningItems == 0
+                          ? 'No learning completed yet'
+                          : '${data.completedLearningItems} learning items completed',
+                      onTap: () => _showLearningProgressSheet(
+                        context: context,
+                        data: data,
+                        onOpenLearning: onOpenLearning,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _ProgressCard(
+                      icon: Icons.check_rounded,
+                      label: 'Quiz Avg',
+                      value: data.quizValue,
+                      subtitle: data.quizAttemptCount == 0
+                          ? 'No quiz attempts yet'
+                          : '${data.quizAttemptCount} quiz attempts',
+                      onTap: () => _showQuizProgressSheet(
+                        context: context,
+                        data: data,
+                        onOpenLearning: onOpenLearning,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            SizedBox(
-              width: cardWidth,
-              child: _ProgressCard(
-                icon: Icons.quiz_rounded,
-                iconColor: _cyan,
-                iconBackground: _cyan.withValues(alpha: 0.08),
-                label: 'Quiz Avg',
-                value: data.quizValue,
-                subtitle: data.quizAttemptCount == 0
-                    ? 'No quiz attempts yet'
-                    : '${data.quizAttemptCount} quiz attempts',
-                onTap: () => _showQuizProgressSheet(
-                  context: context,
-                  data: data,
-                  onOpenLearning: onOpenLearning,
-                ),
-              ),
-            ),
-            SizedBox(
-              width: constraints.maxWidth,
-              child: _ProgressCard(
-                icon: Icons.play_lesson_rounded,
-                iconColor: _amber,
-                iconBackground: _amber.withValues(alpha: 0.1),
-                label: 'Current Module',
-                value: data.currentModule,
-                subtitle: data.currentModule == 'Not started'
-                    ? 'Start your first learning module'
-                    : data.currentTimestamp == null
-                    ? 'Continue this learning module'
-                    : 'Last opened ${_relativeTime(data.currentTimestamp!)}',
-                horizontal: true,
-                onTap: () => _showCurrentModuleSheet(
-                  context: context,
-                  data: data,
-                  onOpenLearning: onOpenLearning,
-                ),
+            const SizedBox(height: 8),
+            _ProgressCard(
+              icon: Icons.explore_outlined,
+              label: 'Current Module',
+              value: data.currentModule,
+              subtitle: data.currentModule == 'Not started'
+                  ? 'Start your first learning module'
+                  : data.currentTimestamp == null
+                  ? 'Continue this learning module'
+                  : 'Last opened ${_relativeTime(data.currentTimestamp!)}',
+              valueOnTop: false,
+              onTap: () => _showCurrentModuleSheet(
+                context: context,
+                data: data,
+                onOpenLearning: onOpenLearning,
               ),
             ),
           ],
@@ -975,101 +1002,53 @@ class _ProgressGrid extends StatelessWidget {
   }
 }
 
+/// Figma order: icon, value, label, subtitle. The Current Module card puts the
+/// label below the value as well (name first), so [valueOnTop] only differs in size.
 class _ProgressCard extends StatelessWidget {
   final IconData icon;
-  final Color iconColor;
-  final Color iconBackground;
   final String label;
   final String value;
   final String subtitle;
-  final bool horizontal;
+  final bool valueOnTop;
   final VoidCallback? onTap;
 
   const _ProgressCard({
     required this.icon,
-    required this.iconColor,
-    required this.iconBackground,
     required this.label,
     required this.value,
     required this.subtitle,
-    this.horizontal = false,
+    this.valueOnTop = true,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final iconWidget = Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: iconBackground,
-        borderRadius: BorderRadius.circular(9),
-      ),
-      child: Icon(icon, size: 17, color: iconColor),
-    );
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label.toUpperCase(),
-          style: GoogleFonts.manrope(
-            fontSize: 9,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.6,
-            color: _muted,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          maxLines: horizontal ? 2 : 1,
-          overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.sora(
-            fontSize: horizontal ? 17 : 20,
-            fontWeight: FontWeight.w700,
-            color: _ink,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          subtitle,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.manrope(fontSize: 10, color: _muted),
-        ),
-      ],
-    );
-
-    final card = Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _border),
-      ),
-      child: horizontal
-          ? Row(
-              children: [
-                iconWidget,
-                const SizedBox(width: 13),
-                Expanded(child: content),
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [iconWidget, const SizedBox(height: 9), content],
+    final p = authPalette(context);
+    return _Card(
+      onTap: onTap,
+      semanticsLabel: '$label, $value, $subtitle',
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 20, color: p.primaryText),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: _title(p, valueOnTop ? 22 : 20),
             ),
-    );
-
-    if (onTap == null) return card;
-
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: card,
+            const SizedBox(height: 4),
+            Text(label, style: _small(p, weight: FontWeight.w600)),
+            Text(
+              subtitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: _small(p, color: p.textTertiary).copyWith(fontSize: 12),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1080,65 +1059,41 @@ class _InsightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 17, 18, 17),
-      decoration: BoxDecoration(
-        color: elioGreen.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: elioGreen.withValues(alpha: 0.14)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 3,
-            height: 76,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [elioGreen, _cyan],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+    final p = authPalette(context);
+    return _Card(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: 4,
+              decoration: BoxDecoration(
+                color: p.primaryText,
+                borderRadius: BorderRadius.circular(2),
               ),
-              borderRadius: BorderRadius.circular(3),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'DID YOU KNOW?',
-                  style: GoogleFonts.manrope(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1,
-                    color: elioGreen,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('DID YOU KNOW?', style: _overline(p)),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Smart sorting starts with recognizing the material.',
+                    style: _title(p, 16),
                   ),
-                ),
-                const SizedBox(height: 7),
-                Text(
-                  'Smart sorting starts with recognizing the material.',
-                  style: GoogleFonts.sora(
-                    fontSize: 14,
-                    height: 1.4,
-                    fontWeight: FontWeight.w600,
-                    color: _ink,
+                  const SizedBox(height: 4),
+                  Text(
+                    'Explore each waste category to see how AI helps ELIO classify it.',
+                    style: _small(p),
                   ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  'Explore each waste category to see how AI helps ELIO classify it.',
-                  style: GoogleFonts.manrope(
-                    fontSize: 11,
-                    height: 1.5,
-                    color: const Color(0xFF3D4943),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1157,36 +1112,29 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: GoogleFonts.sora(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: _ink,
+    final p = authPalette(context);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: _minTap),
+      child: Row(
+        children: [
+          Expanded(
+            child: Semantics(
+              header: true,
+              child: Text(title, style: _title(p, 20)),
             ),
           ),
-        ),
-        if (actionLabel != null)
-          TextButton(
-            onPressed: onActionTap,
-            style: TextButton.styleFrom(
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              foregroundColor: elioGreen,
-            ),
-            child: Text(
-              actionLabel!,
-              style: GoogleFonts.manrope(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
+          if (actionLabel != null)
+            TextButton(
+              onPressed: onActionTap,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(_minTap, _minTap),
+                foregroundColor: p.primaryText,
+                textStyle: ElioTokens.button,
               ),
+              child: Text(actionLabel!),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -1202,7 +1150,7 @@ class _AchievementList extends StatelessWidget {
       _Achievement(
         name: 'Environmental Explorer',
         description: 'Complete at least 3 learning items',
-        icon: Icons.explore_rounded,
+        icon: Icons.explore_outlined,
         color: _amber,
         unlocked: data.completedLearningItems >= 3,
       ),
@@ -1226,7 +1174,7 @@ class _AchievementList extends StatelessWidget {
       children: [
         for (var i = 0; i < achievements.length; i++) ...[
           _AchievementCard(achievement: achievements[i]),
-          if (i != achievements.length - 1) const SizedBox(height: 10),
+          if (i != achievements.length - 1) const SizedBox(height: 8),
         ],
       ],
     );
@@ -1240,33 +1188,18 @@ class _AchievementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = authPalette(context);
     final unlocked = achievement.unlocked;
-    return AnimatedOpacity(
-      opacity: unlocked ? 1 : 0.56,
-      duration: const Duration(milliseconds: 220),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _border),
-        ),
+    return _Card(
+      padding: const EdgeInsets.all(12),
+      semanticsLabel:
+          '${achievement.name}, ${unlocked ? 'unlocked' : 'locked'}. ${achievement.description}',
+      child: ExcludeSemantics(
         child: Row(
           children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: unlocked
-                    ? achievement.color.withValues(alpha: 0.1)
-                    : const Color(0xFFECEFED),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                achievement.icon,
-                color: unlocked ? achievement.color : _muted,
-                size: 21,
-              ),
+            _IconTile(
+              unlocked ? achievement.icon : Icons.lock_outline_rounded,
+              color: unlocked ? null : authPalette(context).textSecondary,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1275,38 +1208,23 @@ class _AchievementCard extends StatelessWidget {
                 children: [
                   Text(
                     achievement.name,
-                    style: GoogleFonts.sora(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: _ink,
-                    ),
+                    style: _small(
+                      p,
+                      color: p.textPrimary,
+                      weight: FontWeight.w600,
+                    ).copyWith(fontSize: 14),
                   ),
-                  const SizedBox(height: 3),
                   Text(
-                    unlocked
-                        ? achievement.description
-                        : 'Start learning to unlock achievements',
-                    style: GoogleFonts.manrope(fontSize: 10, color: _muted),
+                    achievement.description,
+                    style: _small(p).copyWith(fontSize: 12),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: unlocked
-                    ? elioGreen.withValues(alpha: 0.1)
-                    : const Color(0xFFE8EBE9),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                unlocked ? Icons.check_rounded : Icons.lock_outline_rounded,
-                size: 13,
-                color: unlocked ? elioGreen : _muted,
-              ),
-            ),
+            if (unlocked) ...[
+              const SizedBox(width: 8),
+              Icon(Icons.check_rounded, size: 20, color: p.primaryText),
+            ],
           ],
         ),
       ),
@@ -1319,62 +1237,44 @@ class _RecentActivityList extends StatelessWidget {
 
   const _RecentActivityList({required this.activities});
 
+  static IconData _icon(_LearningActivityType type) => switch (type) {
+    _LearningActivityType.video => Icons.play_circle_outline_rounded,
+    _LearningActivityType.guide => Icons.menu_book_outlined,
+    _LearningActivityType.quiz => Icons.check_rounded,
+    _LearningActivityType.module => Icons.explore_outlined,
+  };
+
   @override
   Widget build(BuildContext context) {
+    final p = authPalette(context);
     if (activities.isEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 28),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _border),
-        ),
+      return _Card(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         child: Column(
           children: [
-            const Icon(Icons.history_rounded, color: _muted, size: 28),
-            const SizedBox(height: 9),
+            Icon(Icons.history_rounded, color: p.textSecondary, size: 28),
+            const SizedBox(height: 8),
             Text(
               'Your lessons, videos, quizzes, and reflections will appear here once you begin.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.manrope(
-                fontSize: 12,
-                height: 1.5,
-                color: _muted,
-              ),
+              style: _small(p),
             ),
           ],
         ),
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _border),
-      ),
-      child: Column(
-        children: [
-          for (var i = 0; i < activities.length; i++)
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 13),
-              decoration: BoxDecoration(
-                border: i == activities.length - 1
-                    ? null
-                    : const Border(bottom: BorderSide(color: _border)),
-              ),
+    return Column(
+      children: [
+        for (var i = 0; i < activities.length; i++) ...[
+          _Card(
+            padding: const EdgeInsets.all(12),
+            semanticsLabel:
+                '${activities[i].title}. ${activities[i].subtitle}. ${_relativeTime(activities[i].timestamp)}',
+            child: ExcludeSemantics(
               child: Row(
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: activities[i].color,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+                  _IconTile(_icon(activities[i].type)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -1382,40 +1282,35 @@ class _RecentActivityList extends StatelessWidget {
                       children: [
                         Text(
                           activities[i].title,
-                          style: GoogleFonts.manrope(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: _ink,
-                          ),
+                          style: _small(
+                            p,
+                            color: p.textPrimary,
+                            weight: FontWeight.w600,
+                          ).copyWith(fontSize: 14),
                         ),
-                        if (activities[i].subtitle.trim().isNotEmpty) ...[
-                          const SizedBox(height: 2),
+                        if (activities[i].subtitle.trim().isNotEmpty)
                           Text(
                             activities[i].subtitle,
-                            style: GoogleFonts.manrope(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: _muted,
-                            ),
+                            style: _small(p).copyWith(fontSize: 12),
                           ),
-                        ],
                       ],
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   Text(
                     _relativeTime(activities[i].timestamp),
-                    style: GoogleFonts.manrope(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: _muted,
-                    ),
+                    style: _small(
+                      p,
+                      color: p.textTertiary,
+                    ).copyWith(fontSize: 12),
                   ),
                 ],
               ),
             ),
+          ),
+          if (i != activities.length - 1) const SizedBox(height: 8),
         ],
-      ),
+      ],
     );
   }
 }
@@ -1900,15 +1795,15 @@ class _QuickActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = (constraints.maxWidth - 10) / 2;
+        final width = (constraints.maxWidth - 8) / 2;
         return Wrap(
-          spacing: 10,
-          runSpacing: 10,
+          spacing: 8,
+          runSpacing: 8,
           children: [
             SizedBox(
               width: width,
               child: _QuickActionCard(
-                icon: Icons.menu_book_rounded,
+                icon: Icons.menu_book_outlined,
                 title: 'Learn',
                 subtitle: 'Lessons and quizzes',
                 onTap: onOpenLearning,
@@ -1917,7 +1812,7 @@ class _QuickActions extends StatelessWidget {
             SizedBox(
               width: width,
               child: _QuickActionCard(
-                icon: Icons.settings_input_component_rounded,
+                icon: Icons.wifi_rounded,
                 title: 'Config',
                 subtitle: 'Connect ELIO',
                 onTap: () => onSelectTab(2),
@@ -1935,7 +1830,7 @@ class _QuickActions extends StatelessWidget {
             SizedBox(
               width: width,
               child: _QuickActionCard(
-                icon: Icons.videocam_rounded,
+                icon: Icons.videocam_outlined,
                 title: 'Camera',
                 subtitle: 'View camera tools',
                 onTap: () => onSelectTab(3),
@@ -1963,48 +1858,24 @@ class _QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: elioGreen.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: elioGreen, size: 18),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                style: GoogleFonts.sora(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: _ink,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.manrope(fontSize: 10, color: _muted),
-              ),
-            ],
-          ),
+    final p = authPalette(context);
+    return _Card(
+      onTap: onTap,
+      semanticsLabel: '$title, $subtitle',
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _IconTile(icon, size: 36),
+            const SizedBox(height: 12),
+            Text(title, style: _title(p, 16)),
+            Text(
+              subtitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: _small(p).copyWith(fontSize: 12),
+            ),
+          ],
         ),
       ),
     );
@@ -2016,28 +1887,32 @@ class _GuestBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFDF5ED),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _amber.withValues(alpha: 0.24)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.info_outline_rounded, color: _amber, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Guest progress is stored on this device. Sign in to sync it across devices.',
-              style: GoogleFonts.manrope(
-                fontSize: 11,
-                height: 1.45,
-                color: const Color(0xFF7A511C),
+    final p = authPalette(context);
+    return Semantics(
+      container: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: ShapeDecoration(
+          color: p.secondaryText.withValues(alpha: p.isDark ? 0.12 : 0.04),
+          shape: _shape(
+            p,
+            _radiusM,
+            side: p.secondaryText.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline_rounded, color: p.secondaryText, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Guest progress is stored on this device. Sign in to sync it across devices.',
+                style: _small(p, color: p.textPrimary),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -3208,77 +3083,82 @@ void _showProgressSummarySheet({
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) {
-      final maxHeight = MediaQuery.of(context).size.height * 0.82;
+    builder: (context) => _legacyTheme(
+      context,
+      Builder(
+        builder: (context) {
+          final maxHeight = MediaQuery.of(context).size.height * 0.82;
 
-      return SafeArea(
-        child: Container(
-          margin: const EdgeInsets.all(12),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-          constraints: BoxConstraints(maxHeight: maxHeight),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 42,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD8DEDB),
-                    borderRadius: BorderRadius.circular(99),
+          return SafeArea(
+            child: Container(
+              margin: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+              constraints: BoxConstraints(maxHeight: maxHeight),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD8DEDB),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                title,
-                style: GoogleFonts.sora(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: _ink,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: GoogleFonts.manrope(
-                  fontSize: 11,
-                  height: 1.4,
-                  color: _muted,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Flexible(child: SingleChildScrollView(child: child)),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    onAction();
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: elioGreen,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  const SizedBox(height: 14),
+                  Text(
+                    title,
+                    style: GoogleFonts.sora(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: _ink,
+                    ),
                   ),
-                  icon: const Icon(Icons.menu_book_rounded, size: 18),
-                  label: Text(
-                    actionLabel,
-                    style: GoogleFonts.manrope(fontWeight: FontWeight.w800),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.manrope(
+                      fontSize: 11,
+                      height: 1.4,
+                      color: _muted,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  Flexible(child: SingleChildScrollView(child: child)),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        onAction();
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: elioGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.menu_book_rounded, size: 18),
+                      label: Text(
+                        actionLabel,
+                        style: GoogleFonts.manrope(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      );
-    },
+            ),
+          );
+        },
+      ),
+    ),
   );
 }
 
@@ -3297,86 +3177,91 @@ void _showUnfinishedLearningSheet({
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) {
-      final visibleItems = items.take(8).toList();
+    builder: (context) => _legacyTheme(
+      context,
+      Builder(
+        builder: (context) {
+          final visibleItems = items.take(8).toList();
 
-      return SafeArea(
-        child: Container(
-          margin: const EdgeInsets.all(12),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 42,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD8DEDB),
-                    borderRadius: BorderRadius.circular(99),
+          return SafeArea(
+            child: Container(
+              margin: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD8DEDB),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Unfinished Learning',
-                style: GoogleFonts.sora(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: _ink,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Choose an unfinished video or guide to continue learning.',
-                style: GoogleFonts.manrope(
-                  fontSize: 11,
-                  height: 1.4,
-                  color: _muted,
-                ),
-              ),
-              const SizedBox(height: 12),
-              for (var i = 0; i < visibleItems.length; i++) ...[
-                _UnfinishedLearningTile(
-                  item: visibleItems[i],
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    onSelectItem(visibleItems[i]);
-                  },
-                ),
-                if (i != visibleItems.length - 1)
-                  const Divider(height: 1, color: _border),
-              ],
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    onOpenLearning();
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: elioGreen,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Unfinished Learning',
+                    style: GoogleFonts.sora(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: _ink,
+                    ),
                   ),
-                  icon: const Icon(Icons.menu_book_rounded, size: 18),
-                  label: Text(
-                    'Open Learning',
-                    style: GoogleFonts.manrope(fontWeight: FontWeight.w800),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Choose an unfinished video or guide to continue learning.',
+                    style: GoogleFonts.manrope(
+                      fontSize: 11,
+                      height: 1.4,
+                      color: _muted,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  for (var i = 0; i < visibleItems.length; i++) ...[
+                    _UnfinishedLearningTile(
+                      item: visibleItems[i],
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        onSelectItem(visibleItems[i]);
+                      },
+                    ),
+                    if (i != visibleItems.length - 1)
+                      const Divider(height: 1, color: _border),
+                  ],
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        onOpenLearning();
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: elioGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.menu_book_rounded, size: 18),
+                      label: Text(
+                        'Open Learning',
+                        style: GoogleFonts.manrope(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      );
-    },
+            ),
+          );
+        },
+      ),
+    ),
   );
 }
 
