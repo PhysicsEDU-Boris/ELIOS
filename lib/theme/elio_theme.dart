@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../providers/elio_theme_mode_provider.dart';
 import 'elio_dark_theme.dart';
 import 'elio_light_theme.dart';
 
 abstract final class ElioTheme {
-  /// Picks the dark or light theme from the platform brightness (ThemeMode.system).
-  static Widget wrap(Widget child) => Builder(
-        builder: (context) =>
-            MediaQuery.platformBrightnessOf(context) == Brightness.dark
-                ? ElioDarkTheme.wrap(child)
-                : ElioLightTheme.wrap(child),
-      );
+  /// Uses the saved user choice, with light on the first frame.
+  static Widget wrap(Widget child) => Consumer(
+    builder: (context, ref, _) =>
+        ref.watch(elioThemeModeProvider) == ElioThemeMode.dark
+        ? ElioDarkTheme.wrap(child)
+        : ElioLightTheme.wrap(child),
+  );
 }

@@ -7,6 +7,8 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:elio/providers/elio_theme_mode_provider.dart';
 import 'package:elio/Screens/home_shell.dart';
 import 'package:elio/Screens/login_screen.dart';
 
@@ -32,7 +34,15 @@ class RouteSpy extends NavigatorObserver {
   bool get wentLogin => pages.contains(LoginScreen);
 }
 
-/// Pumps [home] in a MaterialApp at [size] with the platform [brightness].
+class _ChosenThemeMode extends ElioThemeModeNotifier {
+  _ChosenThemeMode(this.mode);
+  final ElioThemeMode mode;
+  @override
+  ElioThemeMode build() => mode;
+}
+
+/// Pumps [home] at [size], explicitly selecting the mode matching [brightness].
+/// Platform-default behavior is tested separately in elio_theme_mode_test.dart.
 Future<RouteSpy> pumpAt(
   WidgetTester tester,
   Widget home, {
@@ -58,18 +68,30 @@ Future<RouteSpy> pumpAt(
   final key = GlobalKey<NavigatorState>();
   final spy = RouteSpy()..navigatorKey = key;
   await tester.pumpWidget(
-    MaterialApp(
-      navigatorKey: key,
-      navigatorObservers: [spy],
-      builder: (context, child) => viewInsets == EdgeInsets.zero
-          ? child!
-          : MediaQuery(
-              data: MediaQuery.of(
-                context,
-              ).copyWith(viewInsets: viewInsets, padding: EdgeInsets.zero),
-              child: child!,
-            ),
-      home: home,
+    ProviderScope(
+      key: UniqueKey(),
+      overrides: [
+        elioThemeModeProvider.overrideWith(
+          () => _ChosenThemeMode(
+            brightness == Brightness.dark
+                ? ElioThemeMode.dark
+                : ElioThemeMode.light,
+          ),
+        ),
+      ],
+      child: MaterialApp(
+        navigatorKey: key,
+        navigatorObservers: [spy],
+        builder: (context, child) => viewInsets == EdgeInsets.zero
+            ? child!
+            : MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(viewInsets: viewInsets, padding: EdgeInsets.zero),
+                child: child!,
+              ),
+        home: home,
+      ),
     ),
   );
   return spy;

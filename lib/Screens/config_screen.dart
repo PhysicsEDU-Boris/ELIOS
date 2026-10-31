@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../providers/app_preferences_provider.dart';
+import '../providers/elio_theme_mode_provider.dart';
 import '../providers/esp_config_provider.dart';
 import '../providers/robot_provider.dart';
 import '../services/gemma_quiz_service.dart';
@@ -1134,6 +1135,31 @@ class _ConfigSettingsSheet extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 18),
+
+                  if (darkModeOption) ...[
+                    _SettingsSectionCard(
+                      title: 'Tampilan',
+                      cardBorder: cardBorder,
+                      children: [
+                        MergeSemantics(
+                          child: _SettingsSwitchRow(
+                            title: 'Mode tampilan',
+                            subtitle: ref.watch(elioThemeModeProvider) == ElioThemeMode.dark
+                                ? 'Gelap'
+                                : 'Terang',
+                            value: ref.watch(elioThemeModeProvider) == ElioThemeMode.dark,
+                            onChanged: (dark) => ref
+                                .read(elioThemeModeProvider.notifier)
+                                .setMode(dark ? ElioThemeMode.dark : ElioThemeMode.light),
+                            primaryColor: primaryColor,
+                            textPrimary: textPrimary,
+                            textSecondary: textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                  ],
 
                   // ── Connection ──
                   _SettingsSectionCard(

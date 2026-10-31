@@ -295,7 +295,9 @@ Old DevLog values replaced: 4 to 8 (Small), 6 to 12 (Medium), 8 to 16 (Large), 1
 Status: accepted by the owner on 31 Oct 2026. DevLog (designmd.ai/chef/devlog, MIT, v1) defines DARK only; the site's Light/Dark switch only changes its preview. The light mode below is DERIVED from the same hues (Tailwind slate/green/amber/cyan/red) and contrast-checked on 31 Oct 2026.
 
 ## Mode rule
-- Both modes ship. Default: follow the system setting (ThemeMode.system). A manual switch in Settings is a later task.
+- Both modes ship. The default is light. Dark is chosen by the user in Settings and saved on the device; the app does not follow the system setting.
+- The Settings option is hidden in normal builds until S1–S3 move every screen to tokens; enable it with `--dart-define=DARK_MODE_OPTION=true` or a tester build.
+- Native launch screens are light only.
 - Supersedes Do/Don't #4 ("don't use light backgrounds, never invert") and the "dark-mode glow" philosophy for light mode.
 - The PDF export is always light (printing). Photos are never tinted.
 
