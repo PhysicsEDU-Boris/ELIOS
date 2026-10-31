@@ -25,4 +25,4 @@
 
 ## Design file font (decision 0091, draft)
 
-- `docs/design.md` now specifies Google Sans Flex and Google Sans Code and a new Status Chip. The app code is unchanged (still JetBrains Mono, Inter, Sora, Manrope). Check the font licences before bundling.
+- `docs/design.md` now specifies Google Sans Flex and Google Sans Code and a new Status Chip. The app code is unchanged (still JetBrains Mono, Inter, Sora, Manrope). Radii now follow the M3 scale with continuous corners. Check the font licences before bundling.

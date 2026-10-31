@@ -88,16 +88,24 @@ DevLog is a dark-mode design system built for developer blogs and technical writ
 
 ## Border Radius
 
-| Token  | Value | Usage                              |
-|--------|-------|------------------------------------|
-| None   | 0px   | Dividers, rules                    |
-| Small  | 4px   | Buttons, inputs, chips, cards      |
-| Medium | 6px   | Code blocks, panels                |
-| Large  | 8px   | Modals, dialogs                    |
-| XL     | 12px  | Large containers                   |
-| Full   | 9999px| Status dots, avatars               |
+Shape scale from Material 3 ([corner radius scale](https://m3.material.io/styles/shape/corner-radius-scale)), ten steps. Corners are continuous (Apple "squircle", see [Rounded Corners in the Apple Ecosystem](https://medium.com/minimal-notes/rounded-corners-in-the-apple-ecosystem-1b3f45e18fcc)): in Figma set corner smoothing to 60% on every rounded rectangle except pills; in Flutter use `RoundedSuperellipseBorder` (or `ContinuousRectangleBorder` where it is not available) instead of `RoundedRectangleBorder`.
 
-The default radius is 4px — subtle enough to feel terminal-native while softening raw rectangles.
+| Token (Figma)         | Value  | Usage                                                        |
+|-----------------------|--------|--------------------------------------------------------------|
+| `radius/none`         | 0px    | Dividers, rules                                              |
+| `radius/xs`           | 4px    | Checkbox, radio inner shapes, small marks                    |
+| `radius/s`            | 8px    | Filter chips, tooltips                                       |
+| `radius/m`            | 12px   | Text inputs, banners, snackbars, code blocks                 |
+| `radius/l`            | 16px   | Cards, list containers                                       |
+| `radius/l-increased`  | 20px   | Large cards, sheets on small screens                         |
+| `radius/xl`           | 28px   | Dialogs, bottom sheets (top corners)                         |
+| `radius/xl-increased` | 32px   | Hero containers                                              |
+| `radius/xxl`          | 48px   | Splash and onboarding hero shapes                            |
+| `radius/full`         | 9999px | Buttons, status chips, status dots, avatars                  |
+
+Old DevLog values replaced: 4 to 8 (Small), 6 to 12 (Medium), 8 to 16 (Large), 12 to 20+ (XL). The old default of 4px is now `radius/xs`.
+
+**Optical roundness (nested shapes):** inner radius = outer radius - padding (for example 28 - 12 = 16). Never reuse the outer radius on a child; if the result is 0 or less, use `radius/none`. A pill button inside a 28px dialog needs no adjustment because it is Full.
 
 ## Shadows
 
@@ -124,7 +132,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 - Border: `1px solid #4ADE80`
 - Padding: 8px 20px
 - Font: Google Sans Flex, 14px, weight 600
-- Radius: 4px
+- Radius: Full (pill)
 - Hover: Background `#22C55E`, shadow `0 0 16px rgba(74, 222, 128, 0.2)`
 - Active: Background `#16A34A`
 
@@ -134,7 +142,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 - Border: `1px solid #334155`
 - Padding: 8px 20px
 - Font: Google Sans Flex, 14px, weight 600
-- Radius: 4px
+- Radius: Full (pill)
 - Hover: Background `#334155`, border `#475569`
 - Active: Background `#475569`
 
@@ -144,7 +152,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 - Border: none
 - Padding: 8px 20px
 - Font: Google Sans Flex, 14px, weight 600
-- Radius: 4px
+- Radius: Full (pill)
 - Hover: Background `#1E293B`, text `#F1F5F9`
 - Active: Background `#334155`
 
@@ -154,7 +162,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 - Border: `1px solid #F87171`
 - Padding: 8px 20px
 - Font: Google Sans Flex, 14px, weight 600
-- Radius: 4px
+- Radius: Full (pill)
 - Hover: Background `#EF4444`, shadow `0 0 16px rgba(248, 113, 113, 0.2)`
 - Active: Background `#DC2626`
 
@@ -167,7 +175,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 **Default**
 - Background: `#1E293B`
 - Border: `1px solid #334155`
-- Radius: 4px
+- Radius: Large 16px
 - Padding: 24px
 - Shadow: none
 - Hover: Border `#475569`, shadow `0 0 8px rgba(74, 222, 128, 0.08)`
@@ -175,7 +183,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 **Elevated**
 - Background: `#1E293B`
 - Border: `1px solid #475569`
-- Radius: 4px
+- Radius: Large 16px
 - Padding: 24px
 - Shadow: `0 0 16px rgba(74, 222, 128, 0.12)`
 
@@ -185,7 +193,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 - Height: 40px
 - Background: `#0F172A`
 - Border: `1px solid #334155`
-- Radius: 4px
+- Radius: Medium 12px
 - Padding: 8px 14px
 - Font: Google Sans Flex, 14px, weight 400
 - Text color: `#F1F5F9`
@@ -203,7 +211,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 **Filter Chip**
 - Background: `#1E293B`
 - Border: `1px solid #334155`
-- Radius: 4px
+- Radius: Small 8px
 - Padding: 4px 12px
 - Font: Google Sans Flex, 12px, weight 500
 - Text: `#94A3B8`
@@ -234,7 +242,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 
 - Size: 16px
 - Border: `1.5px solid #475569`
-- Radius: 3px
+- Radius: Extra small 4px
 - Background: `#0F172A`
 - Checked: Background `#4ADE80`, border `#4ADE80`, checkmark `#0F172A`
 - Indeterminate: Background `#4ADE80`, dash `#0F172A`
@@ -261,7 +269,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 - Text: `#0F172A`
 - Font: Google Sans Flex, 12px, weight 500
 - Padding: 6px 12px
-- Radius: 4px
+- Radius: Small 8px
 - Max width: 260px
 - Arrow: 6px, same background
 - Delay: 200ms enter, 0ms leave
@@ -277,7 +285,7 @@ The default radius is 4px — subtle enough to feel terminal-native while soften
 6. **Do** ensure all text meets WCAG AA contrast against `#0F172A` (minimum 4.5:1 for body).
 7. **Don't** use heavy box shadows — glow effects should be subtle and atmospheric, not prominent.
 8. **Do** support syntax highlighting themes that respect the green/amber/cyan palette.
-9. **Don't** round corners beyond 4px for standard elements — keep the terminal sharpness intact.
+9. **Do** take every corner radius from the scale in Border Radius (no ad-hoc values), use continuous corners, and compute nested radii as outer radius minus padding. **Don't** put Large or bigger corners on information-dense components such as cards full of text.
 10. **Do** provide a visible focus ring on all interactive elements using the green glow for keyboard navigation.
 
 ---
@@ -350,7 +358,7 @@ four hues; white text on red, blue, green measures 4.71, 5.39, 4.50:1.
 Extended from the tokens, dark only. Disabled = opacity 0.35 (buttons, checkbox, radio) and
 0.4 (inputs). Selected list tile = Surface Raised fill. Snackbar = Surface Raised fill, Text
 Primary, Success/Error never used as the fill. Dialog and bottom sheet = Surface, radius
-Large (8) / Large top corners, overlay shadow from the Shadows table. App bar = Background,
+Extra large (28) / top corners, overlay shadow from the Shadows table. App bar = Background,
 no elevation. Tab bar = Primary indicator, Text Secondary unselected. Switch = Primary track
 when on, Border Strong off. Material text roles: `bodyLarge` = Body Small (Google Sans Flex 14), because Material 3 reads TextField
 input text from it and the input spec is Google Sans Flex 14; the Body Large token (18) sits on

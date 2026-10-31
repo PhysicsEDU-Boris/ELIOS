@@ -12,7 +12,7 @@ kept outside the repo.
 ## [Unreleased]
 
 ### Changed
-- Design file font (decision 0091, draft): `docs/design.md` switches from JetBrains Mono and Inter to Google Sans Flex (headings, UI) and Google Sans Code (code), and the Status Chip is redefined in the MUI style. Design only; the app still bundles the old fonts.
+- Design file font (decision 0091, draft): `docs/design.md` switches from JetBrains Mono and Inter to Google Sans Flex (headings, UI) and Google Sans Code (code), and the Status Chip is redefined in the MUI style. The corner radii follow the Material 3 scale with continuous corners (buttons and chips pill, inputs 12, cards 16, dialogs 28). Design only; the app still bundles the old fonts and uses the old 4px radii.
 
 ### Added
 - E1 (decision 0041): "Bukan ini?" picker to correct a misnamed object (quiz and History use the corrected item, the photo is kept, B3 still asks for confirmation); Gemma loads in the background when the phone scan screen opens in the tester build; the tester build keeps the model loaded after the scan screen closes (about 1.6 GB); the identify photo is capped at 512 px, the prompt is shorter and drops the can example; the tester log adds the photo size and `queryMs`.
