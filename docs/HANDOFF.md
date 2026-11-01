@@ -31,3 +31,9 @@
 
 - `lib/Screens/home_screen.dart` restyled to Figma 243:2358 (light and dark, tokens only, 48 dp targets, two columns from 840 dp); behaviour unchanged. Decision 0140, details in [lane-h.md](handoff/lane-h.md).
 - Not checked: real 3D viewer, phone feel, native Mac window (no isolated test store documented, so the app was not launched).
+
+## N4 profile top bar and drawer (1 Nov, draft PR, stacked on N3 #72)
+
+- `elio_top_bar.dart` + `elio_drawer_host.dart` (custom drawer) wired in `HomeShell`; Home hamburger removed; decision 0143.
+- Tests: `test/widgets/elio_drawer_host_test.dart` (15). `flutter test`: only the 2 `elio_tokens_test` failures, which also fail on the N3 base.
+- Not checked: phone or Mac window, real photo avatar. Open: Learn shows two bars; no wide-layout rail.

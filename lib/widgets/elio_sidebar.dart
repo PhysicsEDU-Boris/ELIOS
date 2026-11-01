@@ -22,6 +22,7 @@ class ElioSidebar extends ConsumerWidget {
     required this.onSignOut,
     required this.onClose,
     this.showThemeToggle = darkModeOption,
+    this.phone = false,
   });
 
   final User? user;
@@ -32,6 +33,10 @@ class ElioSidebar extends ConsumerWidget {
   final VoidCallback onSignOut;
   final VoidCallback onClose;
   final bool showThemeToggle;
+
+  /// Phone drawer (N4, Figma 279:2399): profile header on top, no brand mark and
+  /// no collapse button, Sign Out at the bottom.
+  final bool phone;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -47,40 +52,105 @@ class ElioSidebar extends ConsumerWidget {
     final hasPhoto = photo != null && photo.isNotEmpty;
     final dark = ref.watch(elioThemeModeProvider) == ElioThemeMode.dark;
 
+    final profile = Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: p.surfaceRaised,
+            backgroundImage: hasPhoto ? NetworkImage(photo) : null,
+            child: !hasPhoto
+                ? Icon(Icons.person_outline_rounded, color: p.primaryText)
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: ElioTokens.bodySmall.copyWith(
+                    color: p.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  detail,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: ElioTokens.caption.copyWith(color: p.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          if (isGuest)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: ShapeDecoration(
+                shape: StadiumBorder(side: BorderSide(color: p.secondaryText)),
+              ),
+              child: Text(
+                'GUEST',
+                style: ElioTokens.overline.copyWith(
+                  color: p.secondaryText,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+
     return SafeArea(
       child: Column(
         children: [
+          if (phone) ...[
+            // Focus lands here when the drawer opens (profile header first).
+            Focus(child: profile),
+            Divider(
+              height: 1,
+              indent: 16,
+              endIndent: 16,
+              color: p.borderMedium,
+            ),
+          ],
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               children: [
-                Row(
-                  children: [
-                    ElioMark(size: 40, color: p.primaryText),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'ELIOS',
-                        style: ElioTokens.subhead.copyWith(
-                          color: p.textPrimary,
+                if (!phone) ...[
+                  Row(
+                    children: [
+                      ElioMark(size: 40, color: p.primaryText),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'ELIOS',
+                          style: ElioTokens.subhead.copyWith(
+                            color: p.textPrimary,
+                          ),
                         ),
                       ),
-                    ),
-                    IconButton(
-                      onPressed: onClose,
-                      tooltip: 'Close sidebar',
-                      constraints: const BoxConstraints.tightFor(
-                        width: _minTap,
-                        height: _minTap,
+                      IconButton(
+                        onPressed: onClose,
+                        tooltip: 'Close sidebar',
+                        constraints: const BoxConstraints.tightFor(
+                          width: _minTap,
+                          height: _minTap,
+                        ),
+                        icon: Icon(
+                          Icons.view_sidebar_outlined,
+                          color: p.textSecondary,
+                        ),
                       ),
-                      icon: Icon(
-                        Icons.view_sidebar_outlined,
-                        color: p.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
@@ -123,66 +193,15 @@ class ElioSidebar extends ConsumerWidget {
               ],
             ),
           ),
-          Divider(height: 1, indent: 16, endIndent: 16, color: p.borderMedium),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: p.surfaceRaised,
-                  backgroundImage: hasPhoto ? NetworkImage(photo) : null,
-                  child: !hasPhoto
-                      ? Icon(Icons.person_outline_rounded, color: p.primaryText)
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: ElioTokens.bodySmall.copyWith(
-                          color: p.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        detail,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: ElioTokens.caption.copyWith(
-                          color: p.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (isGuest)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: ShapeDecoration(
-                      shape: StadiumBorder(
-                        side: BorderSide(color: p.secondaryText),
-                      ),
-                    ),
-                    child: Text(
-                      'GUEST',
-                      style: ElioTokens.overline.copyWith(
-                        color: p.secondaryText,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ),
-              ],
+          if (!phone) ...[
+            Divider(
+              height: 1,
+              indent: 16,
+              endIndent: 16,
+              color: p.borderMedium,
             ),
-          ),
+            profile,
+          ],
           if (showThemeToggle)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -210,6 +229,13 @@ class ElioSidebar extends ConsumerWidget {
                   ),
                 ),
               ),
+            ),
+          if (phone)
+            Divider(
+              height: 1,
+              indent: 16,
+              endIndent: 16,
+              color: p.borderMedium,
             ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
