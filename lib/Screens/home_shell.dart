@@ -283,7 +283,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                 currentIndex: _currentIndex,
                 onSelect: _onDrawerTap,
                 onClose: () => _drawerKey.currentState?.close(),
-                phone: MediaQuery.sizeOf(context).width < 600,
                 onSignOut: () async {
                   _drawerKey.currentState?.close();
                   await widget.auth.signOut();

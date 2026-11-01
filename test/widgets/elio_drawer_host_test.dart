@@ -40,8 +40,7 @@ Future<_Rig> _pump(
             child: ElioSidebar(
               user: MockUser(isAnonymous: true, photoURL: ''),
               currentIndex: 0,
-              phone: true,
-              showThemeToggle: false,
+              showThemeToggle: true,
               onSelect: (i) {
                 r.selected.add(i);
                 r.host.currentState!.close();
@@ -91,23 +90,24 @@ Future<void> _openDrawer(WidgetTester t) async {
 void main() {
   setUpAll(loadElioFonts);
 
-  testWidgets('avatar tap opens the phone drawer: header, nav, sign out', (
-    t,
-  ) async {
-    await _pump(t);
-    expect(_open, findsNothing);
-    final bar = t.getSize(find.byType(ElioTopBar));
-    expect(bar.height, 56);
-    expect(t.getSize(_avatar).shortestSide, 48);
+  testWidgets(
+    'avatar tap opens the N1 drawer: logo, nav, dark mode, sign out',
+    (t) async {
+      await _pump(t);
+      expect(_open, findsNothing);
+      final bar = t.getSize(find.byType(ElioTopBar));
+      expect(bar.height, 56);
+      expect(t.getSize(_avatar).shortestSide, 48);
 
-    await _openDrawer(t);
-    expect(_open, findsOneWidget);
-    expect(find.text('Sign Out'), findsOneWidget);
-    expect(find.text('Guest User'), findsOneWidget);
-    expect(find.text('ELIOS'), findsNothing); // no brand mark on phones
-    expect(find.byTooltip('Close sidebar'), findsNothing); // no collapse button
-    expect(t.getSize(find.byType(ElioSidebar)).width, 304);
-  });
+      await _openDrawer(t);
+      expect(_open, findsOneWidget);
+      expect(find.text('Sign Out'), findsOneWidget);
+      expect(find.text('Guest User'), findsOneWidget);
+      expect(find.text('ELIOS'), findsOneWidget); // N1 header with the logo
+      expect(find.text('Dark mode'), findsOneWidget);
+      expect(t.getSize(find.byType(ElioSidebar)).width, 304);
+    },
+  );
 
   testWidgets('scrim tap closes and focus returns to the avatar', (t) async {
     final r = await _pump(t);

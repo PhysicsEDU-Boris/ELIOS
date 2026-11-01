@@ -9,7 +9,7 @@ Figma: page N4 Profile top bar 278:2358, top bar 278:2388, avatar button 278:238
 - `lib/widgets/elio_drawer_host.dart` replaces `Scaffold.drawer` (it settles at 50% / 365 dp/s and can edge-swipe open). 304 dp, at most 80% of the width (288 at 360), scrim 40%, open 250 ms ease-out, close 200 ms ease-in, none with reduced motion. Closes by scrim tap, drag, Back (`PopScope`), Escape, or choosing a destination. No edge-swipe open.
 - Drag follows the finger 1:1; direction lock: after 8 dp it is a drawer drag only if |dx| > |dy|, else the recognizer steps aside so the menu scrolls. Closes past 40% of the width or faster than 700 dp/s, otherwise it springs back.
 - Focus moves into the drawer (profile header first) on open, the page behind is excluded from focus and semantics, and focus returns to the avatar when it has closed.
-- `ElioSidebar(phone: true)`: profile header on top, divider, Navigate, optional Dark mode switch (unchanged gate), divider, Sign Out. No brand mark, no collapse button.
+- The drawer content is the N1 sidebar unchanged (logo header, profile row, Dark mode switch behind `darkModeOption`, Sign Out). Owner chose it over the N4 spec's profile-first header with no brand mark (1 Nov, after a phone test).
 - The Home screen lost its hamburger and its own avatar; its greeting and notification button stay (`HomeScreen.onOpenDrawer` removed).
 
 ## Not done / open
