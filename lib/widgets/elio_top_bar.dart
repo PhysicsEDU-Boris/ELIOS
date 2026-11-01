@@ -106,7 +106,13 @@ class _AvatarState extends State<_Avatar> {
       child: InkResponse(
         focusNode: widget.focusNode,
         onTap: widget.onTap,
-        onFocusChange: (f) => setState(() => _focused = f),
+        // Ring for keyboard focus only; after a touch close it would look stuck.
+        onFocusChange: (f) => setState(
+          () => _focused =
+              f &&
+              FocusManager.instance.highlightMode ==
+                  FocusHighlightMode.traditional,
+        ),
         onHighlightChanged: (v) => setState(() => _pressed = v),
         highlightShape: BoxShape.circle,
         splashFactory: NoSplash.splashFactory,
