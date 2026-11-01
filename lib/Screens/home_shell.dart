@@ -279,6 +279,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         ),
         body: _buildCurrentScreen(),
         drawerScrimColor: Colors.black.withValues(alpha: 0.4),
+        floatingActionButtonLocation: const ElioControlFabLocation(),
+        floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
+        floatingActionButton: ElioTheme.wrap(
+          ElioControlButton(onTap: () => _onBottomNavigationTap(_controlIndex)),
+        ),
         onDrawerChanged: (open) => setState(() => _drawerOpen = open),
         bottomNavigationBar: ElioTheme.wrap(
           ElioBottomNav(

@@ -53,80 +53,61 @@ class ElioBottomNav extends StatelessWidget {
     return Semantics(
       container: true,
       label: 'Main',
-      // The raise strip above the rule shows the page colour, not the Scaffold's.
-      child: ColoredBox(
-        color: p.background,
-        child: Stack(
-          alignment: Alignment.topCenter,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: _raise),
-              child: Material(
-                color: p.surface,
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: _barHeight),
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.paddingOf(context).bottom,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border(top: BorderSide(color: p.borderMedium)),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: tab(
-                          0,
-                          'Home',
-                          Icons.home_outlined,
-                          Icons.home,
-                          d: false,
-                        ),
-                      ),
-                      Expanded(
-                        child: tab(
-                          1,
-                          'Learn',
-                          Icons.menu_book_outlined,
-                          Icons.menu_book,
-                        ),
-                      ),
-                      Expanded(
-                        child: _Cell(
-                          label: 'Control',
-                          semantics: 'Control, opens robot control',
-                          selected: false,
-                          divider: true,
-                          onTap: onControl,
-                          icon: const SizedBox.shrink(),
-                        ),
-                      ),
-                      Expanded(
-                        child: tab(
-                          2,
-                          'Config',
-                          Icons.wifi_outlined,
-                          Icons.wifi,
-                        ),
-                      ),
-                      Expanded(
-                        child: _Cell(
-                          label: 'Profile',
-                          semantics: 'Profile and menu',
-                          selected: profileOpen,
-                          divider: true,
-                          onTap: onProfile,
-                          icon: _Avatar(user: user, ring: profileOpen),
-                        ),
-                      ),
-                    ],
-                  ),
+      child: Material(
+        color: p.surface,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: _barHeight),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.paddingOf(context).bottom,
+          ),
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: p.borderMedium)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: tab(
+                  0,
+                  'Home',
+                  Icons.home_outlined,
+                  Icons.home,
+                  d: false,
                 ),
               ),
-            ),
-            // Inside the bar's own layout box, so the whole circle takes taps.
-            Positioned(top: 0, child: _ControlButton(onTap: onControl)),
-          ],
+              Expanded(
+                child: tab(
+                  1,
+                  'Learn',
+                  Icons.menu_book_outlined,
+                  Icons.menu_book,
+                ),
+              ),
+              Expanded(
+                child: _Cell(
+                  label: 'Control',
+                  semantics: 'Control, opens robot control',
+                  selected: false,
+                  divider: true,
+                  onTap: onControl,
+                  icon: const SizedBox.shrink(),
+                ),
+              ),
+              Expanded(
+                child: tab(2, 'Config', Icons.wifi_outlined, Icons.wifi),
+              ),
+              Expanded(
+                child: _Cell(
+                  label: 'Profile',
+                  semantics: 'Profile and menu',
+                  selected: profileOpen,
+                  divider: true,
+                  onTap: onProfile,
+                  icon: _Avatar(user: user, ring: profileOpen),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -255,17 +236,19 @@ class _CellState extends State<_Cell> {
   }
 }
 
-/// Takes taps over the whole circle (the part above the rule is outside the
-/// Control cell); the cell under it carries the semantics.
-class _ControlButton extends StatefulWidget {
-  const _ControlButton({required this.onTap});
+/// The raised Control circle. Put it in `Scaffold.floatingActionButton` with
+/// [ElioControlFabLocation]: it then overlaps the page, not the bar's layout
+/// box, and the page above the bar is not shortened. The Control cell in the bar
+/// carries the semantics.
+class ElioControlButton extends StatefulWidget {
+  const ElioControlButton({super.key, required this.onTap});
   final VoidCallback onTap;
 
   @override
-  State<_ControlButton> createState() => _ControlButtonState();
+  State<ElioControlButton> createState() => _ControlButtonState();
 }
 
-class _ControlButtonState extends State<_ControlButton> {
+class _ControlButtonState extends State<ElioControlButton> {
   bool _focused = false;
 
   @override
@@ -314,6 +297,17 @@ class _ControlButtonState extends State<_ControlButton> {
       ),
     );
   }
+}
+
+/// Centres the circle horizontally, its ring [_raise] above the bar's top rule.
+class ElioControlFabLocation extends FloatingActionButtonLocation {
+  const ElioControlFabLocation();
+
+  @override
+  Offset getOffset(ScaffoldPrelayoutGeometry g) => Offset(
+    (g.scaffoldSize.width - g.floatingActionButtonSize.width) / 2,
+    g.contentBottom - _raise,
+  );
 }
 
 class _Avatar extends StatelessWidget {

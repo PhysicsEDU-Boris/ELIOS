@@ -28,6 +28,8 @@ Future<_Calls> _pump(
     t,
     ElioTheme.wrap(
       Scaffold(
+        floatingActionButtonLocation: const ElioControlFabLocation(),
+        floatingActionButton: ElioControlButton(onTap: () => c.control++),
         bottomNavigationBar: ElioBottomNav(
           currentIndex: current,
           onSelectTab: c.tabs.add,
