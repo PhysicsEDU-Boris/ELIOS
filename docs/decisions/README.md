@@ -41,3 +41,4 @@ their status changed.
 | [0070](0070-history-crop.md) | Separate History photos from identification crops | Accepted |
 | [0091](0091-google-sans-flex-font.md) | Design file font change to Google Sans Flex / Google Sans Code, new status chip spec (design only, amends 0090) | Draft |
 | [0140](0140-home-screen.md) | Home screen restyle from Figma H1, light and dark, tokens only, behaviour unchanged | Accepted (look pending review) |
+| [0141](0141-sidebar-theme-toggle.md) | Sidebar from Figma N1 with a Dark mode switch behind the option gate | Accepted (review pending) |
