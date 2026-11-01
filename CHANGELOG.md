@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- N4: top bar with the profile avatar and page title on every tab; the avatar opens a new phone drawer (304 dp, 40% scrim, drag/Back/Escape close, focus returns to the avatar). The Home hamburger is gone (decision 0143).
+
 - N3: new bottom nav (Home, Learn, centre Control, Config, History); the old Profile cell is gone (decision 0142).
 
 - Sidebar drawer rebuilt from the N1 Figma with a Dark mode switch (behind the dark mode option); behaviour unchanged (decision 0141).
