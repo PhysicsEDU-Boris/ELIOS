@@ -296,6 +296,10 @@ void main() {
         expect(find.text('Read again'), findsOneWidget);
         expect(find.text('Continue'), findsOneWidget);
         expect(find.text('Food scraps'), findsOneWidget);
+        expect(find.text('Videos'), findsOneWidget);
+        expect(find.text('1 video'), findsOneWidget);
+        expect(find.text('Guides'), findsOneWidget);
+        expect(find.text('1 guide'), findsOneWidget);
         expect(find.text('Simulation for this module'), findsOneWidget);
         expect(find.text('Organic waste management quiz'), findsOneWidget);
       });

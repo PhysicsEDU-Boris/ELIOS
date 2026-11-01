@@ -169,32 +169,37 @@ class _ModuleBody extends ConsumerWidget {
             ],
           ),
         ),
-        LearnSectionHeader(
-          title: 'Lessons',
-          actionLabel: lessons == null ? null : '${list.length} lessons',
-        ),
-        if (lessons == null)
-          const Column(
-            children: [
-              LearnSkeleton(height: 220),
-              SizedBox(height: 12),
-              LearnSkeleton(height: 220),
-            ],
-          )
-        else if (list.isEmpty)
-          const LearnHintCard(text: 'No lessons in this module yet.')
-        else
-          LessonCardGrid(
-            children: [
-              for (final l in list)
-                LessonTile(
-                  lesson: l,
-                  progress: progress,
-                  showButton: true,
-                  onTap: () => push(LessonPage(lesson: l)),
-                ),
-            ],
+        // Videos and guides as separate sections (owner request, 1 Nov).
+        for (final (title, isVideo, unit) in const [
+          ('Videos', true, 'videos'),
+          ('Guides', false, 'guides'),
+        ]) ...[
+          LearnSectionHeader(
+            title: title,
+            actionLabel: lessons == null
+                ? null
+                : switch (list.where((l) => l.isVideo == isVideo).length) {
+                    1 => '1 ${unit.substring(0, unit.length - 1)}',
+                    final n => '$n $unit',
+                  },
           ),
+          if (lessons == null)
+            const LearnSkeleton(height: 220)
+          else if (!list.any((l) => l.isVideo == isVideo))
+            LearnHintCard(text: 'No $unit in this module yet.')
+          else
+            LessonCardGrid(
+              children: [
+                for (final l in list.where((l) => l.isVideo == isVideo))
+                  LessonTile(
+                    lesson: l,
+                    progress: progress,
+                    showButton: true,
+                    onTap: () => push(LessonPage(lesson: l)),
+                  ),
+              ],
+            ),
+        ],
         const LearnSectionHeader(title: 'Simulation for this module'),
         SimulationRow(
           icon: sim.icon,
