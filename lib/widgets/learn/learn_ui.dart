@@ -444,29 +444,30 @@ class LessonCard extends StatelessWidget {
 /// Lesson card grid 295:2420: two columns on phones, each row as tall as
 /// its tallest card (text scale 1.3 never clips).
 class LessonCardGrid extends StatelessWidget {
-  const LessonCardGrid({super.key, required this.children});
+  const LessonCardGrid({super.key, required this.children, this.columns = 2, this.gap = 12});
 
   final List<Widget> children;
+  final int columns;
+  final double gap;
 
   @override
   Widget build(BuildContext context) {
     final rows = <Widget>[];
-    for (var i = 0; i < children.length; i += 2) {
+    for (var i = 0; i < children.length; i += columns) {
       rows.add(
         IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(child: children[i]),
-              const SizedBox(width: 12),
-              Expanded(
-                child: i + 1 < children.length ? children[i + 1] : const SizedBox(),
-              ),
+              for (var c = 0; c < columns; c++) ...[
+                if (c > 0) SizedBox(width: gap),
+                Expanded(child: i + c < children.length ? children[i + c] : const SizedBox()),
+              ],
             ],
           ),
         ),
       );
-      if (i + 2 < children.length) rows.add(const SizedBox(height: 12));
+      if (i + columns < children.length) rows.add(SizedBox(height: gap));
     }
     return Column(children: rows);
   }

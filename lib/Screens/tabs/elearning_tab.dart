@@ -592,17 +592,78 @@ class LessonListPage extends ConsumerWidget {
           if (lessons.isEmpty)
             const LearnStateView(asset: LearnArt.stateEmpty, title: 'Nothing here yet.')
           else
-            LearnListCard(
+            // Three columns of thumbnails (owner request, 1 Nov).
+            LessonCardGrid(
+              columns: 3,
+              gap: 8,
               children: [
                 for (final l in lessons)
-                  LessonRow(
+                  LessonThumbTile(
                     lesson: l,
                     progress: progress,
-                    subtitle: [l.meta, if (l.lengthLabel.isNotEmpty) l.lengthLabel].join(' · '),
                     onTap: () => Navigator.of(context).push(learnRoute<void>(LessonPage(lesson: l))),
                   ),
               ],
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Compact thumbnail card for the three-column lesson lists.
+class LessonThumbTile extends StatelessWidget {
+  const LessonThumbTile({super.key, required this.lesson, required this.progress, required this.onTap});
+
+  final LearnLesson lesson;
+  final LearningProgress? progress;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    final done = lesson.state(progress) == LessonState.done;
+    return LearnCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(6),
+      radius: learnRadiusM,
+      semanticLabel: '${lesson.isVideo ? 'Video' : 'Guide'} ${lesson.title}',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LearnCover(
+            aspectRatio: lesson.isVideo ? 16 / 9 : 3 / 4,
+            badge: lesson.isVideo ? lesson.lengthLabel : null,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                LearnThumbnail(url: lesson.imageUrl, fallbackAsset: lesson.fallbackArt),
+                if (lesson.isVideo) const Center(child: PlayBadge(size: 28)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            lesson.title,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: context.text.labelLarge,
+          ),
+          const Spacer(),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  lesson.isVideo ? lesson.meta.replaceFirst('Video · ', '') : lesson.meta.replaceFirst('Guide · ', ''),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.text.labelMedium?.copyWith(color: p.textSecondary),
+                ),
+              ),
+              if (done) Icon(Icons.check_circle_rounded, size: 16, color: p.primaryText),
+            ],
+          ),
         ],
       ),
     );

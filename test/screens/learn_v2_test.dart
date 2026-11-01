@@ -384,6 +384,34 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
+  for (final b in Brightness.values) {
+    testWidgets('videos and guides list as a 3-column thumbnail grid (${b.name}, text 1.3)', (t) async {
+      LearnLesson video(int i) => LearnLesson.video(VideoLesson.fromMap({
+        'moduleId': 'organic',
+        'title': 'A long video title number $i that wraps',
+        'durationLabel': '3:1$i',
+        'level': 'Basics',
+        'thumbnailUrl': '',
+        'order': i,
+      }, 'v$i'));
+      await _pump(
+        t,
+        LessonListPage(title: 'Videos', lessons: [for (var i = 0; i < 4; i++) video(i)]),
+        brightness: b,
+        textScale: 1.3,
+        size: const Size(360, 1600),
+      );
+      expect(t.takeException(), isNull);
+      expect(find.byType(LessonThumbTile), findsNWidgets(4));
+      // First three share a row, the fourth starts the next one.
+      final y = [for (var i = 0; i < 4; i++) t.getTopLeft(find.byType(LessonThumbTile).at(i)).dy];
+      expect(y[0], y[1]);
+      expect(y[1], y[2]);
+      expect(y[3], greaterThan(y[0]));
+      expect(_svg(LearnArt.coverOrganik), findsWidgets);
+    });
+  }
+
   group('simulations show the computed result in the v2 layout', () {
     String calcText(WidgetTester t) => t
         .widgetList<Text>(find.descendant(of: find.byType(CalcBox), matching: find.byType(Text)))
