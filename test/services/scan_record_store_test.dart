@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:elio/models/home_stats.dart' show questBonus;
 import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/trophy_rules.dart';
@@ -156,9 +157,9 @@ void main() {
 
       expect(store1.records.length, 2);
       expect(store1.records.first.id, 'rec-2'); // newest first
-      expect(store1.totalTrophies, 40); // 10 + 30
+      expect(store1.totalTrophies, 40 + questBonus(store1.records)); // 10 + 30 + quests
       expect(store1.userLevel, StudentLevel.ecoStarter);
-      expect(store1.levelProgress, closeTo(0.40, 0.001));
+      expect(store1.levelProgress, StudentLevel.ecoStarter.progress(store1.totalTrophies));
 
       // Reload into a fresh store instance from same file
       final store2 = ScanRecordStore(customFile: testFile);
@@ -167,7 +168,7 @@ void main() {
       expect(store2.records.length, 2);
       expect(store2.records[0].id, 'rec-2');
       expect(store2.records[1].id, 'rec-1');
-      expect(store2.totalTrophies, 40);
+      expect(store2.totalTrophies, 40 + questBonus(store2.records));
     });
 
     test('level updates to Lv3 Bin Expert at 340 trophies', () async {
@@ -187,12 +188,13 @@ void main() {
 
       await store.addRecord(record);
 
-      expect(store.totalTrophies, 340);
+      expect(store.totalTrophies, 340 + questBonus(store.records));
       expect(store.userLevel, StudentLevel.binExpert);
       expect(store.userLevel.levelNumber, 3);
       expect(store.userLevel.levelAndTitle, 'Level 3 · Bin Expert');
       // Progress from 250 to 500: (340 - 250) / 250 = 90 / 250 = 0.36
-      expect(store.levelProgress, closeTo(0.36, 0.001));
+      expect(StudentLevel.binExpert.progress(340), closeTo(0.36, 0.001));
+      expect(store.levelProgress, StudentLevel.binExpert.progress(store.totalTrophies));
     });
 
     test('seedFigmaSampleRecords populates Figma 100:170 sample data', () async {
@@ -216,7 +218,7 @@ void main() {
       expect(store.records[3].category, ScanCategory.organic);
       expect(store.records[3].trophies, 0);
 
-      expect(store.totalTrophies, 50); // 20 + 20 + 10 + 0
+      expect(store.totalTrophies, 50 + questBonus(store.records)); // 20 + 20 + 10 + 0 + quests
     });
 
     test('saves and reloads records with structured explanations and tables', () async {
@@ -299,7 +301,7 @@ void main() {
       );
       await store1.addRecord(record1);
       expect(store1.records.length, 1);
-      expect(store1.totalTrophies, 10);
+      expect(store1.totalTrophies, 10 + questBonus(store1.records));
 
       // 2. Restart store (new instance, simulating app rebuild / restart)
       final store2 = ScanRecordStore(customFile: testFile);
@@ -328,7 +330,7 @@ void main() {
       expect(store2.records.length, 2);
       expect(store2.records[0].id, 'second-scan');
       expect(store2.records[1].id, 'initial-scan');
-      expect(store2.totalTrophies, 20);
+      expect(store2.totalTrophies, 20 + questBonus(store2.records));
 
       // 3. Restart store once more and load explicitly: records still there
       final store3 = ScanRecordStore(customFile: testFile);
@@ -336,7 +338,7 @@ void main() {
       expect(reloaded.length, 2);
       expect(store3.records[0].id, 'second-scan');
       expect(store3.records[1].id, 'initial-scan');
-      expect(store3.totalTrophies, 20);
+      expect(store3.totalTrophies, 20 + questBonus(store3.records));
     });
 
     test('rapid overlapping addRecord calls do not lose records', () async {
@@ -359,13 +361,13 @@ void main() {
       await Future.wait(futures);
 
       expect(store.records.length, count);
-      expect(store.totalTrophies, count * 10);
+      expect(store.totalTrophies, count * 10 + questBonus(store.records));
 
       // Reload into fresh instance to verify disk persistence
       final storeReloaded = ScanRecordStore(customFile: testFile);
       final diskRecords = await storeReloaded.load();
       expect(diskRecords.length, count);
-      expect(storeReloaded.totalTrophies, count * 10);
+      expect(storeReloaded.totalTrophies, count * 10 + questBonus(storeReloaded.records));
     });
   });
 }

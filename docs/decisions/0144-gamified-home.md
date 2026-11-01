@@ -1,6 +1,6 @@
 # 0144 Gamified Home (H1 v4)
 
-Status: accepted for the H1v4 draft PR; owner review pending. Replaces the layout of 0140 (its
+Status: accepted for the H1v4 draft PR; owner review pending. Quest rewards: owner decided 2 Nov 2026 that they count. Replaces the layout of 0140 (its
 achievement rules stay).
 
 ## Decision
@@ -14,8 +14,7 @@ from Home: 3D robot viewer, continue learning, progress grid, recent activity, q
 header trophy pill and bell sit in the N4 top bar (`ElioTopBar.trailing`), Home tab only.
 
 Data rules (`lib/models/home_stats.dart`, pure, unit-tested with a fixed clock):
-- Source: `ScanRecordStore` only. Total trophies = sum of `ScanRecord.trophies` (same as History);
-  level, progress and "N to LvX" from `StudentLevel` (`trophy_rules.dart`).
+- Source: `ScanRecordStore` only. Level, progress and "N to LvX" from `StudentLevel` (`trophy_rules.dart`).
 - Days are local calendar days (`DateTime.toLocal()`), so counts split at local midnight.
 - Day streak: consecutive days with a scan ending today, or yesterday when there is no scan today yet.
   Longest = longest run ever.
@@ -27,10 +26,15 @@ Data rules (`lib/models/home_stats.dart`, pure, unit-tested with a fixed clock):
 - Bins are the robot's three bins: Organik = organic, **Anorganik = recyclable + residu** (the robot
   sorts residu there; the caption names the residu count), B3 = b3. "Top" = most scans, none on a tie.
 - This week: Monday-first stacked bars of the current week, by bin.
+- Total trophies = sum of `ScanRecord.trophies` + quest rewards (below).
 - Daily quests from today's scans: scan 3 items (progress n/3), finish a scan quiz (a scan today with
   all its questions answered and graded), sort one B3 item. They reset at local midnight.
-  **Rewards (+10, +10, +20) are display only until the owner decides**: they are never added to
-  trophy totals or levels.
+  **Rewards (+10, +10, +20) count toward trophies and levels** (owner, 2 Nov 2026). They are derived
+  from each local day's scans (`questBonus`), nothing extra is stored, and only days from 2 Nov 2026
+  count, so older records add nothing. `ScanRecordStore.totalTrophies` includes them, so Home, the
+  header pill, History, the Control total and the quiz result popup all show the same number. Per-scan
+  trophies in History rows are unchanged, so the History total is now more than the sum of its rows.
+  An essay graded after midnight completes "Finish a scan quiz" for the day the scan was made.
 - Medals: the three achievements of the old Home with the same unlock rules, gold art when unlocked,
   locked art otherwise. No new achievements. (Robotics Beginner and Sustainability Advocate look only
   at the tracked modules organic/inorganic/hazardous, so they cannot unlock today; unchanged.)

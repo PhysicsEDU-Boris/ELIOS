@@ -32,12 +32,51 @@ class DailyQuest {
   const DailyQuest(this.title, this.reward, this.progress);
   final String title;
 
-  /// Display only until the owner decides (decision 0144): never added to totals.
+  /// Added to the trophy total when done (owner, 2 Nov; decision 0144).
   final int reward;
 
   /// 0..1
   final double progress;
   bool get done => progress >= 1;
+}
+
+/// Quest rewards count from the day the quests first appeared; earlier days get
+/// none, so old records do not suddenly add trophies.
+final questRewardsStart = DateTime(2026, 11, 2);
+
+/// The three daily quests for one local day's scans.
+List<DailyQuest> dailyQuests(List<ScanRecord> dayRecords) {
+  final quizDone = dayRecords.any(
+    (r) =>
+        r.questions.isNotEmpty &&
+        r.questions.length >= r.difficulty.questionCount &&
+        !r.questions.any((q) => q.gradingPending),
+  );
+  return [
+    DailyQuest('Scan 3 items today', 10, (dayRecords.length / 3).clamp(0, 1)),
+    DailyQuest('Finish a scan quiz', 10, quizDone ? 1 : 0),
+    DailyQuest(
+      'Sort one B3 item safely',
+      20,
+      dayRecords.any((r) => r.category == ScanCategory.b3) ? 1 : 0,
+    ),
+  ];
+}
+
+/// Rewards of every quest done on each local day since [questRewardsStart].
+/// Derived from the records, so nothing extra is stored.
+int questBonus(Iterable<ScanRecord> records) {
+  final byDay = <DateTime, List<ScanRecord>>{};
+  for (final r in records) {
+    final d = localDay(r.time);
+    if (!d.isBefore(questRewardsStart)) byDay.putIfAbsent(d, () => []).add(r);
+  }
+  return byDay.values.fold(
+    0,
+    (sum, day) =>
+        sum +
+        dailyQuests(day).where((q) => q.done).fold(0, (a, q) => a + q.reward),
+  );
 }
 
 class HomeStats {
@@ -92,7 +131,7 @@ class HomeStats {
       today: today,
       records: records,
       perDay: perDay,
-      totalTrophies: trophies,
+      totalTrophies: trophies + questBonus(records),
       quizSeries: last,
       currentStreak: current,
       longestStreak: longest,
@@ -195,22 +234,5 @@ class HomeStats {
     return sorted.first.key;
   }
 
-  List<DailyQuest> get quests {
-    final todays = recordsOn(today);
-    final quizDone = todays.any(
-      (r) =>
-          r.questions.isNotEmpty &&
-          r.questions.length >= r.difficulty.questionCount &&
-          !r.questions.any((q) => q.gradingPending),
-    );
-    return [
-      DailyQuest('Scan 3 items today', 10, (todays.length / 3).clamp(0, 1)),
-      DailyQuest('Finish a scan quiz', 10, quizDone ? 1 : 0),
-      DailyQuest(
-        'Sort one B3 item safely',
-        20,
-        todays.any((r) => r.category == ScanCategory.b3) ? 1 : 0,
-      ),
-    ];
-  }
+  List<DailyQuest> get quests => dailyQuests(recordsOn(today));
 }

@@ -5,6 +5,7 @@ import 'dart:ui' show ImageByteFormat;
 import 'package:elio/Screens/home/home_activity.dart';
 import 'package:elio/Screens/home_screen.dart';
 import 'package:elio/models/guide_lesson.dart';
+import 'package:elio/models/home_stats.dart';
 import 'package:elio/models/learning_progress.dart';
 import 'package:elio/models/quiz_set.dart';
 import 'package:elio/models/scan_record.dart';
@@ -93,7 +94,8 @@ class _FakeStore extends ScanRecordStore {
   @override
   bool get isLoaded => loaded;
   @override
-  int get totalTrophies => _records.fold(0, (s, r) => s + r.trophies);
+  int get totalTrophies =>
+      _records.fold(0, (s, r) => s + r.trophies) + questBonus(_records);
   @override
   Future<List<ScanRecord>> load({bool force = false}) async => _records;
 }

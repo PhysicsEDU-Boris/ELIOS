@@ -206,13 +206,42 @@ void main() {
       expect(next.quests.every((q) => q.progress == 0), isTrue);
     });
 
-    test('rewards never change trophies or level', () {
+    test('done quests add their rewards to trophies and level', () {
+      // Wed 4 Nov: B3 + finished quiz = +20 +10; 3 scans not reached.
       final s = HomeStats.from([
-        rec(now, cat: ScanCategory.b3, trophies: 0),
+        rec(now, cat: ScanCategory.b3, qs: const [_right], trophies: 10),
+        rec(now, trophies: 50),
       ], now);
-      expect(s.quests[2].done, isTrue);
-      expect(s.totalTrophies, 0);
-      expect(s.level, StudentLevel.ecoStarter);
+      expect(s.totalTrophies, 60 + 30);
+      expect(questBonus(s.records), 30);
+
+      // A full day: all three quests, +40.
+      final full = HomeStats.from([
+        rec(now, cat: ScanCategory.b3, qs: const [_right], trophies: 0),
+        rec(now, trophies: 0),
+        rec(now, trophies: 0),
+      ], now);
+      expect(full.totalTrophies, 40);
+    });
+
+    test('each day counts once; days before quests existed count nothing', () {
+      final records = [
+        rec(DateTime(2026, 11, 3, 9), cat: ScanCategory.b3, trophies: 0),
+        rec(DateTime(2026, 11, 3, 10), cat: ScanCategory.b3, trophies: 0),
+        rec(DateTime(2026, 11, 2, 9), cat: ScanCategory.b3, trophies: 0),
+        rec(DateTime(2026, 11, 1, 23, 59), cat: ScanCategory.b3, trophies: 0),
+      ];
+      // 3 Nov: B3 once (+20) even with two B3 scans; 2 Nov: +20; 1 Nov: before start.
+      expect(questBonus(records), 40);
+      expect(HomeStats.from(records, now).totalTrophies, 40);
+    });
+
+    test('bonus can move the level', () {
+      final s = HomeStats.from([
+        rec(now, cat: ScanCategory.b3, qs: const [_right], trophies: 80),
+      ], now);
+      expect(s.totalTrophies, 110);
+      expect(s.level, StudentLevel.wasteSpotter);
     });
   });
 
