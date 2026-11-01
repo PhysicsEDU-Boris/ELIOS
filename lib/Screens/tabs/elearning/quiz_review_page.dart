@@ -2,15 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../models/learning_progress.dart';
-import '../../../widgets/elio_learning_app_bar.dart';
+import '../../../widgets/learn/learn_ui.dart';
 
-const _background = Color(0xFFF7FAF6);
-const _primary = Color(0xFF004F38);
-const _ink = Color(0xFF181D1A);
-const _muted = Color(0xFF3F4943);
-const _border = Color(0xFFBEC9C2);
-const _success = Color(0xFF059669);
-const _error = Color(0xFFBA1A1A);
 
 class QuizReviewPage extends StatelessWidget {
   final QuizReview review;
@@ -19,38 +12,22 @@ class QuizReviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _background,
-      appBar: const ElioLearningAppBar(
-        title: 'Quiz Review',
-        showBack: true,
-        backgroundColor: _background,
-      ),
-      body: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 720),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _QuizReviewHeader(review: review),
-                  const SizedBox(height: 18),
-                  for (var index = 0; index < review.answers.length; index++)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _QuizReviewAnswerCard(
-                        answer: review.answers[index],
-                        questionNumber: index + 1,
-                      ),
-                    ),
-                ],
+    return LearnPageScaffold(
+      title: 'Quiz review',
+      centerTitle: false,
+      body: LearnListView(
+        children: [
+          _QuizReviewHeader(review: review),
+          const SizedBox(height: 16),
+          for (var index = 0; index < review.answers.length; index++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _QuizReviewAnswerCard(
+                answer: review.answers[index],
+                questionNumber: index + 1,
               ),
             ),
-          ),
-        ),
+        ],
       ),
     );
   }
@@ -63,15 +40,15 @@ class _QuizReviewHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = review.passed ? _success : _error;
+    final statusColor = review.passed ? context.elio.primaryText : context.elio.errorText;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.elio.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _border.withValues(alpha: 0.5)),
+        border: Border.all(color: context.elio.borderSubtle.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,7 +56,7 @@ class _QuizReviewHeader extends StatelessWidget {
           Text(
             review.quizTitle,
             style: GoogleFonts.inter(
-              color: _ink,
+              color: context.elio.textPrimary,
               fontSize: 21,
               height: 1.25,
               fontWeight: FontWeight.w800,
@@ -111,16 +88,17 @@ class _QuizReviewHeader extends StatelessWidget {
 class _QuizReviewMetric extends StatelessWidget {
   final String label;
   final String value;
-  final Color color;
+  final Color? color;
 
   const _QuizReviewMetric({
     required this.label,
     required this.value,
-    this.color = _primary,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
+    final color = this.color ?? context.elio.primaryText;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
@@ -143,7 +121,7 @@ class _QuizReviewMetric extends StatelessWidget {
           Text(
             value,
             style: GoogleFonts.inter(
-              color: _ink,
+              color: context.elio.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w700,
             ),
@@ -167,10 +145,10 @@ class _QuizReviewAnswerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final unanswered = answer.selectedIndex == null;
     final color = unanswered
-        ? _muted
+        ? context.elio.textSecondary
         : answer.isCorrect
-        ? _success
-        : _error;
+        ? context.elio.primaryText
+        : context.elio.errorText;
     final icon = unanswered
         ? Icons.warning_amber_rounded
         : answer.isCorrect
@@ -181,9 +159,9 @@ class _QuizReviewAnswerCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.elio.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _border.withValues(alpha: 0.5)),
+        border: Border.all(color: context.elio.borderSubtle.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,7 +187,7 @@ class _QuizReviewAnswerCard extends StatelessWidget {
           Text(
             answer.question,
             style: GoogleFonts.inter(
-              color: _ink,
+              color: context.elio.textPrimary,
               fontSize: 16,
               height: 1.35,
               fontWeight: FontWeight.w800,
@@ -225,14 +203,14 @@ class _QuizReviewAnswerCard extends StatelessWidget {
           _QuizReviewAnswerLine(
             label: 'Correct answer',
             value: _answerText(answer, answer.correctIndex),
-            color: _success,
+            color: context.elio.primaryText,
           ),
           if (answer.explanation.trim().isNotEmpty) ...[
             const SizedBox(height: 14),
             Text(
               'Explanation',
               style: GoogleFonts.inter(
-                color: _muted,
+                color: context.elio.textSecondary,
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
               ),
@@ -240,7 +218,7 @@ class _QuizReviewAnswerCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               answer.explanation,
-              style: GoogleFonts.inter(color: _ink, fontSize: 13, height: 1.45),
+              style: GoogleFonts.inter(color: context.elio.textPrimary, fontSize: 13, height: 1.45),
             ),
           ],
         ],
@@ -284,7 +262,7 @@ class _QuizReviewAnswerLine extends StatelessWidget {
           Text(
             value,
             style: GoogleFonts.inter(
-              color: _ink,
+              color: context.elio.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w700,
             ),

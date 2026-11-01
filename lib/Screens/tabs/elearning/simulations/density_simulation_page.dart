@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../../widgets/learn/learn_ui.dart';
+import '../../../../models/physics_module.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../physics/shared_constants.dart';
 import '../../../../../physics/density/density_state.dart';
 import '../../../../../physics/density/density_notifier.dart';
-import '../../../../../theme/elio_learning_colors.dart';
 import 'painters/density_painter.dart';
 import 'widgets/sim_module_header.dart';
 import 'widgets/formula_box.dart';
@@ -44,6 +45,7 @@ class _DensitySimulationPageState extends ConsumerState<DensitySimulationPage> {
     final classification = state.classification;
 
     return SimulationPageScaffold(
+      module: PhysicsModuleId.density,
       appBarTitle: 'Densitas & Klasifikasi',
       header: const SimModuleHeader(
         tag: 'MODUL A · MATERI',
@@ -100,8 +102,8 @@ class _DensitySimulationPageState extends ConsumerState<DensitySimulationPage> {
                         ? Icons.help_outline_rounded
                         : Icons.check_circle_rounded,
                     statusColor: classification == WasteCategory.outOfRange
-                        ? elioWarning
-                        : elioOk,
+                        ? context.elio.secondaryText
+                        : context.elio.primaryText,
                     statusText: classification == WasteCategory.outOfRange
                         ? 'Material tidak dikenal'
                         : 'Material: ${_getCategoryName(classification)}',
@@ -113,9 +115,9 @@ class _DensitySimulationPageState extends ConsumerState<DensitySimulationPage> {
                   const SizedBox(height: 16),
                   
                   // Bins
-                  const Text(
+                  Text(
                     'Pilih Tong Sampah:',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: elioMuted),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.elio.textSecondary),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -258,9 +260,9 @@ class _BinWidgetState extends State<_BinWidget> with SingleTickerProviderStateMi
           width: 80,
           height: 100,
           decoration: BoxDecoration(
-            color: widget.isHighlighted ? elioPrimaryLight : Colors.white,
+            color: widget.isHighlighted ? context.elio.primaryText.withValues(alpha: 0.1) : context.elio.surface,
             border: Border.all(
-              color: widget.isHighlighted ? elioPrimary : elioBorder,
+              color: widget.isHighlighted ? context.elio.primaryText : context.elio.borderSubtle,
               width: widget.isHighlighted ? 3 : 1,
             ),
             borderRadius: BorderRadius.circular(8),
@@ -271,7 +273,7 @@ class _BinWidgetState extends State<_BinWidget> with SingleTickerProviderStateMi
               Icon(
                 Icons.delete_outline,
                 size: 32,
-                color: widget.isHighlighted ? elioPrimary : elioMuted,
+                color: widget.isHighlighted ? context.elio.primaryText : context.elio.textSecondary,
               ),
               const SizedBox(height: 8),
               Text(
@@ -279,7 +281,7 @@ class _BinWidgetState extends State<_BinWidget> with SingleTickerProviderStateMi
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: widget.isHighlighted ? elioPrimary : elioMuted,
+                  color: widget.isHighlighted ? context.elio.primaryText : context.elio.textSecondary,
                 ),
               ),
             ],

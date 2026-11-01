@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../../widgets/learn/learn_ui.dart';
+import '../../../../models/physics_module.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../physics/kinematics/kinematics_notifier.dart';
-import '../../../../../theme/elio_learning_colors.dart';
 import 'painters/kinematics_painter.dart';
 import 'widgets/sim_module_header.dart';
 import 'widgets/formula_box.dart';
@@ -81,6 +82,7 @@ class _KinematicsSimulationPageState extends ConsumerState<KinematicsSimulationP
     final notifier = ref.read(kinematicsProvider.notifier);
 
     return SimulationPageScaffold(
+      module: PhysicsModuleId.kinematics,
       appBarTitle: 'Kinematika',
       header: const SimModuleHeader(
         tag: 'MODUL E · MATERI',
@@ -94,7 +96,7 @@ class _KinematicsSimulationPageState extends ConsumerState<KinematicsSimulationP
             const TextSpan(text: 't = s / v = '),
             TextSpan(
               text: state.predictedTimeS.toStringAsFixed(1),
-              style: const TextStyle(color: elioWarning),
+              style: TextStyle(color: context.elio.secondaryText),
             ),
             const TextSpan(text: ' s'),
           ],
@@ -108,21 +110,21 @@ class _KinematicsSimulationPageState extends ConsumerState<KinematicsSimulationP
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.elio.surface,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: elioBorder),
+                      border: Border.all(color: context.elio.borderSubtle),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Row(
+                          child: Wrap(
+                            spacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              const Icon(Icons.timer_rounded, color: elioOk, size: 24),
-                              const SizedBox(width: 8),
-                              const Text('Live Timer:', style: TextStyle(color: elioMuted, fontSize: 14)),
-                              const SizedBox(width: 8),
-                              Text('${state.elapsedS.toStringAsFixed(2)} s', style: const TextStyle(color: elioInk, fontSize: 18, fontWeight: FontWeight.bold)),
+                              Icon(Icons.timer_rounded, color: context.elio.primaryText, size: 24),
+                              Text('Live Timer:', style: TextStyle(color: context.elio.textSecondary, fontSize: 14)),
+                              Text('${state.elapsedS.toStringAsFixed(2)} s', style: TextStyle(color: context.elio.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
@@ -131,8 +133,8 @@ class _KinematicsSimulationPageState extends ConsumerState<KinematicsSimulationP
                           icon: const Icon(Icons.play_arrow_rounded),
                           label: const Text('JALANKAN'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: elioPrimary,
-                            foregroundColor: Colors.white,
+                            backgroundColor: context.elio.primary,
+                            foregroundColor: context.elio.onPrimary,
                           ),
                         ),
                       ],
@@ -179,32 +181,32 @@ class _KinematicsSimulationPageState extends ConsumerState<KinematicsSimulationP
                     headerTitle: 'HASIL PREDIKSI',
                     formulaExpression: 'Waktu Tiba = ${state.distanceM.toStringAsFixed(1)} / ${state.velocityMs.toStringAsFixed(2)} = ${state.predictedTimeS.toStringAsFixed(1)} detik',
                     statusIcon: Icons.route_rounded,
-                    statusColor: elioPrimary,
+                    statusColor: context.elio.primaryText,
                     statusText: 'Estimasi Waktu Sampai (ETA)',
                   ),
                   
                   const SizedBox(height: 16),
                   // Bonus GLBB Toggle
                   Card(
-                    color: Colors.white,
+                    color: context.elio.surface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: const BorderSide(color: elioBorder),
+                      side: BorderSide(color: context.elio.borderSubtle),
                     ),
                     elevation: 0,
                     child: Theme(
                       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
-                        title: const Text('Bonus: Bagaimana dengan GLBB?', style: TextStyle(fontWeight: FontWeight.bold, color: elioInk)),
-                        iconColor: elioPrimary,
-                        collapsedIconColor: elioMuted,
+                        title: Text('Bonus: Bagaimana dengan GLBB?', style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
+                        iconColor: context.elio.primaryText,
+                        collapsedIconColor: context.elio.textSecondary,
                         children: [
                           Container(
                             padding: const EdgeInsets.all(16),
-                            color: elioPrimaryLight.withValues(alpha: 0.3),
-                            child: const Text(
+                            color: context.elio.primaryText.withValues(alpha: 0.1).withValues(alpha: 0.3),
+                            child: Text(
                               'GLBB (Gerak Lurus Berubah Beraturan) melibatkan akselerasi (a). Di dunia nyata, ELIO tidak langsung melesat ke kecepatan penuh — motor butuh waktu (meski kurang dari 1 detik) untuk berakselerasi dari diam hingga kecepatan konstan.\n\nRumus GLBB: s = v₀·t + ½·a·t²\n\nKarena akselerasi ELIO sangat cepat, jarak berakselerasi sangat kecil dan sering diabaikan dalam navigasi ruangan biasa. Namun, jika ada halangan dadakan, modul rem darurat ELIO akan menggunakan deselerasi (akselerasi negatif) yang dihitung dengan rumus GLBB yang sama.',
-                              style: TextStyle(color: elioMuted, height: 1.5),
+                              style: TextStyle(color: context.elio.textSecondary, height: 1.5),
                             ),
                           ),
                         ],
