@@ -1,0 +1,24 @@
+<svg width="320" height="200" viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="v1 (not chosen) / Illustrations + icons (components)">
+<g id="Illustration/Sim Daya" clip-path="url(#clip0_293_2358)">
+<path id="Vector" d="M320 0H0V200H320V0Z" fill="#F1F5F9"/>
+<path id="Vector_2" d="M196 56H124C116.268 56 110 62.268 110 70V162C110 169.732 116.268 176 124 176H196C203.732 176 210 169.732 210 162V70C210 62.268 203.732 56 196 56Z" fill="white" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M176 44H144C141.791 44 140 45.7909 140 48V54C140 56.2091 141.791 58 144 58H176C178.209 58 180 56.2091 180 54V48C180 45.7909 178.209 44 176 44Z" fill="#94A3B8" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_4" d="M192 66H128C123.582 66 120 69.5817 120 74V158C120 162.418 123.582 166 128 166H192C196.418 166 200 162.418 200 158V74C200 69.5817 196.418 66 192 66Z" fill="#4ADE80"/>
+<path id="Vector_5" d="M164 92L150 114H162L156 134L174 108H162L164 92Z" fill="#0F172A"/>
+<path id="Vector_6" d="M68 40H30C25.5817 40 22 43.5817 22 48V72C22 76.4183 25.5817 80 30 80H68C72.4183 80 76 76.4183 76 72V48C76 43.5817 72.4183 40 68 40Z" fill="#22D3EE" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_7" d="M49 69C53.9706 69 58 64.9706 58 60C58 55.0294 53.9706 51 49 51C44.0294 51 40 55.0294 40 60C40 64.9706 44.0294 69 49 69Z" fill="white" stroke="#0F172A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_8" d="M49 162C61.1503 162 71 152.15 71 140C71 127.85 61.1503 118 49 118C36.8497 118 27 127.85 27 140C27 152.15 36.8497 162 49 162Z" fill="#0F172A"/>
+<path id="Vector_9" d="M49 148C53.4183 148 57 144.418 57 140C57 135.582 53.4183 132 49 132C44.5817 132 41 135.582 41 140C41 144.418 44.5817 148 49 148Z" fill="#94A3B8"/>
+<path id="Vector_10" d="M244 140L270 90L296 102" stroke="#0F172A" stroke-width="12" stroke-linecap="round"/>
+<path id="Vector_11" d="M244 140L270 90L296 102" stroke="#FBBF24" stroke-width="6" stroke-linecap="round"/>
+<path id="Vector_12" d="M262 140H230C227.791 140 226 141.791 226 144V152C226 154.209 227.791 156 230 156H262C264.209 156 266 154.209 266 152V144C266 141.791 264.209 140 262 140Z" fill="#0F172A"/>
+<path id="Vector_13" d="M76 60H110M71 140H110M226 148H210" stroke="#94A3B8" stroke-width="3" stroke-dasharray="5 5"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_293_2358">
+<rect width="320" height="200" fill="white"/>
+</clipPath>
+</defs>
+</svg>

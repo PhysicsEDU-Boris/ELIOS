@@ -36,11 +36,19 @@
 
 - `elio_top_bar.dart` + `elio_drawer_host.dart` (custom drawer) wired in `HomeShell`; Home hamburger removed; decision 0143.
 - Tests: `test/widgets/elio_drawer_host_test.dart` (15). `flutter test`: only the 2 `elio_tokens_test` failures, which also fail on the N3 base.
-- Not checked: phone or Mac window, real photo avatar. Open: Learn shows two bars; no wide-layout rail.
+- Not checked: phone or Mac window, real photo avatar. Open: no wide-layout rail (Learn's second bar removed by L1).
+
+## L1 Learn tab v2 (1 Nov, draft PR, stacked on `feat/n3-bottom-nav`)
+
+- Hub, module, lesson, quiz, My progress and all 9 simulations rebuilt from Figma L1 v2 (light and dark, tokens via theme); components in `lib/widgets/learn/learn_ui.dart`; illustrations in `assets/illustrations/learn/`. Decisions 0170-0172.
+- N4 (#73) was merged into `feat/n3-bottom-nav`, not `feature/live-scan`, so the PR targets `feat/n3-bottom-nav`.
+- Tests: `test/screens/learn_v2_test.dart` (36). `flutter test`: 765 pass, 2 known `elio_tokens_test` failures.
+- Phone (Edge 60 Fusion): video, PDF, sliders, progress, dark mode pass; see `docs/test-results/l1/README.md`.
+- Open: turn the phone inside the video player once; error screen only widget-tested (Firestore cache hides it offline); Kuis fisika score is never saved (pre-existing).
 
 ## H1v4 gamified Home (2 Nov, draft PR, on top of N4 catch-up #75)
 
-- #73 (N4) never reached `feature/live-scan`; #75 merges it (only `2dd92db`). #74 (L1 learn v2) is also missing there, not brought in.
+- #73 (N4) never reached `feature/live-scan`; #75 merges it (only `2dd92db`). #74 (L1 learn v2) was missing too; added to #75 on 2 Nov after the owner saw the old Learn on the phone.
 - New Home from Figma 321:2358 with real scan data only; maths in `lib/models/home_stats.dart`, UI in `home_screen.dart` + `lib/Screens/home/`. Decision 0144 (residu in Anorganik, tree per level). Owner: quest rewards count toward trophies and levels (derived per day from 2 Nov 2026, in `ScanRecordStore.totalTrophies`).
 - Tests: `test/models/home_stats_test.dart` (19, break-checked), `test/screens/home_screen_test.dart` (15). `flutter test` +741 ~20 -2 (the 2 known `elio_tokens_test` failures).
 - Phone (Edge 60 Fusion, tester APK, guest session, owner data untouched): Home = History (26 scans, 202 trophies, B3 8 / Anorganik 17 / Organik 1, 0 today; before the quest-bonus change, which adds nothing to Oct records). Shots in `docs/test-results/h1v4/`.

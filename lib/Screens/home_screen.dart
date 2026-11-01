@@ -34,7 +34,7 @@ import 'home/home_parts.dart';
 import 'home/home_search.dart';
 import 'login_screen.dart';
 import 'tabs/elearning/simulations/simulations_page.dart'
-    show openPhysicsModule;
+    show openSimulation;
 
 const _controlTab = 3;
 const _historyTab = 4;
@@ -279,7 +279,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             title: s.title,
             subtitle: s.tag,
             icon: s.icon,
-            onTap: () => openPhysicsModule(context, ref, s),
+            onTap: () => openSimulation(context, ref, s),
           ),
       for (final s in _quizSets)
         if (m(s.title))

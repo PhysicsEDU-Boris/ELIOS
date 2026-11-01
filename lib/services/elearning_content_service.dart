@@ -1,10 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/elearning_module.dart';
 import '../models/guide_lesson.dart';
 import '../models/quiz_question.dart';
 import '../models/quiz_set.dart';
 import '../models/video_lesson.dart';
+
+/// The Learn screens read content through this provider so tests can pass
+/// a service backed by fake_cloud_firestore.
+final elearningContentServiceProvider = Provider<ElearningContentService>(
+  (ref) => ElearningContentService(),
+);
 
 class ElearningContentService {
   static const _validModuleIds = {'organic', 'inorganic', 'hazardous'};
@@ -107,6 +114,31 @@ class ElearningContentService {
     return snapshot.docs
         .map(QuizQuestion.fromFirestore)
         .toList(growable: false);
+  }
+
+  /// Published guides and videos from the local Firestore cache only, for
+  /// "Open offline lessons" when the live streams fail (decision 0172).
+  Future<({List<GuideLesson> guides, List<VideoLesson> videos})>
+  fetchCachedLessons() async {
+    const cache = GetOptions(source: Source.cache);
+    final guides = await _firestore
+        .collection('guide_lessons')
+        .where('isPublished', isEqualTo: true)
+        .get(cache);
+    final videos = await _firestore
+        .collection('video_lessons')
+        .where('isPublished', isEqualTo: true)
+        .get(cache);
+    return (
+      guides: guides.docs
+          .map(GuideLesson.fromFirestore)
+          .where((lesson) => _validModuleIds.contains(lesson.moduleId))
+          .toList(growable: false),
+      videos: videos.docs
+          .map(VideoLesson.fromFirestore)
+          .where((lesson) => _validModuleIds.contains(lesson.moduleId))
+          .toList(growable: false),
+    );
   }
 
   String? _validatedModuleId(String? moduleId) {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../../../../../../theme/elio_learning_colors.dart';
+
+import '../../../../../widgets/learn/learn_ui.dart';
 
 class MetaChip extends StatelessWidget {
   final IconData icon;
@@ -10,27 +10,11 @@ class MetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.elio;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F4F2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: elioMuted),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              color: elioMuted,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: ShapeDecoration(color: p.surfaceRaised, shape: learnShape(8)),
+      child: LearnMeta(icon: icon, label: label),
     );
   }
 }

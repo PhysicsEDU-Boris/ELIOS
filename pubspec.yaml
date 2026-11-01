@@ -76,6 +76,7 @@ flutter:
     - .env.prod
     - .env.example
     - assets/icon/
+    - assets/illustrations/learn/
     - assets/models/
     - assets/module/
     - assets/quiz/
