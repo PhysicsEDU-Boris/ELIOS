@@ -10,9 +10,11 @@ import '../utils/system_ui.dart';
 
 import '../models/app_notification.dart';
 import '../providers/app_notification_provider.dart';
+import '../providers/elio_theme_mode_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/robot_provider.dart';
 import '../theme/elio_theme.dart';
+import '../theme/elio_tokens.dart';
 import '../widgets/app_notification_banner.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
 import '../widgets/elio_bottom_nav.dart';
@@ -256,6 +258,12 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     return AppNotificationBannerHost(
       child: Scaffold(
         key: _scaffoldKey,
+        // Shows behind the bar's rounded corners; the shell is outside ElioTheme.
+        backgroundColor:
+            (ref.watch(elioThemeModeProvider) == ElioThemeMode.dark
+                    ? ElioTokens.dark
+                    : ElioTokens.light)
+                .background,
         drawer: ElioTheme.wrap(
           Builder(
             builder: (context) => Drawer(
