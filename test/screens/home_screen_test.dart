@@ -121,7 +121,7 @@ Future<void> _png(WidgetTester t, String name) async {
 }
 
 class _Calls {
-  int drawer = 0, learning = 0;
+  int learning = 0;
 }
 
 Future<_Calls> _pump(
@@ -145,7 +145,6 @@ Future<_Calls> _pump(
       shot,
       HomeScreen(
         auth: MockFirebaseAuth(),
-        onOpenDrawer: () => calls.drawer++,
         onOpenLearning: () => calls.learning++,
       ),
     ),
@@ -232,7 +231,6 @@ void main() {
   testWidgets('tap targets are at least 48 dp', (t) async {
     await _pump(t, state: _State.activity, size: tall);
     final targets = [
-      find.byTooltip('Open navigation menu'),
       find.byTooltip('Open notifications'),
       find.widgetWithText(TextButton, 'View learning'),
       find.widgetWithText(FilledButton, 'Continue Module'),
@@ -246,7 +244,6 @@ void main() {
       expect(f, findsWidgets);
     }
     for (final f in [
-      find.byTooltip('Open navigation menu'),
       find.byTooltip('Open notifications'),
       find.widgetWithText(TextButton, 'View learning'),
       find.widgetWithText(FilledButton, 'Continue Module'),
@@ -270,9 +267,6 @@ void main() {
     final container = ProviderScope.containerOf(
       t.element(find.byType(HomeScreen)),
     );
-
-    await t.tap(find.byTooltip('Open navigation menu'));
-    expect(calls.drawer, 1);
 
     await t.tap(find.text('View learning'));
     expect(calls.learning, 1);
@@ -312,7 +306,7 @@ void main() {
   testWidgets('semantics labels exist for the main controls', (t) async {
     final handle = t.ensureSemantics();
     await _pump(t, state: _State.activity, size: tall);
-    for (final tip in ['Open navigation menu', 'Open notifications']) {
+    for (final tip in ['Open notifications']) {
       final node = t.getSemantics(find.byTooltip(tip));
       expect('${node.label}|${node.tooltip}', contains(tip));
     }
