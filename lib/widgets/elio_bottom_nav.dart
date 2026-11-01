@@ -1,9 +1,8 @@
 // Bottom navigation (Figma page "N3 Bottom nav", component set 270:5746, spec
-// 270:8626): Home, Learn, Control (raised round button), Config, Profile.
-// Tab indices are the app's provider indices (Home 0, Learn 1, Config 2); only
-// the on-screen order differs. Control is an action, never selected; Profile
-// opens the sidebar, it is not a tab.
-import 'package:firebase_auth/firebase_auth.dart';
+// 270:8626): Home, Learn, Control (raised round button), Config, History.
+// Tab indices are the app's provider indices (Home 0, Learn 1, Config 2,
+// History 4); only the on-screen order differs. Control (3) is an action and
+// is never selected.
 import 'package:flutter/material.dart';
 
 import '../theme/elio_tokens.dart';
@@ -20,33 +19,20 @@ class ElioBottomNav extends StatelessWidget {
     required this.currentIndex,
     required this.onSelectTab,
     required this.onControl,
-    required this.onProfile,
-    required this.user,
-    this.profileOpen = false,
   });
 
-  /// Active tab: Home 0, Learn 1, Config 2.
+  /// Active tab: Home 0, Learn 1, Config 2, History 4.
   final int currentIndex;
   final ValueChanged<int> onSelectTab;
   final VoidCallback onControl;
-  final VoidCallback onProfile;
-  final User? user;
-  final bool profileOpen;
 
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context);
-    Widget tab(
-      int i,
-      String label,
-      IconData off,
-      IconData on, {
-      bool d = true,
-    }) => _Cell(
+    Widget tab(int i, String label, IconData off, IconData on) => _Cell(
       label: label,
       semantics: label,
       selected: currentIndex == i,
-      divider: d,
       onTap: () => onSelectTab(i),
       icon: Icon(currentIndex == i ? on : off, size: 24),
     );
@@ -55,26 +41,20 @@ class ElioBottomNav extends StatelessWidget {
       label: 'Main',
       child: Material(
         color: p.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          side: BorderSide(color: p.borderMedium),
+        ),
+        clipBehavior: Clip.antiAlias,
         child: Container(
           constraints: const BoxConstraints(minHeight: _barHeight),
           padding: EdgeInsets.only(
             bottom: MediaQuery.paddingOf(context).bottom,
           ),
-          decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: p.borderMedium)),
-          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: tab(
-                  0,
-                  'Home',
-                  Icons.home_outlined,
-                  Icons.home,
-                  d: false,
-                ),
-              ),
+              Expanded(child: tab(0, 'Home', Icons.home_outlined, Icons.home)),
               Expanded(
                 child: tab(
                   1,
@@ -88,7 +68,6 @@ class ElioBottomNav extends StatelessWidget {
                   label: 'Control',
                   semantics: 'Control, opens robot control',
                   selected: false,
-                  divider: true,
                   onTap: onControl,
                   icon: const SizedBox.shrink(),
                 ),
@@ -97,13 +76,11 @@ class ElioBottomNav extends StatelessWidget {
                 child: tab(2, 'Config', Icons.wifi_outlined, Icons.wifi),
               ),
               Expanded(
-                child: _Cell(
-                  label: 'Profile',
-                  semantics: 'Profile and menu',
-                  selected: profileOpen,
-                  divider: true,
-                  onTap: onProfile,
-                  icon: _Avatar(user: user, ring: profileOpen),
+                child: tab(
+                  4,
+                  'History',
+                  Icons.history_rounded,
+                  Icons.history_rounded,
                 ),
               ),
             ],
@@ -120,13 +97,12 @@ class _Cell extends StatefulWidget {
     required this.label,
     required this.semantics,
     required this.selected,
-    required this.divider,
     required this.onTap,
     required this.icon,
   });
 
   final String label, semantics;
-  final bool selected, divider;
+  final bool selected;
   final VoidCallback onTap;
   final Widget icon;
 
@@ -158,11 +134,6 @@ class _CellState extends State<_Cell> {
         focusColor: Colors.transparent,
         child: Container(
           constraints: const BoxConstraints(minHeight: _barHeight - 1),
-          decoration: BoxDecoration(
-            border: widget.divider
-                ? Border(left: BorderSide(color: p.borderSubtle))
-                : null,
-          ),
           child: Stack(
             alignment: Alignment.topCenter,
             children: [
@@ -308,65 +279,4 @@ class ElioControlFabLocation extends FloatingActionButtonLocation {
     (g.scaffoldSize.width - g.floatingActionButtonSize.width) / 2,
     g.contentBottom - _raise,
   );
-}
-
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.user, required this.ring});
-  final User? user;
-  final bool ring;
-
-  String? get _initials {
-    if (user == null || user!.isAnonymous) return null;
-    var words = (user!.displayName ?? '').trim().split(RegExp(r'\s+'));
-    if (words.first.isEmpty) words = (user!.email ?? '').trim().split(' ');
-    final s = words.take(2).where((w) => w.isNotEmpty).map((w) => w[0]).join();
-    return s.isEmpty ? null : s.toUpperCase();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final p = authPalette(context);
-    final initials = _initials;
-    final photo = user?.photoURL;
-    final fallback = initials == null
-        ? const Icon(Icons.person_outline_rounded, size: 20)
-        : Text(
-            initials,
-            style: ElioTokens.caption.copyWith(
-              color: p.primaryText,
-              fontWeight: FontWeight.w600,
-            ),
-          );
-    return Container(
-      width: 32,
-      height: 32,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: p.surface,
-        border: Border.all(
-          color: ring ? p.primaryText : p.formBorder,
-          width: ring ? 2 : 1.5,
-        ),
-      ),
-      // The initials show while the photo loads and when it fails (offline).
-      child: ClipOval(
-        child: Stack(
-          alignment: Alignment.center,
-          fit: StackFit.expand,
-          children: [
-            Center(child: fallback),
-            if (photo != null && photo.isNotEmpty)
-              Image.network(
-                photo,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                frameBuilder: (_, child, frame, _) =>
-                    frame == null ? const SizedBox.shrink() : child,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }

@@ -8,3 +8,4 @@ Branch `feat/n3-bottom-nav` from `feature/live-scan` (#69 merged). Decision 0142
 - Figma read: N3 Bottom nav 269:2358 (spec 270:8626, component 270:2378).
 - Unrelated: worktree `elios-n3-shell` holds uncommitted rail/sidebar work (wide layouts); untouched.
 - Device check (1 Nov 2026, Motorola edge 60 fusion, debug APK, dark): Profile opens the left drawer with the scrim over the bar and the Profile ring; Learn and Config switch tabs; Control opens the landscape route and Back returns. Not checked on device: light mode, quiz guard, text scale 1.3, offline photo. Learn and Config pages are still the legacy light look under the dark bar.
+- Figma changed 1 Nov 2026: Profile cell -> History tab (index 4, `ScanHistoryScreen`), rounded top, no dividers. Checked on device: History tab opens and is active; rounded bar. Sidebar now only from the Home header menu or edge swipe. `control_layout.dart` still pushes ScanHistoryScreen as a route (unchanged).

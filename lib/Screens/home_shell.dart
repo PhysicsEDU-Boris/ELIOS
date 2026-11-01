@@ -19,6 +19,7 @@ import '../widgets/elio_bottom_nav.dart';
 import '../widgets/elio_sidebar.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
+import 'scan_history_screen.dart';
 import 'tabs/elearning_tab.dart';
 import 'config_screen.dart';
 import 'control_screen.dart';
@@ -34,6 +35,8 @@ class HomeShell extends ConsumerStatefulWidget {
 
 class _HomeShellState extends ConsumerState<HomeShell> {
   static const int _controlIndex = 3;
+  // Added by N3; the other indices are unchanged.
+  static const int _historyIndex = 4;
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   int _currentIndex = 0;
@@ -41,7 +44,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   int _quizResetGeneration = 0;
   bool _syncingNavigationProvider = false;
   bool _controlScreenOpen = false;
-  bool _drawerOpen = false;
   final Set<int> _loggedTabBuilds = <int>{};
 
   late final HomeScreen _homeScreen;
@@ -56,7 +58,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     });
 
     final initialNavigationIndex = ref.read(navigationIndexProvider);
-    if (initialNavigationIndex >= 0 && initialNavigationIndex < _controlIndex) {
+    if ((initialNavigationIndex >= 0 &&
+            initialNavigationIndex < _controlIndex) ||
+        initialNavigationIndex == _historyIndex) {
       _currentIndex = initialNavigationIndex;
     } else if (initialNavigationIndex == _controlIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -78,6 +82,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         0 => 'Home/Dashboard',
         1 => 'Learn',
         2 => 'Config',
+        _historyIndex => 'History',
         _ => 'Control placeholder',
       };
       debugPrint('[StartupDiag] building $label');
@@ -93,6 +98,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         },
       ),
       2 => const ConfigScreen(),
+      _historyIndex => ScanHistoryScreen(
+        onClose: () => _onBottomNavigationTap(0),
+      ),
       _ => const SizedBox.shrink(),
     };
   }
@@ -106,7 +114,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   }
 
   void _handleNavigationProviderChange(int index) {
-    if (_syncingNavigationProvider || index < 0 || index > _controlIndex) {
+    if (_syncingNavigationProvider || index < 0 || index > _historyIndex) {
       return;
     }
 
@@ -200,16 +208,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     return true;
   }
 
-  Future<void> _openProfile() async {
-    if (!await _confirmLeaveQuiz()) return;
-    _scaffoldKey.currentState?.openDrawer();
-  }
-
   Future<void> _onBottomNavigationTap(
     int index, {
     bool updateProvider = true,
   }) async {
-    if (index < 0 || index > _controlIndex) return;
+    if (index < 0 || index > _historyIndex) return;
 
     if (index == _currentIndex && index != _controlIndex) return;
 
@@ -284,16 +287,12 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         floatingActionButton: ElioTheme.wrap(
           ElioControlButton(onTap: () => _onBottomNavigationTap(_controlIndex)),
         ),
-        onDrawerChanged: (open) => setState(() => _drawerOpen = open),
         bottomNavigationBar: ElioTheme.wrap(
           ElioBottomNav(
             // Control (3) is an action, never the active tab.
             currentIndex: _currentIndex,
             onSelectTab: _onBottomNavigationTap,
             onControl: () => _onBottomNavigationTap(_controlIndex),
-            onProfile: _openProfile,
-            user: user,
-            profileOpen: _drawerOpen,
           ),
         ),
       ),
