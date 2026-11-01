@@ -37,3 +37,12 @@
 - `elio_top_bar.dart` + `elio_drawer_host.dart` (custom drawer) wired in `HomeShell`; Home hamburger removed; decision 0143.
 - Tests: `test/widgets/elio_drawer_host_test.dart` (15). `flutter test`: only the 2 `elio_tokens_test` failures, which also fail on the N3 base.
 - Not checked: phone or Mac window, real photo avatar. Open: Learn shows two bars; no wide-layout rail.
+
+## H1v4 gamified Home (2 Nov, draft PR, on top of N4 catch-up #75)
+
+- #73 (N4) never reached `feature/live-scan`; #75 merges it (only `2dd92db`). #74 (L1 learn v2) is also missing there, not brought in.
+- New Home from Figma 321:2358 with real scan data only; maths in `lib/models/home_stats.dart`, UI in `home_screen.dart` + `lib/Screens/home/`. Decision 0144 (residu in Anorganik, quest rewards display only, tree per level).
+- Tests: `test/models/home_stats_test.dart` (17, break-checked), `test/screens/home_screen_test.dart` (15). `flutter test` +739 ~20 -2 (the 2 known `elio_tokens_test` failures).
+- Phone (Edge 60 Fusion, tester APK, guest session, owner data untouched): Home = History (26 scans, 202 trophies, B3 8 / Anorganik 17 / Organik 1, 0 today). Shots in `docs/test-results/h1v4/`.
+- Build hygiene: the 2.59 GB Gemma model sits in `assets/models/` in this checkout and gets bundled; move it out for an APK build and back after.
+- Open: owner decision on quest rewards; History has no per-day filter; `trophiesFor(List)` returns 0 (callers pass trophies explicitly).

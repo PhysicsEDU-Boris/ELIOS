@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- H1v4: gamified Home from Figma (level tree, stats, daily quests, 17-week scan activity with a month view, bin buddies with residu in Anorganik, week bars, quiz sparkline, medals, did-you-know, local search, loading and guest states), light and dark, real scan data only; quest rewards are display only (decision 0144).
+
 - N4: top bar with the profile avatar and page title on every tab; the avatar opens a new phone drawer (304 dp, 40% scrim, drag/Back/Escape close, focus returns to the avatar). The Home hamburger is gone (decision 0143).
 
 - N3: new bottom nav (Home, Learn, centre Control, Config, History); the old Profile cell is gone (decision 0142).
