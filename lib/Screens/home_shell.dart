@@ -10,14 +10,18 @@ import '../utils/system_ui.dart';
 
 import '../models/app_notification.dart';
 import '../providers/app_notification_provider.dart';
+import '../providers/elio_theme_mode_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/robot_provider.dart';
 import '../theme/elio_theme.dart';
+import '../theme/elio_tokens.dart';
 import '../widgets/app_notification_banner.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
+import '../widgets/elio_bottom_nav.dart';
 import '../widgets/elio_sidebar.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
+import 'scan_history_screen.dart';
 import 'tabs/elearning_tab.dart';
 import 'config_screen.dart';
 import 'control_screen.dart';
@@ -33,6 +37,8 @@ class HomeShell extends ConsumerStatefulWidget {
 
 class _HomeShellState extends ConsumerState<HomeShell> {
   static const int _controlIndex = 3;
+  // Added by N3; the other indices are unchanged.
+  static const int _historyIndex = 4;
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   int _currentIndex = 0;
@@ -54,7 +60,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     });
 
     final initialNavigationIndex = ref.read(navigationIndexProvider);
-    if (initialNavigationIndex >= 0 && initialNavigationIndex < _controlIndex) {
+    if ((initialNavigationIndex >= 0 &&
+            initialNavigationIndex < _controlIndex) ||
+        initialNavigationIndex == _historyIndex) {
       _currentIndex = initialNavigationIndex;
     } else if (initialNavigationIndex == _controlIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -76,6 +84,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         0 => 'Home/Dashboard',
         1 => 'Learn',
         2 => 'Config',
+        _historyIndex => 'History',
         _ => 'Control placeholder',
       };
       debugPrint('[StartupDiag] building $label');
@@ -91,6 +100,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         },
       ),
       2 => const ConfigScreen(),
+      _historyIndex => ScanHistoryScreen(
+        onClose: () => _onBottomNavigationTap(0),
+      ),
       _ => const SizedBox.shrink(),
     };
   }
@@ -104,7 +116,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   }
 
   void _handleNavigationProviderChange(int index) {
-    if (_syncingNavigationProvider || index < 0 || index > _controlIndex) {
+    if (_syncingNavigationProvider || index < 0 || index > _historyIndex) {
       return;
     }
 
@@ -167,45 +179,48 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     }
   }
 
+  /// True when no quiz is running, or the user chose to leave it (progress reset).
+  Future<bool> _confirmLeaveQuiz() async {
+    if (_currentIndex != 1 || !_quizInProgress) return true;
+    final shouldLeave = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Leave quiz?'),
+        content: const Text(
+          'You have an active quiz. If you leave now, your current quiz '
+          'progress will be lost.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Leave Quiz'),
+          ),
+        ],
+      ),
+    );
+    if (shouldLeave != true || !mounted) return false;
+    setState(() {
+      _quizInProgress = false;
+      _quizResetGeneration++;
+    });
+    return true;
+  }
+
   Future<void> _onBottomNavigationTap(
     int index, {
     bool updateProvider = true,
   }) async {
-    if (index < 0 || index > _controlIndex) return;
+    if (index < 0 || index > _historyIndex) return;
 
     if (index == _currentIndex && index != _controlIndex) return;
 
-    if (_currentIndex == 1 && _quizInProgress) {
-      final shouldLeave = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Leave quiz?'),
-          content: const Text(
-            'You have an active quiz. If you leave now, your current quiz '
-            'progress will be lost.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Leave Quiz'),
-            ),
-          ],
-        ),
-      );
-
-      if (shouldLeave != true || !mounted) {
-        _syncNavigationProvider(_currentIndex);
-        return;
-      }
-
-      setState(() {
-        _quizInProgress = false;
-        _quizResetGeneration++;
-      });
+    if (!await _confirmLeaveQuiz()) {
+      _syncNavigationProvider(_currentIndex);
+      return;
     }
 
     if (!mounted) return;
@@ -243,6 +258,12 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     return AppNotificationBannerHost(
       child: Scaffold(
         key: _scaffoldKey,
+        // Shows behind the bar's rounded corners; the shell is outside ElioTheme.
+        backgroundColor:
+            (ref.watch(elioThemeModeProvider) == ElioThemeMode.dark
+                    ? ElioTokens.dark
+                    : ElioTokens.light)
+                .background,
         drawer: ElioTheme.wrap(
           Builder(
             builder: (context) => Drawer(
@@ -268,39 +289,22 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           ),
         ),
         body: _buildCurrentScreen(),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: _onBottomNavigationTap,
-          selectedItemColor: const Color(0xFF1D9E75),
-          unselectedItemColor: Colors.grey,
-          type: BottomNavigationBarType.fixed,
-          selectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
+        drawerScrimColor: Colors.black.withValues(alpha: 0.4),
+        floatingActionButtonLocation: const ElioControlFabLocation(),
+        floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
+        floatingActionButton: ElioTheme.wrap(
+          ElioControlButton(
+            onTap: () => _onBottomNavigationTap(_controlIndex),
+            modelAsset: 'assets/models/mobilElios5.glb',
           ),
-          unselectedLabelStyle: const TextStyle(fontSize: 12),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.menu_book_outlined),
-              activeIcon: Icon(Icons.menu_book),
-              label: 'Learn',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.wifi_outlined),
-              activeIcon: Icon(Icons.wifi),
-              label: 'Config',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.gamepad_outlined),
-              activeIcon: Icon(Icons.gamepad),
-              label: 'Control',
-            ),
-          ],
+        ),
+        bottomNavigationBar: ElioTheme.wrap(
+          ElioBottomNav(
+            // Control (3) is an action, never the active tab.
+            currentIndex: _currentIndex,
+            onSelectTab: _onBottomNavigationTap,
+            onControl: () => _onBottomNavigationTap(_controlIndex),
+          ),
         ),
       ),
     );
