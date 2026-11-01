@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../../../../../../theme/elio_learning_colors.dart';
 
+import '../../../../../theme/elio_tokens.dart';
+import '../../../../../widgets/learn/learn_ui.dart';
+
+/// Rumus tab body (Figma 310:5964): overline, mono formula, note.
 class FormulaBox extends StatelessWidget {
   final String title;
   final TextSpan formulaText;
@@ -16,47 +18,21 @@ class FormulaBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: elioBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              color: elioPrimary,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-            ),
+    final p = context.elio;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: context.text.labelSmall?.copyWith(color: p.primaryText)),
+        const SizedBox(height: 8),
+        Text.rich(
+          TextSpan(
+            style: ElioTokens.subhead.copyWith(color: p.textPrimary),
+            children: [formulaText],
           ),
-          const SizedBox(height: 8),
-          Text.rich(
-            TextSpan(
-              style: GoogleFonts.jetBrainsMono(
-                color: elioInk,
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-              ),
-              children: [
-                formulaText,
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: GoogleFonts.inter(
-                color: elioMuted, fontSize: 11.5),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 8),
+        Text(subtitle, style: context.text.bodySmall?.copyWith(color: p.textSecondary)),
+      ],
     );
   }
 }

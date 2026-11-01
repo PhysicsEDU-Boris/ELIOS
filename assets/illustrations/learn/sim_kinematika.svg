@@ -1,0 +1,28 @@
+<svg width="320" height="200" viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="v1 (not chosen) / Illustrations + icons (components)">
+<g id="Illustration/Sim Kinematika" clip-path="url(#clip0_293_2358)">
+<path id="Vector" d="M320 0H0V200H320V0Z" fill="#F1F5F9"/>
+<path id="Vector_2" d="M296 120H24C19.5817 120 16 123.582 16 128V152C16 156.418 19.5817 160 24 160H296C300.418 160 304 156.418 304 152V128C304 123.582 300.418 120 296 120Z" fill="#475569" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M30 140H290" stroke="#F8FAFC" stroke-width="3" stroke-dasharray="14 10"/>
+<path id="Vector_4" d="M30 164V174" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_5" d="M90 164V174" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_6" d="M150 164V174" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_7" d="M210 164V174" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_8" d="M270 164V174" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_9" d="M276 118V60" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_10" d="M276 60H304L296 70L304 80H276V60Z" fill="#F87171" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_11" d="M94 88H50C44.4772 88 40 92.4772 40 98V108C40 113.523 44.4772 118 50 118H94C99.5228 118 104 113.523 104 108V98C104 92.4772 99.5228 88 94 88Z" fill="#4ADE80" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_12" d="M75 70H61C58.2386 70 56 72.2386 56 75V83C56 85.7614 58.2386 88 61 88H75C77.7614 88 80 85.7614 80 83V75C80 72.2386 77.7614 70 75 70Z" fill="#0F172A"/>
+<path id="Vector_13" d="M68 83C70.2091 83 72 81.2091 72 79C72 76.7909 70.2091 75 68 75C65.7909 75 64 76.7909 64 79C64 81.2091 65.7909 83 68 83Z" fill="#22D3EE"/>
+<path id="Vector_14" d="M56 129C60.9706 129 65 124.971 65 120C65 115.029 60.9706 111 56 111C51.0294 111 47 115.029 47 120C47 124.971 51.0294 129 56 129Z" fill="#0F172A"/>
+<path id="Vector_15" d="M90 129C94.9706 129 99 124.971 99 120C99 115.029 94.9706 111 90 111C85.0294 111 81 115.029 81 120C81 124.971 85.0294 129 90 129Z" fill="#0F172A"/>
+<path id="Vector_16" d="M120 100H250" stroke="#15803D" stroke-width="3" stroke-dasharray="8 8"/>
+<path id="Vector_17" d="M244 94L252 100L244 106" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_293_2358">
+<rect width="320" height="200" fill="white"/>
+</clipPath>
+</defs>
+</svg>

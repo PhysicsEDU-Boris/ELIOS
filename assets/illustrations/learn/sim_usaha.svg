@@ -1,0 +1,26 @@
+<svg width="320" height="200" viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="v1 (not chosen) / Illustrations + icons (components)">
+<g id="Illustration/Sim Usaha" clip-path="url(#clip0_293_2358)">
+<path id="Vector" d="M320 0H0V200H320V0Z" fill="#F1F5F9"/>
+<path id="Vector_2" d="M20 180H230" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M40 20V180" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_4" d="M36 40H48" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_5" d="M36 75H48" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_6" d="M36 110H48" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_7" d="M36 145H48" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_8" d="M120 20V180" stroke="#CBD5E1" stroke-width="10" stroke-linecap="round"/>
+<path id="Vector_9" d="M149 92H91C89.3431 92 88 93.3431 88 95V97C88 98.6569 89.3431 100 91 100H149C150.657 100 152 98.6569 152 97V95C152 93.3431 150.657 92 149 92Z" fill="#0F172A"/>
+<path id="Vector_10" d="M136 62H104C101.791 62 100 63.7909 100 66V88C100 90.2091 101.791 92 104 92H136C138.209 92 140 90.2091 140 88V66C140 63.7909 138.209 62 136 62Z" fill="#4ADE80" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_11" d="M100 72H140M100 82H140" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_12" d="M262 40H254C251.791 40 250 41.7909 250 44V176C250 178.209 251.791 180 254 180H262C264.209 180 266 178.209 266 176V44C266 41.7909 264.209 40 262 40Z" fill="#E2E8F0"/>
+<path id="Vector_13" d="M264 150H252C250.895 150 250 150.895 250 152V158C250 159.105 250.895 160 252 160H264C265.105 160 266 159.105 266 158V152C266 150.895 265.105 150 264 150Z" fill="#FBBF24" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_14" d="M294 40H286C283.791 40 282 41.7909 282 44V176C282 178.209 283.791 180 286 180H294C296.209 180 298 178.209 298 176V44C298 41.7909 296.209 40 294 40Z" fill="#E2E8F0"/>
+<path id="Vector_15" d="M294 44H286C283.791 44 282 45.7909 282 48V176C282 178.209 283.791 180 286 180H294C296.209 180 298 178.209 298 176V48C298 45.7909 296.209 44 294 44Z" fill="#4ADE80" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_293_2358">
+<rect width="320" height="200" fill="white"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,10 +1,11 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../../widgets/learn/learn_ui.dart';
+import '../../../../models/physics_module.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../physics/torque/torque_state.dart';
 import '../../../../../physics/torque/torque_notifier.dart';
-import '../../../../../theme/elio_learning_colors.dart';
 import 'painters/torque_painter.dart';
 import 'widgets/sim_module_header.dart';
 import 'widgets/formula_box.dart';
@@ -51,6 +52,7 @@ class _TorqueSimulationPageState extends ConsumerState<TorqueSimulationPage> {
     final status = state.motorStatus;
 
     return SimulationPageScaffold(
+      module: PhysicsModuleId.torque,
       appBarTitle: 'Torsi Bahu Robot',
       header: const SimModuleHeader(
         tag: 'MODUL C · MEKANIKA',
@@ -64,7 +66,7 @@ class _TorqueSimulationPageState extends ConsumerState<TorqueSimulationPage> {
                         const TextSpan(text: 'τ = r · F · sin(θ) = '),
                         TextSpan(
                           text: tau.toStringAsFixed(2),
-                          style: const TextStyle(color: elioWarning),
+                          style: TextStyle(color: context.elio.secondaryText),
                         ),
                         const TextSpan(text: ' N·m'),
                       ],
@@ -124,10 +126,10 @@ class _TorqueSimulationPageState extends ConsumerState<TorqueSimulationPage> {
                             ? Icons.error_rounded
                             : Icons.dangerous_rounded,
                     statusColor: status == MotorStatus.safe
-                        ? elioOk
+                        ? context.elio.primaryText
                         : status == MotorStatus.warning
-                            ? elioWarning
-                            : elioDanger,
+                            ? context.elio.secondaryText
+                            : context.elio.errorText,
                     statusText: 'Motor: ${status == MotorStatus.safe ? 'AMAN' : status == MotorStatus.warning ? 'PERHATIAN' : 'KRITIS'} · batas aman 8 N·m',
                   ),
                   ThresholdBanner(
@@ -140,9 +142,9 @@ class _TorqueSimulationPageState extends ConsumerState<TorqueSimulationPage> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFAFCFB),
+                      color: context.elio.surfaceRaised,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: elioBorder),
+                      border: Border.all(color: context.elio.borderSubtle),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,7 +152,7 @@ class _TorqueSimulationPageState extends ConsumerState<TorqueSimulationPage> {
                         Text(
                           'TANTANGAN',
                           style: TextStyle(
-                            color: elioPrimary,
+                            color: context.elio.primaryText,
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.6,
@@ -161,7 +163,7 @@ class _TorqueSimulationPageState extends ConsumerState<TorqueSimulationPage> {
                           'Cari berat maksimum yang dapat diangkat ELIO saat r = 0.5 m dan '
                           'θ = 90° dengan batas torsi 8 N·m.\nJawaban: F = τ/(r·sinθ) = '
                           '8 / 0.5 = 16 N',
-                          style: TextStyle(color: elioMuted, fontSize: 12.5, height: 1.55),
+                          style: TextStyle(color: context.elio.textSecondary, fontSize: 12.5, height: 1.55),
                         ),
                       ],
                     ),

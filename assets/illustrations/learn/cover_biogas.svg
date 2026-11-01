@@ -1,0 +1,23 @@
+<svg width="320" height="180" viewBox="0 0 320 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="v1 (not chosen) / Illustrations + icons (components)">
+<g id="Illustration/Cover Biogas" clip-path="url(#clip0_293_2358)">
+<path id="Vector" d="M320 0H0V180H320V0Z" fill="#FEF3C7"/>
+<path id="Vector_2" d="M0 148H320V180H0V148Z" fill="#86EFAC" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M70 148V112C70 96.087 76.3214 80.8258 87.5736 69.5736C98.8258 58.3214 114.087 52 130 52C145.913 52 161.174 58.3214 172.426 69.5736C183.679 80.8258 190 96.087 190 112V148H70Z" fill="#15803D" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_4" d="M86 148V116C86 104.33 90.6357 93.1389 98.8873 84.8873C107.139 76.6357 118.33 72 130 72C141.67 72 152.861 76.6357 161.113 84.8873C169.364 93.1389 174 104.33 174 116V148H86Z" fill="#4ADE80" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_5" d="M190 96H236V70" stroke="#0F172A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_6" d="M190 96H236V70" stroke="#94A3B8" stroke-width="2.5"/>
+<path id="Vector_7" d="M236 68C226 58 232 46 236 38C240 46 250 54 240 68H236Z" fill="#F87171" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_8" d="M236 64C232 60 234 54 236 50C238 54 242 58 238 64H236Z" fill="#FBBF24"/>
+<path id="Vector_9" d="M104 136C108 122 120 118 130 120C124 126 120 132 120 142L104 136Z" fill="#FBBF24" stroke="#0F172A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_10" d="M150 135C153.866 135 157 131.866 157 128C157 124.134 153.866 121 150 121C146.134 121 143 124.134 143 128C143 131.866 146.134 135 150 135Z" fill="#F87171" stroke="#0F172A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_11" d="M282 33C282 37.6667 284.333 40 289 40C284.333 40 282 42.3333 282 47C282 42.3333 279.667 40 275 40C279.667 40 282 37.6667 282 33Z" fill="white" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_12" d="M40 46C40 50 42 52 46 52C42 52 40 54 40 58C40 54 38 52 34 52C38 52 40 50 40 46Z" fill="#4ADE80" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_293_2358">
+<rect width="320" height="180" fill="white"/>
+</clipPath>
+</defs>
+</svg>

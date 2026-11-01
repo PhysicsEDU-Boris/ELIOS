@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../../../../../../theme/elio_learning_colors.dart';
+import '../../../../../widgets/learn/learn_ui.dart';
 import 'collapsible_section.dart';
 
 class DeepExplainCard extends StatelessWidget {
@@ -26,18 +25,18 @@ class DeepExplainCard extends StatelessWidget {
         children: [
           Text(
             bodyText,
-            textAlign: TextAlign.justify,
-            style: GoogleFonts.inter(color: elioInk, fontSize: 12.5, height: 1.6, fontWeight: FontWeight.w500),
+                        style: context.text.bodySmall,
           ),
           const SizedBox(height: 10),
           for (final point in bulletPoints)
-            _bullet(point),
+            _bullet(context, point),
         ],
       ),
     );
   }
 
-  Widget _bullet(String text) {
+  Widget _bullet(BuildContext context, String text) {
+    final p = context.elio;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
@@ -47,16 +46,15 @@ class DeepExplainCard extends StatelessWidget {
             margin: const EdgeInsets.only(top: 2, right: 8),
             padding: const EdgeInsets.all(2),
             decoration: BoxDecoration(
-              border: Border.all(color: elioPrimary.withValues(alpha: 0.3)),
+              border: Border.all(color: p.primaryText.withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: const Text('▸', style: TextStyle(color: elioPrimary, fontWeight: FontWeight.bold, fontSize: 10, height: 1.0)),
+            child: Text('▸', style: TextStyle(color: p.primaryText, fontWeight: FontWeight.bold, fontSize: 10, height: 1.0)),
           ),
           Expanded(
             child: Text(
               text,
-              textAlign: TextAlign.justify,
-              style: GoogleFonts.inter(color: elioInk, fontSize: 12.5, height: 1.5, fontWeight: FontWeight.w500),
+                            style: context.text.bodySmall,
             ),
           ),
         ],
