@@ -15,6 +15,7 @@ import '../providers/robot_provider.dart';
 import '../theme/elio_theme.dart';
 import '../widgets/app_notification_banner.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
+import '../widgets/elio_bottom_nav.dart';
 import '../widgets/elio_sidebar.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
@@ -40,6 +41,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   int _quizResetGeneration = 0;
   bool _syncingNavigationProvider = false;
   bool _controlScreenOpen = false;
+  bool _drawerOpen = false;
   final Set<int> _loggedTabBuilds = <int>{};
 
   late final HomeScreen _homeScreen;
@@ -167,6 +169,42 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     }
   }
 
+  /// True when no quiz is running, or the user chose to leave it (progress reset).
+  Future<bool> _confirmLeaveQuiz() async {
+    if (_currentIndex != 1 || !_quizInProgress) return true;
+    final shouldLeave = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Leave quiz?'),
+        content: const Text(
+          'You have an active quiz. If you leave now, your current quiz '
+          'progress will be lost.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Leave Quiz'),
+          ),
+        ],
+      ),
+    );
+    if (shouldLeave != true || !mounted) return false;
+    setState(() {
+      _quizInProgress = false;
+      _quizResetGeneration++;
+    });
+    return true;
+  }
+
+  Future<void> _openProfile() async {
+    if (!await _confirmLeaveQuiz()) return;
+    _scaffoldKey.currentState?.openDrawer();
+  }
+
   Future<void> _onBottomNavigationTap(
     int index, {
     bool updateProvider = true,
@@ -175,37 +213,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
     if (index == _currentIndex && index != _controlIndex) return;
 
-    if (_currentIndex == 1 && _quizInProgress) {
-      final shouldLeave = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Leave quiz?'),
-          content: const Text(
-            'You have an active quiz. If you leave now, your current quiz '
-            'progress will be lost.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Leave Quiz'),
-            ),
-          ],
-        ),
-      );
-
-      if (shouldLeave != true || !mounted) {
-        _syncNavigationProvider(_currentIndex);
-        return;
-      }
-
-      setState(() {
-        _quizInProgress = false;
-        _quizResetGeneration++;
-      });
+    if (!await _confirmLeaveQuiz()) {
+      _syncNavigationProvider(_currentIndex);
+      return;
     }
 
     if (!mounted) return;
@@ -268,39 +278,17 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           ),
         ),
         body: _buildCurrentScreen(),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: _onBottomNavigationTap,
-          selectedItemColor: const Color(0xFF1D9E75),
-          unselectedItemColor: Colors.grey,
-          type: BottomNavigationBarType.fixed,
-          selectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
+        onDrawerChanged: (open) => setState(() => _drawerOpen = open),
+        bottomNavigationBar: ElioTheme.wrap(
+          ElioBottomNav(
+            // Control (3) is an action, never the active tab.
+            currentIndex: _currentIndex,
+            onSelectTab: _onBottomNavigationTap,
+            onControl: () => _onBottomNavigationTap(_controlIndex),
+            onProfile: _openProfile,
+            user: user,
+            profileOpen: _drawerOpen,
           ),
-          unselectedLabelStyle: const TextStyle(fontSize: 12),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.menu_book_outlined),
-              activeIcon: Icon(Icons.menu_book),
-              label: 'Learn',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.wifi_outlined),
-              activeIcon: Icon(Icons.wifi),
-              label: 'Config',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.gamepad_outlined),
-              activeIcon: Icon(Icons.gamepad),
-              label: 'Control',
-            ),
-          ],
         ),
       ),
     );

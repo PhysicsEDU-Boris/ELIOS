@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- N3: new bottom nav (Home, Learn, centre Control, Config, Profile); Profile opens the sidebar (decision 0142).
+
 - Sidebar drawer rebuilt from the N1 Figma with a Dark mode switch (behind the dark mode option); behaviour unchanged (decision 0141).
 
 - Home screen restyled to the H1 Figma design in light and dark (tokens, 48 dp targets, two columns from 840 dp); behaviour unchanged (decision 0140).
