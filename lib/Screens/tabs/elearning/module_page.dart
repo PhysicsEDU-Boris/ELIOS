@@ -156,7 +156,14 @@ class _ModuleBody extends ConsumerWidget {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: [for (final e in examples) Chip(label: Text(e))],
+                  children: [
+                    for (final e in examples)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: ShapeDecoration(color: p.surfaceRaised, shape: learnShape(8)),
+                        child: Text(e, style: context.text.labelMedium?.copyWith(color: p.textSecondary)),
+                      ),
+                  ],
                 ),
               ],
             ],

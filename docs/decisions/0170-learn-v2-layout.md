@@ -16,5 +16,8 @@ Status: draft PR, owner review pending. Figma file J2jSbARJSyJCStNFeWkWDj, page 
 - Simulation pages keep their own tag text ("MODUL A · MATERI") in the summary card; the live painter canvas stays in the Simulasi tab, the static Figma canvas is the summary image.
 - Deep-dive and the physics quiz have no Figma canvas: they use the Intro cover and the mascot.
 
+## Phone check
+See `docs/test-results/l1/README.md` (1 Nov, motorola edge 60 fusion).
+
 ## Not done
 - Wide layouts (600 dp and up) are only centred at 600 dp, no two-pane layout.

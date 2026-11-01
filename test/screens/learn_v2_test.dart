@@ -328,7 +328,8 @@ void main() {
         expect(t.takeException(), isNull);
         expect(find.text('Progres simulasi'), findsOneWidget);
         expect(find.text('Organic waste management'), findsOneWidget);
-        expect(find.text('Best 80%'), findsOneWidget);
+        expect(find.text('Best 80% · 2 questions'), findsOneWidget);
+        expect(find.text('Organic waste management quiz'), findsOneWidget);
         expect(find.text('Passed'), findsOneWidget);
       });
 

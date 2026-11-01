@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/elearning_module.dart';
 import '../../../models/guide_lesson.dart';
 import '../../../models/physics_module.dart';
+import '../../../models/quiz_set.dart';
 import '../../../models/video_lesson.dart';
 import '../../../providers/learning_progress_provider.dart';
 import '../../../providers/physics_progress_provider.dart';
@@ -52,10 +53,14 @@ class _ProgressPageState extends ConsumerState<ProgressPage> {
             stream: _streams.videos,
             builder: (context, videosSnap) => StreamBuilder<List<GuideLesson>>(
               stream: _streams.guides,
-              builder: (context, guidesSnap) => _body(
-                modulesSnap.data!,
-                videosSnap.data ?? const [],
-                guidesSnap.data ?? const [],
+              builder: (context, guidesSnap) => StreamBuilder<List<QuizSet>>(
+                stream: _streams.quizSets,
+                builder: (context, quizSnap) => _body(
+                  modulesSnap.data!,
+                  videosSnap.data ?? const [],
+                  guidesSnap.data ?? const [],
+                  quizSnap.data ?? const [],
+                ),
               ),
             ),
           );
@@ -64,7 +69,12 @@ class _ProgressPageState extends ConsumerState<ProgressPage> {
     );
   }
 
-  Widget _body(List<ElearningModule> modules, List<VideoLesson> videos, List<GuideLesson> guides) {
+  Widget _body(
+    List<ElearningModule> modules,
+    List<VideoLesson> videos,
+    List<GuideLesson> guides,
+    List<QuizSet> quizSets,
+  ) {
     final p = context.elio;
     final progress = ref.watch(learningProgressProvider).valueOrNull;
     final physics = ref.watch(physicsProgressProvider).valueOrNull;
@@ -81,7 +91,10 @@ class _ProgressPageState extends ConsumerState<ProgressPage> {
     final shown = modules.where((m) => _tab == 0 ? values[m.id]! < 1 : values[m.id]! >= 1).toList();
     final reviews = progress?.quizReviews ?? const {};
     final scores = progress?.quizScores ?? const <String, int>{};
-    final quizIds = {...scores.keys, ...reviews.keys}.toList()..sort();
+    final order = {for (final m in modules) m.id: m.order};
+    final quizIds = {...scores.keys, ...reviews.keys}.toList()
+      ..sort((a, b) => (order[a] ?? 99).compareTo(order[b] ?? 99));
+    QuizSet? setFor(String id) => quizSets.where((q) => q.moduleId == id).firstOrNull;
 
     if (isFirstLaunch(progress) && simsDone == 0) {
       return LearnListView(
@@ -135,12 +148,13 @@ class _ProgressPageState extends ConsumerState<ProgressPage> {
                     if (m.durationMinutes > 0) '${m.durationMinutes} min',
                   ].join(' · '),
                   title: m.title,
-                  leading: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  footer: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       LearnProgressBar(value: values[m.id]!),
                       const SizedBox(height: 4),
                       Wrap(
+                        alignment: WrapAlignment.spaceBetween,
                         spacing: 8,
                         children: [
                           Text(
@@ -167,10 +181,10 @@ class _ProgressPageState extends ConsumerState<ProgressPage> {
               for (final id in quizIds)
                 GuideLessonRow(
                   icon: Icons.help_outline_rounded,
-                  title: reviews[id]?.quizTitle ?? '${binLabel(id)} quiz',
+                  title: reviews[id]?.quizTitle ?? setFor(id)?.title ?? '${binLabel(id)} quiz',
                   subtitle: [
                     if (scores[id] != null) 'Best ${scores[id]}%',
-                    if (reviews[id] != null) '${reviews[id]!.totalQuestions} questions',
+                    '${reviews[id]?.totalQuestions ?? setFor(id)?.questionCount ?? 0} questions',
                   ].join(' · '),
                   trailing: LevelChip(
                     label: (reviews[id]?.passed ?? (scores[id] ?? 0) >= 70) ? 'Passed' : 'Try again',

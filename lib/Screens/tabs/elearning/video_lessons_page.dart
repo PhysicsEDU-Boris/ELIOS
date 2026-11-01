@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -84,6 +85,8 @@ class _YoutubeVideoPageState extends ConsumerState<_YoutubeVideoPage> {
   @override
   void initState() {
     super.initState();
+    // The app pins portrait elsewhere; the player may turn for fullscreen.
+    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     _progressNotifier = ref.read(learningProgressProvider.notifier);
     _controller = YoutubePlayerController.fromVideoId(
       videoId: widget.youtubeId,
@@ -102,6 +105,7 @@ class _YoutubeVideoPageState extends ConsumerState<_YoutubeVideoPage> {
     }
     unawaited(_videoStateSub?.cancel());
     _controller.close();
+    SystemChrome.setPreferredOrientations(const [DeviceOrientation.portraitUp]);
     super.dispose();
   }
 
@@ -179,7 +183,12 @@ class _YoutubeVideoPageState extends ConsumerState<_YoutubeVideoPage> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: Text(widget.title),
+        title: Text(
+          widget.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: context.text.titleLarge?.copyWith(color: Colors.white),
+        ),
       ),
       body: Center(child: YoutubePlayer(controller: _controller)),
     );

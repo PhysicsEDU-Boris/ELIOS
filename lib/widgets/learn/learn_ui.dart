@@ -99,7 +99,9 @@ class LearnSectionHeader extends StatelessWidget {
               child: Text(title, style: context.text.titleLarge),
             ),
           ),
-          if (actionLabel != null)
+          if (actionLabel != null && onAction == null)
+            Text(actionLabel!, style: context.text.labelLarge?.copyWith(color: p.primaryText))
+          else if (actionLabel != null)
             TextButton(
               onPressed: onAction,
               style: TextButton.styleFrom(
@@ -357,8 +359,11 @@ class LessonCard extends StatelessWidget {
     this.primaryButton = false,
     this.onTap,
     this.coverBadge,
+    this.footer,
   });
 
+  /// Full-width content under the meta row (progress bars).
+  final Widget? footer;
   final Widget cover;
   final String meta;
   final String title;
@@ -409,6 +414,7 @@ class LessonCard extends StatelessWidget {
                     ],
                   ),
                 ],
+                if (footer != null) ...[const SizedBox(height: 6), footer!],
               ],
             ),
           ),
@@ -423,6 +429,7 @@ class LessonCard extends StatelessWidget {
                       style: FilledButton.styleFrom(
                         backgroundColor: p.surfaceRaised,
                         foregroundColor: p.textPrimary,
+                        side: BorderSide.none,
                       ),
                       child: Text(buttonLabel!),
                     ),
@@ -1043,7 +1050,8 @@ class LearnListView extends StatelessWidget {
           Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 600),
-              child: c,
+              // Full width so free text aligns left, not centred.
+              child: SizedBox(width: double.infinity, child: c),
             ),
           ),
       ],
@@ -1184,6 +1192,7 @@ class LearnStateView extends StatelessWidget {
                 minimumSize: const Size(120, 48),
                 backgroundColor: p.surfaceRaised,
                 foregroundColor: p.textPrimary,
+                side: BorderSide.none,
               ),
               child: Text(secondaryLabel!),
             ),
