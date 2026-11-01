@@ -285,7 +285,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         floatingActionButtonLocation: const ElioControlFabLocation(),
         floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
         floatingActionButton: ElioTheme.wrap(
-          ElioControlButton(onTap: () => _onBottomNavigationTap(_controlIndex)),
+          ElioControlButton(
+            onTap: () => _onBottomNavigationTap(_controlIndex),
+            modelAsset: 'assets/models/mobilElios5.glb',
+          ),
         ),
         bottomNavigationBar: ElioTheme.wrap(
           ElioBottomNav(

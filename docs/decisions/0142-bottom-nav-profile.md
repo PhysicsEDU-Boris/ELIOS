@@ -11,6 +11,7 @@ Figma: page N3 Bottom nav 269:2358, component set 270:5746, spec 270:8626. Cells
 - Bar 64 dp + safe-area inset, grows with text scale. Active = filled icon, primary-text label (600) and a 24x3 stroke on the top rule. Focus = 2 px ring + 4 px halo from the palette. No animation of its own; ink splash off with `disableAnimations`.
 - The circle is `ElioControlButton` in `Scaffold.floatingActionButton` (`ElioControlFabLocation`, no animation), so it overlaps the page and the bar stays 64 dp + inset: no strip above the bar, the page runs down to the top rule. The Control cell in the bar keeps the label, tap and semantics.
 - Dark mode toggle gate (`DARK_MODE_OPTION`) is unchanged, in the sidebar.
+- The Control circle is a green sphere (radial gradient, gloss) with a live 3D robot (`assets/models/mobilElios5.glb`, via `flutter_3d_controller`): drag to spin, a still press opens Control. The shipped model is a copy of the owner's file with the three 30% transparent materials made opaque (they washed out on green); the original stays in Downloads. The robot icon shows until the model appears and stays if it fails to load.
 
 ## Not done
 - Under 600 dp only is in the Figma spec; wide layouts (sidebar) are deferred, so the bar shows at every width for now.

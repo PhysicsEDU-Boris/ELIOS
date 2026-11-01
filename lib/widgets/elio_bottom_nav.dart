@@ -3,7 +3,10 @@
 // Tab indices are the app's provider indices (Home 0, Learn 1, Config 2,
 // History 4); only the on-screen order differs. Control (3) is an action and
 // is never selected.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 
 import '../theme/elio_tokens.dart';
 import 'auth/auth_widgets.dart' show authPalette;
@@ -211,24 +214,55 @@ class _CellState extends State<_Cell> {
 /// [ElioControlFabLocation]: it then overlaps the page, not the bar's layout
 /// box, and the page above the bar is not shortened. The Control cell in the bar
 /// carries the semantics.
+///
+/// With [modelAsset] the robot icon is a 3D model the user can spin by dragging
+/// on it; a tap still opens Control. The icon shows until the model has loaded
+/// and stays if it fails (the bar never waits on it).
 class ElioControlButton extends StatefulWidget {
-  const ElioControlButton({super.key, required this.onTap});
+  const ElioControlButton({super.key, required this.onTap, this.modelAsset});
   final VoidCallback onTap;
+  final String? modelAsset;
 
   @override
   State<ElioControlButton> createState() => _ControlButtonState();
 }
 
 class _ControlButtonState extends State<ElioControlButton> {
-  bool _focused = false;
+  bool _focused = false, _loaded = false, _failed = false;
+  Offset? _down;
+  Timer? _showTimer;
+  DateTime _lastTap = DateTime(0);
+
+  @override
+  void initState() {
+    super.initState();
+    // onLoad is not always delivered by the web view; show the model anyway.
+    _showTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _loaded = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _showTimer?.cancel();
+    super.dispose();
+  }
+
+  void _tap() {
+    final now = DateTime.now();
+    if (now.difference(_lastTap) < const Duration(milliseconds: 500)) return;
+    _lastTap = now;
+    widget.onTap();
+  }
 
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context);
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final has3d = widget.modelAsset != null && !_failed;
     return ExcludeSemantics(
       child: InkResponse(
-        onTap: widget.onTap,
+        onTap: _tap,
         onFocusChange: (f) => setState(() => _focused = f),
         highlightShape: BoxShape.circle,
         radius: _controlSize / 2 + _ringGap,
@@ -256,13 +290,86 @@ class _ControlButtonState extends State<ElioControlButton> {
             height: _controlSize,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: p.primary,
+              // A sphere: light from the top left, darker towards the rim.
+              gradient: RadialGradient(
+                center: const Alignment(-0.35, -0.4),
+                radius: 0.95,
+                colors: [
+                  Color.lerp(p.primary, Colors.white, 0.45)!,
+                  p.primary,
+                  p.primaryActive,
+                ],
+                stops: const [0, 0.55, 1],
+              ),
               shape: BoxShape.circle,
               // 1.5 px stroke keeps the circle at 3:1 on white.
               border: Border.all(color: p.primaryText, width: 1.5),
               boxShadow: dark ? ElioGlow.control : ElioLightEffects.card,
             ),
-            child: Icon(Icons.smart_toy, size: 28, color: p.onPrimary),
+            child: !has3d
+                ? Icon(Icons.smart_toy, size: 28, color: p.onPrimary)
+                : ClipOval(
+                    // The web view turns the robot with its own touch handling;
+                    // a short still press is read here as a tap.
+                    child: Listener(
+                      onPointerDown: (e) => _down = e.position,
+                      onPointerUp: (e) {
+                        final d = _down;
+                        _down = null;
+                        if (d != null && (e.position - d).distance < 10) {
+                          _tap();
+                        }
+                      },
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Flutter3DViewer(
+                            src: widget.modelAsset!,
+                            progressBarColor: Colors.transparent,
+                            onProgress: (v) {
+                              if (v >= 1 && mounted)
+                                setState(() => _loaded = true);
+                            },
+                            onLoad: (_) {
+                              if (mounted) setState(() => _loaded = true);
+                            },
+                            onError: (_) {
+                              if (mounted) setState(() => _failed = true);
+                            },
+                          ),
+                          if (!_loaded)
+                            IgnorePointer(
+                              child: Icon(
+                                Icons.smart_toy,
+                                size: 28,
+                                color: p.onPrimary,
+                              ),
+                            ),
+                          // Glossy highlight; the touches pass through.
+                          IgnorePointer(
+                            child: Align(
+                              alignment: const Alignment(-0.35, -0.6),
+                              child: Container(
+                                width: 22,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.white.withValues(alpha: 0.55),
+                                      Colors.white.withValues(alpha: 0),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
           ),
         ),
       ),
