@@ -278,6 +278,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           ),
         ),
         body: _buildCurrentScreen(),
+        drawerScrimColor: Colors.black.withValues(alpha: 0.4),
         onDrawerChanged: (open) => setState(() => _drawerOpen = open),
         bottomNavigationBar: ElioTheme.wrap(
           ElioBottomNav(

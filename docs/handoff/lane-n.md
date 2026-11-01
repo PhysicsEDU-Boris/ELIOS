@@ -5,4 +5,6 @@ Branch `feat/n3-bottom-nav` from `feature/live-scan` (#69 merged). Decision 0142
 - Tests: `test/widgets/elio_bottom_nav_test.dart` (light and dark order, taps, Control never selected, avatar fallbacks, 320 dp at text 1.3). Break-checked: wrong Config index and swapped order both fail.
 - Not tested: `HomeShell` provider mapping and quiz guard (HomeScreen needs Firebase); not built or run on Mac or phone.
 - Pages with their own bottom padding or SafeArea (check by eye, not edited): home_screen, config_screen, elearning_tab, scan_history_screen, quiz_page. The bar's layout box now includes the 16 dp raise, so body is 16 dp shorter than with the old bar.
+- Figma read: N3 Bottom nav 269:2358 (spec 270:8626, component 270:2378).
 - Unrelated: worktree `elios-n3-shell` holds uncommitted rail/sidebar work (wide layouts); untouched.
+- Device check (1 Nov 2026, Motorola edge 60 fusion, debug APK, dark): Profile opens the left drawer with the scrim over the bar and the Profile ring; Learn and Config switch tabs; Control opens the landscape route and Back returns. Not checked on device: light mode, quiz guard, text scale 1.3, offline photo. Learn and Config pages are still the legacy light look under the dark bar.
