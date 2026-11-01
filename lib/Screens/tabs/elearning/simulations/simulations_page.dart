@@ -37,65 +37,6 @@ class SimulationsPage extends StatelessWidget {
 class SimulationsContent extends ConsumerWidget {
   const SimulationsContent({super.key});
 
-  void _openModule(BuildContext context, WidgetRef ref, PhysicsModule module) {
-    if (!module.isAvailable) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('${module.title} segera hadir.')));
-      return;
-    }
-
-    ref.read(physicsProgressProvider.notifier).markModuleViewed(module.id.name);
-
-    switch (module.id) {
-      case PhysicsModuleId.torque:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const TorqueSimulationPage()),
-        );
-        break;
-      case PhysicsModuleId.density:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const DensitySimulationPage()),
-        );
-        break;
-      case PhysicsModuleId.heat:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const HeatSimulationPage()),
-        );
-        break;
-      case PhysicsModuleId.workEnergy:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const WorkEnergySimulationPage()),
-        );
-        break;
-      case PhysicsModuleId.kinematics:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const KinematicsSimulationPage()),
-        );
-        break;
-      case PhysicsModuleId.pwm:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const PwmSimulationPage()),
-        );
-        break;
-      case PhysicsModuleId.power:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const PowerBudgetSimulationPage()),
-        );
-        break;
-      case PhysicsModuleId.deepDive:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const DeepDiveSimulationPage()),
-        );
-        break;
-      case PhysicsModuleId.quiz:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const PhysicsQuizPage()),
-        );
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final progressState = ref.watch(physicsProgressProvider);
@@ -142,7 +83,7 @@ class SimulationsContent extends ConsumerWidget {
                     child: _SimulationCard(
                       module: module,
                       isCompleted: progress?.viewedModuleIds.contains(module.id.name) ?? false,
-                      onTap: () => _openModule(context, ref, module),
+                      onTap: () => openPhysicsModule(context, ref, module),
                     ),
                   ),
               ],
@@ -424,5 +365,65 @@ class _PhysicsProgressOverviewCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Opens a simulation page; also used by the Home search.
+void openPhysicsModule(BuildContext context, WidgetRef ref, PhysicsModule module) {
+  if (!module.isAvailable) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('${module.title} segera hadir.')));
+    return;
+  }
+
+  ref.read(physicsProgressProvider.notifier).markModuleViewed(module.id.name);
+
+  switch (module.id) {
+    case PhysicsModuleId.torque:
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const TorqueSimulationPage()),
+      );
+      break;
+    case PhysicsModuleId.density:
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const DensitySimulationPage()),
+      );
+      break;
+    case PhysicsModuleId.heat:
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const HeatSimulationPage()),
+      );
+      break;
+    case PhysicsModuleId.workEnergy:
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const WorkEnergySimulationPage()),
+      );
+      break;
+    case PhysicsModuleId.kinematics:
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const KinematicsSimulationPage()),
+      );
+      break;
+    case PhysicsModuleId.pwm:
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const PwmSimulationPage()),
+      );
+      break;
+    case PhysicsModuleId.power:
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const PowerBudgetSimulationPage()),
+      );
+      break;
+    case PhysicsModuleId.deepDive:
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const DeepDiveSimulationPage()),
+      );
+      break;
+    case PhysicsModuleId.quiz:
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const PhysicsQuizPage()),
+      );
+      break;
   }
 }

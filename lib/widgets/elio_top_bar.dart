@@ -18,6 +18,7 @@ class ElioTopBar extends StatelessWidget {
     this.subtitle,
     this.photoUrl,
     this.avatarFocusNode,
+    this.trailing,
   });
 
   final String title;
@@ -27,6 +28,9 @@ class ElioTopBar extends StatelessWidget {
 
   /// Focus returns here when the drawer closes.
   final FocusNode? avatarFocusNode;
+
+  /// Optional actions after the title (Home: trophy pill and bell).
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +49,7 @@ class ElioTopBar extends StatelessWidget {
           const SizedBox(width: 4),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(right: 16),
+              padding: EdgeInsets.only(right: trailing == null ? 16 : 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -73,6 +77,7 @@ class ElioTopBar extends StatelessWidget {
               ),
             ),
           ),
+          if (trailing != null) ...[trailing!, const SizedBox(width: 4)],
         ],
       ),
     );

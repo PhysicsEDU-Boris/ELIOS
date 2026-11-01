@@ -313,7 +313,17 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     child: SafeArea(
                       bottom: false,
                       child: ElioTopBar(
-                        title: _pageTitle,
+                        title: _currentIndex == 0
+                            ? 'Hello, ${homeDisplayName(user)}'
+                            : _pageTitle,
+                        subtitle: _currentIndex == 0
+                            ? 'Ready to learn with ELIO?'
+                            : null,
+                        trailing: _currentIndex == 0
+                            ? HomeHeaderActions(
+                                onOpenLearning: () => _onBottomNavigationTap(1),
+                              )
+                            : null,
                         photoUrl: user?.photoURL,
                         avatarFocusNode: _avatarFocus,
                         onOpenProfile: () => _drawerKey.currentState?.open(),
