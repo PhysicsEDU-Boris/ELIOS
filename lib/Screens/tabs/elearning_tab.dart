@@ -1,33 +1,33 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/elearning_module.dart';
-import '../../models/app_notification.dart';
+import '../../models/guide_lesson.dart';
 import '../../models/learning_progress.dart';
-import '../../models/waste_category.dart';
-import '../../providers/app_notification_provider.dart';
+import '../../models/physics_module.dart';
+import '../../models/quiz_set.dart';
+import '../../models/video_lesson.dart';
 import '../../providers/learning_progress_provider.dart';
 import '../../providers/navigation_provider.dart';
+import '../../providers/physics_progress_provider.dart';
 import '../../services/elearning_content_service.dart';
-import '../../widgets/elio_learning_app_bar.dart';
+import '../../theme/elio_theme.dart';
+import '../../widgets/learn/learn_ui.dart';
 import 'elearning/guides_page.dart';
+import 'elearning/learn_content.dart';
+import 'elearning/lesson_page.dart';
+import 'elearning/module_page.dart';
+import 'elearning/progress_page.dart';
 import 'elearning/quiz_page.dart';
-import 'elearning/video_lessons_page.dart';
 import 'elearning/simulations/simulations_page.dart';
+import 'elearning/video_lessons_page.dart';
 
-const _background = Color(0xFFF8FAF9);
-const _primary = Color(0xFF00694C);
-const _ink = Color(0xFF191C1C);
-const _muted = Color(0xFF3D4943);
-const _border = Color(0xFFE6E9E8);
-
-enum LearningSection { allCategories, guides, videoLessons, quiz, simulations }
-
+/// Learn hub, L1 v2 (Figma 309:4863). Content streams from Firestore
+/// through [elearningContentServiceProvider]; progress from the providers.
 class ElearningTab extends ConsumerStatefulWidget {
   final ValueChanged<bool>? onQuizActiveChanged;
+
+  /// Kept for the shell; quizzes now run on their own route.
   final int quizResetGeneration;
 
   const ElearningTab({
@@ -41,559 +41,628 @@ class ElearningTab extends ConsumerStatefulWidget {
 }
 
 class _ElearningTabState extends ConsumerState<ElearningTab> {
-  final ElearningContentService _service = ElearningContentService();
-  LearningSection _selectedSection = LearningSection.allCategories;
-  String? _selectedModuleId;
-  String? _pendingResumeVideoId;
-  String? _pendingResumeGuideId;
-  bool _quizInProgress = false;
-  final Set<LearningSection> _visitedSections = <LearningSection>{
-    LearningSection.allCategories,
-  };
+  late LearnStreams _streams;
 
-  void _selectSection(LearningSection section) {
-    setState(() {
-      _selectedSection = section;
-      _visitedSections.add(section);
-      if (section == LearningSection.allCategories && !_quizInProgress) {
-        _selectedModuleId = null;
-      }
-    });
+  @override
+  void initState() {
+    super.initState();
+    _streams = LearnStreams(ref.read(elearningContentServiceProvider));
   }
 
-  void _clearModuleFilter() {
-    if (_selectedModuleId == null || _quizInProgress) return;
-    setState(() => _selectedModuleId = null);
-  }
+  void _retry() => setState(
+    () => _streams = LearnStreams(ref.read(elearningContentServiceProvider)),
+  );
 
-  void _handleLearningResumeIntent(LearningResumeIntent intent) {
-    if (!mounted) return;
-
-    setState(() {
+  Future<void> _handleResumeIntent(LearningResumeIntent intent) async {
+    final service = ref.read(elearningContentServiceProvider);
+    ref.read(learningResumeIntentProvider.notifier).state = null;
+    try {
       switch (intent.type) {
         case LearningResumeType.video:
-          _selectedSection = LearningSection.videoLessons;
-          _visitedSections.add(LearningSection.videoLessons);
-          _selectedModuleId = intent.moduleId;
-          _pendingResumeVideoId = intent.id;
-          _pendingResumeGuideId = null;
-          break;
+          final videos = await service
+              .watchVideoLessons(moduleId: intent.moduleId)
+              .first;
+          final video = videos.where((v) => v.id == intent.id).firstOrNull;
+          if (video != null && mounted) {
+            await openVideoLesson(context, ref, video);
+          }
         case LearningResumeType.guide:
-          _selectedSection = LearningSection.guides;
-          _visitedSections.add(LearningSection.guides);
-          _selectedModuleId = intent.moduleId;
-          _pendingResumeVideoId = null;
-          _pendingResumeGuideId = intent.id;
-          break;
+          final guides = await service
+              .watchGuideLessons(moduleId: intent.moduleId)
+              .first;
+          final guide = guides.where((g) => g.id == intent.id).firstOrNull;
+          if (guide != null && mounted) {
+            await openGuideLesson(context: context, ref: ref, lesson: guide);
+          }
         case LearningResumeType.quiz:
-          _selectedSection = LearningSection.quiz;
-          _visitedSections.add(LearningSection.quiz);
-          _selectedModuleId = intent.moduleId ?? intent.id;
-          _pendingResumeVideoId = null;
-          _pendingResumeGuideId = null;
-          break;
+          if (mounted) {
+            await Navigator.of(context).push(
+              learnRoute<void>(QuizPage(moduleId: intent.moduleId ?? intent.id)),
+            );
+          }
       }
-    });
-
-    _clearLearningResumeIntentLater(intent);
-  }
-
-  void _clearLearningResumeIntentLater(LearningResumeIntent handledIntent) {
-    Future<void>(() {
-      if (!mounted) return;
-
-      final current = ref.read(learningResumeIntentProvider);
-      if (current == null) return;
-
-      final isSameIntent =
-          current.type == handledIntent.type &&
-          current.id == handledIntent.id &&
-          current.moduleId == handledIntent.moduleId;
-
-      if (!isSameIntent) return;
-
-      ref.read(learningResumeIntentProvider.notifier).state = null;
-    });
-  }
-
-  void _clearPendingResumeVideo() {
-    if (!mounted || _pendingResumeVideoId == null) return;
-    setState(() => _pendingResumeVideoId = null);
-  }
-
-  void _clearPendingResumeGuide() {
-    if (!mounted || _pendingResumeGuideId == null) return;
-    setState(() => _pendingResumeGuideId = null);
-  }
-
-  Future<void> _showLearningPath(
-    ElearningModule module,
-    LearningProgress? progress,
-  ) async {
-    final moduleProgress =
-        progress?.categories[module.id]?.progressPercentage ?? 0;
-
-    setState(() => _selectedModuleId = module.id);
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      showDragHandle: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) => _LearningPathSheet(
-        module: module,
-        progress: moduleProgress,
-        onSectionSelected: (section) {
-          Navigator.pop(sheetContext);
-          setState(() {
-            _selectedModuleId = module.id;
-            _selectedSection = section;
-            _visitedSections.add(section);
-          });
-        },
-      ),
-    );
-  }
-
-  Widget _buildSection(LearningSection section, LearningProgress? progress) {
-    return switch (section) {
-      LearningSection.allCategories => _AllCategoriesContent(
-        service: _service,
-        progress: progress,
-        onModuleSelected: (module) => _showLearningPath(module, progress),
-      ),
-      LearningSection.guides => GuidesContent(
-        selectedModuleId: _selectedModuleId,
-        onClearFilter: _clearModuleFilter,
-        resumeGuideId: _pendingResumeGuideId,
-        onResumeGuideHandled: _clearPendingResumeGuide,
-      ),
-      LearningSection.videoLessons => VideoLessonsContent(
-        selectedModuleId: _selectedModuleId,
-        onClearFilter: _clearModuleFilter,
-        resumeVideoId: _pendingResumeVideoId,
-        onResumeVideoHandled: _clearPendingResumeVideo,
-      ),
-      LearningSection.quiz => QuizContent(
-        key: ValueKey(widget.quizResetGeneration),
-        selectedModuleId: _selectedModuleId,
-        onClearFilter: _clearModuleFilter,
-        onQuizActiveChanged: (active) {
-          if (_quizInProgress == active) return;
-          setState(() => _quizInProgress = active);
-        widget.onQuizActiveChanged?.call(active);
-        },
-      ),
-      LearningSection.simulations => const SimulationsContent(),
-    };
+    } catch (error) {
+      debugPrint('[Learn] resume failed: $error');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<LearningResumeIntent?>(learningResumeIntentProvider, (
-      previous,
-      next,
-    ) {
-      if (next == null) return;
-      _handleLearningResumeIntent(next);
+    ref.listen<LearningResumeIntent?>(learningResumeIntentProvider, (_, next) {
+      if (next != null) _handleResumeIntent(next);
     });
-
-    final pendingIntent = ref.read(learningResumeIntentProvider);
-    if (pendingIntent != null) {
+    final pending = ref.read(learningResumeIntentProvider);
+    if (pending != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
         final intent = ref.read(learningResumeIntentProvider);
-        if (intent != null) _handleLearningResumeIntent(intent);
+        if (mounted && intent != null) _handleResumeIntent(intent);
       });
     }
 
-    final progress = ref.watch(learningProgressProvider).valueOrNull;
-    final unreadNotifications = ref.watch(unreadNotificationCountProvider);
-
-    return Scaffold(
-      backgroundColor: _background,
-      appBar: ElioLearningAppBar(
-        title: 'ELIO',
-        action: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            IconButton(
-              onPressed: () => _showLearningNotificationsTopPanel(context),
-              icon: const Icon(Icons.notifications_none_rounded),
-              color: _primary,
-              tooltip: 'Notifications',
-            ),
-            if (unreadNotifications > 0)
-              Positioned(
-                right: 2,
-                top: 2,
-                child: Container(
-                  constraints: const BoxConstraints(minWidth: 17),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFBA1A1A),
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: Colors.white, width: 1.4),
-                  ),
-                  child: Text(
-                    unreadNotifications > 9 ? '9+' : '$unreadNotifications',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 720),
-                  child: _LearningFilterChips(
-                    selectedSection: _selectedSection,
-                    onSectionSelected: _selectSection,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Expanded(
-              child: IndexedStack(
-                index: _selectedSection.index,
-                children: LearningSection.values
-                    .map((section) {
-                      if (_visitedSections.contains(section) ||
-                          section == _selectedSection) {
-                        return _buildSection(section, progress);
-                      }
-                      return const SizedBox.shrink();
-                    })
-                    .toList(growable: false),
-              ),
-            ),
-          ],
+    return ElioTheme.wrap(
+      Builder(
+        builder: (context) => ColoredBox(
+          color: context.elio.background,
+          child: LearnHub(streams: _streams, onRetry: _retry),
         ),
       ),
     );
   }
 }
 
-void _showLearningNotificationsTopPanel(BuildContext context) {
-  showGeneralDialog<void>(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: 'Dismiss notifications',
-    barrierColor: Colors.black.withValues(alpha: 0.18),
-    transitionDuration: const Duration(milliseconds: 260),
-    pageBuilder: (dialogContext, animation, secondaryAnimation) {
-      return const SizedBox.shrink();
-    },
-    transitionBuilder: (dialogContext, animation, secondaryAnimation, child) {
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      );
+/// The four content streams of the hub, created once per load or retry.
+class LearnStreams {
+  LearnStreams(ElearningContentService service)
+    : modules = service.watchModules(),
+      videos = service.watchVideoLessons(),
+      guides = service.watchGuideLessons(),
+      quizSets = service.watchQuizSets();
 
-      return SafeArea(
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, -1),
-              end: Offset.zero,
-            ).animate(curved),
-            child: FadeTransition(
-              opacity: curved,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-                child: Material(
-                  color: Colors.transparent,
-                  child: Consumer(
-                    builder: (context, ref, _) {
-                      final items = ref.watch(appNotificationProvider);
-                      final notifier = ref.read(
-                        appNotificationProvider.notifier,
-                      );
+  final Stream<List<ElearningModule>> modules;
+  final Stream<List<VideoLesson>> videos;
+  final Stream<List<GuideLesson>> guides;
+  final Stream<List<QuizSet>> quizSets;
+}
 
-                      return Container(
-                        constraints: BoxConstraints(
-                          maxWidth: 720,
-                          maxHeight:
-                              MediaQuery.of(dialogContext).size.height * 0.78,
-                        ),
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(22),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.14),
-                              blurRadius: 24,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Center(
-                              child: Container(
-                                width: 42,
-                                height: 4,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFD8DEDB),
-                                  borderRadius: BorderRadius.circular(99),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Notifications',
-                                    style: GoogleFonts.inter(
-                                      color: _ink,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () =>
-                                      Navigator.of(dialogContext).pop(),
-                                  icon: const Icon(Icons.close_rounded),
-                                  tooltip: 'Close notifications',
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Learning updates and robot alerts from ELIO.',
-                              style: GoogleFonts.inter(
-                                color: _muted,
-                                fontSize: 13,
-                                height: 1.4,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Flexible(
-                              child: SingleChildScrollView(
-                                child: items.isEmpty
-                                    ? const _LearningNotificationsEmptyState()
-                                    : Column(
-                                        children: [
-                                          for (
-                                            var i = 0;
-                                            i < items.length;
-                                            i++
-                                          ) ...[
-                                            _LearningNotificationTile(
-                                              item: items[i],
-                                              onTap: () {
-                                                notifier.markRead(items[i].id);
-                                              },
-                                            ),
-                                            if (i != items.length - 1)
-                                              const Divider(
-                                                height: 1,
-                                                color: _border,
-                                              ),
-                                          ],
-                                        ],
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            if (items.isNotEmpty) ...[
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      onPressed: notifier.markAllRead,
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: _primary,
-                                        visualDensity: VisualDensity.compact,
-                                      ),
-                                      child: Text(
-                                        'Mark all read',
-                                        style: GoogleFonts.inter(
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      onPressed: notifier.clearAll,
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: const Color(
-                                          0xFFBA1A1A,
-                                        ),
-                                        visualDensity: VisualDensity.compact,
-                                      ),
-                                      child: Text(
-                                        'Clear all',
-                                        style: GoogleFonts.inter(
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                            ],
-                            SizedBox(
-                              width: double.infinity,
-                              child: FilledButton.icon(
-                                onPressed: () =>
-                                    Navigator.of(dialogContext).pop(),
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: _primary,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                ),
-                                icon: const Icon(Icons.check_rounded, size: 18),
-                                label: Text(
-                                  'Done',
-                                  style: GoogleFonts.inter(
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
+/// Hub body with its states: skeleton, error, no modules, first launch.
+class LearnHub extends ConsumerWidget {
+  const LearnHub({super.key, required this.streams, required this.onRetry});
+
+  final LearnStreams streams;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return StreamBuilder<List<ElearningModule>>(
+      stream: streams.modules,
+      builder: (context, modulesSnap) {
+        if (modulesSnap.hasError) {
+          return LearnListView(
+            children: [LearnModulesError(onRetry: onRetry)],
+          );
+        }
+        if (!modulesSnap.hasData) {
+          return const LearnListView(children: [LearnHubSkeleton()]);
+        }
+        final modules = modulesSnap.data!;
+        if (modules.isEmpty) {
+          return const LearnListView(children: [LearnNoModules()]);
+        }
+        return StreamBuilder<List<VideoLesson>>(
+          stream: streams.videos,
+          builder: (context, videosSnap) => StreamBuilder<List<GuideLesson>>(
+            stream: streams.guides,
+            builder: (context, guidesSnap) => StreamBuilder<List<QuizSet>>(
+              stream: streams.quizSets,
+              builder: (context, quizSnap) => _HubContent(
+                modules: modules,
+                videos: videosSnap.data,
+                guides: guidesSnap.data,
+                quizSets: quizSnap.data,
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+}
+
+class _HubContent extends ConsumerWidget {
+  const _HubContent({
+    required this.modules,
+    required this.videos,
+    required this.guides,
+    required this.quizSets,
+  });
+
+  final List<ElearningModule> modules;
+  final List<VideoLesson>? videos;
+  final List<GuideLesson>? guides;
+  final List<QuizSet>? quizSets;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final progress = ref.watch(learningProgressProvider).valueOrNull;
+    final physics = ref.watch(physicsProgressProvider).valueOrNull;
+    final lessonsLoaded = videos != null && guides != null;
+    final lessons = mergeLessons(guides ?? const [], videos ?? const []);
+    final firstLaunch = isFirstLaunch(progress);
+    final overall = progress?.weightedProgressFor(
+          totalVideos: videos?.length ?? 0,
+          totalGuides: guides?.length ?? 0,
+          totalQuizModules: modules.length,
+        ) ??
+        0;
+    final started = modules
+        .where((m) => moduleProgress(m.id, lessons, progress) > 0)
+        .length;
+    final continuing = inProgressLessons(lessons, progress);
+    final recentModule = continuing.firstOrNull?.moduleId;
+
+    void push(Widget page) => Navigator.of(context).push(learnRoute<void>(page));
+    void openLesson(LearnLesson l) => push(LessonPage(lesson: l));
+
+    return LearnListView(
+      children: [
+        const SizedBox(height: 8),
+        if (firstLaunch)
+          _Hero(
+            title: 'Welcome to Learn',
+            body:
+                'Start with ${binLabel(modules.first.id)}: '
+                '${lessons.where((l) => l.moduleId == modules.first.id).length} '
+                'short lessons, then try the quiz.',
+            buttonLabel: 'Start module 1',
+            onPressed: () => push(ModulePage(module: modules.first)),
+          )
+        else
+          _Hero(
+            title: 'Knowledge challenge',
+            body: quizSets == null || quizSets!.isEmpty
+                ? 'Test how ELIO sorts waste.'
+                : '${quizSets!.length} quizzes. Test how ELIO sorts waste.',
+            buttonLabel: 'Take quiz',
+            buttonIcon: Icons.help_outline_rounded,
+            onPressed: () => push(
+              const QuizPage(),
+            ),
+          ),
+        const SizedBox(height: 16),
+        ProgressSummaryCard(
+          onTap: () => push(const ProgressPage()),
+          title: 'Your learning progress',
+          subtitle: started == 0
+              ? 'No modules started yet'
+              : '$started of ${modules.length} modules in progress',
+          value: overall,
+          footer: '${(overall * 100).round()}% overall completion',
+        ),
+        LearnSectionHeader(
+          title: 'Course modules',
+          actionLabel: 'See all',
+          onAction: () => push(const ProgressPage()),
+        ),
+        _BinRow(
+          modules: modules,
+          selectedId: recentModule,
+          onTap: (m) => push(ModulePage(module: m)),
+        ),
+        LearnSectionHeader(
+          title: 'Continue learning',
+          actionLabel: 'See all',
+          onAction: () => push(
+            LessonListPage(title: 'All lessons', lessons: lessons),
+          ),
+        ),
+        if (!lessonsLoaded)
+          const LearnSkeleton(height: 200)
+        else if (continuing.isEmpty)
+          const LearnHintCard(
+            text:
+                'Nothing in progress yet. Lessons you open will wait for you here.',
+          )
+        else
+          LearnCarousel(
+            children: [
+              for (final l in continuing)
+                LessonTile(lesson: l, progress: progress, onTap: () => openLesson(l)),
+            ],
+          ),
+        LearnSectionHeader(
+          title: 'Watch and learn',
+          actionLabel: videos == null ? null : '${videos!.length} videos',
+          onAction: () => push(
+            LessonListPage(
+              title: 'Videos',
+              lessons: [for (final v in videos!) LearnLesson.video(v)],
+            ),
+          ),
+        ),
+        if (videos == null)
+          const LearnSkeleton(height: 150)
+        else if (videos!.isEmpty)
+          const LearnHintCard(text: 'No videos published yet.')
+        else
+          LearnCarousel(
+            itemWidth: 180,
+            children: [
+              for (final v in videos!)
+                VideoTile(
+                  lesson: LearnLesson.video(v),
+                  moduleTitle: moduleTitleFor(modules, v.moduleId),
+                  onTap: () => openLesson(LearnLesson.video(v)),
+                ),
+            ],
+          ),
+        LearnSectionHeader(
+          title: 'Physics simulations',
+          actionLabel: '${physicsModules.length} modules',
+          onAction: () => push(const SimulationListPage()),
+        ),
+        LearnCarousel(
+          itemWidth: 200,
+          children: [
+            for (final m in physicsModules)
+              SimulationCard(
+                canvasAsset: LearnArt.simulation(m.id),
+                tag: 'Simulasi · ${m.tag.split(' · ').first}',
+                title: m.title,
+                minutes: m.durationMinutes,
+                done: physics?.viewedModuleIds.contains(m.id.name) ?? false,
+                onTap: () => openSimulation(context, ref, m),
+              ),
+          ],
+        ),
+        LearnSectionHeader(
+          title: 'Guides',
+          actionLabel: 'See all',
+          onAction: () => push(
+            LessonListPage(
+              title: 'Guides',
+              lessons: [for (final g in guides ?? const <GuideLesson>[]) LearnLesson.guide(g)],
+            ),
+          ),
+        ),
+        if (guides == null)
+          const LearnSkeleton(height: 160)
+        else if (guides!.isEmpty)
+          const LearnHintCard(text: 'No guides published yet.')
+        else
+          LearnListCard(
+            children: [
+              for (final g in guides!.take(4))
+                LessonRow(
+                  lesson: LearnLesson.guide(g),
+                  progress: progress,
+                  subtitle: '${moduleTitleFor(modules, g.moduleId)} · ${g.description}',
+                  onTap: () => openLesson(LearnLesson.guide(g)),
+                ),
+            ],
+          ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+/// True when the learner has not touched any lesson or quiz yet.
+bool isFirstLaunch(LearningProgress? p) =>
+    p == null ||
+    (p.completedVideoIds.isEmpty &&
+        p.completedGuideIds.isEmpty &&
+        p.videoLastAccessed.isEmpty &&
+        p.guideLastAccessed.isEmpty &&
+        p.quizScores.isEmpty &&
+        p.completedQuizModules.isEmpty);
+
+String moduleTitleFor(List<ElearningModule> modules, String id) {
+  final m = modules.where((m) => m.id == id).firstOrNull;
+  return m == null || m.order <= 0 ? binLabel(id) : 'Module ${m.order}';
+}
+
+class _Hero extends StatelessWidget {
+  const _Hero({
+    required this.title,
+    required this.body,
+    required this.buttonLabel,
+    required this.onPressed,
+    this.buttonIcon,
+  });
+
+  final String title;
+  final String body;
+  final String buttonLabel;
+  final IconData? buttonIcon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    return LearnCard(
+      color: p.primary,
+      borderColor: p.primary,
+      radius: learnRadiusXl,
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: context.text.headlineLarge?.copyWith(color: p.onPrimary)),
+                const SizedBox(height: 8),
+                Text(body, style: context.text.bodySmall?.copyWith(color: p.onPrimary)),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: onPressed,
+                  icon: buttonIcon == null ? null : Icon(buttonIcon),
+                  label: Text(buttonLabel),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: p.surface,
+                    foregroundColor: p.textPrimary,
+                    minimumSize: const Size(48, 48),
+                    shape: const StadiumBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Expanded(flex: 2, child: LearnIllustration(LearnArt.mascot, height: 120)),
+        ],
+      ),
+    );
+  }
+}
+
+class _BinRow extends StatelessWidget {
+  const _BinRow({required this.modules, required this.selectedId, required this.onTap});
+
+  final List<ElearningModule> modules;
+  final String? selectedId;
+  final ValueChanged<ElearningModule> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = [
+      for (final m in modules)
+        BinCard(
+          label: binLabel(m.id),
+          iconAsset: LearnArt.bin(m.id),
+          selected: m.id == selectedId,
+          onTap: () => onTap(m),
+        ),
+    ];
+    if (cards.length <= 3) {
+      return IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < cards.length; i++) ...[
+              if (i > 0) const SizedBox(width: 8),
+              Expanded(child: cards[i]),
+            ],
+          ],
         ),
       );
-    },
+    }
+    return LearnCarousel(itemWidth: 120, children: cards);
+  }
+}
+
+/// Lesson card for carousels and the module grid.
+class LessonTile extends StatelessWidget {
+  const LessonTile({
+    super.key,
+    required this.lesson,
+    required this.progress,
+    required this.onTap,
+    this.showButton = false,
+  });
+
+  final LearnLesson lesson;
+  final LearningProgress? progress;
+  final VoidCallback onTap;
+  final bool showButton;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    final state = lesson.state(progress);
+    final pct = (lesson.progress(progress) * 100).round();
+    return LessonCard(
+      onTap: onTap,
+      cover: LearnThumbnail(url: lesson.imageUrl, fallbackAsset: lesson.fallbackArt),
+      meta: lesson.meta,
+      title: lesson.title,
+      leading: lesson.lengthLabel.isEmpty
+          ? null
+          : LearnMeta(
+              icon: lesson.isVideo ? Icons.play_circle_outline_rounded : Icons.description_outlined,
+              label: lesson.isVideo ? lesson.lengthLabel : 'Guide',
+            ),
+      trailing: switch (state) {
+        LessonState.done => LearnMeta(icon: Icons.check_rounded, label: 'Done', color: p.primaryText),
+        LessonState.inProgress => LearnMeta(icon: Icons.trending_up_rounded, label: '$pct%', color: p.primaryText),
+        LessonState.start => LearnMeta(icon: Icons.trending_up_rounded, label: 'New', color: p.primaryText),
+      },
+      buttonLabel: showButton ? lesson.actionLabel(progress) : null,
+      primaryButton: state != LessonState.done,
+    );
+  }
+}
+
+/// Video card with thumbnail and fallback.
+class VideoTile extends StatelessWidget {
+  const VideoTile({super.key, required this.lesson, required this.moduleTitle, required this.onTap});
+
+  final LearnLesson lesson;
+  final String moduleTitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => VideoCard(
+    thumbnail: LearnThumbnail(url: lesson.imageUrl, fallbackAsset: lesson.fallbackArt),
+    duration: lesson.lengthLabel,
+    title: lesson.title,
+    subtitle: moduleTitle,
+    onTap: onTap,
   );
 }
 
-class _LearningNotificationTile extends StatelessWidget {
-  final AppNotification item;
-  final VoidCallback? onTap;
+/// Guide / video row with a done check.
+class LessonRow extends StatelessWidget {
+  const LessonRow({
+    super.key,
+    required this.lesson,
+    required this.progress,
+    required this.subtitle,
+    required this.onTap,
+    this.highlighted = false,
+  });
 
-  const _LearningNotificationTile({required this.item, this.onTap});
+  final LearnLesson lesson;
+  final LearningProgress? progress;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
-    final color = _notificationColor(item.type);
-
-    return InkWell(
+    final done = lesson.state(progress) == LessonState.done;
+    return GuideLessonRow(
+      title: lesson.title,
+      subtitle: subtitle,
+      icon: lesson.isVideo ? Icons.play_circle_outline_rounded : Icons.description_outlined,
+      highlighted: highlighted,
+      trailing: done ? const DoneCheck() : null,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 13),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(_notificationIcon(item.type), color: color, size: 21),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: GoogleFonts.inter(
-                      color: _ink,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                    ),
+    );
+  }
+}
+
+/// "Learning modules could not be loaded." (Figma 312:6466).
+class LearnModulesError extends StatelessWidget {
+  const LearnModulesError({super.key, required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => LearnStateView(
+    asset: LearnArt.stateOffline,
+    title: 'Learning modules could not be loaded.',
+    message:
+        'Check the connection to ELIO or the internet, then try again. '
+        'Lessons you already opened still work offline.',
+    primaryLabel: 'Try again',
+    onPrimary: onRetry,
+    secondaryLabel: 'Open offline lessons',
+    onSecondary: () => Navigator.of(context).push(learnRoute<void>(const OfflineLessonsPage())),
+  );
+}
+
+/// "No learning modules available yet." (Figma 312:6660).
+class LearnNoModules extends StatelessWidget {
+  const LearnNoModules({super.key});
+
+  @override
+  Widget build(BuildContext context) => const LearnStateView(
+    asset: LearnArt.stateEmpty,
+    title: 'No learning modules available yet.',
+    message: 'New lessons appear here as soon as they are published.',
+  );
+}
+
+/// Plain list of lessons ("See all").
+class LessonListPage extends ConsumerWidget {
+  const LessonListPage({super.key, required this.title, required this.lessons});
+
+  final String title;
+  final List<LearnLesson> lessons;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final progress = ref.watch(learningProgressProvider).valueOrNull;
+    return LearnPageScaffold(
+      title: title,
+      body: LearnListView(
+        children: [
+          if (lessons.isEmpty)
+            const LearnStateView(asset: LearnArt.stateEmpty, title: 'Nothing here yet.')
+          else
+            // Three columns of thumbnails (owner request, 1 Nov).
+            LessonCardGrid(
+              columns: 3,
+              gap: 8,
+              children: [
+                for (final l in lessons)
+                  LessonThumbTile(
+                    lesson: l,
+                    progress: progress,
+                    onTap: () => Navigator.of(context).push(learnRoute<void>(LessonPage(lesson: l))),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.message,
-                    style: GoogleFonts.inter(
-                      color: _muted,
-                      fontSize: 11,
-                      height: 1.35,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
 }
 
-class _LearningNotificationsEmptyState extends StatelessWidget {
-  const _LearningNotificationsEmptyState();
+/// Compact thumbnail card for the three-column lesson lists.
+class LessonThumbTile extends StatelessWidget {
+  const LessonThumbTile({super.key, required this.lesson, required this.progress, required this.onTap});
+
+  final LearnLesson lesson;
+  final LearningProgress? progress;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4F7F5),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _border),
-      ),
+    final p = context.elio;
+    final done = lesson.state(progress) == LessonState.done;
+    return LearnCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(6),
+      radius: learnRadiusM,
+      semanticLabel: '${lesson.isVideo ? 'Video' : 'Guide'} ${lesson.title}',
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.notifications_none_rounded, color: _muted, size: 30),
-          const SizedBox(height: 10),
-          Text(
-            'No notifications right now.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              color: _ink,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
+          LearnCover(
+            aspectRatio: lesson.isVideo ? 16 / 9 : 3 / 4,
+            badge: lesson.isVideo ? lesson.lengthLabel : null,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                LearnThumbnail(url: lesson.imageUrl, fallbackAsset: lesson.fallbackArt),
+                if (lesson.isVideo) const Center(child: PlayBadge(size: 28)),
+              ],
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
-            'Learning updates and robot alerts will appear here.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              color: _muted,
-              fontSize: 11,
-              height: 1.4,
-              fontWeight: FontWeight.w600,
-            ),
+            lesson.title,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: context.text.labelLarge,
+          ),
+          const Spacer(),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  lesson.isVideo ? lesson.meta.replaceFirst('Video · ', '') : lesson.meta.replaceFirst('Guide · ', ''),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.text.labelMedium?.copyWith(color: p.textSecondary),
+                ),
+              ),
+              if (done) Icon(Icons.check_circle_rounded, size: 16, color: p.primaryText),
+            ],
           ),
         ],
       ),
@@ -601,1073 +670,91 @@ class _LearningNotificationsEmptyState extends StatelessWidget {
   }
 }
 
-IconData _notificationIcon(AppNotificationType type) {
-  switch (type) {
-    case AppNotificationType.success:
-      return Icons.check_circle_outline_rounded;
-    case AppNotificationType.warning:
-      return Icons.warning_amber_rounded;
-    case AppNotificationType.error:
-      return Icons.error_outline_rounded;
-    case AppNotificationType.robot:
-      return Icons.smart_toy_outlined;
-    case AppNotificationType.learning:
-      return Icons.menu_book_outlined;
-    case AppNotificationType.quiz:
-      return Icons.fact_check_outlined;
-    case AppNotificationType.info:
-      return Icons.info_outline_rounded;
+/// All nine simulations as rows.
+class SimulationListPage extends ConsumerWidget {
+  const SimulationListPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final physics = ref.watch(physicsProgressProvider).valueOrNull;
+    return LearnPageScaffold(
+      title: 'Simulasi',
+      body: LearnListView(
+        children: [
+          for (final m in physicsModules) ...[
+            SimulationRow(
+              icon: m.icon,
+              tag: m.tag,
+              title: m.title,
+              description: m.description,
+              formula: m.formula,
+              minutes: m.durationMinutes,
+              done: physics?.viewedModuleIds.contains(m.id.name) ?? false,
+              onTap: () => openSimulation(context, ref, m),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ],
+      ),
+    );
   }
 }
 
-Color _notificationColor(AppNotificationType type) {
-  switch (type) {
-    case AppNotificationType.success:
-    case AppNotificationType.robot:
-    case AppNotificationType.learning:
-      return _primary;
-    case AppNotificationType.warning:
-      return const Color(0xFFBA7517);
-    case AppNotificationType.error:
-      return const Color(0xFFBA1A1A);
-    case AppNotificationType.quiz:
-      return const Color(0xFF00647C);
-    case AppNotificationType.info:
-      return _primary;
-  }
+/// Lessons from the Firestore offline cache (modules error state).
+class OfflineLessonsPage extends ConsumerStatefulWidget {
+  const OfflineLessonsPage({super.key});
+
+  @override
+  ConsumerState<OfflineLessonsPage> createState() => _OfflineLessonsPageState();
 }
 
-class _AllCategoriesContent extends StatelessWidget {
-  final ElearningContentService service;
-  final LearningProgress? progress;
-  final ValueChanged<ElearningModule> onModuleSelected;
-
-  const _AllCategoriesContent({
-    required this.service,
-    required this.progress,
-    required this.onModuleSelected,
-  });
+class _OfflineLessonsPageState extends ConsumerState<OfflineLessonsPage> {
+  late final Future<({List<GuideLesson> guides, List<VideoLesson> videos})> _cached =
+      ref.read(elearningContentServiceProvider).fetchCachedLessons();
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 36),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final progress = ref.watch(learningProgressProvider).valueOrNull;
+    return LearnPageScaffold(
+      title: 'Offline lessons',
+      body: FutureBuilder(
+        future: _cached,
+        builder: (context, snap) {
+          if (snap.connectionState != ConnectionState.done) {
+            return const Center(child: LearnSpinner(label: 'Loading offline lessons'));
+          }
+          final data = snap.data;
+          final lessons = data == null ? <LearnLesson>[] : mergeLessons(data.guides, data.videos);
+          return LearnListView(
             children: [
-              const _LearningHeader(),
-              const SizedBox(height: 28),
-              _ProgressOverviewCard(progress: progress),
-              const SizedBox(height: 32),
-              _CourseModulesSection(
-                service: service,
-                progress: progress,
-                onModuleSelected: onModuleSelected,
+              Text(
+                'Guides you opened before work offline. Videos need the internet.',
+                style: context.text.bodySmall?.copyWith(color: context.elio.textSecondary),
               ),
+              const SizedBox(height: 16),
+              if (lessons.isEmpty)
+                const LearnStateView(
+                  asset: LearnArt.stateOffline,
+                  title: 'No lessons saved on this device yet.',
+                )
+              else
+                LearnListCard(
+                  children: [
+                    for (final l in lessons)
+                      LessonRow(
+                        lesson: l,
+                        progress: progress,
+                        subtitle: l.meta,
+                        onTap: () => l.isVideo
+                            ? openVideoLesson(context, ref, l.video!)
+                            : openGuideLesson(context: context, ref: ref, lesson: l.guide!),
+                      ),
+                  ],
+                ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LearningHeader extends StatelessWidget {
-  const _LearningHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Learn Waste\nClassification',
-          style: GoogleFonts.inter(
-            color: _ink,
-            fontSize: 36,
-            height: 1.12,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -1.1,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Explore the environmental physics behind waste, master proper '
-          'sorting, and discover how the ELIO robot classifies materials for '
-          'a more sustainable future.',
-          style: GoogleFonts.inter(
-            color: _muted,
-            fontSize: 16,
-            height: 1.55,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _LearningFilterChips extends StatefulWidget {
-  final LearningSection selectedSection;
-  final ValueChanged<LearningSection> onSectionSelected;
-
-  const _LearningFilterChips({
-    required this.selectedSection,
-    required this.onSectionSelected,
-  });
-
-  @override
-  State<_LearningFilterChips> createState() => _LearningFilterChipsState();
-}
-
-class _LearningFilterChipsState extends State<_LearningFilterChips> {
-  final _listKey = GlobalKey<AnimatedListState>();
-  final _scrollController = ScrollController();
-  late final List<LearningSection> _sections;
-  bool _isReordering = false;
-
-  static const _labels = {
-    LearningSection.allCategories: 'All Categories',
-    LearningSection.guides: 'Guides',
-    LearningSection.videoLessons: 'Video Lessons',
-    LearningSection.quiz: 'Quiz',
-    LearningSection.simulations: 'Simulations',
-  };
-
-  @override
-  void initState() {
-    super.initState();
-    _sections = [
-      widget.selectedSection,
-      ...LearningSection.values.where(
-        (section) => section != widget.selectedSection,
-      ),
-    ];
-  }
-
-  @override
-  void didUpdateWidget(covariant _LearningFilterChips oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.selectedSection == widget.selectedSection) return;
-
-    final hasEverySection =
-        _sections.length == LearningSection.values.length &&
-        _sections.toSet().length == LearningSection.values.length;
-    final currentIndex = _sections.indexOf(widget.selectedSection);
-
-    if (!hasEverySection || currentIndex < 0) {
-      _sections
-        ..clear()
-        ..addAll([
-          widget.selectedSection,
-          ...LearningSection.values.where(
-            (section) => section != widget.selectedSection,
-          ),
-        ]);
-      _scrollToStart();
-      return;
-    }
-
-    if (currentIndex == 0) {
-      _scrollToStart();
-      return;
-    }
-
-    final movedSection = _sections.removeAt(currentIndex);
-    _sections.insert(0, movedSection);
-    _scrollToStart();
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _selectSection(LearningSection section) {
-    if (section == widget.selectedSection) {
-      _scrollToStart();
-      return;
-    }
-
-    if (_isReordering) return;
-
-    final oldIndex = _sections.indexOf(section);
-    if (oldIndex <= 0) return;
-
-    _isReordering = true;
-    final removedSection = _sections.removeAt(oldIndex);
-    _listKey.currentState?.removeItem(
-      oldIndex,
-      (context, animation) => _buildAnimatedChip(
-        section: removedSection,
-        animation: animation,
-        selected: false,
-      ),
-      duration: const Duration(milliseconds: 320),
-    );
-
-    _sections.insert(0, removedSection);
-    widget.onSectionSelected(section);
-
-    Future.delayed(const Duration(milliseconds: 80), () {
-      if (!mounted) return;
-
-      _listKey.currentState?.insertItem(
-        0,
-        duration: const Duration(milliseconds: 380),
-      );
-      _isReordering = false;
-    });
-
-    _scrollToStart();
-  }
-
-  void _scrollToStart() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 420),
-        curve: Curves.easeInOutCubic,
-      );
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 42,
-      child: AnimatedList(
-        key: _listKey,
-        controller: _scrollController,
-        scrollDirection: Axis.horizontal,
-        initialItemCount: _sections.length,
-        itemBuilder: (context, index, animation) {
-          final section = _sections[index];
-          return _buildAnimatedChip(
-            section: section,
-            animation: animation,
-            selected: section == widget.selectedSection,
           );
         },
       ),
     );
   }
-
-  Widget _buildAnimatedChip({
-    required LearningSection section,
-    required Animation<double> animation,
-    required bool selected,
-  }) {
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: Curves.easeInOutCubicEmphasized,
-    );
-
-    return FadeTransition(
-      opacity: curved,
-      child: SizeTransition(
-        axis: Axis.horizontal,
-        sizeFactor: curved,
-        child: Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 350),
-            curve: Curves.easeInOutCubic,
-            decoration: BoxDecoration(
-              color: selected ? _primary : _border,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(24),
-              child: InkWell(
-                onTap: () => _selectSection(section),
-                borderRadius: BorderRadius.circular(24),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: Center(
-                    child: AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 350),
-                      curve: Curves.easeInOutCubic,
-                      style: GoogleFonts.inter(
-                        color: selected ? Colors.white : _muted,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      child: Text(_labels[section]!),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProgressOverviewCard extends StatelessWidget {
-  final LearningProgress? progress;
-
-  const _ProgressOverviewCard({required this.progress});
-
-  @override
-  Widget build(BuildContext context) {
-    final value = _overallProgress(progress);
-    final percent = (value * 100).round();
-    final activeModules = wasteCategories.where((category) {
-      return (progress?.categories[category.id]?.progressPercentage ?? 0) > 0;
-    }).length;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.88),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF123524).withValues(alpha: 0.07),
-                blurRadius: 24,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD1FAE5),
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                    child: const Icon(
-                      Icons.insights_rounded,
-                      color: _primary,
-                      size: 23,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Your Learning Progress',
-                          style: GoogleFonts.inter(
-                            color: _ink,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          activeModules == 0
-                              ? 'Start a module to track your journey'
-                              : '$activeModules of ${wasteCategories.length} modules in progress',
-                          style: GoogleFonts.inter(
-                            color: _muted,
-                            fontSize: 12,
-                            height: 1.3,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    '$percent%',
-                    style: GoogleFonts.inter(
-                      color: _primary,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.8,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: value,
-                  minHeight: 9,
-                  backgroundColor: const Color(0xFFE8EFEB),
-                  valueColor: const AlwaysStoppedAnimation(_primary),
-                ),
-              ),
-              const SizedBox(height: 9),
-              Text(
-                '$percent% Overall Completion',
-                style: GoogleFonts.inter(
-                  color: _muted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CourseModulesSection extends StatelessWidget {
-  final ElearningContentService service;
-  final LearningProgress? progress;
-  final ValueChanged<ElearningModule> onModuleSelected;
-
-  const _CourseModulesSection({
-    required this.service,
-    required this.progress,
-    required this.onModuleSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Course Modules',
-                style: GoogleFonts.inter(
-                  color: _ink,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () => debugPrint('View all learning modules'),
-              style: TextButton.styleFrom(
-                foregroundColor: _primary,
-                textStyle: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              child: const Text('View All'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        StreamBuilder<List<ElearningModule>>(
-          stream: service.watchModules(),
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return const _ModulesMessage(
-                message: 'Learning modules could not be loaded.',
-              );
-            }
-
-            if (!snapshot.hasData) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
-
-            final modules = snapshot.data!;
-            if (modules.isEmpty) {
-              return const _ModulesMessage(
-                message: 'No learning modules available yet.',
-              );
-            }
-
-            return Column(
-              children: [
-                for (final module in modules)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: _CourseModuleCard(
-                      module: module,
-                      metadata: _metadataFor(module.id),
-                      progress:
-                          progress?.categories[module.id]?.progressPercentage ??
-                          0,
-                      onPressed: () => onModuleSelected(module),
-                    ),
-                  ),
-              ],
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
-
-class _ModulesMessage extends StatelessWidget {
-  final String message;
-
-  const _ModulesMessage({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _border),
-      ),
-      child: Text(
-        message,
-        textAlign: TextAlign.center,
-        style: GoogleFonts.inter(
-          color: _muted,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-class _CourseModuleCard extends StatelessWidget {
-  final ElearningModule module;
-  final _ModuleMetadata metadata;
-  final double progress;
-  final VoidCallback onPressed;
-
-  const _CourseModuleCard({
-    required this.module,
-    required this.metadata,
-    required this.progress,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isActive = progress > 0;
-    final percent = (progress.clamp(0.0, 1.0) * 100).round();
-
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(
-          color: isActive ? _primary : Colors.white,
-          width: isActive ? 1.6 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF123524).withValues(alpha: 0.07),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _ModuleArtwork(moduleId: module.id, metadata: metadata),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _LevelChip(
-                      label: module.level,
-                      color: metadata.accent,
-                      background: metadata.softColor,
-                    ),
-                    _InfoChip(
-                      icon: Icons.schedule_rounded,
-                      label: '${module.durationMinutes} min',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 15),
-                Text(
-                  module.title,
-                  style: GoogleFonts.inter(
-                    color: _ink,
-                    fontSize: 20,
-                    height: 1.2,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.35,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  module.description,
-                  style: GoogleFonts.inter(
-                    color: _muted,
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 17),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.menu_book_rounded,
-                      color: Color(0xFF64746C),
-                      size: 18,
-                    ),
-                    const SizedBox(width: 7),
-                    Text(
-                      '${module.lessonCount} lessons',
-                      style: GoogleFonts.inter(
-                        color: _muted,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '$percent%',
-                      style: GoogleFonts.inter(
-                        color: isActive ? _primary : const Color(0xFF94A3B8),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 9),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(5),
-                  child: LinearProgressIndicator(
-                    value: progress.clamp(0.0, 1.0),
-                    minHeight: 6,
-                    backgroundColor: const Color(0xFFE6E9E8),
-                    valueColor: const AlwaysStoppedAnimation(_primary),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  height: 44,
-                  child: FilledButton.icon(
-                    onPressed: onPressed,
-                    icon: Icon(
-                      isActive
-                          ? Icons.play_arrow_rounded
-                          : Icons.arrow_forward_rounded,
-                      size: 19,
-                    ),
-                    label: Text(isActive ? 'Continue' : 'Start Learning'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      textStyle: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LearningPathSheet extends StatelessWidget {
-  final ElearningModule module;
-  final double progress;
-  final ValueChanged<LearningSection> onSectionSelected;
-
-  const _LearningPathSheet({
-    required this.module,
-    required this.progress,
-    required this.onSectionSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final percent = (progress.clamp(0.0, 1.0) * 100).round();
-
-    return SafeArea(
-      top: false,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              module.title,
-              style: GoogleFonts.inter(
-                color: _ink,
-                fontSize: 22,
-                height: 1.2,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              module.description,
-              style: GoogleFonts.inter(
-                color: _muted,
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 18),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _InfoChip(icon: Icons.school_outlined, label: module.level),
-                _InfoChip(
-                  icon: Icons.schedule_rounded,
-                  label: '${module.durationMinutes} min',
-                ),
-                _InfoChip(
-                  icon: Icons.menu_book_rounded,
-                  label: '${module.lessonCount} lessons',
-                ),
-                _InfoChip(
-                  icon: Icons.insights_rounded,
-                  label: '$percent% complete',
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Recommended path: Guide → Video → Quiz',
-              style: GoogleFonts.inter(
-                color: _primary,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 18),
-            _LearningPathButton(
-              label: 'Open Guides',
-              icon: Icons.menu_book_outlined,
-              onPressed: () => onSectionSelected(LearningSection.guides),
-            ),
-            const SizedBox(height: 10),
-            _LearningPathButton(
-              label: 'Watch Video Lessons',
-              icon: Icons.play_circle_outline_rounded,
-              onPressed: () => onSectionSelected(LearningSection.videoLessons),
-            ),
-            const SizedBox(height: 10),
-            _LearningPathButton(
-              label: 'Take Quiz',
-              icon: Icons.quiz_outlined,
-              onPressed: () => onSectionSelected(LearningSection.quiz),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LearningPathButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  const _LearningPathButton({
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: FilledButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 19),
-        label: Text(label),
-        style: FilledButton.styleFrom(
-          backgroundColor: _primary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700),
-        ),
-      ),
-    );
-  }
-}
-
-class _ModuleArtwork extends StatelessWidget {
-  final String moduleId;
-  final _ModuleMetadata metadata;
-
-  const _ModuleArtwork({required this.moduleId, required this.metadata});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 164,
-      width: double.infinity,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    metadata.softColor,
-                    Colors.white,
-                    metadata.accent.withValues(alpha: 0.12),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: -24,
-            top: -42,
-            child: _BlurredCircle(
-              size: 132,
-              color: metadata.accent.withValues(alpha: 0.20),
-            ),
-          ),
-          Positioned(
-            right: -12,
-            bottom: -52,
-            child: _BlurredCircle(
-              size: 154,
-              color: metadata.accent.withValues(alpha: 0.16),
-            ),
-          ),
-          Positioned(
-            left: 35,
-            bottom: 22,
-            child: Transform.rotate(
-              angle: -0.16,
-              child: Text(
-                metadata.secondaryEmoji,
-                style: const TextStyle(fontSize: 48),
-              ),
-            ),
-          ),
-          Container(
-            width: 104,
-            height: 104,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.72),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: metadata.accent.withValues(alpha: 0.18),
-                  blurRadius: 26,
-                  offset: const Offset(0, 12),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              _moduleEmoji(moduleId),
-              style: const TextStyle(fontSize: 54),
-            ),
-          ),
-          Positioned(
-            right: 32,
-            top: 24,
-            child: Transform.rotate(
-              angle: 0.14,
-              child: Text(
-                metadata.tertiaryEmoji,
-                style: const TextStyle(fontSize: 38),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BlurredCircle extends StatelessWidget {
-  final double size;
-  final Color color;
-
-  const _BlurredCircle({required this.size, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return ImageFiltered(
-      imageFilter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      ),
-    );
-  }
-}
-
-class _LevelChip extends StatelessWidget {
-  final String label;
-  final Color color;
-  final Color background;
-
-  const _LevelChip({
-    required this.label,
-    required this.color,
-    required this.background,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(9),
-      ),
-      child: Text(
-        label,
-        style: GoogleFonts.inter(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _InfoChip({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F4F2),
-        borderRadius: BorderRadius.circular(9),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: _muted),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              color: _muted,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ModuleMetadata {
-  final Color accent;
-  final Color softColor;
-  final String secondaryEmoji;
-  final String tertiaryEmoji;
-
-  const _ModuleMetadata({
-    required this.accent,
-    required this.softColor,
-    required this.secondaryEmoji,
-    required this.tertiaryEmoji,
-  });
-}
-
-_ModuleMetadata _metadataFor(String categoryId) {
-  switch (categoryId) {
-    case 'organic':
-      return const _ModuleMetadata(
-        accent: Color(0xFF059669),
-        softColor: Color(0xFFECFDF5),
-        secondaryEmoji: '🍃',
-        tertiaryEmoji: '🥕',
-      );
-    case 'inorganic':
-      return const _ModuleMetadata(
-        accent: Color(0xFF2563EB),
-        softColor: Color(0xFFDBEAFE),
-        secondaryEmoji: '🥫',
-        tertiaryEmoji: '🧴',
-      );
-    case 'hazardous':
-      return const _ModuleMetadata(
-        accent: Color(0xFFDC2626),
-        softColor: Color(0xFFFEE2E2),
-        secondaryEmoji: '🔋',
-        tertiaryEmoji: '🧪',
-      );
-    default:
-      return const _ModuleMetadata(
-        accent: _primary,
-        softColor: Color(0xFFECFDF5),
-        secondaryEmoji: '♻️',
-        tertiaryEmoji: '🌍',
-      );
-  }
-}
-
-String _moduleEmoji(String moduleId) {
-  switch (moduleId) {
-    case 'organic':
-      return '🍃';
-    case 'inorganic':
-      return '♻️';
-    case 'hazardous':
-      return '🔋';
-    default:
-      return '🌍';
-  }
-}
-
-double _overallProgress(LearningProgress? progress) {
-  if (progress == null || wasteCategories.isEmpty) return 0;
-
-  final total = wasteCategories.fold<double>(
-    0,
-    (sum, category) =>
-        sum + (progress.categories[category.id]?.progressPercentage ?? 0),
-  );
-  return (total / wasteCategories.length).clamp(0.0, 1.0);
 }

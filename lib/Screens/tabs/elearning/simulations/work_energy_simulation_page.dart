@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../../widgets/learn/learn_ui.dart';
+import '../../../../models/physics_module.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../physics/shared_constants.dart';
 import '../../../../../physics/work_energy/work_energy_state.dart';
 import '../../../../../physics/work_energy/work_energy_notifier.dart';
-import '../../../../../theme/elio_learning_colors.dart';
 import 'painters/work_energy_painter.dart';
 import 'widgets/sim_module_header.dart';
 import 'widgets/formula_box.dart';
@@ -26,6 +27,7 @@ class WorkEnergySimulationPage extends ConsumerWidget {
     final batPct = state.batteryPercentRemaining;
 
     return SimulationPageScaffold(
+      module: PhysicsModuleId.workEnergy,
       appBarTitle: 'Usaha & Energi',
       header: const SimModuleHeader(
         tag: 'MODUL D · MATERI',
@@ -39,7 +41,7 @@ class WorkEnergySimulationPage extends ConsumerWidget {
                         const TextSpan(text: 'W = m·g·h = '),
                         TextSpan(
                           text: workJ.toStringAsFixed(1),
-                          style: const TextStyle(color: elioWarning),
+                          style: TextStyle(color: context.elio.secondaryText),
                         ),
                         const TextSpan(text: ' J'),
                       ],
@@ -78,7 +80,7 @@ class WorkEnergySimulationPage extends ConsumerWidget {
                     headerTitle: 'HASIL PERHITUNGAN',
                     formulaExpression: 'W = ${state.massKg.toStringAsFixed(1)} × 10 × ${state.heightM.toStringAsFixed(1)} = ${workJ.toStringAsFixed(1)} J',
                     statusIcon: Icons.battery_charging_full_rounded,
-                    statusColor: elioOk,
+                    statusColor: context.elio.primaryText,
                     statusText: 'Baterai Tersisa: ${batPct.toStringAsFixed(3)}%',
                   ),
       ],
@@ -127,39 +129,39 @@ class _WorkEnergyCanvas extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('Usaha (W)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: elioMuted)),
+                      Text('Usaha (W)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: context.elio.textSecondary)),
                       const SizedBox(height: 4),
                       Expanded(
                         child: RotatedBox(
                           quarterTurns: 3,
                           child: LinearProgressIndicator(
                             value: state.workJoules / 75.0, // max work is 5*10*1.5 = 75J
-                            backgroundColor: elioBorder,
-                            color: elioPrimary,
+                            backgroundColor: context.elio.borderSubtle,
+                            color: context.elio.primaryText,
                             minHeight: 12,
                           ),
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text('${state.workJoules.toStringAsFixed(1)} J', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: elioPrimary)),
+                      Text('${state.workJoules.toStringAsFixed(1)} J', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.elio.primaryText)),
                       
                       const SizedBox(height: 20),
                       
-                      const Text('Baterai', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: elioMuted)),
+                      Text('Baterai', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: context.elio.textSecondary)),
                       const SizedBox(height: 4),
                       Expanded(
                         child: RotatedBox(
                           quarterTurns: 3,
                           child: LinearProgressIndicator(
                             value: state.batteryPercentRemaining / 100.0,
-                            backgroundColor: elioBorder,
-                            color: elioOk,
+                            backgroundColor: context.elio.borderSubtle,
+                            color: context.elio.primaryText,
                             minHeight: 12,
                           ),
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text('${state.batteryPercentRemaining.toStringAsFixed(3)}%', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: elioOk)),
+                      Text('${state.batteryPercentRemaining.toStringAsFixed(3)}%', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: context.elio.primaryText)),
                     ],
                   ),
                 ),

@@ -1,0 +1,23 @@
+<svg width="320" height="180" viewBox="0 0 320 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="v1 (not chosen) / Illustrations + icons (components)">
+<g id="Illustration/Cover Safe handling" clip-path="url(#clip0_293_2358)">
+<path id="Vector" d="M320 0H0V180H320V0Z" fill="#FEE2E2"/>
+<path id="Vector_2" d="M0 150H320V180H0V150Z" fill="#FCA5A5" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M260 84H176C172.686 84 170 86.6863 170 90V144C170 147.314 172.686 150 176 150H260C263.314 150 266 147.314 266 144V90C266 86.6863 263.314 84 260 84Z" fill="#FBBF24" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_4" d="M218 98L236 128H200L218 98Z" fill="white" stroke="#0F172A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_5" d="M220 110C220 108.895 219.105 108 218 108C216.895 108 216 108.895 216 110V116C216 117.105 216.895 118 218 118C219.105 118 220 117.105 220 116V110Z" fill="#0F172A"/>
+<path id="Vector_6" d="M218 124.2C219.215 124.2 220.2 123.215 220.2 122C220.2 120.785 219.215 119.8 218 119.8C216.785 119.8 215.8 120.785 215.8 122C215.8 123.215 216.785 124.2 218 124.2Z" fill="#0F172A"/>
+<path id="Vector_7" d="M70 150V104C70 98 78 98 78 104V92C78 86 86 86 86 92V96C86 90 94 90 94 96V102C94 96 102 96 102 102V130C102 142 94 150 84 150H70Z" fill="#22D3EE" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_8" d="M102 138H70C67.7909 138 66 139.791 66 142V150C66 152.209 67.7909 154 70 154H102C104.209 154 106 152.209 106 150V142C106 139.791 104.209 138 102 138Z" fill="#0E7490" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_9" d="M146 104H132C127.582 104 124 107.582 124 112V142C124 146.418 127.582 150 132 150H146C150.418 150 154 146.418 154 142V112C154 107.582 150.418 104 146 104Z" fill="#F87171" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_10" d="M144 96H134C132.895 96 132 96.8954 132 98V104C132 105.105 132.895 106 134 106H144C145.105 106 146 105.105 146 104V98C146 96.8954 145.105 96 144 96Z" fill="#94A3B8" stroke="#0F172A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_11" d="M40 42C40 47.3333 42.6667 50 48 50C42.6667 50 40 52.6667 40 58C40 52.6667 37.3333 50 32 50C37.3333 50 40 47.3333 40 42Z" fill="white" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_12" d="M290 46C290 50 292 52 296 52C292 52 290 54 290 58C290 54 288 52 284 52C288 52 290 50 290 46Z" fill="#FBBF24" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_293_2358">
+<rect width="320" height="180" fill="white"/>
+</clipPath>
+</defs>
+</svg>

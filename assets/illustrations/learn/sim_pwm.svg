@@ -1,0 +1,19 @@
+<svg width="320" height="200" viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="v1 (not chosen) / Illustrations + icons (components)">
+<g id="Illustration/Sim PWM" clip-path="url(#clip0_293_2358)">
+<path id="Vector" d="M320 0H0V200H320V0Z" fill="#F1F5F9"/>
+<path id="Vector_2" d="M16 90H40V30H112V90H136V30H208V90H232V30H304" stroke="#15803D" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M16 90H304" stroke="#CBD5E1" stroke-width="2"/>
+<path id="Vector_4" d="M70 182C88.7777 182 104 166.778 104 148C104 129.222 88.7777 114 70 114C51.2223 114 36 129.222 36 148C36 166.778 51.2223 182 70 182Z" fill="white" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_5" d="M70 148L94 124M70 148L46 124M70 148L46 172M70 148L94 172" stroke="#0F172A" stroke-width="8" stroke-linecap="round"/>
+<path id="Vector_6" d="M70 155C73.866 155 77 151.866 77 148C77 144.134 73.866 141 70 141C66.134 141 63 144.134 63 148C63 151.866 66.134 155 70 155Z" fill="#4ADE80" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_7" d="M290 128H140C134.477 128 130 132.477 130 138V158C130 163.523 134.477 168 140 168H290C295.523 168 300 163.523 300 158V138C300 132.477 295.523 128 290 128Z" fill="white" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_8" d="M226 134H142C138.686 134 136 136.686 136 140V156C136 159.314 138.686 162 142 162H226C229.314 162 232 159.314 232 156V140C232 136.686 229.314 134 226 134Z" fill="#4ADE80"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_293_2358">
+<rect width="320" height="200" fill="white"/>
+</clipPath>
+</defs>
+</svg>

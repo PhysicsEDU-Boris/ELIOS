@@ -3,38 +3,33 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../models/quiz_question.dart';
 import '../../../models/quiz_set.dart';
 import '../../../models/learning_progress.dart';
 import '../../../providers/learning_progress_provider.dart';
 import '../../../services/elearning_content_service.dart';
-import '../../../widgets/elio_learning_app_bar.dart';
+import '../../../widgets/learn/learn_ui.dart';
+import 'learn_content.dart';
 import 'quiz_review_page.dart';
 
-const _background = Color(0xFFF7FAF6);
-const _primary = Color(0xFF004F38);
-const _ink = Color(0xFF181D1A);
-const _muted = Color(0xFF3F4943);
-const _border = Color(0xFFBEC9C2);
-const _surface = Color(0xFFEBEFEA);
-const _success = Color(0xFF059669);
-const _error = Color(0xFFBA1A1A);
-
+/// Quiz list, question and result (L1 v2). [moduleId] narrows the list to
+/// one module's quiz (module page "Quiz").
 class QuizPage extends StatelessWidget {
-  const QuizPage({super.key});
+  const QuizPage({super.key, this.moduleId, this.onQuizActiveChanged});
+
+  final String? moduleId;
+  final ValueChanged<bool>? onQuizActiveChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _background,
-      appBar: const ElioLearningAppBar(
-        title: 'Quiz',
-        showBack: true,
-        backgroundColor: _background,
+    return LearnPageScaffold(
+      title: 'Quiz',
+      centerTitle: false,
+      body: QuizContent(
+        selectedModuleId: moduleId,
+        onQuizActiveChanged: onQuizActiveChanged,
       ),
-      body: const QuizContent(),
     );
   }
 }
@@ -56,7 +51,8 @@ class QuizContent extends ConsumerStatefulWidget {
 }
 
 class _QuizContentState extends ConsumerState<QuizContent> {
-  final ElearningContentService _service = ElearningContentService();
+  ElearningContentService get _service =>
+      ref.read(elearningContentServiceProvider);
   QuizSet? _activeQuizSet;
   List<QuizQuestion> _questions = const [];
   int _currentQuestionIndex = 0;
@@ -259,11 +255,9 @@ class _QuizContentState extends ConsumerState<QuizContent> {
   }
 
   void _openQuizReview(QuizReview review) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => QuizReviewPage(review: review),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(learnRoute<void>(QuizReviewPage(review: review)));
   }
 
   Future<void> _showFinishQuizRequiredDialog() async {
@@ -299,26 +293,11 @@ class _QuizContentState extends ConsumerState<QuizContent> {
     return PopScope<void>(
       canPop: !_quizIsActive,
       onPopInvokedWithResult: (didPop, result) => _handlePopAttempt(didPop),
-      child: SafeArea(
-        top: false,
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 720),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      child: _buildContent(),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+      child: AnimatedSwitcher(
+        duration: context.reduceMotion
+            ? Duration.zero
+            : const Duration(milliseconds: 220),
+        child: _buildContent(),
       ),
     );
   }
@@ -328,31 +307,38 @@ class _QuizContentState extends ConsumerState<QuizContent> {
     if (quizSet == null) return _buildQuizSetList();
 
     if (_isLoadingQuestions) {
-      return const _CenteredMessage(
+      return const Center(
         key: ValueKey('loading-quiz'),
-        icon: Icons.hourglass_top_rounded,
-        title: 'Loading quiz questions...',
+        child: LearnSpinner(label: 'Loading quiz questions'),
       );
     }
 
     if (_questionLoadError != null) {
-      return _CenteredMessage(
+      return LearnListView(
         key: ValueKey('quiz-error-${quizSet.id}'),
-        icon: Icons.cloud_off_outlined,
-        title: 'Quiz questions could not be loaded.',
-        message: 'Check the Firestore connection and try again.',
-        actionLabel: 'Back to Quizzes',
-        onAction: _backToQuizSets,
+        children: [
+          _CenteredMessage(
+            icon: Icons.cloud_off_outlined,
+            title: 'Quiz questions could not be loaded.',
+            message: 'Check the Firestore connection and try again.',
+            actionLabel: 'Back to Quizzes',
+            onAction: _backToQuizSets,
+          ),
+        ],
       );
     }
 
     if (_questions.isEmpty) {
-      return _CenteredMessage(
+      return LearnListView(
         key: ValueKey('empty-${quizSet.id}'),
-        icon: Icons.quiz_outlined,
-        title: 'Quiz questions are not available yet.',
-        actionLabel: 'Back to Quizzes',
-        onAction: _backToQuizSets,
+        children: [
+          _CenteredMessage(
+            icon: Icons.quiz_outlined,
+            title: 'Quiz questions are not available yet.',
+            actionLabel: 'Back to Quizzes',
+            onAction: _backToQuizSets,
+          ),
+        ],
       );
     }
 
@@ -384,168 +370,50 @@ class _QuizContentState extends ConsumerState<QuizContent> {
 
   Widget _buildQuizSetList() {
     final progress = ref.watch(learningProgressProvider).valueOrNull;
+    final p = context.elio;
 
     return StreamBuilder<List<QuizSet>>(
       key: ValueKey('quiz-sets-${widget.selectedModuleId ?? 'all'}'),
       stream: _service.watchQuizSets(moduleId: widget.selectedModuleId),
       builder: (context, snapshot) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        return LearnListView(
           children: [
-            Text(
-              'Knowledge\nChallenge',
-              style: GoogleFonts.inter(
-                color: _ink,
-                fontSize: 42,
-                height: 1.08,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -1.7,
-              ),
-            ),
-            const SizedBox(height: 14),
+            Text('Knowledge challenge', style: context.text.headlineLarge),
+            const SizedBox(height: 8),
             Text(
               'Test your understanding of waste management and how ELIO '
-              'classifies materials.',
-              style: GoogleFonts.inter(
-                color: _muted,
-                fontSize: 16,
-                height: 1.5,
-              ),
+              'classifies materials. Each quiz has one attempt.',
+              style: context.text.bodySmall?.copyWith(color: p.textSecondary),
             ),
-            if (widget.selectedModuleId != null) ...[
-              const SizedBox(height: 18),
-              _FilterBanner(
-                moduleId: widget.selectedModuleId!,
-                onClear: widget.onClearFilter,
-              ),
-            ],
-            const SizedBox(height: 28),
+            const SizedBox(height: 16),
             if (snapshot.hasError)
               const _CenteredMessage(
                 icon: Icons.cloud_off_outlined,
                 title: 'Quiz sets could not be loaded.',
               )
             else if (!snapshot.hasData)
-              const Center(child: CircularProgressIndicator())
+              const Column(
+                children: [
+                  LearnSkeleton(height: 88),
+                  SizedBox(height: 12),
+                  LearnSkeleton(height: 88),
+                ],
+              )
             else if (snapshot.data!.isEmpty)
               const _CenteredMessage(
                 icon: Icons.quiz_outlined,
                 title: 'No published quizzes are available.',
               )
             else
-              _QuizSetGrid(
-                quizSets: snapshot.data!,
-                progress: progress,
-                onStartQuiz: _startQuiz,
-                onReviewQuiz: _openQuizReview,
-              ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _FilterBanner extends StatelessWidget {
-  final String moduleId;
-  final VoidCallback? onClear;
-
-  const _FilterBanner({required this.moduleId, required this.onClear});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8F5EF),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: _primary.withValues(alpha: 0.18)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.filter_alt_outlined, color: _primary, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Filtered by: ${_moduleTitle(moduleId)}',
-              style: GoogleFonts.inter(
-                color: _ink,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          TextButton.icon(
-            onPressed: onClear,
-            icon: const Icon(Icons.close_rounded, size: 16),
-            label: const Text('Clear'),
-            style: TextButton.styleFrom(
-              foregroundColor: _primary,
-              visualDensity: VisualDensity.compact,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuizSetGrid extends StatelessWidget {
-  final List<QuizSet> quizSets;
-  final LearningProgress? progress;
-  final ValueChanged<QuizSet> onStartQuiz;
-  final ValueChanged<QuizReview> onReviewQuiz;
-
-  const _QuizSetGrid({
-    required this.quizSets,
-    required this.progress,
-    required this.onStartQuiz,
-    required this.onReviewQuiz,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 620 ? 2 : 1;
-        final itemWidth =
-            (constraints.maxWidth - ((columns - 1) * 16)) / columns;
-
-        return Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: [
-            for (final quizSet in quizSets)
-              SizedBox(
-                width: itemWidth,
-                child: Builder(
-                  builder: (context) {
-                    final categoryProgress =
-                        progress?.categories[quizSet.moduleId];
-                    final attempted = (categoryProgress?.quizAttempts ?? 0) > 0;
-                    final completed =
-                        progress?.completedQuizModules.contains(
-                          quizSet.moduleId,
-                        ) ??
-                        false;
-                    final scorePercent = progress?.quizScores[quizSet.moduleId];
-                    final review = progress?.quizReviews[quizSet.moduleId];
-
-                    return _QuizSetCard(
-                      quizSet: quizSet,
-                      attempted: attempted,
-                      completed: completed,
-                      scorePercent: scorePercent,
-                      review: review,
-                      onTap: attempted ? null : () => onStartQuiz(quizSet),
-                      onReview: review == null
-                          ? null
-                          : () => onReviewQuiz(review),
-                    );
-                  },
+              for (final quizSet in snapshot.data!) ...[
+                _QuizSetCard.fromProgress(
+                  quizSet: quizSet,
+                  progress: progress,
+                  onStart: () => _startQuiz(quizSet),
+                  onReview: _openQuizReview,
                 ),
-              ),
+                const SizedBox(height: 12),
+              ],
           ],
         );
       },
@@ -572,92 +440,53 @@ class _QuizSetCard extends StatelessWidget {
     required this.onReview,
   });
 
+  factory _QuizSetCard.fromProgress({
+    required QuizSet quizSet,
+    required LearningProgress? progress,
+    required VoidCallback onStart,
+    required ValueChanged<QuizReview> onReview,
+  }) {
+    final attempted =
+        (progress?.categories[quizSet.moduleId]?.quizAttempts ?? 0) > 0;
+    final review = progress?.quizReviews[quizSet.moduleId];
+    return _QuizSetCard(
+      quizSet: quizSet,
+      attempted: attempted,
+      completed:
+          progress?.completedQuizModules.contains(quizSet.moduleId) ?? false,
+      scorePercent: progress?.quizScores[quizSet.moduleId],
+      review: review,
+      onTap: attempted ? null : onStart,
+      onReview: review == null ? null : () => onReview(review),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final accent = _moduleColor(quizSet.moduleId);
     final hasReview = review != null;
     final statusText = attempted
         ? [
             completed ? 'Completed' : 'Attempt used',
-            if (scorePercent != null) 'Best score $scorePercent%',
-            if (!hasReview) 'Review available for new attempts only',
-          ].join(' • ')
-        : 'One attempt only';
-    final buttonLabel = !attempted
-        ? 'Start Quiz'
-        : hasReview
-        ? 'Review Answers'
-        : completed
-        ? 'Review unavailable'
-        : 'Attempt Used';
-    final buttonAction = !attempted ? onTap : onReview;
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _border.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: accent.withValues(alpha: 0.12),
-                foregroundColor: accent,
-                child: const Icon(Icons.quiz_outlined),
-              ),
-              const Spacer(),
-              _DifficultyChip(label: quizSet.level, color: accent),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            quizSet.title,
-            style: GoogleFonts.inter(
-              color: _ink,
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 7),
-          Text(
-            quizSet.description,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(color: _muted, fontSize: 12, height: 1.4),
-          ),
-          const SizedBox(height: 14),
-          Text(
+            if (scorePercent != null) 'best score $scorePercent%',
+            if (!hasReview) 'review for new attempts only',
+          ].join(' · ')
+        : [
             '${quizSet.questionCount} questions',
-            style: GoogleFonts.inter(
-              color: _muted,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            statusText,
-            style: GoogleFonts.inter(
-              color: attempted ? accent : _muted,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: buttonAction,
-              style: OutlinedButton.styleFrom(foregroundColor: _primary),
-              child: Text(buttonLabel),
-            ),
-          ),
-        ],
-      ),
+            if (quizSet.level.isNotEmpty) quizSet.level,
+            'one attempt',
+          ].join(' · ');
+    final buttonLabel = !attempted
+        ? 'Start'
+        : hasReview
+        ? 'Review'
+        : completed
+        ? 'Done'
+        : 'Used';
+    return QuizCard(
+      title: quizSet.title,
+      subtitle: statusText,
+      buttonLabel: buttonLabel,
+      onPressed: !attempted ? onTap : onReview,
     );
   }
 }
@@ -688,6 +517,7 @@ class _QuizQuestionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.elio;
     final correctIndex = question.correctIndex;
     final hasValidCorrectIndex =
         correctIndex >= 0 && correctIndex < question.options.length;
@@ -695,68 +525,36 @@ class _QuizQuestionView extends StatelessWidget {
         hasValidCorrectIndex && selectedOptionIndex == correctIndex;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextButton.icon(
-          onPressed: onBack,
-          icon: const Icon(Icons.lock_outline_rounded),
-          label: const Text('Finish quiz to exit'),
-        ),
-        const SizedBox(height: 14),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Question ${questionIndex + 1} of $totalQuestions',
-                style: GoogleFonts.inter(
-                  color: _ink,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-            _DifficultyChip(
-              label: question.difficulty.isEmpty
-                  ? quizSet.level
-                  : question.difficulty,
-              color: _moduleColor(quizSet.moduleId),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        LinearProgressIndicator(
-          value: (questionIndex + 1) / totalQuestions,
-          minHeight: 9,
-          backgroundColor: _surface,
-          color: _primary,
-        ),
-        const SizedBox(height: 26),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _border.withValues(alpha: 0.5)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        Expanded(
+          child: LearnListView(
             children: [
-              if (question.imageUrl.trim().isNotEmpty) ...[
-                _QuizQuestionImage(imageUrl: question.imageUrl),
-                const SizedBox(height: 22),
-              ],
-              Text(
-                question.question,
-                style: GoogleFonts.inter(
-                  color: _ink,
-                  fontSize: 22,
-                  height: 1.3,
-                  fontWeight: FontWeight.w800,
+              QuizProgressHeader(
+                counter: 'Question ${questionIndex + 1} / $totalQuestions',
+                level: question.difficulty.isEmpty
+                    ? quizSet.level
+                    : question.difficulty,
+                value: (questionIndex + 1) / totalQuestions,
+              ),
+              const SizedBox(height: 16),
+              LearnCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (question.imageUrl.trim().isNotEmpty) ...[
+                      _QuizQuestionImage(imageUrl: question.imageUrl),
+                      const SizedBox(height: 16),
+                    ],
+                    Text(
+                      question.question,
+                      style: context.text.bodyLarge?.copyWith(fontSize: 18),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 16),
               for (var index = 0; index < question.options.length; index++) ...[
-                _AnswerOption(
+                QuizAnswerOption(
                   index: index,
                   label: question.options[index],
                   selected: selectedOptionIndex == index,
@@ -764,35 +562,50 @@ class _QuizQuestionView extends StatelessWidget {
                   answered: answered,
                   onTap: () => onSelectAnswer(index),
                 ),
-                if (index != question.options.length - 1)
-                  const SizedBox(height: 10),
+                const SizedBox(height: 12),
               ],
-              if (answered) ...[
-                const SizedBox(height: 18),
-                Text(
-                  selectedIsCorrect
-                      ? 'Correct${question.explanation.isEmpty ? '!' : ': ${question.explanation}'}'
-                      : 'Not quite${question.explanation.isEmpty ? '.' : ': ${question.explanation}'}',
-                  style: GoogleFonts.inter(
-                    color: selectedIsCorrect ? _success : _error,
-                    fontWeight: FontWeight.w700,
+              if (answered)
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    selectedIsCorrect
+                        ? 'Correct${question.explanation.isEmpty ? '!' : ': ${question.explanation}'}'
+                        : 'Not quite${question.explanation.isEmpty ? '.' : ': ${question.explanation}'}',
+                    style: context.text.titleSmall?.copyWith(
+                      color: selectedIsCorrect ? p.primaryText : p.errorText,
+                    ),
                   ),
                 ),
-              ],
-              const SizedBox(height: 22),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: answered ? onNext : null,
-                  style: FilledButton.styleFrom(backgroundColor: _primary),
-                  child: Text(
-                    questionIndex == totalQuestions - 1
-                        ? 'View Results'
-                        : 'Next Question',
-                  ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: onBack,
+                  icon: const Icon(Icons.lock_outline_rounded),
+                  label: const Text('Finish quiz to exit'),
                 ),
               ),
             ],
+          ),
+        ),
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: answered ? onNext : null,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: Text(
+                  questionIndex == totalQuestions - 1
+                      ? 'View results'
+                      : 'Next question',
+                ),
+              ),
+            ),
           ),
         ),
       ],
@@ -807,117 +620,29 @@ class _QuizQuestionImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _QuizImageFrame(
-      child: CachedNetworkImage(
-        imageUrl: imageUrl,
-        width: double.infinity,
-        height: double.infinity,
-        fit: BoxFit.cover,
-        placeholder: (_, _) => const ColoredBox(color: _surface),
-        errorWidget: (_, _, _) => const _QuizImageUnavailable(),
-      ),
-    );
-  }
-}
-
-class _QuizImageFrame extends StatelessWidget {
-  final Widget child;
-
-  const _QuizImageFrame({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+    final p = context.elio;
+    return ClipRSuperellipse(
+      borderRadius: BorderRadius.circular(learnRadiusM),
       child: SizedBox(
         width: double.infinity,
         height: 200,
-        child: ColoredBox(color: _surface, child: child),
-      ),
-    );
-  }
-}
-
-class _QuizImageUnavailable extends StatelessWidget {
-  const _QuizImageUnavailable();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _QuizImageFrame(
-      child: Center(
-        child: Text(
-          'Image unavailable',
-          style: TextStyle(color: _muted, fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
-  }
-}
-
-class _AnswerOption extends StatelessWidget {
-  final int index;
-  final String label;
-  final bool selected;
-  final bool isCorrect;
-  final bool answered;
-  final VoidCallback onTap;
-
-  const _AnswerOption({
-    required this.index,
-    required this.label,
-    required this.selected,
-    required this.isCorrect,
-    required this.answered,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final revealCorrect = answered && isCorrect;
-    final revealWrong = answered && selected && !isCorrect;
-    final color = revealCorrect
-        ? _success
-        : revealWrong
-        ? _error
-        : selected
-        ? _primary
-        : _border;
-
-    return InkWell(
-      onTap: answered ? null : onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: color.withValues(
-            alpha: revealCorrect || revealWrong ? 0.1 : 0.04,
-          ),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: color,
-              foregroundColor: Colors.white,
+        child: ColoredBox(
+          color: p.surfaceRaised,
+          child: CachedNetworkImage(
+            imageUrl: imageUrl,
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+            placeholder: (_, _) => const SizedBox.expand(),
+            errorWidget: (_, _, _) => Center(
               child: Text(
-                String.fromCharCode(65 + index),
-                style: const TextStyle(fontSize: 12),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: GoogleFonts.inter(
-                  color: _ink,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                'Image unavailable',
+                style: context.text.labelMedium?.copyWith(
+                  color: p.textSecondary,
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -944,40 +669,18 @@ class _QuizResult extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _CenteredMessage(
-      icon: Icons.workspace_premium_outlined,
-      title: quizSet.title,
-      message: 'You scored $score out of $total.',
-      actionLabel: 'Back to Quizzes',
-      onAction: onBack,
-      secondaryActionLabel: 'Review Answers',
-      onSecondaryAction: review == null ? null : () => onReview(review!),
-    );
-  }
-}
-
-class _DifficultyChip extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _DifficultyChip({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        label.isEmpty ? 'Quiz' : label,
-        style: GoogleFonts.inter(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
+    return LearnListView(
+      children: [
+        LearnStateView(
+          asset: LearnArt.mascot,
+          title: quizSet.title,
+          message: 'You scored $score out of $total.',
+          primaryLabel: 'Back to quizzes',
+          onPrimary: onBack,
+          secondaryLabel: review == null ? null : 'Review answers',
+          onSecondary: review == null ? null : () => onReview(review!),
         ),
-      ),
+      ],
     );
   }
 }
@@ -988,96 +691,43 @@ class _CenteredMessage extends StatelessWidget {
   final String? message;
   final String? actionLabel;
   final VoidCallback? onAction;
-  final String? secondaryActionLabel;
-  final VoidCallback? onSecondaryAction;
 
   const _CenteredMessage({
-    super.key,
     required this.icon,
     required this.title,
     this.message,
     this.actionLabel,
     this.onAction,
-    this.secondaryActionLabel,
-    this.onSecondaryAction,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _border.withValues(alpha: 0.5)),
-      ),
+    final p = context.elio;
+    return LearnCard(
+      padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          Icon(icon, color: _primary, size: 42),
-          const SizedBox(height: 14),
+          Icon(icon, color: p.primaryText, size: 40),
+          const SizedBox(height: 12),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              color: _ink,
-              fontSize: 19,
-              fontWeight: FontWeight.w800,
-            ),
+            style: context.text.titleSmall,
           ),
           if (message != null) ...[
             const SizedBox(height: 8),
             Text(
               message!,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(color: _muted, height: 1.4),
+              style: context.text.bodySmall?.copyWith(color: p.textSecondary),
             ),
           ],
           if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: onAction,
-              style: FilledButton.styleFrom(backgroundColor: _primary),
-              child: Text(actionLabel!),
-            ),
-          ],
-          if (secondaryActionLabel != null) ...[
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: onSecondaryAction,
-              style: OutlinedButton.styleFrom(foregroundColor: _primary),
-              icon: const Icon(Icons.fact_check_outlined),
-              label: Text(secondaryActionLabel!),
-            ),
+            const SizedBox(height: 16),
+            FilledButton(onPressed: onAction, child: Text(actionLabel!)),
           ],
         ],
       ),
     );
-  }
-}
-
-String _moduleTitle(String moduleId) {
-  switch (moduleId) {
-    case 'organic':
-      return 'Organic Waste Management';
-    case 'inorganic':
-      return 'Inorganic / Recyclable Waste Management';
-    case 'hazardous':
-      return 'Hazardous Waste (B3) Management';
-    default:
-      return moduleId;
-  }
-}
-
-Color _moduleColor(String moduleId) {
-  switch (moduleId) {
-    case 'organic':
-      return const Color(0xFF059669);
-    case 'inorganic':
-      return const Color(0xFF2563EB);
-    case 'hazardous':
-      return const Color(0xFFDC2626);
-    default:
-      return _primary;
   }
 }
