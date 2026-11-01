@@ -327,8 +327,9 @@ class _ControlButtonState extends State<ElioControlButton> {
                             src: widget.modelAsset!,
                             progressBarColor: Colors.transparent,
                             onProgress: (v) {
-                              if (v >= 1 && mounted)
+                              if (v >= 1 && mounted) {
                                 setState(() => _loaded = true);
+                              }
                             },
                             onLoad: (_) {
                               if (mounted) setState(() => _loaded = true);
