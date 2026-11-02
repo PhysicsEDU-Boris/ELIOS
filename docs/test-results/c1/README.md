@@ -38,3 +38,11 @@ light phone-camera mode, wrong-port refusal, auto-reconnect off (both covered by
 `dark_settings_*` and `dark_*_connected_*` show the old invisible divider.
 Seen, not in scope: the shell banner says "ELIO disconnected… connection was lost" also after a
 deliberate Disconnect.
+
+## Merged build (b2ad413), 2 Nov 14:16
+Same setup (owner session, fake robot over `adb reverse`, Save as default off). Connect now opened Control
+(`merged_before_connect`, `merged_connect_opens_control`). The fake robot's item started a scan quiz; leaving
+Control with it open skipped the disconnect and the app retried every 2 s until its 30-try cap
+(`merged_back_from_control`, `merged_loop_stopped`). Fixed on `fix/control-dispose-disconnect`: same steps,
+"Leaving robot control, disconnecting" logged, no socket afterwards, no exceptions (`fix_control_quiz_open`,
+`fix_back_on_config`). `scan_records.json` unchanged (02:12) in both runs.
