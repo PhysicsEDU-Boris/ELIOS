@@ -44,7 +44,7 @@ their status changed.
 | [0141](0141-sidebar-theme-toggle.md) | Sidebar from Figma N1 with a Dark mode switch behind the option gate | Accepted (review pending) |
 | [0143](0143-profile-top-bar-drawer.md) | Profile avatar top bar and phone drawer from Figma N4 (custom drawer host, gestures, focus) | Accepted (review pending) |
 | [0144](0144-gamified-home.md) | Gamified Home H1 v4: sections, data rules, residu in Anorganik, quest rewards count toward trophies, tree per level | Accepted (review pending) |
-| [0145](0145-config-screen-c1.md) | Config screen C1 from Figma: AI card states, stay on Config after connect, real cancel/failure, saved quiz source, settings audit | Draft |
+| [0145](0145-config-screen-c1.md) | Config screen C1 from Figma: AI card states, real cancel/failure, saved quiz source, settings audit | Draft |
 | [0170](0170-learn-v2-layout.md) | Learn tab L1 v2 layout: components, hub, module, lesson, quiz, progress, simulations | Draft |
 | [0171](0171-learn-thumbnail-fallback.md) | Learn thumbnails: Firestore URL first, bundled illustration as placeholder and fallback | Draft |
 | [0172](0172-learn-offline.md) | Learn loading, error, offline cache and empty states | Draft |

@@ -5,6 +5,8 @@ Device: motorola edge 60 fusion (ZP22233V8C), Android 16, USB. Build: arm64 **de
 (app data kept). The 2.59 GB model was moved out of `assets/models/` for the build and back after.
 Screenshots: `adb exec-out screencap -p`, 540 px JPEG.
 
+After this walk the owner chose to keep the old jump to Control after a successful connect; the build tested here stayed on Config, so the connected shots show the state before that change.
+
 **Session:** the phone was signed in as the owner, not a guest. Signing out would have needed the
 owner's password to undo, so it stayed signed in; no scan, quiz or record was made. Theme, camera
 source and quiz source were changed for the walk and restored (light, MaixCAM2, bank); the saved

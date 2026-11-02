@@ -18,6 +18,7 @@ import '../utils/system_ui.dart';
 import '../widgets/learn/learn_ui.dart';
 import '../widgets/tester_panel.dart';
 import 'config/config_parts.dart';
+import 'control_screen.dart';
 import 'device_scan_screen.dart';
 
 /// "Enter an IP like 192.168.4.1", or null when [value] is a dotted IPv4.
@@ -60,9 +61,13 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     if (config.port > 0) _port.text = config.port.toString();
   }
 
-  Future<void> _openDeviceScan() async {
+  Future<void> _openControlScreen() => _openLandscapeScreen(const ControlScreen());
+
+  Future<void> _openDeviceScan() => _openLandscapeScreen(const DeviceScanScreen());
+
+  Future<void> _openLandscapeScreen(Widget screen) async {
     try {
-      await Navigator.push(context, MaterialPageRoute(builder: (_) => const DeviceScanScreen()));
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
     } finally {
       await Future<void>.delayed(const Duration(milliseconds: 300));
       try {
@@ -87,6 +92,8 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     final ok = await ref.read(configLinkProvider.notifier).connect(ip, port, autoReconnect: autoReconnect);
     debugPrint('[Config] Connect result: $ok');
     if (ok && save) await esp.patch((c) => c.copyWith(esp32IpAddress: ip, port: port));
+    // As before C1: a successful connect goes straight to Control (owner, 2 Nov).
+    if (ok && mounted) await _openControlScreen();
   }
 
   void _disconnect() => ref.read(configLinkProvider.notifier).disconnect();

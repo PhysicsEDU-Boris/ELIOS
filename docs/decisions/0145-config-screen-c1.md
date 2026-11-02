@@ -19,8 +19,8 @@ sheet 349:4445 / 349:4681). Colours from `ElioTokens.light/dark` through the the
   outline gap follows it. Active 3.6 s per orbit, Loading 1.2 s, otherwise and with reduced motion still.
 - Connection: one IP field + port (validated), connect logic moved from the widget into
   `configLinkProvider` so an attempt survives leaving the tab (no setState after dispose).
-  **Connect no longer jumps to the Control screen**: the screen stays and shows the Connected state;
-  Control is the centre nav button. Cancel really ends the attempt (`disconnect()` completes a cancel
+  A successful Connect still opens the Control screen (owner, 2 Nov); the Connected state shows
+  while the link is up on Config (e.g. during the push), and leaving Control disconnects as before. Cancel really ends the attempt (`disconnect()` completes a cancel
   future in `WebSocketService.connect`). Failure shows the real reason; the timeout that fires is the
   service's 10 s (`WebSocketService.connectTimeout`), the old 12 s wrapper is only a guard. The
   failure snackbar shows only if the card is scrolled off screen.

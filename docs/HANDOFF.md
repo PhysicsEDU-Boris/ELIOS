@@ -29,7 +29,7 @@
 
 ## C1 Config screen (2 Nov, draft PR on `feature/live-scan`)
 
-- Config + Settings sheet from Figma 337:2358; decision 0145 (settings audit, battery "—", saved quiz source, Connect stays on Config, real Cancel/failure reason). Logic in `config_link_provider.dart`, UI in `lib/Screens/config/`.
+- Config + Settings sheet from Figma 337:2358; decision 0145 (settings audit, battery "—", saved quiz source, real Cancel/failure reason). Logic in `config_link_provider.dart`, UI in `lib/Screens/config/`.
 - Tests: `test/screens/config_screen_test.dart` (28), `test/services/config_connection_test.dart` (10). `flutter test` +818 ~20 -2 (the 2 known `elio_tokens_test` failures).
 - Phone: owner session (no guest; nothing recorded), fake robot via `adb reverse` (phone had no Wi-Fi). Shots + notes in `docs/test-results/c1/`. **The phone now runs the C1 debug build** (was the H1v4 tester build); reinstall a tester build when needed.
 - Open: Sound effects and Timer are UI only; AI Error/Paused not seen on the phone; dark divider fix not on the phone build.
