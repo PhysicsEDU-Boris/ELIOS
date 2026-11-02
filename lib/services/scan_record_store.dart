@@ -8,6 +8,10 @@ import '../models/scan_record.dart';
 import '../models/trophy_rules.dart';
 import 'gemma_quiz_service.dart';
 
+/// `--dart-define=SCAN_RECORDS_FILE=scan_records_r3test.json`: a phone test build
+/// keeps its records in a separate file, so the owner's `scan_records.json` is never written.
+const _recordsFileName = String.fromEnvironment('SCAN_RECORDS_FILE', defaultValue: 'scan_records.json');
+
 /// Local storage service for [ScanRecord] items and cumulative trophies.
 /// Data is persisted as a JSON file in the application documents directory.
 class ScanRecordStore extends ChangeNotifier {
@@ -75,7 +79,7 @@ class ScanRecordStore extends ChangeNotifier {
   Future<File> _getFile() async {
     if (_customFile != null) return _customFile;
     final dir = await getApplicationDocumentsDirectory();
-    return File('${dir.path}/scan_records.json');
+    return File('${dir.path}/$_recordsFileName');
   }
 
   /// Loads records from disk. If the file does not exist, starts empty.
