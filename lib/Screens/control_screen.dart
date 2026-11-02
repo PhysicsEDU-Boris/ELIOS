@@ -326,7 +326,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
   /// First time on a phone: open the Guide once and remember it on this device.
   Future<void> _maybeAutoGuide() async {
-    if (!mounted || !isPhoneLandscape(context)) return;
+    // Not isPhoneLandscape: the screen is still turning to landscape on this first frame.
+    if (!mounted || MediaQuery.sizeOf(context).shortestSide >= 600) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       if (prefs.getBool(controlGuideShownKey) ?? false) return;
