@@ -154,13 +154,11 @@ class _IconTile extends StatelessWidget {
 
 class HomeScreen extends ConsumerWidget {
   final FirebaseAuth auth;
-  final VoidCallback onOpenDrawer;
   final VoidCallback onOpenLearning;
 
   const HomeScreen({
     super.key,
     required this.auth,
-    required this.onOpenDrawer,
     required this.onOpenLearning,
   });
 
@@ -252,7 +250,6 @@ class HomeScreen extends ConsumerWidget {
                                         _TopBar(
                                           name: _displayNameFor(user),
                                           photoUrl: user?.photoURL,
-                                          onMenuPressed: onOpenDrawer,
                                           unreadNotificationCount:
                                               unreadNotifications,
                                           onNotificationsPressed: () =>
@@ -469,13 +466,11 @@ class _Bar extends StatelessWidget {
 class _TopBar extends StatelessWidget {
   final String name;
   final String? photoUrl;
-  final VoidCallback onMenuPressed;
   final VoidCallback onNotificationsPressed;
   final int unreadNotificationCount;
 
   const _TopBar({
     required this.name,
-    required this.onMenuPressed,
     required this.onNotificationsPressed,
     required this.unreadNotificationCount,
     this.photoUrl,
@@ -489,26 +484,6 @@ class _TopBar extends StatelessWidget {
         : '$unreadNotificationCount';
     return Row(
       children: [
-        IconButton(
-          onPressed: onMenuPressed,
-          tooltip: 'Open navigation menu',
-          constraints: const BoxConstraints.tightFor(
-            width: _minTap,
-            height: _minTap,
-          ),
-          style: IconButton.styleFrom(foregroundColor: p.textPrimary),
-          icon: const Icon(Icons.menu_rounded, size: 24),
-        ),
-        const SizedBox(width: 8),
-        CircleAvatar(
-          radius: 20,
-          backgroundColor: p.surfaceRaised,
-          backgroundImage: photoUrl == null ? null : NetworkImage(photoUrl!),
-          child: photoUrl == null
-              ? Icon(Icons.person_outline_rounded, color: p.primaryText)
-              : null,
-        ),
-        const SizedBox(width: 8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

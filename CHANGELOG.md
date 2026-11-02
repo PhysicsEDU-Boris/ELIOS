@@ -11,6 +11,10 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- L1: Learn tab redesigned to the L1 v2 Figma for all real content, light and dark: hub, module page, lesson page, quiz list and question screen, My progress, and all 9 simulation pages (Materi / Rumus / Simulasi tabs); module pages list Videos and Guides as separate sections; loading, error, offline, first-launch and empty states; bundled ELIO illustrations as thumbnail fallback; YouTube id parsed from `videoUrl` when missing. Data sources, quiz scoring and physics maths unchanged (decisions 0170-0172).
+
+- N4: top bar with the profile avatar and page title on every tab; the avatar opens a new phone drawer (304 dp, 40% scrim, drag/Back/Escape close, focus returns to the avatar). The Home hamburger is gone (decision 0143).
+
 - N3: new bottom nav (Home, Learn, centre Control, Config, History); the old Profile cell is gone (decision 0142).
 
 - Sidebar drawer rebuilt from the N1 Figma with a Dark mode switch (behind the dark mode option); behaviour unchanged (decision 0141).

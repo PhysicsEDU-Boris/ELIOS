@@ -114,6 +114,21 @@ class VideoLesson {
     };
   }
 
+  /// [youtubeId], or the id parsed from [videoUrl] (watch?v=, youtu.be/,
+  /// /embed/, /shorts/, /live/). Empty when neither has one.
+  String get resolvedYoutubeId {
+    final id = youtubeId.trim();
+    if (id.isNotEmpty) return id;
+    return parseYoutubeId(videoUrl) ?? '';
+  }
+
+  static final _youtubeIdPattern = RegExp(
+    r'(?:youtube(?:-nocookie)?\.com/(?:watch\?(?:.*&)?v=|embed/|shorts/|live/|v/)|youtu\.be/)([A-Za-z0-9_-]{11})',
+  );
+
+  static String? parseYoutubeId(String url) =>
+      _youtubeIdPattern.firstMatch(url.trim())?.group(1);
+
   /// Returns a non-empty String value for [key], or `null`.
   static String? _readString(Map<String, dynamic> map, String key) {
     final v = map[key];

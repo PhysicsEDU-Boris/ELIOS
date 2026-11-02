@@ -42,3 +42,7 @@ their status changed.
 | [0091](0091-google-sans-flex-font.md) | Design file font change to Google Sans Flex / Google Sans Code, new status chip spec (design only, amends 0090) | Draft |
 | [0140](0140-home-screen.md) | Home screen restyle from Figma H1, light and dark, tokens only, behaviour unchanged | Accepted (look pending review) |
 | [0141](0141-sidebar-theme-toggle.md) | Sidebar from Figma N1 with a Dark mode switch behind the option gate | Accepted (review pending) |
+| [0143](0143-profile-top-bar-drawer.md) | Profile avatar top bar and phone drawer from Figma N4 (custom drawer host, gestures, focus) | Accepted (review pending) |
+| [0170](0170-learn-v2-layout.md) | Learn tab L1 v2 layout: components, hub, module, lesson, quiz, progress, simulations | Draft |
+| [0171](0171-learn-thumbnail-fallback.md) | Learn thumbnails: Firestore URL first, bundled illustration as placeholder and fallback | Draft |
+| [0172](0172-learn-offline.md) | Learn loading, error, offline cache and empty states | Draft |

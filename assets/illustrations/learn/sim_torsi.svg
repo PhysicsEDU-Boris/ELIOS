@@ -1,0 +1,22 @@
+<svg width="320" height="200" viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="v1 (not chosen) / Illustrations + icons (components)">
+<g id="Illustration/Sim Torsi" clip-path="url(#clip0_293_2358)">
+<path id="Vector" d="M320 0H0V200H320V0Z" fill="#F1F5F9"/>
+<path id="Vector_2" d="M20 176H300" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M144 146H76C72.6863 146 70 148.686 70 152V170C70 173.314 72.6863 176 76 176H144C147.314 176 150 173.314 150 170V152C150 148.686 147.314 146 144 146Z" fill="#0F172A"/>
+<path id="Vector_4" d="M110 140V60" stroke="#0F172A" stroke-width="20" stroke-linecap="round"/>
+<path id="Vector_5" d="M110 140V60" stroke="#4ADE80" stroke-width="13" stroke-linecap="round"/>
+<path id="Vector_6" d="M110 154C117.732 154 124 147.732 124 140C124 132.268 117.732 126 110 126C102.268 126 96 132.268 96 140C96 147.732 102.268 154 110 154Z" fill="#FBBF24" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_7" d="M119 30H101C98.2386 30 96 32.2386 96 35V51C96 53.7614 98.2386 56 101 56H119C121.761 56 124 53.7614 124 51V35C124 32.2386 121.761 30 119 30Z" fill="#FBBF24" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_8" d="M134 140C134 133.635 131.471 127.53 126.971 123.029C122.47 118.529 116.365 116 110 116" stroke="#15803D" stroke-width="3"/>
+<path id="Vector_9" d="M276 24H250C247.791 24 246 25.7909 246 28V160C246 162.209 247.791 164 250 164H276C278.209 164 280 162.209 280 160V28C280 25.7909 278.209 24 276 24Z" fill="white" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_10" d="M277 128H249V161H277V128Z" fill="#4ADE80"/>
+<path id="Vector_11" d="M246 60H280" stroke="#DC2626" stroke-width="3"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_293_2358">
+<rect width="320" height="200" fill="white"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../../widgets/learn/learn_ui.dart';
+import '../../../../models/physics_module.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../physics/pwm/pwm_notifier.dart';
-import '../../../../../theme/elio_learning_colors.dart';
 import 'painters/pwm_painter.dart';
 import 'widgets/sim_module_header.dart';
 import 'widgets/formula_box.dart';
@@ -64,6 +65,7 @@ class _PwmSimulationPageState extends ConsumerState<PwmSimulationPage> with Sing
     final notifier = ref.read(pwmProvider.notifier);
 
     return SimulationPageScaffold(
+      module: PhysicsModuleId.pwm,
       appBarTitle: 'PWM & Motor',
       header: const SimModuleHeader(
         tag: 'MODUL F · MATERI',
@@ -77,7 +79,7 @@ class _PwmSimulationPageState extends ConsumerState<PwmSimulationPage> with Sing
             const TextSpan(text: 'V_avg = D · V_max = '),
             TextSpan(
               text: '${state.averageVoltage.toStringAsFixed(1)} V',
-              style: const TextStyle(color: elioWarning),
+              style: TextStyle(color: context.elio.secondaryText),
             ),
           ],
         ),
@@ -105,9 +107,9 @@ class _PwmSimulationPageState extends ConsumerState<PwmSimulationPage> with Sing
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.elio.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: elioBorder),
+                      border: Border.all(color: context.elio.borderSubtle),
                     ),
                     child: Row(
                       children: [
@@ -123,12 +125,12 @@ class _PwmSimulationPageState extends ConsumerState<PwmSimulationPage> with Sing
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Kecepatan Motor (RPM)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: elioMuted)),
+                              Text('Kecepatan Motor (RPM)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.elio.textSecondary)),
                               const SizedBox(height: 4),
-                              Text('${state.approxRpm.toStringAsFixed(0)} RPM', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: elioPrimary)),
+                              Text('${state.approxRpm.toStringAsFixed(0)} RPM', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: context.elio.primaryText)),
                               const SizedBox(height: 4),
                               // REQUIRED LABEL: DO NOT REMOVE
-                              const Text('Perkiraan (aproksimasi linear)', style: TextStyle(fontSize: 10, color: elioWarning, fontStyle: FontStyle.italic)),
+                              Text('Perkiraan (aproksimasi linear)', style: TextStyle(fontSize: 10, color: context.elio.secondaryText, fontStyle: FontStyle.italic)),
                             ],
                           ),
                         ),
@@ -152,7 +154,7 @@ class _PwmSimulationPageState extends ConsumerState<PwmSimulationPage> with Sing
                     headerTitle: 'TEGANGAN MOTOR',
                     formulaExpression: 'V_avg = ${(state.dutyPercent / 100.0).toStringAsFixed(2)} × 12.0 = ${state.averageVoltage.toStringAsFixed(1)} Volt',
                     statusIcon: Icons.bolt_rounded,
-                    statusColor: elioOk,
+                    statusColor: context.elio.primaryText,
                     statusText: 'Motor menerima setara ${state.averageVoltage.toStringAsFixed(1)}V',
                   ),
       ],

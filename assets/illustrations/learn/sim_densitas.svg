@@ -1,0 +1,26 @@
+<svg width="320" height="200" viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="v1 (not chosen) / Illustrations + icons (components)">
+<g id="Illustration/Sim Densitas" clip-path="url(#clip0_293_2358)">
+<path id="Vector" d="M320 0H0V200H320V0Z" fill="#F1F5F9"/>
+<path id="Vector_2" d="M20 170H300" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<g id="Group">
+<path id="Vector_3" d="M106.65 40H91.95C90.2103 40 88.8 41.4103 88.8 43.15V49.45C88.8 51.1897 90.2103 52.6 91.95 52.6H106.65C108.39 52.6 109.8 51.1897 109.8 49.45V43.15C109.8 41.4103 108.39 40 106.65 40Z" fill="#22D3EE" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_4" d="M90.9 50.5H107.7V61C107.7 65.2 118.2 69.4 118.2 79.9V136.6C118.2 138.828 117.315 140.964 115.74 142.54C114.164 144.115 112.028 145 109.8 145H88.8C86.5722 145 84.4356 144.115 82.8603 142.54C81.285 140.964 80.4 138.828 80.4 136.6V79.9C80.4 69.4 90.9 65.2 90.9 61V50.5Z" fill="#C7D2FE" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_5" d="M118.2 92.5H80.4V115.6H118.2V92.5Z" fill="white" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="Group_2">
+<path id="Vector_6" d="M230.65 40H215.95C214.21 40 212.8 41.4103 212.8 43.15V49.45C212.8 51.1897 214.21 52.6 215.95 52.6H230.65C232.39 52.6 233.8 51.1897 233.8 49.45V43.15C233.8 41.4103 232.39 40 230.65 40Z" fill="#94A3B8" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_7" d="M214.9 50.5H231.7V61C231.7 65.2 242.2 69.4 242.2 79.9V136.6C242.2 138.828 241.315 140.964 239.74 142.54C238.164 144.115 236.028 145 233.8 145H212.8C210.572 145 208.436 144.115 206.86 142.54C205.285 140.964 204.4 138.828 204.4 136.6V79.9C204.4 69.4 214.9 65.2 214.9 61V50.5Z" fill="#CBD5E1" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_8" d="M242.2 92.5H204.4V115.6H242.2V92.5Z" fill="white" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<path id="Vector_9" d="M132 150H68C64.6863 150 62 152.686 62 156V164C62 167.314 64.6863 170 68 170H132C135.314 170 138 167.314 138 164V156C138 152.686 135.314 150 132 150Z" fill="white" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_10" d="M256 150H192C188.686 150 186 152.686 186 156V164C186 167.314 188.686 170 192 170H256C259.314 170 262 167.314 262 164V156C262 152.686 259.314 150 256 150Z" fill="white" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_11" d="M160 60V140" stroke="#94A3B8" stroke-width="2" stroke-dasharray="6 6"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_293_2358">
+<rect width="320" height="200" fill="white"/>
+</clipPath>
+</defs>
+</svg>

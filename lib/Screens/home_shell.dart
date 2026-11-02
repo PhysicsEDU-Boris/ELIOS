@@ -18,7 +18,9 @@ import '../theme/elio_tokens.dart';
 import '../widgets/app_notification_banner.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
 import '../widgets/elio_bottom_nav.dart';
+import '../widgets/elio_drawer_host.dart';
 import '../widgets/elio_sidebar.dart';
+import '../widgets/elio_top_bar.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
 import 'scan_history_screen.dart';
@@ -40,7 +42,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   // Added by N3; the other indices are unchanged.
   static const int _historyIndex = 4;
 
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _drawerKey = GlobalKey<ElioDrawerHostState>();
+  final _avatarFocus = FocusNode(debugLabel: 'profile avatar');
   int _currentIndex = 0;
   bool _quizInProgress = false;
   int _quizResetGeneration = 0;
@@ -73,10 +76,16 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
     _homeScreen = HomeScreen(
       auth: widget.auth,
-      onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
       onOpenLearning: () => _onBottomNavigationTap(1),
     );
   }
+
+  String get _pageTitle => switch (_currentIndex) {
+    0 => 'Home',
+    1 => 'Learn',
+    2 => 'Configure',
+    _ => 'History',
+  };
 
   Widget _buildCurrentScreen() {
     if (_loggedTabBuilds.add(_currentIndex)) {
@@ -236,8 +245,14 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     if (updateProvider) _syncNavigationProvider(index);
   }
 
+  @override
+  void dispose() {
+    _avatarFocus.dispose();
+    super.dispose();
+  }
+
   Future<void> _onDrawerTap(int index) async {
-    Navigator.pop(context);
+    _drawerKey.currentState?.close();
     await _onBottomNavigationTap(index);
   }
 
@@ -256,29 +271,23 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     final user = widget.auth.currentUser;
 
     return AppNotificationBannerHost(
-      child: Scaffold(
-        key: _scaffoldKey,
-        // Shows behind the bar's rounded corners; the shell is outside ElioTheme.
-        backgroundColor:
-            (ref.watch(elioThemeModeProvider) == ElioThemeMode.dark
-                    ? ElioTokens.dark
-                    : ElioTokens.light)
-                .background,
+      child: ElioDrawerHost(
+        key: _drawerKey,
+        onClosed: _avatarFocus.requestFocus,
         drawer: ElioTheme.wrap(
           Builder(
-            builder: (context) => Drawer(
-              width: 304,
-              backgroundColor: authPalette(context).surface,
+            builder: (context) => Material(
+              color: authPalette(context).surface,
               child: ElioSidebar(
                 user: user,
                 currentIndex: _currentIndex,
                 onSelect: _onDrawerTap,
-                onClose: () => Navigator.pop(context),
+                onClose: () => _drawerKey.currentState?.close(),
                 onSignOut: () async {
-                  Navigator.pop(context);
+                  _drawerKey.currentState?.close();
                   await widget.auth.signOut();
-                  if (!context.mounted) return;
-                  Navigator.of(context).pushReplacement(
+                  if (!mounted) return;
+                  Navigator.of(this.context).pushReplacement(
                     MaterialPageRoute(
                       builder: (_) => LoginScreen(auth: widget.auth),
                     ),
@@ -288,22 +297,57 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             ),
           ),
         ),
-        body: _buildCurrentScreen(),
-        drawerScrimColor: Colors.black.withValues(alpha: 0.4),
-        floatingActionButtonLocation: const ElioControlFabLocation(),
-        floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
-        floatingActionButton: ElioTheme.wrap(
-          ElioControlButton(
-            onTap: () => _onBottomNavigationTap(_controlIndex),
-            modelAsset: 'assets/models/mobilElios5.glb',
+        child: Scaffold(
+          // Shows behind the bar's rounded corners; the shell is outside ElioTheme.
+          backgroundColor:
+              (ref.watch(elioThemeModeProvider) == ElioThemeMode.dark
+                      ? ElioTokens.dark
+                      : ElioTokens.light)
+                  .background,
+          body: Column(
+            children: [
+              ElioTheme.wrap(
+                Builder(
+                  builder: (context) => ColoredBox(
+                    color: authPalette(context).background,
+                    child: SafeArea(
+                      bottom: false,
+                      child: ElioTopBar(
+                        title: _pageTitle,
+                        photoUrl: user?.photoURL,
+                        avatarFocusNode: _avatarFocus,
+                        onOpenProfile: () => _drawerKey.currentState?.open(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                // The top bar already took the status bar inset.
+                child: MediaQuery.removePadding(
+                  context: context,
+                  removeTop: true,
+                  child: _buildCurrentScreen(),
+                ),
+              ),
+            ],
           ),
-        ),
-        bottomNavigationBar: ElioTheme.wrap(
-          ElioBottomNav(
-            // Control (3) is an action, never the active tab.
-            currentIndex: _currentIndex,
-            onSelectTab: _onBottomNavigationTap,
-            onControl: () => _onBottomNavigationTap(_controlIndex),
+          floatingActionButtonLocation: const ElioControlFabLocation(),
+          floatingActionButtonAnimator:
+              FloatingActionButtonAnimator.noAnimation,
+          floatingActionButton: ElioTheme.wrap(
+            ElioControlButton(
+              onTap: () => _onBottomNavigationTap(_controlIndex),
+              modelAsset: 'assets/models/mobilElios5.glb',
+            ),
+          ),
+          bottomNavigationBar: ElioTheme.wrap(
+            ElioBottomNav(
+              // Control (3) is an action, never the active tab.
+              currentIndex: _currentIndex,
+              onSelectTab: _onBottomNavigationTap,
+              onControl: () => _onBottomNavigationTap(_controlIndex),
+            ),
           ),
         ),
       ),
