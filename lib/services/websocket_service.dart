@@ -53,6 +53,18 @@ class WebSocketService {
   String _lastEmittedStatus = 'Disconnected';
   int _retryCount = 0;
   final int _maxRetries = 30;
+
+  /// Wait before each auto-reconnect attempt.
+  static const reconnectDelay = Duration(milliseconds: 2000);
+  DateTime? _nextRetryAt;
+
+  /// Read-only for the Control screen's retry line (R2).
+  int get retryCount => _retryCount;
+  int get maxRetries => _maxRetries;
+  bool get autoReconnectEnabled => _autoReconnectEnabled;
+
+  /// When the scheduled reconnect fires; null when none is scheduled.
+  DateTime? get nextRetryAt => (_reconnectTimer?.isActive ?? false) ? _nextRetryAt : null;
   int _connectionGeneration = 0;
   int _receivedFrameCount = 0;
   int _receivedFrameBytes = 0;
@@ -371,8 +383,9 @@ class WebSocketService {
 
     _emitStatus('Reconnecting...');
 
-    final delayMs = 2000;
+    final delayMs = reconnectDelay.inMilliseconds;
     _retryCount++;
+    _nextRetryAt = DateTime.now().add(reconnectDelay);
 
     _reconnectTimer = Timer(Duration(milliseconds: delayMs), () async {
       _reconnectTimer = null;
