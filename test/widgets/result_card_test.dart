@@ -12,7 +12,7 @@ import 'package:elio/services/robot/robot_controller.dart';
 import 'package:elio/services/robot/simulated_robot.dart';
 import 'package:elio/services/scan_record_store.dart';
 import 'package:elio/widgets/control_layout.dart';
-import 'package:elio/widgets/drive_pad.dart';
+import 'package:elio/widgets/control/r2_controls.dart';
 import 'package:elio/widgets/waste_quiz_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -360,23 +360,18 @@ void main() {
                   debugScanButton: ControlPill(icon: Icons.bug_report_outlined, label: 'Debug Scan', onTap: () {}),
                   debugBuild: true,
                   historyButton: const HistoryPill(),
-                  armHeight: (c) => ArmSlider(compact: c, label: 'UP/DOWN', sublabel: 'ARM HEIGHT', value: 0.2, enabled: true, onChanged: (_) {}),
-                  drivePad: (c) => DrivePad(
-                    compact: c,
-                    speed: 75,
-                    enabled: true,
-                    onForward: () {},
-                    onBack: () {},
-                    onLeft: () {},
-                    onRight: () {},
-                    onStop: () {},
-                  ),
+                  driveStatus: const SizedBox(),
+                  joystick: DriveJoystick(enabled: true, onDirection: (_) {}, onRelease: () {}),
+                  speed: const SizedBox(height: 40),
                   camera: const ColoredBox(key: ValueKey('control_camera'), color: Color(0xFFD9D9D9)),
-                  actions: GripperButtons(enabled: true, width: 30, onWidthChanged: (_) {}, onPickUp: () {}, onRelease: () {}),
-                  speed: (c) => SpeedSlider(compact: c, speed: 75, enabled: true, onChanged: (_) {}),
+                  actions: const SizedBox(),
+                  armStatus: const SizedBox(),
+                  armHeight: ControlFader(vertical: true, value: 0.2, onChanged: (_) {}),
+                  armReach: ControlFader(vertical: true, value: 0.3, onChanged: (_) {}),
+                  power: const SizedBox(height: 52),
                   stopButton: EmergencyStopButton(onStop: () => stoppedTapped = true),
-                  armReach: (c) => ArmSlider(compact: c, label: 'FORWARD/BACKWARD', sublabel: 'ARM REACH', value: 0.3, enabled: true, onChanged: (_) {}),
-                  launcher: const QuizLauncherButton(),
+                  bottomCards: const [SizedBox(), SizedBox(), SizedBox(), SizedBox()],
+                  compactStrip: const SizedBox(),
                   quiz: WasteQuizPopup(
                     onStop: () => stoppedTapped = true,
                     onRescan: () => rescanTapped = true,

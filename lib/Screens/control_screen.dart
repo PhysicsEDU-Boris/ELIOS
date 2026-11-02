@@ -3,34 +3,48 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart'
-    show DeviceOrientation, HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey, SystemChrome, SystemUiMode;
+    show DeviceOrientation, HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey, MethodChannel, SystemChrome, SystemUiMode;
 
 import '../models/config_model.dart';
+import '../models/control_session.dart';
 import '../models/scanned_waste.dart';
+import '../providers/config_link_provider.dart';
 import '../providers/esp_config_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../providers/robot_provider.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../services/gemma_quiz_service.dart';
 import '../services/live_scan_controller.dart';
+import '../services/live_scan_state_machine.dart' show LiveScanState;
 import '../services/quiz_tts_service.dart';
 import '../services/robot/motion_gate.dart';
 import '../services/robot/r1_orchestrator.dart';
 import '../services/robot/robot_controller.dart';
+import '../services/scan_record_store.dart';
 import '../services/websocket_service.dart';
+import '../theme/elio_theme.dart';
+import '../widgets/control/control_panels.dart';
+import '../widgets/control/r2_controls.dart';
 import '../widgets/debug_phone_camera_sheet.dart';
 import '../widgets/control_layout.dart';
 import '../widgets/desktop_viewport.dart';
-import '../widgets/drive_pad.dart';
+import '../widgets/elio_drawer_host.dart';
+import '../widgets/elio_sidebar.dart';
+import '../widgets/elio_top_bar.dart' show ElioAvatar;
+import '../widgets/learn/learn_ui.dart' show LearnTheme;
 import '../widgets/live_scan_debug_overlay.dart';
 import '../widgets/question_source_switch.dart';
 import '../widgets/segmentation_overlay_painter.dart';
 import '../widgets/waste_quiz_popup.dart';
 import '../services/frame_source/maix_cam_source.dart';
 import '../services/frame_source/frame_source.dart';
+import 'login_screen.dart';
 
 /// The MaixCAM2 already draws its box, mask and label into the video, so the
 /// app's own box is a debug aid, shown with the live-scan debug overlay only.
@@ -82,10 +96,16 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   String? _r1Status;
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _drawerKey = GlobalKey<ElioDrawerHostState>();
 
-  static const Color textSecondary = Color(0xFF7F8C8D);
-  static const Color primaryColor = Color(0xFF1D9E75);
-  static const Color redAccent = Color(0xFFE74C3C);
+  /// The R2 "Scan quiz" toggle: session-only (decision 0173).
+  bool _scanQuizOn = true;
+
+  /// "This drive" counts records saved from here on.
+  final DateTime _openedAt = DateTime.now();
+
+  /// The joystick's current direction, for the drive card's status chip.
+  DriveDir? _driveDir;
 
   @override
   void initState() {
@@ -143,7 +163,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       armBusy: () => _r1?.ignoresLiveScanLocks ?? false,
       handPaused: () => _r1?.handInView ?? false,
     )..addListener(() {
-        _liveScan?.setScanPaused(_gate.stopped); // no lock, identify or new quiz while STOPPED (0026)
+        _applyScanPause(); // no lock, identify or new quiz while STOPPED (0026)
         if (_gate.stopped && mounted) {
           ref.read(robotControlProvider.notifier).updateStatus(atHome: false);
         }
@@ -237,7 +257,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             armMoving: WebSocketService().armMoving, // same message as the frame (0026)
             capturedFrame: frame,
           );
-        } else if (!_gate.stopped) {
+        } else if (!_gate.stopped && _scanQuizOn) {
           ref.read(wasteQuizProvider.notifier).onDetections(frame.detections!);
         }
       }
@@ -277,6 +297,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     unawaited(_connectAndStartStream());
     debugPrint('Robot controls enabled: true (awaiting WebSocket connection)');
   }
+
+  /// STOPPED (0026) or the Scan quiz toggle off (0173): frames still stream,
+  /// none starts a lock or a quiz. Never touches the stream or the robot.
+  void _applyScanPause() => _liveScan?.setScanPaused(_gate.stopped || !_scanQuizOn);
 
   /// Debug overlay: Gemma's item next to the detector class (decision 0025).
   static String? _scanLine(ScannedWaste? scan) =>
@@ -404,10 +428,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
     final robotState = ref.watch(robotControlProvider);
     final status = ref.watch(robotStatusProvider).value ?? 'Disconnected';
+    final quizState = ref.watch(wasteQuizProvider);
 
     final isConnected = status == 'Connected';
-    final isReconnecting = status == 'Reconnecting...';
     final isOperational = isConnected;
+    final link = controlLink(status);
 
     if (_lastLoggedRobotControlsEnabled != isOperational) {
       _lastLoggedRobotControlsEnabled = isOperational;
@@ -416,114 +441,302 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
     final notifier = _robotNotifier;
     final speed = robotState.pwmSpeed;
-    final statusLabel = isConnected
-        ? 'LIVE'
-        : isReconnecting
-        ? 'RECONNECTING'
-        : 'OFFLINE';
+    final detections = _latestFrame?.detections ?? const <Detection>[];
+    final target = isConnected ? hudTarget(detections) : null;
+    final tip = controlTip(
+      link: link,
+      stopped: _gate.stopped,
+      quizOpen: quizState.phase != WasteQuizPhase.idle && !quizState.minimized,
+      itemLabel: target?.label,
+      itemLocked: _liveScan?.machine.state == LiveScanState.asking,
+      distCm: target?.distCm,
+    );
+    final ws = WebSocketService();
+    final user = Firebase.apps.isEmpty ? null : FirebaseAuth.instance.currentUser;
 
     void stop() => _gate.emergencyStop('button');
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: Colors.white,
-      endDrawerEnableOpenDragGesture: false,
-      endDrawer: kDebugMode ? _debugSheet(context) : null,
-      body: SafeArea(
-        child: ControlLayout(
-          stoppedBanner: _gate.stopped ? StoppedBanner(reason: _gate.stopReason, onResume: _resumeAfterStop) : null,
-          exitButton: ControlPill(icon: Icons.arrow_back_rounded, label: 'Exit', onTap: () => Navigator.of(context).pop()),
-          debugScanButton: ControlPill(
-            icon: Icons.bug_report_outlined,
-            label: 'Debug Scan',
-            onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
-          ),
-          homeButton: HomeButton(
-            onConfirmed: _gate.home,
-            enabled: isOperational,
-          ),
-          historyButton: const HistoryPill(),
-          armHeight: (compact) => ArmSlider(
-            compact: compact,
-            label: 'UP/DOWN',
-            sublabel: 'ARM HEIGHT',
-            value: (robotState.heightValue / 180).clamp(0.0, 1.0),
-            enabled: isOperational,
-            onChanged: (value) {
-              if (_gate.servo('height', (value * 180).toInt())) {
-                notifier.setHeightValue(value * 180);
-                _scheduleStatusRequest();
-              }
-            },
-          ),
-          drivePad: (compact) => DrivePad(
-            compact: compact,
-            speed: speed,
-            enabled: isOperational,
-            onForward: () => _gate.motor(speed.toInt(), speed.toInt()),
-            onBack: () => _gate.motor(-speed.toInt(), -speed.toInt()),
-            onLeft: () => _gate.motor(-speed.toInt(), speed.toInt()),
-            onRight: () => _gate.motor(speed.toInt(), -speed.toInt()),
-            onStop: _gate.stopWheels, // also every D-pad release
-          ),
-          camera: _LandscapeCameraPanel(
-            currentFrame: _latestFrame?.bytes,
-            statusLabel: statusLabel,
-            streamFps: _streamFps,
-            frameCount: _frameCount,
-            lastFrameAt: _lastFrameAt,
-            lastFrameBytes: _lastFrameBytes,
-            detections: _latestFrame?.detections ?? const [],
-            detectionImageSize: Size(
-              _latestFrame?.width.toDouble() ?? 0,
-              _latestFrame?.height.toDouble() ?? 0,
+    void reconnect() => unawaited(_connectAndStartStream());
+
+    return ElioTheme.wrap(Builder(builder: (context) {
+      final p = context.elio;
+      final tall = MediaQuery.sizeOf(context).height >= 700;
+      final (driveWord, driveColor) = switch (link) {
+        ControlLink.waiting => ('Waiting', p.secondaryText),
+        ControlLink.disconnected => ('Offline', p.errorText),
+        _ when _gate.stopped => ('Stopped', p.errorText),
+        _ => (switch (_driveDir) {
+            DriveDir.forward => 'Forward',
+            DriveDir.back => 'Back',
+            DriveDir.left => 'Left',
+            DriveDir.right => 'Right',
+            null => 'Ready',
+          }, p.primaryText),
+      };
+      final (armWord, armColor) = switch (link) {
+        ControlLink.waiting => ('Waiting', p.secondaryText),
+        ControlLink.disconnected => ('Offline', p.errorText),
+        _ when _gate.stopped => ('Stopped', p.errorText),
+        _ => (_gate.isHoming ? 'Homing' : 'Ready', p.primaryText),
+      };
+      Widget hint(String art, String text) => Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: p.surfaceRaised, borderRadius: BorderRadius.circular(12)),
+            child: Row(children: [
+              controlArt(art, height: 36),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(text, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(color: p.textSecondary, fontSize: 12)),
+              ),
+            ]),
+          );
+      Widget armFader(String label, String sub, double value, ValueChanged<double> onChanged) => Column(children: [
+            Text('${(value * 100).round()}%', style: TextStyle(color: p.primaryText, fontWeight: FontWeight.w700, fontSize: 14)),
+            const SizedBox(height: 4),
+            Expanded(
+              child: SizedBox(
+                width: 56,
+                child: ControlFader(vertical: true, value: value, semanticLabel: label, onChanged: isOperational ? onChanged : null),
+              ),
             ),
-          ),
-          actions: GripperButtons(
-            enabled: isOperational,
-            width: robotState.gripperVal,
-            onWidthChanged: (value) {
-              final width = value.round();
-              if (_gate.servo('gripper', width)) notifier.setGripperVal(width.toDouble());
+            const SizedBox(height: 4),
+            ControlCaps(label),
+            if (tall) Text(sub, maxLines: 1, style: TextStyle(color: p.textTertiary, fontSize: 11)),
+          ]);
+      final tally = driveTally(ScanRecordStore.instance.records, _openedAt);
+      final missionDone = tally.bins.values.fold(0, (a, b) => a + b);
+      void onScanQuiz(bool on) => setState(() {
+            _scanQuizOn = on;
+            _applyScanPause();
+          });
+      void onVoice(bool _) => ref.read(wasteQuizProvider.notifier).toggleVoice();
+
+      return ElioDrawerHost(
+        key: _drawerKey,
+        drawer: Material(
+          color: p.surface,
+          child: ElioSidebar(
+            user: user,
+            currentIndex: -1, // Control is not a tab
+            onClose: () => _drawerKey.currentState?.close(),
+            onSelect: (index) {
+              final nav = ref.read(navigationIndexProvider.notifier);
+              _drawerKey.currentState?.close();
+              Navigator.of(context).pop(); // leaving Control disconnects (dispose)
+              nav.state = index;
             },
-            onPickUp: () {
-              if (_gate.servo('gripper', 100)) {
-                notifier.setGripperVal(100);
-                if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
-              }
-            },
-            onRelease: () {
-              if (_gate.servo('gripper', 0)) notifier.setGripperVal(0);
-            },
-          ),
-          speed: (compact) => SpeedSlider(compact: compact, speed: speed, enabled: isOperational, onChanged: notifier.setPwmSpeed),
-          stopButton: EmergencyStopButton(onStop: stop),
-          armReach: (compact) => ArmSlider(
-            compact: compact,
-            label: 'FORWARD/BACKWARD',
-            sublabel: 'ARM REACH',
-            value: (robotState.reachValue / 180).clamp(0.0, 1.0),
-            enabled: isOperational,
-            onChanged: (value) {
-              if (_gate.servo('reach', (value * 180).toInt())) {
-                notifier.setReachValue(value * 180);
-                _scheduleStatusRequest();
-              }
-            },
-          ),
-          launcher: const QuizLauncherButton(),
-          quiz: WasteQuizPopup(
-            onStop: stop,
-            showLauncher: false,
-            onRescan: () {
-              _liveScan?.logEvent('rescan_tapped', {});
-              _liveScan?.rescan();
+            onSignOut: () async {
+              final nav = Navigator.of(context, rootNavigator: true);
+              _drawerKey.currentState?.close();
+              await FirebaseAuth.instance.signOut();
+              nav.pushAndRemoveUntil(
+                MaterialPageRoute<void>(builder: (_) => LoginScreen(auth: FirebaseAuth.instance)),
+                (_) => false,
+              );
             },
           ),
         ),
-      ),
-    );
+        child: Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: p.background,
+          endDrawerEnableOpenDragGesture: false,
+          endDrawer: kDebugMode ? _debugSheet(context) : null,
+          body: SafeArea(
+            child: AnimatedBuilder(
+              animation: ScanRecordStore.instance, // the tally and History follow new records
+              builder: (context, _) => ControlLayout(
+                stoppedBanner: _gate.stopped ? StoppedBanner(reason: _gate.stopReason, onResume: _resumeAfterStop) : null,
+                stoppedPill: _gate.stopped ? StoppedPill(reason: _gate.stopReason) : null,
+                exitButton: ControlPill(icon: Icons.arrow_back_rounded, label: 'Exit', onTap: () => Navigator.of(context).pop()),
+                debugScanButton: ControlPill(
+                  icon: Icons.bug_report_outlined,
+                  label: 'Debug Scan',
+                  dashed: true,
+                  onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
+                ),
+                historyButton: const HistoryPill(),
+                avatar: ElioAvatar(photoUrl: user?.photoURL, onTap: () => _drawerKey.currentState?.open()),
+                driveStatus: ControlStatusChip(label: driveWord, color: driveColor),
+                joystick: controlEnabled(
+                  isOperational,
+                  DriveJoystick(
+                    enabled: isOperational,
+                    onDirection: (dir) {
+                      driveCommand(_gate, dir, speed.toInt());
+                      setState(() => _driveDir = dir);
+                    },
+                    onRelease: () {
+                      _gate.stopWheels(); // motor 0,0, as every D-pad release
+                      setState(() => _driveDir = null);
+                    },
+                  ),
+                ),
+                driveHint: hint('tyre_buddy', isOperational ? 'Push to drive · let go to stop' : 'Unlocks when the robot connects'),
+                speed: controlEnabled(
+                  isOperational,
+                  Column(mainAxisSize: MainAxisSize.min, children: [
+                    Row(children: [
+                      const Expanded(child: ControlCaps('SPEED (PWM)')),
+                      Text('${speed.toInt()}%', style: TextStyle(color: p.primaryText, fontWeight: FontWeight.w700, fontSize: 14)),
+                    ]),
+                    SizedBox(
+                      height: 40,
+                      child: ControlFader(value: speed, max: 100, semanticLabel: 'Speed', onChanged: isOperational ? notifier.setPwmSpeed : null),
+                    ),
+                    const SizedBox(height: 4),
+                    GearChips(speed: speed, onSelect: isOperational ? notifier.setPwmSpeed : null),
+                  ]),
+                ),
+                camera: _LandscapeCameraPanel(
+                  currentFrame: _latestFrame?.bytes,
+                  link: link,
+                  streamFps: _streamFps,
+                  frameCount: _frameCount,
+                  lastFrameAt: _lastFrameAt,
+                  lastFrameBytes: _lastFrameBytes,
+                  detections: detections,
+                  detectionImageSize: Size(
+                    _latestFrame?.width.toDouble() ?? 0,
+                    _latestFrame?.height.toDouble() ?? 0,
+                  ),
+                  retry: RetryInfo(
+                    attempt: ws.retryCount,
+                    maxAttempts: ws.maxRetries,
+                    nextRetryAt: ws.nextRetryAt,
+                    autoReconnect: ws.autoReconnectEnabled,
+                  ),
+                  onReconnect: reconnect,
+                  onWifiSettings: defaultTargetPlatform == TargetPlatform.android
+                      ? () => const MethodChannel('elio/device_health').invokeMethod<void>('wifiSettings')
+                      : null,
+                ),
+                actions: controlEnabled(
+                  isOperational,
+                  LayoutBuilder(builder: (context, c) {
+                    final key = (c.maxHeight - 26).clamp(36.0, 64.0);
+                    return Row(children: [
+                      HomeButton(onConfirmed: _gate.home, enabled: isOperational, size: key),
+                      const SizedBox(width: 10),
+                      TransportKey(
+                        icon: Icons.back_hand_outlined,
+                        label: 'PICK UP',
+                        primary: true,
+                        size: key,
+                        onTap: isOperational
+                            ? () {
+                                if (_gate.servo('gripper', 100)) {
+                                  notifier.setGripperVal(100);
+                                  if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
+                                }
+                              }
+                            : null,
+                      ),
+                      const SizedBox(width: 10),
+                      TransportKey(
+                        icon: Icons.front_hand_outlined,
+                        label: 'RELEASE',
+                        size: key,
+                        onTap: isOperational
+                            ? () {
+                                if (_gate.servo('gripper', 0)) notifier.setGripperVal(0);
+                              }
+                            : null,
+                      ),
+                      VerticalDivider(width: 24, color: p.borderSubtle),
+                      Expanded(
+                        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          Row(children: [
+                            const Expanded(child: ControlCaps('GRIPPER')),
+                            Text('${robotState.gripperVal.round()}%',
+                                style: TextStyle(color: p.primaryText, fontWeight: FontWeight.w700, fontSize: 14)),
+                          ]),
+                          SizedBox(
+                            height: 36,
+                            child: ControlFader(
+                              value: robotState.gripperVal,
+                              max: 100,
+                              semanticLabel: 'Gripper',
+                              onChanged: isOperational
+                                  ? (value) {
+                                      final width = value.round();
+                                      if (_gate.servo('gripper', width)) notifier.setGripperVal(width.toDouble());
+                                    }
+                                  : null,
+                            ),
+                          ),
+                          if (c.maxHeight >= 90)
+                            Row(children: [
+                              Text('Open', style: TextStyle(color: p.textTertiary, fontSize: 11)),
+                              const Spacer(),
+                              Text('Closed', style: TextStyle(color: p.textTertiary, fontSize: 11)),
+                            ]),
+                        ]),
+                      ),
+                    ]);
+                  }),
+                ),
+                armStatus: ControlStatusChip(label: armWord, color: armColor),
+                armHeight: controlEnabled(
+                  isOperational,
+                  armFader('HEIGHT', 'Up / Down', (robotState.heightValue / 180).clamp(0.0, 1.0), (value) {
+                    if (_gate.servo('height', (value * 180).toInt())) {
+                      notifier.setHeightValue(value * 180);
+                      _scheduleStatusRequest();
+                    }
+                  }),
+                ),
+                armReach: controlEnabled(
+                  isOperational,
+                  armFader('REACH', 'Fwd / Back', (robotState.reachValue / 180).clamp(0.0, 1.0), (value) {
+                    if (_gate.servo('reach', (value * 180).toInt())) {
+                      notifier.setReachValue(value * 180);
+                      _scheduleStatusRequest();
+                    }
+                  }),
+                ),
+                power: PowerGlowButton(
+                  link: link,
+                  size: tall ? 64 : 52,
+                  onTap: link == ControlLink.disconnected
+                      ? reconnect
+                      : () => unawaited(ref.read(configLinkProvider.notifier).disconnect()),
+                ),
+                stopButton: EmergencyStopButton(onStop: stop),
+                armTip: hint(
+                  'gear_buddy',
+                  isOperational
+                      ? 'Slide up to lift, slide forward to reach. The arm only moves when the robot is not STOPPED.'
+                      : 'Arm controls unlock when the robot is connected. STOP always works.',
+                ),
+                bottomCards: [
+                  MissionCard(done: missionDone),
+                  DriveTallyCard(bins: tally.bins, trophies: tally.trophies),
+                  ElioTipCard(text: tip.text, mood: tip.mood),
+                  ControlTogglesCard(scanQuiz: _scanQuizOn, voice: quizState.voiceOn, onScanQuiz: onScanQuiz, onVoice: onVoice),
+                ],
+                compactStrip: ControlCompactStrip(
+                  missionDone: missionDone,
+                  bins: tally.bins,
+                  tip: tip.text,
+                  scanQuiz: _scanQuizOn,
+                  voice: quizState.voiceOn,
+                  onScanQuiz: onScanQuiz,
+                  onVoice: onVoice,
+                ),
+                quiz: WasteQuizPopup(
+                  onStop: stop,
+                  showLauncher: false,
+                  onRescan: () {
+                    _liveScan?.logEvent('rescan_tapped', {});
+                    _liveScan?.rescan();
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }));
   }
-
   /// Debug Scan (debug builds only): the live-scan readout, the question
   /// source and "Reset scan (debug)", off the student's screen.
   Widget _debugSheet(BuildContext context) {
@@ -611,114 +824,60 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 class _LandscapeCameraPanel extends StatelessWidget {
   const _LandscapeCameraPanel({
     required this.currentFrame,
-    required this.statusLabel,
+    required this.link,
     required this.streamFps,
     required this.frameCount,
     required this.lastFrameAt,
     required this.lastFrameBytes,
     required this.detections,
     required this.detectionImageSize,
+    required this.retry,
+    required this.onReconnect,
+    this.onWifiSettings,
   });
 
   final Uint8List? currentFrame;
-  final String statusLabel;
+  final ControlLink link;
   final double streamFps;
   final int frameCount;
   final DateTime? lastFrameAt;
   final int lastFrameBytes;
   final List<Detection> detections;
   final Size detectionImageSize;
+  final RetryInfo retry;
+  final VoidCallback onReconnect;
+  final VoidCallback? onWifiSettings;
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = statusLabel == 'LIVE'
-        ? _ControlScreenState.primaryColor
-        : statusLabel == 'RECONNECTING'
-        ? const Color(0xFFE8812A)
-        : _ControlScreenState.redAccent;
-
-    // Sized by ControlLayout (524 x 300 at most, Figma 43:63).
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F3F2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD0D0D0)),
+    return ControlCameraHud(
+      key: const ValueKey('control_camera'),
+      frame: currentFrame,
+      imageSize: detectionImageSize,
+      detections: detections,
+      link: link,
+      fps: streamFps,
+      retry: retry,
+      onReconnect: onReconnect,
+      onWifiSettings: onWifiSettings,
+      debugBoxes: _showAppDetectionBoxes &&
+              detections.isNotEmpty &&
+              detectionImageSize.width > 0 &&
+              detectionImageSize.height > 0
+          ? CustomPaint(
+              painter: SegmentationOverlayPainter(
+                detections: detections,
+                imageSize: detectionImageSize,
+              ),
+            )
+          : null,
+      diagnostics: _CameraDiagnosticsBadge(
+        streamFps: streamFps,
+        frameCount: frameCount,
+        lastFrameAt: lastFrameAt,
+        lastFrameBytes: lastFrameBytes,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(11),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (currentFrame != null)
-              Image.memory(
-                currentFrame!,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-              )
-            else
-              _CameraFallback(
-                isLoading: true,
-                message: statusLabel == 'LIVE'
-                    ? 'Connected. Waiting for camera frames...'
-                    : 'Waiting for MaixCAM2 stream...',
-              ),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x33000000),
-                    Colors.transparent,
-                    Color(0x55000000),
-                  ],
-                  stops: [0, 0.55, 1],
-                ),
-              ),
-            ),
-            if (_showAppDetectionBoxes &&
-                detections.isNotEmpty &&
-                detectionImageSize.width > 0 &&
-                detectionImageSize.height > 0)
-              CustomPaint(
-                painter: SegmentationOverlayPainter(
-                  detections: detections,
-                  imageSize: detectionImageSize,
-                ),
-              ),
-            Positioned(
-              left: 13,
-              bottom: 13,
-              child: _CameraDiagnosticsBadge(
-                streamFps: streamFps,
-                frameCount: frameCount,
-                lastFrameAt: lastFrameAt,
-                lastFrameBytes: lastFrameBytes,
-              ),
-            ),
-            Positioned(
-              top: 13,
-              right: 13,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: Text(
-                  statusLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.66,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      quizButton: const QuizReopenButton(),
     );
   }
 }
@@ -780,59 +939,6 @@ class _CameraDiagnosticsBadge extends ConsumerWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CameraFallback extends StatelessWidget {
-  const _CameraFallback({required this.isLoading, required this.message});
-
-  final bool isLoading;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFC4C4C4), Color(0xFFF2F2F2), Color(0xFFD9D9D9), Color(0xFFA8A8A8)],
-          stops: [0, 0.45, 0.6, 1],
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isLoading)
-              const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  color: _ControlScreenState.primaryColor,
-                  strokeWidth: 3,
-                ),
-              )
-            else
-              const Icon(
-                Icons.videocam_off_outlined,
-                color: _ControlScreenState.textSecondary,
-                size: 28,
-              ),
-            const SizedBox(height: 10),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF6B6B6B),
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

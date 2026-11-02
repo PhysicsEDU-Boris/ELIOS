@@ -11,7 +11,7 @@ import 'package:elio/services/frame_source/frame_source.dart';
 import 'package:elio/services/robot/r1_constants.dart' show armSettle;
 import 'package:elio/services/live_scan_state_machine.dart';
 import 'package:elio/services/websocket_service.dart';
-import 'package:elio/widgets/control_layout.dart' show GripperButtons;
+import 'package:elio/widgets/control/r2_controls.dart' show TransportKey;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -141,10 +141,10 @@ void main() {
       latestFrame = laterFrame;
       controller.onDetections([_plastic], frameSize: _frame, capturedFrame: laterFrame);
     }
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: GripperButtons(
-      enabled: true,
-      onPickUp: controller.onPickUpPressed,
-      onRelease: () {},
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: TransportKey(
+      icon: Icons.back_hand_outlined,
+      label: 'PICK UP',
+      onTap: controller.onPickUpPressed,
     ))));
     await tester.tap(find.text('PICK UP'));
 
