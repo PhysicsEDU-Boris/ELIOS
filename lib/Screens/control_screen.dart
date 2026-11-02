@@ -107,6 +107,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// The joystick's current direction, for the drive card's status chip.
   DriveDir? _driveDir;
 
+  /// The last detector frame's boxes: preview-only frames (every other one)
+  /// carry none, and the HUD tag must not blink (R2).
+  List<Detection> _hudDetections = const [];
+
   @override
   void initState() {
     super.initState();
@@ -244,7 +248,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         _fpsWindowStart = now;
       }
 
-      setState(() => _latestFrame = frame);
+      setState(() {
+        _latestFrame = frame;
+        if (frame.detections != null) _hudDetections = frame.detections!;
+      });
 
       // Auto-generated waste quiz: only fed by the real MaixCAM2 stream, the
       // debug phone-camera path triggers it manually instead.
@@ -441,7 +448,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
     final notifier = _robotNotifier;
     final speed = robotState.pwmSpeed;
-    final detections = _latestFrame?.detections ?? const <Detection>[];
+    final detections = _hudDetections;
     final target = isConnected ? hudTarget(detections) : null;
     final tip = controlTip(
       link: link,
