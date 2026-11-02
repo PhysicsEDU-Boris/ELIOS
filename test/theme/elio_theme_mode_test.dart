@@ -164,10 +164,6 @@ void main() {
     expect(find.text('Connection, video, sound and quiz'), findsOneWidget);
     expect(find.text('Mode tampilan'), findsNothing);
     expect(find.text('Tampilan'), findsNothing);
-    const optionExpected =
-        bool.fromEnvironment('DARK_MODE_OPTION') ||
-        bool.fromEnvironment('TESTER_BUILD');
-    expect(darkModeOption, optionExpected, reason: 'the sidebar switch still follows the flag');
   });
 
   testWidgets(

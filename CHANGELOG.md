@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- The sidebar Dark mode switch is in every build again (it was only in builds made with DARK_MODE_OPTION or TESTER_BUILD). On Android the launcher icon follows the theme: dark navy icon in dark mode, light icon in light mode, switched when you leave the app (decision 0146).
+
 - C1: Config screen and Settings sheet rebuilt from Figma in light and dark: robot hero with drag-to-rotate 3D model, ELIOS AI card (Off, Loading, Active, Error, Paused) with the leaf-orbit logo, camera and quiz-source tiles, Connection card with connecting/connected/failed states, a working Cancel, the real failure reason and timeout, and no fake battery value. The quiz source choice is saved; Show FPS overlay and Master volume now take effect (decision 0145).
 
 - H1v4: gamified Home from Figma (level tree, stats, daily quests, 17-week scan activity with a month view, bin buddies with residu in Anorganik, week bars, quiz sparkline, medals, did-you-know, local search, loading and guest states), light and dark, real scan data only; done daily quests add their rewards to the trophy total and level everywhere, from 2 Nov 2026 on (decision 0144).

@@ -1,13 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'app_preferences_provider.dart' show testerBuild;
-
 enum ElioThemeMode { light, dark }
 
-// shortcut: hidden until S1–S3 migrate every screen to tokens; then remove the gate.
-const darkModeOption = bool.fromEnvironment('DARK_MODE_OPTION') || testerBuild;
+const appIconChannel = MethodChannel('elio/app_icon');
+
+/// The Android launcher icon follows the theme (decision 0146). Other
+/// platforms keep their icon; a failure never blocks the theme change.
+Future<void> applyAppIcon(ElioThemeMode mode) async {
+  if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+  try {
+    await appIconChannel.invokeMethod<void>('setDark', mode == ElioThemeMode.dark);
+  } catch (e) {
+    debugPrint('App icon switch failed: $e');
+  }
+}
 
 final elioThemeModeProvider =
     NotifierProvider<ElioThemeModeNotifier, ElioThemeMode>(
@@ -31,6 +42,7 @@ class ElioThemeModeNotifier extends Notifier<ElioThemeMode> {
       final saved = (await SharedPreferences.getInstance()).getString(_key);
       if (!_disposed && !_touched) {
         state = saved == 'dark' ? ElioThemeMode.dark : ElioThemeMode.light;
+        unawaited(applyAppIcon(state)); // repairs an icon left out of step
       }
     } catch (e) {
       debugPrint('ElioThemeMode load failed: $e');
@@ -40,6 +52,7 @@ class ElioThemeModeNotifier extends Notifier<ElioThemeMode> {
   void setMode(ElioThemeMode mode) {
     _touched = true;
     state = mode;
+    unawaited(applyAppIcon(mode));
     SharedPreferences.getInstance()
         .then((p) => p.setString(_key, mode.name))
         .catchError((Object e) {

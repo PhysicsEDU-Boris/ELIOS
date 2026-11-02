@@ -23,9 +23,9 @@
 - Follow `CLAUDE.md` Mac build hygiene: reuse the retained app/model, inventory before building and verify one app registration afterwards. No physical robot movement or sharing recipient selection.
 - Overall queue: U4c combined native acceptance, then U7 Firebase sync, then U8 documentation/Figma. See [NEXT_TASK.md](NEXT_TASK.md).
 
-## Design file font (decision 0091, draft)
+## Theme switch + app icon (2 Nov, draft PR)
 
-- `docs/design.md` now specifies Google Sans Flex and Google Sans Code and a new Status Chip. The app code is unchanged (still JetBrains Mono, Inter, Sora, Manrope). Radii now follow the M3 scale with continuous corners. Check the font licences before bundling.
+- Sidebar Dark mode row in every build (gate removed); Android icon follows the theme via two launcher aliases, switched in `onStop` (an instant switch closed the app). Decision 0146; phone-checked, shots in `docs/test-results/theme-icon/`. iOS icon not changed.
 
 ## C1 Config screen (2 Nov, draft PR on `feature/live-scan`)
 

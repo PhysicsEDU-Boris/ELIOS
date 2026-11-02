@@ -1,7 +1,7 @@
 // Sidebar (Figma page "N1 Sidebar" 244:2358): phone drawer light 244:2561, dark
 // 244:2625; item states 244:2689. The Figma has no theme toggle: the row above
-// Sign Out follows the shadcn sidebar footer pattern and is shown only behind
-// the same gate as the Config setting (decision 0130, [darkModeOption]).
+// Sign Out follows the shadcn sidebar footer pattern; it is shown in every
+// build since decision 0146 (it was behind DARK_MODE_OPTION / TESTER_BUILD).
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,7 +21,7 @@ class ElioSidebar extends ConsumerWidget {
     required this.onSelect,
     required this.onSignOut,
     required this.onClose,
-    this.showThemeToggle = darkModeOption,
+    this.showThemeToggle = true,
   });
 
   final User? user;
