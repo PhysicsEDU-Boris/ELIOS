@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import '../models/home_stats.dart' show questBonus;
 import '../models/scan_record.dart';
 import '../models/trophy_rules.dart';
 import 'gemma_quiz_service.dart';
@@ -63,7 +64,9 @@ class ScanRecordStore extends ChangeNotifier {
     if (!_loaded && _loadFuture == null) {
       unawaited(load());
     }
-    return _records.fold<int>(0, (sum, r) => sum + r.trophies);
+    // Daily quest rewards count too (decision 0144).
+    return _records.fold<int>(0, (sum, r) => sum + r.trophies) +
+        questBonus(_records);
   }
 
   StudentLevel get userLevel => StudentLevel.forTotal(totalTrophies);
@@ -214,7 +217,8 @@ class ScanRecordStore extends ChangeNotifier {
             trophies: 10,
           ),
           RecordQuestion(
-            question: 'Which recycling code commonly applies to beverage bottles?',
+            question:
+                'Which recycling code commonly applies to beverage bottles?',
             yourAnswer: 'PET 1',
             rightAnswer: 'PET 1',
             isCorrect: true,

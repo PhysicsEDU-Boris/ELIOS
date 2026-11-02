@@ -45,3 +45,12 @@
 - Tests: `test/screens/learn_v2_test.dart` (36). `flutter test`: 765 pass, 2 known `elio_tokens_test` failures.
 - Phone (Edge 60 Fusion): video, PDF, sliders, progress, dark mode pass; see `docs/test-results/l1/README.md`.
 - Open: turn the phone inside the video player once; error screen only widget-tested (Firestore cache hides it offline); Kuis fisika score is never saved (pre-existing).
+
+## H1v4 gamified Home (2 Nov, draft PR, on top of N4 catch-up #75)
+
+- #73 (N4) never reached `feature/live-scan`; #75 merges it (only `2dd92db`). #74 (L1 learn v2) was missing too; added to #75 on 2 Nov after the owner saw the old Learn on the phone.
+- New Home from Figma 321:2358 with real scan data only; maths in `lib/models/home_stats.dart`, UI in `home_screen.dart` + `lib/Screens/home/`. Decision 0144 (residu in Anorganik, tree per level). Owner: quest rewards count toward trophies and levels (derived per day from 2 Nov 2026, in `ScanRecordStore.totalTrophies`).
+- Tests: `test/models/home_stats_test.dart` (19, break-checked), `test/screens/home_screen_test.dart` (15). `flutter test` +741 ~20 -2 (the 2 known `elio_tokens_test` failures).
+- Phone (Edge 60 Fusion, tester APK, guest session, owner data untouched): Home = History (26 scans, 202 trophies, B3 8 / Anorganik 17 / Organik 1, 0 today; before the quest-bonus change, which adds nothing to Oct records). Shots in `docs/test-results/h1v4/`.
+- Build hygiene: the 2.59 GB Gemma model sits in `assets/models/` in this checkout and gets bundled; move it out for an APK build and back after.
+- Open: History total now exceeds the sum of its rows (quest bonus); History has no per-day filter; `trophiesFor(List)` returns 0 (callers pass trophies explicitly).

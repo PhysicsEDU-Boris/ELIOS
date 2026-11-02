@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:elio/models/home_stats.dart' show questBonus;
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/robot_provider.dart';
@@ -209,7 +210,7 @@ void main() {
       final reloadedStore = ScanRecordStore(customFile: testFile);
       await reloadedStore.load();
       expect(reloadedStore.records.length, 1);
-      expect(reloadedStore.totalTrophies, 10);
+      expect(reloadedStore.totalTrophies, 10 + questBonus(reloadedStore.records));
       expect(reloadedStore.records.first.itemName, 'Botol plastik');
     });
   });

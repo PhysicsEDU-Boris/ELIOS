@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:image/image.dart' as img;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:elio/models/home_stats.dart' show questBonus;
 import 'package:elio/Screens/scan_history_screen.dart';
 import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scan_record.dart';
@@ -155,7 +156,7 @@ void main() {
         // 2. Header elements
         expect(find.text('Scan History'), findsOneWidget);
         expect(find.text('Tersimpan lokal'), findsOneWidget);
-        expect(find.text('50 trophies'), findsOneWidget); // 20 + 20 + 10 + 0
+        expect(find.text('${50 + questBonus(store.records)} trophies'), findsOneWidget); // 20 + 20 + 10 + 0 + quests
 
         // 3. Filters
         final filterAll = find.byKey(const ValueKey('filter_chip_All'));

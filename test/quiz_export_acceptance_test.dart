@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:elio/models/home_stats.dart' show questBonus;
 import 'package:elio/Screens/scan_history_screen.dart';
 import 'package:elio/services/scan_record_store.dart';
 import 'package:elio/models/quiz_explanation.dart';
@@ -142,7 +143,7 @@ void main() {
     final state = container.read(wasteQuizProvider);
     expect(state.phase, WasteQuizPhase.finished);
     expect(state.messages.last.text, contains('Jawaban benar: 1 dari 1.'));
-    expect(store.totalTrophies, 8);
+    expect(store.totalTrophies, 8 + questBonus(store.records));
   });
 
   test('new explanation phase still stops TTS before next question', () async {

@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- H1v4: gamified Home from Figma (level tree, stats, daily quests, 17-week scan activity with a month view, bin buddies with residu in Anorganik, week bars, quiz sparkline, medals, did-you-know, local search, loading and guest states), light and dark, real scan data only; done daily quests add their rewards to the trophy total and level everywhere, from 2 Nov 2026 on (decision 0144).
+
 - L1: Learn tab redesigned to the L1 v2 Figma for all real content, light and dark: hub, module page, lesson page, quiz list and question screen, My progress, and all 9 simulation pages (Materi / Rumus / Simulasi tabs); module pages list Videos and Guides as separate sections; loading, error, offline, first-launch and empty states; bundled ELIO illustrations as thumbnail fallback; YouTube id parsed from `videoUrl` when missing. Data sources, quiz scoring and physics maths unchanged (decisions 0170-0172).
 
 - N4: top bar with the profile avatar and page title on every tab; the avatar opens a new phone drawer (304 dp, 40% scrim, drag/Back/Escape close, focus returns to the avatar). The Home hamburger is gone (decision 0143).
