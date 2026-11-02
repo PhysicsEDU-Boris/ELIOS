@@ -49,3 +49,9 @@ sheet 349:4445 / 349:4681). Colours from `ElioTokens.light/dark` through the the
 - Bank tile says "Checked questions, instant" (the bank has 56 items, not Figma's "120").
 - Tests: `test/screens/config_screen_test.dart` (28), `test/services/config_connection_test.dart` (10,
   local fake robot). Break-checked.
+
+## Follow-up (2 Nov, merged-build phone check)
+- Leaving Control with a scan quiz open left a reconnect loop running (debug builds): `ControlScreen.dispose`
+  cleared the quiz first, Riverpod refused that provider write while the tree unmounted, and the throw skipped
+  the disconnect. Dispose now disconnects first and clears the quiz and the R1 drop flag in a microtask.
+  Test: `test/screens/control_dispose_test.dart` (fails on the old order).

@@ -353,7 +353,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _r1Ticker?.cancel();
     _robotReplies?.cancel();
     _statusDebounceTimer?.cancel();
-    _dropPending.state = false;
     HardwareKeyboard.instance.removeHandler(_onKey);
     WidgetsBinding.instance.removeObserver(this);
     _gate.dispose(); // motor 0,0, heartbeat off
@@ -363,14 +362,21 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     debugPrint('[Control] Stopping MaixCAM2 stream');
     _robotNotifier.stopStream();
 
-    // Dismiss quiz if it was left open so it doesn't block future scans.
-    _quizNotifier.dismiss();
-
     debugPrint('[Control] Leaving robot control, disconnecting WebSocket');
     unawaited(_robotNotifier.disconnect());
     unawaited(GemmaQuizService.instance.dispose());
     setDesktopLandscape(false);
-    _liveScan?.dispose(); // last: dismiss() above can still report a phase change
+    _liveScan?.dispose();
+
+    // Riverpod refuses provider writes while the tree unmounts, and the throw
+    // used to skip the disconnect above: clear the drop flag and any open quiz
+    // (so it doesn't block future scans) once the tree is unlocked.
+    final quiz = _quizNotifier;
+    final dropPending = _dropPending;
+    Future.microtask(() {
+      dropPending.state = false;
+      quiz.dismiss();
+    });
     super.dispose();
   }
 
