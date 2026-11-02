@@ -1,0 +1,49 @@
+============================================================
+ELIOS 5-DOF Arm — End Effector IK Demo
+============================================================
+Initial EE position (J4): [  0.  -42.5  90. ]
+[Photo] item (Plastic): crop images/Plastic/crops/train_6314929e863ee6314929e863f4_frame9_jpg.rf_0.jpg
+[Fake] fake-sim-1 scenario one_Plastic on ws://0.0.0.0:8765
+[WS] Client connected: ('127.0.0.1', 51152)
+[WS] STOP seq=1 -> wheels 0, arm hold
+[WS] motor left=0 right=0
+[WS] STATUS seq=2
+[WS] start_stream — streaming ON
+[WS] set_resolution received but ignored — resolution is fixed at 640x480
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] STOP seq=3 -> wheels 0, arm hold
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] STOP seq=4 -> wheels 0, arm hold
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] disconnect -> disconnect_ack
+[WS] clients remaining: 0
+[WS] Client connected: ('127.0.0.1', 51254)
+[WS] STOP seq=5 -> wheels 0, arm hold
+[WS] motor left=0 right=0
+[WS] STATUS seq=6
+[WS] start_stream — streaming ON
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] stop_stream — streaming OFF
+[WS] motor left=0 right=0
+[WS] disconnect -> disconnect_ack
+[WS] parse error: received 1005 (no status received [internal]); then sent 1005 (no status received [internal])
+[WS] clients remaining: 0

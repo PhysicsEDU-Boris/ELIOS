@@ -111,7 +111,7 @@ void main() {
         await shot(t, 'quiz_essay', size, dark);
       });
 
-      for (final step in [0, 4]) {
+      for (final step in [0, 2, 4]) {
         testWidgets('guide step ${step + 1} $tag', (t) async {
           await pumpPhone(t, size, dark: dark, guideStep: step);
           await t.pump(const Duration(milliseconds: 100));

@@ -174,7 +174,13 @@ class _PhoneGuideState extends State<PhoneGuide> {
     } else if (hole.bottom + gap + h <= screen.height - edge) {
       at = Offset(clampX(hole.center.dx - w / 2), hole.bottom + gap);
     } else {
-      at = Offset(clampX(hole.center.dx - w / 2), clampY(hole.top - gap - h));
+      // Above the spotlight: anchored by its bottom edge, so a taller card grows upward.
+      return Positioned(
+        left: clampX(hole.center.dx - w / 2),
+        bottom: screen.height - (hole.top - gap),
+        width: w,
+        child: card,
+      );
     }
     return Positioned(left: at.dx, top: at.dy, width: w, child: card);
   }
