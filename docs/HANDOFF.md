@@ -1,56 +1,43 @@
-# Handoff — 31 Oct 2026
+# Handoff — 2 Nov 2026
 
-- Base: `feature/live-scan` at `ae67416`.
-- Merged: #51 U4b essay rubric; #53 banks (decision 0060); #52 History/PDF crops (0070); #54 Android tester build (0040); #55 E1 (0041), with the "Bukan ini?" picker and background load phone-verified.
-- Open PRs: #50 docs wrap-up (content carried into this docs sync); #47 firmware (motion disabled, `ARM_MOTION_ENABLED=false`); #24 (latency gate failed).
+- Base: `feature/live-scan` at `6b96f4f` (#72 N3 bottom nav merged).
+- Never commit the Xcode scheme, `Maixcam.txt`, `docs/module/`, `docs/quiz-review/proposals/`, `.env*`, Firebase config or the model.
 
-## Phone evidence — Edge 60 Fusion, GPU
+## Merge order (owner is merging now)
 
-- Load: 4.3–9.2 s cached or 41–50 s cold; identify: 19.8–23.9 s with the shorter prompt; questions: 20–41 s; essay grading: 16.5–25.4 s; memory: 3.3–3.7 GB.
-- Thermal gate pauses at CRITICAL.
-- The tester build keeps Gemma loaded after the scan screen closes (about 1.6 GB held until the app closes).
-- Photo-size test: 512/384/256 px gave 24.8/24.3/23.6 s. Photo size does not change identify time in this test.
-- See [Lane A handoff](handoff/lane-a.md) for details; its earlier measurements and pre-PR status predate the summary above.
+1. **#75** `chore/n4-into-live-scan` → `feature/live-scan`. Brings #73 (N4 top bar, `2dd92db`) and #74 (L1 Learn v2, `fad51db`); both had merged into `feat/n3-bottom-nav` after #72, so neither reached `feature/live-scan`. Head `305a05f`: +767 ~19 -2.
+2. **#76** `feat/h1v4-home` (H1v4 gamified Home). Stacked on #75: after #75 merges, change its base to `feature/live-scan`. Head `55238cc`: +779 ~20 -2.
+- Both are drafts: mark ready before merging. The 2 failures are the known `test/theme/elio_tokens_test.dart` ones (font/radius tables, not touched); analyze has 1 old info in `test/question_bank_integrity_test.dart`.
+- After both merge, `feature/live-scan` has N4 top bar, Learn v2 and the new Home. `feat/n3-bottom-nav` can then be retired.
 
-## Owner data incident
+## H1v4 gamified Home (decision 0144)
 
-- The 29 Oct owner History record was overwritten and is still unrecovered. Do not invent or reconstruct its missing answers from guesses.
+- Figma J2jSbARJSyJCStNFeWkWDj page 321:2358 (v4 light/dark, guest, loading; v3 search and month). Real data only.
+- Maths: `lib/models/home_stats.dart` (local days, streaks, bins with residu in Anorganik, accuracy over last 10, week bars, quests). UI: `lib/Screens/home_screen.dart` + `lib/Screens/home/`. Art: `assets/illustrations/home/` (flutter_svg).
+- Header trophy pill + bell in the N4 top bar (`ElioTopBar.trailing`, Home only). Bell opens the old notifications panel, moved to `lib/widgets/home_notifications_sheet.dart`; H2 (#70) not implemented.
+- Owner decision 2 Nov: quest rewards (+10/+10/+20) count toward trophies and level. Derived per local day from 2 Nov 2026 (`questBonus`), included in `ScanRecordStore.totalTrophies`, so Home, History, Control and the quiz popup agree.
+- Search opens simulations via #74's `openSimulation`; lessons/quizzes via `learningResumeIntentProvider`; scans and "Open in History" open History.
+- Tests: `test/models/home_stats_test.dart` (19, break-checked), `test/screens/home_screen_test.dart` (15); renders with `H1_RENDER=1` into `docs/test-results/h1v4/widget/`.
 
-## Next task — U4c combined native acceptance
+## Phone (Edge 60 Fusion, 2 Nov)
 
-- Back up the owner's records and read-verify the backup first. Prove a separate test store is active before interacting; never seed or reset the owner store.
-- Complete real-Gemma/localhost-camera multi-question acceptance: MCQ explanation → next question, essay rubric during live frames, trophy math, quit/relaunch, saved review and complete native PDF export.
-- Follow `CLAUDE.md` Mac build hygiene: reuse the retained app/model, inventory before building and verify one app registration afterwards. No physical robot movement or sharing recipient selection.
-- Overall queue: U4c combined native acceptance, then U7 Firebase sync, then U8 documentation/Figma. See [NEXT_TASK.md](NEXT_TASK.md).
+- Tester APK from `55238cc` installed with `adb install -r` (data kept, first install 3 Oct unchanged). Learn v2 confirmed back.
+- Home = History: 26 scans, 202 trophies, B3 8 / Anorganik 17 / Organik 1, 0 today (all records 29–30 Oct, so no quest bonus). Year grid → 30 Oct → month view: 12 scans. Shots in `docs/test-results/h1v4/`.
+- An extra Back key once left ELIO and taps landed in Instagram and a games app; screenshots deleted, nothing known to be posted. Check the foreground app before every adb tap.
+- APK build: `adb` is at `~/Library/Android/sdk/platform-tools/adb`. The 2.59 GB Gemma model sits in `assets/models/` in this checkout and gets bundled (2.76 GB APK): move it to `../.gemma-hold/` for the build and back after (done twice, model restored). Command: `flutter build apk --release --target-platform android-arm64 --dart-define=TESTER_BUILD=true --dart-define=APP_COMMIT=<sha>` (decision 0040).
 
-## Design file font (decision 0091, draft)
+## Differs from Figma / open
 
-- `docs/design.md` now specifies Google Sans Flex and Google Sans Code and a new Status Chip. The app code is unchanged (still JetBrains Mono, Inter, Sora, Manrope). Radii now follow the M3 scale with continuous corners. Check the font licences before bundling.
+- Inter instead of Google Sans Flex (not bundled); "Top" tag drawn in full; no medals "see all"; N4 avatar icon instead of an initial; medals stack at narrow widths; year-grid cells < 48 dp (Month view is the accessible path).
+- History total now exceeds the sum of its rows (quest bonus); History has no per-day filter.
+- Robotics Beginner and Sustainability Advocate can never unlock (old rules kept).
+- `trophiesFor(List<RecordQuestion>)` returns 0 when `ScanRecord.trophies` is omitted; app callers pass it.
+- Not re-checked on the phone after the quest-bonus change: other Learn pages, dark Learn.
 
-## H1 home screen (31 Oct, draft PR #67)
+## Still open from earlier
 
-- `lib/Screens/home_screen.dart` restyled to Figma 243:2358 (light and dark, tokens only, 48 dp targets, two columns from 840 dp); behaviour unchanged. Decision 0140, details in [lane-h.md](handoff/lane-h.md).
-- Not checked: real 3D viewer, phone feel, native Mac window (no isolated test store documented, so the app was not launched).
-
-## N4 profile top bar and drawer (1 Nov, draft PR, stacked on N3 #72)
-
-- `elio_top_bar.dart` + `elio_drawer_host.dart` (custom drawer) wired in `HomeShell`; Home hamburger removed; decision 0143.
-- Tests: `test/widgets/elio_drawer_host_test.dart` (15). `flutter test`: only the 2 `elio_tokens_test` failures, which also fail on the N3 base.
-- Not checked: phone or Mac window, real photo avatar. Open: no wide-layout rail (Learn's second bar removed by L1).
-
-## L1 Learn tab v2 (1 Nov, draft PR, stacked on `feat/n3-bottom-nav`)
-
-- Hub, module, lesson, quiz, My progress and all 9 simulations rebuilt from Figma L1 v2 (light and dark, tokens via theme); components in `lib/widgets/learn/learn_ui.dart`; illustrations in `assets/illustrations/learn/`. Decisions 0170-0172.
-- N4 (#73) was merged into `feat/n3-bottom-nav`, not `feature/live-scan`, so the PR targets `feat/n3-bottom-nav`.
-- Tests: `test/screens/learn_v2_test.dart` (36). `flutter test`: 765 pass, 2 known `elio_tokens_test` failures.
-- Phone (Edge 60 Fusion): video, PDF, sliders, progress, dark mode pass; see `docs/test-results/l1/README.md`.
-- Open: turn the phone inside the video player once; error screen only widget-tested (Firestore cache hides it offline); Kuis fisika score is never saved (pre-existing).
-
-## H1v4 gamified Home (2 Nov, draft PR, on top of N4 catch-up #75)
-
-- #73 (N4) never reached `feature/live-scan`; #75 merges it (only `2dd92db`). #74 (L1 learn v2) was missing too; added to #75 on 2 Nov after the owner saw the old Learn on the phone.
-- New Home from Figma 321:2358 with real scan data only; maths in `lib/models/home_stats.dart`, UI in `home_screen.dart` + `lib/Screens/home/`. Decision 0144 (residu in Anorganik, tree per level). Owner: quest rewards count toward trophies and levels (derived per day from 2 Nov 2026, in `ScanRecordStore.totalTrophies`).
-- Tests: `test/models/home_stats_test.dart` (19, break-checked), `test/screens/home_screen_test.dart` (15). `flutter test` +741 ~20 -2 (the 2 known `elio_tokens_test` failures).
-- Phone (Edge 60 Fusion, tester APK, guest session, owner data untouched): Home = History (26 scans, 202 trophies, B3 8 / Anorganik 17 / Organik 1, 0 today; before the quest-bonus change, which adds nothing to Oct records). Shots in `docs/test-results/h1v4/`.
-- Build hygiene: the 2.59 GB Gemma model sits in `assets/models/` in this checkout and gets bundled; move it out for an APK build and back after.
-- Open: History total now exceeds the sum of its rows (quest bonus); History has no per-day filter; `trophiesFor(List)` returns 0 (callers pass trophies explicitly).
+- Owner data incident: the 29 Oct owner History record is unrecovered; never reconstruct it.
+- Next queue: U4c combined native acceptance (back up owner records first, separate test store, Mac build hygiene in `CLAUDE.md`), then U7 Firebase sync, U8 docs/Figma. See [NEXT_TASK.md](NEXT_TASK.md).
+- Open PRs besides #75/#76: #71 N2 launch screen, #70 H2 notifications, #67 H1 old home (superseded by #76), #66/#65/#62/#50 docs, #47 firmware (motion off), #24 (latency gate failed).
+- Learn v2 open items: rotate the phone inside the video player; Kuis fisika score never saved (pre-existing).
+- Design font decision 0091 (draft): check licences before bundling Google Sans Flex.
