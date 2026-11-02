@@ -607,15 +607,18 @@ class _ExplanationState extends ConsumerState<_Explanation> {
   Widget _banner(
     ElioPalette p, {
     required bool good,
+    bool neutral = false,
     required String small,
     required String title,
     required String sub,
     required String trophies,
     Widget? art,
   }) {
-    final c = good ? p.primary : p.error;
+    final c = neutral ? p.borderStrong : (good ? p.primary : p.error);
     return Container(
-      key: ValueKey(good ? 'banner_good' : 'banner_bad'),
+      key: ValueKey(
+        neutral ? 'banner_wait' : (good ? 'banner_good' : 'banner_bad'),
+      ),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: c.withValues(alpha: 0.10),
@@ -764,15 +767,19 @@ class _ExplanationState extends ConsumerState<_Explanation> {
     final rows = ex?.rubricRows ?? const <RubricRow>[];
     final max = rows.isEmpty ? 10 : rows.fold<int>(0, (a, r) => a + r.maxScore);
     final good = max > 0 && score / max >= 0.5;
+    final grading = ex?.essayScore == null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _banner(
           p,
-          good: good,
-          small: good ? 'GOOD ANSWER' : 'KEEP GOING',
-          title: 'Score $score / $max',
-          sub: ex?.essayFeedback ?? '',
+          good: good && !grading,
+          neutral: grading,
+          small: grading ? 'GRADING' : (good ? 'GOOD ANSWER' : 'KEEP GOING'),
+          title: grading ? 'Checking your answer...' : 'Score $score / $max',
+          sub: grading
+              ? 'The score appears here when ELIOS AI has read it.'
+              : (ex?.essayFeedback ?? ''),
           trophies: '+$score',
           art: SvgPicture.asset(
             'assets/illustrations/home/bulb_buddy.svg',
@@ -983,11 +990,12 @@ class _ExplanationState extends ConsumerState<_Explanation> {
           Expanded(
             child: ListView(
               controller: _scroll,
+              reverse: true, // the newest message stays in view
               children: [
-                bubble(greeting, user: false, listen: true),
-                for (final m in msgs)
-                  bubble(m.text, user: m.isUser, listen: !m.isUser),
                 if (s.sendingChat) bubble('…', user: false),
+                for (final m in msgs.reversed)
+                  bubble(m.text, user: m.isUser, listen: !m.isUser),
+                if (msgs.isEmpty) bubble(greeting, user: false, listen: true),
               ],
             ),
           ),

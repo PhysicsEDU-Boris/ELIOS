@@ -366,13 +366,14 @@ class PhoneControlLayout extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         _GuideButton(onTap: onGuide),
-        const Spacer(),
-        if (_showGo && !skeleton)
-          Flexible(
-            child: _StoppedPill(key: const ValueKey('phone_stopped_pill')),
-          )
-        else
-          _MissionChip(done: missionDone, compact: narrow),
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: _showGo && !skeleton
+                ? const _StoppedPill(key: ValueKey('phone_stopped_pill'))
+                : _MissionChip(done: missionDone, compact: narrow),
+          ),
+        ),
         const SizedBox(width: 8),
         if (quizBadge != null) ...[
           KeyedSubtree(
@@ -510,9 +511,11 @@ class PhoneControlLayout extends StatelessWidget {
                       value: voiceOn,
                       onChanged: onVoice,
                     ),
-                    const Spacer(),
-                    Flexible(
-                      child: _InfoChip(dot: connColor, text: connText),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: _InfoChip(dot: connColor, text: connText),
+                      ),
                     ),
                   ],
                 ),
@@ -541,7 +544,9 @@ class PhoneControlLayout extends StatelessWidget {
         ),
       );
     } else if (frame != null) {
-      body = Image.memory(frame!, fit: BoxFit.cover, gaplessPlayback: true);
+      body = SizedBox.expand(
+        child: Image.memory(frame!, fit: BoxFit.cover, gaplessPlayback: true),
+      );
     } else {
       body = Center(
         child: Text(
