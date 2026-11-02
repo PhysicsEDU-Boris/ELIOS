@@ -30,8 +30,9 @@ class AppPreferences {
   final String quizTimer;
   final bool skipAllowed;
 
-  /// Not saved: every launch starts on [defaultQuestionSource] (the bank), so a
-  /// switch left on Gemma in an earlier debug session can't carry over (0018).
+  /// The Config screen's "Quiz questions" choice, saved since decision 0145.
+  /// A saved Gemma choice is safe: a quiz falls back to the bank, and says so,
+  /// whenever Gemma is not ready or blocked.
   final QuestionSource questionSource;
 
   const AppPreferences({
@@ -67,6 +68,7 @@ class AppPreferences {
         'quizDifficulty': quizDifficulty,
         'quizTimer': quizTimer,
         'skipAllowed': skipAllowed,
+        'questionSource': questionSource.name,
       };
 
   factory AppPreferences.fromMap(Map<String, dynamic> map) {
@@ -77,6 +79,7 @@ class AppPreferences {
       quizDifficulty: map['quizDifficulty'] is String ? map['quizDifficulty'] as String : d.quizDifficulty,
       quizTimer: map['quizTimer'] is String ? map['quizTimer'] as String : d.quizTimer,
       skipAllowed: map['skipAllowed'] is bool ? map['skipAllowed'] as bool : d.skipAllowed,
+      questionSource: QuestionSource.values.asNameMap()[map['questionSource']] ?? d.questionSource,
     );
   }
 }

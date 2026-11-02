@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'dart:ui' show ImageByteFormat;
 
-import 'package:elio/Screens/config_screen.dart';
+import 'package:elio/Screens/config/config_settings_sheet.dart';
 import 'package:elio/Screens/login_screen.dart';
 import 'package:elio/Screens/splash_screen.dart';
 import 'package:elio/Screens/scan_history_screen.dart';
@@ -15,7 +15,6 @@ import 'package:elio/theme/elio_tokens.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -152,43 +151,23 @@ void main() {
     );
   }
 
-  testWidgets('Settings hides the switch unless the build flag is enabled', (
+  testWidgets('the Config settings sheet has no theme row: theme lives in the sidebar (0145)', (
     t,
   ) async {
     await t.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: ConfigScreen())),
+      const ProviderScope(
+        child: MaterialApp(home: Scaffold(body: Center(child: ConfigSettingsButton()))),
+      ),
     );
-    // Exercise the model's existing fallback: widget tests have no native WebView.
-    t
-        .widget<Flutter3DViewer>(find.byType(Flutter3DViewer))
-        .onError
-        ?.call('widget test');
+    await t.tap(find.byTooltip('Settings'));
     await t.pumpAndSettle();
-    await t.tap(find.byIcon(Icons.settings_rounded).first);
-    await t.pumpAndSettle();
+    expect(find.text('Connection, video, sound and quiz'), findsOneWidget);
+    expect(find.text('Mode tampilan'), findsNothing);
+    expect(find.text('Tampilan'), findsNothing);
     const optionExpected =
         bool.fromEnvironment('DARK_MODE_OPTION') ||
         bool.fromEnvironment('TESTER_BUILD');
-    expect(darkModeOption, optionExpected);
-    expect(
-      find.text('Mode tampilan'),
-      optionExpected ? findsOneWidget : findsNothing,
-    );
-    if (optionExpected) {
-      final row = find
-          .ancestor(of: find.text('Mode tampilan'), matching: find.byType(Row))
-          .first;
-      final toggle = find.descendant(of: row, matching: find.byType(Switch));
-      expect(find.text('Terang'), findsOneWidget);
-      await t.tap(toggle);
-      await t.pumpAndSettle();
-      expect(find.text('Gelap'), findsOneWidget);
-      final container = ProviderScope.containerOf(t.element(toggle));
-      expect(container.read(elioThemeModeProvider), ElioThemeMode.dark);
-      await t.tap(toggle);
-      await t.pumpAndSettle();
-      expect(container.read(elioThemeModeProvider), ElioThemeMode.light);
-    }
+    expect(darkModeOption, optionExpected, reason: 'the sidebar switch still follows the flag');
   });
 
   testWidgets(

@@ -261,6 +261,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// scan session, so a change applies to the next scan.
   WasteQuizUiState _freshSession({ScannedWaste? scan, required WasteQuizPhase phase}) {
     final difficulty = QuizDifficulty.fromSetting(ref.read(appPreferencesProvider).quizDifficulty);
+    QuizTtsService.instance.volume = ref.read(appPreferencesProvider).masterVolume;
     _diagnostics = null;
     _lastAutoSpokenText = null; // a new object/quiz: nothing spoken for it yet
     _sessionSource = sourceOverride ?? effectiveQuestionSource(ref.read(appPreferencesProvider).questionSource);

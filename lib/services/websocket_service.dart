@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show SocketException;
 import 'dart:ui' show Size;
 
 import 'package:flutter/foundation.dart';
@@ -29,6 +30,16 @@ class WebSocketService {
 
   /// R1 command-link replies (decision 0023): `{"event": ..., "seq": n}`.
   Stream<Map<String, dynamic>> get robotReplies => _robotRepliesController.stream;
+
+  /// How long one connect attempt waits for the robot's first answer (tests
+  /// shorten it).
+  static Duration connectTimeout = const Duration(seconds: 10);
+
+  /// Why the last [connect] failed, for the Config screen; null after a
+  /// success or a cancel ([disconnect] during the attempt).
+  String? get lastConnectError => _lastConnectError;
+  String? _lastConnectError;
+  Completer<void>? _connectCancel;
 
   WebSocketChannel? _channel;
   Timer? _reconnectTimer;
@@ -231,9 +242,23 @@ class WebSocketService {
     }
   }
 
+  /// Turns auto-reconnect on or off for the live link: the watchdog is what
+  /// notices a dead Wi-Fi link that never closes the socket.
+  void setAutoReconnect(bool on) {
+    _autoReconnectEnabled = on;
+    if (!on) {
+      _stopWatchdog();
+    } else if (_isConnected && _watchdogTimer == null) {
+      _startWatchdog();
+    }
+  }
+
   Future<bool> connect({bool autoReconnect = false}) async {
+    if (_isConnected) {
+      setAutoReconnect(autoReconnect);
+      return true;
+    }
     _autoReconnectEnabled = autoReconnect;
-    if (_isConnected) return true;
     if (_isConnecting) return false;
 
     _isIntentionallyClosed = false;
@@ -248,6 +273,7 @@ class WebSocketService {
       final generation = ++_connectionGeneration;
 
       debugPrint('[WS] Opening socket ws://$_ip:$_port');
+      final cancel = _connectCancel = Completer<void>();
       final channel = WebSocketChannel.connect(Uri.parse('ws://$_ip:$_port'));
       _channel = channel;
 
@@ -281,9 +307,14 @@ class WebSocketService {
       await Future.any<void>([
         channel.ready,
         firstMessageCompleter.future,
-      ]).timeout(const Duration(seconds: 10));
+        cancel.future,
+      ]).timeout(connectTimeout);
+      if (cancel.isCompleted || generation != _connectionGeneration) {
+        throw const _ConnectCancelled();
+      }
 
       _isConnected = true;
+      _lastConnectError = null;
       _retryCount = 0; // Reset retry count on success
       _emitStatus('Connected');
       if (_autoReconnectEnabled) {
@@ -295,6 +326,9 @@ class WebSocketService {
         debugPrint('[WS] Connect failed ws://$_ip:$_port -> $error');
         return true;
       }());
+      _lastConnectError = error is _ConnectCancelled
+          ? null
+          : connectFailureReason(error, '$_ip:$_port', connectTimeout);
       _isConnected = false;
       _detachAndCloseStaleSocket();
       _emitStatus('Disconnected');
@@ -305,6 +339,7 @@ class WebSocketService {
       return false;
     } finally {
       _isConnecting = false;
+      _connectCancel = null;
     }
   }
 
@@ -500,6 +535,8 @@ class WebSocketService {
   Future<void> disconnect() async {
     _isIntentionallyClosed = true;
     _autoReconnectEnabled = false;
+    // Also ends a connect still waiting for its first answer (Config "Cancel").
+    if (!(_connectCancel?.isCompleted ?? true)) _connectCancel!.complete();
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _stopWatchdog();
@@ -512,11 +549,14 @@ class WebSocketService {
       _channel?.sink.add(jsonEncode({'cmd': 'disconnect'}));
     } catch (_) {}
 
-    await _channelSubscription?.cancel();
+    // Bounded: a socket that never opened can leave close() pending (cancel case).
+    final subscription = _channelSubscription;
+    final channel = _channel;
     _channelSubscription = null;
-
-    await _channel?.sink.close();
     _channel = null;
+    const bound = Duration(milliseconds: 500);
+    await subscription?.cancel().timeout(bound, onTimeout: () {});
+    await channel?.sink.close().timeout(bound, onTimeout: () {});
 
     _isConnected = false;
     _isConnecting = false;
@@ -524,6 +564,29 @@ class WebSocketService {
 
     _emitStatus('Disconnected');
   }
+}
+
+class _ConnectCancelled implements Exception {
+  const _ConnectCancelled();
+}
+
+/// One English sentence for a failed connect, shown on the Config screen.
+String connectFailureReason(Object error, String endpoint, Duration timeout) {
+  final text = '$error'.toLowerCase();
+  if (error is TimeoutException) {
+    return 'No answer from $endpoint after ${timeout.inSeconds} s. '
+        'Check that this phone is on the ELIOS Wi-Fi and the robot is on.';
+  }
+  if (text.contains('refused')) {
+    return '$endpoint refused the connection. Check the port and that the robot app is running.';
+  }
+  if (text.contains('unreachable') || text.contains('no route')) {
+    return 'No route to $endpoint. Join the ELIOS Wi-Fi on this phone first.';
+  }
+  if (error is SocketException) {
+    return 'Could not reach $endpoint (${error.osError?.message ?? error.message}).';
+  }
+  return 'Could not connect to $endpoint.';
 }
 
 /// Lightweight detection result parsed from MaixCAM2 JSON payload.

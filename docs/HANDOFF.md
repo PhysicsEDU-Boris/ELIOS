@@ -1,4 +1,4 @@
-# Handoff — 31 Oct 2026
+# Handoff — 2 Nov 2026
 
 - Base: `feature/live-scan` at `ae67416`.
 - Merged: #51 U4b essay rubric; #53 banks (decision 0060); #52 History/PDF crops (0070); #54 Android tester build (0040); #55 E1 (0041), with the "Bukan ini?" picker and background load phone-verified.
@@ -27,10 +27,12 @@
 
 - `docs/design.md` now specifies Google Sans Flex and Google Sans Code and a new Status Chip. The app code is unchanged (still JetBrains Mono, Inter, Sora, Manrope). Radii now follow the M3 scale with continuous corners. Check the font licences before bundling.
 
-## H1 home screen (31 Oct, draft PR #67)
+## C1 Config screen (2 Nov, draft PR on `feature/live-scan`)
 
-- `lib/Screens/home_screen.dart` restyled to Figma 243:2358 (light and dark, tokens only, 48 dp targets, two columns from 840 dp); behaviour unchanged. Decision 0140, details in [lane-h.md](handoff/lane-h.md).
-- Not checked: real 3D viewer, phone feel, native Mac window (no isolated test store documented, so the app was not launched).
+- Config + Settings sheet from Figma 337:2358; decision 0145 (settings audit, battery "—", saved quiz source, real Cancel/failure reason). Logic in `config_link_provider.dart`, UI in `lib/Screens/config/`.
+- Tests: `test/screens/config_screen_test.dart` (28), `test/services/config_connection_test.dart` (10). `flutter test` +818 ~20 -2 (the 2 known `elio_tokens_test` failures).
+- Phone: owner session (no guest; nothing recorded), fake robot via `adb reverse` (phone had no Wi-Fi). Shots + notes in `docs/test-results/c1/`. **The phone now runs the C1 debug build** (was the H1v4 tester build); reinstall a tester build when needed.
+- Open: Sound effects and Timer are UI only; AI Error/Paused not seen on the phone; dark divider fix not on the phone build.
 
 ## N4 profile top bar and drawer (1 Nov, draft PR, stacked on N3 #72)
 
