@@ -732,6 +732,9 @@ class _CameraDiagnosticsBadge extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Config → Settings → Show FPS overlay (decision 0145).
+    final show = ref.watch(espConfigProvider.select((c) => c.valueOrNull?.showFpsOverlay ?? false));
+    if (!show) return const SizedBox.shrink();
     final resolution = ref.watch(resolutionAckProvider).valueOrNull;
     final frameAgeMs = lastFrameAt == null
         ? null

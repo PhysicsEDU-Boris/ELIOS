@@ -102,6 +102,9 @@ class QuizTtsService {
   @visibleForTesting
   Future<void> Function(String text)? mockSpeak;
 
+  /// Config → Settings → Master volume (0..1), set at each quiz start.
+  double volume = 1.0;
+
   /// Speaks [text]. Always stops whatever was playing first (one slot: the
   /// new utterance replaces the old one). Never throws — a missing/broken
   /// TTS engine on a device just means voice playback silently does nothing.
@@ -116,6 +119,7 @@ class QuizTtsService {
         return;
       }
       await _ensureConfigured();
+      await _tts.setVolume(volume);
       final language = detectLanguage(trimmed);
       if (language != _currentLanguage) {
         await _useLanguage(language);

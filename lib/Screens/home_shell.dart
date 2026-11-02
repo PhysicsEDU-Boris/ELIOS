@@ -25,6 +25,7 @@ import 'login_screen.dart';
 import 'home_screen.dart';
 import 'scan_history_screen.dart';
 import 'tabs/elearning_tab.dart';
+import 'config/config_settings_sheet.dart' show ConfigSettingsButton;
 import 'config_screen.dart';
 import 'control_screen.dart';
 
@@ -83,7 +84,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   String get _pageTitle => switch (_currentIndex) {
     0 => 'Home',
     1 => 'Learn',
-    2 => 'Configure',
+    2 => 'Connect ELIO',
     _ => 'History',
   };
 
@@ -316,14 +317,18 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                         title: _currentIndex == 0
                             ? 'Hello, ${homeDisplayName(user)}'
                             : _pageTitle,
-                        subtitle: _currentIndex == 0
-                            ? 'Ready to learn with ELIO?'
-                            : null,
-                        trailing: _currentIndex == 0
-                            ? HomeHeaderActions(
-                                onOpenLearning: () => _onBottomNavigationTap(1),
-                              )
-                            : null,
+                        subtitle: switch (_currentIndex) {
+                          0 => 'Ready to learn with ELIO?',
+                          2 => 'Robot, camera and quiz setup',
+                          _ => null,
+                        },
+                        trailing: switch (_currentIndex) {
+                          0 => HomeHeaderActions(
+                            onOpenLearning: () => _onBottomNavigationTap(1),
+                          ),
+                          2 => const ConfigSettingsButton(),
+                          _ => null,
+                        },
                         photoUrl: user?.photoURL,
                         avatarFocusNode: _avatarFocus,
                         onOpenProfile: () => _drawerKey.currentState?.open(),

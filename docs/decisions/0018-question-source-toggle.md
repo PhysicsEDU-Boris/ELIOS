@@ -1,6 +1,6 @@
 # 0018: Debug switch between the question bank and Gemma (M3.6)
 
-- Status: Accepted
+- Status: Accepted; the "not saved" part is replaced by 0145 (2 Nov 2026)
 - Date: 2026-10-18
 - Builds on: 0017 (bank by default, Gemma path kept behind `GEMMA_QUESTIONS`).
 - Code:

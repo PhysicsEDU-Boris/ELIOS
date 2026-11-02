@@ -23,13 +23,13 @@ void main() {
     expect(effectiveQuestionSource(QuestionSource.gemma, debug: true), QuestionSource.gemma);
     expect(effectiveQuestionSource(QuestionSource.gemma, debug: false), QuestionSource.bank,
         reason: 'release always uses the bank, whatever the switch says');
-    expect(AppPreferences.fromMap({'questionSource': 'gemma'}).questionSource, QuestionSource.bank,
-        reason: 'a value saved by an older build is ignored');
-    expect(const AppPreferences(questionSource: QuestionSource.gemma).toMap(), isNot(contains('questionSource')),
-        reason: 'the switch is never saved');
+    // Decision 0145 replaces 0018's "never saved": the Config choice is saved.
+    expect(AppPreferences.fromMap({'questionSource': 'gemma'}).questionSource, QuestionSource.gemma);
+    expect(AppPreferences.fromMap({'questionSource': 'nonsense'}).questionSource, QuestionSource.bank);
+    expect(const AppPreferences(questionSource: QuestionSource.gemma).toMap()['questionSource'], 'gemma');
   });
 
-  test('a launch after a debug session left the switch on Gemma starts on the bank (24 Oct)', () async {
+  test('the saved Config choice survives a restart (decision 0145)', () async {
     SharedPreferences.setMockInitialValues({
       'flutter.app_preferences_v1': '{"quizDifficulty": "Hard", "questionSource": "gemma"}',
     });
@@ -40,7 +40,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
     }
     expect(container.read(appPreferencesProvider).quizDifficulty, 'Hard', reason: 'the saved preferences loaded');
-    expect(container.read(appPreferencesProvider).questionSource, QuestionSource.bank);
+    expect(container.read(appPreferencesProvider).questionSource, QuestionSource.gemma);
   });
 
   test('the header names the source of the shown question', () {
@@ -159,6 +159,24 @@ void main() {
       expect(shown, ['botol_plastik-mc-01', 'botol_plastik-mc-02']);
       expect(c.read(wasteQuizProvider).question?.question, isNot('Soal Gemma basi?'));
       expect(questionPrompts.length, promptsBefore, reason: 'no Gemma question work in a bank session');
+    });
+
+    test('a saved ELIOS AI choice with Gemma blocked uses the bank and says why (0145)', () async {
+      final service = GemmaQuizService.instance;
+      final before = service.progress.value;
+      service.progress.value = const GemmaProgress(GemmaStatus.killed);
+      addTearDown(() => service.progress.value = before);
+      final c = container();
+      choose(c, QuestionSource.gemma);
+      c.read(wasteQuizProvider.notifier).startForLabel('botol plastik');
+      await settle(c);
+      final s = c.read(wasteQuizProvider);
+      expect(questionPrompts, isEmpty, reason: 'no Gemma work while blocked');
+      expect(s.question?.bankId, 'botol_plastik-mc-01');
+      expect(s.questionSource, QuestionSource.bank);
+      expect(s.messages.first.text, service.blockedReason, reason: 'the student is told why');
+      expect(c.read(appPreferencesProvider).questionSource, QuestionSource.gemma,
+          reason: 'the saved choice is kept for when ELIOS AI is back');
     });
 
     test('switching mid-session changes the next scan only', () async {
