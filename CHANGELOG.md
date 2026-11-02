@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- The sidebar Dark mode switch is in every build again (it was only in builds made with DARK_MODE_OPTION or TESTER_BUILD). On Android the launcher icon follows the theme: dark navy icon in dark mode, light icon in light mode, switched when you leave the app (decision 0146).
+
 - Fix: leaving the Control screen with a scan quiz open now always disconnects from the robot; before, debug builds kept retrying in the background (decision 0145 follow-up).
 
 - C1: Config screen and Settings sheet rebuilt from Figma in light and dark: robot hero with drag-to-rotate 3D model, ELIOS AI card (Off, Loading, Active, Error, Paused) with the leaf-orbit logo, camera and quiz-source tiles, Connection card with connecting/connected/failed states, a working Cancel, the real failure reason and timeout, and no fake battery value. The quiz source choice is saved; Show FPS overlay and Master volume now take effect (decision 0145).

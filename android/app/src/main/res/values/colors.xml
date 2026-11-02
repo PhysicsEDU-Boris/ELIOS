@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#F8FAFC</color>
+    <!-- Dark launcher icon (decision 0146): follows the in-app theme. -->
+    <color name="ic_launcher_background_dark">#0F172A</color>
     <color name="launch_background">#F8FAFC</color>
 </resources>

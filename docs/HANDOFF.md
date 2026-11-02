@@ -23,16 +23,16 @@
 - Follow `CLAUDE.md` Mac build hygiene: reuse the retained app/model, inventory before building and verify one app registration afterwards. No physical robot movement or sharing recipient selection.
 - Overall queue: U4c combined native acceptance, then U7 Firebase sync, then U8 documentation/Figma. See [NEXT_TASK.md](NEXT_TASK.md).
 
-## Design file font (decision 0091, draft)
+## Theme switch + app icon (2 Nov, draft PR)
 
-- `docs/design.md` now specifies Google Sans Flex and Google Sans Code and a new Status Chip. The app code is unchanged (still JetBrains Mono, Inter, Sora, Manrope). Radii now follow the M3 scale with continuous corners. Check the font licences before bundling.
+- Sidebar Dark mode row in every build (gate removed); Android icon follows the theme via two launcher aliases, switched in `onStop` (an instant switch closed the app). Decision 0146; phone-checked, shots in `docs/test-results/theme-icon/`. iOS icon not changed.
 
 ## C1 Config screen (2 Nov, draft PR on `feature/live-scan`)
 
 - Config + Settings sheet from Figma 337:2358; decision 0145 (settings audit, battery "—", saved quiz source, real Cancel/failure reason). Logic in `config_link_provider.dart`, UI in `lib/Screens/config/`.
 - Tests: `test/screens/config_screen_test.dart` (28), `test/services/config_connection_test.dart` (10). `flutter test` +818 ~20 -2 (the 2 known `elio_tokens_test` failures).
 - Phone: owner session (no guest; nothing recorded), fake robot via `adb reverse` (phone had no Wi-Fi). Shots + notes in `docs/test-results/c1/`. **The phone now runs the C1 debug build** (was the H1v4 tester build); reinstall a tester build when needed.
-- Merged as #77; Connect opens Control (owner). Fix PR: leaving Control with a quiz open now disconnects (was a debug-build reconnect loop).
+- Merged as #77; Connect opens Control (owner). #78 (merged): leaving Control with a quiz open now disconnects (was a debug-build reconnect loop).
 - Open: Sound effects and Timer are UI only; AI Error/Paused not seen on the phone; dark divider fix not on the phone build.
 
 ## N4 profile top bar and drawer (1 Nov, draft PR, stacked on N3 #72)
