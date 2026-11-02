@@ -211,11 +211,19 @@ class HudFloorPainter extends CustomPainter {
         final y = rowY(cm);
         if (y < 0 || y > size.height) continue;
         final inZone = cm >= pickBandMinCm && cm <= pickBandMaxCm;
+        // A dark under-stroke keeps the line visible on a bright floor.
+        canvas.drawLine(
+          Offset(0, y + 1),
+          Offset(size.width, y + 1),
+          Paint()
+            ..color = _glass.withValues(alpha: 0.35)
+            ..strokeWidth = 1.2,
+        );
         canvas.drawLine(
           Offset(0, y),
           Offset(size.width, y),
           Paint()
-            ..color = (inZone ? _hudGreen : _hudText).withValues(alpha: inZone ? 0.8 : 0.35)
+            ..color = (inZone ? _hudGreen : _hudText).withValues(alpha: inZone ? 0.9 : 0.6)
             ..strokeWidth = 1.2,
         );
         final tp = TextPainter(
@@ -225,7 +233,15 @@ class HudFloorPainter extends CustomPainter {
           ),
           textDirection: TextDirection.ltr,
         )..layout();
-        tp.paint(canvas, Offset(12, y - tp.height - 2));
+        final at = Offset(14, y - tp.height - 4);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            (at - const Offset(5, 1)) & Size(tp.width + 10, tp.height + 2),
+            const Radius.circular(6),
+          ),
+          Paint()..color = _glass,
+        );
+        tp.paint(canvas, at);
       }
       final tp = TextPainter(
         text: const TextSpan(
@@ -284,7 +300,7 @@ class _TargetTag extends StatelessWidget {
           children: [
             Positioned(
               left: (centre.dx - 90).clamp(0, math.max(0, c.maxWidth - 180)),
-              top: (centre.dy - 40).clamp(44, math.max(44, c.maxHeight - 30)),
+              top: (centre.dy - 56).clamp(44, math.max(44, c.maxHeight - 30)), // above the firmware's own label
               width: 180,
               child: Center(
                 child: DecoratedBox(
