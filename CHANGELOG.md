@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- R2: gamified Control screen from Figma in light and dark. A joystick replaces the D-pad for the same four drive commands (dead zone; letting go sends motor 0,0), with faders for speed, arm height, reach and gripper, gear chips (25/50/75/100), round STOP and a robot power button. The camera HUD shows floor bands, the pick zone and the item's distance only when the robot sends `dist_cm`. Waiting and disconnected states show the real retry countdown, Reconnect now and Wi-Fi settings, with motion controls dimmed and inert. The bottom row has the mission, the "This drive" bin tally (real scans from this visit, no mission reward), a rule-based ELIO tip, and Voice and Scan quiz toggles (Scan quiz pauses new quizzes for this visit only). Robot commands are unchanged (decision 0173).
+
 - The sidebar Dark mode switch is in every build again (it was only in builds made with DARK_MODE_OPTION or TESTER_BUILD). On Android the launcher icon follows the theme: dark navy icon in dark mode, light icon in light mode, switched when you leave the app (decision 0146).
 
 - Fix: leaving the Control screen with a scan quiz open now always disconnects from the robot; before, debug builds kept retrying in the background (decision 0145 follow-up).
