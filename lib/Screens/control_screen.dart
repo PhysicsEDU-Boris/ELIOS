@@ -8,6 +8,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart'
     show DeviceOrientation, HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey, MethodChannel, SystemChrome, SystemUiMode;
 
@@ -30,7 +31,11 @@ import '../services/scan_record_store.dart';
 import '../services/websocket_service.dart';
 import '../theme/elio_theme.dart';
 import '../widgets/control/control_panels.dart';
+import '../widgets/control/phone/phone_control.dart';
+import '../widgets/control/phone/phone_guide.dart';
+import '../widgets/control/phone/phone_quiz.dart';
 import '../widgets/control/r2_controls.dart';
+import 'scan_history_screen.dart';
 import '../widgets/debug_phone_camera_sheet.dart';
 import '../widgets/control_layout.dart';
 import '../widgets/desktop_viewport.dart';
@@ -106,6 +111,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
   /// The joystick's current direction, for the drive card's status chip.
   DriveDir? _driveDir;
+
+  // R3 (phone): the Guide's targets, the loading skeleton and the Guide itself (0174).
+  final _driveKey = GlobalKey(), _stopKey = GlobalKey(), _actionKey = GlobalKey(), _quizKey = GlobalKey();
+  bool _skeleton = true;
+  bool _guideOpen = false;
+  Timer? _skeletonTimer;
 
   /// The last detector frame's boxes: preview-only frames (every other one)
   /// carry none, and the HUD tag must not blink (R2).
@@ -300,9 +311,31 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       }
     }, fireImmediately: true);
 
-    // Connect to the robot when the control screen opens.
-    unawaited(_connectAndStartStream());
+    // Connect to the robot when the control screen opens. The phone skeleton
+    // shows until this settles (or 1.5 s); STOP is live all that time.
+    _skeletonTimer = Timer(const Duration(milliseconds: 1500), _endSkeleton);
+    unawaited(_connectAndStartStream().whenComplete(_endSkeleton));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutoGuide());
     debugPrint('Robot controls enabled: true (awaiting WebSocket connection)');
+  }
+
+  void _endSkeleton() {
+    _skeletonTimer?.cancel();
+    if (mounted && _skeleton) setState(() => _skeleton = false);
+  }
+
+  /// First time on a phone: open the Guide once and remember it on this device.
+  Future<void> _maybeAutoGuide() async {
+    if (!mounted || !isPhoneLandscape(context)) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(controlGuideShownKey) ?? false) return;
+      await prefs.setBool(controlGuideShownKey, true);
+    } catch (e) {
+      debugPrint('[Control] guide flag: $e');
+      return;
+    }
+    if (mounted) setState(() => _guideOpen = true);
   }
 
   /// STOPPED (0026) or the Scan quiz toggle off (0173): frames still stream,
@@ -384,6 +417,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _r1Ticker?.cancel();
     _robotReplies?.cancel();
     _statusDebounceTimer?.cancel();
+    _skeletonTimer?.cancel();
     HardwareKeyboard.instance.removeHandler(_onKey);
     WidgetsBinding.instance.removeObserver(this);
     _gate.dispose(); // motor 0,0, heartbeat off
@@ -550,7 +584,19 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           body: SafeArea(
             child: AnimatedBuilder(
               animation: ScanRecordStore.instance, // the tally and History follow new records
-              builder: (context, _) => ControlLayout(
+              builder: (context, _) => isPhoneLandscape(context)
+                  ? _phoneLayout(
+                      link: link,
+                      robotState: robotState,
+                      quizState: quizState,
+                      missionDone: missionDone,
+                      user: user,
+                      drive: (driveWord, driveColor),
+                      arm: (armWord, armColor),
+                      stop: stop,
+                      reconnect: reconnect,
+                    )
+                  : ControlLayout(
                 stoppedBanner: _gate.stopped ? StoppedBanner(reason: _gate.stopReason, onResume: _resumeAfterStop) : null,
                 stoppedPill: _gate.stopped ? StoppedPill(reason: _gate.stopReason) : null,
                 exitButton: ControlPill(icon: Icons.arrow_back_rounded, label: 'Exit', onTap: () => Navigator.of(context).pop()),
@@ -744,6 +790,129 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       );
     }));
   }
+  /// R3 phone layout (decision 0174). Same handlers as R2, but nothing is dimmed
+  /// or absorbed: offline the controls press and the gate sends nothing.
+  Widget _phoneLayout({
+    required ControlLink link,
+    required RobotState robotState,
+    required WasteQuizUiState quizState,
+    required int missionDone,
+    required User? user,
+    required (String, Color) drive,
+    required (String, Color) arm,
+    required VoidCallback stop,
+    required VoidCallback reconnect,
+  }) {
+    final notifier = _robotNotifier;
+    final quizOpen = quizState.phase != WasteQuizPhase.idle;
+    return PhoneControlLayout(
+      link: link,
+      stopped: _gate.stopped,
+      stopReason: _gate.stopReason,
+      skeleton: _skeleton,
+      driveLabel: drive,
+      armLabel: arm,
+      speed: robotState.pwmSpeed,
+      onSpeed: notifier.setPwmSpeed,
+      onDirection: (dir) {
+        driveCommand(_gate, dir, robotState.pwmSpeed.toInt());
+        setState(() => _driveDir = dir);
+      },
+      onRelease: () {
+        _gate.stopWheels();
+        setState(() => _driveDir = null);
+      },
+      frame: _latestFrame?.bytes,
+      fps: _streamFps,
+      scanQuizOn: _scanQuizOn,
+      onScanQuiz: (on) => setState(() {
+        _scanQuizOn = on;
+        _applyScanPause();
+      }),
+      voiceOn: quizState.voiceOn,
+      onVoice: (_) => ref.read(wasteQuizProvider.notifier).toggleVoice(),
+      onHome: _gate.home,
+      onPickUp: () {
+        if (_gate.servo('gripper', 100)) {
+          notifier.setGripperVal(100);
+          if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
+        }
+      },
+      onReleaseGripper: () {
+        if (_gate.servo('gripper', 0)) notifier.setGripperVal(0);
+      },
+      gripper: robotState.gripperVal,
+      onGripper: (value) {
+        final width = value.round();
+        if (_gate.servo('gripper', width))
+          notifier.setGripperVal(width.toDouble());
+      },
+      height: robotState.heightValue,
+      onHeight: (value) {
+        if (_gate.servo('height', (value * 180).toInt())) {
+          notifier.setHeightValue(value * 180);
+          _scheduleStatusRequest();
+        }
+      },
+      reach: robotState.reachValue,
+      onReach: (value) {
+        if (_gate.servo('reach', (value * 180).toInt())) {
+          notifier.setReachValue(value * 180);
+          _scheduleStatusRequest();
+        }
+      },
+      onPower: link == ControlLink.disconnected
+          ? reconnect
+          : () => unawaited(ref.read(configLinkProvider.notifier).disconnect()),
+      onConnect: reconnect,
+      onStop: stop,
+      onGo:
+          _resumeAfterStop, // clears STOPPED only; never sends a motion command
+      missionDone: missionDone,
+      trophies: ScanRecordStore.instance.totalTrophies,
+      quizBadge: quizOpen ? 1 : null,
+      onQuiz: () {
+        final q = ref.read(wasteQuizProvider.notifier);
+        quizState.minimized ? q.restore() : q.minimize();
+      },
+      onHistory: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ScanHistoryScreen(store: ScanRecordStore.instance),
+        ),
+      ),
+      onAvatar: () => _drawerKey.currentState?.open(),
+      onBack: () => Navigator.of(context).pop(),
+      onGuide: () => setState(() => _guideOpen = true),
+      photoUrl: user?.photoURL,
+      driveKey: _driveKey,
+      stopKey: _stopKey,
+      actionKey: _actionKey,
+      quizKey: _quizKey,
+      overlays: [
+        Positioned.fill(
+          child: PhoneQuizPopup(
+            onStop: stop,
+            onRescan: () {
+              _liveScan?.logEvent('rescan_tapped', {});
+              _liveScan?.rescan();
+            },
+          ),
+        ),
+        if (_guideOpen)
+          Positioned.fill(
+            child: PhoneGuide(
+              driveKey: _driveKey,
+              stopKey: _stopKey,
+              actionKey: _actionKey,
+              quizKey: _quizKey,
+              onStop: stop,
+              onClose: () => setState(() => _guideOpen = false),
+            ),
+          ),
+      ],
+    );
+  }
+
   /// Debug Scan (debug builds only): the live-scan readout, the question
   /// source and "Reset scan (debug)", off the student's screen.
   Widget _debugSheet(BuildContext context) {
