@@ -2095,7 +2095,7 @@ class _DocumentState extends State<_Document> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 120, child: Text(l, style: label())),
+          SizedBox(width: 132, child: Text(l, style: label())),
           Expanded(
             child: Text(
               value,
