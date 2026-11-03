@@ -1,4 +1,4 @@
-# 0181: LOCK button — the AI boxes the item in the whole frame
+# 0181: LOCK labels and boxes the item; SCAN opens its quiz
 
 - Status: Accepted (owner, 3 Nov 2026: step 1 of "drop the .mud model, Gemini box on LOCK,
   tracking after the lock, AprilTags for the arm")
@@ -16,17 +16,22 @@ away with the .mud model).
 
 ## Decision
 
-- R3 phone Control gets a **LOCK** key in the action bar after RELEASE. It is enabled with a live
-  link, a frame, and no open quiz. The automatic lock still runs as before (the .mud model is
-  still on the camera until the firmware step).
-- LOCK sends the **whole frame** through the existing identify call (one Gemini call, no backend
-  change): the paired clean image when one arrived in the last second, else the live preview.
-  With today's firmware the preview can carry the firmware's own drawn boxes and masks.
-- The AI's `box_2d` crops the popup and History photo (as in 0180) and is kept as
-  `WasteQuizUiState.lockBox`. The video shows it as a green box with the item name while that
-  scan is open. It does not move with the object yet.
-- No detector label: the bank pool and the hazard card come from the AI's answer only.
-- No box from the AI: the popup and History photo are the whole frame.
+- **LOCK** labels and boxes; it opens no quiz (owner, 3 Nov: "locking doesn't need to open the
+  quiz"). It sends the **whole frame** through the identify call (one Gemini call, no backend
+  change): the paired clean image when one arrived in the last second, else the live preview. With
+  today's firmware the preview can carry the firmware's own boxes and masks.
+- The whole-frame prompt asks for one waste item, not hands, walls, boards, tables, floors or
+  cables, and allows "tidak jelas" (none). A first robot test named a cable "kardus" with the
+  plain prompt. The detector-lock prompt is unchanged.
+- The answer stays on the video as a green box with the item name until **UNLOCK** (the same
+  key) or the next LOCK. No item: a snackbar, nothing locked.
+- **SCAN** opens the quiz popup for the locked item from the LOCK answer (no second call). With
+  nothing locked, SCAN locks first. The popup and History photo are the AI's box cut from the
+  frame (the whole frame without a box). No detector label: bank pool and hazard come from the AI.
+- LOCK and SCAN sit at the bottom right of the video (R3 phone). The action bar had no room: with
+  five keys the gripper fader got 27 px on an 800 px phone.
+- The detector's automatic lock and its popup still run (the "Scan quiz" toggle turns them off)
+  until the .mud model is dropped in the firmware step.
 
 ## Not in this step
 
@@ -36,11 +41,12 @@ away with the .mud model).
 
 ## Tests
 
-- `test/m2c_identification_test.dart`: the clean frame goes to the AI, its box crops the photo and
-  is kept as `lockBox` (break-checked), cleared on dismiss; without a clean image the preview is
-  sent and no box keeps the whole frame.
-- `test/widgets/phone_control_test.dart`: LOCK taps through; the box is drawn over the video at the
-  cover-scaled position (break-checked). `control_layout_test` (all sizes) passes with the key.
+- `test/m2c_identification_test.dart`: LOCK sends the clean frame with the waste-only prompt, opens
+  no quiz (break-checked), and keeps the box and its crop; SCAN starts the quiz from that answer
+  with no second call; "tidak jelas" locks nothing; no box keeps the whole preview.
+- `test/widgets/phone_control_test.dart`: LOCK and SCAN tap through; a locked item reads UNLOCK and
+  its box is drawn over the video at the cover-scaled position. `control_layout_test` (all sizes)
+  passes.
 
 ## Robot test (3 Nov, APK `a7e8158`, real MaixCAM2)
 

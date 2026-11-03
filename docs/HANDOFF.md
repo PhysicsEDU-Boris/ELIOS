@@ -17,7 +17,7 @@
 
 ## LOCK button (3 Nov, `feat/lock-button`, stacked on PR #87, decision 0181)
 
-- Owner plan: drop the .mud model; LOCK → Gemini box (1 call); camera tracks it after (MixFormerV2, model on the camera; ByteTrack needs a detector); camera hand_detector keeps arm safety; AprilTags (tag36h11 id 0, 18.52 mm) via find_apriltags; calibrate with robotic_hand_sim's HIL toolkit. Step 1 (this) is app only; firmware steps need the owner's OK at test time.
+- Owner plan: drop the .mud model; LOCK → Gemini box (1 call); camera tracks it after (MixFormerV2, model on the camera; ByteTrack needs a detector); camera hand_detector keeps arm safety; AprilTags (tag36h11 id 0, 18.52 mm) via find_apriltags; calibrate with robotic_hand_sim's HIL toolkit. Step 1 (this, app only): LOCK labels+boxes (no quiz, waste-only prompt), SCAN opens the quiz; keys on the video. firmware steps need the owner's OK at test time.
 
 ## Gemini cloud AI (3 Nov, `feat/gemini-cloud-ai`, decision 0179)
 

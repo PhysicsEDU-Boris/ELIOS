@@ -165,6 +165,8 @@ Future<Rig> pumpPhone(
   WasteQuizUiState quiz = const WasteQuizUiState(),
   int? guideStep,
   Uint8List? frame,
+  Rect? lockBox,
+  bool locked = false,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -292,8 +294,10 @@ Future<Rig> pumpPhone(
                           actionKey: keys[2],
                           quizKey: keys[3],
                           onLock: () => tap('lock'),
-                          lockBox: q.lockBox,
-                          lockLabel: q.scan?.displayName,
+                          locked: locked,
+                          onScan: () => tap('scan'),
+                          lockBox: lockBox,
+                          lockLabel: lockBox == null ? null : 'Kardus',
                           overlays: [
                             Positioned.fill(
                               child: WasteQuizPopup(onStop: stop, showLauncher: false),

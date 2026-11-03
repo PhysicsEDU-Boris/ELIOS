@@ -70,8 +70,12 @@ class ControlScreen extends ConsumerStatefulWidget {
 class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindingObserver {
   final MaixCamSource _source = MaixCamSource();
   CapturedFrame? _latestFrame;
-  /// The newest frame with an unannotated image, for LOCK (0180).
+  /// The newest frame with an unannotated image, for LOCK (0181).
   CapturedFrame? _lastCleanFrame;
+
+  /// LOCK (0181): the AI's answer shown on the video until UNLOCK or the next LOCK.
+  LockedItem? _locked;
+  bool _locking = false;
   StreamSubscription<CapturedFrame>? _frameSubscription;
   ProviderSubscription<AsyncValue<String>>? _statusSubscription;
   late final RobotControlNotifier _robotNotifier;
@@ -882,9 +886,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onBack: () => Navigator.of(context).pop(),
       onGuide: () => setState(() => _guideOpen = true),
       photoUrl: user?.photoURL,
-      onLock: link == ControlLink.connected && _latestFrame != null && !quizOpen ? _lock : null,
-      lockBox: quizOpen ? quizState.lockBox : null,
-      lockLabel: quizState.scan?.displayName,
+      onLock: _locked != null || (link == ControlLink.connected && _latestFrame != null && !_locking) ? _lockOrUnlock : null,
+      locked: _locked != null,
+      onScan: !quizOpen && !_locking && (_locked != null || (link == ControlLink.connected && _latestFrame != null)) ? _scan : null,
+      lockBox: _locked?.box,
+      lockLabel: _locked == null ? null : ScannedWaste.fromLabel(_locked!.result.item!).displayName,
       driveKey: _driveKey,
       stopKey: _stopKey,
       actionKey: _actionKey,
@@ -915,13 +921,38 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     );
   }
 
-  /// LOCK (0180): a clean frame from the last second, else the live preview (it may carry the
-  /// firmware's own boxes until the firmware stops drawing them).
-  void _lock() {
+  /// LOCK (0181): a clean frame from the last second, else the live preview (it may carry the
+  /// firmware's own drawings until the firmware stops making them). UNLOCK clears the box.
+  Future<LockedItem?> _lockOrUnlock() async {
+    if (_locked != null) {
+      setState(() => _locked = null);
+      return null;
+    }
     final clean = _lastCleanFrame;
     final fresh = clean != null && DateTime.now().difference(clean.timestamp) < const Duration(seconds: 1);
     final frame = fresh ? clean : _latestFrame;
-    if (frame != null) ref.read(wasteQuizProvider.notifier).onManualLock(frame);
+    if (frame == null) return null;
+    setState(() => _locking = true);
+    final answer = await ref.read(wasteQuizProvider.notifier).lockItem(frame);
+    if (!mounted) return null;
+    setState(() {
+      _locking = false;
+      _locked = answer.lock;
+    });
+    if (answer.lock == null) {
+      ScaffoldMessenger.of(context)
+        ..removeCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(answer.failure == 'busy'
+            ? 'ELIOS AI is busy. Try LOCK again in a moment.'
+            : answer.failure ?? 'No item found. Point the camera at one item and try again.')));
+    }
+    return answer.lock;
+  }
+
+  /// SCAN (0181): the quiz popup for the locked item; with nothing locked, LOCK first.
+  Future<void> _scan() async {
+    final lock = _locked ?? await _lockOrUnlock();
+    if (lock != null && mounted) ref.read(wasteQuizProvider.notifier).scanLocked(lock);
   }
 
   /// Debug Scan (debug builds only): the live-scan readout, the question

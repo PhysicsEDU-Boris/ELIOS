@@ -65,6 +65,8 @@ class PhoneControlLayout extends StatelessWidget {
     this.photoUrl,
     this.overlays = const [],
     this.onLock,
+    this.locked = false,
+    this.onScan,
     this.lockBox,
     this.lockLabel,
     this.driveKey,
@@ -106,10 +108,15 @@ class PhoneControlLayout extends StatelessWidget {
   /// The quiz popup and the guide, over everything. They keep STOP reachable themselves.
   final List<Widget> overlays;
 
-  /// LOCK (0180): the AI boxes the item in the current frame; null greys the key out.
+  /// LOCK (0181): the AI boxes and names the item in the current frame; null greys the key out.
+  /// With [locked] the same key reads UNLOCK and clears the box.
   final VoidCallback? onLock;
+  final bool locked;
 
-  /// The AI's box for the open LOCK scan, as fractions (0..1) of the frame, and its item name.
+  /// SCAN (0181): opens the quiz popup for the locked item; null greys the key out.
+  final VoidCallback? onScan;
+
+  /// The locked item's box, as fractions (0..1) of the frame, and its name.
   final Rect? lockBox;
   final String? lockLabel;
 
@@ -571,6 +578,34 @@ class PhoneControlLayout extends StatelessWidget {
         ),
       );
     }
+    if (!skeleton && link == ControlLink.connected) {
+      // LOCK and SCAN (0181) sit on the video: camera actions, and the action bar has no room left.
+      body = Stack(children: [
+        body,
+        Positioned(
+          right: 8,
+          bottom: 8,
+          child: Row(children: [
+            TransportKey(
+              key: const ValueKey('phone_lock'),
+              icon: locked ? Icons.center_focus_weak : Icons.center_focus_strong,
+              label: locked ? 'UNLOCK' : 'LOCK',
+              size: 44,
+              onTap: onLock,
+            ),
+            const SizedBox(width: 8),
+            TransportKey(
+              key: const ValueKey('phone_scan'),
+              icon: Icons.quiz_outlined,
+              label: 'SCAN',
+              primary: true,
+              size: 44,
+              onTap: onScan,
+            ),
+          ]),
+        ),
+      ]);
+    }
     return Container(
       key: const ValueKey('phone_video'),
       clipBehavior: Clip.antiAlias,
@@ -645,14 +680,6 @@ class PhoneControlLayout extends StatelessWidget {
                       label: 'RELEASE',
                       size: 48,
                       onTap: onReleaseGripper,
-                    ),
-                    const SizedBox(width: 12),
-                    TransportKey(
-                      key: const ValueKey('phone_lock'),
-                      icon: Icons.center_focus_strong,
-                      label: 'LOCK',
-                      size: 48,
-                      onTap: onLock,
                     ),
                     const SizedBox(width: 12),
                     Container(width: 1.5, height: 52, color: p.borderSubtle),
