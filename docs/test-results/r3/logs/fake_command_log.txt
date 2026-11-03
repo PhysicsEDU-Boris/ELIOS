@@ -1,0 +1,214 @@
+## joystick forward then release
+[WS] motor left=75 right=75
+[WS] motor left=0 right=0
+(end)
+## gear 100
+(end)
+## joystick left
+[WS] motor left=-100 right=100
+[WS] motor left=0 right=0
+(end)
+## PICK UP
+[WS] servo part=gripper val=100
+(end)
+## RELEASE
+[WS] servo part=gripper val=0
+(end)
+## HOME tap (no hold)
+(end)
+## HOME hold 1.3s
+[WS] HOME seq=3
+[WS] STATUS seq=4
+(end)
+## gripper fader tap mid
+[WS] servo part=gripper val=59
+(end)
+## height fader drag up
+[WS] servo part=height val=90
+[WS] servo part=height val=91
+[WS] servo part=height val=93
+[WS] servo part=height val=94
+[WS] servo part=height val=94
+[WS] servo part=height val=96
+[WS] servo part=height val=97
+[WS] servo part=height val=99
+[WS] servo part=height val=100
+[WS] servo part=height val=100
+[WS] servo part=height val=102
+[WS] servo part=height val=103
+[WS] servo part=height val=103
+[WS] servo part=height val=105
+[WS] servo part=height val=106
+[WS] servo part=height val=106
+[WS] servo part=height val=108
+[WS] servo part=height val=109
+[WS] servo part=height val=111
+[WS] servo part=height val=111
+[WS] servo part=height val=112
+[WS] servo part=height val=114
+[WS] servo part=height val=114
+[WS] servo part=height val=116
+[WS] servo part=height val=117
+[WS] servo part=height val=118
+[WS] servo part=height val=120
+[WS] servo part=height val=120
+[WS] servo part=height val=121
+[WS] servo part=height val=123
+[WS] servo part=height val=123
+[WS] servo part=height val=125
+[WS] servo part=height val=126
+[WS] servo part=height val=127
+[WS] servo part=height val=129
+[WS] servo part=height val=129
+[WS] servo part=height val=131
+[WS] servo part=height val=132
+[WS] servo part=height val=133
+[WS] servo part=height val=134
+[WS] servo part=height val=136
+[WS] servo part=height val=136
+[WS] servo part=height val=138
+[WS] servo part=height val=139
+[WS] servo part=height val=139
+[WS] servo part=height val=142
+[WS] servo part=height val=142
+[WS] servo part=height val=145
+[WS] servo part=height val=145
+[WS] servo part=height val=148
+[WS] servo part=height val=149
+[WS] servo part=height val=149
+[WS] servo part=height val=149
+[WS] servo part=height val=150
+[WS] servo part=height val=153
+[WS] servo part=height val=154
+[WS] servo part=height val=154
+[WS] servo part=height val=157
+[WS] servo part=height val=158
+[WS] STATUS seq=5
+(end)
+## reach fader drag up
+[WS] servo part=reach val=90
+[WS] servo part=reach val=91
+[WS] servo part=reach val=92
+[WS] servo part=reach val=93
+[WS] servo part=reach val=95
+[WS] servo part=reach val=95
+[WS] servo part=reach val=96
+[WS] servo part=reach val=98
+[WS] servo part=reach val=99
+[WS] servo part=reach val=101
+[WS] servo part=reach val=102
+[WS] servo part=reach val=104
+[WS] servo part=reach val=105
+[WS] servo part=reach val=105
+[WS] servo part=reach val=108
+[WS] servo part=reach val=110
+[WS] servo part=reach val=110
+[WS] servo part=reach val=110
+[WS] servo part=reach val=110
+[WS] servo part=reach val=111
+[WS] servo part=reach val=113
+[WS] servo part=reach val=113
+[WS] servo part=reach val=114
+[WS] servo part=reach val=116
+[WS] servo part=reach val=117
+[WS] servo part=reach val=119
+[WS] servo part=reach val=119
+[WS] servo part=reach val=120
+[WS] servo part=reach val=122
+[WS] servo part=reach val=122
+[WS] servo part=reach val=123
+[WS] servo part=reach val=125
+[WS] servo part=reach val=126
+[WS] servo part=reach val=128
+[WS] servo part=reach val=128
+[WS] servo part=reach val=129
+[WS] servo part=reach val=131
+[WS] servo part=reach val=132
+[WS] servo part=reach val=133
+[WS] servo part=reach val=134
+[WS] servo part=reach val=135
+[WS] servo part=reach val=137
+[WS] servo part=reach val=137
+[WS] servo part=reach val=138
+[WS] servo part=reach val=140
+[WS] servo part=reach val=141
+[WS] servo part=reach val=142
+[WS] servo part=reach val=144
+[WS] servo part=reach val=144
+[WS] servo part=reach val=146
+[WS] servo part=reach val=147
+[WS] servo part=reach val=149
+[WS] servo part=reach val=150
+[WS] servo part=reach val=150
+[WS] servo part=reach val=153
+[WS] servo part=reach val=153
+[WS] servo part=reach val=153
+[WS] servo part=reach val=156
+[WS] servo part=reach val=156
+[WS] servo part=reach val=158
+[WS] STATUS seq=6
+(end)
+## STOP
+[WS] STOP seq=7 -> wheels 0, arm hold
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+(end)
+## joystick forward while STOPPED
+[WS] motor left=0 right=0
+(end)
+## PICK UP while STOPPED
+(end)
+## GO
+(end)
+## joystick forward after GO
+[WS] motor left=100 right=100
+[WS] motor left=0 right=0
+(end)
+## STOP again
+[WS] STOP seq=8 -> wheels 0, arm hold
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+(end)
+## GO again
+(end)
+## STOP (dark)
+[WS] STOP seq=3 -> wheels 0, arm hold
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+(end)
+## GO (dark)
+(end)
+## STOP while the Guide is open
+[WS] STOP seq=4 -> wheels 0, arm hold
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+(end)
+## GO
+(end)
+## power off
+[WS] motor left=0 right=0
+[WS] disconnect -> disconnect_ack
+[WS] clients remaining: 0
+(end)
+## Connect
+[WS] Client connected: ('127.0.0.1', 51254)
+[WS] STOP seq=5 -> wheels 0, arm hold
+[WS] motor left=0 right=0
+[WS] STATUS seq=6
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+(end)

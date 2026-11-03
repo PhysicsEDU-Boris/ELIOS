@@ -50,3 +50,4 @@ their status changed.
 | [0171](0171-learn-thumbnail-fallback.md) | Learn thumbnails: Firestore URL first, bundled illustration as placeholder and fallback | Draft |
 | [0172](0172-learn-offline.md) | Learn loading, error, offline cache and empty states | Draft |
 | [0173](0173-r2-control-gamified.md) | R2 gamified Control: joystick quantisation, link views, drive tally, Scan quiz pause, dist_cm-only HUD | Draft |
+| [0174](0174-r3-control-phone.md) | R3 Control for phones: one STOP/GO button, no logo in the top bar, Guide, English quiz popups | Draft |

@@ -28,8 +28,15 @@
 - Control rebuilt from Figma 358:2358 (light/dark): joystick for the same D-pad commands, faders, gear chips, power + round STOP, camera HUD (bands/pick zone/distance only with `dist_cm`), waiting/disconnected views with the real 2 s / 30-try retry, mission + "This drive" (real records, no reward), ELIO tip, Voice / Scan quiz toggles. Decision 0173; logic in `lib/models/control_session.dart`, UI in `lib/widgets/control/` + `control_layout.dart`.
 - Tests: `test/widgets/control_layout_test.dart` (226, 8 sizes × 3 states × light/dark), `test/screens/control_r2_test.dart`, `test/models/control_session_test.dart`; break-checked (joystick without the gate fails). `flutter test` +1015 ~20 -2 (the 2 known `elio_tokens_test`).
 - A/B fake log (`docs/test-results/r2/`): identical up to Exit; the base build did not disconnect on Exit (reproduced, cause not found), the new one does.
-- Phone: owner session read-only (27 scans unchanged, no quiz answered), fake via `adb reverse`. **The phone now runs the R2 debug build dd429ed** (tester flags), dark mode. Phone has two Gemma copies (app files + external files), both pre-existing; not touched.
+- Phone: owner session read-only (27 scans unchanged, no quiz answered), fake via `adb reverse`. Phone has two Gemma copies (app files + external files), both pre-existing; not touched.
 - Owner questions: mission reward; HUD crop hides the 20 cm band on phones; base-build Exit not disconnecting.
+
+## R3 Control for phones (2 Nov, draft PR into `feat/r2-control-gamified`)
+
+- Phones in landscape (short side < 600 dp) get the R3 layout from Figma 393:2358 (`lib/widgets/control/phone/`: layout, quiz popups, Guide). One round STOP/GO button (GO = `MotionGate.resume` only), no logo in the top bar, nothing on the video, offline presses send nothing, skeleton, 5-step Guide (first run once per device, key `r3_phone_guide_shown`). R2 stays on tablets and the Mac. Decision 0174.
+- Tests: `test/widgets/phone_control_test.dart`, `test/screens/control_phone_test.dart`; GO test break-checked. Results, side-by-sides and the difference list: `docs/test-results/r3/`.
+- Phone (Edge 60 Fusion): debug build with `SCAN_RECORDS_FILE=scan_records_r3test.json` (separate store). Owner `scan_records.json` verified byte-identical (27 records); fake robot over `adb reverse`, removed after. Space/Esc not tested (no keyboard). **The phone runs the R3 test build, dark mode.** The Gemma model was moved out and back for the builds; no copy.
+- Open: painted card art and SVG export, 3D joystick, ELIOS AI badge art; essay input / identifying / hazard popups still the old Indonesian popup; owner question: should GO and the logo removal also apply to R2 tablet and Mac?
 
 ## Earlier on 2 Nov (merged)
 
