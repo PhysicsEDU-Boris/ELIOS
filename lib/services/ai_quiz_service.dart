@@ -337,12 +337,17 @@ class AiQuizService {
 
   /// Step 1 of a photo scan: name the object, with nothing else in the
   /// prompt to bias it.
-  Future<PhotoIdentification> identifyItem(Uint8List imageBytes, {ScanDiagnostics? diagnostics}) async {
+  ///
+  /// [wholeFrame] (LOCK, 0181): the photo is the whole camera view, which always has some "main
+  /// object", so the prompt asks for waste only and allows "none".
+  Future<PhotoIdentification> identifyItem(Uint8List imageBytes, {ScanDiagnostics? diagnostics, bool wholeFrame = false}) async {
     // E1: shorter, and no can among the examples (a battery was named a can).
     // 0180: also a tight box_2d (Gemini's native [ymin, xmin, ymax, xmax], 0-1000); hands are not the item.
-    const prompt =
-        'Sebutkan benda utama di foto (bukan tangan), spesifik: "ponsel", "baterai", "kardus", '
-        '"botol plastik PET", "kulit pisang", "kertas". Jika tidak jelas tulis "tidak jelas". '
+    final prompt =
+        '${wholeFrame ? 'Sebutkan satu sampah utama di foto (bukan tangan, dinding, papan, meja, lantai atau kabel)' : 'Sebutkan benda utama di foto (bukan tangan)'}, '
+        'spesifik: "ponsel", "baterai", "kardus", '
+        '"botol plastik PET", "kulit pisang", "kertas". '
+        '${wholeFrame ? 'Jika tidak ada sampah atau tidak jelas tulis "tidak jelas". ' : 'Jika tidak jelas tulis "tidak jelas". '}'
         'Balas HANYA JSON: {"item": "nama singkat", "material": "bahan", '
         '"category": "organik"|"anorganik"|"B3"|"residu", '
         '"box_2d": [ymin, xmin, ymax, xmax]} dengan box_2d kotak rapat benda itu, skala 0-1000.';

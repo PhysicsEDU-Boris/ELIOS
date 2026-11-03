@@ -445,6 +445,7 @@ class TransportKey extends StatelessWidget {
     this.primary = false,
     this.size = 60,
     this.progress = 0,
+    this.showLabel = true,
   });
 
   final IconData icon;
@@ -455,6 +456,9 @@ class TransportKey extends StatelessWidget {
 
   /// Hold-to-confirm fill (HOME), 0..1.
   final double progress;
+
+  /// False draws the circle only (short screens); screen readers still get [label].
+  final bool showLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -493,12 +497,14 @@ class TransportKey extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              maxLines: 1,
-              style: TextStyle(color: p.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1),
-            ),
+            if (showLabel) ...[
+              const SizedBox(height: 6),
+              Text(
+                label,
+                maxLines: 1,
+                style: TextStyle(color: p.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1),
+              ),
+            ],
           ],
         ),
       ),

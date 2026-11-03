@@ -1,11 +1,14 @@
 // R3 phone Control: layout states at 3 phone sizes in light and dark, and the
 // gate rules (GO sends nothing, offline sends nothing). Decision 0174.
+import 'dart:typed_data';
+
 import 'package:elio/models/control_session.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/widgets/waste_quiz_popup.dart' show EliosAiBadge;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image/image.dart' as img;
 
 import 'phone_harness.dart';
 
@@ -223,6 +226,26 @@ void main() {
     testWidgets('quiz hidden when there is no quiz', (t) async {
       await pumpPhone(t, size, quiz: const WasteQuizUiState());
       expect(find.byKey(const ValueKey('phone_quiz')), findsNothing);
+    });
+
+    testWidgets('0181: LOCK and SCAN tap through; locked reads UNLOCK', (t) async {
+      await pumpPhone(t, size);
+      await t.tap(find.byKey(const ValueKey('phone_lock')));
+      await t.tap(find.byKey(const ValueKey('phone_scan')));
+      expect(taps.keys, containsAll(['lock', 'scan']));
+      expect(find.text('LOCK'), findsOneWidget);
+    });
+
+    testWidgets('0181: a locked item reads UNLOCK and its box is drawn over the video', (t) async {
+      final frame = Uint8List.fromList(img.encodePng(img.Image(width: 64, height: 64)));
+      await pumpPhone(t, size, frame: frame, locked: true, lockBox: const Rect.fromLTRB(.25, .25, .75, .75));
+      expect(find.text('UNLOCK'), findsOneWidget);
+      final box = t.getRect(find.byKey(const ValueKey('phone_lock_box')));
+      final video = t.getRect(find.byKey(const ValueKey('phone_video')));
+      // a square frame with BoxFit.cover: the box is half the video width, centred
+      expect(box.width, closeTo(video.width / 2, 2));
+      expect(box.center.dx, closeTo(video.center.dx, 2));
+      expect(find.text('Kardus'), findsOneWidget);
     });
 
     testWidgets('nothing on top of the video', (t) async {

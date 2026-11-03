@@ -248,6 +248,49 @@ void main() {
       expect(File(store.records.single.cropPhotoPath!).readAsBytesSync(), orderedEquals(expected));
     });
 
+    test('0181 LOCK: the whole clean frame goes to the AI; no quiz opens; SCAN starts it without a second call', () async {
+      final clean = Uint8List.fromList(img.encodePng(img.Image(width: 40, height: 20)));
+      final frame = CapturedFrame(bytes: Uint8List.fromList([1, 2, 3]), cleanBytes: clean,
+          frameId: 7, detectionFrameId: 7, width: 40, height: 20, timestamp: DateTime(2026));
+      String? prompt;
+      service.mockSendExecute = (p, {imageBytes, isUser = false}) {
+        prompt = p;
+        images.add(imageBytes);
+        return imageBytes != null ? identify.future : Future.value(null);
+      };
+      final pending = quiz.lockItem(frame);
+      await _until(() => images.isNotEmpty);
+      expect(images.single, orderedEquals(clean), reason: 'the paired clean image, not the preview');
+      expect(prompt, contains('tidak ada sampah'));
+      identify.complete('{"item":"botol plastik","category":"anorganik","box_2d":[0,0,500,500]}');
+      final answer = await pending;
+      expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.idle, reason: 'LOCK opens no quiz');
+      expect(answer.lock!.box, const Rect.fromLTRB(0, 0, .5, .5));
+      expect(answer.lock!.photo, orderedEquals(cropToBox((clean, const Rect.fromLTRB(0, 0, .5, .5)))!));
+      quiz.scanLocked(answer.lock!);
+      await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
+      expect(c.read(wasteQuizProvider).scan?.displayName, 'Botol plastik');
+      expect(c.read(wasteQuizProvider).cropBytes, orderedEquals(answer.lock!.photo));
+      expect(images.whereType<Uint8List>(), hasLength(1), reason: 'SCAN reuses the LOCK answer');
+    });
+
+    test('0181 LOCK: "tidak jelas" is a failure, no box keeps the whole preview', () async {
+      final preview = Uint8List.fromList(img.encodePng(img.Image(width: 40, height: 20)));
+      final frame = CapturedFrame(bytes: preview, width: 40, height: 20, timestamp: DateTime(2026));
+      final none = quiz.lockItem(frame);
+      await _until(() => images.isNotEmpty);
+      expect(images.single, orderedEquals(preview));
+      identify.complete('{"item":"tidak jelas"}');
+      expect((await none).lock, isNull);
+      identify = Completer<String?>();
+      final nobox = quiz.lockItem(frame);
+      await _until(() => images.length == 2);
+      identify.complete('{"item":"botol plastik","category":"anorganik"}');
+      final lock = (await nobox).lock!;
+      expect(lock.box, isNull);
+      expect(lock.photo, orderedEquals(preview));
+    });
+
     test('parseBox reads box_2d and rejects bad or sliver boxes', () {
       expect(AiQuizService.parseBox([100, 200, 600, 900]), const Rect.fromLTRB(.2, .1, .9, .6));
       expect(AiQuizService.parseBox([-50, 0, 1200, 1000]), const Rect.fromLTRB(0, 0, 1, 1));

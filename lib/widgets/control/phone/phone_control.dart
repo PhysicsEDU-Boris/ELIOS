@@ -64,6 +64,11 @@ class PhoneControlLayout extends StatelessWidget {
     required this.onGuide,
     this.photoUrl,
     this.overlays = const [],
+    this.onLock,
+    this.locked = false,
+    this.onScan,
+    this.lockBox,
+    this.lockLabel,
     this.driveKey,
     this.stopKey,
     this.actionKey,
@@ -102,6 +107,18 @@ class PhoneControlLayout extends StatelessWidget {
 
   /// The quiz popup and the guide, over everything. They keep STOP reachable themselves.
   final List<Widget> overlays;
+
+  /// LOCK (0181): the AI boxes and names the item in the current frame; null greys the key out.
+  /// With [locked] the same key reads UNLOCK and clears the box.
+  final VoidCallback? onLock;
+  final bool locked;
+
+  /// SCAN (0181): opens the quiz popup for the locked item; null greys the key out.
+  final VoidCallback? onScan;
+
+  /// The locked item's box, as fractions (0..1) of the frame, and its name.
+  final Rect? lockBox;
+  final String? lockLabel;
 
   /// GO replaces STOP only with a live link: offline always shows STOP (Figma 397:2604).
   bool get _showGo => stopped && link == ControlLink.connected;
@@ -552,6 +569,7 @@ class PhoneControlLayout extends StatelessWidget {
       body = SizedBox.expand(
         child: Image.memory(frame!, fit: BoxFit.cover, gaplessPlayback: true),
       );
+      if (lockBox != null) body = Stack(children: [body, Positioned.fill(child: _lockOverlay())]);
     } else {
       body = Center(
         child: Text(
@@ -574,6 +592,39 @@ class PhoneControlLayout extends StatelessWidget {
       child: body,
     );
   }
+
+  /// The AI's box over the video. The square camera frame is shown with BoxFit.cover, so the box
+  /// is scaled by the larger side and shifted by the cropped margin.
+  // ponytail: assumes a square frame (MaixCAM2 streams the model's 640x640); pass the frame size if that changes.
+  Widget _lockOverlay() => LayoutBuilder(builder: (context, c) {
+    final side = c.maxWidth > c.maxHeight ? c.maxWidth : c.maxHeight;
+    final dx = (c.maxWidth - side) / 2, dy = (c.maxHeight - side) / 2;
+    final b = lockBox!;
+    return Stack(children: [
+      Positioned(
+        key: const ValueKey('phone_lock_box'),
+        left: dx + b.left * side,
+        top: dy + b.top * side,
+        width: b.width * side,
+        height: b.height * side,
+        child: DecoratedBox(
+          decoration: BoxDecoration(border: Border.all(color: const Color(0xFF22C55E), width: 3)),
+          child: lockLabel == null
+              ? null
+              : Align(
+                  alignment: Alignment.topLeft,
+                  child: ColoredBox(
+                    color: const Color(0xFF22C55E),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      child: Text(lockLabel!, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ),
+        ),
+      ),
+    ]);
+  });
 
   Widget _actionBar(BuildContext context) {
     final p = context.elio;
@@ -644,6 +695,7 @@ class PhoneControlLayout extends StatelessWidget {
   Widget _armCard(BuildContext context) {
     final p = context.elio;
     final on = link == ControlLink.connected;
+    final shortScreen = MediaQuery.sizeOf(context).height < 400;
     Widget fader(String label, double value, ValueChanged<double> onChanged) =>
         SizedBox(
           width: 48,
@@ -695,6 +747,27 @@ class PhoneControlLayout extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      // LOCK and SCAN (0181), above Online (owner, 3 Nov). Round keys with captions fit
+                      // a 412 px phone; on shorter ones (800x360) only smaller keys without captions fit.
+                      TransportKey(
+                        key: const ValueKey('phone_lock'),
+                        icon: locked ? Icons.center_focus_weak : Icons.center_focus_strong,
+                        label: locked ? 'UNLOCK' : 'LOCK',
+                        size: shortScreen ? 26 : 32,
+                        showLabel: !shortScreen,
+                        onTap: onLock,
+                      ),
+                      const SizedBox(height: 4),
+                      TransportKey(
+                        key: const ValueKey('phone_scan'),
+                        icon: Icons.quiz_outlined,
+                        label: 'SCAN',
+                        primary: true,
+                        size: shortScreen ? 26 : 32,
+                        showLabel: !shortScreen,
+                        onTap: onScan,
+                      ),
+                      const SizedBox(height: 6),
                       Tooltip(
                         message: on || link == ControlLink.waiting
                             ? 'Putuskan robot'
@@ -702,11 +775,11 @@ class PhoneControlLayout extends StatelessWidget {
                         child: PhoneGlowButton(
                           key: const ValueKey('robot_power'),
                           kind: on ? GlowKind.powerOn : GlowKind.powerOff,
-                          size: 44,
+                          size: 40,
                           onTap: onPower,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Text(
                         on
                             ? 'Online'
@@ -720,7 +793,7 @@ class PhoneControlLayout extends StatelessWidget {
                           fontSize: 12,
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 8),
                       KeyedSubtree(
                         key: stopKey,
                         child: _showGo
