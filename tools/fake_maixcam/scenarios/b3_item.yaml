@@ -1,0 +1,5 @@
+name: b3_item
+description: A phone (E_Waste, B3). Expect the hazard confirmation path (0012).
+duration_s: 40
+items:
+  - {id: phone, label: E_Waste, pos_mm: [-54, -281], size_mm: 140, score: 0.83}

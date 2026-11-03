@@ -1,0 +1,11 @@
+id: elios_clean_m2c_v1
+name: ELIOS Clean Vision
+version: 1.0.0
+author: ELIOS
+icon: ''
+desc: >-
+  Clean-image firmware m2c-clean-v1 for M2C pipeline - sends clean frame +
+  protocol/frameID/hash on WS 8765, preserves UART4 protocol to ESP32/Arduino
+  for arm/wheels
+files:
+  - main.py

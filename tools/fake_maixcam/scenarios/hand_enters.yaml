@@ -1,0 +1,9 @@
+name: hand_enters
+description: A bottle is quizzed first (close that quiz by 25 s). At 25 s a hand (bigger, score 0.97) comes in front of it until 40 s; the bottle is hidden, so it gets no box. The hand must never lock; the bottle may lock again after 0020's rules once the hand leaves.
+duration_s: 60
+items:
+  - {id: bottle, label: Plastic, pos_mm: [-54, -301], size_mm: 120, score: 0.85}
+  - {id: hand, label: Human_Hand, pos_mm: [-40, -260], size_mm: 170, score: 0.97, visible: false}
+events:
+  - {t: 25, do: appear, item: hand}
+  - {t: 40, do: leave, item: hand}

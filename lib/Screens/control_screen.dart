@@ -3,24 +3,62 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart'
-    show DeviceOrientation, SystemChrome, SystemUiMode;
+    show DeviceOrientation, HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey, MethodChannel, SystemChrome, SystemUiMode;
 
 import '../models/config_model.dart';
+import '../models/control_session.dart';
+import '../models/scanned_waste.dart';
+import '../providers/config_link_provider.dart';
 import '../providers/esp_config_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../providers/robot_provider.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../services/gemma_quiz_service.dart';
+import '../services/live_scan_controller.dart';
+import '../services/live_scan_state_machine.dart' show LiveScanState;
+import '../services/quiz_tts_service.dart';
+import '../services/robot/motion_gate.dart';
+import '../services/robot/r1_orchestrator.dart';
+import '../services/robot/robot_controller.dart';
+import '../services/scan_record_store.dart';
 import '../services/websocket_service.dart';
+import '../theme/elio_theme.dart';
+import '../widgets/control/control_panels.dart';
+import '../widgets/control/phone/phone_control.dart';
+import '../widgets/control/phone/phone_guide.dart';
+import '../widgets/control/r2_controls.dart';
+import 'scan_history_screen.dart';
 import '../widgets/debug_phone_camera_sheet.dart';
+import '../widgets/control_layout.dart';
 import '../widgets/desktop_viewport.dart';
+import '../widgets/elio_drawer_host.dart';
+import '../widgets/elio_sidebar.dart';
+import '../widgets/elio_top_bar.dart' show ElioAvatar;
+import '../widgets/learn/learn_ui.dart' show LearnTheme;
+import '../widgets/live_scan_debug_overlay.dart';
+import '../widgets/question_source_switch.dart';
 import '../widgets/segmentation_overlay_painter.dart';
 import '../widgets/waste_quiz_popup.dart';
 import '../services/frame_source/maix_cam_source.dart';
 import '../services/frame_source/frame_source.dart';
+import 'login_screen.dart';
+
+/// The MaixCAM2 already draws its box, mask and label into the video, so the
+/// app's own box is a debug aid, shown with the live-scan debug overlay only.
+const _showAppDetectionBoxes = kDebugMode && liveScanEnabled;
+
+/// `--dart-define=R1=true` (with LIVE_SCAN): R1 probes the MaixCAM2 command
+/// link (decision 0023) and shows the result in the debug overlay. The
+/// student flow (bin question, "Ambil") is not on screen yet (M4).
+const _r1Enabled = liveScanEnabled && bool.fromEnvironment('R1');
+const _pickUpQuizFlow = liveScanEnabled && bool.fromEnvironment('G1_PICKUP_QUIZ_FLOW');
 
 class ControlScreen extends ConsumerStatefulWidget {
   const ControlScreen({super.key});
@@ -29,12 +67,15 @@ class ControlScreen extends ConsumerStatefulWidget {
   ConsumerState<ControlScreen> createState() => _ControlScreenState();
 }
 
-class _ControlScreenState extends ConsumerState<ControlScreen> {
+class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindingObserver {
   final MaixCamSource _source = MaixCamSource();
   CapturedFrame? _latestFrame;
   StreamSubscription<CapturedFrame>? _frameSubscription;
   ProviderSubscription<AsyncValue<String>>? _statusSubscription;
   late final RobotControlNotifier _robotNotifier;
+  // Read once: `ref` can't be used inside dispose() (A1 phone log, 29 Oct).
+  late final WasteQuizNotifier _quizNotifier;
+  late final StateController<bool> _dropPending;
   bool? _lastLoggedRobotControlsEnabled;
   int _frameCount = 0;
   int _fpsFrameCount = 0;
@@ -44,19 +85,159 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   int _lastFrameBytes = 0;
   bool _streamStartedForCurrentConnection = false;
 
-  static const Color textPrimary = Color(0xFF1C2833);
-  static const Color textSecondary = Color(0xFF7F8C8D);
-  static const Color primaryColor = Color(0xFF1D9E75);
-  static const Color orangeAccent = Color(0xFFE67E22);
-  static const Color redAccent = Color(0xFFE74C3C);
+  /// Set only when built with --dart-define=LIVE_SCAN=true (M2a).
+  LiveScanController? _liveScan;
+
+  /// Every motor and servo command passes here (decision 0026): the
+  /// emergency stop, STOPPED, R1's drive lock, the link, the heartbeat.
+  late final MotionGate _gate;
+
+  /// Set only with R1 (see [_r1Enabled]).
+  R1Orchestrator? _r1;
+  StreamSubscription<Map<String, dynamic>>? _robotReplies;
+  Timer? _statusDebounceTimer;
+  Timer? _r1Ticker;
+  String? _r1Status;
+
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _drawerKey = GlobalKey<ElioDrawerHostState>();
+
+  /// The R2 "Scan quiz" toggle: session-only (decision 0173).
+  bool _scanQuizOn = true;
+
+  /// "This drive" counts records saved from here on.
+  final DateTime _openedAt = DateTime.now();
+
+  /// The joystick's current direction, for the drive card's status chip.
+  DriveDir? _driveDir;
+
+  // R3 (phone): the Guide's targets, the loading skeleton and the Guide itself (0174).
+  final _driveKey = GlobalKey(), _stopKey = GlobalKey(), _actionKey = GlobalKey(), _quizKey = GlobalKey();
+  bool _skeleton = true;
+  bool _guideOpen = false;
+  Timer? _skeletonTimer;
+
+  /// The last detector frame's boxes: preview-only frames (every other one)
+  /// carry none, and the HUD tag must not blink (R2).
+  List<Detection> _hudDetections = const [];
 
   @override
   void initState() {
     super.initState();
     _enterLandscapeFullscreen();
     _robotNotifier = ref.read(robotControlProvider.notifier);
+    _quizNotifier = ref.read(wasteQuizProvider.notifier);
+    _dropPending = ref.read(r1DropPendingProvider.notifier);
 
     setDesktopLandscape(true);
+
+    if (liveScanEnabled) {
+      _liveScan = LiveScanController(
+        manualPickUpQuiz: _pickUpQuizFlow,
+        startQuiz: (detection, frame) {
+          if (ref.read(wasteQuizProvider).phase != WasteQuizPhase.idle) return false;
+          if (frame == null) return false;
+          ref.read(wasteQuizProvider.notifier).onRobotLocked(frame, detection);
+          return true;
+        },
+        firstTokenMs: () => GemmaQuizService.instance.lastFirstTokenMs.value,
+        ttsCount: () => QuizTtsService.instance.startedCount,
+        nextWaitMs: () => ref.read(wasteQuizProvider.notifier).lastNextWaitMs,
+      )..onQuizPhase(ref.read(wasteQuizProvider).phase); // a quiz may already be open (minimized)
+
+      // M2b: preload Gemma now, so the first quiz is fast instead of showing
+      // "Memuat model Gemma ke memori...". Fire-and-forget: ensureReady is
+      // single-flight and returns at once if already loading or loaded, and
+      // a failed preload just leaves the model to load as today, on the
+      // first quiz (see GemmaQuizService.warmUp/ensureReady).
+      GemmaQuizService.instance.warmUp(vision: true);
+    }
+
+    final ws = WebSocketService();
+    final robot = MaixCamRobot(
+      sink: (command) {
+        if (_gate.allowsCommand(command)) ws.sendRobotCommand(command);
+      },
+      motor: ws.sendMotorCommand,
+    );
+    _gate = MotionGate(
+      robot: robot,
+      sendServo: ws.sendServoCommand,
+      onEvent: (event, data) {
+        debugPrint('[Control] $event $data');
+        _liveScan?.logEvent(event, data);
+      },
+      onStop: (reason) => _r1?.emergencyStop(reason),
+      onArmCommand: (motion) => _liveScan?.onArmCommand(motion),
+      onHomeTimeout: () {
+        if (mounted) {
+          ref.read(robotControlProvider.notifier).updateStatus(atHome: false);
+        }
+      },
+      armBusy: () => _r1?.ignoresLiveScanLocks ?? false,
+      handPaused: () => _r1?.handInView ?? false,
+    )..addListener(() {
+        _applyScanPause(); // no lock, identify or new quiz while STOPPED (0026)
+        if (_gate.stopped && mounted) {
+          ref.read(robotControlProvider.notifier).updateStatus(atHome: false);
+        }
+        if (mounted) setState(() {});
+      });
+    WidgetsBinding.instance.addObserver(this);
+    HardwareKeyboard.instance.addHandler(_onKey);
+
+    _robotReplies = ws.robotReplies.listen((msg) {
+      robot.handleMessage(msg);
+      final reply = RobotReply.fromJson(msg);
+      if (reply != null) {
+        if (_gate.pendingHomeSeq != null && reply.seq == _gate.pendingHomeSeq) {
+          if (reply.kind == ReplyKind.motionDone) {
+            final homeSuccess = _gate.onHomeReply(reply);
+            if (homeSuccess) {
+              ref.read(robotControlProvider.notifier).resetToHome();
+            }
+          } else if (reply.kind == ReplyKind.error) {
+            _gate.onHomeReply(reply);
+            ref.read(robotControlProvider.notifier).updateStatus(atHome: false);
+          } else if (reply.kind == ReplyKind.ack) {
+            _gate.onHomeReply(reply);
+            // Ack alone means accepted; do not mark successful or reset slider cache.
+          }
+        }
+        if (reply.seq == robot.lastStatusSeq) {
+          ref.read(robotControlProvider.notifier).updateStatus(
+                eeMm: reply.eeMm,
+                clearEeMm: reply.eeMm == null,
+                atHome: reply.atHome,
+              );
+        } else if (reply.hasEeMm || reply.atHome != null) {
+          ref.read(robotControlProvider.notifier).updateStatus(
+                eeMm: reply.eeMm,
+                clearEeMm: reply.hasEeMm && reply.eeMm == null,
+                atHome: reply.atHome,
+              );
+        }
+        if (reply.kind == ReplyKind.motionDone) {
+          robot.status();
+        }
+      }
+    });
+
+    if (_r1Enabled) {
+      _r1 = R1Orchestrator(robot, onResume: (reason) {
+        // A robot that misbehaved stops everything until "Lanjutkan" (0026).
+        if (const {'robot_error', 'robot_unreachable', 'pick_failed'}.contains(reason)) _gate.emergencyStop('error');
+      });
+      _r1Ticker = Timer.periodic(const Duration(milliseconds: 250), (_) {
+        final r1 = _r1!..tick();
+        final text = r1.robotConnected ? 'robot terhubung' : r1.message ?? 'memeriksa robot...';
+        if (mounted && text != _r1Status) setState(() => _r1Status = text);
+        final dropPending = r1.state == R1State.sorting || r1.state == R1State.waitBoth;
+        if (ref.read(r1DropPendingProvider) != dropPending) {
+          ref.read(r1DropPendingProvider.notifier).state = dropPending;
+        }
+      });
+    }
 
     // Subscribe to robot frames outside of build to avoid re-registering
     // the listener on every rebuild.
@@ -77,12 +258,25 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
         _fpsWindowStart = now;
       }
 
-      setState(() => _latestFrame = frame);
-      
+      setState(() {
+        _latestFrame = frame;
+        if (frame.detections != null) _hudDetections = frame.detections!;
+      });
+
       // Auto-generated waste quiz: only fed by the real MaixCAM2 stream, the
       // debug phone-camera path triggers it manually instead.
       if (frame.detections != null && ref.read(debugQuizSourceProvider) == WasteQuizSource.maixCam2) {
-        ref.read(wasteQuizProvider.notifier).onDetections(frame.detections!);
+        final liveScan = _liveScan;
+        if (liveScan != null) {
+          liveScan.onDetections(
+            frame.detections!,
+            frameSize: Size(frame.width.toDouble(), frame.height.toDouble()),
+            armMoving: WebSocketService().armMoving, // same message as the frame (0026)
+            capturedFrame: frame,
+          );
+        } else if (!_gate.stopped && _scanQuizOn) {
+          ref.read(wasteQuizProvider.notifier).onDetections(frame.detections!);
+        }
       }
     });
     _statusSubscription = ref.listenManual(robotStatusProvider, (_, next) {
@@ -92,6 +286,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
         if (!_streamStartedForCurrentConnection) {
           _streamStartedForCurrentConnection = true;
           debugPrint('[Control] Connected status observed, starting stream');
+          _onNewConnection();
           _robotNotifier.startStream();
 
           // Apply the user's chosen resolution preset on connect.
@@ -105,14 +300,80 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
       if (status == 'Disconnected' ||
           status == 'Reconnecting...' ||
           status == 'Connecting...') {
+        if (_streamStartedForCurrentConnection) _r1?.linkDown();
+        _gate.linkLost(); // STOPPED (link_lost) until "Lanjutkan" (0026)
         _streamStartedForCurrentConnection = false;
+        ref.read(robotControlProvider.notifier).updateStatus(
+              clearEeMm: true,
+              clearAtHome: true,
+            );
       }
     }, fireImmediately: true);
 
-    // Connect to the robot when the control screen opens.
-    unawaited(_connectAndStartStream());
+    // Connect to the robot when the control screen opens. The phone skeleton
+    // shows until this settles (or 1.5 s); STOP is live all that time.
+    _skeletonTimer = Timer(const Duration(milliseconds: 1500), _endSkeleton);
+    unawaited(_connectAndStartStream().whenComplete(_endSkeleton));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutoGuide());
     debugPrint('Robot controls enabled: true (awaiting WebSocket connection)');
   }
+
+  void _endSkeleton() {
+    _skeletonTimer?.cancel();
+    if (mounted && _skeleton) setState(() => _skeleton = false);
+  }
+
+  /// First time on a phone: open the Guide once and remember it on this device.
+  Future<void> _maybeAutoGuide() async {
+    // Not isPhoneLandscape: the screen is still turning to landscape on this first frame.
+    if (!mounted || MediaQuery.sizeOf(context).shortestSide >= 600) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(controlGuideShownKey) ?? false) return;
+      await prefs.setBool(controlGuideShownKey, true);
+    } catch (e) {
+      debugPrint('[Control] guide flag: $e');
+      return;
+    }
+    if (mounted) setState(() => _guideOpen = true);
+  }
+
+  /// STOPPED (0026) or the Scan quiz toggle off (0173): frames still stream,
+  /// none starts a lock or a quiz. Never touches the stream or the robot.
+  void _applyScanPause() => _liveScan?.setScanPaused(_gate.stopped || !_scanQuizOn);
+
+  /// Debug overlay: Gemma's item next to the detector class (decision 0025).
+  static String? _scanLine(ScannedWaste? scan) =>
+      scan == null ? null : 'gemma "${scan.displayName}"   detektor ${scan.detectorLabel ?? '-'}';
+
+  /// Once per (re)connection, from whichever path sees it first.
+  void _onNewConnection() {
+    _gate.linkRestored(); // first: STOP + motor 0,0 before anything else (0026)
+    _liveScan?.onLinkRestored(); // 0020: a drop can't time absence; harmless on the first connect
+    _r1?.linkUp(); // 0023: probe the command link (old firmware: "robot tidak terhubung")
+    _gate.robot.status();
+  }
+
+  /// Escape, or space outside a text field: the emergency stop.
+  bool _onKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
+    final key = event.logicalKey;
+    final typing = FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<EditableText>() != null;
+    if (key == LogicalKeyboardKey.escape || (key == LogicalKeyboardKey.space && !typing)) {
+      _gate.emergencyStop('button');
+      return true;
+    }
+    return false;
+  }
+
+  /// "Lanjutkan": the deliberate second action after a stop.
+  void _resumeAfterStop() {
+    _gate.resume();
+    _r1?.resumeAfterStop();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) => _gate.onAppLifecycle(state);
 
   void _enterLandscapeFullscreen() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -141,6 +402,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
       if (!_streamStartedForCurrentConnection) {
         _streamStartedForCurrentConnection = true;
         debugPrint('[Control] Starting stream after connect result');
+        _onNewConnection();
         _robotNotifier.startStream();
       }
     } else {
@@ -152,35 +414,48 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   void dispose() {
     _frameSubscription?.cancel();
     _statusSubscription?.close();
+    _r1Ticker?.cancel();
+    _robotReplies?.cancel();
+    _statusDebounceTimer?.cancel();
+    _skeletonTimer?.cancel();
+    HardwareKeyboard.instance.removeHandler(_onKey);
+    WidgetsBinding.instance.removeObserver(this);
+    _gate.dispose(); // motor 0,0, heartbeat off
 
-    // Disconnect when leaving the control screen.
+    // Disconnect when leaving the control screen (not a quiz pause: the
+    // stream stays up for the whole visit, M2b).
     debugPrint('[Control] Stopping MaixCAM2 stream');
     _robotNotifier.stopStream();
-
-    // Dismiss quiz if it was left open so it doesn't block future scans.
-    ref.read(wasteQuizProvider.notifier).dismiss();
 
     debugPrint('[Control] Leaving robot control, disconnecting WebSocket');
     unawaited(_robotNotifier.disconnect());
     unawaited(GemmaQuizService.instance.dispose());
     setDesktopLandscape(false);
+    _liveScan?.dispose();
+
+    // Riverpod refuses provider writes while the tree unmounts, and the throw
+    // used to skip the disconnect above: clear the drop flag and any open quiz
+    // (so it doesn't block future scans) once the tree is unlocked.
+    final quiz = _quizNotifier;
+    final dropPending = _dropPending;
+    Future.microtask(() {
+      dropPending.state = false;
+      quiz.dismiss();
+    });
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Pause the MaixCAM2 video while the quiz popup covers it (frees CPU and
-    // Wi-Fi for Gemma) and resume when it's closed or minimized. Driving and
-    // arm controls are unaffected.
+    // M2b: the MaixCAM2 video and the live-scan machine both keep running
+    // while the quiz popup is open (previously the stream was stopped and
+    // restarted for every quiz, which is what caused the camera badge's
+    // ~3 s drop to 0.2-0.4 fps after every close while it reconnected). The
+    // state machine itself already refuses to lock or ask during ASKING/QUIZ
+    // (decision 0008), so nothing new can be asked; this only keeps presence
+    // tracking and the preview current.
     ref.listen<WasteQuizUiState>(wasteQuizProvider, (prev, next) {
-      final was = prev != null && prev.phase != WasteQuizPhase.idle && !prev.minimized;
-      final now = next.phase != WasteQuizPhase.idle && !next.minimized;
-      if (was == now) return;
-      if (now) {
-        _robotNotifier.stopStream();
-      } else if (ref.read(robotStatusProvider).valueOrNull == 'Connected') {
-        _robotNotifier.startStream();
-      }
+      if (prev?.phase != next.phase) _liveScan?.onQuizPhase(next.phase);
     });
 
     // Resend resolution to the device whenever the user changes it mid-session.
@@ -194,10 +469,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
     final robotState = ref.watch(robotControlProvider);
     final status = ref.watch(robotStatusProvider).value ?? 'Disconnected';
+    final quizState = ref.watch(wasteQuizProvider);
 
     final isConnected = status == 'Connected';
-    final isReconnecting = status == 'Reconnecting...';
     final isOperational = isConnected;
+    final link = controlLink(status);
 
     if (_lastLoggedRobotControlsEnabled != isOperational) {
       _lastLoggedRobotControlsEnabled = isOperational;
@@ -206,632 +482,581 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
     final notifier = _robotNotifier;
     final speed = robotState.pwmSpeed;
-    final statusLabel = isConnected
-        ? 'LIVE'
-        : isReconnecting
-        ? 'RECONNECTING'
-        : 'OFFLINE';
+    final detections = _hudDetections;
+    final target = isConnected ? hudTarget(detections) : null;
+    final tip = controlTip(
+      link: link,
+      stopped: _gate.stopped,
+      quizOpen: quizState.phase != WasteQuizPhase.idle && !quizState.minimized,
+      itemLabel: target?.label,
+      itemLocked: _liveScan?.machine.state == LiveScanState.asking,
+      distCm: target?.distCm,
+    );
+    final ws = WebSocketService();
+    final user = Firebase.apps.isEmpty ? null : FirebaseAuth.instance.currentUser;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return Center(
-                    child: FittedBox(
-                      fit: BoxFit.contain,
-                      child: SizedBox(
-                        width: 960,
-                        height: 380,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            _VerticalControlSlider(
-                              label: 'UP/DOWN',
-                              sublabel: 'ARM HEIGHT',
-                              value: (robotState.elbowAngle / 180).clamp(
-                                0.0,
-                                1.0,
-                              ),
-                              enabled: isOperational,
-                              labelOnLeft: true,
-                              onChanged: (value) =>
-                                  notifier.setElbowAngle(value * 180),
-                            ),
-                            const SizedBox(width: 12),
-                            _LandscapeDriveControls(
-                              speed: speed,
-                              enabled: isOperational,
-                              onForward: () => notifier.sendMotor(
-                                speed.toInt(),
-                                speed.toInt(),
-                              ),
-                              onBack: () => notifier.sendMotor(
-                                -speed.toInt(),
-                                -speed.toInt(),
-                              ),
-                              onLeft: () => notifier.sendMotor(
-                                -speed.toInt(),
-                                speed.toInt(),
-                              ),
-                              onRight: () => notifier.sendMotor(
-                                speed.toInt(),
-                                -speed.toInt(),
-                              ),
-                              onStop: () => notifier.sendMotor(0, 0),
-                            ),
-                            const SizedBox(width: 14),
-                            SizedBox(
-                              width: 400,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  _LandscapeCameraPanel(
-                                    currentFrame: _latestFrame?.bytes,
-                                    statusLabel: statusLabel,
-                                    streamFps: _streamFps,
-                                    frameCount: _frameCount,
-                                    lastFrameAt: _lastFrameAt,
-                                    lastFrameBytes: _lastFrameBytes,
-                                    detections: _latestFrame?.detections ?? const [],
-                                    detectionImageSize: Size(
-                                      _latestFrame?.width.toDouble() ?? 0,
-                                      _latestFrame?.height.toDouble() ?? 0,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _LandscapeActionButtons(
-                                    enabled: isOperational,
-                                    onPickUp: notifier.pickUp,
-                                    onRelease: notifier.release,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            _LandscapeSpeedPanel(
-                              speed: speed,
-                              enabled: isOperational,
-                              onChanged: notifier.setPwmSpeed,
-                            ),
-                            const SizedBox(width: 12),
-                            _VerticalControlSlider(
-                              label: 'FORWARD/BACKWARD',
-                              sublabel: 'ARM REACH',
-                              value: (robotState.baseAngle / 180).clamp(
-                                0.0,
-                                1.0,
-                              ),
-                              enabled: isOperational,
-                              labelOnLeft: false,
-                              onChanged: (value) =>
-                                  notifier.setBaseAngle(value * 180),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
+    void stop() => _gate.emergencyStop('button');
+    void reconnect() => unawaited(_connectAndStartStream());
+
+    return ElioTheme.wrap(Builder(builder: (context) {
+      final p = context.elio;
+      final tall = MediaQuery.sizeOf(context).height >= 700;
+      final (driveWord, driveColor) = switch (link) {
+        ControlLink.waiting => ('Waiting', p.secondaryText),
+        ControlLink.disconnected => ('Offline', p.errorText),
+        _ when _gate.stopped => ('Stopped', p.errorText),
+        _ => (switch (_driveDir) {
+            DriveDir.forward => 'Forward',
+            DriveDir.back => 'Back',
+            DriveDir.left => 'Left',
+            DriveDir.right => 'Right',
+            null => 'Ready',
+          }, p.primaryText),
+      };
+      final (armWord, armColor) = switch (link) {
+        ControlLink.waiting => ('Waiting', p.secondaryText),
+        ControlLink.disconnected => ('Offline', p.errorText),
+        _ when _gate.stopped => ('Stopped', p.errorText),
+        _ => (_gate.isHoming ? 'Homing' : 'Ready', p.primaryText),
+      };
+      Widget hint(String art, String text) => Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: p.surfaceRaised, borderRadius: BorderRadius.circular(12)),
+            child: Row(children: [
+              controlArt(art, height: 36),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(text, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(color: p.textSecondary, fontSize: 12)),
+              ),
+            ]),
+          );
+      Widget armFader(String label, String sub, double value, ValueChanged<double> onChanged) => Column(children: [
+            Text('${(value * 100).round()}%', style: TextStyle(color: p.primaryText, fontWeight: FontWeight.w700, fontSize: 14)),
+            const SizedBox(height: 4),
+            Expanded(
+              child: SizedBox(
+                width: 56,
+                child: ControlFader(vertical: true, value: value, semanticLabel: label, onChanged: isOperational ? onChanged : null),
               ),
             ),
+            const SizedBox(height: 4),
+            ControlCaps(label),
+            if (tall) Text(sub, maxLines: 1, style: TextStyle(color: p.textTertiary, fontSize: 11)),
+          ]);
+      final tally = driveTally(ScanRecordStore.instance.records, _openedAt);
+      final missionDone = tally.bins.values.fold(0, (a, b) => a + b);
+      void onScanQuiz(bool on) => setState(() {
+            _scanQuizOn = on;
+            _applyScanPause();
+          });
+      void onVoice(bool _) => ref.read(wasteQuizProvider.notifier).toggleVoice();
+
+      return ElioDrawerHost(
+        key: _drawerKey,
+        drawer: Material(
+          color: p.surface,
+          child: ElioSidebar(
+            user: user,
+            currentIndex: -1, // Control is not a tab
+            onClose: () => _drawerKey.currentState?.close(),
+            onSelect: (index) {
+              final nav = ref.read(navigationIndexProvider.notifier);
+              _drawerKey.currentState?.close();
+              Navigator.of(context).pop(); // leaving Control disconnects (dispose)
+              nav.state = index;
+            },
+            onSignOut: () async {
+              final nav = Navigator.of(context, rootNavigator: true);
+              _drawerKey.currentState?.close();
+              await FirebaseAuth.instance.signOut();
+              nav.pushAndRemoveUntil(
+                MaterialPageRoute<void>(builder: (_) => LoginScreen(auth: FirebaseAuth.instance)),
+                (_) => false,
+              );
+            },
           ),
-          Positioned(
-            top: 12,
-            left: 12,
-            child: SafeArea(
-              child: _ExitControlButton(
-                onTap: () => Navigator.of(context).pop(),
-              ),
-            ),
-          ),
-          if (kDebugMode)
-            Positioned(
-              top: 12,
-              right: 12,
-              child: SafeArea(
-                child: _DebugQuizSourceToggle(
-                  onScanWithPhone: () => showModalBottomSheet<void>(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.white,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                    ),
-                    builder: (_) => const DebugPhoneCameraSheet(),
+        ),
+        child: Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: p.background,
+          endDrawerEnableOpenDragGesture: false,
+          endDrawer: kDebugMode ? _debugSheet(context) : null,
+          body: SafeArea(
+            child: AnimatedBuilder(
+              animation: ScanRecordStore.instance, // the tally and History follow new records
+              builder: (context, _) => isPhoneLandscape(context)
+                  ? _phoneLayout(
+                      link: link,
+                      robotState: robotState,
+                      quizState: quizState,
+                      missionDone: missionDone,
+                      user: user,
+                      drive: (driveWord, driveColor),
+                      arm: (armWord, armColor),
+                      stop: stop,
+                      reconnect: reconnect,
+                    )
+                  : ControlLayout(
+                stoppedBanner: _gate.stopped ? StoppedBanner(reason: _gate.stopReason, onResume: _resumeAfterStop) : null,
+                stoppedPill: _gate.stopped ? StoppedPill(reason: _gate.stopReason) : null,
+                exitButton: ControlPill(icon: Icons.arrow_back_rounded, label: 'Exit', onTap: () => Navigator.of(context).pop()),
+                debugScanButton: ControlPill(
+                  icon: Icons.bug_report_outlined,
+                  label: 'Debug Scan',
+                  dashed: true,
+                  onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
+                ),
+                historyButton: const HistoryPill(),
+                avatar: ElioAvatar(photoUrl: user?.photoURL, onTap: () => _drawerKey.currentState?.open()),
+                driveStatus: ControlStatusChip(label: driveWord, color: driveColor),
+                joystick: controlEnabled(
+                  isOperational,
+                  DriveJoystick(
+                    enabled: isOperational,
+                    onDirection: (dir) {
+                      driveCommand(_gate, dir, speed.toInt());
+                      setState(() => _driveDir = dir);
+                    },
+                    onRelease: () {
+                      _gate.stopWheels(); // motor 0,0, as every D-pad release
+                      setState(() => _driveDir = null);
+                    },
                   ),
                 ),
+                driveHint: hint('tyre_buddy', isOperational ? 'Push to drive · let go to stop' : 'Unlocks when the robot connects'),
+                speed: controlEnabled(
+                  isOperational,
+                  Column(mainAxisSize: MainAxisSize.min, children: [
+                    Row(children: [
+                      const Expanded(child: ControlCaps('SPEED (PWM)')),
+                      Text('${speed.toInt()}%', style: TextStyle(color: p.primaryText, fontWeight: FontWeight.w700, fontSize: 14)),
+                    ]),
+                    SizedBox(
+                      height: 40,
+                      child: ControlFader(value: speed, max: 100, semanticLabel: 'Speed', onChanged: isOperational ? notifier.setPwmSpeed : null),
+                    ),
+                    const SizedBox(height: 4),
+                    GearChips(speed: speed, onSelect: isOperational ? notifier.setPwmSpeed : null),
+                  ]),
+                ),
+                camera: _LandscapeCameraPanel(
+                  currentFrame: _latestFrame?.bytes,
+                  link: link,
+                  streamFps: _streamFps,
+                  frameCount: _frameCount,
+                  lastFrameAt: _lastFrameAt,
+                  lastFrameBytes: _lastFrameBytes,
+                  detections: detections,
+                  detectionImageSize: Size(
+                    _latestFrame?.width.toDouble() ?? 0,
+                    _latestFrame?.height.toDouble() ?? 0,
+                  ),
+                  retry: RetryInfo(
+                    attempt: ws.retryCount,
+                    maxAttempts: ws.maxRetries,
+                    nextRetryAt: ws.nextRetryAt,
+                    autoReconnect: ws.autoReconnectEnabled,
+                  ),
+                  onReconnect: reconnect,
+                  onWifiSettings: defaultTargetPlatform == TargetPlatform.android
+                      ? () => const MethodChannel('elio/device_health').invokeMethod<void>('wifiSettings')
+                      : null,
+                ),
+                actions: controlEnabled(
+                  isOperational,
+                  LayoutBuilder(builder: (context, c) {
+                    final key = (c.maxHeight - 26).clamp(36.0, 64.0);
+                    return Row(children: [
+                      HomeButton(onConfirmed: _gate.home, enabled: isOperational, size: key),
+                      const SizedBox(width: 10),
+                      TransportKey(
+                        icon: Icons.back_hand_outlined,
+                        label: 'PICK UP',
+                        primary: true,
+                        size: key,
+                        onTap: isOperational
+                            ? () {
+                                if (_gate.servo('gripper', 100)) {
+                                  notifier.setGripperVal(100);
+                                  if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
+                                }
+                              }
+                            : null,
+                      ),
+                      const SizedBox(width: 10),
+                      TransportKey(
+                        icon: Icons.front_hand_outlined,
+                        label: 'RELEASE',
+                        size: key,
+                        onTap: isOperational
+                            ? () {
+                                if (_gate.servo('gripper', 0)) notifier.setGripperVal(0);
+                              }
+                            : null,
+                      ),
+                      VerticalDivider(width: 24, color: p.borderSubtle),
+                      Expanded(
+                        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          Row(children: [
+                            const Expanded(child: ControlCaps('GRIPPER')),
+                            Text('${robotState.gripperVal.round()}%',
+                                style: TextStyle(color: p.primaryText, fontWeight: FontWeight.w700, fontSize: 14)),
+                          ]),
+                          SizedBox(
+                            height: 36,
+                            child: ControlFader(
+                              value: robotState.gripperVal,
+                              max: 100,
+                              semanticLabel: 'Gripper',
+                              onChanged: isOperational
+                                  ? (value) {
+                                      final width = value.round();
+                                      if (_gate.servo('gripper', width)) notifier.setGripperVal(width.toDouble());
+                                    }
+                                  : null,
+                            ),
+                          ),
+                          if (c.maxHeight >= 90)
+                            Row(children: [
+                              Text('Open', style: TextStyle(color: p.textTertiary, fontSize: 11)),
+                              const Spacer(),
+                              Text('Closed', style: TextStyle(color: p.textTertiary, fontSize: 11)),
+                            ]),
+                        ]),
+                      ),
+                    ]);
+                  }),
+                ),
+                armStatus: ControlStatusChip(label: armWord, color: armColor),
+                armHeight: controlEnabled(
+                  isOperational,
+                  armFader('HEIGHT', 'Up / Down', (robotState.heightValue / 180).clamp(0.0, 1.0), (value) {
+                    if (_gate.servo('height', (value * 180).toInt())) {
+                      notifier.setHeightValue(value * 180);
+                      _scheduleStatusRequest();
+                    }
+                  }),
+                ),
+                armReach: controlEnabled(
+                  isOperational,
+                  armFader('REACH', 'Fwd / Back', (robotState.reachValue / 180).clamp(0.0, 1.0), (value) {
+                    if (_gate.servo('reach', (value * 180).toInt())) {
+                      notifier.setReachValue(value * 180);
+                      _scheduleStatusRequest();
+                    }
+                  }),
+                ),
+                power: PowerGlowButton(
+                  link: link,
+                  size: tall ? 64 : 52,
+                  onTap: link == ControlLink.disconnected
+                      ? reconnect
+                      : () => unawaited(ref.read(configLinkProvider.notifier).disconnect()),
+                ),
+                stopButton: EmergencyStopButton(onStop: stop),
+                armTip: hint(
+                  'gear_buddy',
+                  isOperational
+                      ? 'Slide up to lift, slide forward to reach. The arm only moves when the robot is not STOPPED.'
+                      : 'Arm controls unlock when the robot is connected. STOP always works.',
+                ),
+                bottomCards: [
+                  MissionCard(done: missionDone),
+                  DriveTallyCard(bins: tally.bins, trophies: tally.trophies),
+                  ElioTipCard(text: tip.text, mood: tip.mood),
+                  ControlTogglesCard(scanQuiz: _scanQuizOn, voice: quizState.voiceOn, onScanQuiz: onScanQuiz, onVoice: onVoice),
+                ],
+                compactStrip: ControlCompactStrip(
+                  missionDone: missionDone,
+                  bins: tally.bins,
+                  tip: tip.text,
+                  scanQuiz: _scanQuizOn,
+                  voice: quizState.voiceOn,
+                  onScanQuiz: onScanQuiz,
+                  onVoice: onVoice,
+                ),
+                quiz: WasteQuizPopup(
+                  onStop: stop,
+                  showLauncher: false,
+                  onRescan: () {
+                    _liveScan?.logEvent('rescan_tapped', {});
+                    _liveScan?.rescan();
+                  },
+                ),
               ),
             ),
-          const WasteQuizPopup(),
-        ],
-      ),
-    );
-  }
-}
-
-/// Debug-only control for testing the auto-generated waste quiz without the
-/// physical MaixCAM2 hardware connected — opens the phone's own camera and
-/// feeds a captured photo straight to Gemma.
-class _DebugQuizSourceToggle extends StatelessWidget {
-  const _DebugQuizSourceToggle({required this.onScanWithPhone});
-
-  final VoidCallback onScanWithPhone;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.92),
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onScanWithPhone,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          height: 38,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFBEC9C2)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.camera_alt_outlined,
-                size: 18,
-                color: _ControlScreenState.textPrimary,
-              ),
-              SizedBox(width: 6),
-              Text(
-                'Debug Scan',
-                style: TextStyle(
-                  color: _ControlScreenState.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
           ),
         ),
-      ),
-    );
+      );
+    }));
   }
-}
-
-class _ExitControlButton extends StatelessWidget {
-  const _ExitControlButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.92),
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          height: 38,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFBEC9C2)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.arrow_back_rounded,
-                size: 18,
-                color: _ControlScreenState.textPrimary,
-              ),
-              SizedBox(width: 6),
-              Text(
-                'Exit',
-                style: TextStyle(
-                  color: _ControlScreenState.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
+  /// R3 phone layout (decision 0174). Same handlers as R2, but nothing is dimmed
+  /// or absorbed: offline the controls press and the gate sends nothing.
+  Widget _phoneLayout({
+    required ControlLink link,
+    required RobotState robotState,
+    required WasteQuizUiState quizState,
+    required int missionDone,
+    required User? user,
+    required (String, Color) drive,
+    required (String, Color) arm,
+    required VoidCallback stop,
+    required VoidCallback reconnect,
+  }) {
+    final notifier = _robotNotifier;
+    final quizOpen = quizState.phase != WasteQuizPhase.idle;
+    return PhoneControlLayout(
+      link: link,
+      stopped: _gate.stopped,
+      stopReason: _gate.stopReason,
+      skeleton: _skeleton,
+      driveLabel: drive,
+      armLabel: arm,
+      speed: robotState.pwmSpeed,
+      onSpeed: notifier.setPwmSpeed,
+      onDirection: (dir) {
+        driveCommand(_gate, dir, robotState.pwmSpeed.toInt());
+        setState(() => _driveDir = dir);
+      },
+      onRelease: () {
+        _gate.stopWheels();
+        setState(() => _driveDir = null);
+      },
+      frame: _latestFrame?.bytes,
+      fps: _streamFps,
+      scanQuizOn: _scanQuizOn,
+      onScanQuiz: (on) => setState(() {
+        _scanQuizOn = on;
+        _applyScanPause();
+      }),
+      voiceOn: quizState.voiceOn,
+      onVoice: (_) => ref.read(wasteQuizProvider.notifier).toggleVoice(),
+      onHome: _gate.home,
+      onPickUp: () {
+        if (_gate.servo('gripper', 100)) {
+          notifier.setGripperVal(100);
+          if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
+        }
+      },
+      onReleaseGripper: () {
+        if (_gate.servo('gripper', 0)) notifier.setGripperVal(0);
+      },
+      gripper: robotState.gripperVal,
+      onGripper: (value) {
+        final width = value.round();
+        if (_gate.servo('gripper', width)) {
+          notifier.setGripperVal(width.toDouble());
+        }
+      },
+      height: robotState.heightValue,
+      onHeight: (value) {
+        if (_gate.servo('height', (value * 180).toInt())) {
+          notifier.setHeightValue(value * 180);
+          _scheduleStatusRequest();
+        }
+      },
+      reach: robotState.reachValue,
+      onReach: (value) {
+        if (_gate.servo('reach', (value * 180).toInt())) {
+          notifier.setReachValue(value * 180);
+          _scheduleStatusRequest();
+        }
+      },
+      onPower: link == ControlLink.disconnected
+          ? reconnect
+          : () => unawaited(ref.read(configLinkProvider.notifier).disconnect()),
+      onConnect: reconnect,
+      onStop: stop,
+      onGo:
+          _resumeAfterStop, // clears STOPPED only; never sends a motion command
+      missionDone: missionDone,
+      trophies: ScanRecordStore.instance.totalTrophies,
+      quizBadge: quizOpen ? 1 : null,
+      quizWaiting: quizState.phase == WasteQuizPhase.identifying || quizState.phase == WasteQuizPhase.loadingQuestion,
+      onQuiz: () {
+        final q = ref.read(wasteQuizProvider.notifier);
+        quizState.minimized ? q.restore() : q.minimize();
+      },
+      onHistory: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ScanHistoryScreen(store: ScanRecordStore.instance),
         ),
       ),
+      onAvatar: () => _drawerKey.currentState?.open(),
+      onBack: () => Navigator.of(context).pop(),
+      onGuide: () => setState(() => _guideOpen = true),
+      photoUrl: user?.photoURL,
+      driveKey: _driveKey,
+      stopKey: _stopKey,
+      actionKey: _actionKey,
+      quizKey: _quizKey,
+      overlays: [
+        Positioned.fill(
+          child: WasteQuizPopup(
+            onStop: stop,
+            showLauncher: false,
+            onRescan: () {
+              _liveScan?.logEvent('rescan_tapped', {});
+              _liveScan?.rescan();
+            },
+          ),
+        ),
+        if (_guideOpen)
+          Positioned.fill(
+            child: PhoneGuide(
+              driveKey: _driveKey,
+              stopKey: _stopKey,
+              actionKey: _actionKey,
+              quizKey: _quizKey,
+              onStop: stop,
+              onClose: () => setState(() => _guideOpen = false),
+            ),
+          ),
+      ],
     );
   }
-}
 
-class _VerticalControlSlider extends StatelessWidget {
-  const _VerticalControlSlider({
-    required this.label,
-    required this.sublabel,
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-    this.labelOnLeft = false,
-  });
-
-  final String label;
-  final String sublabel;
-  final double value;
-  final bool enabled;
-  final ValueChanged<double> onChanged;
-  final bool labelOnLeft;
-
-  @override
-  Widget build(BuildContext context) {
-    final labels = FittedBox(
-      fit: BoxFit.scaleDown,
-      child: RotatedBox(
-        quarterTurns: 3,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+  /// Debug Scan (debug builds only): the live-scan readout, the question
+  /// source and "Reset scan (debug)", off the student's screen.
+  Widget _debugSheet(BuildContext context) {
+    return Drawer(
+      width: 380,
+      backgroundColor: const Color(0xFF2B2B2B),
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(12),
           children: [
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: _ControlScreenState.textPrimary,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.5,
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              const Text('Base', style: TextStyle(color: Colors.white)),
+              IconButton(onPressed: () => _nudgeBase(-2), icon: const Icon(Icons.chevron_left, color: Colors.white), tooltip: 'Base left'),
+              IconButton(onPressed: () => _nudgeBase(2), icon: const Icon(Icons.chevron_right, color: Colors.white), tooltip: 'Base right'),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                key: const ValueKey('debug_home_button'),
+                onPressed: () => _gate.home(),
+                icon: const Icon(Icons.home_outlined, size: 18),
+                label: const Text('HOME'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white54),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              sublabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: _ControlScreenState.textSecondary,
-                fontSize: 8,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1,
+            ]),
+            if (_liveScan != null)
+              LiveScanDebugOverlay(
+                controller: _liveScan!,
+                scanLine: [
+                  ?_scanLine(ref.watch(wasteQuizProvider).scan),
+                  'gerak diblokir ${_gate.blocked}${_gate.stopped ? '   STOPPED (${_gate.stopReason})' : ''}',
+                ].join('\n'),
+                armTags: WebSocketService().armTags,
+                eeMm: ref.watch(robotControlProvider).eeMm,
+              ),
+            if (_r1 != null) ...[
+              const SizedBox(height: 6),
+              Text('R1: ${_r1Status ?? 'memeriksa robot...'}',
+                  style: const TextStyle(color: Colors.white, fontSize: 12, backgroundColor: Colors.black54)),
+            ],
+            const SizedBox(height: 6),
+            const Align(alignment: Alignment.centerLeft, child: QuestionSourceSwitch()), // 0018: from the next scan
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                // Gemma on a phone-camera photo, without the MaixCAM2.
+                onPressed: () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.white,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  builder: (_) => const DebugPhoneCameraSheet(),
+                ),
+                icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                label: const Text('Scan dengan kamera HP'),
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white54)),
               ),
             ),
           ],
         ),
       ),
     );
-
-    final slider = Container(
-      width: 58,
-      height: 260,
-      decoration: BoxDecoration(
-        color: _ControlScreenState.primaryColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFBEC9C2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: RotatedBox(
-        quarterTurns: 3,
-        child: SliderTheme(
-          data: SliderThemeData(
-            activeTrackColor: Colors.white,
-            inactiveTrackColor: Colors.white.withValues(alpha: 0.45),
-            trackHeight: 4,
-            thumbColor: _ControlScreenState.primaryColor,
-            overlayColor: Colors.white.withValues(alpha: 0.15),
-            thumbShape: const RoundSliderThumbShape(
-              enabledThumbRadius: 10,
-              elevation: 0,
-            ),
-          ),
-          child: Slider(value: value, onChanged: enabled ? onChanged : null),
-        ),
-      ),
-    );
-
-    return Opacity(
-      opacity: enabled ? 1 : 0.70,
-      child: SizedBox(
-        width: 90,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: labelOnLeft
-              ? [
-                  Expanded(child: Center(child: labels)),
-                  const SizedBox(width: 4),
-                  slider,
-                ]
-              : [
-                  slider,
-                  const SizedBox(width: 4),
-                  Expanded(child: Center(child: labels)),
-                ],
-        ),
-      ),
-    );
   }
-}
 
-class _LandscapeDriveControls extends StatelessWidget {
-  const _LandscapeDriveControls({
-    required this.speed,
-    required this.enabled,
-    required this.onForward,
-    required this.onBack,
-    required this.onLeft,
-    required this.onRight,
-    required this.onStop,
-  });
-
-  final double speed;
-  final bool enabled;
-  final VoidCallback onForward;
-  final VoidCallback onBack;
-  final VoidCallback onLeft;
-  final VoidCallback onRight;
-  final VoidCallback onStop;
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: enabled ? 1 : 0.65,
-      child: AbsorbPointer(
-        absorbing: !enabled,
-        child: SizedBox(
-          width: 158,
-          height: 270,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'DRIVE CONTROLS',
-                style: TextStyle(
-                  color: Color(0xFF3F4943),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 2,
-                ),
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: 158,
-                height: 180,
-                child: Stack(
-                  children: [
-                    Align(
-                      alignment: Alignment.topCenter,
-                      child: _DpadButton(
-                        icon: Icons.arrow_upward,
-                        onPressed: onForward,
-                        onReleased: onStop,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: _DpadButton(
-                        icon: Icons.arrow_back,
-                        onPressed: onLeft,
-                        onReleased: onStop,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.center,
-                      child: _DpadButton(
-                        icon: Icons.hexagon_outlined,
-                        onPressed: onStop,
-                        onReleased: onStop,
-                        isStop: true,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: _DpadButton(
-                        icon: Icons.arrow_forward,
-                        onPressed: onRight,
-                        onReleased: onStop,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: _DpadButton(
-                        icon: Icons.arrow_downward,
-                        onPressed: onBack,
-                        onReleased: onStop,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${speed.toInt()}% PWM',
-                style: const TextStyle(
-                  color: _ControlScreenState.textSecondary,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  void _scheduleStatusRequest() {
+    _statusDebounceTimer?.cancel();
+    _statusDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _gate.status();
+      }
+    });
   }
-}
 
-class _DpadButton extends StatelessWidget {
-  const _DpadButton({
-    required this.icon,
-    required this.onPressed,
-    required this.onReleased,
-    this.isStop = false,
-  });
-
-  final IconData icon;
-  final VoidCallback onPressed;
-  final VoidCallback onReleased;
-  final bool isStop;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => onPressed(),
-      onTapUp: (_) => onReleased(),
-      onTapCancel: onReleased,
-      child: Container(
-        width: 52,
-        height: 56,
-        decoration: BoxDecoration(
-          color: isStop ? const Color(0xFFFEF2F2) : Colors.white,
-          borderRadius: BorderRadius.circular(isStop ? 26 : 12),
-          border: Border.all(
-            color: isStop ? const Color(0xFFFECACA) : const Color(0xFFBEC9C2),
-          ),
-        ),
-        child: Icon(
-          icon,
-          color: isStop
-              ? _ControlScreenState.redAccent
-              : _ControlScreenState.textPrimary,
-          size: isStop ? 30 : 28,
-        ),
-      ),
-    );
+  void _nudgeBase(double delta) {
+    final angle = (ref.read(robotControlProvider).baseAngle + delta).clamp(0.0, 180.0);
+    if (_gate.servo('base', angle.toInt())) _robotNotifier.setBaseAngle(angle);
   }
 }
 
 class _LandscapeCameraPanel extends StatelessWidget {
   const _LandscapeCameraPanel({
     required this.currentFrame,
-    required this.statusLabel,
+    required this.link,
     required this.streamFps,
     required this.frameCount,
     required this.lastFrameAt,
     required this.lastFrameBytes,
     required this.detections,
     required this.detectionImageSize,
+    required this.retry,
+    required this.onReconnect,
+    this.onWifiSettings,
   });
 
   final Uint8List? currentFrame;
-  final String statusLabel;
+  final ControlLink link;
   final double streamFps;
   final int frameCount;
   final DateTime? lastFrameAt;
   final int lastFrameBytes;
   final List<Detection> detections;
   final Size detectionImageSize;
+  final RetryInfo retry;
+  final VoidCallback onReconnect;
+  final VoidCallback? onWifiSettings;
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = statusLabel == 'LIVE'
-        ? _ControlScreenState.primaryColor
-        : statusLabel == 'RECONNECTING'
-        ? _ControlScreenState.orangeAccent
-        : _ControlScreenState.redAccent;
-
-    return Container(
-      width: 400,
-      height: 230,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F3F2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFBEC9C2)),
+    return ControlCameraHud(
+      key: const ValueKey('control_camera'),
+      frame: currentFrame,
+      imageSize: detectionImageSize,
+      detections: detections,
+      link: link,
+      fps: streamFps,
+      retry: retry,
+      onReconnect: onReconnect,
+      onWifiSettings: onWifiSettings,
+      debugBoxes: _showAppDetectionBoxes &&
+              detections.isNotEmpty &&
+              detectionImageSize.width > 0 &&
+              detectionImageSize.height > 0
+          ? CustomPaint(
+              painter: SegmentationOverlayPainter(
+                detections: detections,
+                imageSize: detectionImageSize,
+              ),
+            )
+          : null,
+      diagnostics: _CameraDiagnosticsBadge(
+        streamFps: streamFps,
+        frameCount: frameCount,
+        lastFrameAt: lastFrameAt,
+        lastFrameBytes: lastFrameBytes,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(11),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (currentFrame != null)
-              Image.memory(
-                currentFrame!,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-              )
-            else
-              _CameraFallback(
-                isLoading: true,
-                message: statusLabel == 'LIVE'
-                    ? 'Connected. Waiting for camera frames...'
-                    : 'Waiting for MaixCAM2 stream...',
-              ),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x33000000),
-                    Colors.transparent,
-                    Color(0x55000000),
-                  ],
-                  stops: [0, 0.55, 1],
-                ),
-              ),
-            ),
-            if (detections.isNotEmpty &&
-                detectionImageSize.width > 0 &&
-                detectionImageSize.height > 0)
-              CustomPaint(
-                painter: SegmentationOverlayPainter(
-                  detections: detections,
-                  imageSize: detectionImageSize,
-                ),
-              ),
-            Positioned(
-              left: 10,
-              bottom: 10,
-              child: _CameraDiagnosticsBadge(
-                streamFps: streamFps,
-                frameCount: frameCount,
-                lastFrameAt: lastFrameAt,
-                lastFrameBytes: lastFrameBytes,
-              ),
-            ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  statusLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.7,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      quizButton: const QuizReopenButton(),
     );
   }
 }
@@ -851,6 +1076,9 @@ class _CameraDiagnosticsBadge extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Config → Settings → Show FPS overlay (decision 0145).
+    final show = ref.watch(espConfigProvider.select((c) => c.valueOrNull?.showFpsOverlay ?? false));
+    if (!show) return const SizedBox.shrink();
     final resolution = ref.watch(resolutionAckProvider).valueOrNull;
     final frameAgeMs = lastFrameAt == null
         ? null
@@ -864,9 +1092,9 @@ class _CameraDiagnosticsBadge extends ConsumerWidget {
         : 'Pending';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.58),
+        color: const Color(0xFF474747),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -877,222 +1105,19 @@ class _CameraDiagnosticsBadge extends ConsumerWidget {
             'FPS ${streamFps.toStringAsFixed(1)} • F $frameCount • $resLabel',
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
             ),
           ),
           Text(
             frameAgeMs == null ? sizeLabel : '$sizeLabel • ${frameAgeMs}ms',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.82),
-              fontSize: 8,
-              fontWeight: FontWeight.w700,
+            style: const TextStyle(
+              color: Color(0xFFDDDDDD),
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CameraFallback extends StatelessWidget {
-  const _CameraFallback({required this.isLoading, required this.message});
-
-  final bool isLoading;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: const Color(0xFFF0F3F2),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isLoading)
-              const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  color: _ControlScreenState.primaryColor,
-                  strokeWidth: 3,
-                ),
-              )
-            else
-              const Icon(
-                Icons.videocam_off_outlined,
-                color: _ControlScreenState.textSecondary,
-                size: 28,
-              ),
-            const SizedBox(height: 10),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: _ControlScreenState.textSecondary,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LandscapeActionButtons extends StatelessWidget {
-  const _LandscapeActionButtons({
-    required this.enabled,
-    required this.onPickUp,
-    required this.onRelease,
-  });
-
-  final bool enabled;
-  final VoidCallback onPickUp;
-  final VoidCallback onRelease;
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: enabled ? 1 : 0.65,
-      child: Row(
-        children: [
-          Expanded(
-            child: SizedBox(
-              height: 56,
-              child: FilledButton.icon(
-                onPressed: enabled ? onPickUp : null,
-                icon: const Icon(Icons.pinch, size: 20),
-                label: const Text('PICK UP'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: _ControlScreenState.primaryColor,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: _ControlScreenState.primaryColor,
-                  disabledForegroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: SizedBox(
-              height: 56,
-              child: OutlinedButton.icon(
-                onPressed: enabled ? onRelease : null,
-                icon: const Icon(Icons.back_hand_outlined, size: 20),
-                label: const Text('RELEASE'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: _ControlScreenState.textPrimary,
-                  disabledForegroundColor: _ControlScreenState.textPrimary,
-                  side: const BorderSide(color: Color(0xFFBEC9C2)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LandscapeSpeedPanel extends StatelessWidget {
-  const _LandscapeSpeedPanel({
-    required this.speed,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final double speed;
-  final bool enabled;
-  final ValueChanged<double> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: enabled ? 1 : 0.70,
-      child: Container(
-        width: 170,
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFBEC9C2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 5,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Flexible(
-                  child: Text(
-                    'Speed (PWM)',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Color(0xFF3F4943),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '${speed.toInt()}%',
-                  style: const TextStyle(
-                    color: _ControlScreenState.primaryColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-            SliderTheme(
-              data: SliderThemeData(
-                activeTrackColor: _ControlScreenState.primaryColor,
-                inactiveTrackColor: const Color(0xFFE5E7EB),
-                trackHeight: 4,
-                thumbColor: _ControlScreenState.primaryColor,
-                overlayColor: _ControlScreenState.primaryColor.withValues(
-                  alpha: 0.12,
-                ),
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
-              ),
-              child: Slider(
-                value: speed.clamp(0, 100),
-                min: 0,
-                max: 100,
-                onChanged: enabled ? onChanged : null,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

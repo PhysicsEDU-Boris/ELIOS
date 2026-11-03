@@ -1,0 +1,5 @@
+name: r1_b3_sort
+description: Pick a reachable E_Waste phone for the B3 hazard-confirmation sort path.
+duration_s: 60
+items:
+  - {id: phone, label: E_Waste, pos_mm: [-54, -281], size_mm: 140, score: 0.83}

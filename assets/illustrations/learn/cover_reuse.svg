@@ -1,0 +1,25 @@
+<svg width="320" height="180" viewBox="0 0 320 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="v1 (not chosen) / Illustrations + icons (components)">
+<g id="Illustration/Cover Reuse" clip-path="url(#clip0_293_2358)">
+<path id="Vector" d="M320 0H0V180H320V0Z" fill="#CFFAFE"/>
+<path id="Vector_2" d="M0 150H320V180H0V150Z" fill="#67E8F9" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M112 150V96C112 93.8783 112.843 91.8434 114.343 90.3431C115.843 88.8429 117.878 88 120 88H164C166.122 88 168.157 88.8429 169.657 90.3431C171.157 91.8434 172 93.8783 172 96V150H112Z" fill="#7DD3FC" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_4" d="M112 108H172" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_5" d="M142 88V68" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_6" d="M142 72C130 58 114 60 112 64C118 74 130 78 142 72Z" fill="#4ADE80" stroke="#0F172A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_7" d="M142 68C152 52 168 52 172 56C166 68 154 72 142 68Z" fill="#4ADE80" stroke="#0F172A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_8" d="M234 106H202C198.686 106 196 108.686 196 112V144C196 147.314 198.686 150 202 150H234C237.314 150 240 147.314 240 144V112C240 108.686 237.314 106 234 106Z" fill="#F87171" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_9" d="M196 118H240" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_10" d="M206 98C210 86 226 86 230 98" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_11" d="M60 70C61.5893 66.3458 63.9973 63.1058 67.038 60.5303C70.0787 57.9548 73.6707 56.1127 77.5366 55.1462C81.4024 54.1798 85.4387 54.1148 89.3337 54.9564C93.2286 55.798 96.878 57.5236 100 60" stroke="#15803D" stroke-width="6" stroke-linecap="round"/>
+<path id="Vector_12" d="M98 50L104 62L91 63L98 50Z" fill="#15803D"/>
+<path id="Vector_13" d="M272 32C272 37.3333 274.667 40 280 40C274.667 40 272 42.6667 272 48C272 42.6667 269.333 40 264 40C269.333 40 272 37.3333 272 32Z" fill="#FBBF24" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_14" d="M48 115C48 118.333 49.6667 120 53 120C49.6667 120 48 121.667 48 125C48 121.667 46.3333 120 43 120C46.3333 120 48 118.333 48 115Z" fill="white" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_293_2358">
+<rect width="320" height="180" fill="white"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../../../../../../theme/elio_learning_colors.dart';
 
+import '../../../../../theme/elio_tokens.dart';
+import '../../../../../widgets/learn/learn_ui.dart';
+
+/// Slider 300:3321: label and mono value above a green track.
 class LabeledSlider extends StatelessWidget {
   final String label;
   final String valueLabel;
@@ -22,39 +24,33 @@ class LabeledSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.elio;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                color: elioMuted,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+            Expanded(
+              child: Text(label, style: context.text.bodySmall?.copyWith(color: p.textSecondary)),
             ),
-            Text(
-              valueLabel,
-              style: GoogleFonts.jetBrainsMono(
-                color: elioInk,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            Text(valueLabel, style: ElioTokens.code.copyWith(color: p.textPrimary)),
           ],
         ),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
-            activeTrackColor: elioPrimary,
-            inactiveTrackColor: elioBorder,
-            thumbColor: elioPrimary,
-            overlayColor: elioPrimary.withValues(alpha: 0.15),
-            trackHeight: 5,
+            activeTrackColor: p.primary,
+            inactiveTrackColor: p.borderSubtle,
+            thumbColor: p.primaryActive,
+            overlayColor: p.primary.withValues(alpha: 0.15),
+            trackHeight: 4,
           ),
-          child: Slider(value: value, min: min, max: max, onChanged: onChanged),
+          child: Slider(
+            value: value,
+            min: min,
+            max: max,
+            onChanged: onChanged,
+            semanticFormatterCallback: (_) => '$label $valueLabel',
+          ),
         ),
       ],
     );

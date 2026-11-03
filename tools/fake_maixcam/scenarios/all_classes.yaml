@@ -1,0 +1,33 @@
+name: all_classes
+description: One dataset crop per class, shown one after another at 25 cm (35 s each, 10 s empty gap), for identify checks of all 9 classes in one run. Close each quiz soon after it opens.
+duration_s: 430
+items:
+  - {id: cardboard, label: Cardboard, pos_mm: [-54, -301], size_mm: 120, score: 0.86, visible: false}
+  - {id: e_waste, label: E_Waste, pos_mm: [-54, -301], size_mm: 120, score: 0.86, visible: false}
+  - {id: glass, label: Glass, pos_mm: [-54, -301], size_mm: 120, score: 0.86, visible: false}
+  - {id: metal, label: Metal, pos_mm: [-54, -301], size_mm: 120, score: 0.86, visible: false}
+  - {id: organic, label: Organic, pos_mm: [-54, -301], size_mm: 120, score: 0.86, visible: false}
+  - {id: paper, label: Paper, pos_mm: [-54, -301], size_mm: 120, score: 0.86, visible: false}
+  - {id: paperboard, label: Paperboard, pos_mm: [-54, -301], size_mm: 120, score: 0.86, visible: false}
+  - {id: plastic, label: Plastic, pos_mm: [-54, -301], size_mm: 120, score: 0.86, visible: false}
+  - {id: tetra_pak, label: Tetra_Pak, pos_mm: [-54, -301], size_mm: 120, score: 0.86, visible: false}
+noise: {score_jitter: 0.03}
+events:
+  - {t: 25, do: appear, item: cardboard}
+  - {t: 60, do: leave, item: cardboard}
+  - {t: 70, do: appear, item: e_waste}
+  - {t: 105, do: leave, item: e_waste}
+  - {t: 115, do: appear, item: glass}
+  - {t: 150, do: leave, item: glass}
+  - {t: 160, do: appear, item: metal}
+  - {t: 195, do: leave, item: metal}
+  - {t: 205, do: appear, item: organic}
+  - {t: 240, do: leave, item: organic}
+  - {t: 250, do: appear, item: paper}
+  - {t: 285, do: leave, item: paper}
+  - {t: 295, do: appear, item: paperboard}
+  - {t: 330, do: leave, item: paperboard}
+  - {t: 340, do: appear, item: plastic}
+  - {t: 375, do: leave, item: plastic}
+  - {t: 385, do: appear, item: tetra_pak}
+  - {t: 420, do: leave, item: tetra_pak}

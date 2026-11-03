@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../../widgets/learn/learn_ui.dart';
+import '../../../../models/physics_module.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../physics/power_budget/power_budget_notifier.dart';
-import '../../../../../theme/elio_learning_colors.dart';
 import 'widgets/sim_module_header.dart';
 import 'widgets/formula_box.dart';
 import 'widgets/labeled_slider.dart';
@@ -24,6 +25,7 @@ class PowerBudgetSimulationPage extends ConsumerWidget {
         : '${state.estimatedRuntimeS!.toStringAsFixed(0)} s';
 
     return SimulationPageScaffold(
+      module: PhysicsModuleId.power,
       appBarTitle: 'Daya & Anggaran Baterai',
       header: const SimModuleHeader(
         tag: 'MODUL G · MATERI',
@@ -37,7 +39,7 @@ class PowerBudgetSimulationPage extends ConsumerWidget {
             const TextSpan(text: 'E = P_total · t = '),
             TextSpan(
               text: '${state.energyJoules.toStringAsFixed(0)} J',
-              style: const TextStyle(color: elioWarning),
+              style: TextStyle(color: context.elio.secondaryText),
             ),
           ],
         ),
@@ -47,9 +49,9 @@ class PowerBudgetSimulationPage extends ConsumerWidget {
         const SizedBox(height: 16),
                   
                   // Scenario Presets
-                  const Text(
+                  Text(
                     'Preset Skenario:',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: elioMuted),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.elio.textSecondary),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -58,20 +60,20 @@ class PowerBudgetSimulationPage extends ConsumerWidget {
                     children: [
                       ActionChip(
                         label: const Text('Mode Sortir'),
-                        backgroundColor: (state.cameraOn && state.armOn && !state.driveOn) ? elioPrimaryLight : Colors.white,
-                        side: BorderSide(color: (state.cameraOn && state.armOn && !state.driveOn) ? elioPrimary : elioBorder),
+                        backgroundColor: (state.cameraOn && state.armOn && !state.driveOn) ? context.elio.primaryText.withValues(alpha: 0.1) : context.elio.surface,
+                        side: BorderSide(color: (state.cameraOn && state.armOn && !state.driveOn) ? context.elio.primaryText : context.elio.borderSubtle),
                         onPressed: () => notifier.applyScenarioSortir(),
                       ),
                       ActionChip(
                         label: const Text('Mode Jelajah'),
-                        backgroundColor: (state.cameraOn && state.driveOn && !state.armOn) ? elioPrimaryLight : Colors.white,
-                        side: BorderSide(color: (state.cameraOn && state.driveOn && !state.armOn) ? elioPrimary : elioBorder),
+                        backgroundColor: (state.cameraOn && state.driveOn && !state.armOn) ? context.elio.primaryText.withValues(alpha: 0.1) : context.elio.surface,
+                        side: BorderSide(color: (state.cameraOn && state.driveOn && !state.armOn) ? context.elio.primaryText : context.elio.borderSubtle),
                         onPressed: () => notifier.applyScenarioJelajah(),
                       ),
                       ActionChip(
                         label: const Text('Idle'),
-                        backgroundColor: (state.cameraOn && !state.driveOn && !state.armOn) ? elioPrimaryLight : Colors.white,
-                        side: BorderSide(color: (state.cameraOn && !state.driveOn && !state.armOn) ? elioPrimary : elioBorder),
+                        backgroundColor: (state.cameraOn && !state.driveOn && !state.armOn) ? context.elio.primaryText.withValues(alpha: 0.1) : context.elio.surface,
+                        side: BorderSide(color: (state.cameraOn && !state.driveOn && !state.armOn) ? context.elio.primaryText : context.elio.borderSubtle),
                         onPressed: () => notifier.applyScenarioIdle(),
                       ),
                     ],
@@ -83,9 +85,9 @@ class PowerBudgetSimulationPage extends ConsumerWidget {
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: const BorderSide(color: elioBorder),
+                      side: BorderSide(color: context.elio.borderSubtle),
                     ),
-                    color: Colors.white,
+                    color: context.elio.surface,
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Column(
@@ -94,21 +96,21 @@ class PowerBudgetSimulationPage extends ConsumerWidget {
                             title: const Text('Kamera (10W)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                             value: state.cameraOn,
                             onChanged: notifier.toggleCamera,
-                            activeThumbColor: elioPrimary,
+                            activeThumbColor: context.elio.primary,
                           ),
                           const Divider(height: 1),
                           SwitchListTile(
                             title: const Text('Motor Penggerak (36W)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                             value: state.driveOn,
                             onChanged: notifier.toggleDrive,
-                            activeThumbColor: elioPrimary,
+                            activeThumbColor: context.elio.primary,
                           ),
                           const Divider(height: 1),
                           SwitchListTile(
                             title: const Text('Motor Lengan (18W)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                             value: state.armOn,
                             onChanged: notifier.toggleArm,
-                            activeThumbColor: elioPrimary,
+                            activeThumbColor: context.elio.primary,
                           ),
                         ],
                       ),
@@ -131,9 +133,9 @@ class PowerBudgetSimulationPage extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.elio.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: elioBorder),
+                      border: Border.all(color: context.elio.borderSubtle),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,15 +143,15 @@ class PowerBudgetSimulationPage extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Sisa Baterai', style: TextStyle(color: elioMuted, fontSize: 12)),
-                            Text('${state.remainingPercent.toStringAsFixed(1)}%', style: const TextStyle(color: elioInk, fontSize: 14, fontWeight: FontWeight.bold)),
+                            Text('Sisa Baterai', style: TextStyle(color: context.elio.textSecondary, fontSize: 12)),
+                            Text('${state.remainingPercent.toStringAsFixed(1)}%', style: TextStyle(color: context.elio.textPrimary, fontSize: 14, fontWeight: FontWeight.bold)),
                           ],
                         ),
                         const SizedBox(height: 8),
                         LinearProgressIndicator(
                           value: state.remainingPercent / 100.0,
-                          backgroundColor: elioBorder,
-                          color: state.remainingPercent > 20 ? elioOk : elioDanger,
+                          backgroundColor: context.elio.borderSubtle,
+                          color: state.remainingPercent > 20 ? context.elio.primaryText : context.elio.errorText,
                           minHeight: 12,
                           borderRadius: BorderRadius.circular(6),
                         ),
@@ -162,7 +164,7 @@ class PowerBudgetSimulationPage extends ConsumerWidget {
                     headerTitle: 'PREDIKSI KETAHANAN BATERAI',
                     formulaExpression: 't_estimasi = 50000 J / ${state.totalPowerW.toStringAsFixed(0)} W = $runtimeStr',
                     statusIcon: Icons.access_time_filled_rounded,
-                    statusColor: elioPrimary,
+                    statusColor: context.elio.primaryText,
                     statusText: 'Bertahan selama $runtimeStr',
                   ),
       ],

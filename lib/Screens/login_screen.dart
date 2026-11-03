@@ -3,10 +3,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:elio/providers/auth_provider.dart';
+import 'package:elio/theme/elio_theme.dart';
+import 'package:elio/theme/elio_tokens.dart';
+import 'package:elio/widgets/auth/auth_widgets.dart';
+import 'package:elio/widgets/splash/elio_leaf.dart';
 
 import 'home_shell.dart';
 
@@ -31,17 +34,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // ── State ─────────────────────────────────────────────────
   bool _isSignUp = false;
+  bool _isForgot = false;
+  bool _resetSent = false;
   bool _isLoading = false;
   String? _errorMessage;
-
-  // ── Colors (matched to your splash/theme) ─────────────────
-  static const Color _primary = Color(0xFF1D9E75);
-  static const Color _textDark = Color(0xFF1C2833);
-  static const Color _textMuted = Color(0xFF5D6D7E);
-  static const Color _textHint = Color(0xFFAEB6BF);
-  static const Color _border = Color(0xFFE5E8E8);
-  static const Color _surface = Color(0xFFFFFFFF);
-  static const Color _bg = Color(0xFFF4F7F5);
 
   // ── Cleanup ───────────────────────────────────────────────
   @override
@@ -81,6 +77,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ── Snackbar helper ───────────────────────────────────────
+  // ponytail: the snackbar shows in the Home scaffold after the route change, so it
+  // takes the app theme, not the ELIOS one. Restyle it with HomeShell.
   void _showSnack(String message, {bool isError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -88,28 +86,18 @@ class _LoginScreenState extends State<LoginScreen> {
       SnackBar(
         content: Row(
           children: [
-            Icon(
-              isError ? Icons.error_outline : Icons.check_circle_outline,
-              color: Colors.white,
-              size: 20,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+            Builder(
+              builder: (context) => Icon(
+                isError ? Icons.error_outline : Icons.check_circle_outline,
+                color: DefaultTextStyle.of(context).style.color,
+                size: 20,
               ),
             ),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: isError ? const Color(0xFFE74C3C) : _primary,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
     );
   }
@@ -219,7 +207,8 @@ class _LoginScreenState extends State<LoginScreen> {
         clientId: defaultTargetPlatform == TargetPlatform.iOS
             ? iosGoogleClientId
             : null,
-        serverClientId: '250721309748-la1mikrov7nhdno6d55389l0du6p457f.apps.googleusercontent.com',
+        serverClientId:
+            '250721309748-la1mikrov7nhdno6d55389l0du6p457f.apps.googleusercontent.com',
         scopes: const ['email', 'profile'],
       );
 
@@ -318,14 +307,11 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await widget.auth.sendPasswordResetEmail(email: email);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Reset link sent to your email.'),
-          backgroundColor: _primary,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      setState(() {
+        _resetSent = true;
+        _errorMessage = null;
+      });
+      _showSnack('Reset link sent to your email.');
     } on FirebaseAuthException catch (e) {
       _setError(_mapError(e.code));
     } catch (_) {
@@ -361,464 +347,276 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
+  // ── Mode switches ─────────────────────────────────────────
+  void _toggleSignUp() => setState(() {
+    _isSignUp = !_isSignUp;
+    _errorMessage = null;
+  });
+
+  void _setForgot(bool value) => setState(() {
+    _isForgot = value;
+    _resetSent = false;
+    _errorMessage = null;
+  });
+
   // ── BUILD ─────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bg,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-            child: Column(
-              children: [
-                // ── Logo ─────────────────────────────────
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: _primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: const Icon(
-                    Icons.recycling_rounded,
-                    size: 44,
-                    color: _primary,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'ELIO',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 5,
-                    color: _textDark,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Smart Waste Sorting Robot',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: _textMuted,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-
-                const SizedBox(height: 36),
-
-                // ── Title ────────────────────────────────
-                Text(
-                  _isSignUp ? 'Create Account' : 'Welcome Back',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: _textDark,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _isSignUp
-                      ? 'Join ELIO to start sorting'
-                      : 'Sign in to control ELIO',
-                  style: const TextStyle(fontSize: 14, color: _textMuted),
-                ),
-
-                const SizedBox(height: 28),
-
-                // ── Google Button ────────────────────────
-                _buildGoogleButton(),
-
-                const SizedBox(height: 20),
-
-                // ── OR Divider ───────────────────────────
-                Row(
-                  children: const [
-                    Expanded(child: Divider(color: _border)),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'OR',
-                        style: TextStyle(
-                          color: _textHint,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: _border)),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // ── Email Form ───────────────────────────
-                Form(
-                  key: _formKey,
-                  child: Column(
+    return ElioTheme.wrap(
+      Builder(
+        builder: (context) {
+          final p = authPalette(context);
+          // Figma 1366x768: brand panel plus a 400 dp form column; phones 390x844: full-height form.
+          final wide = MediaQuery.sizeOf(context).width >= 900;
+          final form = _buildForm(p, wide);
+          return Scaffold(
+            body: wide
+                ? Row(
                     children: [
-                      // Name (sign up only)
-                      if (_isSignUp) ...[
-                        _buildTextField(
-                          controller: _nameController,
-                          validator: _nameValidator,
-                          label: 'Full Name',
-                          hint: 'John Doe',
-                          prefix: Icons.person_outline,
-                          keyboardType: TextInputType.name,
-                        ),
-                        const SizedBox(height: 14),
-                      ],
-
-                      // Email
-                      _buildTextField(
-                        controller: _emailController,
-                        validator: _emailValidator,
-                        label: _isSignUp ? 'Email' : 'Email / Username',
-                        hint: _isSignUp
-                            ? 'you@example.com'
-                            : 'you@example.com or username',
-                        prefix: Icons.mail_outline,
-                        keyboardType: TextInputType.emailAddress,
-                        focusNode: _emailFocusNode,
-                        textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) {
-                          FocusScope.of(
-                            context,
-                          ).requestFocus(_passwordFocusNode);
-                        },
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Password
-                      _buildTextField(
-                        controller: _passwordController,
-                        validator: _passwordValidator,
-                        label: 'Password',
-                        hint: 'Enter your password',
-                        prefix: Icons.lock_outline,
-                        obscure: _obscurePassword,
-                        focusNode: _passwordFocusNode,
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) {
-                          if (_isSignUp) {
-                            _signUpWithEmail();
-                          } else {
-                            _handleEmailAuth();
-                          }
-                        },
-                        suffixIcon: Focus(
-                          canRequestFocus: false,
-                          skipTraversal: true,
-                          descendantsAreFocusable: false,
-                          child: IconButton(
-                            onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            ),
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                              size: 20,
-                              color: _textHint,
-                            ),
+                      const AuthBrandPanel(),
+                      Expanded(
+                        child: Center(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(ElioTokens.space24),
+                            child: SizedBox(width: 400, child: form),
                           ),
-                        ),
-                      ),
-
-                      if (_errorMessage != null) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: const Color(
-                              0xFFE74C3C,
-                            ).withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(
-                                0xFFE74C3C,
-                              ).withValues(alpha: 0.2),
-                            ),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                color: Color(0xFFE74C3C),
-                                size: 20,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  _errorMessage!,
-                                  style: const TextStyle(
-                                    color: Color(0xFFE74C3C),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () =>
-                                    setState(() => _errorMessage = null),
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 16,
-                                  color: Color(0xFFE74C3C),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-
-                      // Forgot password (sign in only)
-                      if (!_isSignUp) ...[
-                        const SizedBox(height: 4),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: _isLoading ? null : _resetPassword,
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                              ),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: const Text(
-                              'Forgot password?',
-                              style: TextStyle(fontSize: 13),
-                            ),
-                          ),
-                        ),
-                      ],
-
-                      const SizedBox(height: 8),
-
-                      // Submit button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading
-                              ? null
-                              : (_isSignUp
-                                    ? _signUpWithEmail
-                                    : _handleEmailAuth),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _primary,
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor: _primary.withValues(
-                              alpha: 0.5,
-                            ),
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Text(
-                                  _isSignUp ? 'Create Account' : 'Sign In',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
                         ),
                       ),
                     ],
+                  )
+                : SafeArea(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        24,
+                        32,
+                        24,
+                        24,
+                      ),
+                      child: form,
+                    ),
                   ),
-                ),
+          );
+        },
+      ),
+    );
+  }
 
-                const SizedBox(height: 20),
-
-                // ── Toggle Sign In / Sign Up ─────────────
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _isSignUp
-                          ? 'Already have an account? '
-                          : "Don't have an account? ",
-                      style: const TextStyle(color: _textMuted, fontSize: 14),
-                    ),
-                    TextButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () => setState(() {
-                              _isSignUp = !_isSignUp;
-                              _errorMessage = null;
-                            }),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(_isSignUp ? 'Sign In' : 'Sign Up'),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // ── Guest Mode ───────────────────────────
-                Column(
-                  children: [
-                    TextButton.icon(
-                      onPressed: _isLoading ? null : _signInAsGuest,
-                      icon: const Icon(Icons.person_outline, size: 18),
-                      label: const Text(
-                        'Continue as Guest',
-                        style: TextStyle(fontSize: 14),
-                      ),
-                      style: TextButton.styleFrom(foregroundColor: _textMuted),
-                    ),
-                    const SizedBox(height: 4),
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.info_outline, size: 13, color: _textHint),
-                        SizedBox(width: 4),
-                        SizedBox(
-                          width: 240,
-                          child: Text(
-                            'Guest mode saves data locally only. Sign in to sync progress.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: _textHint, fontSize: 11),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
+  Widget _buildForm(ElioPalette p, bool wide) {
+    final title = _isForgot
+        ? 'Forgot password?'
+        : _isSignUp
+        ? 'Create Account'
+        : 'Welcome Back';
+    final subtitle = _isForgot
+        ? null
+        : _isSignUp
+        ? 'Join ELIOS to start sorting'
+        : 'Sign in to control ELIOS';
+    return AutofillGroup(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: ElioTokens.space24,
+        children: [
+          if (!wide)
+            Row(
+              spacing: 12,
+              children: [
+                ElioMark(size: 48, color: p.primaryText),
+                Text('ELIOS', style: authBrandStyle(p, large: false)),
               ],
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: ElioTokens.space4,
+            children: [
+              Semantics(
+                header: true,
+                child: Text(
+                  title,
+                  style: ElioTokens.headline.copyWith(color: p.textPrimary),
+                ),
+              ),
+              if (subtitle != null)
+                Text(
+                  subtitle,
+                  style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
+                ),
+            ],
+          ),
+          Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: _isForgot ? _forgotFields(p) : _signFields(p),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: ElioTokens.space16,
+            children: _isForgot ? _forgotActions() : _signActions(p),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool get _emailHasError =>
+      _errorMessage == _mapError('user-not-found') ||
+      _errorMessage == _mapError('invalid-email');
+
+  bool get _passwordHasError => _errorMessage == _mapError('wrong-password');
+
+  Widget _emailField() => AuthField(
+    controller: _emailController,
+    validator: _isForgot ? null : _emailValidator,
+    label: _isSignUp || _isForgot ? 'Email' : 'Email / Username',
+    hint: _isSignUp || _isForgot
+        ? 'you@example.com'
+        : 'you@example.com or username',
+    icon: Icons.mail_outline,
+    keyboardType: TextInputType.emailAddress,
+    focusNode: _emailFocusNode,
+    autofillHints: _isSignUp || _isForgot
+        ? const [AutofillHints.email]
+        : const [AutofillHints.username, AutofillHints.email],
+    textInputAction: _isForgot ? TextInputAction.done : TextInputAction.next,
+    onChanged: _isForgot ? (_) => setState(() => _resetSent = false) : null,
+    onFieldSubmitted: (_) => _isForgot
+        ? _resetPassword()
+        : FocusScope.of(context).requestFocus(_passwordFocusNode),
+    onTapOutside: (_) => _dismissKeyboard(),
+    hasError: _emailHasError,
+    dimmed: _isLoading,
+  );
+
+  List<Widget> _forgotFields(ElioPalette p) => _gaps([
+    if (_errorMessage != null)
+      AuthBanner(kind: AuthBannerKind.error, message: _errorMessage!)
+    else if (_resetSent)
+      const AuthBanner(
+        kind: AuthBannerKind.success,
+        message: 'Reset link sent to your email.',
+      ),
+    _emailField(),
+  ]);
+
+  List<Widget> _forgotActions() => [
+    AuthPrimaryButton(
+      label: 'Send reset link',
+      onPressed: _resetSent ? null : _resetPassword,
+    ),
+    Center(
+      child: AuthLink(label: 'Sign In', onPressed: () => _setForgot(false)),
+    ),
+  ];
+
+  List<Widget> _signFields(ElioPalette p) => _gaps([
+    if (_errorMessage != null)
+      AuthBanner(kind: AuthBannerKind.error, message: _errorMessage!),
+    if (_isSignUp)
+      AuthField(
+        controller: _nameController,
+        validator: _nameValidator,
+        label: 'Full Name',
+        hint: 'John Doe',
+        icon: Icons.person_outline,
+        keyboardType: TextInputType.name,
+        textInputAction: TextInputAction.next,
+        autofillHints: const [AutofillHints.name],
+        onTapOutside: (_) => _dismissKeyboard(),
+        dimmed: _isLoading,
+      ),
+    _emailField(),
+    // The "Forgot password?" link sits on the label row (Figma 196:724), so it
+    // shares a Stack with the field: 16 dp above the label to 32 dp into it.
+    Stack(
+      children: [
+        Padding(
+          padding: EdgeInsets.only(top: _isSignUp ? 0 : 16),
+          child: AuthField(
+            controller: _passwordController,
+            validator: _passwordValidator,
+            label: 'Password',
+            hint: 'Enter your password',
+            icon: Icons.lock_outline,
+            obscure: _obscurePassword,
+            focusNode: _passwordFocusNode,
+            autofillHints: _isSignUp
+                ? const [AutofillHints.newPassword]
+                : const [AutofillHints.password],
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) =>
+                _isSignUp ? _signUpWithEmail() : _handleEmailAuth(),
+            onTapOutside: (_) => _dismissKeyboard(),
+            hasError: _passwordHasError,
+            dimmed: _isLoading,
+            suffix: AuthVisibilityToggle(
+              obscured: _obscurePassword,
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  // ── Text field builder ────────────────────────────────────
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String? Function(String?) validator,
-    required String label,
-    required String hint,
-    required IconData prefix,
-    bool obscure = false,
-    TextInputType? keyboardType,
-    TextInputAction? textInputAction,
-    FocusNode? focusNode,
-    ValueChanged<String>? onFieldSubmitted,
-    Widget? suffixIcon,
-  }) {
-    return TextFormField(
-      controller: controller,
-      validator: validator,
-      focusNode: focusNode,
-      obscureText: obscure,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction ?? TextInputAction.next,
-      onFieldSubmitted: onFieldSubmitted,
-      onTapOutside: (_) => _dismissKeyboard(),
-      style: const TextStyle(fontSize: 15, color: _textDark),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: _surface,
-        prefixIcon: Icon(prefix, size: 20, color: _textMuted),
-        suffixIcon: suffixIcon,
-        labelText: label,
-        hintText: hint,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: _border, width: 1.5),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: _border, width: 1.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: _primary, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFE74C3C), width: 1.5),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFE74C3C), width: 2),
-        ),
-        labelStyle: const TextStyle(
-          color: _textMuted,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-        hintStyle: const TextStyle(color: _textHint, fontSize: 15),
-        errorStyle: const TextStyle(color: Color(0xFFE74C3C), fontSize: 12),
-      ),
-    );
-  }
-
-  // ── Google button ─────────────────────────────────────────
-  Widget _buildGoogleButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: OutlinedButton(
-        onPressed: _isLoading ? null : _signInWithGoogle,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: _surface,
-          foregroundColor: _textDark,
-          side: const BorderSide(color: _border, width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: _isLoading
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2.5),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SvgPicture.asset(
-                    'assets/icon/google_icon.svg',
-                    width: 20,
-                    height: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Continue with Google',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: _textDark,
-                    ),
-                  ),
-                ],
+        if (!_isSignUp)
+          PositionedDirectional(
+            top: 0,
+            end: 0,
+            child: Opacity(
+              opacity: _isLoading ? ElioTokens.disabledOpacity : 1,
+              child: AuthLink(
+                label: 'Forgot password?',
+                onPressed: _isLoading ? null : () => _setForgot(true),
               ),
-      ),
-    );
-  }
+            ),
+          ),
+      ],
+    ),
+  ], skipBeforeLast: !_isSignUp);
+
+  /// 16 dp between fields. The sign-in password group already holds that gap
+  /// (the "Forgot password?" link sits in it), so no gap goes before it there.
+  List<Widget> _gaps(List<Widget> items, {bool skipBeforeLast = false}) => [
+    for (var i = 0; i < items.length; i++) ...[
+      if (i > 0 && !(skipBeforeLast && i == items.length - 1))
+        const SizedBox(height: ElioTokens.space16),
+      items[i],
+    ],
+  ];
+
+  List<Widget> _signActions(ElioPalette p) => [
+    AuthPrimaryButton(
+      label: _isSignUp ? 'Create Account' : 'Sign In',
+      loading: _isLoading,
+      onPressed: _isSignUp ? _signUpWithEmail : _handleEmailAuth,
+    ),
+    const AuthDivider(),
+    AuthSecondaryButton(
+      google: true,
+      label: 'Continue with Google',
+      onPressed: _isLoading ? null : _signInWithGoogle,
+    ),
+    AuthSecondaryButton(
+      label: 'Continue as Guest',
+      onPressed: _isLoading ? null : _signInAsGuest,
+    ),
+    Text(
+      'Guest mode saves data locally only. Sign in to sync progress.',
+      textAlign: TextAlign.center,
+      style: ElioTokens.caption.copyWith(color: p.textTertiary),
+    ),
+    Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(
+          _isSignUp ? 'Already have an account? ' : "Don't have an account? ",
+          style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
+        ),
+        AuthLink(
+          label: _isSignUp ? 'Sign In' : 'Sign Up',
+          onPressed: _isLoading ? null : _toggleSignUp,
+        ),
+      ],
+    ),
+  ];
 }

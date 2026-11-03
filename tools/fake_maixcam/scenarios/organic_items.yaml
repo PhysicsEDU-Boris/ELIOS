@@ -1,0 +1,10 @@
+name: organic_items
+description: A cut fruit (Organic dataset crop, the closest to the owner's mango photo) held 25 cm ahead; close its quiz by 25 s. It leaves at 30 s and a peel (Organic crop) arrives on the same spot at 38 s. Expect a fruit identify, one quiz each, and the peel locking only after the fruit is gone (0020). Photos come from make_crops.py (default seed); if missing, any Organic crop is used.
+duration_s: 70
+items:
+  - {id: fruit, label: Organic, photo: images/Organic/crops/train_org-177-_jpg.rf.7a6b82fcc51d45603431ed5d_0.jpg, pos_mm: [-54, -301], size_mm: 120, score: 0.86}
+  - {id: peel, label: Organic, photo: images/Organic/crops/train_Oraganic-258-_jpg.rf.3e058729dd23280c012_0.jpg, pos_mm: [-54, -291], size_mm: 100, score: 0.81, visible: false}
+noise: {score_jitter: 0.03}
+events:
+  - {t: 30, do: leave, item: fruit}
+  - {t: 38, do: appear, item: peel}

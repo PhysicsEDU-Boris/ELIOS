@@ -6,6 +6,7 @@ import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/gemma_quiz_service.dart';
 import 'package:elio/services/quiz_tts_service.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -88,7 +89,7 @@ void main() {
     expect(last.text, startsWith('Jawab soalnya dulu'));
   });
 
-  test('skip works only when "Skip Allowed" is on', () {
+  test('skip works only when "Skip Allowed" is on', () async {
     final off = _container(skipAllowed: false);
     off.read(wasteQuizProvider.notifier).skipQuestion();
     expect(off.read(wasteQuizProvider).phase, WasteQuizPhase.active);
@@ -96,6 +97,7 @@ void main() {
     // Easy = 1 question, so skipping the only question finishes the session.
     final on = _container(skipAllowed: true);
     on.read(wasteQuizProvider.notifier).skipQuestion();
+    await pumpEventQueue();
     expect(on.read(wasteQuizProvider).phase, WasteQuizPhase.finished);
     expect(on.read(wasteQuizProvider).skippedCount, 1);
   });
@@ -132,11 +134,14 @@ void main() {
       };
 
       final f1 = service.identifyItem(Uint8List(0));
+      await pumpEventQueue(); // the scan is running (submitted) before the user asks
+      expect(call, 1);
       final f2 = service.discuss(quizContext: 'ctx', history: [], message: 'hi');
       
       final res1 = await f1;
       expect(res1.item, isNull);
-      
+      completer1.complete(null); // the cancelled native call ends; only then the slot frees
+
       completer2.complete('reply');
       final res2 = await f2;
       expect(res2, 'reply');
@@ -161,13 +166,438 @@ void main() {
       final f1 = service.identifyItem(Uint8List(0));
       service.cancel();
       await f1;
-      
+      completer1.complete(null); // the cancelled native call ends
+      await pumpEventQueue();
+
       final completer2 = Completer<String?>();
       service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => completer2.future;
       final f2 = service.identifyItem(Uint8List(0));
       completer2.complete('{"item": "kertas", "material": "kertas", "category": "organik"}');
       final res2 = await f2;
       expect(res2.item, 'kertas');
+    });
+
+    test('cancel() awaits stopGeneration, and a throwing one does not escape', () async {
+      final stopCompleter = Completer<void>();
+      var stopCalled = 0;
+      service.mockStopGeneration = () {
+        stopCalled++;
+        return stopCompleter.future;
+      };
+      final gen = Completer<String?>();
+      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => gen.future;
+      final f1 = service.identifyItem(Uint8List(0));
+
+      var cancelDone = false;
+      final cancelFuture = service.cancel().then((_) => cancelDone = true);
+      await Future<void>.delayed(Duration.zero); // let the mock get called
+      expect(stopCalled, 1);
+      expect(cancelDone, isFalse, reason: 'cancel() should still be awaiting stopGeneration');
+
+      stopCompleter.completeError(StateError('native stop failed')); // the throwing case
+      await cancelFuture; // must not throw despite the error
+      expect(cancelDone, isTrue);
+
+      final res1 = await f1;
+      expect(res1.item, isNull);
+      gen.complete(null); // end the call so the slot frees for the next test
+      await pumpEventQueue();
+      service.mockStopGeneration = null;
+    });
+
+    test('cancel() releases the active caller well before a slow native stop settles, '
+        'and _stopGeneration itself is capped at 2 s', () {
+      fakeAsync((async) {
+        final genCompleter = Completer<String?>();
+        service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => genCompleter.future;
+        var stopCalled = 0;
+        service.mockStopGeneration = () {
+          stopCalled++;
+          return Future<void>.delayed(const Duration(seconds: 5)); // "native" never returns quickly
+        };
+
+        PhotoIdentification? result;
+        service.identifyItem(Uint8List(0)).then((r) => result = r);
+        async.flushMicrotasks();
+        expect(result, isNull, reason: 'still generating');
+
+        var cancelSettled = false;
+        service.cancel().then((_) => cancelSettled = true);
+
+        async.elapse(const Duration(milliseconds: 50)); // well under 100 ms, on the fake clock
+        expect(stopCalled, 1);
+        expect(result, isNotNull, reason: 'the active caller must not be held up by the 5 s stop');
+        expect(result!.item, isNull);
+        expect(cancelSettled, isFalse, reason: 'cancel() itself is still awaiting the capped stop');
+
+        async.elapse(const Duration(seconds: 2)); // the cap in _stopGeneration
+        expect(cancelSettled, isTrue, reason: '_stopGeneration must give up at 2 s, not wait the full 5 s');
+
+        genCompleter.complete(null); // end the call so the slot frees for the next test
+        async.flushMicrotasks();
+        service.mockStopGeneration = null;
+      });
+    });
+
+  });
+
+  group('TTS: one slot, no repeat for the same text, closing stops it', () {
+    setUp(() {
+      QuizTtsService.instance.mockSpeak = null;
+      QuizTtsService.instance.mockStop = null;
+    });
+    tearDown(() {
+      QuizTtsService.instance.mockSpeak = null;
+      QuizTtsService.instance.mockStop = null;
+    });
+
+    test('a new utterance stops the old one first (not queued)', () async {
+      final spoken = <String>[];
+      final stopCalls = <int>[];
+      QuizTtsService.instance.mockStop = () async => stopCalls.add(spoken.length);
+      QuizTtsService.instance.mockSpeak = (text) async => spoken.add(text);
+
+      final before = QuizTtsService.instance.startedCount;
+      await QuizTtsService.instance.speak('pertama');
+      await QuizTtsService.instance.speak('kedua');
+
+      expect(spoken, ['pertama', 'kedua']); // both went through, not queued behind each other
+      expect(stopCalls.length, 2); // stop() ran before each speak
+      expect(QuizTtsService.instance.startedCount, before + 2);
+    });
+
+    test('the same auto-spoken text is not repeated within a quiz (rebuild-safe)', () async {
+      final spoken = <String>[];
+      QuizTtsService.instance.mockSpeak = (text) async => spoken.add(text);
+
+      final container = _container(skipAllowed: false);
+      final notifier = container.read(wasteQuizProvider.notifier);
+      // Need voiceOn: true to exercise auto-speak; _container seeds it off.
+      container.read(wasteQuizProvider.notifier).toggleVoice();
+
+      // Before the question is answered, every chat message gets the exact
+      // same "answer first" reply — the scenario the popup rebuilding (or
+      // minimizing/restoring) could otherwise cause to speak twice.
+      await notifier.sendChatMessage('apa ini?');
+      await pumpEventQueue(); // _appendAiReply's speak() is unawaited
+      await notifier.sendChatMessage('tolong jelaskan');
+      await pumpEventQueue();
+
+      expect(spoken, hasLength(1), reason: 'identical text spoken only once per quiz');
+      expect(spoken.single, startsWith('Jawab soalnya dulu'));
+    });
+
+    test('a genuinely different reply is still spoken', () async {
+      final spoken = <String>[];
+      QuizTtsService.instance.mockSpeak = (text) async => spoken.add(text);
+      final container = _container(skipAllowed: true, questionIndex: 0);
+      container.read(wasteQuizProvider.notifier).toggleVoice();
+      container.read(wasteQuizProvider.notifier).skipQuestion(); // finishes (Easy = 1 question): a different message
+      await pumpEventQueue(); // _appendAiReply's speak() is unawaited
+
+      expect(spoken, hasLength(1));
+      expect(spoken.single, contains('Sesi selesai'));
+    });
+
+    test('closing the quiz stops speech', () async {
+      var stopCalled = 0;
+      QuizTtsService.instance.mockStop = () async => stopCalled++;
+      final container = _container(skipAllowed: false);
+      container.read(wasteQuizProvider.notifier).dismiss();
+      expect(stopCalled, 1);
+    });
+
+    test('"Soal berikutnya" stops speech immediately, before the new question shows', () async {
+      var stopCalled = 0;
+      QuizTtsService.instance.mockStop = () async => stopCalled++;
+      final container = ProviderContainer(overrides: [
+        appPreferencesProvider.overrideWith(() => _SeededPrefs(const AppPreferences(skipAllowed: false))),
+        wasteQuizProvider.overrideWith(() => _SeededQuiz(WasteQuizUiState(
+              phase: WasteQuizPhase.explaining,
+              scan: ScannedWaste.fromLabel('botol plastik'),
+              difficulty: QuizDifficulty.medium, // 3 questions: not the last one yet
+              questionIndex: 0,
+              question: _mc,
+              selectedOption: _mc.correctIndex, // answered
+              voiceOn: false,
+            ))),
+      ]);
+      addTearDown(container.dispose);
+
+      container.read(wasteQuizProvider.notifier).nextQuestion();
+      await pumpEventQueue();
+
+      expect(stopCalled, greaterThanOrEqualTo(1),
+          reason: 'the previous question\'s voice must not keep playing over the new question');
+      expect(container.read(wasteQuizProvider).questionIndex, 1, reason: 'the stop call must not block advancing');
+    });
+
+    test('skipping a question stops speech immediately', () async {
+      var stopCalled = 0;
+      QuizTtsService.instance.mockStop = () async => stopCalled++;
+      final container = ProviderContainer(overrides: [
+        appPreferencesProvider.overrideWith(() => _SeededPrefs(const AppPreferences(skipAllowed: true))),
+        wasteQuizProvider.overrideWith(() => _SeededQuiz(WasteQuizUiState(
+              phase: WasteQuizPhase.active,
+              scan: ScannedWaste.fromLabel('botol plastik'),
+              difficulty: QuizDifficulty.medium,
+              questionIndex: 0,
+              question: _mc,
+              voiceOn: false,
+            ))),
+      ]);
+      addTearDown(container.dispose);
+
+      container.read(wasteQuizProvider.notifier).skipQuestion();
+      await pumpEventQueue();
+
+      expect(stopCalled, greaterThanOrEqualTo(1));
+      expect(container.read(wasteQuizProvider).questionIndex, 1);
+    });
+
+    test('a stop call when nothing is speaking changes nothing else', () async {
+      var stopCalled = 0;
+      QuizTtsService.instance.mockStop = () async => stopCalled++;
+      final container = _container(skipAllowed: false, questionIndex: 0);
+
+      container.read(wasteQuizProvider.notifier).dismiss(); // nothing was ever spoken in this test
+      await pumpEventQueue();
+
+      expect(stopCalled, 1, reason: 'stop() is still called, but safely -- no speak() ever happened');
+      expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.idle);
+    });
+  });
+
+  group('M2b part 3: background quiz prefetch (decision 0011)', () {
+    setUp(() async {
+      // GemmaQuizService.instance is a process-wide singleton: flush any
+      // leftover active/pending request from a previous test before this
+      // one starts, so it never sees the slot as busy.
+      await GemmaQuizService.instance.cancel();
+      GemmaQuizService.instance.mockSendExecute = null;
+      // Prefetch is the opt-in Gemma question path (decision 0017 keeps it, off by default).
+      WasteQuizNotifier.sourceOverride = QuestionSource.gemma;
+      WasteQuizNotifier.essayQuestions = true;
+      await pumpEventQueue();
+    });
+    tearDown(() {
+      GemmaQuizService.instance.mockSendExecute = null;
+      WasteQuizNotifier.sourceOverride = null;
+      WasteQuizNotifier.essayQuestions = essayQuestionsEnabled;
+    });
+
+    const mcJson = '{"question": "Soal ke-1?", "correct": "A", "wrong": ["B","C","D"], '
+        ' "explanation": "e"}';
+
+    String fakeResponse(int n, String prompt) => prompt.contains('pilihan ganda')
+        ? '{"question": "Soal ke-$n?", "correct": "A", "wrong": ["B","C","D"], "explanation": "e"}'
+        : '{"question": "Soal ke-$n?", "explanation": "e"}';
+
+    ProviderContainer mediumContainer() {
+      final c = ProviderContainer(overrides: [
+        appPreferencesProvider
+            .overrideWith(() => _SeededPrefs(const AppPreferences(quizDifficulty: 'Medium'))),
+      ]);
+      addTearDown(c.dispose);
+      return c;
+    }
+
+    test('background prefetch fills questions 2 and 3 in order after question 1 shows', () async {
+      var calls = 0;
+      final prompts = <String>[];
+      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+        calls++;
+        prompts.add(prompt);
+        return fakeResponse(calls, prompt);
+      };
+
+      final container = mediumContainer();
+      container.read(wasteQuizProvider.notifier).startForLabel('botol plastik');
+      await pumpEventQueue();
+
+      expect(container.read(wasteQuizProvider).question?.question, 'Soal ke-1?');
+      expect(calls, 3, reason: 'question 1 (foreground) + questions 2, 3 (background) all generated');
+      expect(prompts[1], contains('Soal ke-1?'), reason: 'question 2 avoids question 1 (sequential, not parallel)');
+      expect(prompts[2], contains('Soal ke-2?'), reason: 'question 3 avoids question 2 too');
+    });
+
+    test('"Soal berikutnya" takes an already-buffered question instantly, no new generation', () async {
+      var calls = 0;
+      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+        calls++;
+        return fakeResponse(calls, prompt);
+      };
+
+      final container = mediumContainer();
+      final notifier = container.read(wasteQuizProvider.notifier);
+      notifier.startForLabel('botol plastik');
+      await pumpEventQueue(); // question 1 shown, questions 2 and 3 prefetched
+
+      final callsBeforeTap = calls;
+      notifier.selectOption(0); // answers question 1 (multiple choice)
+      notifier.nextQuestion();
+      await pumpEventQueue();
+
+      expect(container.read(wasteQuizProvider).questionIndex, 1);
+      expect(container.read(wasteQuizProvider).question?.question, 'Soal ke-2?');
+      expect(calls, callsBeforeTap, reason: 'served straight from the buffer, no new generation call');
+      expect(notifier.lastNextWaitMs, lessThan(20), reason: 'instant from the buffer');
+    });
+
+    test('a tap before the buffer is ready waits, then shows the question (never a fallback)', () async {
+      var calls = 0;
+      final pending = Completer<String?>();
+      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+        calls++;
+        if (calls == 1) return mcJson; // question 1 resolves right away
+        return pending.future; // question 2's background generation hangs
+      };
+
+      final container = mediumContainer();
+      final notifier = container.read(wasteQuizProvider.notifier);
+      notifier.startForLabel('botol plastik');
+      await pumpEventQueue();
+      expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.active);
+
+      notifier.selectOption(0);
+      notifier.nextQuestion();
+      await pumpEventQueue();
+      expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.loadingQuestion,
+          reason: 'not ready yet: show the waiting state, not a fallback');
+      expect(container.read(wasteQuizProvider).questionIndex, 1);
+
+      pending.complete('{"question": "Soal ke-2?", "explanation": "e"}');
+      await pumpEventQueue();
+
+      expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.active);
+      expect(container.read(wasteQuizProvider).question?.question, 'Soal ke-2?');
+      expect(container.read(wasteQuizProvider).isFallback, isFalse);
+    });
+
+    test('a chat message pauses prefetch, which resumes after -- never a fallback', () {
+      fakeAsync((async) {
+        var calls = 0;
+        final completers = <Completer<String?>>[];
+        GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) {
+          calls++;
+          final c = Completer<String?>();
+          completers.add(c);
+          return c.future;
+        };
+
+        final container = mediumContainer();
+        final notifier = container.read(wasteQuizProvider.notifier)..toggleVoice(); // no TTS
+
+        notifier.startForLabel('botol plastik'); // call 1: question 1
+        async.flushMicrotasks();
+        expect(calls, 1);
+        completers[0].complete(mcJson);
+        async.flushMicrotasks();
+        expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.active);
+        expect(calls, 2, reason: 'prefetch for question 2 (essay) starts right away');
+
+        notifier.selectOption(0); // answers question 1, synchronous
+        notifier.sendChatMessage('apa ini?'); // call 3 (isUser) cancels call 2 (prefetch)
+        async.flushMicrotasks();
+        expect(calls, 2, reason: 'the chat waits until the cancelled prefetch has really ended');
+        completers[1].complete(null); // the native stop lands: call 2 ends
+        async.flushMicrotasks();
+        expect(calls, 3, reason: 'the chat request pre-empted and ran despite the prefetch being active');
+
+        completers[2].complete('balasan obrolan'); // the chat's own reply
+        async.flushMicrotasks();
+        expect(container.read(wasteQuizProvider).messages.last.text, 'balasan obrolan');
+
+        async.elapse(const Duration(milliseconds: 300)); // the prefetch retry delay
+        expect(calls, 4, reason: 'prefetch retried question 2 once the slot was free again');
+        completers[3].complete('{"question": "Soal ke-2?", "explanation": "e"}');
+        async.flushMicrotasks();
+
+        notifier.nextQuestion();
+        async.flushMicrotasks();
+        expect(container.read(wasteQuizProvider).question?.question, 'Soal ke-2?');
+        expect(container.read(wasteQuizProvider).isFallback, isFalse,
+            reason: 'a chat message must never turn a question into a fallback');
+
+        // Medium has a 3rd question: resolving question 2 just above kicks
+        // off its own background prefetch (call 5, never scripted here).
+        // Settle it so the singleton GemmaQuizService isn't left mid-request
+        // for the next test.
+        notifier.dismiss();
+        for (final c in completers) {
+          if (!c.isCompleted) c.complete(null); // end every call so the slot frees
+        }
+        async.flushMicrotasks();
+      });
+    });
+
+    test('closing the quiz cancels prefetch and clears the buffer', () {
+      fakeAsync((async) {
+        var calls = 0;
+        final completers = <Completer<String?>>[];
+        GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) {
+          calls++;
+          final c = Completer<String?>();
+          completers.add(c);
+          return c.future;
+        };
+
+        final container = mediumContainer();
+        final notifier = container.read(wasteQuizProvider.notifier);
+        notifier.startForLabel('botol plastik');
+        async.flushMicrotasks();
+        completers[0].complete(mcJson);
+        async.flushMicrotasks();
+        expect(calls, 2, reason: 'prefetch for question 2 started');
+
+        notifier.dismiss();
+        completers[1].complete('{"question": "Soal ke-2?", "explanation": "e"}'); // the cancelled call resolves late
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 1));
+
+        expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.idle,
+            reason: 'dismiss must stick even if the stale prefetch resolves late');
+        expect(calls, 2, reason: 'no retry after close: the buffer is cancelled, not kept alive');
+      });
+    });
+
+    test('a near-identical question is rejected and retried', () async {
+      var calls = 0;
+      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+        calls++;
+        return calls == 1
+            ? '{"question": "Apa dampak plastik?", "explanation": "e"}' // near-duplicate of avoid[0]
+            : '{"question": "Bagaimana proses daur ulang logam?", "explanation": "e"}';
+      };
+
+      final result = await GemmaQuizService.instance.generateQuestionBackground(
+        waste: ScannedWaste.fromLabel('botol plastik'),
+        type: QuizQuestionType.essay,
+        difficulty: QuizDifficulty.easy,
+        avoid: const ['apa dampak plastik?'],
+      );
+
+      expect(calls, 2, reason: 'the near-duplicate on attempt 1 is rejected; attempt 2 is accepted');
+      expect(result.retry, isFalse);
+      expect(result.question?.question, 'Bagaimana proses daur ulang logam?');
+    });
+
+    test('an unparseable response is retried once in the background', () async {
+      var calls = 0;
+      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+        calls++;
+        return calls == 1 ? 'not json at all' : '{"question": "Soal valid?", "explanation": "e"}';
+      };
+
+      final result = await GemmaQuizService.instance.generateQuestionBackground(
+        waste: ScannedWaste.fromLabel('kardus'),
+        type: QuizQuestionType.essay,
+        difficulty: QuizDifficulty.easy,
+      );
+
+      expect(calls, 2);
+      expect(result.retry, isFalse);
+      expect(result.question?.question, 'Soal valid?');
     });
   });
 }

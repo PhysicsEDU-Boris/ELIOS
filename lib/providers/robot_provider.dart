@@ -37,26 +37,44 @@ class RobotState {
   final double pwmSpeed;
   final double baseAngle;
   final double elbowAngle;
+  final double reachValue;
+  final double heightValue;
   final double gripperVal;
+  final List<double>? eeMm;
+  final bool? atHome;
 
   const RobotState({
     this.pwmSpeed = 75,
     this.baseAngle = 90,
     this.elbowAngle = 45,
-    this.gripperVal = 10,
+    this.reachValue = 90,
+    this.heightValue = 90,
+    this.gripperVal = 0,
+    this.eeMm,
+    this.atHome = false,
   });
 
   RobotState copyWith({
     double? pwmSpeed,
     double? baseAngle,
     double? elbowAngle,
+    double? reachValue,
+    double? heightValue,
     double? gripperVal,
+    List<double>? eeMm,
+    bool clearEeMm = false,
+    bool? atHome,
+    bool clearAtHome = false,
   }) {
     return RobotState(
       pwmSpeed: pwmSpeed ?? this.pwmSpeed,
       baseAngle: baseAngle ?? this.baseAngle,
       elbowAngle: elbowAngle ?? this.elbowAngle,
+      reachValue: reachValue ?? this.reachValue,
+      heightValue: heightValue ?? this.heightValue,
       gripperVal: gripperVal ?? this.gripperVal,
+      eeMm: clearEeMm ? null : (eeMm ?? this.eeMm),
+      atHome: clearAtHome ? false : (atHome ?? this.atHome),
     );
   }
 }
@@ -81,35 +99,52 @@ class RobotControlNotifier extends Notifier<RobotState> {
 
   void resetConnectionState() => _ws.resetConnectionState();
 
-  // Drive commands ────────────────────────────────────────────────────────────
-
-  void sendMotor(int left, int right) => _ws.sendMotorCommand(left, right);
+  // Motion goes through the control screen's MotionGate (decision 0026); this
+  // notifier keeps the slider values only.
 
   void startStream() => _ws.sendStartStreamCommand();
 
   void stopStream() => _ws.sendStopStreamCommand();
 
-  // Arm commands + local state update ────────────────────────────────────────
+  // Slider state (the servo command itself is sent by the gate) ───────────────
 
   void setPwmSpeed(double v) => state = state.copyWith(pwmSpeed: v);
+  void setBaseAngle(double v) => state = state.copyWith(baseAngle: v, atHome: false);
+  void setElbowAngle(double v) => state = state.copyWith(elbowAngle: v, atHome: false);
+  void setReachValue(double v) => state = state.copyWith(reachValue: v, atHome: false);
+  void setHeightValue(double v) => state = state.copyWith(heightValue: v, atHome: false);
+  void setGripperVal(double v) => state = state.copyWith(gripperVal: v, atHome: false);
 
-  void setBaseAngle(double v) {
-    state = state.copyWith(baseAngle: v);
-    _ws.sendServoCommand('base', v.toInt());
+  void updateStatus({
+    List<double>? eeMm,
+    bool clearEeMm = false,
+    bool? atHome,
+    bool clearAtHome = false,
+  }) {
+    // STATUS reports a commanded target, not verified HOME completion (0027).
+    final effectiveAtHome = clearAtHome || atHome == false ? false : state.atHome;
+    state = state.copyWith(
+      eeMm: eeMm,
+      clearEeMm: clearEeMm,
+      atHome: effectiveAtHome ?? state.atHome,
+    );
   }
 
-  void setElbowAngle(double v) {
-    state = state.copyWith(elbowAngle: v);
-    _ws.sendServoCommand('elbow', v.toInt());
+  /// Sets whether the robot is confirmed to be at home pose.
+  void setAtHome(bool atHome) {
+    state = state.copyWith(atHome: atHome);
   }
 
-  void setGripperVal(double v) {
-    state = state.copyWith(gripperVal: v);
-    _ws.sendServoCommand('gripper', v.toInt());
+  /// Resets arm sliders and gripper to neutral home values (decision 0027/G2c).
+  /// Only call this after verified HOME completion (motion_done).
+  void resetToHome() {
+    state = state.copyWith(
+      reachValue: 90.0,
+      heightValue: 90.0,
+      gripperVal: 0.0,
+      atHome: true,
+    );
   }
-
-  void pickUp() => _ws.sendServoCommand('gripper', 100);
-  void release() => _ws.sendServoCommand('gripper', 0);
 
   // Resolution control ────────────────────────────────────────────────────────
 
@@ -127,3 +162,8 @@ final robotControlProvider = NotifierProvider<RobotControlNotifier, RobotState>(
 final resolutionAckProvider = StreamProvider<Size>((ref) {
   return WebSocketService().resolutionAcks;
 });
+
+/// R1 DROP in progress gate (UI plan U2): when R1 is enabled and sorting/dropping,
+/// the Result Card shows "Robot sedang membuang ke tempat sampah..." and keeps
+/// "Scan lagi" disabled until DROP finishes.
+final r1DropPendingProvider = StateProvider<bool>((ref) => false);

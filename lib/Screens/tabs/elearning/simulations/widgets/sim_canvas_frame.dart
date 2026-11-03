@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../../../../../../theme/elio_learning_colors.dart';
+import '../../../../../widgets/learn/learn_ui.dart';
 
 class SimCanvasFrame extends StatelessWidget {
   final Widget canvas;
@@ -19,10 +18,9 @@ class SimCanvasFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F5F2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: elioBorder),
+      decoration: ShapeDecoration(
+        color: context.elio.surfaceRaised,
+        shape: learnShape(learnRadiusM, BorderSide(color: context.elio.borderSubtle)),
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
@@ -55,18 +53,14 @@ class _SimNote extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.88),
+        color: context.elio.surface.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: GoogleFonts.inter(
-          color: elioMuted,
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-        ),
+        style: context.text.labelMedium?.copyWith(color: context.elio.textSecondary),
       ),
     );
   }
@@ -81,16 +75,12 @@ class _RiskBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: elioDanger,
+        color: context.elio.error,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         text,
-        style: GoogleFonts.inter(
-          color: Colors.white,
-          fontSize: 9.5,
-          fontWeight: FontWeight.w700,
-        ),
+        style: context.text.labelMedium?.copyWith(color: context.elio.onError),
       ),
     );
   }

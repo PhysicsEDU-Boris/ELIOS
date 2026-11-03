@@ -53,6 +53,10 @@ dependencies:
   # the ELIO-SANDBOX prototype's TtsService).
   flutter_tts: ^4.2.5
 
+  # PDF generation and sharing for quiz session reports (decision 0031).
+  pdf: ^3.11.0
+  printing: ^5.13.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -60,6 +64,7 @@ dev_dependencies:
     sdk: flutter
   firebase_auth_mocks: ^0.15.1
   fake_cloud_firestore: ^4.1.0+1
+  fake_async: ^1.3.3
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.13.1
 
@@ -71,22 +76,35 @@ flutter:
     - .env.prod
     - .env.example
     - assets/icon/
+    - assets/illustrations/learn/
     - assets/models/
+    - assets/module/
+    - assets/quiz/
+    - assets/illustrations/home/
+    - assets/illustrations/control/
+
+  fonts:
+    - family: JetBrains Mono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Variable.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Variable.ttf
 
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/icon/ELIO_ICON.png"
+  image_path: "assets/icon/option-b/master-light.png"
+  image_path_ios: "assets/icon/option-b/ios-light.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#1D9E75"
-  adaptive_icon_foreground: "assets/icon/ELIO_ICON.png"
+  adaptive_icon_background: "#F8FAFC"
+  adaptive_icon_foreground: "assets/icon/option-b/android-foreground-light-transparent.png"
+  adaptive_icon_foreground_inset: 0
 
 flutter_native_splash:
-  color: "#1D9E75"
-  image: "assets/icon/ELIO_ICON.png"
+  # The launch resources are committed; the generator is not part of the build.
+  color: "#F8FAFC"
   android_12:
-    color: "#1D9E75"
-    image: "assets/icon/ELIO_ICON.png"
-    branding_mode: "contain"
+    color: "#F8FAFC"
   ios: true
   web: false

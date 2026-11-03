@@ -1,0 +1,28 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="1024" height="1024" fill="#F5F5F5"/>
+<g id="05 App icon &#194;&#183; Option B (CHOSEN) &#194;&#183; leaf + terminal cursor">
+<path d="M-1144 -1142C-1144 -1143.1 -1143.1 -1144 -1142 -1144H3602C3603.1 -1144 3604 -1143.1 3604 -1142V1762C3604 1763.1 3603.1 1764 3602 1764H-1142C-1143.1 1764 -1144 1763.1 -1144 1762V-1142Z" fill="white"/>
+<path d="M-1142 -1144V-1143H3602V-1144V-1145H-1142V-1144ZM3604 -1142H3603V1762H3604H3605V-1142H3604ZM3602 1764V1763H-1142V1764V1765H3602V1764ZM-1144 1762H-1143V-1142H-1144H-1145V1762H-1144ZM-1142 1764V1763C-1142.55 1763 -1143 1762.55 -1143 1762H-1144H-1145C-1145 1763.66 -1143.66 1765 -1142 1765V1764ZM3604 1762H3603C3603 1762.55 3602.55 1763 3602 1763V1764V1765C3603.66 1765 3605 1763.66 3605 1762H3604ZM3602 -1144V-1143C3602.55 -1143 3603 -1142.55 3603 -1142H3604H3605C3605 -1143.66 3603.66 -1145 3602 -1145V-1144ZM-1142 -1144V-1145C-1143.66 -1145 -1145 -1143.66 -1145 -1142H-1144H-1143C-1143 -1142.55 -1142.55 -1143 -1142 -1143V-1144Z" fill="black" fill-opacity="0.1"/>
+<g id="Icon B / macOS 1024 (824 squircle body) / Light">
+<g id="squircle body (824, margin 100)" filter="url(#filter0_d_191_281)">
+<rect x="100" y="100" width="824" height="824" rx="185" fill="#F8FAFC"/>
+</g>
+<g id="ELIOS mark B">
+<path id="Vector" d="M332.46 661.46C316.95 483.8 465 333.4 680.26 323.06L332.46 661.46Z" fill="#15803D"/>
+<path id="Vector_2" d="M700.94 343.74C709.4 559 568.4 700 353.14 682.14L700.94 343.74Z" fill="#15803D"/>
+<path id="Vector_3" d="M683.55 671.8H575.45C571.556 671.8 568.4 674.956 568.4 678.85V702.35C568.4 706.243 571.556 709.4 575.45 709.4H683.55C687.444 709.4 690.6 706.243 690.6 702.35V678.85C690.6 674.956 687.444 671.8 683.55 671.8Z" fill="#15803D"/>
+</g>
+</g>
+</g>
+<defs>
+<filter id="filter0_d_191_281" x="76" y="88" width="872" height="872" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="12"/>
+<feGaussianBlur stdDeviation="12"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.4 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_191_281"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_191_281" result="shape"/>
+</filter>
+</defs>
+</svg>

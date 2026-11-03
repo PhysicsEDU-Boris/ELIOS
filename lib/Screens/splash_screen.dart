@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
+import '../theme/elio_theme.dart';
+import '../theme/elio_tokens.dart';
+import '../widgets/splash/splash_growth.dart';
 import 'login_screen.dart';
 import 'home_shell.dart';
 
@@ -14,41 +18,33 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnim;
-  late Animation<double> _scaleAnim;
+  // One controller drives the whole "Growth v2" timeline (milliseconds).
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    // The default scales a forward() to 5 % of its length when the OS asks for
+    // reduced motion; the 600 ms hold must stay 600 ms.
+    animationBehavior: AnimationBehavior.preserve,
+  );
+  bool _started = false;
+  bool _reduced = false;
 
   @override
-  void initState() {
-    super.initState();
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    );
-
-    _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
-      ),
-    );
-
-    _scaleAnim = Tween<double>(begin: 0.75, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.7, curve: Curves.easeOutBack),
-      ),
-    );
-
-    _controller.forward();
-    Future.delayed(const Duration(milliseconds: 2500), _navigate);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    _reduced = MediaQuery.disableAnimationsOf(context);
+    final end = _reduced
+        ? SplashGrowthSpec.reducedHoldMs
+        : SplashGrowthSpec.navigateAt;
+    _controller
+      ..duration = Duration(milliseconds: end)
+      ..forward().whenComplete(_navigate);
   }
 
   void _navigate() {
-    final user = widget.auth.currentUser;
     if (!mounted) return;
-
+    final user = widget.auth.currentUser;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (_, _, _) => user != null
@@ -56,7 +52,10 @@ class _SplashScreenState extends State<SplashScreen>
             : LoginScreen(auth: widget.auth),
         transitionsBuilder: (_, anim, _, child) =>
             FadeTransition(opacity: anim, child: child),
-        transitionDuration: const Duration(milliseconds: 600),
+        // Reduced motion cuts; otherwise the 250 ms dissolve ends at 3650 ms.
+        transitionDuration: _reduced
+            ? Duration.zero
+            : const Duration(milliseconds: SplashGrowthSpec.dissolveMs),
       ),
     );
   }
@@ -69,52 +68,25 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F6E56),
-      body: Center(
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return FadeTransition(
-              opacity: _fadeAnim,
-              child: ScaleTransition(scale: _scaleAnim, child: child),
-            );
-          },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset('assets/icon/ELIO_ICON.png', fit: BoxFit.contain),
-              const SizedBox(height: 24),
-              const Text(
-                'ELIO',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 40,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 6,
-                ),
+    return ElioTheme.wrap(
+      Builder(
+        builder: (context) {
+          final p = Theme.of(context).brightness == Brightness.dark
+              ? ElioTokens.dark
+              : ElioTokens.light;
+          return Scaffold(
+            body: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) => SplashGrowth(
+                // Reduced motion shows F11 (3300 ms) for the whole hold.
+                t: _reduced
+                    ? SplashGrowthSpec.f11.toDouble()
+                    : _controller.value * SplashGrowthSpec.navigateAt,
+                palette: p,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Smart Waste Sorting Robot',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  fontSize: 14,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 56),
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white.withValues(alpha: 0.5),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

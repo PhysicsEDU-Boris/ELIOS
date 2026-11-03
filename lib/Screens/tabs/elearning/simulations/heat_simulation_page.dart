@@ -1,11 +1,12 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../../../widgets/learn/learn_ui.dart';
+import '../../../../models/physics_module.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../physics/heat/heat_state.dart';
 import '../../../../../physics/heat/heat_notifier.dart';
 import '../../../../../physics/shared/porosity_notifier.dart';
-import '../../../../../theme/elio_learning_colors.dart';
 import 'painters/heat_painter.dart';
 import 'widgets/sim_module_header.dart';
 import 'widgets/formula_box.dart';
@@ -39,6 +40,7 @@ class _HeatSimulationPageState extends ConsumerState<HeatSimulationPage> {
     final isAnaerobic = porosity.isAnaerobic && t > 55.0;
 
     return SimulationPageScaffold(
+      module: PhysicsModuleId.heat,
       appBarTitle: 'Kalor & Termodinamika',
       header: const SimModuleHeader(
         tag: 'MODUL B · MATERI',
@@ -52,7 +54,7 @@ class _HeatSimulationPageState extends ConsumerState<HeatSimulationPage> {
             const TextSpan(text: 'Q = m·c·ΔT = '),
             TextSpan(
               text: q.toStringAsFixed(0),
-              style: const TextStyle(color: elioWarning),
+              style: TextStyle(color: context.elio.secondaryText),
             ),
             const TextSpan(text: ' J'),
           ],
@@ -142,9 +144,9 @@ class _HeatSimulationPageState extends ConsumerState<HeatSimulationPage> {
 
   Color _getPhaseColor(CompostPhase phase) {
     switch (phase) {
-      case CompostPhase.mesophilic: return elioOk;
+      case CompostPhase.mesophilic: return context.elio.primaryText;
       case CompostPhase.thermophilic: return Colors.orange;
-      case CompostPhase.overheated: return elioWarning;
+      case CompostPhase.overheated: return context.elio.secondaryText;
     }
   }
 

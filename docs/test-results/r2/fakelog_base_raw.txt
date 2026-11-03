@@ -1,0 +1,285 @@
+[Fake] fake-sim-1 scenario r2_empty on ws://0.0.0.0:8765
+[WS] Client connected: ('127.0.0.1', 50396)
+[WS] STOP seq=1 -> wheels 0, arm hold
+[WS] motor left=0 right=0
+[WS] STATUS seq=2
+[WS] start_stream — streaming ON
+[WS] set_resolution received but ignored — resolution is fixed at 640x480
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] ping -> pong
+[WS] heartbeat x5/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] motor left=75 right=75
+[WS] heartbeat x4/s
+[WS] motor left=0 right=0
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] motor left=-75 right=75
+[WS] heartbeat x4/s
+[WS] motor left=0 right=0
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] motor left=75 right=-75
+[WS] heartbeat x4/s
+[WS] motor left=0 right=0
+[WS] heartbeat x4/s
+[WS] motor left=-75 right=-75
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] motor left=0 right=0
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] motor left=100 right=100
+[WS] heartbeat x4/s
+[WS] motor left=0 right=0
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] servo part=height val=180
+[WS] STATUS seq=3
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] servo part=height val=0
+[WS] heartbeat x3/s
+[WS] STATUS seq=4
+[WS] heartbeat x5/s
+[WS] servo part=reach val=180
+[WS] STATUS seq=5
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] servo part=reach val=0
+[WS] STATUS seq=6
+[WS] heartbeat x4/s
+[WS] servo part=gripper val=100
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] servo part=gripper val=0
+[WS] heartbeat x4/s
+[WS] servo part=gripper val=100
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] servo part=gripper val=0
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] HOME seq=7
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] STATUS seq=8
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] STOP seq=9 -> wheels 0, arm hold
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] motor left=0 right=0
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] motor left=100 right=100
+[WS] heartbeat x4/s
+[WS] motor left=0 right=0
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+--- fake killed and restarted ---
+============================================================
+ELIOS 5-DOF Arm — End Effector IK Demo
+============================================================
+Initial EE position (J4): [  0.  -42.5  90. ]
+[Fake] fake-sim-1 scenario r2_empty on ws://0.0.0.0:8765
+[WS] Client connected: ('127.0.0.1', 50496)
+[WS] STOP seq=10 -> wheels 0, arm hold
+[WS] motor left=0 right=0
+[WS] STATUS seq=11
+[WS] start_stream — streaming ON
+[WS] set_resolution received but ignored — resolution is fixed at 640x480
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] ping -> pong
+[WS] heartbeat x5/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] motor left=0 right=0
+[WS] heartbeat x4/s
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] motor left=100 right=100
+[WS] heartbeat x4/s
+[WS] motor left=0 right=0
+[WS] heartbeat x4/s
+[WS] ping -> pong
+[WS] heartbeat x4/s
+[WS] motor left=0 right=0
+[WS] stop_stream — streaming OFF
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold
+[Watchdog] app messages again
+[WS] ping -> pong
+[Watchdog] no app message for 1 s: wheels 0 / arm hold

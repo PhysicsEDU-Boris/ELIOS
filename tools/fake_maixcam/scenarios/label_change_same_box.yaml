@@ -1,0 +1,7 @@
+name: label_change_same_box
+description: The same box reads Paper; close the first quiz by 25 s. From 30 s it reads Cardboard. A new label on the quizzed box must hold for the lock time before it can lock (0020).
+duration_s: 60
+items:
+  - {id: sheet, label: Paper, pos_mm: [-54, -301], size_mm: 110, score: 0.8}
+events:
+  - {t: 30, do: set_label, item: sheet, label: Cardboard}

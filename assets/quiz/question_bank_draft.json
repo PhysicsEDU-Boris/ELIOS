@@ -1,0 +1,1246 @@
+{
+  "status": "accepted",
+  "schemaNote": "mc follows decision 0013 (correct + wrong[3]); every quote is verbatim from its sourceChunk in assets/module/module_chunks.json",
+  "chunksFile": "assets/module/module_chunks.json",
+  "pools": {
+    "organik": [
+      "Organic"
+    ],
+    "paper_family": [
+      "Paper",
+      "Paperboard",
+      "Cardboard"
+    ],
+    "plastic": [
+      "Plastic"
+    ],
+    "glass": [
+      "Glass"
+    ],
+    "metal": [
+      "Metal"
+    ],
+    "tetra_pak": [
+      "Tetra_Pak"
+    ],
+    "e_waste_b3": [
+      "E_Waste"
+    ]
+  },
+  "items": [
+    {
+      "id": "organik-mc-01",
+      "pool": "organik",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Sisa makanan dan daun kering dapat terurai secara alami. Apa ciri bahan asal sampah tersebut?",
+      "correct": "Berasal dari makhluk hidup dan dapat terurai secara alami oleh mikroorganisme",
+      "wrong": [
+        "Berasal dari bahan sintetis dan sangat sulit diuraikan mikroorganisme",
+        "Mengandung bahan berbahaya dan beracun sehingga harus dipisah dalam wadah khusus",
+        "Berasal dari bahan mineral dan dapat bertahan di lingkungan ratusan tahun"
+      ],
+      "explanation": "Modul mendefinisikan sampah organik sebagai sampah dari hewan dan tumbuhan yang dapat terurai secara alami oleh mikroorganisme.",
+      "sourceChunk": "1.3",
+      "pdfPage": 6,
+      "quote": "Sampah organik adalah sampah yang berasal dari makhluk hidup (hewan dan tumbuhan) dan dapat terurai secara alami oleh mikroorganisme dalam jangka waktu tertentu.",
+      "status": "accepted"
+    },
+    {
+      "id": "organik-mc-02",
+      "pool": "organik",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Sifat sampah organik yang dapat diuraikan secara biologis disebut apa?",
+      "correct": "Biodegradable",
+      "wrong": [
+        "Non-biodegradable",
+        "Korosif",
+        "Reaktif"
+      ],
+      "explanation": "Modul menyebut sifat dapat diuraikan secara biologis sebagai biodegradable; korosif dan reaktif adalah karakteristik B3.",
+      "sourceChunk": "1.3",
+      "pdfPage": 6,
+      "quote": "Sifat ini disebut biodegradable, yaitu dapat diuraikan secara biologis (Damanhuri dan Padmi, 2010).",
+      "status": "accepted"
+    },
+    {
+      "id": "organik-mc-03",
+      "pool": "organik",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Mengapa pengomposan aerobik dapat membantu membunuh patogen dan biji gulma?",
+      "correct": "Karena prosesnya menghasilkan panas 50-70°C",
+      "wrong": [
+        "Karena prosesnya berlangsung tanpa oksigen",
+        "Karena prosesnya menghasilkan gas metana yang membunuh kuman",
+        "Karena prosesnya memakai cacing tanah yang memakan biji gulma"
+      ],
+      "explanation": "Pengomposan aerobik memakai mikroorganisme yang memerlukan oksigen dan menghasilkan panas 50-70°C yang membantu membunuh patogen.",
+      "sourceChunk": "3.2",
+      "pdfPage": 17,
+      "quote": "Prosesnya lebih cepat dan menghasilkan panas 50-70°C yang membantu membunuh patogen (kuman penyakit) dan biji gulma.",
+      "status": "accepted"
+    },
+    {
+      "id": "organik-mc-04",
+      "pool": "organik",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Proses apa yang menghasilkan biogas dari sampah organik?",
+      "correct": "Fermentasi anaerobik bahan organik oleh bakteri metanogen",
+      "wrong": [
+        "Pengomposan aerobik dengan tumpukan yang dibalik berkala",
+        "Penguraian oleh cacing tanah di dalam kotak vermikompos",
+        "Pembakaran terbuka sampah organik di TPA"
+      ],
+      "explanation": "Modul menjelaskan biogas berasal dari fermentasi anaerobik oleh bakteri metanogen, dengan komponen utama metana dan karbon dioksida.",
+      "sourceChunk": "3.3",
+      "pdfPage": 18,
+      "quote": "Biogas dihasilkan dari fermentasi anaerobik bahan organik oleh bakteri metanogen.",
+      "status": "accepted"
+    },
+    {
+      "id": "organik-mc-05",
+      "pool": "organik",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Mengapa menangkap metana dari sampah organik lalu membakarnya sebagai energi dianggap menguntungkan bagi iklim?",
+      "correct": "Metana yang berpotensi pemanasan tinggi diubah menjadi CO2 yang potensinya lebih rendah, sambil menghasilkan energi",
+      "wrong": [
+        "Pembakaran menghilangkan seluruh karbon sehingga tidak ada gas rumah kaca yang tersisa",
+        "Metana bukan gas rumah kaca, jadi pembakaran hanya bermanfaat sebagai sumber energi",
+        "Pembakaran mengubah CO2 menjadi metana yang lebih aman bagi iklim"
+      ],
+      "explanation": "Modul menyebut metana di TPA sebagai gas rumah kaca kuat; membakarnya mengubahnya menjadi CO2 yang berpotensi pemanasan lebih rendah.",
+      "sourceChunk": "3.3",
+      "pdfPage": 18,
+      "quote": "Menangkap dan membakarnya sebagai energi mengubah metana (potensi pemanasan tinggi) menjadi CO2 (potensi lebih rendah) sambil menghasilkan energi.",
+      "status": "accepted"
+    },
+    {
+      "id": "organik-mc-06",
+      "pool": "organik",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Sisa makanan yang dibuang ke TPA membusuk tanpa oksigen. Gas apa yang terbentuk dan apa cara mengurangi emisinya?",
+      "correct": "Metana; emisinya dikurangi dengan pengomposan aerobik dan penangkapan biogas",
+      "wrong": [
+        "Merkuri; emisinya dikurangi dengan memasukkan sisa makanan ke kelompok B3",
+        "Dioksin dari pembusukan; emisinya dikurangi dengan membakar sisa makanan",
+        "Tidak ada gas yang terbentuk karena sampah organik dapat terurai"
+      ],
+      "explanation": "Sampah organik yang membusuk tanpa oksigen menghasilkan metana; modul menyebut pengomposan aerobik dan penangkapan biogas mengurangi emisi itu.",
+      "sourceChunk": "9.qa",
+      "pdfPage": 34,
+      "quote": "Sampah organik yang membusuk tanpa oksigen di TPA menghasilkan metana, gas rumah kaca dengan potensi pemanasan sekitar 25-28 kali CO2.",
+      "status": "accepted"
+    },
+    {
+      "id": "organik-essay-01",
+      "pool": "organik",
+      "type": "essay",
+      "difficulty": "Sedang",
+      "question": "Jelaskan perbedaan pengomposan aerobik dan anaerobik, termasuk hasil yang dapat diperoleh dari masing-masing.",
+      "sourceChunk": "3.2",
+      "pdfPage": 17,
+      "rubricPoints": [
+        {
+          "point": "Pengomposan aerobik memakai mikroorganisme yang memerlukan oksigen.",
+          "sourceChunk": "3.2",
+          "pdfPage": 17,
+          "quote": "Mikroorganisme yang memerlukan oksigen mengurai bahan organik."
+        },
+        {
+          "point": "Aerobik lebih cepat dan panasnya membantu membunuh patogen dan biji gulma.",
+          "sourceChunk": "3.2",
+          "pdfPage": 17,
+          "quote": "Prosesnya lebih cepat dan menghasilkan panas 50-70°C yang membantu membunuh patogen (kuman penyakit) dan biji gulma."
+        },
+        {
+          "point": "Proses tanpa oksigen (anaerobik) menghasilkan biogas lewat fermentasi oleh bakteri metanogen.",
+          "sourceChunk": "3.3",
+          "pdfPage": 18,
+          "quote": "Biogas dihasilkan dari fermentasi anaerobik bahan organik oleh bakteri metanogen."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "organik-essay-02",
+      "pool": "organik",
+      "type": "essay",
+      "difficulty": "Sulit",
+      "question": "Mengapa sampah organik sebaiknya diolah menjadi kompos atau biogas daripada dibuang ke TPA? Jelaskan dengan alasan tentang dampak lingkungannya.",
+      "sourceChunk": "9.qa",
+      "pdfPage": 34,
+      "rubricPoints": [
+        {
+          "point": "Sampah organik yang membusuk tanpa oksigen di TPA menghasilkan metana, gas rumah kaca.",
+          "sourceChunk": "9.qa",
+          "pdfPage": 34,
+          "quote": "Sampah organik yang membusuk tanpa oksigen di TPA menghasilkan metana, gas rumah kaca dengan potensi pemanasan sekitar 25-28 kali CO2."
+        },
+        {
+          "point": "Daur ulang mengurangi beban TPA dan dampak negatif sampah.",
+          "sourceChunk": "3.1",
+          "pdfPage": 17,
+          "quote": "Daur ulang adalah bagian dari strategi pengelolaan sampah untuk mengurangi beban TPA (Tempat Pemrosesan Akhir) dan dampak negatif sampah terhadap lingkungan."
+        },
+        {
+          "point": "Pengomposan menghasilkan kompos yang berguna sebagai pupuk organik.",
+          "sourceChunk": "3.2",
+          "pdfPage": 17,
+          "quote": "Pengomposan adalah proses dekomposisi bahan organik oleh mikroorganisme dalam kondisi terkontrol untuk menghasilkan kompos sebagai pupuk organik (Damanhuri dan Padmi, 2010)."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-mc-01",
+      "pool": "paper_family",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Kertas dan karton bekas dapat terurai secara alami. Serat apa yang menjadi bahan asalnya?",
+      "correct": "Serat tumbuhan",
+      "wrong": [
+        "Bahan sintetis",
+        "Bahan mineral",
+        "Lapisan plastik dan aluminium"
+      ],
+      "explanation": "Modul menyebut kertas dan karton berasal dari serat tumbuhan sehingga dapat terurai.",
+      "sourceChunk": "1.3",
+      "pdfPage": 7,
+      "quote": "Kertas dan karton berasal dari serat tumbuhan sehingga dapat terurai, tetapi di sistem pemilahan sehari-hari sering ditaruh pada kelompok anorganik daur ulang karena lebih bernilai bila didaur ulang menjadi kertas baru (lihat Bab 4).",
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-mc-02",
+      "pool": "paper_family",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Dalam pemilahan sehari-hari, kertas bekas sering ditaruh di kelompok mana, dan mengapa?",
+      "correct": "Anorganik daur ulang, karena lebih bernilai bila didaur ulang menjadi kertas baru",
+      "wrong": [
+        "Kelompok B3, karena tinta kertas termasuk bahan berbahaya dan beracun",
+        "Kelompok residu, karena kertas tidak dapat didaur ulang",
+        "Kelompok sampah karet dan tekstil sintetis"
+      ],
+      "explanation": "Kertas bersifat dapat terurai, tetapi dalam pemilahan sehari-hari sering dimasukkan ke anorganik daur ulang karena lebih bernilai didaur ulang.",
+      "sourceChunk": "9.qa",
+      "pdfPage": 34,
+      "quote": "Kertas berasal dari serat tumbuhan sehingga bersifat dapat terurai, namun dalam pemilahan sehari-hari sering dimasukkan ke anorganik daur ulang karena lebih bernilai didaur ulang menjadi kertas.",
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-mc-03",
+      "pool": "paper_family",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Mengapa kertas hanya dapat didaur ulang beberapa kali saja?",
+      "correct": "Serat selulosanya memendek setiap kali didaur ulang",
+      "wrong": [
+        "Tintanya tidak dapat dihilangkan setelah daur ulang pertama",
+        "Kertas harus dilebur pada suhu tinggi seperti logam",
+        "Kertas berubah sifat menjadi non-biodegradable setelah dicampur air"
+      ],
+      "explanation": "Modul menjelaskan serat selulosa memendek pada setiap daur ulang, sehingga kertas hanya dapat didaur ulang sekitar 5-7 kali.",
+      "sourceChunk": "4.3",
+      "pdfPage": 21,
+      "quote": "Serat selulosa kertas memendek setiap kali didaur ulang, sehingga kertas dapat didaur ulang sekitar 5-7 kali (Arief, 2016).",
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-mc-04",
+      "pool": "paper_family",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Pada daur ulang kertas, apa yang dilakukan pada tahap de-inking?",
+      "correct": "Menghilangkan tinta dari kertas",
+      "wrong": [
+        "Melebur kertas menjadi pelet",
+        "Memisahkan kertas dengan magnet",
+        "Melapisi kertas dengan plastik agar awet"
+      ],
+      "explanation": "Dalam tahapan daur ulang kertas di modul, de-inking adalah tahap penghilangan tinta; pelet dan magnet dipakai pada plastik dan logam.",
+      "sourceChunk": "4.3",
+      "pdfPage": 21,
+      "quote": "3. Penghilangan tinta (de-inking).",
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-mc-05",
+      "pool": "paper_family",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Kardus polos dan kertas berminyak bekas wadah gorengan sama-sama berbahan kertas. Apa bedanya bila akan dikomposkan?",
+      "correct": "Kertas berminyak tidak cocok dikomposkan, sedangkan kardus polos termasuk produk organik yang dapat terurai",
+      "wrong": [
+        "Kertas berminyak lebih cepat terurai karena minyaknya membantu mikroba",
+        "Keduanya termasuk B3 karena berasal dari kemasan makanan",
+        "Kardus polos tidak dapat terurai karena tebal, sedangkan kertas berminyak dapat"
+      ],
+      "explanation": "Modul memasukkan kardus polos ke produk organik terurai, tetapi kertas berlapis plastik, berminyak, atau berlaminasi tidak cocok dikomposkan.",
+      "sourceChunk": "1.3",
+      "pdfPage": 7,
+      "quote": "Kertas berlapis plastik, berminyak, atau berlaminasi (misalnya kemasan karton minuman, lihat 4.6) tidak cocok dikomposkan.",
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-mc-06",
+      "pool": "paper_family",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Seorang mahasiswa mengutip angka jumlah pohon yang diselamatkan per ton kertas daur ulang. Sikap apa yang dianjurkan?",
+      "correct": "Memverifikasi angka itu dari sumber primer, karena besarnya bervariasi antar sumber dan antar pabrik",
+      "wrong": [
+        "Langsung memakai angka itu karena semua sumber memberi angka yang sama",
+        "Menganggap daur ulang kertas tidak menghemat bahan baku sama sekali",
+        "Menggantinya dengan angka penghematan energi aluminium karena berlaku untuk semua bahan"
+      ],
+      "explanation": "Modul menyebut daur ulang kertas menghemat bahan baku, air, dan energi, tetapi besar penghematan yang dikutip bervariasi dan perlu diverifikasi.",
+      "sourceChunk": "4.3",
+      "pdfPage": 21,
+      "quote": "Besaran penghematan yang sering dikutip (misalnya jumlah pohon atau liter air per ton) bervariasi antar sumber dan antar pabrik, sehingga sebaiknya diverifikasi dari sumber primer sebelum dipakai sebagai data.",
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-essay-01",
+      "pool": "paper_family",
+      "type": "essay",
+      "difficulty": "Sedang",
+      "question": "Jelaskan posisi kertas dan karton dalam klasifikasi sampah: sifat bahannya dan kelompoknya dalam praktik pemilahan.",
+      "sourceChunk": "1.3",
+      "pdfPage": 7,
+      "rubricPoints": [
+        {
+          "point": "Kertas dan karton berasal dari serat tumbuhan sehingga dapat terurai.",
+          "sourceChunk": "1.3",
+          "pdfPage": 7,
+          "quote": "Kertas dan karton berasal dari serat tumbuhan sehingga dapat terurai, tetapi di sistem pemilahan sehari-hari sering ditaruh pada kelompok anorganik daur ulang karena lebih bernilai bila didaur ulang menjadi kertas baru (lihat Bab 4)."
+        },
+        {
+          "point": "Dalam pemilahan sehari-hari kertas sering dimasukkan ke anorganik daur ulang karena lebih bernilai didaur ulang.",
+          "sourceChunk": "9.qa",
+          "pdfPage": 34,
+          "quote": "Kertas berasal dari serat tumbuhan sehingga bersifat dapat terurai, namun dalam pemilahan sehari-hari sering dimasukkan ke anorganik daur ulang karena lebih bernilai didaur ulang menjadi kertas."
+        },
+        {
+          "point": "Kertas berlapis plastik, berminyak, atau berlaminasi tidak cocok dikomposkan.",
+          "sourceChunk": "1.3",
+          "pdfPage": 7,
+          "quote": "Kertas berlapis plastik, berminyak, atau berlaminasi (misalnya kemasan karton minuman, lihat 4.6) tidak cocok dikomposkan."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-essay-02",
+      "pool": "paper_family",
+      "type": "essay",
+      "difficulty": "Sulit",
+      "question": "Uraikan bagaimana kertas bekas diolah menjadi kertas baru dan mengapa jumlah daur ulangnya terbatas.",
+      "sourceChunk": "4.3",
+      "pdfPage": 21,
+      "rubricPoints": [
+        {
+          "point": "Serat dilumatkan dalam air (pulping).",
+          "sourceChunk": "4.3",
+          "pdfPage": 21,
+          "quote": "2. Perendaman dan pelumatan serat dalam air (pulping)."
+        },
+        {
+          "point": "Tinta dihilangkan (de-inking) sebelum serat disaring dan dibentuk ulang.",
+          "sourceChunk": "4.3",
+          "pdfPage": 21,
+          "quote": "3. Penghilangan tinta (de-inking)."
+        },
+        {
+          "point": "Serat selulosa memendek setiap kali didaur ulang, jadi jumlah daur ulang terbatas.",
+          "sourceChunk": "4.3",
+          "pdfPage": 21,
+          "quote": "Serat selulosa kertas memendek setiap kali didaur ulang, sehingga kertas dapat didaur ulang sekitar 5-7 kali (Arief, 2016)."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-mc-01",
+      "pool": "plastic",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Kemasan plastik bekas sulit terurai di lingkungan. Sifat bahan apa yang menyebabkan hal itu?",
+      "correct": "Karena berasal dari bahan sintetis yang sangat sulit diuraikan mikroorganisme",
+      "wrong": [
+        "Karena berasal dari makhluk hidup",
+        "Karena mengandung bahan berbahaya sehingga selalu termasuk B3",
+        "Karena dapat dikomposkan bersama sisa makanan"
+      ],
+      "explanation": "Modul menyebut sampah non-organik, termasuk plastik, berasal dari bahan sintetis atau anorganis yang sangat sulit diuraikan mikroorganisme.",
+      "sourceChunk": "1.4",
+      "pdfPage": 7,
+      "quote": "Sampah non-organik berasal dari bahan sintetis atau bahan anorganis yang tidak dapat atau sangat sulit diuraikan mikroorganisme.",
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-mc-02",
+      "pool": "plastic",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Menurut data SIPSN 2024, di posisi mana plastik dalam komposisi sampah nasional?",
+      "correct": "Kedua, setelah sisa makanan",
+      "wrong": [
+        "Pertama, di atas sisa makanan",
+        "Ketiga, setelah kayu dan ranting",
+        "Terakhir, setelah kertas dan karton"
+      ],
+      "explanation": "Ringkasan Bab 1 menyebut sisa makanan sebagai komponen terbesar, disusul plastik.",
+      "sourceChunk": "1.summary",
+      "pdfPage": 8,
+      "quote": "Di Indonesia 2024, sisa makanan adalah komponen terbesar (39,87%), disusul plastik (19,54%).",
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-mc-03",
+      "pool": "plastic",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Pada daur ulang plastik, untuk apa kode jenis resin (1 = PET, 2 = HDPE, dan seterusnya) dipakai?",
+      "correct": "Untuk memilah plastik pada tahap pengumpulan",
+      "wrong": [
+        "Untuk menentukan suhu tumpukan kompos",
+        "Untuk menandai plastik sebagai sampah B3",
+        "Untuk memisahkan plastik dengan magnet"
+      ],
+      "explanation": "Tahap pertama daur ulang plastik di modul adalah pengumpulan dan pemilahan berdasarkan kode jenis resin.",
+      "sourceChunk": "4.2",
+      "pdfPage": 20,
+      "quote": "1. Pengumpulan dan pemilahan berdasarkan kode jenis resin (1 = PET, 2 = HDPE, dan seterusnya).",
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-mc-04",
+      "pool": "plastic",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Serpihan PET dan HDPE tercampur di bak air. Plastik mana yang diambil dari permukaan air?",
+      "correct": "HDPE, karena massa jenisnya lebih kecil dari air",
+      "wrong": [
+        "PET, karena massa jenisnya lebih kecil dari air",
+        "PET, karena massa jenisnya lebih besar dari air",
+        "Tidak ada, karena keduanya tenggelam"
+      ],
+      "explanation": "Contoh soal di modul menunjukkan HDPE (0,95) mengapung dan PET (1,38) tenggelam karena dibandingkan dengan air (1,00).",
+      "sourceChunk": "6.1",
+      "pdfPage": 26,
+      "quote": "Jawab: HDPE (0,95 < 1,00) mengapung dan diambil dari permukaan; PET (1,38 > 1,00) tenggelam dan diambil dari dasar.",
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-mc-05",
+      "pool": "plastic",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Serpihan PP dan HDPE sama-sama mengapung di air. Apa yang diperlukan untuk memisahkan keduanya?",
+      "correct": "Larutan dengan massa jenis antara 0,90 dan 0,95 g/cm3, misalnya campuran alkohol dan air",
+      "wrong": [
+        "Magnet, karena PP tertarik magnet sedangkan HDPE tidak",
+        "Larutan dengan massa jenis di atas 1,38 g/cm3",
+        "Larutan dengan massa jenis di bawah 0,90 g/cm3"
+      ],
+      "explanation": "Karena keduanya lebih ringan dari air, modul menyarankan larutan dengan massa jenis di antara massa jenis PP dan HDPE.",
+      "sourceChunk": "6.1",
+      "pdfPage": 26,
+      "quote": "Untuk memisahkan PP dari HDPE, diperlukan larutan dengan massa jenis antara 0,90 dan 0,95 g/cm3 (misalnya campuran alkohol dan air).",
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-mc-06",
+      "pool": "plastic",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Menurut urutan prioritas 3R, tindakan mana yang paling utama untuk plastik sekali pakai?",
+      "correct": "Mengurangi pemakaiannya sejak awal (reduce)",
+      "wrong": [
+        "Langsung mendaur ulangnya (recycle) karena recycle lebih utama daripada reduce",
+        "Memakainya kembali (reuse) karena reuse lebih utama daripada reduce",
+        "Menimbunnya di TPA agar tidak tersebar di lingkungan"
+      ],
+      "explanation": "Modul menyebut urutan 3R menunjukkan prioritas: reduce lebih utama daripada reuse, dan reuse lebih utama daripada recycle.",
+      "sourceChunk": "4.1",
+      "pdfPage": 20,
+      "quote": "Urutan menunjukkan prioritas: Reduce lebih utama daripada Reuse, dan Reuse lebih utama daripada Recycle.",
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-essay-01",
+      "pool": "plastic",
+      "type": "essay",
+      "difficulty": "Sedang",
+      "question": "Jelaskan tahapan daur ulang plastik, dari pengumpulan sampai menjadi bahan untuk produk baru.",
+      "sourceChunk": "4.2",
+      "pdfPage": 20,
+      "rubricPoints": [
+        {
+          "point": "Plastik dikumpulkan dan dipilah menurut kode jenis resin.",
+          "sourceChunk": "4.2",
+          "pdfPage": 20,
+          "quote": "1. Pengumpulan dan pemilahan berdasarkan kode jenis resin (1 = PET, 2 = HDPE, dan seterusnya)."
+        },
+        {
+          "point": "Plastik dibersihkan lalu dicacah menjadi serpihan (flakes).",
+          "sourceChunk": "4.2",
+          "pdfPage": 20,
+          "quote": "3. Pencacahan (shredding) menjadi serpihan (flakes)."
+        },
+        {
+          "point": "Serpihan dilebur pada suhu tinggi.",
+          "sourceChunk": "4.2",
+          "pdfPage": 20,
+          "quote": "4. Peleburan pada suhu tinggi (sekitar 200-300°C)."
+        },
+        {
+          "point": "Hasil leburan dibentuk menjadi pelet plastik daur ulang.",
+          "sourceChunk": "4.2",
+          "pdfPage": 20,
+          "quote": "5. Pembentukan pelet plastik daur ulang."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-essay-02",
+      "pool": "plastic",
+      "type": "essay",
+      "difficulty": "Sulit",
+      "question": "Jelaskan bagaimana konsep massa jenis dipakai untuk memisahkan jenis plastik di fasilitas daur ulang, dengan contoh PET dan HDPE.",
+      "sourceChunk": "6.1",
+      "pdfPage": 26,
+      "rubricPoints": [
+        {
+          "point": "Benda mengapung bila massa jenisnya lebih kecil daripada massa jenis fluida.",
+          "sourceChunk": "6.1",
+          "pdfPage": 26,
+          "quote": "Benda mengapung dalam fluida bila massa jenisnya lebih kecil daripada massa jenis fluida."
+        },
+        {
+          "point": "HDPE mengapung dan PET tenggelam di air, sehingga keduanya dapat diambil terpisah.",
+          "sourceChunk": "6.1",
+          "pdfPage": 26,
+          "quote": "Jawab: HDPE (0,95 < 1,00) mengapung dan diambil dari permukaan; PET (1,38 > 1,00) tenggelam dan diambil dari dasar."
+        },
+        {
+          "point": "Pemisahan apung-tenggelam ini dipakai di fasilitas daur ulang.",
+          "sourceChunk": "4.2",
+          "pdfPage": 21,
+          "quote": "Kerapatan dipakai pada pemisahan apung-tenggelam (float-sink) di fasilitas daur ulang."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "glass-mc-01",
+      "pool": "glass",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Saat memilah benda berbahan kaca, kelompok benda mana yang dapat dikumpulkan bersama?",
+      "correct": "Botol kaca, pecahan kaca jendela, dan cermin",
+      "wrong": [
+        "Lampu TL dan lampu hemat energi (CFL)",
+        "Kaleng aluminium dan kawat logam",
+        "Styrofoam dan kantong kresek"
+      ],
+      "explanation": "Modul memberi contoh sampah kaca berupa botol kaca, pecahan kaca jendela, dan cermin; lampu TL dan CFL termasuk B3.",
+      "sourceChunk": "1.4",
+      "pdfPage": 7,
+      "quote": "Botol kaca, pecahan kaca jendela dan cermin.",
+      "status": "accepted"
+    },
+    {
+      "id": "glass-mc-02",
+      "pool": "glass",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Dalam daur ulang kaca, sampah kaca dipilah menurut apa?",
+      "correct": "Warnanya",
+      "wrong": [
+        "Kode jenis resinnya",
+        "Sifat magnetiknya",
+        "Kadar kelembabannya"
+      ],
+      "explanation": "Modul menyebut kaca dipilah menurut warna sebelum dicuci, dihancurkan, dilebur, dan dibentuk ulang.",
+      "sourceChunk": "4.5",
+      "pdfPage": 21,
+      "quote": "Kaca: dipilah menurut warna, dicuci, dihancurkan (cullet), dilebur, dan dibentuk ulang.",
+      "status": "accepted"
+    },
+    {
+      "id": "glass-mc-03",
+      "pool": "glass",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Mengapa lampu TL, neon, dan CFL tidak dimasukkan ke sampah kaca biasa?",
+      "correct": "Karena mengandung merkuri sehingga termasuk sampah B3",
+      "wrong": [
+        "Karena terbuat dari plastik, bukan kaca",
+        "Karena dapat dikomposkan bersama sampah organik",
+        "Karena kacanya tertarik magnet"
+      ],
+      "explanation": "Modul membedakan bohlam pijar biasa dari lampu TL, neon, dan CFL yang mengandung merkuri sehingga termasuk B3.",
+      "sourceChunk": "1.4",
+      "pdfPage": 7,
+      "quote": "Lampu bohlam pijar biasa terbuat dari kaca dan kawat logam, tetapi lampu TL, neon, dan lampu hemat energi (CFL) mengandung merkuri sehingga termasuk sampah B3 (Bab 2).",
+      "status": "accepted"
+    },
+    {
+      "id": "glass-mc-04",
+      "pool": "glass",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Saat sampah dipilah dengan magnet di fasilitas daur ulang, bagaimana perilaku kaca?",
+      "correct": "Tidak tertarik magnet, sama seperti aluminium dan plastik",
+      "wrong": [
+        "Tertarik magnet seperti besi dan baja",
+        "Tertarik magnet bila kacanya berwarna gelap",
+        "Tertarik magnet bila kacanya pecah menjadi cullet"
+      ],
+      "explanation": "Modul menyebut hanya logam feromagnetik seperti besi dan baja yang tertarik magnet; kaca tidak.",
+      "sourceChunk": "6.8",
+      "pdfPage": 27,
+      "quote": "Logam feromagnetik (besi, baja) tertarik magnet, sedangkan aluminium, tembaga, kaca, dan plastik tidak.",
+      "status": "accepted"
+    },
+    {
+      "id": "glass-mc-05",
+      "pool": "glass",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Apa perbedaan daur ulang kaca dan daur ulang kertas?",
+      "correct": "Kaca dapat didaur ulang berkali-kali tanpa kehilangan mutu, sedangkan serat kertas memendek setiap kali didaur ulang",
+      "wrong": [
+        "Kertas dapat didaur ulang tanpa batas, sedangkan kaca hanya sekali",
+        "Keduanya kehilangan mutu dan hanya dapat didaur ulang sekali",
+        "Keduanya diproses dengan pelumatan dalam air (pulping)"
+      ],
+      "explanation": "Modul menyebut kaca tidak kehilangan mutu saat didaur ulang, sedangkan serat kertas memendek sehingga kertas hanya dapat didaur ulang beberapa kali.",
+      "sourceChunk": "4.5",
+      "pdfPage": 21,
+      "quote": "Kaca dapat didaur ulang berkali-kali tanpa kehilangan mutu; botol utuh lebih baik dipakai ulang (reuse).",
+      "status": "accepted"
+    },
+    {
+      "id": "glass-mc-06",
+      "pool": "glass",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Sebuah lampu CFL pecah di kamar. Tindakan mana yang aman?",
+      "correct": "Memakai sarung tangan dan mengumpulkan pecahan dengan kertas karton atau selotip",
+      "wrong": [
+        "Menyapu pecahan lalu membuangnya ke kelompok sampah kaca biasa",
+        "Menyedot pecahan dengan penyedot debu agar tidak ada yang tertinggal",
+        "Membakar pecahan agar merkurinya hilang"
+      ],
+      "explanation": "Lampu CFL mengandung merkuri; modul meminta pecahan dikumpulkan dengan sarung tangan, tanpa sapu atau penyedot debu, dan diperlakukan sebagai B3.",
+      "sourceChunk": "2.8",
+      "pdfPage": 15,
+      "quote": "Gunakan sarung tangan; kumpulkan pecahan dengan kertas karton atau selotip.",
+      "status": "accepted"
+    },
+    {
+      "id": "glass-essay-01",
+      "pool": "glass",
+      "type": "essay",
+      "difficulty": "Sedang",
+      "question": "Jelaskan proses daur ulang kaca dan mengapa botol kaca yang masih utuh lebih baik dipakai ulang.",
+      "sourceChunk": "4.5",
+      "pdfPage": 21,
+      "rubricPoints": [
+        {
+          "point": "Kaca dipilah menurut warna, dicuci, dihancurkan menjadi cullet, dilebur, dan dibentuk ulang.",
+          "sourceChunk": "4.5",
+          "pdfPage": 21,
+          "quote": "Kaca: dipilah menurut warna, dicuci, dihancurkan (cullet), dilebur, dan dibentuk ulang."
+        },
+        {
+          "point": "Kaca dapat didaur ulang berkali-kali tanpa kehilangan mutu, tetapi botol utuh lebih baik dipakai ulang.",
+          "sourceChunk": "4.5",
+          "pdfPage": 21,
+          "quote": "Kaca dapat didaur ulang berkali-kali tanpa kehilangan mutu; botol utuh lebih baik dipakai ulang (reuse)."
+        },
+        {
+          "point": "Dalam 3R, reuse lebih utama daripada recycle.",
+          "sourceChunk": "4.1",
+          "pdfPage": 20,
+          "quote": "Urutan menunjukkan prioritas: Reduce lebih utama daripada Reuse, dan Reuse lebih utama daripada Recycle."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "glass-essay-02",
+      "pool": "glass",
+      "type": "essay",
+      "difficulty": "Sulit",
+      "question": "Jelaskan mengapa tidak semua benda berbahan kaca boleh dimasukkan ke kelompok non-organik biasa.",
+      "sourceChunk": "1.4",
+      "pdfPage": 7,
+      "rubricPoints": [
+        {
+          "point": "Lampu TL, neon, dan CFL mengandung merkuri sehingga termasuk B3.",
+          "sourceChunk": "1.4",
+          "pdfPage": 7,
+          "quote": "Lampu bohlam pijar biasa terbuat dari kaca dan kawat logam, tetapi lampu TL, neon, dan lampu hemat energi (CFL) mengandung merkuri sehingga termasuk sampah B3 (Bab 2)."
+        },
+        {
+          "point": "Benda non-organik seperti kaca berpindah ke kelompok B3 bila mengandung bahan berbahaya.",
+          "sourceChunk": "1.6",
+          "pdfPage": 8,
+          "quote": "Sebagian benda non-organik (logam, kaca) sebenarnya berpindah ke kelompok B3 bila mengandung bahan berbahaya."
+        },
+        {
+          "point": "Pecahan lampu neon atau CFL disimpan di wadah tertutup dan diperlakukan sebagai B3.",
+          "sourceChunk": "2.8",
+          "pdfPage": 15,
+          "quote": "3. Masukkan semua pecahan ke wadah tertutup (misalnya toples kaca bertutup) dan perlakukan sebagai sampah B3."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "metal-mc-01",
+      "pool": "metal",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Saat memilah benda berbahan logam, kelompok benda mana yang dapat dikumpulkan bersama?",
+      "correct": "Kaleng aluminium minuman, potongan besi, dan pipa logam",
+      "wrong": [
+        "Botol kaca dan cermin",
+        "Kantong kresek dan styrofoam",
+        "Ban bekas dan sandal karet"
+      ],
+      "explanation": "Modul memberi contoh sampah logam berupa kaleng aluminium, potongan besi, baja, tembaga, pipa, dan kawat logam.",
+      "sourceChunk": "1.4",
+      "pdfPage": 7,
+      "quote": "Kaleng aluminium minuman dan makanan kaleng, potongan besi, baja, tembaga, pipa dan kawat logam.",
+      "status": "accepted"
+    },
+    {
+      "id": "metal-mc-02",
+      "pool": "metal",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Mendaur ulang aluminium memerlukan kira-kira berapa energi dibanding membuatnya dari bijih bauksit?",
+      "correct": "Sekitar 5%",
+      "wrong": [
+        "Sekitar 50%",
+        "Sekitar 95%",
+        "Sama besar, sekitar 100%"
+      ],
+      "explanation": "Modul menyebut daur ulang aluminium hanya memerlukan sekitar 5% energi produksi dari bauksit; 95% adalah penghematannya.",
+      "sourceChunk": "4.4",
+      "pdfPage": 21,
+      "quote": "Daur ulang logam, khususnya aluminium, sangat hemat energi: mendaur ulang aluminium hanya memerlukan sekitar 5% energi dibanding membuatnya dari bijih bauksit (Tchobanoglous dkk., 1993).",
+      "status": "accepted"
+    },
+    {
+      "id": "metal-mc-03",
+      "pool": "metal",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Bagaimana cara sederhana membedakan kaleng baja dari kaleng aluminium?",
+      "correct": "Mendekatkan magnet: kaleng yang menempel berbahan baja",
+      "wrong": [
+        "Mendekatkan magnet: kaleng yang menempel berbahan aluminium",
+        "Membaca kode jenis resin pada kaleng",
+        "Memilah kaleng menurut warnanya seperti memilah kaca"
+      ],
+      "explanation": "Modul menjelaskan besi dan baja tertarik magnet, sedangkan aluminium tidak, sehingga magnet memisahkan kedua jenis kaleng.",
+      "sourceChunk": "6.8",
+      "pdfPage": 27,
+      "quote": "Uji sederhana di kelas: dekatkan magnet ke kaleng; bila menempel, kaleng berbahan baja.",
+      "status": "accepted"
+    },
+    {
+      "id": "metal-mc-04",
+      "pool": "metal",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Pada tahap peleburan daur ulang logam, logam mana yang melebur pada suhu lebih rendah?",
+      "correct": "Aluminium, sekitar 660°C",
+      "wrong": [
+        "Besi, sekitar 660°C",
+        "Aluminium, sekitar 1538°C",
+        "Keduanya sama, sekitar 200-300°C"
+      ],
+      "explanation": "Modul menyebut aluminium dilebur sekitar 660°C dan besi sekitar 1538°C; 200-300°C adalah suhu lebur plastik.",
+      "sourceChunk": "4.4",
+      "pdfPage": 21,
+      "quote": "3. Peleburan di tanur: aluminium sekitar 660°C, besi sekitar 1538°C.",
+      "status": "accepted"
+    },
+    {
+      "id": "metal-mc-05",
+      "pool": "metal",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Secara teoritis, melebur 1 kg aluminium dari 25°C memerlukan sekitar 0,97 MJ. Mengapa tanur nyata memerlukan energi lebih banyak?",
+      "correct": "Karena ada rugi panas; perhitungan itu hanya energi minimum untuk meleburkan",
+      "wrong": [
+        "Karena aluminium harus dipanaskan sampai sekitar 1538°C",
+        "Karena perhitungan itu sudah termasuk energi elektrolisis bauksit",
+        "Karena kalor lebur aluminium tidak ikut dihitung"
+      ],
+      "explanation": "Modul menegaskan nilai 0,97 MJ adalah batas teoritis; tanur nyata memerlukan lebih banyak karena rugi panas.",
+      "sourceChunk": "6.2",
+      "pdfPage": 26,
+      "quote": "Ini hanya energi minimum untuk meleburkan; tanur nyata memerlukan lebih banyak karena rugi panas.",
+      "status": "accepted"
+    },
+    {
+      "id": "metal-mc-06",
+      "pool": "metal",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Apa dasar klaim bahwa daur ulang aluminium hemat sekitar 95% energi?",
+      "correct": "Energi untuk melebur aluminium jauh lebih kecil daripada energi memproduksinya dari bauksit lewat elektrolisis",
+      "wrong": [
+        "Aluminium bekas tidak perlu dilebur saat didaur ulang",
+        "Aluminium melebur pada suhu lebih tinggi daripada besi",
+        "Kaleng aluminium dapat dipisahkan dengan magnet sehingga tidak perlu dipilah"
+      ],
+      "explanation": "Modul membandingkan energi teoritis melebur aluminium dengan energi produksi dari bauksit lewat elektrolisis yang jauh lebih besar.",
+      "sourceChunk": "6.2",
+      "pdfPage": 26,
+      "quote": "Namun nilai ini jauh lebih kecil daripada energi untuk memproduksi aluminium dari bauksit lewat elektrolisis, yang menjadi dasar klaim bahwa daur ulang aluminium hemat sekitar 95% energi.",
+      "status": "accepted"
+    },
+    {
+      "id": "metal-essay-01",
+      "pool": "metal",
+      "type": "essay",
+      "difficulty": "Sedang",
+      "question": "Jelaskan tahapan daur ulang logam dan bagaimana logam besi dipisahkan dari logam lain.",
+      "sourceChunk": "4.4",
+      "pdfPage": 21,
+      "rubricPoints": [
+        {
+          "point": "Logam dipilah menurut jenisnya; magnet dapat memisahkan logam besi.",
+          "sourceChunk": "4.4",
+          "pdfPage": 21,
+          "quote": "1. Pengumpulan dan pemilahan menurut jenis logam (magnet dapat memisahkan logam besi)."
+        },
+        {
+          "point": "Logam dibersihkan dari kontaminan seperti cat dan plastik.",
+          "sourceChunk": "4.4",
+          "pdfPage": 21,
+          "quote": "2. Pembersihan dari kontaminan (cat, plastik)."
+        },
+        {
+          "point": "Logam dilebur, dimurnikan, lalu dicetak menjadi ingot atau produk baru.",
+          "sourceChunk": "4.4",
+          "pdfPage": 21,
+          "quote": "5. Pencetakan menjadi ingot atau produk baru."
+        },
+        {
+          "point": "Besi dan baja tertarik magnet, sedangkan aluminium tidak.",
+          "sourceChunk": "6.8",
+          "pdfPage": 27,
+          "quote": "Logam feromagnetik (besi, baja) tertarik magnet, sedangkan aluminium, tembaga, kaca, dan plastik tidak."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "metal-essay-02",
+      "pool": "metal",
+      "type": "essay",
+      "difficulty": "Sulit",
+      "question": "Jelaskan mengapa daur ulang aluminium sangat dianjurkan, dengan membandingkan energi daur ulang dan produksi dari bijih.",
+      "sourceChunk": "6.2",
+      "pdfPage": 26,
+      "rubricPoints": [
+        {
+          "point": "Daur ulang aluminium hanya memerlukan sekitar 5% energi produksi dari bauksit.",
+          "sourceChunk": "4.4",
+          "pdfPage": 21,
+          "quote": "Daur ulang logam, khususnya aluminium, sangat hemat energi: mendaur ulang aluminium hanya memerlukan sekitar 5% energi dibanding membuatnya dari bijih bauksit (Tchobanoglous dkk., 1993)."
+        },
+        {
+          "point": "Energi teoritis melebur 1 kg aluminium sekitar 0,97 MJ.",
+          "sourceChunk": "6.2",
+          "pdfPage": 26,
+          "quote": "Total Q = 968.500 J ≈ 0,97 MJ."
+        },
+        {
+          "point": "Energi itu jauh lebih kecil daripada produksi dari bauksit lewat elektrolisis, walau tanur nyata butuh lebih karena rugi panas.",
+          "sourceChunk": "6.2",
+          "pdfPage": 26,
+          "quote": "Namun nilai ini jauh lebih kecil daripada energi untuk memproduksi aluminium dari bauksit lewat elektrolisis, yang menjadi dasar klaim bahwa daur ulang aluminium hemat sekitar 95% energi."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "tetra_pak-mc-01",
+      "pool": "tetra_pak",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Kemasan karton minuman seperti kotak susu atau jus termasuk jenis kemasan apa?",
+      "correct": "Kemasan berlapis (multilayer)",
+      "wrong": [
+        "Kemasan logam tanpa lapisan",
+        "Kemasan kertas polos tanpa lapisan",
+        "Kemasan kaca"
+      ],
+      "explanation": "Modul menyebut kemasan karton minuman sebagai kemasan berlapis (multilayer).",
+      "sourceChunk": "4.6",
+      "pdfPage": 21,
+      "quote": "Kemasan karton minuman, misalnya kotak susu atau jus (sering dikenal dengan merek Tetra Pak), adalah kemasan berlapis (multilayer).",
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "tetra_pak-mc-02",
+      "pool": "tetra_pak",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Bahan apa saja yang menyusun kemasan karton minuman?",
+      "correct": "Kertas karton yang dilapisi plastik dan lapisan tipis aluminium foil",
+      "wrong": [
+        "Kertas karton yang dilapisi kaca",
+        "Plastik dan baja",
+        "Kertas polos saja"
+      ],
+      "explanation": "Modul menyebut kemasan ini sebagian besar kertas karton, dilapisi plastik dan aluminium foil tipis.",
+      "sourceChunk": "4.6",
+      "pdfPage": 21,
+      "quote": "Sebagian besar terdiri dari kertas karton, dilapisi plastik dan lapisan tipis aluminium foil.",
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "tetra_pak-mc-03",
+      "pool": "tetra_pak",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Apa alasan kemasan karton minuman bekas dimasukkan ke non-organik daur ulang, bukan ke kompos?",
+      "correct": "Lapisan plastik dan aluminiumnya membuat kemasan tidak dapat dikomposkan",
+      "wrong": [
+        "Kertasnya mengandung merkuri",
+        "Kemasan itu termasuk sampah B3",
+        "Kertasnya tidak dapat didaur ulang sama sekali"
+      ],
+      "explanation": "Walau sebagian besar bahannya kertas, kemasan ini berlapis plastik dan aluminium sehingga tidak dapat dikomposkan dan masuk non-organik daur ulang.",
+      "sourceChunk": "4.6",
+      "pdfPage": 22,
+      "quote": "Kemasan karton minuman bekas termasuk sampah non-organik yang dapat didaur ulang meskipun sebagian besar bahannya kertas, karena berlapis plastik dan aluminium sehingga tidak dapat dikomposkan.",
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "tetra_pak-mc-04",
+      "pool": "tetra_pak",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Apa fungsi lapisan plastik dan aluminium pada kemasan karton minuman?",
+      "correct": "Menjaga isi minuman tetap awet dan tidak bocor",
+      "wrong": [
+        "Membuat kemasan mudah dikomposkan",
+        "Membuat kemasan tertarik magnet saat dipilah",
+        "Menjadikan kemasan termasuk sampah B3"
+      ],
+      "explanation": "Modul menyebut lapisan plastik dan aluminium berfungsi menjaga isi minuman tetap awet dan tidak bocor.",
+      "sourceChunk": "4.6",
+      "pdfPage": 21,
+      "quote": "Lapisan plastik dan aluminium menjaga isi minuman tetap awet dan tidak bocor.",
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "tetra_pak-mc-05",
+      "pool": "tetra_pak",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Apa yang terjadi pada tahap pulping dalam daur ulang kemasan karton minuman?",
+      "correct": "Karton dicampur air di mesin pulper sehingga serat kertas terlepas dari lapisan plastik dan aluminium",
+      "wrong": [
+        "Kemasan dilebur sekitar 660°C untuk memisahkan aluminium",
+        "Kemasan dipisahkan dengan magnet untuk mengambil aluminiumnya",
+        "Kemasan dikomposkan agar lapisan plastiknya terurai"
+      ],
+      "explanation": "Menurut tahap daur ulang yang dikutip modul, pulping memakai air di mesin pulper untuk melepaskan serat dari plastik dan aluminium.",
+      "sourceChunk": "4.6",
+      "pdfPage": 22,
+      "quote": "2. Pulping: karton dicampur dengan air di mesin pulper sehingga serat kertas terlepas dari lapisan plastik dan aluminium.",
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "tetra_pak-mc-06",
+      "pool": "tetra_pak",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Setelah serat kertas dipisahkan, apa yang terjadi pada PolyAl (sisa plastik dan aluminium)?",
+      "correct": "Dicacah dan diolah menjadi granul, lalu antara lain dibuat menjadi lembar atap gelombang",
+      "wrong": [
+        "Dibuang ke TPA karena tidak dapat diolah",
+        "Dikomposkan bersama sampah organik",
+        "Diserahkan ke fasilitas pengelola B3"
+      ],
+      "explanation": "Modul menyebut PolyAl dicacah dan diolah menjadi granul, dan produknya antara lain lembar atap gelombang.",
+      "sourceChunk": "4.6",
+      "pdfPage": 22,
+      "quote": "4. Daur ulang PolyAl: plastik dan aluminium yang tersisa dicacah dan diolah menjadi granul.",
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "tetra_pak-essay-01",
+      "pool": "tetra_pak",
+      "type": "essay",
+      "difficulty": "Sedang",
+      "question": "Jelaskan mengapa kemasan karton minuman diperlakukan berbeda dari kertas polos dalam pemilahan sampah.",
+      "sourceChunk": "4.6",
+      "pdfPage": 21,
+      "rubricPoints": [
+        {
+          "point": "Kemasan ini berlapis: kertas karton, plastik, dan aluminium foil.",
+          "sourceChunk": "4.6",
+          "pdfPage": 21,
+          "quote": "Sebagian besar terdiri dari kertas karton, dilapisi plastik dan lapisan tipis aluminium foil."
+        },
+        {
+          "point": "Karena berlapis, kemasan tidak dapat dikomposkan dan masuk non-organik daur ulang.",
+          "sourceChunk": "4.6",
+          "pdfPage": 22,
+          "quote": "Kemasan karton minuman bekas termasuk sampah non-organik yang dapat didaur ulang meskipun sebagian besar bahannya kertas, karena berlapis plastik dan aluminium sehingga tidak dapat dikomposkan."
+        },
+        {
+          "point": "Kertas berlaminasi seperti kemasan karton minuman tidak cocok dikomposkan.",
+          "sourceChunk": "1.3",
+          "pdfPage": 7,
+          "quote": "Kertas berlapis plastik, berminyak, atau berlaminasi (misalnya kemasan karton minuman, lihat 4.6) tidak cocok dikomposkan."
+        }
+      ],
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "tetra_pak-essay-02",
+      "pool": "tetra_pak",
+      "type": "essay",
+      "difficulty": "Sulit",
+      "question": "Uraikan alur daur ulang kemasan karton minuman di fasilitas pemisahan serat dan lapisan PolyAl.",
+      "sourceChunk": "4.6",
+      "pdfPage": 22,
+      "rubricPoints": [
+        {
+          "point": "Pulping melepaskan serat kertas dari lapisan plastik dan aluminium.",
+          "sourceChunk": "4.6",
+          "pdfPage": 22,
+          "quote": "2. Pulping: karton dicampur dengan air di mesin pulper sehingga serat kertas terlepas dari lapisan plastik dan aluminium."
+        },
+        {
+          "point": "Serat dibersihkan, dikeringkan, lalu dibuat menjadi lembaran kertas baru.",
+          "sourceChunk": "4.6",
+          "pdfPage": 22,
+          "quote": "3. Daur ulang serat: serat dibersihkan, diperas, dikeringkan, lalu dibuat menjadi lembaran kertas baru."
+        },
+        {
+          "point": "PolyAl dicacah dan diolah menjadi granul.",
+          "sourceChunk": "4.6",
+          "pdfPage": 22,
+          "quote": "4. Daur ulang PolyAl: plastik dan aluminium yang tersisa dicacah dan diolah menjadi granul."
+        },
+        {
+          "point": "Produk akhirnya antara lain produk kertas dan lembar atap gelombang.",
+          "sourceChunk": "4.6",
+          "pdfPage": 22,
+          "quote": "5. Produk: serat kertas menjadi produk kertas; PolyAl menjadi antara lain lembar atap gelombang."
+        }
+      ],
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "e_waste_b3-mc-01",
+      "pool": "e_waste_b3",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Elektronik rusak mengandung logam yang dapat dipulihkan. Mengapa tetap harus dipisahkan dari sampah logam biasa?",
+      "correct": "Karena juga mengandung bahan berbahaya sehingga dibahas sebagai sampah B3",
+      "wrong": [
+        "Karena dapat dikomposkan",
+        "Karena tidak mengandung logam yang dapat dipulihkan",
+        "Karena termasuk sampah kertas"
+      ],
+      "explanation": "Modul menyebut e-waste mengandung logam tetapi juga bahan berbahaya, sehingga dibahas sebagai sampah B3.",
+      "sourceChunk": "1.4",
+      "pdfPage": 7,
+      "quote": "Perangkat elektronik rusak (e-waste) mengandung logam, tetapi juga mengandung bahan berbahaya sehingga dibahas sebagai sampah B3 di Bab 2.",
+      "status": "accepted"
+    },
+    {
+      "id": "e_waste_b3-mc-02",
+      "pool": "e_waste_b3",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Berapa kelompok yang dipakai dalam pemilahan sampah di sumber yang baik?",
+      "correct": "Tiga: organik, non-organik, dan B3",
+      "wrong": [
+        "Dua: organik dan non-organik",
+        "Empat: organik, plastik, kertas, dan logam",
+        "Satu: semua sampah dicampur lalu dipilah di TPA"
+      ],
+      "explanation": "Modul menegaskan pemilahan di sumber yang baik memakai tiga kelompok, dengan B3 sebagai kelompok ketiga.",
+      "sourceChunk": "1.6",
+      "pdfPage": 8,
+      "quote": "Pemilahan di sumber yang baik memakai tiga kelompok, bukan dua.",
+      "status": "accepted"
+    },
+    {
+      "id": "e_waste_b3-mc-03",
+      "pool": "e_waste_b3",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Apa peran masyarakat dalam pengelolaan e-waste?",
+      "correct": "Memilah, menyimpan dengan aman, dan menyetor ke titik pengumpulan",
+      "wrong": [
+        "Membongkar dan melebur sendiri untuk mengambil logamnya",
+        "Membakar kabelnya agar tembaga mudah diambil",
+        "Membuangnya bersama sampah logam biasa"
+      ],
+      "explanation": "Modul menyebut pemulihan material dari B3 hanya boleh dilakukan fasilitas berizin; masyarakat memilah, menyimpan, dan menyetor.",
+      "sourceChunk": "4.7",
+      "pdfPage": 22,
+      "quote": "Peran masyarakat adalah memilah, menyimpan aman, dan menyetor.",
+      "status": "accepted"
+    },
+    {
+      "id": "e_waste_b3-mc-04",
+      "pool": "e_waste_b3",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Apa akibatnya bila B3 seperti elektronik rusak terbuang bersama sampah biasa ke TPA?",
+      "correct": "Lindi dapat membawa logam berat ke tanah dan air tanah",
+      "wrong": [
+        "Elektronik itu terurai menjadi kompos",
+        "Elektronik itu menghasilkan biogas yang bernilai energi",
+        "Logam beratnya berubah menjadi metana yang aman"
+      ],
+      "explanation": "Modul menjelaskan B3 yang menumpuk di TPA terbawa lindi sehingga logam berat mencemari tanah dan air tanah.",
+      "sourceChunk": "2.7",
+      "pdfPage": 14,
+      "quote": "B3 yang terbuang bersama sampah biasa menumpuk di TPA, lalu lindi (cairan rembesan) membawa logam berat ke tanah dan air tanah.",
+      "status": "accepted"
+    },
+    {
+      "id": "e_waste_b3-mc-05",
+      "pool": "e_waste_b3",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Seseorang membakar kabel bekas dan merendam papan sirkuit dengan asam untuk mengambil logamnya. Mengapa cara ini berbahaya?",
+      "correct": "Sangat berbahaya bagi pekerja dan lingkungan; daur ulang B3 hanya boleh dilakukan fasilitas berizin",
+      "wrong": [
+        "Dianjurkan karena termasuk recycle dalam prinsip 3R",
+        "Aman asalkan dilakukan di luar ruangan",
+        "Boleh karena logam dari e-waste tidak berbahaya"
+      ],
+      "explanation": "Modul memperingatkan daur ulang e-waste secara informal sangat berbahaya dan hanya boleh dilakukan fasilitas berizin.",
+      "sourceChunk": "2.9",
+      "pdfPage": 15,
+      "quote": "Daur ulang e-waste secara informal (membakar kabel, merendam papan sirkuit dengan asam) sangat berbahaya bagi pekerja dan lingkungan.",
+      "status": "accepted"
+    },
+    {
+      "id": "e_waste_b3-mc-06",
+      "pool": "e_waste_b3",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Zat seperti merkuri dan timbal dari B3 dapat terbiomagnifikasi. Apa artinya?",
+      "correct": "Konsentrasinya naik di setiap tingkat rantai makanan",
+      "wrong": [
+        "Konsentrasinya turun di setiap tingkat rantai makanan",
+        "Zatnya terurai menjadi kompos oleh mikroorganisme",
+        "Zatnya berubah menjadi metana di TPA"
+      ],
+      "explanation": "Modul menjelaskan biomagnifikasi sebagai naiknya konsentrasi zat di setiap tingkat rantai makanan.",
+      "sourceChunk": "2.7",
+      "pdfPage": 14,
+      "quote": "Zat seperti merkuri dan timbal terakumulasi di tubuh makhluk hidup dan terbiomagnifikasi (konsentrasi naik di setiap tingkat rantai makanan).",
+      "status": "accepted"
+    },
+    {
+      "id": "e_waste_b3-essay-01",
+      "pool": "e_waste_b3",
+      "type": "essay",
+      "difficulty": "Sedang",
+      "question": "Jelaskan langkah aman mengelola e-waste atau baterai bekas di rumah sampai diserahkan ke tempat yang tepat.",
+      "sourceChunk": "2.8",
+      "pdfPage": 14,
+      "rubricPoints": [
+        {
+          "point": "Kenali B3 dari label dan simbol bahaya.",
+          "sourceChunk": "2.8",
+          "pdfPage": 14,
+          "quote": "1. Kenali: baca label produk; simbol bahaya (api, tengkorak, korosif, tanda seru) menandakan B3."
+        },
+        {
+          "point": "Pisahkan dalam wadah khusus yang kering, tertutup, dan jauh dari anak-anak serta panas.",
+          "sourceChunk": "2.8",
+          "pdfPage": 14,
+          "quote": "2. Pisahkan: sediakan satu wadah khusus B3 yang kering, tertutup, dan jauh dari anak-anak serta panas."
+        },
+        {
+          "point": "Jangan membakar baterai atau sampah elektronik.",
+          "sourceChunk": "2.8",
+          "pdfPage": 14,
+          "quote": "Jangan membakar baterai, aerosol, atau sampah elektronik."
+        },
+        {
+          "point": "Serahkan ke titik pengumpulan, misalnya drop box e-waste atau program take-back produsen.",
+          "sourceChunk": "2.8",
+          "pdfPage": 14,
+          "quote": "4. Kumpulkan sedikit demi sedikit, lalu serahkan ke titik pengumpulan: dinas lingkungan hidup, bank sampah yang menerima B3 atau e-waste, drop box e-waste, program take-back produsen, atau pengelola limbah B3 berizin."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "e_waste_b3-essay-02",
+      "pool": "e_waste_b3",
+      "type": "essay",
+      "difficulty": "Sulit",
+      "question": "Mengapa e-waste tidak didaur ulang oleh masyarakat sendiri, padahal mengandung logam berharga? Jelaskan juga dampaknya bila dibuang atau diolah sembarangan.",
+      "sourceChunk": "4.7",
+      "pdfPage": 22,
+      "rubricPoints": [
+        {
+          "point": "Sampah B3 tidak didaur ulang oleh masyarakat sendiri.",
+          "sourceChunk": "4.7",
+          "pdfPage": 22,
+          "quote": "Berbeda dari plastik atau kertas, sampah B3 tidak didaur ulang oleh masyarakat sendiri."
+        },
+        {
+          "point": "Pemulihan material dari B3 hanya boleh dilakukan fasilitas berizin.",
+          "sourceChunk": "4.7",
+          "pdfPage": 22,
+          "quote": "Pemulihan material dari B3 hanya boleh dilakukan fasilitas berizin."
+        },
+        {
+          "point": "Daur ulang informal sangat berbahaya bagi pekerja dan lingkungan.",
+          "sourceChunk": "2.9",
+          "pdfPage": 15,
+          "quote": "Daur ulang e-waste secara informal (membakar kabel, merendam papan sirkuit dengan asam) sangat berbahaya bagi pekerja dan lingkungan."
+        },
+        {
+          "point": "B3 yang dibuang ke TPA terbawa lindi ke tanah dan air tanah.",
+          "sourceChunk": "2.7",
+          "pdfPage": 14,
+          "quote": "B3 yang terbuang bersama sampah biasa menumpuk di TPA, lalu lindi (cairan rembesan) membawa logam berat ke tanah dan air tanah."
+        }
+      ],
+      "status": "accepted"
+    }
+  ]
+}

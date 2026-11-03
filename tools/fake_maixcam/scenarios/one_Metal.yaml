@@ -1,0 +1,6 @@
+name: one_Metal
+description: One Metal dataset crop held 25 cm ahead for 60 s, for identify checks. Expect one lock, Gemma naming a Metal object, and Metal-class bank questions (0025).
+duration_s: 60
+items:
+  - {id: item, label: Metal, pos_mm: [-54, -301], size_mm: 120, score: 0.88}
+noise: {score_jitter: 0.03}

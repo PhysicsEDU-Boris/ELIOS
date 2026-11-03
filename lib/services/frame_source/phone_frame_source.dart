@@ -3,10 +3,17 @@ import 'package:camera/camera.dart';
 import 'package:camera_macos/camera_macos.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show DeviceOrientation;
 
 import 'frame_source.dart';
+import 'yuv_jpeg.dart';
 
+/// Android reads photos from the image stream only (the latest YUV frame, turned
+  /// into a JPEG in an isolate); `takePicture` is never mixed with the stream
+  /// because CameraX rebinds its use cases between the two (decision 0040).
 class PhoneFrameSource extends FrameSource {
+  final bool _useStream = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  CameraImage? _latest;
   final bool _useMacCamera = !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
   
   CameraController? _controller;
@@ -23,6 +30,11 @@ class PhoneFrameSource extends FrameSource {
   
   @override
   bool get isInitialized => _useMacCamera ? _initialized : _controller != null;
+
+  /// Which camera is showing, for the scan screen's chip.
+  String get cameraName => _useMacCamera
+      ? 'Mac camera'
+      : (_cameras.isNotEmpty && _cameras[_cameraIndex].lensDirection == CameraLensDirection.front ? 'Front camera' : 'Back camera');
   
   @override
   String? get error => _errorMsg;
@@ -63,9 +75,12 @@ class PhoneFrameSource extends FrameSource {
     
     await old?.dispose();
     
-    final controller = CameraController(_cameras[index], ResolutionPreset.medium, enableAudio: false);
+    _latest = null;
+    final controller = CameraController(_cameras[index], _useStream ? ResolutionPreset.high : ResolutionPreset.medium,
+        enableAudio: false, imageFormatGroup: _useStream ? ImageFormatGroup.yuv420 : null);
     try {
       await controller.initialize();
+      if (_useStream) await controller.startImageStream((image) => _latest = image);
       _controller = controller;
       _errorMsg = null;
       notifyListeners();
@@ -94,6 +109,11 @@ class PhoneFrameSource extends FrameSource {
         final pic = await _macController!.takePicture();
         bytes = pic?.bytes;
         // Optional: Mac camera dimensions might not be easily accessible here. We'll set 0.
+      } else if (_useStream) {
+        final shot = await _jpegFromLatest();
+        bytes = shot.bytes;
+        width = shot.width;
+        height = shot.height;
       } else {
         final file = await _controller!.takePicture();
         bytes = await file.readAsBytes();
@@ -117,6 +137,37 @@ class PhoneFrameSource extends FrameSource {
     }
   }
 
+  Future<({Uint8List bytes, int width, int height})> _jpegFromLatest() async {
+    final image = _latest;
+    final controller = _controller!;
+    if (image == null || image.planes.length < 3) throw StateError('Kamera belum mengirim gambar');
+    final yPlane = image.planes[0];
+    final degrees = switch (controller.value.deviceOrientation) {
+      DeviceOrientation.landscapeLeft => 90,
+      DeviceOrientation.portraitDown => 180,
+      DeviceOrientation.landscapeRight => 270,
+      _ => 0,
+    };
+    final description = _cameras[_cameraIndex];
+    return yuvToJpegInIsolate(
+      YuvFrame(
+        width: image.width,
+        height: image.height,
+        y: yPlane.bytes,
+        u: image.planes[1].bytes,
+        v: image.planes[2].bytes,
+        yRowStride: yPlane.bytesPerRow,
+        uvRowStride: image.planes[1].bytesPerRow,
+        uvPixelStride: image.planes[1].bytesPerPixel ?? 1,
+      ),
+      rotation: yuvRotation(
+        sensorOrientation: description.sensorOrientation,
+        deviceDegrees: degrees,
+        frontFacing: description.lensDirection == CameraLensDirection.front,
+      ),
+    );
+  }
+
   @override
   Future<void> pausePreview() async {
     if (_useMacCamera) {
@@ -127,6 +178,8 @@ class PhoneFrameSource extends FrameSource {
       notifyListeners();
     } else {
       if (_controller != null && _controller!.value.isInitialized) {
+        // Stop the stream too: nothing needs frames while the quiz covers the preview.
+        if (_useStream && _controller!.value.isStreamingImages) await _controller!.stopImageStream();
         await _controller!.pausePreview();
       }
     }
@@ -140,6 +193,9 @@ class PhoneFrameSource extends FrameSource {
     } else {
       if (_controller != null && _controller!.value.isInitialized) {
         await _controller!.resumePreview();
+        if (_useStream && !_controller!.value.isStreamingImages) {
+          await _controller!.startImageStream((image) => _latest = image);
+        }
       }
     }
   }
@@ -194,12 +250,18 @@ class PhoneFrameSource extends FrameSource {
       );
     } else {
       if (_controller != null && _controller!.value.isInitialized) {
+        // previewSize is always sensor-landscape (w > h); CameraPreview rotates
+        // itself, so only swap the box when the device is held upright.
+        final value = _controller!.value;
+        final landscape = (value.lockedCaptureOrientation ?? value.deviceOrientation) == DeviceOrientation.landscapeLeft ||
+            (value.lockedCaptureOrientation ?? value.deviceOrientation) == DeviceOrientation.landscapeRight;
+        final ps = value.previewSize;
         return ClipRect(
           child: FittedBox(
             fit: fit,
             child: SizedBox(
-              width: _controller!.value.previewSize?.height ?? 640,
-              height: _controller!.value.previewSize?.width ?? 480,
+              width: ps == null ? 640 : (landscape ? ps.width : ps.height),
+              height: ps == null ? 480 : (landscape ? ps.height : ps.width),
               child: CameraPreview(_controller!),
             ),
           ),
