@@ -695,6 +695,7 @@ class PhoneControlLayout extends StatelessWidget {
   Widget _armCard(BuildContext context) {
     final p = context.elio;
     final on = link == ControlLink.connected;
+    final shortScreen = MediaQuery.sizeOf(context).height < 400;
     Widget fader(String label, double value, ValueChanged<double> onChanged) =>
         SizedBox(
           width: 48,
@@ -746,18 +747,24 @@ class PhoneControlLayout extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      // LOCK and SCAN (0181), above Online (owner, 3 Nov). Pills, not round keys:
-                      // two 44 px keys with captions overflow the 360 px phone by 73 px.
-                      _MiniKey(
+                      // LOCK and SCAN (0181), above Online (owner, 3 Nov). Round keys with captions fit
+                      // a 412 px phone; on shorter ones (800x360) only smaller keys without captions fit.
+                      TransportKey(
                         key: const ValueKey('phone_lock'),
+                        icon: locked ? Icons.center_focus_weak : Icons.center_focus_strong,
                         label: locked ? 'UNLOCK' : 'LOCK',
+                        size: shortScreen ? 26 : 32,
+                        showLabel: !shortScreen,
                         onTap: onLock,
                       ),
                       const SizedBox(height: 4),
-                      _MiniKey(
+                      TransportKey(
                         key: const ValueKey('phone_scan'),
+                        icon: Icons.quiz_outlined,
                         label: 'SCAN',
                         primary: true,
+                        size: shortScreen ? 26 : 32,
+                        showLabel: !shortScreen,
                         onTap: onScan,
                       ),
                       const SizedBox(height: 6),
@@ -1392,46 +1399,6 @@ class PhoneGlowButton extends StatelessWidget {
                         ),
                       ),
                     ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A small labelled pill key for the ARM card's narrow column (LOCK, SCAN; 0181). Null [onTap] greys it out.
-class _MiniKey extends StatelessWidget {
-  const _MiniKey({super.key, required this.label, required this.onTap, this.primary = false});
-
-  final String label;
-  final VoidCallback? onTap;
-  final bool primary;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.elio;
-    return Opacity(
-      opacity: onTap == null ? ElioTokens.disabledOpacity : 1,
-      child: Material(
-        color: primary ? p.primary : p.surface,
-        shape: StadiumBorder(side: BorderSide(color: primary ? p.primaryActive : p.borderMedium, width: 1.5)),
-        child: InkWell(
-          customBorder: const StadiumBorder(),
-          onTap: onTap,
-          child: SizedBox(
-            height: 26,
-            child: Center(
-              child: Text(
-                label,
-                maxLines: 1,
-                style: TextStyle(
-                  color: primary ? p.onPrimary : p.primaryText,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 11,
-                  letterSpacing: .4,
-                ),
-              ),
             ),
           ),
         ),
