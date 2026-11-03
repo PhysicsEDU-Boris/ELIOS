@@ -49,7 +49,6 @@
 - Rest times live in one function instance's memory; a cold start forgets them.
 - Phone test, 3 Nov (Edge 60 Fusion): identify and 3 AI questions, about 1.1-1.4 s per call at the
   backend, 1.6 s on the phone; one 3.5 Flash-Lite timeout fell through to 3.1 Flash-Lite as designed.
-- The Cloudflare Worker `elios-ai` from the first attempt is still deployed but unused; delete it in
-  the Cloudflare dashboard.
+- The Cloudflare Worker `elios-ai` from the first attempt was deleted (3 Nov).
 - No App Check: any signed-in user of `elio-apps`, guests included, could call the backend.
 - Android `minSdk` stays 30 (it was set for Gemma); lower versions are untested.
