@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scan_record.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 
 void main() {
   group('QuizExplanation model', () {

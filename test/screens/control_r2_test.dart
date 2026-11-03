@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:elio/Screens/control_screen.dart';
 import 'package:elio/models/control_session.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/websocket_service.dart' show Detection;
 import 'package:elio/theme/elio_light_theme.dart';
 import 'package:elio/widgets/control/control_panels.dart';
@@ -50,9 +50,9 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     FlutterSecureStorage.setMockInitialValues({});
-    GemmaQuizService.instance.mockSendExecute = (p, {imageBytes, fresh = false, isUser = false, onToken}) async => null;
+    AiQuizService.instance.mockSendExecute = (p, {imageBytes, isUser = false}) async => null;
   });
-  tearDown(() => GemmaQuizService.instance.mockSendExecute = null);
+  tearDown(() => AiQuizService.instance.mockSendExecute = null);
 
   testWidgets('the avatar opens the existing drawer', (t) async {
     final c = await _pumpScreen(t);

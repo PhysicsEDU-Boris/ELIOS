@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'quiz_explanation.dart';
 
-/// A validated Gemma essay result. Rows are present only when the whole rubric
+/// A validated AI essay result. Rows are present only when the whole rubric
 /// is complete and its sum matches [score].
 class EssayGrade {
   const EssayGrade({

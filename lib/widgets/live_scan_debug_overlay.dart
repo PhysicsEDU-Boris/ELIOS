@@ -21,7 +21,7 @@ class LiveScanDebugOverlay extends StatelessWidget {
 
   final LiveScanController controller;
 
-  /// The current scan: Gemma's item and the detector class (decision 0025).
+  /// The current scan: the AI's item and the detector class (decision 0025).
   final String? scanLine;
 
   /// AprilTags on the arm from the camera (decision 0022/0027).

@@ -95,7 +95,7 @@ class LiveScanStateMachine {
   LiveScanState get state => _state;
 
   /// Quiz starts requested so far (the "identify calls" of the plan). An ask
-  /// that came back BUSY never reached Gemma and is counted in [busyCount].
+  /// that came back BUSY never reached the AI and is counted in [busyCount].
   int get askCount => _askCount;
 
   /// Asks refused because a quiz was already open.

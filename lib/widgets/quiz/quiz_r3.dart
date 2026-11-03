@@ -2,7 +2,7 @@
 // essay review 417:6944, loading 422:7322, skeleton 422:7792; decision 0175).
 // One set of widgets for Control (phone and R2), the phone camera scan, tablets
 // and the Mac. Same provider calls as before; only the look and the English UI
-// are new. Question, answer and explanation text stay as the bank or Gemma wrote it.
+// are new. Question, answer and explanation text stay as the bank or the AI wrote it.
 part of '../waste_quiz_popup.dart';
 
 String _level(QuizDifficulty d) => switch (d) {
@@ -719,7 +719,7 @@ class _LoadingView extends ConsumerWidget {
     final essay =
         questionTypeFor(state.questionIndex, essays: essayQuestionsEnabled) ==
         QuizQuestionType.essay;
-    final gemma = state.questionSource == QuestionSource.gemma;
+    final ai = state.questionSource == QuestionSource.ai;
     final pool = state.scan == null
         ? null
         : QuestionBank.loaded?.selection(state.scan!).pool;
@@ -738,7 +738,7 @@ class _LoadingView extends ConsumerWidget {
         'Picked a topic',
         identifying
             ? 'After the scan'
-            : gemma
+            : ai
             ? 'ELIOS AI topic'
             : (pool == null ? 'Question bank' : 'Bank pool · $pool'),
         identifying ? 0 : 2,
@@ -918,8 +918,8 @@ class _LoadingView extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        gemma || identifying
-                            ? 'Gemma runs offline on this phone. This usually takes 20–40 seconds.'
+                        ai || identifying
+                            ? 'ELIOS AI is writing it online. This usually takes 2–4 seconds.'
                             : 'From the reviewed question bank. This takes a moment.',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

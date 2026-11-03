@@ -64,7 +64,7 @@ class R1Orchestrator {
   /// What the screen tells the student ("Berhenti", "Maju sedikit", ...).
   String? message;
 
-  /// The bin the robot uses (detector, Gemma, hazard veto) and the student's guess.
+  /// The bin the robot uses (detector, the AI, hazard veto) and the student's guess.
   Bin? robotBin;
   Bin? studentBin;
 
@@ -164,7 +164,7 @@ class R1Orchestrator {
   }
 
   /// Identification finished: the robot's bin, and whether a person must
-  /// confirm it (B3, or detector and Gemma disagree).
+  /// confirm it (B3, or detector and the AI disagree).
   void onIdentified(Bin bin, {bool needsConfirm = false}) {
     if (_state == R1State.objectInView) {
       _bufferedIdentify = (bin, needsConfirm);

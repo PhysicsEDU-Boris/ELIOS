@@ -1,7 +1,7 @@
 import 'waste_category.dart';
 
 /// A waste item reported by the camera (MaixCAM2 label or debug phone scan),
-/// normalized into the context Gemma needs to write relevant questions.
+/// normalized into the context the AI needs to write relevant questions.
 class ScannedWaste {
   final String rawLabel;
   final String displayName;
@@ -14,7 +14,7 @@ class ScannedWaste {
   final String? material;
 
   /// The MaixCAM2 detector class of the locked box (live scan only), kept
-  /// apart from [rawLabel], which is Gemma's item text there (decision 0025).
+  /// apart from [rawLabel], which is the AI's item text there (decision 0025).
   final String? detectorLabel;
 
   const ScannedWaste._(
@@ -71,7 +71,7 @@ class ScannedWaste {
     'hazardous': 'limbah B3 (berbahaya)',
   };
 
-  // Gemma's raw categories -> bin; residu has no compartment, so inorganic.
+  // The AI's raw categories -> bin; residu has no compartment, so inorganic.
   static const _rawCategoryBins = {
     'organik': 'organic',
     'anorganik': 'inorganic',
@@ -85,14 +85,14 @@ class ScannedWaste {
   static String? detectorCategory(String label) =>
       _binRawNames[detectorLabels[label.trim()]?.$2];
 
-  /// The detector class and Gemma's raw category point to different bins
+  /// The detector class and the AI's raw category point to different bins
   /// (residu counts as anorganik). Unknown detector classes never mismatch.
   static bool categoryMismatch(String detectorLabel, String? gemmaCategory) {
     final expected = detectorLabels[detectorLabel.trim()]?.$2;
     return expected != null && expected != _rawCategoryBins[gemmaCategory?.toLowerCase().trim()];
   }
 
-  /// [categoryHint] is Gemma's own classification of a photo ("organik",
+  /// [categoryHint] is the AI's own classification of a photo ("organik",
   /// "anorganik", "B3", "residu"); it wins over the keyword lookup.
   factory ScannedWaste.fromLabel(
     String label, {
@@ -104,7 +104,7 @@ class ScannedWaste {
     final hinted = _rawCategoryBins[categoryHint?.toLowerCase().trim()];
     final base = ScannedWaste._fromKeywords(label);
     // Hazardous keywords (batteries, phones, e-waste) beat the model's guess:
-    // a phone must go to B3 even if Gemma calls it "anorganik".
+    // a phone must go to B3 even if the AI calls it "anorganik".
     final hazard =
         hazardousEvidence ||
         hinted == 'hazardous' ||

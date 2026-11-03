@@ -6,7 +6,7 @@ import '../providers/waste_quiz_provider.dart';
 import '../services/frame_source/phone_frame_source.dart';
 
 /// Debug-only stand-in for the MaixCAM2 camera: captures a still photo with
-/// the phone's own camera and feeds it straight to Gemma, so the popup-quiz
+/// the phone's own camera and feeds it straight to the AI, so the popup-quiz
 /// flow can be tested without the physical robot connected.
 class DebugPhoneCameraSheet extends ConsumerStatefulWidget {
   const DebugPhoneCameraSheet({super.key});

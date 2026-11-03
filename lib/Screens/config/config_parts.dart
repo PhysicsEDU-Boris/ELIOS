@@ -5,7 +5,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../services/gemma_quiz_service.dart';
+import '../../services/ai_quiz_service.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/learn/learn_ui.dart';
 import '../home/home_parts.dart' show homeArt, homeRadiusL;
@@ -307,46 +307,30 @@ class ConfigButton extends StatelessWidget {
 
 // ── ELIOS AI ─────────────────────────────────────────────────────────────
 
-/// The five card states 343:3076.
-enum AiCardState { off, loading, active, error, paused }
+/// Card states 343:3076. Cloud AI has nothing to load or cool down, so the
+/// Figma Loading and Paused states are gone (decision 0179).
+enum AiCardState { off, active, error }
 
-AiCardState aiCardState(GemmaStatus status) => switch (status) {
-      GemmaStatus.idle => AiCardState.off,
-      GemmaStatus.installing || GemmaStatus.loading => AiCardState.loading,
-      GemmaStatus.ready => AiCardState.active,
-      GemmaStatus.error || GemmaStatus.killed || GemmaStatus.missing => AiCardState.error,
-      GemmaStatus.paused => AiCardState.paused,
+AiCardState aiCardState(AiStatus status) => switch (status) {
+      AiStatus.idle => AiCardState.off,
+      AiStatus.ready => AiCardState.active,
+      AiStatus.offline => AiCardState.error,
     };
 
-/// "Activate ELIOS AI" / "Try again": the existing copy-then-load path, with
-/// the image encoder (scans need it).
-Future<void> activateEliosAi() async {
-  final service = GemmaQuizService.instance;
-  if (service.progress.value.status == GemmaStatus.killed) service.clearKilled();
-  if (await service.prepare()) await service.ensureReady(vision: true);
-}
-
-/// ELIOS AI card 343:3076, driven by [GemmaQuizService.progress].
+/// ELIOS AI card 343:3076, driven by the last cloud call ([AiQuizService.status]).
 class EliosAiCard extends StatelessWidget {
-  const EliosAiCard({super.key, this.onActivate = activateEliosAi});
-  final Future<void> Function() onActivate;
+  const EliosAiCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final service = GemmaQuizService.instance;
-    return ValueListenableBuilder<GemmaProgress>(
-      valueListenable: service.progress,
-      builder: (context, progress, _) {
+    final service = AiQuizService.instance;
+    return ValueListenableBuilder<AiStatus>(
+      valueListenable: service.status,
+      builder: (context, status, _) {
         final p = context.elio;
-        final state = aiCardState(progress.status);
-        final tint = switch (state) {
-          AiCardState.error => p.error,
-          AiCardState.paused => p.secondaryText,
-          _ => p.tertiaryText,
-        };
-        final showBulb = state == AiCardState.off || state == AiCardState.loading || state == AiCardState.active;
+        final state = aiCardState(status);
         return ConfigCard(
-          tint: tint,
+          tint: state == AiCardState.error ? p.error : p.tertiaryText,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -363,18 +347,18 @@ class EliosAiCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Semantics(header: true, child: Text('ELIOS AI', style: configTitle(p))),
-                              Text('Gemma · on this phone, no internet', style: configCaption(p)),
+                              Text('Gemini · needs internet', style: configCaption(p)),
                             ],
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Semantics(liveRegion: true, container: true, child: _body(context, p, state, progress, service)),
+                    Semantics(liveRegion: true, container: true, child: _body(p, state, service)),
                   ],
                 ),
               ),
-              if (showBulb) ...[
+              if (state != AiCardState.error) ...[
                 const SizedBox(width: 8),
                 Padding(padding: const EdgeInsets.only(top: 40), child: homeArt('bulb_buddy', width: 56, height: 59)),
               ],
@@ -385,101 +369,42 @@ class EliosAiCard extends StatelessWidget {
     );
   }
 
-  Widget _body(BuildContext context, ElioPalette p, AiCardState state, GemmaProgress progress, GemmaQuizService service) {
-    switch (state) {
-      case AiCardState.off:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Turn it on to identify scans and write new quiz questions.', style: configBody(p)),
-            const SizedBox(height: 12),
-            ConfigButton(label: 'Activate ELIOS AI', icon: Icons.auto_awesome_rounded, onPressed: onActivate),
-            const SizedBox(height: 8),
-            Text('First start about 45 s, then 5 to 10 s', style: configCaption(p)),
-          ],
-        );
-      case AiCardState.loading:
-        final installing = progress.status == GemmaStatus.installing;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                SizedBox.square(
-                    dimension: 16, child: CircularProgressIndicator(strokeWidth: 2, color: p.primaryText)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(installing ? 'Copying the AI model (one time)…' : 'Loading AI into memory…',
-                      style: configStrong(p)),
-                ),
-                if (installing) Text('${progress.installPercent}%', style: configStrong(p, color: p.primaryText)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            // The engine reports no percent while loading; only the copy has one.
-            LinearProgressIndicator(
-              value: installing ? progress.installPercent / 100 : null,
-              minHeight: 6,
-              borderRadius: BorderRadius.circular(ElioTokens.radiusFull),
-              color: p.primary,
-              backgroundColor: p.surface,
-              semanticsLabel: 'ELIOS AI loading',
-              semanticsValue: installing ? '${progress.installPercent}%' : null,
-            ),
-            const SizedBox(height: 8),
-            Text('Keep the app open. The quiz uses the question bank until it is ready.', style: configCaption(p)),
-          ],
-        );
-      case AiCardState.active:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Identifying scans and writing quiz questions.', style: configBody(p)),
-            const SizedBox(height: 12),
-            DecoratedBox(
-              decoration: ShapeDecoration(shape: StadiumBorder(side: BorderSide(color: p.primaryText))),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.check_rounded, size: 16, color: p.primaryText),
-                    const SizedBox(width: 4),
-                    Text('Active · offline', style: configCaption(p, color: p.primaryText)),
-                  ],
+  Widget _body(ElioPalette p, AiCardState state, AiQuizService service) => switch (state) {
+        AiCardState.off => Text('Identifies scans and writes new quiz questions, about 2 to 4 s each.',
+            style: configBody(p)),
+        AiCardState.active => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Identifying scans and writing quiz questions.', style: configBody(p)),
+              const SizedBox(height: 12),
+              DecoratedBox(
+                decoration: ShapeDecoration(shape: StadiumBorder(side: BorderSide(color: p.primaryText))),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_rounded, size: 16, color: p.primaryText),
+                      const SizedBox(width: 4),
+                      Text('Active · ${service.lastModel ?? 'cloud'}', style: configCaption(p, color: p.primaryText)),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        );
-      case AiCardState.error:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _alertLine(p, Icons.error_outline_rounded, 'ELIOS AI could not start', p.errorText),
-            Padding(
-              padding: const EdgeInsets.only(left: 28, top: 2),
-              child: Text('${progress.error ?? 'Unknown error.'} The quiz uses the question bank.',
-                  style: configCaption(p, color: p.textPrimary)),
-            ),
-            const SizedBox(height: 12),
-            ConfigButton(label: 'Try again', icon: Icons.refresh_rounded, primary: false, onPressed: onActivate),
-          ],
-        );
-      case AiCardState.paused:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _alertLine(p, Icons.thermostat_rounded, 'Paused, the phone is too hot', p.secondaryText),
-            Padding(
-              padding: const EdgeInsets.only(left: 28, top: 2),
-              child: Text(service.blockedReason ?? 'ELIOS AI resumes by itself when the phone cools down.',
-                  style: configCaption(p, color: p.textPrimary)),
-            ),
-          ],
-        );
-    }
-  }
+            ],
+          ),
+        AiCardState.error => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _alertLine(p, Icons.cloud_off_rounded, 'ELIOS AI is not reachable', p.errorText),
+              Padding(
+                padding: const EdgeInsets.only(left: 28, top: 2),
+                child: Text('No internet, or every AI model is busy. The quiz uses the question bank and tries '
+                    'the AI again on the next scan.', style: configCaption(p, color: p.textPrimary)),
+              ),
+            ],
+          ),
+      };
 
   Widget _alertLine(ElioPalette p, IconData icon, String text, Color color) => Row(
         children: [
@@ -492,7 +417,7 @@ class EliosAiCard extends StatelessWidget {
 
 /// ELIOS AI logo 347:4439: the centre leaf stays still, the small leaf orbits
 /// clockwise at constant speed and the outline opens where it passes.
-/// Active 3.6 s per orbit, Loading 1.2 s, other states and reduced motion
+/// Active 3.6 s per orbit; other states and reduced motion
 /// rest at Frame 01 (small leaf on the left).
 class EliosAiLogo extends StatefulWidget {
   const EliosAiLogo({super.key, required this.state, this.size = 48});
@@ -501,7 +426,6 @@ class EliosAiLogo extends StatefulWidget {
 
   static Duration? periodFor(AiCardState state) => switch (state) {
         AiCardState.active => const Duration(milliseconds: 3600),
-        AiCardState.loading => const Duration(milliseconds: 1200),
         _ => null,
       };
 

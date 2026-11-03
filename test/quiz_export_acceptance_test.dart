@@ -10,7 +10,7 @@ import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/quiz_pdf_service.dart';
 import 'package:elio/services/quiz_tts_service.dart';
 import 'package:elio/widgets/quiz_explanation_overlay.dart';

@@ -11,7 +11,7 @@ import 'package:elio/providers/config_link_provider.dart';
 import 'package:elio/providers/elio_theme_mode_provider.dart';
 import 'package:elio/providers/esp_config_provider.dart';
 import 'package:elio/providers/robot_provider.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/theme/elio_dark_theme.dart';
 import 'package:elio/theme/elio_light_theme.dart';
 import 'package:elio/theme/elio_tokens.dart';
@@ -64,13 +64,13 @@ Future<void> _pumpConfig(
   String status = 'Disconnected',
   ConfigLink link = const ConfigLink(),
   EspConfig esp = const EspConfig(),
-  GemmaProgress gemma = const GemmaProgress(GemmaStatus.idle),
+  AiStatus ai = AiStatus.idle,
   Size size = const Size(400, 2200),
 }) async {
   t.view.physicalSize = size * 2;
   t.view.devicePixelRatio = 2;
   addTearDown(t.view.reset);
-  GemmaQuizService.instance.progress.value = gemma;
+  AiQuizService.instance.status.value = ai;
   _link = _Link(link);
   await t.pumpWidget(ProviderScope(
     overrides: [
@@ -102,7 +102,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     FlutterSecureStorage.setMockInitialValues({});
   });
-  tearDown(() => GemmaQuizService.instance.progress.value = const GemmaProgress(GemmaStatus.idle));
+  tearDown(() => AiQuizService.instance.status.value = AiStatus.idle);
 
   test('field validation', () {
     expect(validateIp('192.168.4.1'), isNull);
@@ -116,16 +116,11 @@ void main() {
     }
   });
 
-  test('GemmaStatus → ELIOS AI card state', () {
-    expect({for (final s in GemmaStatus.values) s: aiCardState(s)}, {
-      GemmaStatus.idle: AiCardState.off,
-      GemmaStatus.installing: AiCardState.loading,
-      GemmaStatus.loading: AiCardState.loading,
-      GemmaStatus.ready: AiCardState.active,
-      GemmaStatus.error: AiCardState.error,
-      GemmaStatus.missing: AiCardState.error,
-      GemmaStatus.killed: AiCardState.error,
-      GemmaStatus.paused: AiCardState.paused,
+  test('AiStatus → ELIOS AI card state', () {
+    expect({for (final s in AiStatus.values) s: aiCardState(s)}, {
+      AiStatus.idle: AiCardState.off,
+      AiStatus.ready: AiCardState.active,
+      AiStatus.offline: AiCardState.error,
     });
   });
 
@@ -142,8 +137,8 @@ void main() {
         expect(find.text('Put ELIO and this phone on the same Wi-Fi or hotspot, then tap Connect now.'), findsOneWidget);
         expect(_enabled(t, 'Connect now'), isTrue);
         expect(_enabled(t, 'Disconnect'), isFalse);
-        expect(find.text('Activate ELIOS AI'), findsOneWidget);
-        expect(find.text('Needs ELIOS AI active'), findsOneWidget);
+        expect(find.text('Gemini · needs internet'), findsOneWidget);
+        expect(find.text('New questions each scan, needs internet'), findsOneWidget);
       });
 
       testWidgets('connecting', (t) async {
@@ -181,73 +176,53 @@ void main() {
         expect(find.byType(SnackBar), findsNothing, reason: 'the inline alert is on screen');
       });
 
-      testWidgets('phone camera, AI paused', (t) async {
+      testWidgets('phone camera, AI offline', (t) async {
         await _pumpConfig(t,
             dark: dark,
             esp: const EspConfig(cameraSource: CameraSource.device),
-            gemma: const GemmaProgress(GemmaStatus.paused));
+            ai: AiStatus.offline);
         _expectPalette(t, dark);
         expect(find.text('Robot not used'), findsOneWidget);
         expect(find.text('Not used'), findsOneWidget);
         expect(find.text('Phone'), findsOneWidget);
         expect(find.text('Start scan'), findsOneWidget);
         expect(find.text('Connection'), findsNothing, reason: 'phone mode hides the connection card');
-        expect(find.text('Paused, the phone is too hot'), findsOneWidget);
+        expect(find.text('ELIOS AI is not reachable'), findsOneWidget);
       });
     });
 
     group('ELIOS AI card ($mode)', () {
-      late int activations;
-      Future<void> pumpCard(WidgetTester t, GemmaProgress progress) async {
-        activations = 0;
-        GemmaQuizService.instance.progress.value = progress;
+      Future<void> pumpCard(WidgetTester t, AiStatus status) async {
+        AiQuizService.instance.status.value = status;
         await t.pumpWidget(MaterialApp(
           theme: dark ? ElioDarkTheme.data : ElioLightTheme.data,
-          home: Scaffold(body: EliosAiCard(onActivate: () async => activations++)),
+          home: const Scaffold(body: EliosAiCard()),
         ));
       }
 
-      testWidgets('Off', (t) async {
-        await pumpCard(t, const GemmaProgress(GemmaStatus.idle));
-        expect(find.text('Turn it on to identify scans and write new quiz questions.'), findsOneWidget);
-        await t.tap(find.text('Activate ELIOS AI'));
-        expect(activations, 1);
+      testWidgets('Off: nothing to activate', (t) async {
+        await pumpCard(t, AiStatus.idle);
+        expect(find.text('Gemini · needs internet'), findsOneWidget);
+        expect(find.textContaining('Identifies scans'), findsOneWidget);
+        expect(find.byType(ConfigButton), findsNothing);
       });
 
-      testWidgets('Loading (copy with its real percent, then engine load)', (t) async {
-        await pumpCard(t, const GemmaProgress(GemmaStatus.installing, installPercent: 62));
-        expect(find.text('62%'), findsOneWidget);
-        expect(t.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator)).value, 0.62);
-        GemmaQuizService.instance.progress.value = const GemmaProgress(GemmaStatus.loading);
-        await t.pump();
-        expect(find.text('Loading AI into memory…'), findsOneWidget);
-        expect(find.textContaining('%'), findsNothing, reason: 'the engine reports no percent');
-        expect(t.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator)).value, isNull);
+      testWidgets('Active names the model that answered', (t) async {
+        AiQuizService.instance.lastModel = 'gemini-3.5-flash-lite';
+        addTearDown(() => AiQuizService.instance.lastModel = null);
+        await pumpCard(t, AiStatus.ready);
+        expect(find.text('Active · gemini-3.5-flash-lite'), findsOneWidget);
       });
 
-      testWidgets('Active', (t) async {
-        await pumpCard(t, const GemmaProgress(GemmaStatus.ready));
-        expect(find.text('Active · offline'), findsOneWidget);
-        expect(find.text('Activate ELIOS AI'), findsNothing);
-      });
-
-      testWidgets('Error shows the real message and retries', (t) async {
-        await pumpCard(t, const GemmaProgress(GemmaStatus.error, error: 'Memori (RAM) perangkat tidak cukup.'));
-        expect(find.text('ELIOS AI could not start'), findsOneWidget);
-        expect(find.textContaining('Memori (RAM) perangkat tidak cukup.'), findsOneWidget);
-        await t.tap(find.text('Try again'));
-        expect(activations, 1);
-      });
-
-      testWidgets('Paused shows the blocked reason', (t) async {
-        await pumpCard(t, const GemmaProgress(GemmaStatus.paused));
-        expect(find.text('Paused, the phone is too hot'), findsOneWidget);
-        expect(find.text(GemmaQuizService.instance.blockedReason!), findsOneWidget);
+      testWidgets('Offline says the quiz uses the bank', (t) async {
+        await pumpCard(t, AiStatus.offline);
+        expect(find.text('ELIOS AI is not reachable'), findsOneWidget);
+        expect(find.textContaining('uses the question bank'), findsOneWidget);
       });
     });
   }
 
-  testWidgets('logo orbits only when Active or Loading, and never with reduced motion', (t) async {
+  testWidgets('logo orbits only when Active, and never with reduced motion', (t) async {
     Future<bool> moving(AiCardState state, {bool reduce = false}) async {
       await t.pumpWidget(MaterialApp(
         theme: ElioLightTheme.data,
@@ -261,13 +236,11 @@ void main() {
     }
 
     expect(await moving(AiCardState.active), isTrue);
-    expect(await moving(AiCardState.loading), isTrue);
-    for (final still in [AiCardState.off, AiCardState.error, AiCardState.paused]) {
+    for (final still in [AiCardState.off, AiCardState.error]) {
       expect(await moving(still), isFalse, reason: '$still');
     }
     expect(await moving(AiCardState.active, reduce: true), isFalse);
     expect(EliosAiLogo.periodFor(AiCardState.active), const Duration(milliseconds: 3600));
-    expect(EliosAiLogo.periodFor(AiCardState.loading), const Duration(milliseconds: 1200));
   });
 
   testWidgets('Connect validates first, then uses the auto-reconnect setting', (t) async {
@@ -307,20 +280,17 @@ void main() {
     expect(find.text('Start scan'), findsOneWidget);
   });
 
-  testWidgets('ELIOS AI quiz tile needs a ready model; saved choice survives a failure', (t) async {
-    await _pumpConfig(t, dark: false, gemma: const GemmaProgress(GemmaStatus.ready));
-    expect(find.text('New questions each scan, 20 to 40 s'), findsOneWidget);
-    await t.tap(find.text('ELIOS AI').last);
+  testWidgets('ELIOS AI quiz tile can be chosen any time, offline included (decision 0179)', (t) async {
+    await _pumpConfig(t, dark: false, ai: AiStatus.offline);
+    expect(find.text('New questions each scan, needs internet'), findsOneWidget);
+    await t.tap(find.text('Question bank'));
     await t.pump();
     final container = ProviderScope.containerOf(t.element(find.byType(ConfigScreen)));
-    expect(container.read(appPreferencesProvider).questionSource, QuestionSource.gemma);
-
-    GemmaQuizService.instance.progress.value = const GemmaProgress(GemmaStatus.error, error: 'x');
+    expect(container.read(appPreferencesProvider).questionSource, QuestionSource.bank);
+    await t.tap(find.text('ELIOS AI').last);
     await t.pump();
-    expect(find.text('Needs ELIOS AI active'), findsOneWidget);
-    final bank = t.getSemantics(find.text('Question bank'));
-    expect(bank.flagsCollection.isSelected, Tristate.isTrue, reason: 'quizzes use the bank meanwhile');
-    expect(container.read(appPreferencesProvider).questionSource, QuestionSource.gemma);
+    expect(container.read(appPreferencesProvider).questionSource, QuestionSource.ai);
+    expect(t.getSemantics(find.text('Question bank')).flagsCollection.isSelected, Tristate.isFalse);
   });
 
   testWidgets('settings sheet saves every value and they load after a restart', (t) async {

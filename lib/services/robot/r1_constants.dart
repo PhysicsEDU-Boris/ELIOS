@@ -20,7 +20,7 @@ const pickBandMaxCm = 28.0;
 /// also covers an inference frame (~0.5 s) delaying the reply.
 const ackTimeout = Duration(seconds: 2);
 
-/// Proposed: Gemma's image identify takes 7-9 s to its first token (HANDOFF);
+/// Proposed: the AI's image identify takes 7-9 s to its first token (HANDOFF);
 /// 45 s leaves room for a slow full answer without hanging forever.
 const identifyTimeout = Duration(seconds: 45);
 

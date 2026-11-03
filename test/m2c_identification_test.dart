@@ -5,11 +5,12 @@ import 'package:elio/models/scanned_waste.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:elio/services/scan_record_store.dart';
+import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/detection_crop.dart';
 import 'package:elio/services/detection_stabilizer.dart';
 import 'package:elio/services/frame_source/frame_source.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/live_scan_controller.dart';
 import 'package:elio/services/live_scan_state_machine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -95,7 +96,7 @@ void main() {
   );
 
   group('locked robot crop → identification → quiz', () {
-    final service = GemmaQuizService.instance;
+    final service = AiQuizService.instance;
     late ProviderContainer c;
     late WasteQuizNotifier quiz;
     late Completer<String?> identify;
@@ -106,10 +107,11 @@ void main() {
       identify = Completer<String?>();
       images = [];
       service.mockSendExecute =
-          (prompt, {imageBytes, fresh = false, isUser = false, onToken}) {
+          (prompt, {imageBytes, isUser = false}) {
             images.add(imageBytes);
             return imageBytes != null ? identify.future : Future.value(null);
           };
+      WasteQuizNotifier.sourceOverride = QuestionSource.bank; // the AI only identifies here (0017)
       c = ProviderContainer();
       quiz = c.read(wasteQuizProvider.notifier)..toggleVoice();
     });
@@ -119,7 +121,7 @@ void main() {
       await service.cancel();
       await pumpEventQueue();
       service.mockSendExecute = null;
-      service.mockBeforeSubmit = null;
+      WasteQuizNotifier.sourceOverride = null;
       c.dispose();
     });
 
@@ -386,36 +388,18 @@ void main() {
       expect(images, hasLength(1));
     });
 
-    test('close while the model is still loading never submits', () async {
-      final loading = Completer<void>();
-      var prepared = false;
-      service.mockBeforeSubmit = () {
-        prepared = true;
-        return loading.future;
-      };
-      quiz.onRobotLocked(_frame(), _box);
-      await _until(() => prepared);
-      quiz.dismiss();
-      loading.complete();
-      await pumpEventQueue();
-      expect(images, isEmpty);
-      expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.idle);
-    });
-
-    test('close after submit discards the result, slot busy until the call ends', () async {
+    test('close after submit discards the late result and frees the slot at once', () async {
       quiz.onRobotLocked(_frame(), _box);
       await _until(() => images.isNotEmpty);
       quiz.dismiss();
       await pumpEventQueue();
-      expect((await service.identifyItem(Uint8List(1))).failure, 'busy');
-      identify.complete('{"item":"baterai","category":"B3"}');
-      await pumpEventQueue();
-      expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.idle);
       final next = service.identifyItem(Uint8List(1));
       await pumpEventQueue();
-      expect(images, hasLength(2), reason: 'slot free once the running call ended');
-      identify = Completer<String?>()..complete('{"item":"botol"}');
-      expect((await next).failure, isNot('busy'));
+      expect(images, hasLength(2), reason: 'a cloud call holds no device resource, so the next one runs');
+      identify.complete('{"item":"botol"}');
+      expect((await next).item, 'botol');
+      await pumpEventQueue();
+      expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.idle, reason: 'the dismissed scan never shows');
     });
 
     test('user close is logged as cancelled, not as a failure', () async {
@@ -439,7 +423,7 @@ void main() {
       await _until(() => images.isNotEmpty);
       identify.complete(null);
       await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.finished);
-      expect(c.read(wasteQuizProvider).notice, GemmaQuizService.notReadyMessage);
+      expect(c.read(wasteQuizProvider).notice, AiQuizService.notReadyMessage);
     });
 
     test(

@@ -1,12 +1,11 @@
-// Tester build (decision 0040): source switch, no-model state, thermal gate, kill detection, YUV photo.
+// Tester build (decision 0040): source switch, offline AI state, YUV photo.
 import 'dart:io';
 
 import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/services/device_health.dart';
 import 'package:elio/services/frame_source/viewfinder_crop.dart';
 import 'package:elio/services/frame_source/yuv_jpeg.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/scan_record_store.dart';
 import 'package:elio/services/tester_log.dart';
 import 'package:elio/widgets/tester_panel.dart';
@@ -17,42 +16,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:shared_preferences/shared_preferences.dart';
 
-String _mcReply(String q) =>
-    '{"question": "$q", "correct": "B3", "wrong": ["Organik", "Kertas", "Kaca"], "explanation": "e"}';
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  final service = GemmaQuizService.instance;
+  final service = AiQuizService.instance;
   late Directory dir;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     dir = Directory.systemTemp.createTempSync('elio_tester_test');
-    service.sideloadDirOverride = dir;
-    service.thermal = ThermalGate(read: () async => 0);
-    service.clearKilled();
-    service.progress.value = const GemmaProgress(GemmaStatus.idle);
+    service.status.value = AiStatus.idle;
   });
 
   tearDown(() async {
-    service.sideloadDirOverride = null;
     service.mockSendExecute = null;
-    service.thermal = ThermalGate();
-    service.progress.value = const GemmaProgress(GemmaStatus.idle);
+    service.status.value = AiStatus.idle;
     WasteQuizNotifier.sourceOverride = null;
     dir.deleteSync(recursive: true);
   });
 
   group('question source switch', () {
-    test('the build default is the bank and a plain release resolves to the bank', () {
-      expect(defaultQuestionSource, QuestionSource.bank);
-      expect(effectiveQuestionSource(QuestionSource.gemma, debug: false), QuestionSource.bank);
-      // Run this file with and without --dart-define=TESTER_BUILD=true.
-      expect(effectiveQuestionSource(QuestionSource.gemma, debug: false || testerBuild),
-          testerBuild ? QuestionSource.gemma : QuestionSource.bank);
+    test('the default is ELIOS AI, in every build (decision 0179)', () {
+      expect(defaultQuestionSource, QuestionSource.ai);
     });
 
-    testWidgets('the panel switch moves the source from Bank to Gemma', (tester) async {
+    testWidgets('the panel switch moves the source from ELIOS AI to Bank', (tester) async {
       final c = ProviderContainer();
       addTearDown(c.dispose);
       await tester.pumpWidget(UncontrolledProviderScope(
@@ -60,37 +47,20 @@ void main() {
         child: const MaterialApp(home: Scaffold(body: SingleChildScrollView(child: TesterPanel()))),
       ));
       expect(find.text('Sumber soal'), findsOneWidget);
-      expect(c.read(appPreferencesProvider).questionSource, QuestionSource.bank);
-      await tester.tap(find.text('Gemma'));
+      expect(find.text('AI: Belum dipakai'), findsOneWidget);
+      expect(c.read(appPreferencesProvider).questionSource, QuestionSource.ai);
+      await tester.tap(find.text('Bank'));
       await tester.pump();
-      expect(c.read(appPreferencesProvider).questionSource, QuestionSource.gemma);
-    });
-  });
-
-  group('no model file', () {
-    test('prepare says "Model belum ada" with the path to push to, and loads nothing', () async {
-      expect(await service.modelMissing(), isTrue);
-      expect(await service.prepare(), isFalse);
-      final p = service.progress.value;
-      expect(p.status, GemmaStatus.missing);
-      expect(p.error, contains('Model belum ada'));
-      expect(p.error, contains('${dir.path}/${GemmaQuizService.modelFileName}'));
-      expect(gemmaStateLabel(p), startsWith('Model belum ada'));
+      expect(c.read(appPreferencesProvider).questionSource, QuestionSource.bank);
     });
 
-    test('a half-pushed file is reported as incomplete, not loaded', () async {
-      File('${dir.path}/${GemmaQuizService.modelFileName}').writeAsBytesSync(Uint8List(1024));
-      expect(await service.prepare(), isFalse);
-      expect(service.progress.value.status, GemmaStatus.error);
-      expect(service.progress.value.error, contains('belum lengkap'));
-    });
-
-    test('bank mode runs a full question without the model', () async {
-      var gemmaCalls = 0;
-      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
-        gemmaCalls++;
+    test('bank mode runs a full question without calling the AI', () async {
+      var aiCalls = 0;
+      service.mockSendExecute = (prompt, {imageBytes, isUser = false}) async {
+        aiCalls++;
         return null;
       };
+      WasteQuizNotifier.sourceOverride = QuestionSource.bank;
       final c = ProviderContainer();
       addTearDown(c.dispose);
       c.read(wasteQuizProvider.notifier).startForLabel('botol plastik', photo: Uint8List.fromList([1, 2, 3]));
@@ -100,7 +70,43 @@ void main() {
       final s = c.read(wasteQuizProvider);
       expect(s.question?.bankId, isNotNull);
       expect(s.cropBytes, [1, 2, 3], reason: 'the captured photo is kept for Scan History');
-      expect(gemmaCalls, 0);
+      expect(aiCalls, 0);
+    });
+  });
+
+  group('AI offline', () {
+    test('the panel names the model that answered, and says when none did', () {
+      expect(aiStateLabel(AiStatus.ready, 'gemini-3.5-flash-lite'), 'Siap (gemini-3.5-flash-lite)');
+      expect(aiStateLabel(AiStatus.offline, null), 'Tidak tersambung, mode bank');
+    });
+
+    test('identify and essay grading say so, without throwing', () async {
+      service.mockSendExecute = (prompt, {imageBytes, isUser = false}) async => null;
+      final id = await service.identifyItem(Uint8List.fromList([1]));
+      expect(id.item, isNull);
+      expect(id.failure, AiQuizService.notReadyMessage);
+      expect(await service.reviewEssay(question: 'q', expectedPoints: 'p', answer: 'a'), isNull);
+    });
+
+    test('an AI-mode quiz with no AI answer uses a bank question and says so', () async {
+      service.mockSendExecute = (prompt, {imageBytes, isUser = false}) async => null;
+      WasteQuizNotifier.sourceOverride = QuestionSource.ai;
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      c.read(wasteQuizProvider.notifier).startForLabel('botol plastik');
+      for (var i = 0; i < 200 && c.read(wasteQuizProvider).phase == WasteQuizPhase.loadingQuestion; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+      final s = c.read(wasteQuizProvider);
+      expect(s.question?.bankId, isNotNull);
+      expect(s.isFallback, isFalse);
+      expect(s.questionSource, QuestionSource.bank);
+      expect(s.messages.last.text, contains('AI tidak tersambung'));
+    });
+
+    test('a real call without Firebase fails soft: null, status offline', () async {
+      expect(await service.discuss(quizContext: 'k', history: const [], message: 'halo'), isNull);
+      expect(service.status.value, AiStatus.offline);
     });
   });
 
@@ -140,118 +146,16 @@ void main() {
         reason: 'the result card PDF embeds the saved History photo');
   });
 
-  group('thermal gate', () {
-    test('SEVERE still runs; pauses at CRITICAL, resumes at SEVERE', () async {
-      var status = 1;
-      final events = <String>[];
-      final gate = ThermalGate(read: () async => status, onChange: (s, p) => events.add('$s:$p'));
-      expect(await gate.check(), isFalse);
-      status = 3;
-      expect(await gate.check(), isFalse, reason: 'SEVERE is allowed (12 GB phone test, 29 Oct)');
-      status = 4;
-      expect(await gate.check(), isTrue);
-      expect(gate.statusName, 'CRITICAL');
-      status = 3;
-      expect(await gate.check(), isFalse, reason: 'back to SEVERE resumes');
-      status = 5;
-      expect(await gate.check(), isTrue);
-      expect(events, ['1:false', '3:false', '4:true', '3:false', '5:true']);
-    });
-
-    test('an unreadable status (null) keeps the last decision', () async {
-      int? status = 4;
-      final gate = ThermalGate(read: () async => status);
-      expect(await gate.check(), isTrue);
-      status = null;
-      expect(await gate.check(), isTrue);
-    });
-
-    test('critical heat: identify and essay grading get honest text, Gemma is never called', () async {
-      var gemmaCalls = 0;
-      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
-        gemmaCalls++;
-        return 'x';
-      };
-      service.thermal = ThermalGate(read: () async => 4);
-      await service.refreshBlocked();
-      final id = await service.identifyItem(Uint8List.fromList([1]));
-      expect(id.item, isNull);
-      expect(id.failure, contains('panas'));
-      expect(await service.reviewEssay(question: 'q', expectedPoints: 'p', answer: 'a'), isNull);
-      expect(service.progress.value.status, GemmaStatus.paused);
-      expect(gemmaCalls, 0);
-    });
-
-    test('critical heat in Gemma mode: the quiz uses a bank question and says so', () async {
-      var gemmaCalls = 0;
-      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
-        gemmaCalls++;
-        return _mcReply('Soal Gemma?');
-      };
-      service.thermal = ThermalGate(read: () async => 4);
-      await service.refreshBlocked();
-      WasteQuizNotifier.sourceOverride = QuestionSource.gemma;
-      final c = ProviderContainer();
-      addTearDown(c.dispose);
-      c.read(wasteQuizProvider.notifier).startForLabel('botol plastik');
-      for (var i = 0; i < 200 && c.read(wasteQuizProvider).phase == WasteQuizPhase.loadingQuestion; i++) {
-        await Future<void>.delayed(const Duration(milliseconds: 5));
-      }
-      final s = c.read(wasteQuizProvider);
-      expect(s.question?.bankId, isNotNull);
-      expect(s.questionSource, QuestionSource.bank);
-      expect(s.messages.last.text, contains('Ponsel terlalu panas'));
-      expect(gemmaCalls, 0);
-    });
-
-    test('it cools down: Gemma is allowed again', () async {
-      var status = 4;
-      service.thermal = ThermalGate(read: () async => status);
-      await service.refreshBlocked();
-      expect(service.progress.value.status, GemmaStatus.paused);
-      status = 3;
-      await service.refreshBlocked();
-      expect(service.progress.value.status, GemmaStatus.idle);
-      expect(service.blockedReason, isNull);
-    });
-  });
-
-  group('system kill', () {
-    test('classifies the previous run', () {
-      expect(classifyPreviousRun(markerLeft: false, exitReason: 3), PreviousRun.clean);
-      expect(classifyPreviousRun(markerLeft: true, exitReason: 3), PreviousRun.systemKilled);
-      expect(classifyPreviousRun(markerLeft: true, exitReason: 2), PreviousRun.systemKilled);
-      expect(classifyPreviousRun(markerLeft: true, exitReason: null), PreviousRun.systemKilled);
-      expect(classifyPreviousRun(markerLeft: true, exitReason: 5), PreviousRun.nativeCrash);
-      expect(classifyPreviousRun(markerLeft: true, exitReason: 10), PreviousRun.clean, reason: 'user swiped it away');
-    });
-
-    test('a leftover marker shows the message and blocks Gemma until the tester retries', () async {
-      File('${dir.path}/gemma_active.marker').writeAsStringSync('x');
-      await service.checkPreviousRun();
-      expect(service.progress.value.status, GemmaStatus.killed);
-      expect(service.blockedReason, 'Gemma dihentikan sistem, mode bank aktif.');
-      expect(await service.ensureReady(), isFalse, reason: 'no silent retry');
-      service.clearKilled();
-      expect(service.blockedReason, isNull);
-    });
-
-    test('no marker: nothing shown', () async {
-      await service.checkPreviousRun();
-      expect(service.progress.value.status, GemmaStatus.idle);
-    });
-  });
-
   group('tester log', () {
     test('writes lines to the file and is a no-op when disabled', () async {
       final log = TesterLog.instance;
       log.enabled = true;
       await log.init(dir: dir);
-      log.log('gemma', 'load ms=123');
-      expect(File('${dir.path}/elio_tester.log').readAsStringSync(), contains('[gemma] load ms=123'));
+      log.log('ai', 'model=gemini-3.5-flash-lite ms=1800');
+      expect(File('${dir.path}/elio_tester.log').readAsStringSync(), contains('[ai] model=gemini-3.5-flash-lite ms=1800'));
       log.clear();
       log.enabled = false;
-      log.log('gemma', 'ignored');
+      log.log('ai', 'ignored');
       expect(log.read(), isNot(contains('ignored')));
       log.enabled = testerBuild;
     });

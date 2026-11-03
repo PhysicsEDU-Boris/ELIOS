@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.boris.elio">
-    <!-- Local Wi-Fi WebSocket to the robot. Flutter only adds this to debug/
-         profile manifests; Gemma inference itself never uses the network. -->
+    <!-- Local Wi-Fi WebSocket to the robot and the ELIOS AI cloud calls. Flutter
+         only adds this to debug/profile manifests. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />

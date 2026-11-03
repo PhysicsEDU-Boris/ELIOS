@@ -3,14 +3,14 @@ import 'package:flutter/foundation.dart';
 import '../models/essay_grade.dart';
 import '../models/quiz_explanation.dart';
 import '../models/scanned_waste.dart';
-import '../services/gemma_quiz_service.dart';
+import '../services/ai_quiz_service.dart';
 
 /// Generates structured [QuizExplanation] objects for answered questions.
 ///
 /// Design (decision 0031):
 /// - Bank-grounded questions use in-process logic to build a deterministic
-///   explanation table; no Gemma call needed.
-/// - Gemma-generated questions attempt a short `discuss()` call; if the
+///   explanation table; no AI call needed.
+/// - AI-generated questions attempt a short `discuss()` call; if the
 ///   service is unavailable the unavailable sentinel is returned.
 /// - The call is non-blocking: the caller sets `explanationLoading = true`
 ///   and awaits this future while showing a spinner.
@@ -22,7 +22,7 @@ class QuizExplanationService {
   /// [question] — the [GeneratedQuestion] that was shown.
   /// [selectedIndex] — the option index chosen (null for essay / skipped).
   /// [scan] — the [ScannedWaste] that triggered the quiz session.
-  /// [essayGrade] — validated Gemma grade; null when grading is unavailable.
+  /// [essayGrade] — validated AI grade; null when grading is unavailable.
   static Future<QuizExplanation> generate({
     required GeneratedQuestion question,
     required ScannedWaste scan,

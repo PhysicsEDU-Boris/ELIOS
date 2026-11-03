@@ -13,7 +13,7 @@ import '../models/scanned_waste.dart';
 import '../services/detection_crop.dart';
 import '../services/detection_stabilizer.dart';
 import '../services/frame_source/frame_source.dart';
-import '../services/gemma_quiz_service.dart';
+import '../services/ai_quiz_service.dart';
 import '../services/question_bank.dart';
 import '../services/quiz_explanation_service.dart';
 import '../services/quiz_tts_service.dart';
@@ -29,10 +29,6 @@ enum WasteQuizPhase { idle, identifying, confirmingHazard, confirmingMismatch, l
 /// MaixCAM2 is the real hardware path; phone camera is a debug-only
 /// stand-in for testing without the robot.
 enum WasteQuizSource { maixCam2, phoneCamera }
-
-/// `--dart-define=GEMMA_QUESTIONS=true`: the question-source switch starts on Gemma
-/// (decision 0018); the default source is the reviewed bank (decision 0017).
-const gemmaQuestionsEnabled = defaultQuestionSource == QuestionSource.gemma;
 
 /// Essay questions are off by default: sessions are multiple choice only (decision 0017).
 // The tester build always asks essays (A1: the essay grade needs measuring).
@@ -65,7 +61,7 @@ class WasteQuizUiState {
   /// Why a session ended early (e.g. the photo couldn't be identified).
   final String? notice;
 
-  /// The detector class Gemma disagreed with (confirmingMismatch only).
+  /// The detector class AI disagreed with (confirmingMismatch only).
   final String? mismatchDetector;
 
   /// The question source this session uses (decision 0018), for the header.
@@ -201,7 +197,7 @@ const _sameLabelCooldown = Duration(seconds: 25);
 
 class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   ScanDiagnostics? _diagnostics;
-  ScannedWaste? _detectorChoice; // Gemma's item in the detector's bin, for the mismatch card
+  ScannedWaste? _detectorChoice; // AI's item in the detector's bin, for the mismatch card
   String? _lastLabel;
   DateTime? _lastShownAt;
   int _generation = 0;
@@ -215,7 +211,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   // Captured when a session starts, so a switch only affects the next scan (decision 0018).
   QuestionSource _sessionSource = QuestionSource.bank;
-  bool get _gemma => _sessionSource == QuestionSource.gemma;
+  bool get _ai => _sessionSource == QuestionSource.ai;
 
   // From the scan result (the object known) to each question shown, for the per-question log.
   Stopwatch? _scanClock;
@@ -223,7 +219,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   // This session's remaining bank questions per type (decision 0017).
   Map<QuizQuestionType, List<GeneratedQuestion>>? _bankQueues;
 
-  // Physics angles Gemma questions already used this session, so none repeats (decision 0019).
+  // Physics angles AI questions already used this session, so none repeats (decision 0019).
   final _usedAngles = <String>[];
 
   // The text last spoken automatically (decision 0009: "one TTS slot, keyed
@@ -234,7 +230,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   String? _lastAutoSpokenText;
 
   // Background prefetch (decision 0011, M2b part 3): questions 2..N are
-  // generated through the single Gemma slot as soon as question 1 shows, one
+  // generated through the single AI slot as soon as question 1 shows, one
   // at a time, into these completers (keyed by index) -- "Soal berikutnya"
   // just awaits the one it needs, instant if it's already done.
   final _prefetchCompleters = <int, Completer<GeneratedQuestion?>>{};
@@ -264,7 +260,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     QuizTtsService.instance.volume = ref.read(appPreferencesProvider).masterVolume;
     _diagnostics = null;
     _lastAutoSpokenText = null; // a new object/quiz: nothing spoken for it yet
-    _sessionSource = sourceOverride ?? effectiveQuestionSource(ref.read(appPreferencesProvider).questionSource);
+    _sessionSource = sourceOverride ?? ref.read(appPreferencesProvider).questionSource;
     _scanClock = scan == null ? null : (Stopwatch()..start());
     _recordedQuestions.clear();
     return WasteQuizUiState(phase: phase, scan: scan, difficulty: difficulty, voiceOn: state.voiceOn,
@@ -290,11 +286,11 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
     _lastLabel = label;
     _lastShownAt = now;
-    GemmaQuizService.instance.cancel();
+    AiQuizService.instance.cancel();
     _startSession(ScannedWaste.fromLabel(label));
   }
 
-  /// Device-camera path: first ask Gemma what the object is (on its own,
+  /// Device-camera path: first ask AI what the object is (on its own,
   /// unbiased), then generate the questions about that object.
   void onPhotoCaptured(Uint8List imageBytes) {
     if (state.phase != WasteQuizPhase.idle) return;
@@ -307,7 +303,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _usedAngles.clear();
     _cancelPrefetch();
     final generation = ++_generation;
-    GemmaQuizService.instance.cancel();
+    AiQuizService.instance.cancel();
     loadingSince = DateTime.now();
     state = _freshSession(phase: WasteQuizPhase.identifying);
     unawaited(_identifyThenQuiz(imageBytes, generation));
@@ -326,7 +322,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _usedAngles.clear();
     _cancelPrefetch();
     final generation = ++_generation;
-    GemmaQuizService.instance.cancel();
+    AiQuizService.instance.cancel();
     loadingSince = DateTime.now();
     state = _freshSession(phase: WasteQuizPhase.identifying);
     final diagnostics = kDebugMode ? ScanDiagnostics() : null;
@@ -365,7 +361,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   Future<void> _identifyThenQuiz(Uint8List imageBytes, int generation,
       {String? detectorLabel, double? detectorScore, int? frameId, ScanDiagnostics? diagnostics}) async {
-    final result = await GemmaQuizService.instance.identifyItem(imageBytes, diagnostics: diagnostics);
+    final result = await AiQuizService.instance.identifyItem(imageBytes, diagnostics: diagnostics);
     diagnostics?.event('identify_result', {'item': result.item, 'material': result.material,
       'category': result.category, 'failure': result.failure, 'stale': generation != _generation});
     if (generation != _generation) return;
@@ -377,7 +373,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (item == null) {
       // Not dismissed, so the cancel came from a chat request taking the slot.
       final reason = result.failure == 'cancelled'
-          ? GemmaQuizService.notReadyMessage
+          ? AiQuizService.notReadyMessage
           : result.failure ?? 'Benda di foto belum dikenali.';
       state = state.copyWith(
         phase: WasteQuizPhase.finished,
@@ -398,7 +394,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       state = state.copyWith(phase: WasteQuizPhase.confirmingHazard);
       return;
     }
-    // Hazard wins above; any other detector/Gemma disagreement waits for the user.
+    // Hazard wins above; any other detector/AI disagreement waits for the user.
     if (detectorLabel != null && ScannedWaste.categoryMismatch(detectorLabel, result.category)) {
       final detectorChoice = ScannedWaste.fromLabel(item, material: result.material,
           categoryHint: ScannedWaste.detectorCategory(detectorLabel), detectorLabel: detectorLabel);
@@ -423,7 +419,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _diagnostics?.event('item_corrected', {'from': state.scan!.displayName, 'to': label});
     _generation++;
     _detectorChoice = null;
-    GemmaQuizService.instance.cancel();
+    AiQuizService.instance.cancel();
     unawaited(QuizTtsService.instance.stop());
     _startSession(ScannedWaste.fromLabel(label, categoryHint: category));
   }
@@ -434,7 +430,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _loadQuestion(0);
   }
 
-  /// The user picks the bin after a detector/Gemma mismatch; only then the quiz runs.
+  /// The user picks the bin after a detector/AI mismatch; only then the quiz runs.
   void resolveMismatch({required bool useDetector}) {
     final detectorChoice = _detectorChoice;
     if (state.phase != WasteQuizPhase.confirmingMismatch || detectorChoice == null) return;
@@ -454,7 +450,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _cropBytes = photo;
     _historyPhotoBytes = photo; // the retained phone shot is also the History photo (D1 + A1)
     _recordedQuestions.clear();
-    GemmaQuizService.instance.cancel();
+    AiQuizService.instance.cancel();
     _startSession(ScannedWaste.fromLabel(label));
   }
 
@@ -492,20 +488,12 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       sendingChat: false,
     );
 
-    // Gemma mode with Gemma blocked (hot phone, killed, no model): questions
-    // come from the bank, said out loud, not silently (decision 0040).
-    String? bankNotice;
-    if (_gemma) {
-      bankNotice = GemmaQuizService.instance.blockedReason;
-      if (bankNotice != null) _sessionSource = QuestionSource.bank;
-    }
-
     final diagnostics = _diagnostics;
     diagnostics?.event('question_request', {'requestId': '${diagnostics.id}/question-${index + 1}'});
     final sw = kDebugMode ? (Stopwatch()..start()) : null;
     final loadClock = Stopwatch()..start();
-    final generated = _gemma
-        ? await GemmaQuizService.instance.generateQuestion(
+    var generated = _ai
+        ? await AiQuizService.instance.generateQuestion(
             waste: scan,
             type: type,
             difficulty: state.difficulty,
@@ -513,16 +501,24 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
             usedAngles: List.of(_usedAngles),
           )
         : await _fromBank(scan, type);
+    // AI mode with no AI answer (offline, every model capped): the rest of the
+    // session comes from the bank, said out loud, not silently (decision 0179).
+    String? bankNotice;
+    if (generated == null && _ai && generation == _generation) {
+      _sessionSource = QuestionSource.bank;
+      generated = await _fromBank(scan, type);
+      if (generated != null) bankNotice = _bankNotice;
+    }
     if (generated?.angle != null) _usedAngles.add(generated!.angle!);
     diagnostics?.event('question_complete', {'question': index + 1, 'generationMs': sw?.elapsedMilliseconds,
-      'firstTokenMs': GemmaQuizService.instance.lastFirstTokenMs.value,
+      'replyMs': AiQuizService.instance.lastReplyMs.value, 'model': AiQuizService.instance.lastModel,
       'fallback': generated == null, 'stale': generation != _generation, 'bankId': generated?.bankId});
     if (sw != null) {
       // One line per question load, so a slow session (decision 0009) shows
       // exactly which question was slow and whether it fell back.
       debugPrint('[WasteQuiz] ${scan.displayName}: question ${index + 1}/$total '
-          '(${type.name}) in ${sw.elapsedMilliseconds}ms, first token '
-          '${GemmaQuizService.instance.lastFirstTokenMs.value ?? '-'}ms, '
+          '(${type.name}) in ${sw.elapsedMilliseconds}ms, reply '
+          '${AiQuizService.instance.lastReplyMs.value ?? '-'}ms, '
           'fallback=${generated == null}');
     }
     if (generation != _generation) return; // dismissed or superseded
@@ -549,7 +545,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _announceReady();
     diagnostics?.event('question_shown', {'question': index + 1, 'totalLockToQuestionMs': diagnostics.clock.elapsedMilliseconds});
     _logQuestion(index, scan, generated, loadClock.elapsedMilliseconds);
-    if (index == 0 && _gemma) _startPrefetch();
+    if (index == 0 && _ai) _startPrefetch();
   }
 
   /// The next bank question of [type] not yet asked this session: the object's
@@ -580,12 +576,14 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _diagnostics?.event('class_mismatch', fields);
   }
 
-  String _fallbackIntro() => _gemma
+  String _fallbackIntro() => _ai
       ? 'Ini soal cadangan karena AI belum bisa membuat soal. ${_aiUnavailableReason()}'
       : 'Ini soal umum karena benda ini belum ada di bank soal.';
 
+  static const _bankNotice = 'AI tidak tersambung, jadi soal ini dari bank soal. Periksa internet.';
+
   /// Starts filling questions 2..N in the background through the single
-  /// Gemma slot, one at a time, the instant question 1 shows.
+  /// AI slot, one at a time, the instant question 1 shows.
   void _startPrefetch() {
     final total = state.totalQuestions;
     if (total <= 1) return;
@@ -620,7 +618,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       final timing = kDebugMode ? (Stopwatch()..start()) : null;
       final requestId = '${diagnostics?.id}/question-${index + 1}/attempt-${++attempt}';
       diagnostics?.event('prefetch_request', {'requestId': requestId});
-      final result = await GemmaQuizService.instance.generateQuestionBackground(
+      final result = await AiQuizService.instance.generateQuestionBackground(
         waste: scan,
         type: type,
         difficulty: state.difficulty,
@@ -668,13 +666,18 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     );
 
     final sw = Stopwatch()..start();
-    final generated = _gemma ? await _prefetchCompleters[index]?.future : await _fromBank(scan, type);
+    var generated = _ai ? await _prefetchCompleters[index]?.future : await _fromBank(scan, type);
+    String? bankNotice;
+    if (generated == null && _ai && generation == _generation) {
+      generated = await _fromBank(scan, type); // the prefetch got no AI answer: offline fallback
+      if (generated != null) bankNotice = _bankNotice;
+    }
     final waitedMs = sw.elapsedMilliseconds;
     _lastNextWaitMs = waitedMs;
     if (kDebugMode) {
       debugPrint('[WasteQuiz] ${scan.displayName}: question ${index + 1}/$total '
-          '(${type.name}) waited ${waitedMs}ms, first token '
-          '${GemmaQuizService.instance.lastFirstTokenMs.value ?? '-'}ms, '
+          '(${type.name}) waited ${waitedMs}ms, reply '
+          '${AiQuizService.instance.lastReplyMs.value ?? '-'}ms, '
           'fallback=${generated == null}');
     }
     if (generation != _generation) return; // dismissed or superseded while waiting
@@ -685,11 +688,11 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       return;
     }
     _askedQuestions.add(question.question);
-    final intro = generated == null
+    final intro = bankNotice ?? (generated == null
         ? _fallbackIntro()
         : type == QuizQuestionType.multipleChoice
             ? 'Pilih satu jawaban dulu. Setelah itu kamu bisa bertanya apa saja tentang soal ini.'
-            : 'Tulis jawabanmu lalu kirim. Setelah dikoreksi, kamu bisa bertanya lebih lanjut.';
+            : 'Tulis jawabanmu lalu kirim. Setelah dikoreksi, kamu bisa bertanya lebih lanjut.');
     state = state.copyWith(
       phase: WasteQuizPhase.active,
       question: question,
@@ -709,8 +712,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       'source': _sessionSource.name,
       'item': scan.displayName,
       'detector': scan.detectorLabel ?? '-',
-      'object': _gemma ? '-' : chosen?.object ?? '-',
-      'pool': _gemma ? 'gemma' : chosen?.pool ?? '-',
+      'object': _ai ? '-' : chosen?.object ?? '-',
+      'pool': _ai ? 'ai' : chosen?.pool ?? '-',
       'angle': generated?.angle ?? '-',
       'fromScanMs': _scanClock?.elapsedMilliseconds,
       'loadMs': loadMs,
@@ -826,7 +829,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       messages: [...state.messages, ChatMessage(isUser: true, text: trimmed, caption: 'Jawaban Essay')],
     );
     final reply = score == null
-        ? await GemmaQuizService.instance.reviewEssay(
+        ? await AiQuizService.instance.reviewEssay(
             question: q.question,
             expectedPoints: q.explanation,
             answer: trimmed,
@@ -888,7 +891,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
     final generation = _generation;
     state = state.copyWith(sendingChat: true);
-    final reply = await GemmaQuizService.instance.discuss(
+    final reply = await AiQuizService.instance.discuss(
       quizContext: _quizContext(q),
       history: history,
       message: trimmed,
@@ -918,14 +921,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   }
 
   /// Short, specific reason shown when the AI couldn't answer.
-  String _aiUnavailableReason() {
-    final p = GemmaQuizService.instance.progress.value;
-    return GemmaQuizService.instance.blockedReason ?? switch (p.status) {
-      GemmaStatus.error => p.error ?? 'Buka Pengaturan Koneksi untuk menyiapkan ulang AI.',
-      GemmaStatus.installing || GemmaStatus.loading => 'AI masih disiapkan, coba lagi sebentar lagi.',
-      _ => 'Coba lagi.',
-    };
-  }
+  String _aiUnavailableReason() => AiQuizService.instance.status.value == AiStatus.offline
+      ? 'Periksa koneksi internet, lalu coba lagi.'
+      : 'Coba lagi.';
 
   /// Only allowed when Config Settings → Quiz → Skip Allowed is on.
   void skipQuestion() {
@@ -1093,7 +1091,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _diagnostics = null;
     _generation++;
     _cancelPrefetch();
-    GemmaQuizService.instance.cancel();
+    AiQuizService.instance.cancel();
     unawaited(QuizTtsService.instance.stop());
     _cropBytes = null;
     _historyPhotoBytes = null;

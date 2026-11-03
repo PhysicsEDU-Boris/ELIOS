@@ -6,7 +6,7 @@ import 'dart:typed_data';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/question_bank.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -80,9 +80,9 @@ void main() {
   group('quiz session (bank default, Gemma never asked for a question)', () {
     late List<String> prompts;
     setUp(() async {
-      await GemmaQuizService.instance.cancel();
+      await AiQuizService.instance.cancel();
       prompts = [];
-      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+      AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) async {
         prompts.add(prompt);
         if (_isQuestionRequest(prompt)) fail('question request reached Gemma: $prompt');
         if (imageBytes != null) return '{"item":"ponsel","material":"logam, kaca, plastik","category":"B3"}';
@@ -93,7 +93,7 @@ void main() {
       await pumpEventQueue();
     });
     tearDown(() {
-      GemmaQuizService.instance.mockSendExecute = null;
+      AiQuizService.instance.mockSendExecute = null;
       WasteQuizNotifier.sourceOverride = null;
       WasteQuizNotifier.essayQuestions = essayQuestionsEnabled;
     });
@@ -127,7 +127,6 @@ void main() {
     }
 
     test('defaults: build flags are off', () {
-      expect(gemmaQuestionsEnabled, isFalse);
       expect(essayQuestionsEnabled, isFalse);
     });
 

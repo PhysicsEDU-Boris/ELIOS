@@ -14,7 +14,7 @@ import 'package:elio/providers/auth_provider.dart';
 import 'package:elio/providers/learning_progress_provider.dart';
 import 'package:elio/providers/navigation_provider.dart';
 import 'package:elio/services/elearning_content_service.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/scan_record_store.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';

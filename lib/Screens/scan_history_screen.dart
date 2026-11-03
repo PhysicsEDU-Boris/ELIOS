@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/scan_record.dart';
-import '../services/gemma_quiz_service.dart';
+import '../services/ai_quiz_service.dart';
 import '../services/quiz_pdf_service.dart';
 import '../services/scan_record_store.dart';
 import '../widgets/quiz_explanation_overlay.dart';

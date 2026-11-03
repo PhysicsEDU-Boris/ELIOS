@@ -15,7 +15,7 @@ import '../models/trophy_rules.dart';
 import '../providers/app_preferences_provider.dart';
 import '../providers/robot_provider.dart';
 import '../providers/waste_quiz_provider.dart';
-import '../services/gemma_quiz_service.dart';
+import '../services/ai_quiz_service.dart';
 import '../services/question_bank.dart';
 import '../services/quiz_explanation_service.dart';
 import '../services/quiz_pdf_service.dart';
@@ -33,13 +33,13 @@ part 'quiz/quiz_r3.dart';
 /// 600dp wide (question + 280dp AI chat), tabs below that. The question panel
 /// and the chat scroll independently, so long questions or AI replies never
 /// push content off-screen. Inert while idle so robot controls stay usable.
-/// Where the shown question came from (decisions 0017, 0018). A Gemma question
+/// Where the shown question came from (decisions 0017, 0018). An AI question
 /// never claims to be from the module.
 String questionSourceHeader(WasteQuizUiState state) {
   if (state.question?.bankId != null) return 'SOAL DARI MODUL · BANK SOAL';
-  if (!state.isFallback) return 'SOAL GEMMA';
-  return state.questionSource == QuestionSource.gemma
-      ? 'SOAL CADANGAN (AI ON-DEVICE BELUM SIAP)'
+  if (!state.isFallback) return 'SOAL ELIOS AI';
+  return state.questionSource == QuestionSource.ai
+      ? 'SOAL CADANGAN (ELIOS AI TIDAK TERSAMBUNG)'
       : 'SOAL UMUM (BENDA BELUM ADA DI BANK SOAL)';
 }
 

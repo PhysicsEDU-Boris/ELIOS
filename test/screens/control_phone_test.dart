@@ -1,7 +1,7 @@
 // R3 on the real ControlScreen (no robot: the link is down): the phone layout
 // is chosen by size, the Guide opens by itself once per device, and tablets keep R2.
 import 'package:elio/Screens/control_screen.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/widgets/control/phone/phone_control.dart';
 import 'package:elio/widgets/control/phone/phone_guide.dart';
 import 'package:flutter/material.dart';
@@ -38,10 +38,10 @@ void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
-    GemmaQuizService.instance.mockSendExecute =
-        (p, {imageBytes, fresh = false, isUser = false, onToken}) async => null;
+    AiQuizService.instance.mockSendExecute =
+        (p, {imageBytes, isUser = false}) async => null;
   });
-  tearDown(() => GemmaQuizService.instance.mockSendExecute = null);
+  tearDown(() => AiQuizService.instance.mockSendExecute = null);
 
   testWidgets(
     'a phone in landscape gets the R3 layout; STOP is live while it loads',

@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 
 class _SeededQuiz extends WasteQuizNotifier {
   _SeededQuiz(this.seed);

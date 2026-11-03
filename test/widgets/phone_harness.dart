@@ -3,7 +3,7 @@
 import 'package:elio/models/chat_message.dart';
 import 'package:elio/models/control_session.dart';
 import 'package:elio/models/quiz_explanation.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/robot_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';

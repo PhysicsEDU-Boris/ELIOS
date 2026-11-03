@@ -6,7 +6,7 @@ enum TtsStatus { idle, speaking, error }
 /// Voice playback for the AI Correction Assistant's messages — same
 /// approach as the ELIO-SANDBOX prototype's `TtsService`, using the
 /// device's own TTS engine (no model download, so it's always available
-/// even if the Gemma model isn't installed yet).
+/// even when the AI is offline).
 class QuizTtsService {
   QuizTtsService._() {
     _tts.setStartHandler(() => status.value = TtsStatus.speaking);
@@ -16,7 +16,7 @@ class QuizTtsService {
   }
   static final instance = QuizTtsService._();
 
-  // Gemma replies in whichever language the student used — this heuristic
+  // The AI replies in whichever language the student used — this heuristic
   // only needs to tell apart the two languages this quiz actually uses.
   static const _indonesianMarkers = {
     'yang', 'dan', 'atau', 'adalah', 'ini', 'itu', 'tidak', 'dengan', 'untuk',

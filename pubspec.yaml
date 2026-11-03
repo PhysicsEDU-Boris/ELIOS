@@ -16,6 +16,8 @@ dependencies:
   firebase_auth: ^6.5.2
   cloud_firestore: ^6.5.0
   firebase_storage: ^13.4.2
+  # Gemini identify and quiz questions through the eliosAi function (decision 0179).
+  cloud_functions: ^6.0.0
   google_sign_in: ^6.2.1
 
   # UI & State
@@ -41,13 +43,8 @@ dependencies:
   # The `camera` plugin has no macOS implementation; this provides the Mac
   # webcam for the device-camera scan screen.
   camera_macos: ^0.1.1
-  # Locates the copied Gemma model on Android to report copy progress.
+  # App storage paths (scan records, tester log, PDF reports).
   path_provider: ^2.1.6
-
-  # On-device Gemma inference for the auto-generated waste-sorting quiz
-  # (same API/model as the ELIO-SANDBOX prototype's GemmaService).
-  flutter_gemma: ^1.9.0
-  flutter_gemma_litertlm: ^1.8.2
 
   # Voice playback for the quiz's AI Correction Assistant messages (same as
   # the ELIO-SANDBOX prototype's TtsService).

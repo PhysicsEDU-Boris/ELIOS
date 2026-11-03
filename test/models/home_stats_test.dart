@@ -1,7 +1,7 @@
 import 'package:elio/models/home_stats.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/trophy_rules.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _right = RecordQuestion(

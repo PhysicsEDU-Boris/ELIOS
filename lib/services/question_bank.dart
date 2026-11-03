@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/services.dart' show rootBundle;
 
 import '../models/scanned_waste.dart';
-import 'gemma_quiz_service.dart';
+import 'ai_quiz_service.dart';
 
 /// Pre-written, module-grounded questions (decision 0017): first the scanned
 /// object's own questions, then its label pool's (decision 0015). No model.
@@ -111,7 +111,7 @@ class QuestionBank {
   }
 
   /// What [scan] is served (decision 0025): (a) the bank object matched from
-  /// Gemma's words, if its `label` is the detector class (or no class decides);
+  /// The AI's words, if its `label` is the detector class (or no class decides);
   /// (b) else the detector class's label pool; (c) with no deciding class,
   /// today's fallback ([poolFor]).
   ({String? object, String? pool}) selection(ScannedWaste scan) {
@@ -122,8 +122,8 @@ class QuestionBank {
     return (object: null, pool: poolFor(scan));
   }
 
-  /// The label pool Gemma's words point to, when the detector class decides and
-  /// they point to a different one in the same bin (Plastic box, Gemma
+  /// The label pool the AI's words point to, when the detector class decides and
+  /// they point to a different one in the same bin (Plastic box, the AI
   /// "kertas"). Logged as `class_mismatch`; no card is shown (decision 0025).
   String? classMismatch(ScannedWaste scan) {
     final det = _decidingClass(scan);
