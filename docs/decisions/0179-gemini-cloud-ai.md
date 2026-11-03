@@ -1,6 +1,6 @@
 # 0179: ELIOS AI moves to the Gemini API through a Firebase Function; on-device Gemma removed
 
-- Status: Accepted (owner, 3 Nov 2026: the key lives in a Firebase Function). Free or paid key still open.
+- Status: Accepted (owner, 3 Nov 2026: the key lives in a Firebase Function; free-tier key for now).
 - Date: 2026-11-03
 - Builds on: [0176](0176-cloud-ai-benchmark.md) (chain and switch rules), 0017/0018/0145 (question source), 0040 (tester build).
 
@@ -31,12 +31,17 @@
   LiteRT-LM build phase, the Config card's Activate/Loading/Paused states, the scan screen's "loading"
   and "model missing" states, and the four on-device integration tests.
 
-## Not done / limits
+- **Free tier for now** (owner, 3 Nov). The chain order fits the free caps: 3.5 Flash-Lite and
+  3.1 Flash-Lite allow 500 calls a day, the other three 20 each (about 1,060 a day together); a
+  capped model is skipped until the reset, so only when all are capped does the bank take over.
 
-- **Free or paid key** (0176 decision 2) is still the owner's call. On the free tier Google may use
-  prompts and photos to improve its products, and most chain models cap at 20 calls a day.
-- **Deploying** needs the owner: Firebase Blaze plan on `elio-apps`, `firebase login`, the secret, then
-  `firebase deploy --only functions`. Until then every AI call fails and quizzes use the bank.
+## Open items / limits
+
+- **Move to a paid key before students use it.** On the free tier Google may use the prompts and
+  the students' photos to improve its products. Paid also lifts the 20-per-day caps.
+- **Deploying** is the owner's step: upgrading `elio-apps` to the Blaze plan, `firebase login`, and
+  setting the `GEMINI_API_KEY` secret are done by the owner (the key is never printed or committed),
+  then `firebase deploy --only functions`. Until then every AI call fails and quizzes use the bank.
 - Rest times live in one function instance's memory: a cold start forgets them (the first call
   then simply meets the same 429 again).
 - No App Check: any signed-in user of the project could call the function. Upgrade if abuse shows up.
