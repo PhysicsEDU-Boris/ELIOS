@@ -69,3 +69,9 @@ away with the .mud model).
   (`docs/test-results/0181/lock-kardus-no-quiz.png`). SCAN: the quiz opened at once from that
   answer (no second identify call). Closed unanswered, nothing saved.
 - The UNLOCK and SCAN captions touched on the video: the gap went from 8 to 18 px.
+
+## Robot test 3 (APK `d1f5059`): keys in the ARM card
+
+- LOCK and SCAN pills above Online, STOP unchanged. LOCK named a cigarette pack "bungkus rokok"
+  with a green box; the pill read UNLOCK, and UNLOCK cleared it
+  (`docs/test-results/0181/lock-scan-in-arm-card.png`).
