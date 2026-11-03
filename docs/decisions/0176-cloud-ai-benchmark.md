@@ -51,7 +51,7 @@ automatically:
 3. gemini-3-flash-preview (20/day)
 4. gemini-3.6-flash (20/day; the most evidence)
 5. gemini-robotics-er-2-preview (20/day)
-6. Offline: the existing on-device Gemma and question bank, unchanged.
+6. Offline: the question bank only (on-device Gemma is dropped, see below).
 
 On the free tier, the chain together gives about 1,060 calls per day and about 45 per minute.
 
@@ -62,6 +62,15 @@ On the free tier, the chain together gives about 1,060 calls per day and about 4
 - **404:** drop the model from the chain.
 - **Invalid JSON:** one retry on the same model, then the next model.
 - **Logging:** each scan records which model answered.
+
+## On-device Gemma dropped (owner, 3 Nov 2026)
+
+The target architecture no longer uses local Gemma: identify and question generation move to the
+cloud API, and the question bank is the only offline fallback. This needs internet on the robot
+path, so MaixCAM2 has to run in STA mode (joins the school Wi-Fi) instead of its own access point;
+the owner will work that out. Until the cloud path is built, the app still contains Gemma and
+nothing is removed; removing it (model download, load, thermal gate, Gemma settings) is a later
+task, done together with the cloud switch so the app never has no AI path at all.
 
 ## Owner decisions
 

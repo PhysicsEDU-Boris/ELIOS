@@ -10,7 +10,7 @@
 - `tools/cloud_ai_bench/bench.py` (stdlib + Pillow) benchmarks every Gemini model on the owner's free key; key only from `GEMINI_API_KEY`, never saved. No app change.
 - Photos: 28 Roboflow images in `~/Desktop/elio_bench` (outside the repo, EXIF removed), not robot crops. Run stopped by the owner after 44 calls (daily caps of 20, 503s): too small to separate models.
 - Answering models: 3.5 Flash-Lite 1.8 s, 3 Flash 2.2 s, 3.6 Flash 2.1 s (10/10 bins), Robotics ER 3.7 s; all bins right. 3.8 Flash and Gemma 4 API only 5xx; 2.5 models 404.
-- Accepted (owner, 3 Nov): 3.5 Flash-Lite primary + automatic fallback chain (0176), not built yet. Still open: free vs paid tier, backend for the key, finish the run.
+- Accepted (owner, 3 Nov): 3.5 Flash-Lite primary + automatic fallback chain (0176), not built yet. On-device Gemma is dropped from the plan (bank is the only offline fallback); its code stays until the cloud path ships. MaixCAM2 STA mode for internet: owner. Still open: free vs paid tier, backend for the key, finish the run.
 - Resume: rerun the same command; it skips calls that already succeeded. Free caps reset 15:00 WIB.
 
 ## Phone evidence — Edge 60 Fusion, GPU
