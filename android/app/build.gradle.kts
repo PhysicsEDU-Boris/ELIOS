@@ -21,14 +21,9 @@ android {
         jvmTarget = "17"
     }
 
-    // The bundled Gemma model (assets/models/gemma-4-E2B-it.litertlm, ~2.4GB)
-    // is already-compressed binary weights: deflating it again would make the
-    // build take far longer for no size benefit, and — more importantly —
-    // large_file_handler's fast on-device copy path needs the asset stored
-    // UNCOMPRESSED to read it directly via AssetFileDescriptor. Same fix
-    // flutter_gemma's own example app applies for its model assets.
+    // TFLite models are memory-mapped from the APK, so they stay uncompressed.
     aaptOptions {
-        noCompress("litertlm", "tflite", "task", "bin")
+        noCompress("tflite")
     }
 
     defaultConfig {
@@ -36,8 +31,8 @@ android {
         applicationId = "com.boris.elio"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        // .litertlm inference needs API 30+: on API 29 and below the native
-        // LiteRT-LM library fails to load at runtime (the build doesn't catch it).
+        // API 30+ was set for on-device Gemma (removed, decision 0179); kept
+        // because lower versions are untested on this app.
         minSdk = maxOf(flutter.minSdkVersion, 30)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

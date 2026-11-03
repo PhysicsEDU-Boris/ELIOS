@@ -3,7 +3,7 @@
 // tree was unmounting, and the rest of dispose (the disconnect) never ran.
 import 'package:elio/Screens/control_screen.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -14,10 +14,10 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     FlutterSecureStorage.setMockInitialValues({});
-    GemmaQuizService.instance.mockSendExecute =
-        (p, {imageBytes, fresh = false, isUser = false, onToken}) async => null;
+    AiQuizService.instance.mockSendExecute =
+        (p, {imageBytes, isUser = false}) async => null;
   });
-  tearDown(() => GemmaQuizService.instance.mockSendExecute = null);
+  tearDown(() => AiQuizService.instance.mockSendExecute = null);
 
   testWidgets(
     'leaving Control with a quiz open clears it and runs the whole dispose',

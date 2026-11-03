@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:elio/models/scanned_waste.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/question_bank.dart';
 import 'package:flutter_test/flutter_test.dart';
 

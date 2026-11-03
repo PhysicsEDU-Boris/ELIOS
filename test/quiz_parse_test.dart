@@ -1,10 +1,10 @@
 // Multiple-choice parse path, decision 0013: one `correct` answer plus
 // `wrong` distractors, so the answer key comes from the structure.
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 GeneratedQuestion? _mc(String raw) =>
-    GemmaQuizService.instance.parseQuestion(raw, QuizQuestionType.multipleChoice);
+    AiQuizService.instance.parseQuestion(raw, QuizQuestionType.multipleChoice);
 
 void main() {
   test('correct + 3 wrong gives 4 options with the key on the correct text', () {
@@ -49,7 +49,7 @@ void main() {
   });
 
   test('essay still parses without options', () {
-    final q = GemmaQuizService.instance
+    final q = AiQuizService.instance
         .parseQuestion('{"question": "Jelaskan?", "explanation": "poin"}', QuizQuestionType.essay)!;
     expect(q.options, isEmpty);
   });

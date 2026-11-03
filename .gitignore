@@ -99,3 +99,7 @@ tools/cloud_ai_bench/**/*.jpg
 tools/cloud_ai_bench/**/*.jpeg
 tools/cloud_ai_bench/**/*.png
 tools/cloud_ai_bench/**/*.heic
+
+# Cloudflare Worker local state
+worker/.wrangler/
+ai-backend/.vercel/

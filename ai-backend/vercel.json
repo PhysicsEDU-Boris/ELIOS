@@ -1,0 +1,4 @@
+{
+  "regions": ["sin1"],
+  "functions": { "api/ai.js": { "maxDuration": 60 } }
+}

@@ -42,6 +42,6 @@ Uint8List _downscale((Uint8List, int) a) {
         : img.copyResize(image, height: maxSide);
     return Uint8List.fromList(img.encodeJpg(small, quality: 85));
   } catch (_) {
-    return jpeg; // a bad photo is Gemma's to refuse, not the resize's
+    return jpeg; // a bad photo is the AI's to refuse, not the resize's
   }
 }

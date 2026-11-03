@@ -2,7 +2,7 @@
 // phone sizes in light and dark, and the identify crop exactly as before (0041, 0070).
 import 'package:elio/Screens/device_scan_screen.dart';
 import 'package:elio/services/frame_source/viewfinder_crop.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/theme/elio_dark_theme.dart';
 import 'package:elio/theme/elio_light_theme.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +19,7 @@ Future<List<String>> _pump(
   WidgetTester t,
   Size size, {
   required bool dark,
-  required GemmaProgress gemma,
+  required AiStatus ai,
   bool ready = true,
 }) async {
   t.view.devicePixelRatio = 1;
@@ -51,7 +51,7 @@ Future<List<String>> _pump(
                   onSwitchCamera: () => taps.add('switch'),
                   testLabels: const ['Botol plastik'],
                   onTestLabel: (l) => taps.add('test $l'),
-                  gemma: ValueNotifier(gemma),
+                  ai: ValueNotifier(ai),
                 ),
               ),
             ),
@@ -108,7 +108,7 @@ void main() {
           t,
           size,
           dark: dark,
-          gemma: const GemmaProgress(GemmaStatus.ready),
+          ai: AiStatus.ready,
         );
         expect(t.takeException(), isNull);
         expect(find.text('ELIOS AI ready'), findsOneWidget);
@@ -124,52 +124,13 @@ void main() {
         await shot(t, 'ready');
       });
 
-      testWidgets('camera model loading $tag', (t) async {
-        final taps = await _pump(
-          t,
-          size,
-          dark: dark,
-          gemma: const GemmaProgress(GemmaStatus.loading),
-        );
+      testWidgets('camera, AI offline: Scan still works, chip says bank $tag', (t) async {
+        final taps = await _pump(t, size, dark: dark, ai: AiStatus.offline);
         expect(t.takeException(), isNull);
-        expect(find.text('Getting ELIOS AI ready…'), findsOneWidget);
-        // The loader reports no progress: an indeterminate bar, no percentage.
-        expect(
-          t
-              .widget<LinearProgressIndicator>(
-                find.byKey(const ValueKey('scan_ai_progress')),
-              )
-              .value,
-          isNull,
-        );
-        expect(find.textContaining('%'), findsNothing);
+        expect(find.text('ELIOS AI offline · question bank'), findsOneWidget);
         await t.tap(find.byKey(const ValueKey('scan_button')));
-        expect(taps, isEmpty); // Scan stays disabled until ready
-        await shot(t, 'loading');
-      });
-
-      testWidgets('camera model installing shows the real percentage $tag', (
-        t,
-      ) async {
-        await _pump(
-          t,
-          size,
-          dark: dark,
-          gemma: const GemmaProgress(
-            GemmaStatus.installing,
-            installPercent: 62,
-          ),
-        );
-        expect(t.takeException(), isNull);
-        expect(find.text('ELIOS AI loading · 62%'), findsOneWidget);
-        expect(
-          t
-              .widget<LinearProgressIndicator>(
-                find.byKey(const ValueKey('scan_ai_progress')),
-              )
-              .value,
-          0.62,
-        );
+        expect(taps, ['scan']);
+        await shot(t, 'offline');
       });
 
       testWidgets('camera skeleton $tag', (t) async {
@@ -177,7 +138,7 @@ void main() {
           t,
           size,
           dark: dark,
-          gemma: const GemmaProgress(GemmaStatus.loading),
+          ai: AiStatus.idle,
           ready: false,
         );
         expect(t.takeException(), isNull);
@@ -186,15 +147,4 @@ void main() {
       });
     }
   }
-
-  testWidgets('no model: Scan still works in bank mode', (t) async {
-    final taps = await _pump(
-      t,
-      const Size(915, 412),
-      dark: false,
-      gemma: const GemmaProgress(GemmaStatus.missing),
-    );
-    await t.tap(find.byKey(const ValueKey('scan_button')));
-    expect(taps, ['scan']);
-  });
 }

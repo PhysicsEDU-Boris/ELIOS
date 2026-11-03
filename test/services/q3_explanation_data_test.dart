@@ -6,7 +6,7 @@ import 'package:elio/models/essay_grade.dart';
 import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/scanned_waste.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/question_bank.dart';
 import 'package:elio/services/quiz_explanation_service.dart';
 import 'package:elio/services/quiz_pdf_service.dart';

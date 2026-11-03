@@ -1,12 +1,10 @@
-// E1 (decision 0041): smaller identify photo and prompt, "Bukan ini?" picker, background Gemma load.
-import 'dart:io';
+// E1 (decision 0041): smaller identify photo and prompt, "Bukan ini?" picker.
 import 'dart:typed_data';
 
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/services/device_health.dart';
 import 'package:elio/services/frame_source/viewfinder_crop.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/question_bank.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,25 +21,10 @@ Future<void> _until(bool Function() done) async {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  final service = GemmaQuizService.instance;
-  late Directory dir;
+  final service = AiQuizService.instance;
+  setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
-    dir = Directory.systemTemp.createTempSync('elio_e1_test');
-    service.sideloadDirOverride = dir;
-    service.thermal = ThermalGate(read: () async => 0);
-    service.clearKilled();
-    service.progress.value = const GemmaProgress(GemmaStatus.idle);
-  });
-
-  tearDown(() {
-    service.sideloadDirOverride = null;
-    service.mockSendExecute = null;
-    service.thermal = ThermalGate();
-    service.progress.value = const GemmaProgress(GemmaStatus.idle);
-    dir.deleteSync(recursive: true);
-  });
+  tearDown(() => service.mockSendExecute = null);
 
   group('identify photo and prompt', () {
     test('downscaleJpeg caps the long side, and leaves small or undecodable bytes alone', () async {
@@ -58,7 +41,7 @@ void main() {
     test('identify sends the downscaled photo and a prompt without the can example', () async {
       String? seenPrompt;
       Uint8List? seenImage;
-      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+      service.mockSendExecute = (prompt, {imageBytes, isUser = false}) async {
         seenPrompt = prompt;
         seenImage = imageBytes;
         return '{"item": "baterai", "material": "logam", "category": "B3"}';
@@ -69,7 +52,7 @@ void main() {
       expect(seenPrompt, isNot(contains('kaleng')));
       expect(seenPrompt, contains('baterai'));
       final sent = img.decodeJpg(seenImage!)!;
-      expect(sent.width, GemmaQuizService.identifyMaxSide);
+      expect(sent.width, AiQuizService.identifyMaxSide);
       expect(seenImage!.length, lessThan(original.length));
     });
   });
@@ -82,7 +65,7 @@ void main() {
     }
 
     Future<void> scanAs(ProviderContainer c, Uint8List photo, String json) async {
-      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async => json;
+      service.mockSendExecute = (prompt, {imageBytes, isUser = false}) async => json;
       c.read(wasteQuizProvider.notifier).onPhotoCaptured(photo);
       await _until(() => c.read(wasteQuizProvider).phase != WasteQuizPhase.identifying);
       await _until(() => c.read(wasteQuizProvider).phase != WasteQuizPhase.loadingQuestion);
@@ -145,51 +128,6 @@ void main() {
       }
       expect(seen, hasLength(13), reason: 'no two picker names collapse to one bank object');
       expect(ScannedWaste.fromLabel('baterai', categoryHint: 'B3').category?.id, 'hazardous');
-    });
-  });
-
-  group('background load', () {
-    // A sparse file of the full size: the plugin then fails (no platform in a unit test),
-    // but only after the service has started the install, which is what is observed.
-    void pushModel() {
-      final f = File('${dir.path}/${GemmaQuizService.modelFileName}')..createSync();
-      final raf = f.openSync(mode: FileMode.write)..truncateSync(2588147712);
-      raf.closeSync();
-    }
-
-    Future<Set<GemmaStatus>> watch(void Function() act) async {
-      final seen = <GemmaStatus>{};
-      void on() => seen.add(service.progress.value.status);
-      service.progress.addListener(on);
-      act();
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      service.progress.removeListener(on);
-      return seen;
-    }
-
-    test('tester build: no load at launch, none from a non-scan screen', () async {
-      pushModel();
-      final seen = await watch(() => service.warmUp(vision: true, tester: true));
-      expect(seen, isEmpty);
-    });
-
-    test('tester build: the scan screen starts the load when the model file is there', () async {
-      pushModel();
-      final seen = await watch(() => service.warmUp(vision: true, scanScreen: true, tester: true));
-      expect(seen, contains(GemmaStatus.installing));
-    });
-
-    test('tester build: no model file leaves the state alone ("Model belum ada" comes from the scan)', () async {
-      final seen = await watch(() => service.warmUp(vision: true, scanScreen: true, tester: true));
-      expect(seen, isEmpty);
-    });
-
-    test('tester build: a killed run or a hot phone is not loaded over', () async {
-      pushModel();
-      service.thermal = ThermalGate(read: () async => 4);
-      await service.thermal.check();
-      final seen = await watch(() => service.warmUp(vision: true, scanScreen: true, tester: true));
-      expect(seen, isNot(contains(GemmaStatus.installing)));
     });
   });
 }

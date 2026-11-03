@@ -4,23 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/app_preferences_provider.dart';
 import '../services/device_health.dart';
-import '../services/gemma_quiz_service.dart';
+import '../services/ai_quiz_service.dart';
 import '../services/tester_log.dart';
 
-/// Gemma state label for the tester panel.
-String gemmaStateLabel(GemmaProgress p) => switch (p.status) {
-      GemmaStatus.idle => 'Belum dimuat',
-      GemmaStatus.installing => 'Menyiapkan model…',
-      GemmaStatus.loading => 'Memuat…',
-      GemmaStatus.ready => 'Siap',
-      GemmaStatus.error => 'Gagal: ${p.error ?? '-'}',
-      GemmaStatus.missing => p.error ?? 'Model belum ada',
-      GemmaStatus.paused => 'Dijeda: ponsel panas',
-      GemmaStatus.killed => p.error ?? 'Gemma dihentikan sistem, mode bank aktif.',
+/// Cloud AI state label for the tester panel: the model that last answered.
+String aiStateLabel(AiStatus status, String? model) => switch (status) {
+      AiStatus.idle => 'Belum dipakai',
+      AiStatus.ready => 'Siap (${model ?? '-'})',
+      AiStatus.offline => 'Tidak tersambung, mode bank',
     };
 
 /// Settings block of the tester build (decision 0040): question source switch,
-/// Gemma state, manual load, and the shareable log. Callers show it only when
+/// cloud AI state, and the shareable log. Callers show it only when
 /// [testerBuild] is true.
 class TesterPanel extends ConsumerWidget {
   const TesterPanel({super.key});
@@ -28,7 +23,7 @@ class TesterPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final source = ref.watch(appPreferencesProvider.select((p) => p.questionSource));
-    final service = GemmaQuizService.instance;
+    final service = AiQuizService.instance;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -42,7 +37,7 @@ class TesterPanel extends ConsumerWidget {
               showSelectedIcon: false,
               segments: const [
                 ButtonSegment(value: QuestionSource.bank, label: Text('Bank')),
-                ButtonSegment(value: QuestionSource.gemma, label: Text('Gemma')),
+                ButtonSegment(value: QuestionSource.ai, label: Text('ELIOS AI')),
               ],
               selected: {source},
               onSelectionChanged: (s) =>
@@ -51,27 +46,15 @@ class TesterPanel extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 8),
-        ValueListenableBuilder<GemmaProgress>(
-          valueListenable: service.progress,
-          builder: (context, p, _) => Text('Gemma: ${gemmaStateLabel(p)}', key: const Key('gemma-state')),
-        ),
-        FutureBuilder<String?>(
-          future: service.sideloadModelPath,
-          builder: (context, snap) => snap.data == null
-              ? const SizedBox.shrink()
-              : Text('File model: ${snap.data}', style: const TextStyle(fontSize: 11)),
+        ValueListenableBuilder<AiStatus>(
+          valueListenable: service.status,
+          builder: (context, status, _) =>
+              Text('AI: ${aiStateLabel(status, service.lastModel)}', key: const Key('ai-state')),
         ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           children: [
-            OutlinedButton(
-              onPressed: () {
-                service.clearKilled();
-                service.ensureReady(vision: true);
-              },
-              child: const Text('Muat Gemma'),
-            ),
             OutlinedButton(
               onPressed: () => DeviceHealth.shareText(_tail()),
               child: const Text('Bagikan log'),

@@ -20,7 +20,7 @@ import '../providers/esp_config_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/robot_provider.dart';
 import '../providers/waste_quiz_provider.dart';
-import '../services/gemma_quiz_service.dart';
+import '../services/ai_quiz_service.dart';
 import '../services/live_scan_controller.dart';
 import '../services/live_scan_state_machine.dart' show LiveScanState;
 import '../services/quiz_tts_service.dart';
@@ -140,17 +140,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           ref.read(wasteQuizProvider.notifier).onRobotLocked(frame, detection);
           return true;
         },
-        firstTokenMs: () => GemmaQuizService.instance.lastFirstTokenMs.value,
+        firstTokenMs: () => AiQuizService.instance.lastReplyMs.value,
         ttsCount: () => QuizTtsService.instance.startedCount,
         nextWaitMs: () => ref.read(wasteQuizProvider.notifier).lastNextWaitMs,
       )..onQuizPhase(ref.read(wasteQuizProvider).phase); // a quiz may already be open (minimized)
-
-      // M2b: preload Gemma now, so the first quiz is fast instead of showing
-      // "Memuat model Gemma ke memori...". Fire-and-forget: ensureReady is
-      // single-flight and returns at once if already loading or loaded, and
-      // a failed preload just leaves the model to load as today, on the
-      // first quiz (see GemmaQuizService.warmUp/ensureReady).
-      GemmaQuizService.instance.warmUp(vision: true);
     }
 
     final ws = WebSocketService();
@@ -342,9 +335,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// none starts a lock or a quiz. Never touches the stream or the robot.
   void _applyScanPause() => _liveScan?.setScanPaused(_gate.stopped || !_scanQuizOn);
 
-  /// Debug overlay: Gemma's item next to the detector class (decision 0025).
+  /// Debug overlay: the AI's item next to the detector class (decision 0025).
   static String? _scanLine(ScannedWaste? scan) =>
-      scan == null ? null : 'gemma "${scan.displayName}"   detektor ${scan.detectorLabel ?? '-'}';
+      scan == null ? null : 'AI "${scan.displayName}"   detektor ${scan.detectorLabel ?? '-'}';
 
   /// Once per (re)connection, from whichever path sees it first.
   void _onNewConnection() {
@@ -429,7 +422,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
     debugPrint('[Control] Leaving robot control, disconnecting WebSocket');
     unawaited(_robotNotifier.disconnect());
-    unawaited(GemmaQuizService.instance.dispose());
+    unawaited(AiQuizService.instance.cancel());
     setDesktopLandscape(false);
     _liveScan?.dispose();
 
@@ -964,7 +957,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             Align(
               alignment: Alignment.centerLeft,
               child: OutlinedButton.icon(
-                // Gemma on a phone-camera photo, without the MaixCAM2.
+                // The AI on a phone-camera photo, without the MaixCAM2.
                 onPressed: () => showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,

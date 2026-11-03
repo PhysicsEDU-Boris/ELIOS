@@ -64,7 +64,7 @@ const missionTarget = 3;
 /// The ELIO tip's mood picks the illustration and card colour.
 enum TipMood { happy, searching, sad, alert }
 
-/// Rule-based ELIO tip from existing states only (no Gemma). [distCm] is the
+/// Rule-based ELIO tip from existing states only (no AI). [distCm] is the
 /// nearest item's floor distance when the firmware sends it (0022).
 ({String text, TipMood mood}) controlTip({
   required ControlLink link,

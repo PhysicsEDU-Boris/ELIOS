@@ -1,9 +1,9 @@
-// Question source switch (decision 0018): bank vs Gemma, chosen per session.
+// Question source switch (decisions 0018, 0179): bank vs ELIOS AI, chosen per session.
 import 'dart:async';
 
 import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/widgets/waste_quiz_popup.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,21 +17,18 @@ String _mcReply(String question) =>
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('defaults and release builds resolve to the bank', () {
-    expect(defaultQuestionSource, QuestionSource.bank, reason: 'no GEMMA_QUESTIONS define in tests');
-    expect(const AppPreferences().questionSource, QuestionSource.bank);
-    expect(effectiveQuestionSource(QuestionSource.gemma, debug: true), QuestionSource.gemma);
-    expect(effectiveQuestionSource(QuestionSource.gemma, debug: false), QuestionSource.bank,
-        reason: 'release always uses the bank, whatever the switch says');
-    // Decision 0145 replaces 0018's "never saved": the Config choice is saved.
-    expect(AppPreferences.fromMap({'questionSource': 'gemma'}).questionSource, QuestionSource.gemma);
-    expect(AppPreferences.fromMap({'questionSource': 'nonsense'}).questionSource, QuestionSource.bank);
-    expect(const AppPreferences(questionSource: QuestionSource.gemma).toMap()['questionSource'], 'gemma');
+  test('the default is ELIOS AI; a saved choice is kept (decisions 0145, 0179)', () {
+    expect(const AppPreferences().questionSource, QuestionSource.ai);
+    expect(AppPreferences.fromMap({'questionSource': 'bank'}).questionSource, QuestionSource.bank);
+    // A choice saved before 0179 ("gemma") or a bad value becomes the default.
+    expect(AppPreferences.fromMap({'questionSource': 'gemma'}).questionSource, QuestionSource.ai);
+    expect(AppPreferences.fromMap({'questionSource': 'nonsense'}).questionSource, QuestionSource.ai);
+    expect(const AppPreferences(questionSource: QuestionSource.ai).toMap()['questionSource'], 'ai');
   });
 
   test('the saved Config choice survives a restart (decision 0145)', () async {
     SharedPreferences.setMockInitialValues({
-      'flutter.app_preferences_v1': '{"quizDifficulty": "Hard", "questionSource": "gemma"}',
+      'flutter.app_preferences_v1': '{"quizDifficulty": "Hard", "questionSource": "bank"}',
     });
     final container = ProviderContainer();
     addTearDown(container.dispose);
@@ -40,19 +37,19 @@ void main() {
       await Future<void>.delayed(Duration.zero);
     }
     expect(container.read(appPreferencesProvider).quizDifficulty, 'Hard', reason: 'the saved preferences loaded');
-    expect(container.read(appPreferencesProvider).questionSource, QuestionSource.gemma);
+    expect(container.read(appPreferencesProvider).questionSource, QuestionSource.bank);
   });
 
   test('the header names the source of the shown question', () {
     const gemmaQ = GeneratedQuestion(type: QuizQuestionType.multipleChoice, question: 'q', options: ['a', 'b', 'c', 'd']);
     const bankQ = GeneratedQuestion(type: QuizQuestionType.multipleChoice, question: 'q', bankId: 'ponsel-mc-01');
     expect(questionSourceHeader(const WasteQuizUiState(question: bankQ)), 'SOAL DARI MODUL · BANK SOAL');
-    expect(questionSourceHeader(const WasteQuizUiState(question: gemmaQ, questionSource: QuestionSource.gemma)),
-        'SOAL GEMMA');
+    expect(questionSourceHeader(const WasteQuizUiState(question: gemmaQ, questionSource: QuestionSource.ai)),
+        'SOAL ELIOS AI');
     expect(questionSourceHeader(const WasteQuizUiState(question: gemmaQ, isFallback: true)),
         'SOAL UMUM (BENDA BELUM ADA DI BANK SOAL)');
-    expect(questionSourceHeader(const WasteQuizUiState(question: gemmaQ, isFallback: true, questionSource: QuestionSource.gemma)),
-        'SOAL CADANGAN (AI ON-DEVICE BELUM SIAP)');
+    expect(questionSourceHeader(const WasteQuizUiState(question: gemmaQ, isFallback: true, questionSource: QuestionSource.ai)),
+        'SOAL CADANGAN (ELIOS AI TIDAK TERSAMBUNG)');
   });
 
   group('sessions follow the switch', () {
@@ -60,10 +57,10 @@ void main() {
     late Future<String?> Function(String prompt) reply;
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
-      await GemmaQuizService.instance.cancel();
+      await AiQuizService.instance.cancel();
       questionPrompts = [];
       reply = (prompt) async => _mcReply('Soal Gemma ${questionPrompts.length}?');
-      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) {
+      AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) {
         if (_isQuestionRequest(prompt)) questionPrompts.add(prompt);
         return reply(prompt);
       };
@@ -72,15 +69,15 @@ void main() {
       await pumpEventQueue();
     });
     tearDown(() async {
-      GemmaQuizService.instance.mockSendExecute = null;
+      AiQuizService.instance.mockSendExecute = null;
       WasteQuizNotifier.essayQuestions = essayQuestionsEnabled;
-      await GemmaQuizService.instance.cancel();
+      await AiQuizService.instance.cancel();
     });
 
     ProviderContainer container() {
       final c = ProviderContainer();
       addTearDown(c.dispose);
-      c.read(appPreferencesProvider.notifier).update((p) => p.copyWith(quizDifficulty: 'Medium', skipAllowed: true));
+      c.read(appPreferencesProvider.notifier).update((p) => p.copyWith(quizDifficulty: 'Medium', skipAllowed: true, questionSource: QuestionSource.bank));
       return c;
     }
 
@@ -93,31 +90,49 @@ void main() {
       }
     }
 
-    test('gemma: the question prompt reaches Gemma and its question shows as "SOAL GEMMA"', () async {
+    test('ai: the question prompt reaches the AI and its question shows as "SOAL ELIOS AI"', () async {
       final c = container();
-      choose(c, QuestionSource.gemma);
+      choose(c, QuestionSource.ai);
       c.read(wasteQuizProvider.notifier).startForLabel('botol plastik');
       await settle(c);
       final s = c.read(wasteQuizProvider);
       expect(questionPrompts, isNotEmpty);
       expect(s.question?.question, 'Soal Gemma 1?');
       expect(s.question?.bankId, isNull);
-      expect(questionSourceHeader(s), 'SOAL GEMMA');
+      expect(questionSourceHeader(s), 'SOAL ELIOS AI');
     });
 
-    test('gemma: a failed or timed-out reply gives the fixed fallback, never the bank', () async {
-      reply = (prompt) async => _isQuestionRequest(prompt) ? null : 'ok'; // null = failed / timed out
+    test('ai: no AI answer (offline, every model capped) gives a bank question, said out loud', () async {
+      reply = (prompt) async => _isQuestionRequest(prompt) ? null : 'ok'; // null = the function failed
       final c = container();
-      choose(c, QuestionSource.gemma);
+      choose(c, QuestionSource.ai);
       c.read(wasteQuizProvider.notifier).startForLabel('botol plastik');
       await settle(c);
       final s = c.read(wasteQuizProvider);
       expect(questionPrompts, isNotEmpty);
-      expect(s.isFallback, isTrue);
-      expect(s.question?.bankId, isNull, reason: 'not silently swapped for a bank question');
-      final fixed = WasteQuizNotifier.fallbackQuestions(s.scan!, QuizQuestionType.multipleChoice).map((q) => q.question);
-      expect(fixed, contains(s.question?.question));
-      expect(questionSourceHeader(s), 'SOAL CADANGAN (AI ON-DEVICE BELUM SIAP)');
+      expect(s.isFallback, isFalse);
+      expect(s.question?.bankId, 'botol_plastik-mc-01');
+      expect(s.questionSource, QuestionSource.bank);
+      expect(questionSourceHeader(s), 'SOAL DARI MODUL · BANK SOAL');
+      expect(s.messages.first.text, contains('AI tidak tersambung'));
+      expect(c.read(appPreferencesProvider).questionSource, QuestionSource.ai,
+          reason: 'the saved choice is kept for the next scan');
+    });
+
+    test('ai: a prefetched question with no AI answer is taken from the bank', () async {
+      reply = (prompt) async =>
+          !_isQuestionRequest(prompt) ? 'ok' : questionPrompts.length == 1 ? _mcReply('Soal AI pertama?') : null;
+      final c = container();
+      choose(c, QuestionSource.ai);
+      final quiz = c.read(wasteQuizProvider.notifier);
+      quiz.startForLabel('botol plastik');
+      await settle(c);
+      expect(c.read(wasteQuizProvider).question?.question, 'Soal AI pertama?');
+      quiz.skipQuestion();
+      await settle(c);
+      final s = c.read(wasteQuizProvider);
+      expect(s.question?.bankId, isNotNull);
+      expect(s.messages.last.text, contains('AI tidak tersambung'));
     });
 
     test('bank -> gemma -> bank across scans, and a stale prefetch is never shown', () async {
@@ -138,7 +153,7 @@ void main() {
           : questionPrompts.length == 1
               ? _mcReply('Soal Gemma pertama?')
               : stale.future;
-      choose(c, QuestionSource.gemma);
+      choose(c, QuestionSource.ai);
       quiz.startForLabel('botol plastik');
       await settle(c);
       expect(c.read(wasteQuizProvider).question?.question, 'Soal Gemma pertama?');
@@ -161,30 +176,12 @@ void main() {
       expect(questionPrompts.length, promptsBefore, reason: 'no Gemma question work in a bank session');
     });
 
-    test('a saved ELIOS AI choice with Gemma blocked uses the bank and says why (0145)', () async {
-      final service = GemmaQuizService.instance;
-      final before = service.progress.value;
-      service.progress.value = const GemmaProgress(GemmaStatus.killed);
-      addTearDown(() => service.progress.value = before);
-      final c = container();
-      choose(c, QuestionSource.gemma);
-      c.read(wasteQuizProvider.notifier).startForLabel('botol plastik');
-      await settle(c);
-      final s = c.read(wasteQuizProvider);
-      expect(questionPrompts, isEmpty, reason: 'no Gemma work while blocked');
-      expect(s.question?.bankId, 'botol_plastik-mc-01');
-      expect(s.questionSource, QuestionSource.bank);
-      expect(s.messages.first.text, service.blockedReason, reason: 'the student is told why');
-      expect(c.read(appPreferencesProvider).questionSource, QuestionSource.gemma,
-          reason: 'the saved choice is kept for when ELIOS AI is back');
-    });
-
     test('switching mid-session changes the next scan only', () async {
       final c = container();
       final quiz = c.read(wasteQuizProvider.notifier);
       quiz.startForLabel('kardus');
       await settle(c);
-      choose(c, QuestionSource.gemma); // during a bank session
+      choose(c, QuestionSource.ai); // during a bank session
       quiz.skipQuestion();
       await settle(c);
       expect(c.read(wasteQuizProvider).question?.bankId, 'kardus-mc-02');

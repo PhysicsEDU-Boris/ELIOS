@@ -5,7 +5,7 @@ import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/robot_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/detection_stabilizer.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/robot/r1_constants.dart';
 import 'package:elio/services/robot/r1_orchestrator.dart';
 import 'package:elio/services/robot/robot_controller.dart';

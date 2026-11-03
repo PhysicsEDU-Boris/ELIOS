@@ -10,7 +10,7 @@ import 'package:elio/models/home_stats.dart';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/robot_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/robot/motion_gate.dart';
 import 'package:elio/services/robot/robot_controller.dart';
 import 'package:elio/theme/elio_dark_theme.dart';
@@ -441,5 +441,5 @@ Future<void> loadFonts() async {
 
 /// No Gemma in widget tests.
 void stubGemma() {
-  GemmaQuizService.instance.mockSendExecute = (p, {imageBytes, fresh = false, isUser = false, onToken}) async => null;
+  AiQuizService.instance.mockSendExecute = (p, {imageBytes, isUser = false}) async => null;
 }

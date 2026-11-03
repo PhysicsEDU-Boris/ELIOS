@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/gemma_quiz_service.dart';
+import '../services/ai_quiz_service.dart';
 import 'quiz_explanation.dart';
 import 'trophy_rules.dart';
 

@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/widgets/quiz_explanation_overlay.dart';
 
 class _FakeWasteQuizNotifier extends WasteQuizNotifier {

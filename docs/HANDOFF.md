@@ -7,21 +7,13 @@
 - Merged: #51 U4b essay rubric; #53 banks (decision 0060); #52 History/PDF crops (0070); #54 Android tester build (0040); #55 E1 (0041), with the "Bukan ini?" picker and background load phone-verified.
 - Open PRs: #70 H2 and #71 N2 conflict with the base (rebase needed); #47 firmware (motion disabled); #24 (latency gate failed); docs-only #50, #62, #65, #66.
 
-## Cloud AI benchmark spike (3 Nov, draft PR into `feature/live-scan`, decision 0176)
+## Gemini cloud AI (3 Nov, `feat/gemini-cloud-ai`, decision 0179)
 
-- `tools/cloud_ai_bench/bench.py` (stdlib + Pillow) benchmarks every Gemini model on the owner's free key; key only from `GEMINI_API_KEY`, never saved. No app change.
-- Photos: 28 Roboflow images in `~/Desktop/elio_bench` (outside the repo, EXIF removed), not robot crops. Run stopped by the owner after 44 calls (daily caps of 20, 503s): too small to separate models.
-- Answering models: 3.5 Flash-Lite 1.8 s, 3 Flash 2.2 s, 3.6 Flash 2.1 s (10/10 bins), Robotics ER 3.7 s; all bins right. 3.8 Flash and Gemma 4 API only 5xx; 2.5 models 404.
-- Accepted (owner, 3 Nov): 3.5 Flash-Lite primary + automatic fallback chain (0176), not built yet. On-device Gemma is dropped from the plan (bank is the only offline fallback); its code stays until the cloud path ships. MaixCAM2 STA mode for internet: owner. Still open: free vs paid tier, backend for the key, finish the run.
-- Resume: rerun the same command; it skips calls that already succeeded. Free caps reset 15:00 WIB.
-
-## Phone evidence — Edge 60 Fusion, GPU
-
-- Load: 4.3–9.2 s cached or 41–50 s cold; identify: 19.8–23.9 s with the shorter prompt; questions: 20–41 s; essay grading: 16.5–25.4 s; memory: 3.3–3.7 GB.
-- Thermal gate pauses at CRITICAL.
-- The tester build keeps Gemma loaded after the scan screen closes (about 1.6 GB held until the app closes).
-- Photo-size test: 512/384/256 px gave 24.8/24.3/23.6 s. Photo size does not change identify time in this test.
-- See [Lane A handoff](handoff/lane-a.md) for details; its earlier measurements and pre-PR status predate the summary above.
+- On-device Gemma removed. `lib/services/ai_quiz_service.dart` POSTs identify, questions, essay grading and chat with the Firebase ID token to the `ai-backend` Vercel function (`ai-backend/`, team ELIOS, region sin1, https://ai-backend-seven-orpin.vercel.app/api/ai), which checks the token, holds `GEMINI_API_KEY` and runs the 0176 chain (`node --test` in `ai-backend/`, break-checked). Firebase Blaze skipped (200k IDR); Cloudflare dropped (Gemini refuses its locations; the `elios-ai` Worker was deleted 3 Nov).
+- No AI answer: the quiz uses the bank and says so. ELIOS AI is the default source in every build. Thermal gate, model copy/sideload, Activate card states and the macOS LiteRT-LM phase are gone.
+- Phone-verified 3 Nov: identify + 3 AI questions, ~1.6 s each, `source=ai`; a 3.5 Flash-Lite timeout fell to 3.1 Flash-Lite. Phone runs the debug APK from this branch. Free key for now; paid before students. Redeploy: `npx vercel deploy --prod --scope elios5` in `ai-backend/`.
+- `macos/Podfile.lock` still lists the Gemma pods (`pod install` hit a Ruby error here); the next Mac build refreshes it. Phone Gemma files deleted 3 Nov (owner's OK): the pushed model, the app's copy and its 4 caches; app data 2.6 GB → 473 MB, scan records kept.
+- Benchmark spike (0176): `tools/cloud_ai_bench/`; resume with the same command, free caps reset 15:00 WIB.
 
 ## Owner data incident
 

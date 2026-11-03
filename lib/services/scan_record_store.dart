@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import '../models/home_stats.dart' show questBonus;
 import '../models/scan_record.dart';
 import '../models/trophy_rules.dart';
-import 'gemma_quiz_service.dart';
+import 'ai_quiz_service.dart';
 
 /// `--dart-define=SCAN_RECORDS_FILE=scan_records_r3test.json`: a phone test build
 /// keeps its records in a separate file, so the owner's `scan_records.json` is never written.

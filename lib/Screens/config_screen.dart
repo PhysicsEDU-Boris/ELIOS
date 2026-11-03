@@ -11,7 +11,7 @@ import '../providers/app_preferences_provider.dart';
 import '../providers/config_link_provider.dart';
 import '../providers/esp_config_provider.dart';
 import '../providers/robot_provider.dart';
-import '../services/gemma_quiz_service.dart';
+import '../services/ai_quiz_service.dart';
 import '../services/robot_wifi.dart';
 import '../theme/elio_theme.dart';
 import '../theme/elio_tokens.dart';
@@ -681,22 +681,18 @@ class _ElioModelViewerState extends State<_ElioModelViewer> {
   }
 }
 
-/// Question bank / ELIOS AI (saved choice, decision 0145). The ELIOS AI tile
-/// needs a loaded model; a saved ELIOS AI choice shows (and quizzes use) the
-/// bank until then.
+/// Question bank / ELIOS AI (saved choice, decision 0145). ELIOS AI can be
+/// chosen at any time; with no AI answer a scan uses the bank (decision 0179).
 class _QuizSourceTiles extends ConsumerWidget {
   const _QuizSourceTiles();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chosen = ref.watch(appPreferencesProvider.select((p) => p.questionSource));
-    return ValueListenableBuilder<GemmaProgress>(
-      valueListenable: GemmaQuizService.instance.progress,
-      builder: (context, progress, _) {
+    final shown = ref.watch(appPreferencesProvider.select((p) => p.questionSource));
+    return ValueListenableBuilder<AiStatus>(
+      valueListenable: AiQuizService.instance.status,
+      builder: (context, status, _) {
         final p = context.elio;
-        final aiReady = progress.status == GemmaStatus.ready &&
-            effectiveQuestionSource(QuestionSource.gemma) == QuestionSource.gemma;
-        final shown = aiReady ? chosen : QuestionSource.bank;
         void choose(QuestionSource s) =>
             ref.read(appPreferencesProvider.notifier).update((prefs) => prefs.copyWith(questionSource: s));
         return _TilePair(
@@ -713,16 +709,15 @@ class _QuizSourceTiles extends ConsumerWidget {
               width: 40,
               height: 40,
               decoration: ShapeDecoration(
-                color: shown == QuestionSource.gemma ? p.surface : p.surfaceRaised,
+                color: shown == QuestionSource.ai ? p.surface : p.surfaceRaised,
                 shape: const CircleBorder(),
               ),
-              child: Center(child: EliosAiLogo(state: aiCardState(progress.status), size: 26)),
+              child: Center(child: EliosAiLogo(state: aiCardState(status), size: 26)),
             ),
             title: 'ELIOS AI',
-            description: aiReady ? 'New questions each scan, 20 to 40 s' : 'Needs ELIOS AI active',
-            selected: shown == QuestionSource.gemma,
-            enabled: aiReady,
-            onTap: () => choose(QuestionSource.gemma),
+            description: 'New questions each scan, needs internet',
+            selected: shown == QuestionSource.ai,
+            onTap: () => choose(QuestionSource.ai),
           ),
         );
       },

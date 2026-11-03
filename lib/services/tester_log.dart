@@ -4,7 +4,6 @@ import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../providers/app_preferences_provider.dart';
-import 'device_health.dart';
 
 /// Phone-test log (decision 0040): a plain text file the tester can share from
 /// the settings screen. Every call is a no-op unless the app is a tester build.
@@ -48,16 +47,6 @@ class TesterLog with WidgetsBindingObserver {
     } catch (_) {
       // Logging must never break the app.
     }
-  }
-
-  /// Logs memory and thermal state with [what], e.g. "load" or "request".
-  Future<void> snapshot(String what) async {
-    if (!enabled) return;
-    final m = await DeviceHealth.memory();
-    final t = await DeviceHealth.thermalStatus();
-    log('mem', '$what appPss=${m?.pssMb ?? '?'}MB rss=${ProcessInfo.currentRss ~/ (1024 * 1024)}MB '
-        'ramFree=${m?.availMb ?? '?'}/${m?.totalMb ?? '?'}MB lowMemory=${m?.low ?? '?'} '
-        'thermal=${t == null ? '?' : ThermalGate.names[t.clamp(0, 6)]}');
   }
 
   String read() {

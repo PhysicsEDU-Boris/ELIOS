@@ -6,7 +6,7 @@ import 'package:elio/models/home_stats.dart' show questBonus;
 import 'package:elio/Screens/scan_history_screen.dart';
 import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scan_record.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/scan_record_store.dart';
 
 void main() {
