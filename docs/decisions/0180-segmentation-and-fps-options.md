@@ -1,6 +1,6 @@
 # 0180: Better segmentation and a faster ELIOS camera: options
 
-- Status: Draft (research only; nothing built; waiting for the owner to pick)
+- Status: Accepted for option B (owner, 3 Nov 2026: "we try Gemini"); FPS steps and A/C still open
 - Date: 2026-11-03
 - Builds on: [0012](0012-crop-identification-and-hazards.md) (lock → one crop → identify),
   [0025](0025-bank-detector-class.md) (detector class picks the bank pool),
@@ -84,6 +84,23 @@ multi-object video. So: **the model is free; running it is not** (GPU or a paid 
    dataset from ELIOS's own camera), retrain YOLO11s-seg.
 4. **Paid, only if the arm needs pixel-exact masks:** C (SAM 3 on fal, ~$0.005 per lock), called
    from `ai-backend` once per lock.
+
+## Built: option B (3 Nov 2026)
+
+- `prepareDetectionCrop` also makes `identifyBytes`: the locked box plus 25 % of its size on each
+  side, so Gemini can see an object the camera's box cut off. The popup and History crops are
+  unchanged when Gemini gives no box.
+- `identifyItem` asks, in the same single call, for `box_2d` ([ymin, xmin, ymax, xmax], 0-1000) of
+  the main item, and says hands are not the item. `parseBox` rejects missing, malformed and sliver
+  boxes (< 5 % of a side); out-of-range values are clamped.
+- Live scan only: a valid box re-crops that padded photo (`cropToBox`, 5 % margin), and the result
+  becomes the popup crop and the History photo. The phone-camera scan ignores the box.
+- No backend change (`ai-backend` passes the prompt through), no extra call, no firmware change.
+  The detector still locks, picks the bank pool and flags E_Waste (0025).
+- Tests: `test/m2c_identification_test.dart` (padded identify crop, Gemini box re-crop for popup and
+  History, `parseBox`); the re-crop test was break-checked.
+- Not yet known: how tight Gemini's boxes are on real ELIOS frames, and whether the box adds time
+  to the ~1.5 s identify. Check on the phone with the tester log line `identified ... box=`.
 
 ## Questions for the owner
 

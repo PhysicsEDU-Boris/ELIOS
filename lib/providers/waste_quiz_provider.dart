@@ -355,12 +355,14 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     }
     _cropBytes = bytes;
     _historyPhotoBytes = crop.historyBytes ?? bytes;
-    await _identifyThenQuiz(bytes, generation, detectorLabel: detection.label,
-        detectorScore: detection.score, frameId: frame.frameId, diagnostics: diagnostics);
+    await _identifyThenQuiz(crop.identifyBytes ?? bytes, generation, detectorLabel: detection.label,
+        detectorScore: detection.score, frameId: frame.frameId, diagnostics: diagnostics, refineCrop: true);
   }
 
+  /// [refineCrop]: the photo is a padded robot crop, so Gemini's box replaces the detector's crop (0180).
   Future<void> _identifyThenQuiz(Uint8List imageBytes, int generation,
-      {String? detectorLabel, double? detectorScore, int? frameId, ScanDiagnostics? diagnostics}) async {
+      {String? detectorLabel, double? detectorScore, int? frameId, ScanDiagnostics? diagnostics,
+      bool refineCrop = false}) async {
     final result = await AiQuizService.instance.identifyItem(imageBytes, diagnostics: diagnostics);
     diagnostics?.event('identify_result', {'item': result.item, 'material': result.material,
       'category': result.category, 'failure': result.failure, 'stale': generation != _generation});
@@ -381,6 +383,17 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         messages: [...state.messages, ChatMessage(isUser: false, text: reason)],
       );
       return;
+    }
+    final box = result.box;
+    if (refineCrop && box != null) {
+      final refined = await compute(cropToBox, (imageBytes, box));
+      diagnostics?.event('ai_box', {'box': [box.left, box.top, box.right, box.bottom], 'valid': refined != null});
+      if (generation != _generation) return;
+      if (refined != null) {
+        _cropBytes = refined;
+        _historyPhotoBytes = refined;
+        state = state.copyWith(cropBytes: refined);
+      }
     }
     final detectorHazard = detectorLabel != null &&
         ScannedWaste.fromLabel(detectorLabel).category?.id == 'hazardous';
