@@ -57,6 +57,9 @@ dependencies:
   pdf: ^3.11.0
   printing: ^5.13.1
 
+  # Robot Wi-Fi QR (decision 0178); already in the lock through `pdf`.
+  barcode: ^2.2.9
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,6 +1,7 @@
 # Handoff — 3 Nov 2026
 
-- 3 Nov: MaixCAM2 dashboard shows the live SSID (AP/STA) and IP (decision 0177, `fix/dashboard-live-ip`); not deployed to the camera yet.
+- 3 Nov: #84 live SSID/IP dashboard merged (0177). `feat/wifi-qr-setup` (0178): camera "Wi-Fi setup" joins a hotspot from a WIFI: QR with a 45 s rollback; app Config gets Robot Wi-Fi QR and Find ELIO. Fast NPU QR scan, glare luma steps, success to dashboard banner / failure back to scan. Robot-tested twice from STA (wrong password rolled back, real one joined); AP-to-STA not tested. A manual exposure/gain probe restarted the camera; touch came back with a `hyn_ts` re-bind.
+- Devices now: camera in STA on the owner's hotspot `boris` (10.51.200.84), running the `feat/wifi-qr-setup` `main.py` in `elios_clean_m2c_v1` (old copy `/root/main.py.pre-wifiqr.bak`, AP files in `/boot/wifi_backup_ap/`). Phone: debug APK from that branch installed in place (data and Gemma model kept), Config camera = MaixCAM2, IP 10.51.200.84.
 - 3 Nov: #80 R2, #81 R3 and #82 Q3 merged into `feature/live-scan` (`8b006d7`); `main` = `feature/live-scan` + the owner's module PDF upload (merge `07161c1`).
 - `feat/cloud-ai-architecture` (from `main` `07161c1`) is the faster ELIOS AI work: MaixCAM2 in STA mode, cloud detector and cloud quiz generation replacing on-device Gemma. Step 1, the provider benchmark, is below; nothing in the app is built yet.
 - Merged: #51 U4b essay rubric; #53 banks (decision 0060); #52 History/PDF crops (0070); #54 Android tester build (0040); #55 E1 (0041), with the "Bukan ini?" picker and background load phone-verified.

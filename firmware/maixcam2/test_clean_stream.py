@@ -3,6 +3,7 @@ import ast
 import asyncio
 import base64
 import json
+import threading
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -56,6 +57,7 @@ class CleanStreamTest(unittest.TestCase):
 
         ns = dict(asyncio=asyncio, json=json, base64=base64,
                   stream_cam=Camera(), ws_streaming=True, ws_clients={Client()},
+                  cam_lock=threading.Lock(), setup={'stage': None},
                   STREAM_RESOLUTION=(640, 640), DET_EVERY_N_FRAMES=2,
                   model_loaded=True, model=SimpleNamespace(forward_image=infer),
                   mean=None, scale=None, RAW_CONF_TH=.25, DET_IOU_TH=.45,
