@@ -2,7 +2,7 @@
 // gate rules (GO sends nothing, offline sends nothing). Decision 0174.
 import 'package:elio/models/control_session.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/widgets/control/phone/phone_control.dart';
+import 'package:elio/widgets/waste_quiz_popup.dart' show EliosAiBadge;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -87,29 +87,29 @@ void main() {
         await shot(t, 'skeleton', size, dark);
       });
 
-      testWidgets('quiz question $tag', (t) async {
-        await pumpPhone(t, size, dark: dark, quiz: openQuiz);
-        expect(t.takeException(), isNull);
-        await shot(t, 'quiz_question', size, dark);
-      });
-
-      testWidgets('quiz explanation right $tag', (t) async {
-        await pumpPhone(t, size, dark: dark, quiz: explaining(right: true));
-        expect(t.takeException(), isNull);
-        await shot(t, 'quiz_right', size, dark);
-      });
-
-      testWidgets('quiz explanation wrong $tag', (t) async {
-        await pumpPhone(t, size, dark: dark, quiz: explaining(right: false));
-        expect(t.takeException(), isNull);
-        await shot(t, 'quiz_wrong', size, dark);
-      });
-
-      testWidgets('quiz explanation essay $tag', (t) async {
-        await pumpPhone(t, size, dark: dark, quiz: explainingEssay());
-        expect(t.takeException(), isNull);
-        await shot(t, 'quiz_essay', size, dark);
-      });
+      // Every quiz popup state: no overflow, and the compact STOP is in the header (or the skeleton).
+      final popups = <String, WasteQuizUiState>{
+        'quiz_question': openQuiz,
+        'quiz_loading': loading(),
+        'quiz_identifying': loading(identifying: true),
+        'quiz_skeleton': skeletonQuiz,
+        'quiz_essay_input': essayInput(),
+        'quiz_right': explaining(right: true),
+        'quiz_wrong': explaining(right: false),
+        'quiz_wrong_no_why': explaining(right: false, why: false),
+        'quiz_essay': explainingEssay(),
+        'quiz_essay_pending': explainingEssay(pending: true),
+        'quiz_long_text': explaining(right: true, long: true),
+      };
+      for (final e in popups.entries) {
+        testWidgets('${e.key} $tag', (t) async {
+          await pumpPhone(t, size, dark: dark, quiz: e.value);
+          await t.pump(const Duration(milliseconds: 50));
+          expect(t.takeException(), isNull);
+          expectTappable(t, find.byKey(const ValueKey('quiz_stop')), 'compact STOP');
+          await shot(t, e.key, size, dark);
+        });
+      }
 
       for (final step in [0, 2, 4]) {
         testWidgets('guide step ${step + 1} $tag', (t) async {
@@ -233,5 +233,90 @@ void main() {
         findsNothing,
       );
     });
+  });
+
+  group('q3 popups (decision 0175)', () {
+    const size = Size(915, 412);
+
+    testWidgets('wrong answer with a reviewed wrongWhy shows both headings; struck-through pick; options table', (t) async {
+      await pumpPhone(t, size, quiz: explaining(right: false));
+      expect(find.text('Not quite'), findsOneWidget);
+      expect(find.text('Why your answer is not right'), findsOneWidget);
+      expect(find.text('Why the correct answer is right'), findsOneWidget);
+      expect(find.text('Table 1. The answer options'), findsOneWidget);
+      expect(find.text('Your answer'), findsOneWidget);
+      expect(find.text('Correct answer'), findsOneWidget);
+      final picked = t.widget<Text>(find.text('Organik bin').first);
+      expect(picked.style?.decoration, TextDecoration.lineThrough);
+    });
+
+    testWidgets('wrong answer without wrongWhy hides that heading (no generic sentence)', (t) async {
+      await pumpPhone(t, size, quiz: explaining(right: false, why: false));
+      expect(find.text('Why your answer is not right'), findsNothing);
+      expect(find.text('Why the correct answer is right'), findsOneWidget);
+    });
+
+    testWidgets('right answer: bin reference table, quote with section and page, bank source', (t) async {
+      await pumpPhone(t, size, quiz: explaining(right: true));
+      expect(find.text('Correct!'), findsOneWidget);
+      expect(find.textContaining('Table 1. Where'), findsOneWidget);
+      expect(find.text('ELIOS module · section 4.2 · page 21'), findsOneWidget);
+      expect(find.text('Reviewed question bank'), findsOneWidget);
+      expect(find.text('plastic-mc-04'), findsOneWidget);
+      expect(find.text('ELIOS'), findsNothing); // no logo in the review header
+    });
+
+    testWidgets('essay: score banner, scoring table, AI graded source; pending is grey +0', (t) async {
+      await pumpPhone(t, size, quiz: explainingEssay());
+      expect(find.text('Score 8 / 10'), findsOneWidget);
+      expect(find.text('Table 1. Scoring breakdown'), findsOneWidget);
+      expect(find.text('AI graded · check with your teacher'), findsOneWidget);
+    });
+
+    testWidgets('essay pending: grey Waiting for grading, +0', (t) async {
+      await pumpPhone(t, size, quiz: explainingEssay(pending: true));
+      expect(find.byKey(const ValueKey('banner_pending')), findsOneWidget);
+      expect(find.text('Waiting for grading'), findsOneWidget);
+      expect(find.text('+0'), findsOneWidget);
+    });
+
+    testWidgets('long text scrolls inside the document, not the popup', (t) async {
+      await pumpPhone(t, size, quiz: explaining(right: true, long: true));
+      final doc = find.byKey(const ValueKey('quiz_document'));
+      final popupBefore = t.getRect(find.byKey(const ValueKey('quiz_popup')));
+      final scroll = t.widget<SingleChildScrollView>(find.descendant(of: doc, matching: find.byType(SingleChildScrollView)));
+      expect(scroll.controller!.position.maxScrollExtent, greaterThan(0));
+      await t.drag(doc, const Offset(0, -400));
+      await t.pump();
+      expect(scroll.controller!.offset, greaterThan(0));
+      expect(t.getRect(find.byKey(const ValueKey('quiz_popup'))), popupBefore);
+    });
+
+    testWidgets('question popup keeps its ELIOS header', (t) async {
+      await pumpPhone(t, size, quiz: openQuiz);
+      expect(find.text('ELIOS'), findsOneWidget);
+    });
+
+    testWidgets('loading: real timer, steps, Minimise puts the Quiz button into Waiting', (t) async {
+      await pumpPhone(t, size, quiz: loading());
+      expect(find.byKey(const ValueKey('quiz_loading_timer')), findsOneWidget);
+      expect(find.text('Read the scan'), findsOneWidget);
+      expect(find.text('Writing the question'), findsOneWidget);
+      expect(find.text('Checking the answer'), findsNothing); // no such event in the code
+      await t.tap(find.byKey(const ValueKey('quiz_loading_minimise')));
+      await t.pump();
+      expect(find.byKey(const ValueKey('quiz_loading')), findsNothing);
+      expect(find.byKey(const ValueKey('quiz_button_waiting')), findsOneWidget);
+    });
+
+    for (final (name, q) in [('loading', loading()), ('skeleton', skeletonQuiz), ('review', explaining(right: true))]) {
+      testWidgets('STOP works from the $name popup', (t) async {
+        final rig = await pumpPhone(t, size, quiz: q);
+        await t.tap(find.byKey(const ValueKey('quiz_stop')));
+        await t.pump();
+        expect(rig.gate.stopped, isTrue);
+        await t.pump(const Duration(seconds: 1));
+      });
+    }
   });
 }
