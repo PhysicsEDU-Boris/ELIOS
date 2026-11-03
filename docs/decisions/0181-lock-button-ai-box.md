@@ -41,3 +41,15 @@ away with the .mud model).
   sent and no box keeps the whole frame.
 - `test/widgets/phone_control_test.dart`: LOCK taps through; the box is drawn over the video at the
   cover-scaled position (break-checked). `control_layout_test` (all sizes) passes with the key.
+
+## Robot test (3 Nov, APK `a7e8158`, real MaixCAM2)
+
+- LOCK sent the paired clean frame; `gemini-3.1-flash-lite` answered in 2.2 s with "kardus" and a
+  box; the green "Kardus" box sat on the video at the right place
+  (`docs/test-results/0181/lock-green-box-on-video.png`). Closed with ✕, nothing saved.
+- Problem found: no waste item was in view, and the AI still named something: it boxed a strip of
+  cable along the table edge as "kardus". The identify prompt asks for "the main object", which a
+  whole frame always has. Next: a LOCK prompt that may answer "nothing" (wall, board, table and
+  cables are not waste).
+- The live preview still shows the .mud model's large red mask over the pegboard, the owner's
+  "untidy mask" complaint.
