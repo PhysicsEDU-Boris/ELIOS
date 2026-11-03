@@ -840,7 +840,7 @@ class _LoadingView extends ConsumerWidget {
                 width: 160,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: p.borderMedium,
+                  color: p.isDark ? p.borderStrong : p.borderMedium,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -1069,7 +1069,7 @@ class _QuestionView extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Color.lerp(fills[i], p.textPrimary, 0.3)!,
+                  color: HSLColor.fromColor(fills[i]).withLightness(HSLColor.fromColor(fills[i]).lightness * 0.7).toColor(),
                   offset: const Offset(0, 4),
                 ),
               ],
