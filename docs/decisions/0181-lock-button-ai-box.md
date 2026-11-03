@@ -59,3 +59,11 @@ away with the .mud model).
   cables are not waste).
 - The live preview still shows the .mud model's large red mask over the pegboard, the owner's
   "untidy mask" complaint.
+
+## Robot test 2 (APK `51ddcd9`): LOCK without the quiz, SCAN
+
+- A white cardboard box in view (the .mud model showed only a small "E_Waste 0.33" mask in a
+  corner). LOCK: "kardus" with a tight green box, no popup, key read UNLOCK
+  (`docs/test-results/0181/lock-kardus-no-quiz.png`). SCAN: the quiz opened at once from that
+  answer (no second identify call). Closed unanswered, nothing saved.
+- The UNLOCK and SCAN captions touched on the video: the gap went from 8 to 18 px.

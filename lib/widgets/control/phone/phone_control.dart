@@ -593,7 +593,7 @@ class PhoneControlLayout extends StatelessWidget {
               size: 44,
               onTap: onLock,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 18), // room for the UNLOCK and SCAN captions
             TransportKey(
               key: const ValueKey('phone_scan'),
               icon: Icons.quiz_outlined,
