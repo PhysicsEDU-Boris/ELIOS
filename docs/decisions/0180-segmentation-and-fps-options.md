@@ -99,8 +99,10 @@ multi-object video. So: **the model is free; running it is not** (GPU or a paid 
   The detector still locks, picks the bank pool and flags E_Waste (0025).
 - Tests: `test/m2c_identification_test.dart` (padded identify crop, Gemini box re-crop for popup and
   History, `parseBox`); the re-crop test was break-checked.
-- Not yet known: how tight Gemini's boxes are on real ELIOS frames, and whether the box adds time
-  to the ~1.5 s identify. Check on the phone with the tester log line `identified ... box=`.
+- Phone test (fake MaixCAM, real photos; [results](../test-results/0180/README.md)): one answer,
+  3.5 Flash-Lite in 2.7 s, box on the bottle and tighter than the camera's. Two other runs got
+  HTTP 503 from every Gemini model (Google overload, not this change).
+- Still open: the real ELIOS camera, more objects, and whether the box adds time to identify.
 
 ## Questions for the owner
 

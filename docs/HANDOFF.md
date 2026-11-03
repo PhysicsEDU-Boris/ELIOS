@@ -11,7 +11,8 @@
 
 - Research: SAM 3 model is free (SAM License) but needs a GPU or a paid API (fal $0.005/image). FPS fixes (decode filter, JPEG quality, thread, binary frames) need the owner's OK for firmware; camera was offline, time split is an estimate.
 - Built option B (owner's pick): identify gets a padded crop (box + 25 %/side) and returns `box_2d`; live scan re-crops popup + History photo from it; no backend/firmware change. Box tightness and added latency still to check on the phone (tester log `identified ... box=`).
-- Debug APK `666e7a1` (LIVE_SCAN=true) built in this worktree's `build/app/outputs/flutter-apk/`; not installed (phone and camera offline 3 Nov). Install with `adb install -r` (keeps data).
+- Phone test 3 Nov (fake MaixCAM, real camera offline): box works, 2.7 s, 1 of 3 runs answered; 2 got 503 from every Gemini model. Results `docs/test-results/0180/`.
+- Phone now runs the normal debug APK `760d639` (LIVE_SCAN=true), camera source Phone camera as before. **Saved robot address is 127.0.0.1** (the app saves only after a successful connect, and the camera was off): when ELIOS is on, Config → Find ELIO → Connect now to save it again. Test diagnostics removed.
 
 ## Gemini cloud AI (3 Nov, `feat/gemini-cloud-ai`, decision 0179)
 
