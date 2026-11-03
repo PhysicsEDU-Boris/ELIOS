@@ -31,11 +31,18 @@
 - Phone: owner session read-only (27 scans unchanged, no quiz answered), fake via `adb reverse`. Phone has two Gemma copies (app files + external files), both pre-existing; not touched.
 - Owner questions: mission reward; HUD crop hides the 20 cm band on phones; base-build Exit not disconnecting.
 
+## Q3 quiz popups + camera scan (3 Nov, draft PR into `feat/r3-control-phone`)
+
+- One R3 popup everywhere (`lib/widgets/quiz/quiz_r3.dart`): question, loading (timer, 3 real steps), skeleton, essay input, review document + coach chat; explanation data from the bank (quote, section, page, id; wrongWhy optional, none written). Camera scan restyled, crop unchanged. Decision 0175.
+- Tests: `phone_control_test` (all popup states, 3 sizes × light/dark), `scan_screen_test` (crop break-checked), `q3_explanation_data_test` (break-checked). `flutter test` only the 2 known failures.
+- Phone: test store `scan_records_q3test.json` (deleted after), owner `scan_records.json` and the R3 test file byte-identical. **The phone runs the Q3 debug build, light mode, Phone camera, Question bank.** No real item was scanned (Gemma identify ran, nothing recognised). Results: `docs/test-results/q3/`.
+- Open: who writes wrongWhy; R2 GO/logo; result card and History detail still the older look.
+
 ## R3 Control for phones (2 Nov, draft PR into `feat/r2-control-gamified`)
 
 - Phones in landscape (short side < 600 dp) get the R3 layout from Figma 393:2358 (`lib/widgets/control/phone/`: layout, quiz popups, Guide). One round STOP/GO button (GO = `MotionGate.resume` only), no logo in the top bar, nothing on the video, offline presses send nothing, skeleton, 5-step Guide (first run once per device, key `r3_phone_guide_shown`). R2 stays on tablets and the Mac. Decision 0174.
 - Tests: `test/widgets/phone_control_test.dart`, `test/screens/control_phone_test.dart`; GO test break-checked. Results, side-by-sides and the difference list: `docs/test-results/r3/`.
-- Phone (Edge 60 Fusion): debug build with `SCAN_RECORDS_FILE=scan_records_r3test.json` (separate store). Owner `scan_records.json` verified byte-identical (27 records); fake robot over `adb reverse`, removed after. Space/Esc not tested (no keyboard). **The phone runs the R3 test build, dark mode.** The Gemma model was moved out and back for the builds; no copy.
+- Phone (Edge 60 Fusion): debug build with `SCAN_RECORDS_FILE=scan_records_r3test.json` (separate store). Owner `scan_records.json` verified byte-identical (27 records); fake robot over `adb reverse`, removed after. Space/Esc not tested (no keyboard). The Gemma model was moved out and back for the builds; no copy.
 - Open: painted card art and SVG export, 3D joystick, ELIOS AI badge art; essay input / identifying / hazard popups still the old Indonesian popup; owner question: should GO and the logo removal also apply to R2 tablet and Mac?
 
 ## Earlier on 2 Nov (merged)
@@ -50,4 +57,3 @@
 - Tests: `test/models/home_stats_test.dart` (19, break-checked), `test/screens/home_screen_test.dart` (15). `flutter test` +741 ~20 -2 (the 2 known `elio_tokens_test` failures).
 - Phone (Edge 60 Fusion, tester APK, guest session, owner data untouched): Home = History (26 scans, 202 trophies, B3 8 / Anorganik 17 / Organik 1, 0 today; before the quest-bonus change, which adds nothing to Oct records). Shots in `docs/test-results/h1v4/`.
 - Build hygiene: the 2.59 GB Gemma model sits in `assets/models/` in this checkout and gets bundled; move it out for an APK build and back after.
-- Open: History total now exceeds the sum of its rows (quest bonus); History has no per-day filter; `trophiesFor(List)` returns 0 (callers pass trophies explicitly).

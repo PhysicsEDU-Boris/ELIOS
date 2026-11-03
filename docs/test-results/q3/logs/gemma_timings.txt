@@ -1,0 +1,22 @@
+2026-11-03T11:33:50.434499 [gemma] load start vision=true
+2026-11-03T11:34:02.410519 [gemma] load ms=12166 backend=PreferredBackend.gpu requested=PreferredBackend.gpu image=true
+2026-11-03T11:35:06.757952 [gemma] request queryMs=7 firstTokenMs=33391 totalMs=40736 chars=77 image=true
+2026-11-03T11:35:06.760759 [gemma] identify ms=41007 ok=true
+2026-11-03T11:37:47.929498 [gemma] request queryMs=0 firstTokenMs=3478 totalMs=16239 chars=199 image=false
+2026-11-03T11:38:17.916256 [gemma] request queryMs=0 firstTokenMs=2086 totalMs=29805 chars=583 image=false
+2026-11-03T11:38:54.345844 [gemma] request queryMs=0 firstTokenMs=2350 totalMs=36155 chars=540 image=false
+2026-11-03T11:39:16.368715 [gemma] request queryMs=0 firstTokenMs=2182 totalMs=21745 chars=406 image=false
+2026-11-03T11:39:28.993523 [gemma] request queryMs=0 firstTokenMs=2394 totalMs=12615 chars=278 image=false
+2026-11-03T11:40:13.078682 [gemma] request queryMs=0 firstTokenMs=2134 totalMs=43798 chars=530 image=false
+2026-11-03T11:42:28.953314 [gemma] request queryMs=0 firstTokenMs=2377 totalMs=23742 chars=379 image=false
+2026-11-03T11:42:28.955405 [gemma] essay-grade ms=23781 ok=true
+2026-11-03T11:48:36.325271 [gemma] load start vision=true
+2026-11-03T11:50:26.136154 [gemma] load ms=109905 backend=PreferredBackend.gpu requested=PreferredBackend.gpu image=true
+2026-11-03T11:51:15.905819 [gemma] request queryMs=23 firstTokenMs=33726 totalMs=41493 chars=77 image=true
+2026-11-03T11:51:15.907931 [gemma] identify ms=41750 ok=true
+2026-11-03T11:52:15.075304 [gemma] request queryMs=0 firstTokenMs=2460 totalMs=28312 chars=567 image=false
+2026-11-03T11:52:38.629867 [gemma] request queryMs=0 firstTokenMs=1868 totalMs=23260 chars=514 image=false
+2026-11-03T11:53:43.538445 [gemma] request queryMs=0 firstTokenMs=17577 totalMs=22947 chars=77 image=true
+2026-11-03T11:53:43.539824 [gemma] identify ms=23019 ok=true
+2026-11-03T11:54:20.421246 [gemma] request queryMs=0 firstTokenMs=2860 totalMs=36675 chars=635 image=false
+2026-11-03T11:54:39.198369 [gemma] request queryMs=0 firstTokenMs=2509 totalMs=18523 chars=314 image=false

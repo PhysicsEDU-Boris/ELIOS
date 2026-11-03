@@ -1,0 +1,21 @@
+## STOP from the loading popup
+[WS] STOP seq=3 -> wheels 0, arm hold
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+## Minimise
+## GO
+## joystick forward after GO
+[WS] motor left=75 right=75
+[WS] motor left=0 right=0
+## STOP from the review
+[WS] STOP seq=4 -> wheels 0, arm hold
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+[WS] motor left=0 right=0
+## close quiz and GO
+## GO

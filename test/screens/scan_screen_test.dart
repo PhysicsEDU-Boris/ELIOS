@@ -94,12 +94,13 @@ void main() {
       final tag =
           '${size.width.toInt()}x${size.height.toInt()} ${dark ? 'dark' : 'light'}';
       Future<void> shot(WidgetTester t, String name) async {
-        if (_pngDir.isNotEmpty)
+        if (_pngDir.isNotEmpty) {
           await savePng(
             t,
             _pngDir,
             'scan_${name}_${size.width.toInt()}x${size.height.toInt()}_${dark ? 'dark' : 'light'}',
           );
+        }
       }
 
       testWidgets('camera ready $tag', (t) async {
