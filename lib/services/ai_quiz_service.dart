@@ -106,7 +106,7 @@ class AiQuizService {
   static const _tag = '[AiQuizService]';
 
   /// The Worker's address; `--dart-define=ELIOS_AI_URL=...` points a build at another one.
-  static const workerUrl = String.fromEnvironment('ELIOS_AI_URL', defaultValue: 'https://elios-ai.WORKERS_SUBDOMAIN.workers.dev');
+  static const workerUrl = String.fromEnvironment('ELIOS_AI_URL', defaultValue: 'https://elios-ai.elios-ai-worker.workers.dev');
 
   // The Worker tries up to 5 models at about 8 s each; this only stops a hung call.
   static const _callTimeout = Duration(seconds: 60);
