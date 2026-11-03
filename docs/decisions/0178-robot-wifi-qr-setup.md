@@ -57,5 +57,6 @@ comes from the phone's DHCP and changes with the hotspot.
 - App: Find ELIO replaced `192.168.4.1` with `10.51.200.84`. Connect gave LIVE 14 fps.
 - Second round (new flow): wrong password went back to scanning with the reason; real password
   went to the dashboard with the green banner. Both left the camera on `boris`, with no `.tmp` files.
-- Not tested on the robot: switching from AP mode (the hostapd/udhcpd cleanup), and a
-  different hotspot.
+- Home router: QR for `WIFIBOR` (phone on WIFIBOR, hotspot off): joined at 192.168.100.135 with internet.
+  Find ELIO from the phone on WIFIBOR found it; Connect gave LIVE 13 fps.
+- Not tested on the robot: switching from AP mode (the hostapd/udhcpd cleanup), and someone else's phone.

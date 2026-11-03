@@ -567,7 +567,7 @@ def force_disconnect_all_clients():
     """
     global ws_status, ws_streaming
     if _ws_loop is None or not ws_clients:
-        ws_status = "Idle"
+        ws_status = "Idle" if _ws_loop is None else "Serving"
         ws_streaming = False
         return
 
@@ -653,7 +653,8 @@ async def ws_handler(websocket):
         print("[WS] connection closed:", ce)
     finally:
         ws_clients.discard(websocket)
-        ws_status = "Serving" if ws_clients else "Idle"
+        # The server keeps listening after a client leaves: WAITING, not OFFLINE.
+        ws_status = "Client connected" if ws_clients else "Serving"
         if not ws_clients:
             ws_streaming = False
         print("[WS] clients remaining:", len(ws_clients))

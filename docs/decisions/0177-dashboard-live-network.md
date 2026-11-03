@@ -26,3 +26,9 @@ screen to type it into the app's Config screen.
 - A very long SSID may run past its card; not handled.
 - API checked read-only on the device over USB SSH (`get_ip`, `get_ssid`, `is_ap_mode`,
   `time.ticks_ms`); the new `main.py` itself was not deployed.
+
+## Follow-up (3 Nov, PR #85)
+
+- The "Flutter / WS" pill showed OFFLINE ("Idle") after the last app disconnected, while the server
+  was still listening. It now shows WAITING ("Serving"), and CONNECTED while any client is still
+  connected. Force-disconnect does the same. Test `firmware/maixcam2/test_ws_status.py` (break-checked).
