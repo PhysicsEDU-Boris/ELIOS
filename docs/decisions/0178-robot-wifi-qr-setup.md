@@ -19,6 +19,13 @@ comes from the phone's DHCP and changes with the hotspot.
 - Camera: a "Wi-Fi setup" button on the dashboard, shown only while no app is connected (the scan
   uses the stream camera). It scans for a standard `WIFI:T:WPA;S:..;P:..;;` QR for up to 90 s,
   then asks "Join <ssid>?". Nothing changes without that tap.
+- Scan: `image.QRCodeDetector` (NPU, about 18 ms at 640x640 against 80 ms for `find_qrcodes`). Against
+  phone-screen glare, every 1.5 s without a QR the picture gets darker (`luma` minus 0, 2 or 4), and
+  the camera's own luma is restored when the scan ends. Manual exposure/gain is not used:
+  a probe that set it restarted the camera, and the touch controller then failed its I2C probe on boot
+  (fixed by re-binding `hyn_ts`).
+- After Join: success goes straight to the dashboard with a 15 s green banner (SSID and IP). Failure goes
+  back to scanning with the reason in a red box. There is no OK step.
 - Accepted: WPA passwords of 8 to 63 printable ASCII characters, SSIDs of 1 to 32 bytes. Open and WEP
   are refused because `wifi.sh` builds the config with `wpa_passphrase`.
 - Join: writes `wifi.ssid`, `wifi.pass`, `wifi.sta`, removes `wifi.ap`, leaves `wifi.ipv4_prefix`.
@@ -48,5 +55,7 @@ comes from the phone's DHCP and changes with the hotspot.
   `boris` at the same IP by itself, `/boot/wifi.*` byte-identical to before, no `.tmp` left.
 - QR with the real password (typed by the owner): "Connected", `False True 10.51.200.84`, internet up.
 - App: Find ELIO replaced `192.168.4.1` with `10.51.200.84`. Connect gave LIVE 14 fps.
+- Second round (new flow): wrong password went back to scanning with the reason; real password
+  went to the dashboard with the green banner. Both left the camera on `boris`, with no `.tmp` files.
 - Not tested on the robot: switching from AP mode (the hostapd/udhcpd cleanup), and a
   different hotspot.

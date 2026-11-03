@@ -4,6 +4,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 NAMES = {'BOOT_DIR', 'WIFI_FILES', 'JOIN_TIMEOUT_S', 'parse_wifi_qr', '_read_wifi_files',
          '_write_wifi_files', '_restart_wifi', 'apply_wifi'}
@@ -79,6 +80,39 @@ class ApplyTest(unittest.TestCase):
         self.assertFalse(ok)
         self.assertEqual(self.cmds, [])
         self.assertEqual(self.files(), {**self.before, 'wpa_supplicant.conf': b'x'})
+
+
+def load_flow(result):
+    """_join_worker with the real setup/start_scan and a fake apply_wifi."""
+    names = {'setup', 'start_scan', '_join_worker', 'BANNER_MS', 'SETUP_SCAN_MS'}
+    tree = ast.parse(Path(__file__).with_name('main.py').read_text())
+    body = [n for n in tree.body
+            if getattr(n, 'name', None) in names
+            or getattr(getattr(n, 'targets', [None])[0], 'id', None) in names]
+    ns = {'mtime': SimpleNamespace(ticks_ms=lambda: 1000), '_net': {'at': 5}, 'C_GREEN': 'green',
+          'apply_wifi': lambda ssid, pw: result}
+    exec(compile(ast.Module(body=body, type_ignores=[]), 'main.py', 'exec'), ns)
+    return ns
+
+
+class FlowTest(unittest.TestCase):
+    def test_success_goes_to_the_dashboard_with_a_banner(self):
+        ns = load_flow((True, '10.51.200.84'))
+        ns['setup'].update(stage='joining', pw='secret123')
+        ns['_join_worker']('boris', 'secret123')
+        self.assertIsNone(ns['setup']['stage'])
+        self.assertIn('10.51.200.84', ns['setup']['banner'])
+        self.assertEqual(ns['setup']['pw'], '')
+        self.assertIsNone(ns['_net']['at'])  # dashboard re-reads the IP at once
+
+    def test_failure_goes_back_to_scanning_with_the_reason(self):
+        ns = load_flow((False, "Couldn't join boris. Back on the old Wi-Fi (10.51.200.84)"))
+        ns['setup'].update(stage='joining', pw='wrongpass1')
+        ns['_join_worker']('boris', 'wrongpass1')
+        self.assertEqual(ns['setup']['stage'], 'scan')
+        self.assertIn("Couldn't join boris", ns['setup']['msg'])
+        self.assertEqual(ns['setup']['pw'], '')
+        self.assertGreater(ns['setup']['until'], 1000)
 
 
 if __name__ == '__main__':

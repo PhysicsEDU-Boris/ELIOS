@@ -11,7 +11,7 @@ kept outside the repo.
 
 ## [Unreleased]
 
-- Robot Wi-Fi by QR: on the camera, tap Wi-Fi setup and show a Wi-Fi QR (from Config > Robot Wi-Fi QR, or Android's hotspot Share QR). After you confirm, the robot joins that hotspot. If it gets no IP within 45 seconds, it puts the old Wi-Fi back. Config also has Find ELIO, which finds the robot's new IP on the phone's network and fills it in (decision 0178).
+- Robot Wi-Fi by QR: on the camera, tap Wi-Fi setup and show a Wi-Fi QR (from Config > Robot Wi-Fi QR, or Android's hotspot Share QR). After you confirm, the robot joins that hotspot. If it gets no IP within 45 seconds, it puts the old Wi-Fi back. The scan uses the camera's fast QR detector and darkens the picture step by step against phone-screen glare. Success returns to the dashboard with a green banner showing the IP; failure returns to scanning with the reason. Config also has Find ELIO, which finds the robot's new IP on the phone's network and fills it in (decision 0178).
 
 - MaixCAM2 dashboard: the first row now shows the joined WiFi SSID with its mode (AP or STA) and the live IP, re-read every 3 seconds, instead of the hard-coded ELIOS / 192.168.4.1. With no IP it shows "--". Display-only; WiFi mode is still set by the OS (decision 0177).
 

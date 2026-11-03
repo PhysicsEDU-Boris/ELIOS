@@ -137,7 +137,7 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text('Turn the screen brightness up if the robot does not read it.',
+                  Text('Robot not reading it? Lower the screen brightness or tilt the phone a little.',
                       textAlign: TextAlign.center, style: configCaption(p)),
                 ],
               ],
