@@ -1,8 +1,7 @@
-'use strict';
 // Gemini fallback chain and switch rules from decision 0176.
 
 const API = 'https://generativelanguage.googleapis.com/v1beta/models';
-const CHAIN = [
+export const CHAIN = [
   'gemini-3.5-flash-lite',
   'gemini-3.1-flash-lite',
   'gemini-3-flash-preview',
@@ -13,11 +12,11 @@ const TIMEOUT_MS = 8000;
 const REST_MS = 60000;
 
 // Model -> epoch ms until which it is skipped (Infinity: dropped after a 404).
-// ponytail: per function instance; index.js caps the function at one instance so this is shared.
-const restUntil = new Map();
+// ponytail: per Worker isolate, not shared across Cloudflare locations; move to KV if 429s repeat.
+export const restUntil = new Map();
 
 /** Next midnight in America/Los_Angeles, when the free daily caps reset (15:00 WIB). */
-function nextPacificMidnight(now) {
+export function nextPacificMidnight(now) {
   const la = new Date(new Date(now).toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
   const offset = now - la.getTime();
   la.setHours(24, 0, 0, 0);
@@ -52,7 +51,7 @@ function isJson(text) {
  * Tries each chain model in order. Returns {text, model, ms, tried} from the first good reply,
  * or null when every model is resting, failing or capped (the app then uses the question bank).
  */
-async function generate({ key, prompt, system, image, json }, { fetch = globalThis.fetch, now = Date.now, log = console.log } = {}) {
+export async function generate({ key, prompt, system, image, json }, { fetch = globalThis.fetch, now = Date.now, log = console.log } = {}) {
   const body = JSON.stringify({
     contents: [{
       role: 'user',
@@ -102,5 +101,3 @@ async function generate({ key, prompt, system, image, json }, { fetch = globalTh
   log(`eliosAi: no model answered (tried ${tried.join(', ') || 'none, all resting'})`);
   return null;
 }
-
-module.exports = { CHAIN, generate, nextPacificMidnight, restUntil };

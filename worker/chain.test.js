@@ -1,7 +1,6 @@
-'use strict';
-const test = require('node:test');
-const assert = require('node:assert');
-const { CHAIN, generate, nextPacificMidnight, restUntil } = require('./chain');
+import test from 'node:test';
+import assert from 'node:assert';
+import { CHAIN, generate, nextPacificMidnight, restUntil } from './chain.js';
 
 const ok = (text) => ({ status: 200, text: async () => JSON.stringify({ candidates: [{ content: { parts: [{ text }] } }] }) });
 const fail = (status, body = '{}') => ({ status, text: async () => body });

@@ -1,0 +1,8 @@
+# Cloudflare Worker that holds the Gemini key (decision 0179). Free plan, no card.
+# Deploy: npx wrangler@4 deploy   Secret (owner only): npx wrangler@4 secret put GEMINI_API_KEY
+name = "elios-ai"
+main = "index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+FIREBASE_PROJECT_ID = "elio-apps"

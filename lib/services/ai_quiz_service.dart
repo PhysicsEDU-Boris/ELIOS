@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
-import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/scanned_waste.dart';
@@ -93,8 +94,8 @@ class PhotoIdentification {
 }
 
 /// Cloud AI (Gemini) for the scan quiz: identify, questions, essay grading and
-/// chat. Each request goes to the `eliosAi` Firebase Function, which holds the
-/// key and runs the 0176 fallback chain (decision 0179).
+/// chat. Each request goes to the `elios-ai` Cloudflare Worker (`worker/`), which
+/// holds the key and runs the 0176 fallback chain (decision 0179).
 ///
 /// Every public method returns `null` instead of throwing, so no internet or
 /// every model capped degrades to the question bank rather than breaking the popup.
@@ -104,7 +105,10 @@ class AiQuizService {
 
   static const _tag = '[AiQuizService]';
 
-  // The function tries up to 5 models at about 8 s each; this only stops a hung call.
+  /// The Worker's address; `--dart-define=ELIOS_AI_URL=...` points a build at another one.
+  static const workerUrl = String.fromEnvironment('ELIOS_AI_URL', defaultValue: 'https://elios-ai.WORKERS_SUBDOMAIN.workers.dev');
+
+  // The Worker tries up to 5 models at about 8 s each; this only stops a hung call.
   static const _callTimeout = Duration(seconds: 60);
 
   static const _systemInstruction =
@@ -173,7 +177,7 @@ class AiQuizService {
   Completer<String?>? _pendingCompleter;
   Future<String?> Function()? _pendingTask;
 
-  /// Stands in for the `eliosAi` call in tests.
+  /// Stands in for the Worker call in tests.
   @visibleForTesting
   Future<String?> Function(String prompt, {Uint8List? imageBytes, bool isUser})? mockSendExecute;
 
@@ -186,26 +190,33 @@ class AiQuizService {
 
   void _log(String msg) => debugPrint('$_tag $msg');
 
-  /// One `eliosAi` call. [json] asks Gemini for a JSON reply, which the
-  /// function checks (one retry, then the next model). Null on any failure.
+  /// One Worker call, signed with the student's Firebase ID token. [json] asks
+  /// Gemini for a JSON reply, which the Worker checks (one retry, then the next
+  /// model). Null on any failure.
   Future<String?> _call(String prompt, Uint8List? photo, bool json) async {
     final sw = Stopwatch()..start();
+    final client = HttpClient();
     try {
-      final res = await FirebaseFunctions.instanceFor(region: 'asia-southeast2').httpsCallable('eliosAi', options: HttpsCallableOptions(timeout: _callTimeout)).call<Map<Object?, Object?>>({
+      final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+      if (token == null) throw StateError('not signed in');
+      final req = await client.postUrl(Uri.parse(workerUrl)).timeout(_callTimeout);
+      req.headers
+        ..contentType = ContentType.json
+        ..set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      req.write(jsonEncode({
         'prompt': prompt,
         'system': _systemInstruction,
         if (photo != null) 'image': base64Encode(photo),
         'json': json,
-      });
-      lastModel = res.data['model'] as String?;
+      }));
+      final res = await req.close().timeout(_callTimeout);
+      final body = jsonDecode(await res.transform(utf8.decoder).join().timeout(_callTimeout)) as Map<String, dynamic>;
+      if (res.statusCode != 200) throw HttpException('HTTP ${res.statusCode}: ${body['error']}');
+      lastModel = body['model'] as String?;
       lastReplyMs.value = sw.elapsedMilliseconds;
       status.value = AiStatus.ready;
-      TesterLog.instance.log(
-        'ai',
-        'model=$lastModel ms=${sw.elapsedMilliseconds} '
-            'tried=${res.data['tried']} image=${photo != null}',
-      );
-      final text = (res.data['text'] as String?)?.trim();
+      TesterLog.instance.log('ai', 'model=$lastModel ms=${sw.elapsedMilliseconds} tried=${body['tried']} image=${photo != null}');
+      final text = (body['text'] as String?)?.trim();
       return text == null || text.isEmpty ? null : text;
     } catch (e) {
       // No internet, every model busy or capped, not signed in: the caller falls back to the bank.
@@ -213,6 +224,8 @@ class AiQuizService {
       _log('call failed after ${sw.elapsedMilliseconds}ms: $e');
       TesterLog.instance.log('ai', 'failed ms=${sw.elapsedMilliseconds}: $e');
       return null;
+    } finally {
+      client.close(force: true);
     }
   }
 

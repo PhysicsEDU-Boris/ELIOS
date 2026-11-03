@@ -16,8 +16,6 @@ dependencies:
   firebase_auth: ^6.5.2
   cloud_firestore: ^6.5.0
   firebase_storage: ^13.4.2
-  # Gemini identify and quiz questions through the eliosAi function (decision 0179).
-  cloud_functions: ^6.0.0
   google_sign_in: ^6.2.1
 
   # UI & State
