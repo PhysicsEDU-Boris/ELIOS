@@ -2,9 +2,9 @@
 # Derived from the owner's Maixcam.txt reference; see README.md for its hash.
 # Clean pixels are encoded before drawing; annotated preview remains unchanged.
 # Hardware behavior is inherited from that reference, not deployment-verified.
-# WiFi AP is provisioned by the OS; this script does not configure WiFi.
+# WiFi (AP or STA) is set up by the OS; this script only reads its status.
 
-from maix import image, display, camera, touchscreen, nn, app, tensor, time as mtime
+from maix import image, display, camera, touchscreen, nn, app, tensor, network, time as mtime
 import json, asyncio, websockets, base64, math, hashlib
 import numpy as np
 
@@ -19,13 +19,31 @@ disp  = display.Display()
 W, H  = disp.width(), disp.height()
 ts    = touchscreen.TouchScreen()
 
-# ── Fixed AP configuration (display-only) ────────────────────────────────────
-# These match the AP already provisioned on this unit via SSH
-# (hostapd/dnsmasq). Purely for the dashboard cards — nothing here
-# configures or starts the AP.
-AP_SSID = "ELIOS"
-AP_IP   = "192.168.4.1"
+# ── Network status (display-only) ────────────────────────────────────────────
+# The OS picks AP or STA (/boot/wifi.ap, /boot/wifi.sta); in STA the IP comes
+# from the phone hotspot's DHCP and changes, so the cards read it live.
+# Nothing here configures WiFi.
 WS_PORT = 8765
+NET_REFRESH_MS = 3000
+_wifi = None
+_net = {"at": None, "ssid": "--", "ip": "--"}
+
+def net_cards(now_ms):
+    """(ssid_text, ip_text) for the dashboard, re-read every NET_REFRESH_MS."""
+    global _wifi
+    if _net["at"] is not None and now_ms - _net["at"] < NET_REFRESH_MS:
+        return _net["ssid"], _net["ip"]
+    _net["at"] = now_ms
+    try:
+        if _wifi is None:
+            _wifi = network.wifi.Wifi()
+        ip = _wifi.get_ip()
+        ssid = "{} ({})".format(_wifi.get_ssid(), "AP" if _wifi.is_ap_mode() else "STA") if ip else "--"
+    except Exception as e:
+        print("[Net] status read failed:", e)
+        ip, ssid = "", "--"
+    _net["ssid"], _net["ip"] = ssid, ip or "--"
+    return _net["ssid"], _net["ip"]
 
 # ── AI Model ──────────────────────────────────────────────────────────────────
 # Your trained waste-segmentation model (converted from
@@ -721,9 +739,11 @@ def draw_dashboard(c, t):
         txt(c,cx+12,cy+8, title,C_MUTED,sc=0.60)
         txt(c,cx+12,cy+28,value,vcol,   sc=0.78)
 
-    # Row 1 — AP SSID / AP IP (display-only — AP is provisioned at OS level)
-    card(PAD,       CY1,"AP SSID", AP_SSID, C_GREEN)
-    card(PAD+CW+12, CY1,"AP IP",   AP_IP,   C_GREEN)
+    # Row 1 — live SSID (mode) / IP (display-only — WiFi is set up by the OS)
+    ssid, ip = net_cards(mtime.ticks_ms())
+    ncol = C_GREEN if ip != "--" else C_MUTED
+    card(PAD,       CY1,"WiFi SSID", ssid, ncol)
+    card(PAD+CW+12, CY1,"IP",        ip,   ncol)
 
     # Row 2 — AP Port / Connected clients
     card(PAD,       CY2,"AP Port", str(WS_PORT), C_GREEN)
