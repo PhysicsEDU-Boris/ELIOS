@@ -21,8 +21,12 @@ void main() {
       _setScreen(tester, size);
       await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: DeviceScanScreen())));
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('Scan & Buat Kuis'), findsOneWidget);
-      expect(find.text('Uji tanpa kamera'), findsOneWidget);
+      // No camera in tests: the R3 skeleton, or the scan card with the camera error.
+      expect(find.byType(ScanScreenLayout), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('scan_skeleton')).evaluate().isNotEmpty || find.byKey(const ValueKey('scan_button')).evaluate().isNotEmpty,
+        isTrue,
+      );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(milliseconds: 50));

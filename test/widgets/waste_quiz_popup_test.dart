@@ -65,7 +65,7 @@ final _states = <String, WasteQuizUiState>{
     messages: [ChatMessage(isUser: false, text: 'Pilih satu jawaban.')],
   ),
   'mc-answered-long-chat': WasteQuizUiState(
-    phase: WasteQuizPhase.active,
+    phase: WasteQuizPhase.explaining,
     scan: _scan,
     question: _mcQuestion,
     selectedOption: 0,
@@ -129,26 +129,27 @@ Future<void> _pump(WidgetTester tester, Size size, WasteQuizUiState state, {doub
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
-  testWidgets('level chip names the session while bank items start Mudah-first', (tester) async {
+  testWidgets('header and overline name the question and the session level', (tester) async {
     await _pump(tester, const Size(760, 360), WasteQuizUiState(
       phase: WasteQuizPhase.active, scan: _scan, question: _mcQuestion, difficulty: QuizDifficulty.hard,
     ));
-    expect(find.text('Soal 1/5 · Sesi Sulit'), findsOneWidget);
+    expect(find.text('Question 1 of 5'), findsOneWidget);
+    expect(find.text('MULTIPLE CHOICE · HARD'), findsOneWidget);
   });
 
   testWidgets('identification shows Looking and no quiz answers', (tester) async {
     await _pump(tester, const Size(760, 360), _states['identifying']!);
-    expect(find.text('Looking…'), findsOneWidget);
-    expect(find.text('Lanjut kuis'), findsNothing);
+    expect(find.text('Reading the scan…'), findsOneWidget);
+    expect(find.text('Continue quiz'), findsNothing);
   });
 
   testWidgets('hazard can be rejected before quiz generation', (tester) async {
     await _pump(tester, const Size(760, 360), _states['hazard']!);
-    expect(find.textContaining('Kemungkinan limbah B3'), findsOneWidget);
-    expect(find.text('Lanjut kuis'), findsOneWidget);
-    await tester.tap(find.text('Scan ulang'));
+    expect(find.textContaining('Possibly hazardous (B3)'), findsOneWidget);
+    expect(find.text('Continue quiz'), findsOneWidget);
+    await tester.tap(find.text('Scan again'));
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Lanjut kuis'), findsNothing);
+    expect(find.text('Continue quiz'), findsNothing);
   });
 
   for (final screen in _screens.entries) {
@@ -185,19 +186,20 @@ void main() {
   testWidgets('essay field and submit button are reachable on the smallest landscape phone',
       (tester) async {
     await _pump(tester, const Size(640, 320), _states['essay']!);
-    await tester.ensureVisible(find.text('Kirim Jawaban'));
+    final submit = find.byKey(const ValueKey('quiz_essay_submit'));
+    await tester.ensureVisible(submit);
     await tester.pump();
-    final rect = tester.getRect(find.text('Kirim Jawaban'));
-    expect(rect.bottom, lessThanOrEqualTo(320));
-    expect(find.byType(TextField), findsNWidgets(2)); // essay + chat input
+    expect(tester.getRect(submit).bottom, lessThanOrEqualTo(320));
+    expect(find.byKey(const ValueKey('quiz_essay_field')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('popup stays usable with the keyboard open (landscape)', (tester) async {
     await _pump(tester, const Size(800, 360), _states['essay']!, keyboard: 180);
-    await tester.ensureVisible(find.text('Kirim Jawaban'));
+    final submit = find.byKey(const ValueKey('quiz_essay_submit'));
+    await tester.ensureVisible(submit);
     await tester.pump();
-    expect(tester.getRect(find.text('Kirim Jawaban')).bottom, lessThanOrEqualTo(180));
+    expect(tester.getRect(submit).bottom, lessThanOrEqualTo(180));
     expect(tester.takeException(), isNull);
   });
 
@@ -212,12 +214,12 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('narrow screens switch to Soal / Asisten AI tabs', (tester) async {
+  testWidgets('narrow screens switch between Explanation and the coach', (tester) async {
     await _pump(tester, const Size(360, 740), _states['mc-answered-long-chat']!);
-    expect(find.text('Soal'), findsOneWidget);
-    await tester.tap(find.textContaining('Asisten AI'));
+    expect(find.byKey(const ValueKey('quiz_document')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('tab_coach')));
     await tester.pump();
-    expect(find.text('Tanya AI untuk koreksi...'), findsOneWidget);
+    expect(find.text('Ask ELIOS AI…'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

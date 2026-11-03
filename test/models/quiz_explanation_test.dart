@@ -150,7 +150,7 @@ void main() {
     });
 
     test('ScanRecord schemaVersion forward and backward compatibility', () {
-      // Default new record has schemaVersion 2
+      // Default new record has schemaVersion 3
       final newRecord = ScanRecord(
         id: 'new-1',
         time: DateTime.now(),
@@ -166,8 +166,8 @@ void main() {
           ),
         ],
       );
-      expect(newRecord.schemaVersion, 2);
-      expect(newRecord.toJson()['schemaVersion'], 2);
+      expect(newRecord.schemaVersion, 3);
+      expect(newRecord.toJson()['schemaVersion'], 3);
 
       // Legacy record JSON without schemaVersion defaults to 1
       final legacyRecordJson = {

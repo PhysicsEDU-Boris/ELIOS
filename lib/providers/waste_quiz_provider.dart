@@ -308,6 +308,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _cancelPrefetch();
     final generation = ++_generation;
     GemmaQuizService.instance.cancel();
+    loadingSince = DateTime.now();
     state = _freshSession(phase: WasteQuizPhase.identifying);
     unawaited(_identifyThenQuiz(imageBytes, generation));
   }
@@ -326,6 +327,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _cancelPrefetch();
     final generation = ++_generation;
     GemmaQuizService.instance.cancel();
+    loadingSince = DateTime.now();
     state = _freshSession(phase: WasteQuizPhase.identifying);
     final diagnostics = kDebugMode ? ScanDiagnostics() : null;
     _diagnostics = diagnostics;
@@ -465,6 +467,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       state = _freshSession(scan: scan, phase: WasteQuizPhase.confirmingHazard);
       return;
     }
+    loadingSince = DateTime.now();
     state = _freshSession(scan: scan, phase: WasteQuizPhase.loadingQuestion);
     _loadQuestion(0);
   }
@@ -480,6 +483,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final scan = state.scan!;
     final type = questionTypeFor(index, essays: essayQuestions);
     final total = state.totalQuestions;
+    loadingSince = DateTime.now();
     state = state.copyWith(
       phase: WasteQuizPhase.loadingQuestion,
       questionIndex: index,
@@ -542,6 +546,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       questionSource: _sessionSource,
       messages: [...state.messages, ChatMessage(isUser: false, text: intro)],
     );
+    _announceReady();
     diagnostics?.event('question_shown', {'question': index + 1, 'totalLockToQuestionMs': diagnostics.clock.elapsedMilliseconds});
     _logQuestion(index, scan, generated, loadClock.elapsedMilliseconds);
     if (index == 0 && _gemma) _startPrefetch();
@@ -653,6 +658,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final scan = state.scan!;
     final type = questionTypeFor(index, essays: essayQuestions);
     final total = state.totalQuestions;
+    loadingSince = DateTime.now();
     state = state.copyWith(
       phase: WasteQuizPhase.loadingQuestion,
       questionIndex: index,
@@ -690,6 +696,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       isFallback: generated == null,
       messages: [...state.messages, ChatMessage(isUser: false, text: intro)],
     );
+    _announceReady();
     _logQuestion(index, scan, generated, waitedMs);
   }
 
@@ -997,7 +1004,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (photoBytes != null) {
       try {
         final dir = await getApplicationDocumentsDirectory();
-        final scansDir = Directory('${dir.path}/scans');
+        final scansDir = Directory('${dir.path}/$scanPhotosDirName');
         if (!scansDir.existsSync()) scansDir.createSync(recursive: true);
         final file = File('${scansDir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.jpg');
         file.writeAsBytesSync(photoBytes, flush: true);
@@ -1058,6 +1065,15 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       _lastAutoSpokenText = text;
       unawaited(QuizTtsService.instance.speak(text));
     }
+  }
+
+  /// When the current wait (identify or question) started; the loading popup's timer.
+  DateTime? loadingSince;
+
+  /// A question arrived while the quiz was minimised: the Quiz button shows its badge,
+  /// and with Voice on TTS says so (decision 0175).
+  void _announceReady() {
+    if (state.minimized && state.voiceOn) unawaited(QuizTtsService.instance.speak('Question ready'));
   }
 
   void listen(String text) => unawaited(QuizTtsService.instance.speak(text));

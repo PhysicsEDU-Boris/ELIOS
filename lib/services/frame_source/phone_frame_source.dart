@@ -30,6 +30,11 @@ class PhoneFrameSource extends FrameSource {
   
   @override
   bool get isInitialized => _useMacCamera ? _initialized : _controller != null;
+
+  /// Which camera is showing, for the scan screen's chip.
+  String get cameraName => _useMacCamera
+      ? 'Mac camera'
+      : (_cameras.isNotEmpty && _cameras[_cameraIndex].lensDirection == CameraLensDirection.front ? 'Front camera' : 'Back camera');
   
   @override
   String? get error => _errorMsg;

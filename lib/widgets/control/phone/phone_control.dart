@@ -10,6 +10,7 @@ import '../../../models/control_session.dart';
 import '../../../theme/elio_tokens.dart';
 import '../../control_layout.dart' show HomeButton;
 import '../../elio_top_bar.dart' show ElioAvatar;
+import '../../waste_quiz_popup.dart' show QuizButton;
 import '../r2_controls.dart';
 import '../../learn/learn_ui.dart' show LearnTheme;
 
@@ -55,6 +56,7 @@ class PhoneControlLayout extends StatelessWidget {
     required this.missionDone,
     required this.trophies,
     required this.quizBadge,
+    this.quizWaiting = false,
     required this.onQuiz,
     required this.onHistory,
     required this.onAvatar,
@@ -89,6 +91,9 @@ class PhoneControlLayout extends StatelessWidget {
 
   /// Null hides the Quiz button (no quiz).
   final int? quizBadge;
+
+  /// The question is still being prepared: the Quiz button shows Waiting.
+  final bool quizWaiting;
   final VoidCallback onQuiz, onHistory, onAvatar, onBack, onGuide;
   final String? photoUrl;
 
@@ -378,7 +383,7 @@ class PhoneControlLayout extends StatelessWidget {
         if (quizBadge != null) ...[
           KeyedSubtree(
             key: quizKey,
-            child: _QuizButton(count: quizBadge!, onTap: onQuiz),
+            child: QuizButton(key: const ValueKey('phone_quiz'), waiting: quizWaiting, count: quizBadge!, onTap: onQuiz),
           ),
           const SizedBox(width: 8),
         ],
@@ -396,7 +401,7 @@ class PhoneControlLayout extends StatelessWidget {
                 color: context.elio.textPrimary,
               ),
               const SizedBox(width: 6),
-              _Trophies(count: trophies),
+              TrophyCount(count: trophies),
             ],
           ),
         ),
@@ -956,92 +961,8 @@ class _StoppedPill extends StatelessWidget {
   }
 }
 
-/// "Quiz" with the ELIOS AI mark and a count. The only ELIOS AI branding on Control.
-class _QuizButton extends StatelessWidget {
-  const _QuizButton({required this.count, required this.onTap});
-  final int count;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.elio;
-    return PhonePill(
-      key: const ValueKey('phone_quiz'),
-      semantic: 'Quiz',
-      green: true,
-      onTap: onTap,
-      padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const EliosAiBadge(size: 32),
-          const SizedBox(width: 6),
-          Text(
-            'Quiz',
-            style: TextStyle(
-              color: p.textPrimary,
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Container(
-            width: 20,
-            height: 20,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: p.error, shape: BoxShape.circle),
-            child: Text(
-              '$count',
-              style: TextStyle(
-                color: p.onError,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Green ring, filled core, white leaf (Figma Brand/ELIOS AI badge). Flat shapes only.
-class EliosAiBadge extends StatelessWidget {
-  const EliosAiBadge({super.key, this.size = 32});
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.elio;
-    return ExcludeSemantics(
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: p.primaryActive, width: size * 0.08),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(size * 0.1),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: p.primaryActive,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.eco_rounded,
-              size: size * 0.5,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Trophies extends StatelessWidget {
-  const _Trophies({required this.count});
+class TrophyCount extends StatelessWidget {
+  const TrophyCount({super.key, required this.count});
   final int count;
 
   @override

@@ -172,9 +172,19 @@ class QuestionBank {
 
   static GeneratedQuestion _toQuestion(Map<String, dynamic> item, QuizQuestionType type, Random rng) {
     if (type == QuizQuestionType.essay) {
-      final points = [for (final p in item['rubricPoints'] as List) (p as Map)['point'] as String];
+      final rubric = [for (final p in item['rubricPoints'] as List) p as Map];
+      final points = [for (final p in rubric) p['point'] as String];
+      // Essays cite their rubric points' own quotes, sections and pages.
+      String? joined(String key) {
+        final values = {for (final p in rubric) if (p[key] != null) '${p[key]}'};
+        return values.isEmpty ? null : values.join(', ');
+      }
+      final quotes = [for (final p in rubric) if (p['quote'] != null) p['quote'] as String];
       return GeneratedQuestion(type: type, question: item['question'] as String, explanation: points.join(' '),
-          bankId: item['id'] as String);
+          bankId: item['id'] as String,
+          quote: quotes.isEmpty ? null : quotes.join(' … '),
+          sourceSection: joined('sourceChunk') ?? item['sourceChunk'] as String?,
+          sourcePage: joined('pdfPage') ?? item['pdfPage']?.toString());
     }
     final correct = item['correct'] as String;
     final options = [correct, ...(item['wrong'] as List).cast<String>()]..shuffle(rng);
@@ -185,6 +195,11 @@ class QuestionBank {
       correctIndex: options.indexOf(correct),
       explanation: item['explanation'] as String,
       bankId: item['id'] as String,
+      quote: item['quote'] as String?,
+      sourceSection: item['sourceChunk'] as String?,
+      sourcePage: item['pdfPage']?.toString(),
+      // Optional, reviewed per wrong option (decision 0175); never written by the app.
+      wrongWhy: {for (final e in ((item['wrongWhy'] as Map?) ?? const {}).entries) e.key as String: e.value as String},
     );
   }
 }

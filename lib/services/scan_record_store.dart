@@ -12,6 +12,9 @@ import 'gemma_quiz_service.dart';
 /// keeps its records in a separate file, so the owner's `scan_records.json` is never written.
 const _recordsFileName = String.fromEnvironment('SCAN_RECORDS_FILE', defaultValue: 'scan_records.json');
 
+/// History photos go next to their records: `scans/` normally, `scans_<file>/` in a test build.
+const scanPhotosDirName = _recordsFileName == 'scan_records.json' ? 'scans' : 'scans_$_recordsFileName';
+
 /// Local storage service for [ScanRecord] items and cumulative trophies.
 /// Data is persisted as a JSON file in the application documents directory.
 class ScanRecordStore extends ChangeNotifier {

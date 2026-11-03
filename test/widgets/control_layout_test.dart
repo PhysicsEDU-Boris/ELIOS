@@ -76,16 +76,12 @@ void main() {
               }
 
               if (quiz == Quiz.open) {
-                final quizStop = find.descendant(of: find.byType(WasteQuizPopup), matching: find.text('STOP'));
-                expectOnScreen(
-                  tester,
-                  find.ancestor(of: quizStop, matching: find.byType(InkWell)).first,
-                  size,
-                  'quiz-header STOP',
-                );
-                _expectOneLine(tester, quizStop, find.ancestor(of: quizStop, matching: find.byType(InkWell)).first);
-                expectTappable(tester, find.byTooltip('Tutup'), 'quiz close (X)');
-                expectTappable(tester, find.byTooltip('Kecilkan'), 'quiz minimise');
+                // The R3 popup's compact STOP (decision 0175).
+                final quizStop = find.byKey(const ValueKey('quiz_stop'));
+                expectOnScreen(tester, quizStop, size, 'quiz-header STOP');
+                _expectOneLine(tester, find.descendant(of: quizStop, matching: find.text('STOP')), quizStop);
+                expectTappable(tester, find.byKey(const ValueKey('quiz_close')), 'quiz close (X)');
+                expectTappable(tester, find.byKey(const ValueKey('quiz_minimise')), 'quiz minimise');
                 await tester.tap(quizStop);
                 await tester.pump();
                 expect(taps['quiz stop'], 1, reason: 'one tap on the quiz STOP');
@@ -149,7 +145,7 @@ void main() {
         final rig = await pumpControl(tester, size, quiz: quiz);
         if (quiz == Quiz.open) {
           // Minimise, then the yellow button brings it back.
-          await tester.tap(find.byTooltip('Kecilkan'));
+          await tester.tap(find.byKey(const ValueKey('quiz_minimise')));
           await tester.pump(const Duration(milliseconds: 300));
           await tester.ensureVisible(find.byTooltip('Buka kuis'));
           await tester.pump();
@@ -157,7 +153,7 @@ void main() {
           await tester.tap(find.byTooltip('Buka kuis'));
           await tester.pump(const Duration(milliseconds: 300));
           expect(find.byTooltip('Buka kuis'), findsNothing, reason: 'no quiz button while the quiz is open');
-          expectTappable(tester, find.byTooltip('Tutup'), 'quiz reopened');
+          expectTappable(tester, find.byKey(const ValueKey('quiz_close')), 'quiz reopened');
           await tester.pump(const Duration(seconds: 2)); // tooltip timers
           return;
         }
@@ -326,7 +322,7 @@ void main() {
     await tester.tap(find.text('Dibilas lalu dikeringkan'));
     await tester.pump();
     expect(container.read(wasteQuizProvider).selectedOption, isNotNull, reason: 'answering is not motion');
-    await tester.tap(find.byTooltip('Tutup'));
+    await tester.tap(find.byKey(const ValueKey('quiz_close')));
     await tester.pump(const Duration(milliseconds: 300));
     expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.idle);
   });

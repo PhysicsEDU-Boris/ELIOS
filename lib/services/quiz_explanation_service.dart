@@ -66,9 +66,6 @@ class QuizExplanationService {
     final itemName = scan.displayName;
     final categoryId = scan.category?.id ?? '';
 
-    // Build comparison table from the scanned item's category.
-    final rows = _buildComparisonRows(categoryId, itemName);
-
     final summary = explanation.isNotEmpty
         ? explanation
         : isCorrect
@@ -80,37 +77,29 @@ class QuizExplanationService {
         : 'Berdasarkan klasifikasi sampah, $itemName termasuk dalam kategori '
             '${_categoryLabel(categoryId)}.';
 
-    final selectedFeedback = isCorrect
-        ? ''
-        : '"$selectedAnswer" tidak tepat karena berbeda dengan kategori yang sesuai '
-            'untuk $itemName.';
-
-    final concept = 'Pemilahan sampah yang benar penting untuk memastikan setiap jenis '
-        'sampah diproses sesuai jalurnya: organik didaur ulang secara biologis, '
-        'anorganik/plastik didaur ulang secara industri, B3 ditangani secara aman, '
-        'dan residu dibuang ke TPA.';
-
-    final takeaway = 'Ingat: $itemName masuk ke ${_categoryLabel(categoryId)}.';
-
-    // Source attribution
-    final grounding = question.bankId != null
-        ? GroundingStatus.bankGrounded
-        : GroundingStatus.gemmaUngrounded;
-    final sourceTitle = question.bankId != null ? 'Bank Soal ELIO' : null;
-    final sourceSection = question.bankId != null ? 'Modul Pemilahan Sampah' : null;
-
+    final bank = question.bankId != null;
     return QuizExplanation(
       summary: summary,
       correctAnswerReason: correctReason,
-      selectedAnswerFeedback: selectedFeedback,
-      conceptExplanation: concept,
-      comparisonRows: rows,
-      learningTakeaway: takeaway,
-      sourceTitle: sourceTitle,
-      sourceSection: sourceSection,
-      groundingStatus: grounding,
+      // Only a reviewed reason; empty hides "Why your answer is not right" (decision 0175).
+      selectedAnswerFeedback: isCorrect ? '' : (question.wrongWhy[selectedAnswer] ?? ''),
+      // The bin reference belongs to the right-answer path only; a wrong answer gets the options table.
+      comparisonRows: isCorrect ? _buildComparisonRows(categoryId, itemName) : const [],
+      learningTakeaway: 'Ingat: $itemName masuk ke ${_categoryLabel(categoryId)}.',
+      sourceTitle: bank ? 'Bank Soal ELIO' : null,
+      sourceSection: bank ? question.sourceSection : null,
+      sourcePage: bank ? question.sourcePage : null,
+      quote: bank ? question.quote : null,
+      bankId: question.bankId,
+      groundingStatus: bank ? GroundingStatus.bankGrounded : GroundingStatus.gemmaUngrounded,
     );
   }
+
+  /// Table 1 for a wrong answer: every option, the pick and the right one marked.
+  static List<({String option, bool picked, bool correct})> optionRows(GeneratedQuestion question, int? selectedIndex) => [
+        for (var i = 0; i < question.options.length; i++)
+          (option: question.options[i], picked: i == selectedIndex, correct: i == question.correctIndex),
+      ];
 
   // ---------------------------------------------------------------------------
   // Essay explanation
@@ -121,10 +110,14 @@ class QuizExplanationService {
     required EssayGrade? essayGrade,
   }) {
     if (essayGrade == null) {
-      return const QuizExplanation(
+      return QuizExplanation(
         summary: 'Jawaban tersimpan. Menunggu penilaian karena AI belum tersedia.',
         correctAnswerReason: '',
         essayFeedback: 'Menunggu penilaian',
+        sourceSection: question.sourceSection,
+        sourcePage: question.sourcePage,
+        quote: question.quote,
+        bankId: question.bankId,
         groundingStatus: GroundingStatus.gemmaUngrounded,
       );
     }
@@ -141,6 +134,10 @@ class QuizExplanationService {
       groundingStatus: GroundingStatus.gemmaUngrounded,
       essayScore: essayGrade.score,
       essayFeedback: feedback,
+      sourceSection: question.sourceSection,
+      sourcePage: question.sourcePage,
+      quote: question.quote,
+      bankId: question.bankId,
       rubricRows: essayGrade.rubricRows.isEmpty ? null : essayGrade.rubricRows,
       referenceAnswer: expectedPoints.isNotEmpty ? expectedPoints : null,
     );

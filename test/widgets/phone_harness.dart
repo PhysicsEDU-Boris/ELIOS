@@ -1,5 +1,6 @@
 // The R3 phone layout wired like ControlScreen._phoneLayout: every motion goes
 // through a real MotionGate into the recording fake robot (reuses the R2 rig).
+import 'package:elio/models/chat_message.dart';
 import 'package:elio/models/control_session.dart';
 import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/services/gemma_quiz_service.dart';
@@ -11,7 +12,7 @@ import 'package:elio/theme/elio_dark_theme.dart';
 import 'package:elio/theme/elio_light_theme.dart';
 import 'package:elio/widgets/control/phone/phone_control.dart';
 import 'package:elio/widgets/control/phone/phone_guide.dart';
-import 'package:elio/widgets/control/phone/phone_quiz.dart';
+import 'package:elio/widgets/waste_quiz_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,59 +49,89 @@ final _mcq = const GeneratedQuestion(
       'A clean plastic bottle is PET. Recycling plants melt it and make new bottles or fibres.',
 );
 
-const _explanation = QuizExplanation(
-  summary:
-      'A clean plastic bottle is PET. Recycling plants melt it and make new bottles or fibres. Rinse it, squash it, then drop it in Anorganik.',
-  correctAnswerReason: 'PET is recyclable.',
+QuizExplanation _explanation({required bool right, bool why = true, bool long = false}) => QuizExplanation(
+  summary: 'Modul menyebut botol plastik minuman sebagai PET; HDPE dan PVC dipakai untuk produk lain.' * (long ? 12 : 1),
+  correctAnswerReason: 'Botol minuman umumnya PET, yang didaur ulang menjadi botol atau serat baru.',
+  selectedAnswerFeedback: !right && why ? 'Sisa organik terurai; botol PET tidak.' : '',
+  comparisonRows: right
+      ? const [
+          ComparisonRow(bin: 'Sampah Organik', material: 'Sisa makanan, daun', accepted: 'Bahan yang terurai secara alami'),
+          ComparisonRow(bin: 'Daur Ulang (Anorganik)', material: 'Plastik, kertas, logam', accepted: 'Bahan yang dapat diproses ulang', isCorrect: true),
+          ComparisonRow(bin: 'Limbah B3', material: 'Baterai, HP', accepted: 'Bahan berbahaya'),
+        ]
+      : const [],
+  learningTakeaway: 'Ingat: Botol plastik masuk ke Daur Ulang (Anorganik).',
+  sourceTitle: 'Bank Soal ELIO',
+  sourceSection: '4.2',
+  sourcePage: '21',
+  quote: 'Botol minuman umumnya terbuat dari PET.',
+  bankId: 'plastic-mc-04',
   groundingStatus: GroundingStatus.bankGrounded,
 );
 
-WasteQuizUiState explaining({required bool right}) => WasteQuizUiState(
+WasteQuizUiState explaining({required bool right, bool why = true, bool long = false}) => WasteQuizUiState(
   phase: WasteQuizPhase.explaining,
   scan: ScannedWaste.fromLabel('botol-plastik'),
   questionIndex: 0,
   question: _mcq,
   selectedOption: right ? 1 : 0,
-  currentExplanation: _explanation,
+  currentExplanation: _explanation(right: right, why: why, long: long),
   correctCount: right ? 1 : 0,
-  messages: const [],
+  messages: [
+    ChatMessage(isUser: false, text: 'Pilih satu jawaban dulu. Setelah itu kamu bisa bertanya apa saja tentang soal ini.'),
+    ChatMessage(isUser: true, text: 'Kenapa bukan organik?'),
+    ChatMessage(isUser: false, text: 'Botol PET tidak terurai oleh mikroorganisme.'),
+  ],
 );
 
-WasteQuizUiState explainingEssay() => WasteQuizUiState(
+const _essayQ = GeneratedQuestion(
+  type: QuizQuestionType.essay,
+  question: 'Jelaskan mengapa botol plastik perlu dibilas sebelum didaur ulang.',
+  explanation: 'Sisa makanan merusak satu batch plastik daur ulang.',
+  bankId: 'plastic-essay-01',
+);
+
+WasteQuizUiState explainingEssay({bool pending = false}) => WasteQuizUiState(
   phase: WasteQuizPhase.explaining,
   scan: ScannedWaste.fromLabel('botol-plastik'),
   questionIndex: 2,
-  question: const GeneratedQuestion(
-    type: QuizQuestionType.essay,
-    question: 'Why should we rinse a plastic bottle before recycling it?',
-    options: [],
-    correctIndex: 0,
-    explanation: 'Food leftovers spoil a batch of recycled plastic.',
-  ),
+  question: _essayQ,
   essaySubmitted: true,
-  essayAnswer: 'Because food leftovers can spoil the plastic.',
-  currentExplanation: const QuizExplanation(
-    summary: 'Clean plastic melts into good new material.',
-    correctAnswerReason: 'Leftovers contaminate the batch.',
-    essayScore: 8,
-    essayFeedback: 'Good answer. Mention that dirty plastic is rejected.',
-    rubricRows: [
-      RubricRow(
-        criterion: 'Names the problem',
-        maxScore: 5,
-        awardedScore: 4,
-        comment: 'Leftovers',
-      ),
-      RubricRow(
-        criterion: 'Names the result',
-        maxScore: 5,
-        awardedScore: 4,
-        comment: 'Spoils the batch',
-      ),
-    ],
-    groundingStatus: GroundingStatus.bankGrounded,
-  ),
+  essayAnswer: 'Karena sisa makanan bisa merusak plastik.',
+  currentExplanation: pending
+      ? const QuizExplanation(summary: 'Jawaban tersimpan.', correctAnswerReason: '', essayFeedback: 'Menunggu penilaian', groundingStatus: GroundingStatus.gemmaUngrounded)
+      : const QuizExplanation(
+          summary: 'Jawaban bagus.',
+          correctAnswerReason: '',
+          essayScore: 8,
+          essayFeedback: 'Jawaban bagus. Sebutkan bahwa plastik kotor ditolak.',
+          rubricRows: [
+            RubricRow(criterion: 'Menyebut masalahnya', maxScore: 5, awardedScore: 5, comment: 'Sisa makanan'),
+            RubricRow(criterion: 'Menyebut akibatnya', maxScore: 5, awardedScore: 3, comment: 'Batch rusak'),
+          ],
+          quote: 'Plastik harus bersih dan kering sebelum didaur ulang.',
+          sourceSection: '4.3',
+          sourcePage: '22',
+          groundingStatus: GroundingStatus.gemmaUngrounded,
+        ),
   messages: const [],
+);
+
+/// The loading popup: identifying (no scan yet) or writing the question.
+WasteQuizUiState loading({bool identifying = false}) => WasteQuizUiState(
+  phase: identifying ? WasteQuizPhase.identifying : WasteQuizPhase.loadingQuestion,
+  scan: identifying ? null : ScannedWaste.fromLabel('botol-plastik'),
+  questionIndex: 0,
+);
+
+/// The popup with no question yet: the skeleton.
+const skeletonQuiz = WasteQuizUiState(phase: WasteQuizPhase.active);
+
+WasteQuizUiState essayInput() => WasteQuizUiState(
+  phase: WasteQuizPhase.active,
+  scan: ScannedWaste.fromLabel('botol-plastik'),
+  questionIndex: 1,
+  question: _essayQ,
 );
 
 class _Disposes extends StatefulWidget {
@@ -248,6 +279,7 @@ Future<Rig> pumpPhone(
                           missionDone: 2,
                           trophies: 222,
                           quizBadge: q.phase == WasteQuizPhase.idle ? null : 1,
+                          quizWaiting: q.phase == WasteQuizPhase.identifying || q.phase == WasteQuizPhase.loadingQuestion,
                           onQuiz: () => tap('quiz'),
                           onHistory: () => tap('history'),
                           onAvatar: () => tap('avatar'),
@@ -259,7 +291,7 @@ Future<Rig> pumpPhone(
                           quizKey: keys[3],
                           overlays: [
                             Positioned.fill(
-                              child: PhoneQuizPopup(onStop: stop),
+                              child: WasteQuizPopup(onStop: stop, showLauncher: false),
                             ),
                             if (guideOpen)
                               Positioned.fill(

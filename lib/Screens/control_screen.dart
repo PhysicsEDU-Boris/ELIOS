@@ -33,7 +33,6 @@ import '../theme/elio_theme.dart';
 import '../widgets/control/control_panels.dart';
 import '../widgets/control/phone/phone_control.dart';
 import '../widgets/control/phone/phone_guide.dart';
-import '../widgets/control/phone/phone_quiz.dart';
 import '../widgets/control/r2_controls.dart';
 import 'scan_history_screen.dart';
 import '../widgets/debug_phone_camera_sheet.dart';
@@ -845,8 +844,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       gripper: robotState.gripperVal,
       onGripper: (value) {
         final width = value.round();
-        if (_gate.servo('gripper', width))
+        if (_gate.servo('gripper', width)) {
           notifier.setGripperVal(width.toDouble());
+        }
       },
       height: robotState.heightValue,
       onHeight: (value) {
@@ -872,6 +872,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       missionDone: missionDone,
       trophies: ScanRecordStore.instance.totalTrophies,
       quizBadge: quizOpen ? 1 : null,
+      quizWaiting: quizState.phase == WasteQuizPhase.identifying || quizState.phase == WasteQuizPhase.loadingQuestion,
       onQuiz: () {
         final q = ref.read(wasteQuizProvider.notifier);
         quizState.minimized ? q.restore() : q.minimize();
@@ -891,8 +892,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       quizKey: _quizKey,
       overlays: [
         Positioned.fill(
-          child: PhoneQuizPopup(
+          child: WasteQuizPopup(
             onStop: stop,
+            showLauncher: false,
             onRescan: () {
               _liveScan?.logEvent('rescan_tapped', {});
               _liveScan?.rescan();
