@@ -17,3 +17,18 @@ the bottom is still partly inside, and the top edge touches the cap (the 5 % cro
 
 Not shown: the real ELIOS camera, more objects, latency over many calls (one 2.7 s answer vs ~1.6 s
 for identify without the box on 3 Nov; one sample, not a measurement).
+
+## Real ELIOS camera (same evening, after the camera reboot)
+
+The camera's Wi-Fi had been down since 22:27 (camera clock): a system stop left the Wi-Fi driver
+loaded, and Sipeed's `wifi.sh start` refuses to start while it is loaded (348 failed restarts).
+A reboot (owner's OK) brought STA on WIFIBOR back; the owner opened ELIOS Clean Vision by hand
+(auto-start is set to `settings`). Phone: normal debug APK `760d639`, MaixCAM2, 192.168.100.135.
+
+| Object | Camera detector | Gemini | Time | Boxes |
+|---|---|---|---|---|
+| MaixCAM2 retail box (cardboard, printed camera photo) | E_Waste 0.80 | "kardus", kertas, anorganik | 23.4 s (`gemini-3.6-flash`; models before it overloaded) | almost identical; Gemini slightly tighter at the bottom |
+
+`real-camera-maixcam-box.png`: red = camera box, green = Gemini box, on the padded crop sent.
+The app then showed "Possibly hazardous (B3): Kardus": decision 0012 never lets Gemini downgrade a
+detector E_Waste. The label was the precision problem here, not the box.

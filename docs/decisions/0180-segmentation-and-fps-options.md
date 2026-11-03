@@ -102,9 +102,16 @@ multi-object video. So: **the model is free; running it is not** (GPU or a paid 
 - Phone test (fake MaixCAM, real photos; [results](../test-results/0180/README.md)): one answer,
   3.5 Flash-Lite in 2.7 s, box on the bottle and tighter than the camera's. Two other runs got
   HTTP 503 from every Gemini model (Google overload, not this change).
-- Still open: the real ELIOS camera, more objects, and whether the box adds time to identify.
+- Real camera, one object: a cardboard box the detector called E_Waste (0.80); Gemini said "kardus"
+  and its box matched the camera's. The label, not the box, was wrong, and the 0012 hazard rule then
+  showed "Possibly hazardous (B3): Kardus". Gemini took 23 s (overloaded models skipped).
+- Still open: more objects; latency when Gemini is not overloaded; whether Gemini may downgrade a
+  detector E_Waste (owner question below).
 
 ## Questions for the owner
+
+0. Should a confident Gemini answer be allowed to clear a detector E_Waste (today it never can,
+   0012), or should the card just say both opinions?
 
 1. May we change the camera firmware (timing line, then F1/F4)? It would be tested on the robot
    with the old `main.py` kept as a backup.
