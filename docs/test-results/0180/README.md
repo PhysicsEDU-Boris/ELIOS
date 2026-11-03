@@ -32,3 +32,12 @@ A reboot (owner's OK) brought STA on WIFIBOR back; the owner opened ELIOS Clean 
 `real-camera-maixcam-box.png`: red = camera box, green = Gemini box, on the padded crop sent.
 The app then showed "Possibly hazardous (B3): Kardus": decision 0012 never lets Gemini downgrade a
 detector E_Waste. The label was the precision problem here, not the box.
+
+## AI may clear a detector E_Waste (APK `4f27083`, real camera)
+
+| Object | Camera detector | Gemini | Time | Result |
+|---|---|---|---|---|
+| 3500 mAh lithium cell | E_Waste 0.67 | "baterai", litium-ion, B3 | 9.4 s (`gemini-3.1-flash-lite`) | not cleared, B3 card kept (correct) |
+
+The cardboard box (the "cleared" case) was no longer in view; that path is covered by the unit
+test. Popup closed with "Scan again", no record saved.
