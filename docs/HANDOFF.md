@@ -13,6 +13,8 @@
 - No AI answer: the quiz uses the bank and says so. ELIOS AI is the default source in every build. Thermal gate, model copy/sideload, Activate card states and the macOS LiteRT-LM phase are gone.
 - Phone-verified 3 Nov: identify + 3 AI questions, ~1.6 s each, `source=ai`; a 3.5 Flash-Lite timeout fell to 3.1 Flash-Lite. Phone runs the debug APK from this branch. Free key for now; paid before students. Redeploy: `npx vercel deploy --prod --scope elios5` in `ai-backend/`.
 - `macos/Podfile.lock` still lists the Gemma pods (`pod install` hit a Ruby error here); the next Mac build refreshes it. Phone Gemma files deleted 3 Nov (owner's OK): the pushed model, the app's copy and its 4 caches; app data 2.6 GB → 473 MB, scan records kept.
+- Free key capacity: about 1,060 calls/day (≈250 scans on Medium) and 45/min across the chain; resets 15:00 WIB daily, no weekly/monthly cap. Vercel Hobby limits reset monthly.
+- Figma pipeline page 74:130 updated to Gemini (flows 1, 5, 6, architecture box). Notion ELIOS page has the 3 Nov night wrap-up.
 - Benchmark spike (0176): `tools/cloud_ai_bench/`; resume with the same command, free caps reset 15:00 WIB.
 
 ## Owner data incident
