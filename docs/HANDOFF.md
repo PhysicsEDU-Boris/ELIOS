@@ -7,6 +7,10 @@
 - Merged: #51 U4b essay rubric; #53 banks (decision 0060); #52 History/PDF crops (0070); #54 Android tester build (0040); #55 E1 (0041), with the "Bukan ini?" picker and background load phone-verified.
 - Open PRs: #70 H2 and #71 N2 conflict with the base (rebase needed); #47 firmware (motion disabled); #24 (latency gate failed); docs-only #50, #62, #65, #66.
 
+## Segmentation + FPS options (3 Nov, `docs/segmentation-fps-options`, draft 0180)
+
+- Research only, nothing built. SAM 3: model free (SAM License, commercial/education OK, gated weights) but needs a GPU or a paid API (fal $0.005/image). Draft pick: FPS via firmware decode/JPEG fixes (owner OK needed), Gemini `box_2d` in the existing identify call, retrain with ELIOS-camera photos (SAM 3 as labeller). Camera was offline, so the time split is an estimate; owner questions in 0180.
+
 ## Gemini cloud AI (3 Nov, `feat/gemini-cloud-ai`, decision 0179)
 
 - On-device Gemma removed. `lib/services/ai_quiz_service.dart` POSTs identify, questions, essay grading and chat with the Firebase ID token to the `ai-backend` Vercel function (`ai-backend/`, team ELIOS, region sin1, https://ai-backend-seven-orpin.vercel.app/api/ai), which checks the token, holds `GEMINI_API_KEY` and runs the 0176 chain (`node --test` in `ai-backend/`, break-checked). Firebase Blaze skipped (200k IDR); Cloudflare dropped (Gemini refuses its locations; the `elios-ai` Worker was deleted 3 Nov).
