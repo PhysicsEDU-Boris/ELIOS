@@ -105,6 +105,8 @@ class QuizExplanation {
     this.sourceTitle,
     this.sourceSection,
     this.sourcePage,
+    this.quote,
+    this.bankId,
     this.groundingStatus = GroundingStatus.unavailable,
     // Essay-specific
     this.essayScore,
@@ -135,6 +137,10 @@ class QuizExplanation {
   final String? sourceTitle;
   final String? sourceSection;
   final String? sourcePage;
+
+  /// The module passage (bank questions only) and the bank item id (decision 0175).
+  final String? quote;
+  final String? bankId;
   final GroundingStatus groundingStatus;
 
   // Essay-specific fields
@@ -155,6 +161,8 @@ class QuizExplanation {
         if (sourceTitle != null) 'sourceTitle': sourceTitle,
         if (sourceSection != null) 'sourceSection': sourceSection,
         if (sourcePage != null) 'sourcePage': sourcePage,
+        if (quote != null) 'quote': quote,
+        if (bankId != null) 'bankId': bankId,
         'groundingStatus': groundingStatus.name,
         if (essayScore != null) 'essayScore': essayScore,
         if (essayFeedback != null) 'essayFeedback': essayFeedback,
@@ -181,6 +189,8 @@ class QuizExplanation {
       sourceTitle: json['sourceTitle'] as String?,
       sourceSection: json['sourceSection'] as String?,
       sourcePage: json['sourcePage'] as String?,
+      quote: json['quote'] as String?,
+      bankId: json['bankId'] as String?,
       groundingStatus: grounding,
       essayScore: (json['essayScore'] as num?)?.toInt(),
       essayFeedback: json['essayFeedback'] as String?,

@@ -287,6 +287,17 @@ class QuizPdfService {
     pw.SizedBox(height: 4),
   ];
 
+  /// "Sumber: Bank Soal ELIO · bagian 1.3 · hal. 6 · organik-mc-01" (decision 0175).
+  static String? sourceLine(QuizExplanation exp) {
+    if (exp.sourceTitle == null && exp.bankId == null) return null;
+    return [
+      'Sumber: ${exp.sourceTitle ?? 'Bank Soal ELIO'}',
+      if (exp.sourceSection != null) 'bagian ${exp.sourceSection}',
+      if (exp.sourcePage != null) 'hal. ${exp.sourcePage}',
+      ?exp.bankId,
+    ].join(' · ');
+  }
+
   static List<pw.Widget> _explanationSection(QuizExplanation exp) {
     return [
         pw.Text('Penjelasan',
@@ -329,12 +340,14 @@ class QuizPdfService {
                 fontSize: 10, fontStyle: pw.FontStyle.italic, color: _subtext),
           ),
         ],
-        if (exp.sourceTitle != null) ...[
+        if (exp.quote != null) ...[
           pw.SizedBox(height: 4),
-          pw.Text(
-            'Sumber: ${exp.sourceTitle}${exp.sourceSection != null ? ' - ${exp.sourceSection}' : ''}',
-            overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 9, color: _caption),
-          ),
+          pw.Text('"${exp.quote}"',
+              overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: _subtext)),
+        ],
+        if (sourceLine(exp) != null) ...[
+          pw.SizedBox(height: 4),
+          pw.Text(sourceLine(exp)!, overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 9, color: _caption)),
         ],
     ];
   }

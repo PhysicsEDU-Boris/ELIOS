@@ -152,7 +152,7 @@ class ScanRecord {
     this.difficulty = QuizDifficulty.medium,
     required this.questions,
     int? trophies,
-    this.schemaVersion = 2,
+    this.schemaVersion = 3, // v3: explanations may carry quote and bankId (0175)
   }) : trophies = trophies ?? trophiesFor(questions);
 
   int get correctCount => questions.where((q) => q.isCorrect).length;

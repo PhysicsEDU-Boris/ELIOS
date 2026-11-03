@@ -41,6 +41,14 @@ class GeneratedQuestion {
   /// The physics angle a Gemma question was asked about (decision 0019), for rotation and logs.
   final String? angle;
 
+  /// The module passage a bank question rests on, its section and PDF page (decision 0175).
+  final String? quote;
+  final String? sourceSection;
+  final String? sourcePage;
+
+  /// Reviewed "why this is not right" per wrong option text; empty when none is written.
+  final Map<String, String> wrongWhy;
+
   const GeneratedQuestion({
     required this.type,
     required this.question,
@@ -49,6 +57,10 @@ class GeneratedQuestion {
     this.explanation = '',
     this.bankId,
     this.angle,
+    this.quote,
+    this.sourceSection,
+    this.sourcePage,
+    this.wrongWhy = const {},
   });
 }
 

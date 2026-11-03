@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../models/chat_message.dart';
 import '../models/quiz_explanation.dart';
+import '../services/quiz_pdf_service.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../theme/elio_learning_colors.dart';
 
@@ -644,11 +645,14 @@ class ExplanationBody extends StatelessWidget {
           ),
           const SizedBox(height: 8),
         ],
-        if (explanation.sourceTitle != null)
+        if (explanation.quote != null) ...[
+          Text('"${explanation.quote}"',
+              style: GoogleFonts.inter(color: _elioCaption, fontSize: 12, fontStyle: FontStyle.italic)),
+          const SizedBox(height: 4),
+        ],
+        if (QuizPdfService.sourceLine(explanation) != null)
           Text(
-            'Sumber: ${explanation.sourceTitle}'
-                '${explanation.sourceSection != null ? ' · ${explanation.sourceSection}' : ''}'
-                '${explanation.sourcePage != null ? ' · Hal. ${explanation.sourcePage}' : ''}',
+            QuizPdfService.sourceLine(explanation)!,
             style: GoogleFonts.inter(color: _elioCaption, fontSize: 12),
           ),
       ],
