@@ -75,4 +75,4 @@ away with the .mud model).
 
 - LOCK and SCAN pills above Online, STOP unchanged. LOCK named a cigarette pack "bungkus rokok"
   with a green box; the pill read UNLOCK, and UNLOCK cleared it
-  (`docs/test-results/0181/lock-scan-in-arm-card.png`).
+  (`docs/test-results/0181/lock-scan-in-arm-card.png`, pills; round keys in `lock-scan-round-keys.png`).
