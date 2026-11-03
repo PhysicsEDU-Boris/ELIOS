@@ -53,3 +53,4 @@ their status changed.
 | [0174](0174-r3-control-phone.md) | R3 Control for phones: one STOP/GO button, no logo in the top bar, Guide, English quiz popups | Draft |
 | [0175](0175-q3-quiz-scan-popups.md) | Q3: one R3 quiz popup everywhere, real explanation data, loading/skeleton, R3 phone camera scan | Draft |
 | [0176](0176-cloud-ai-benchmark.md) | Cloud AI benchmark spike: Gemini models on free tier, 3.5 Flash-Lite primary + automatic fallback chain | Accepted |
+| [0177](0177-dashboard-live-network.md) | MaixCAM2 dashboard shows the live SSID (AP/STA) and IP, re-read every 3 s, display-only | Accepted |
