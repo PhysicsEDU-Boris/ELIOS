@@ -12,7 +12,7 @@ const TIMEOUT_MS = 8000;
 const REST_MS = 60000;
 
 // Model -> epoch ms until which it is skipped (Infinity: dropped after a 404).
-// ponytail: per Worker isolate, not shared across Cloudflare locations; move to KV if 429s repeat.
+// ponytail: per function instance, forgotten on a cold start; move to a store if 429s repeat.
 export const restUntil = new Map();
 
 /** Next midnight in America/Los_Angeles, when the free daily caps reset (15:00 WIB). */
@@ -92,6 +92,7 @@ export async function generate({ key, prompt, system, image, json }, { fetch = g
         log(`eliosAi answered by ${model} in ${ms} ms (tried ${tried.join(', ')})`);
         return { text: reply, model, ms, tried };
       }
+      if (status === 400) log(`eliosAi ${model} 400: ${text.slice(0, 300)}`); // request or location problem, not a cap
       if (status === 429) restUntil.set(model, restAfter429(text, now()));
       else if (status === 404) restUntil.set(model, Infinity);
       else if (status >= 500) restUntil.set(model, now() + REST_MS);

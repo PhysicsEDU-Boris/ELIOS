@@ -45,7 +45,7 @@ test('a token signed with another key, or edited after signing, is refused', asy
   assert.equal(await check('not.a.token'), null);
 });
 
-test('the Worker refuses calls without a valid token before spending the key', async () => {
+test('the backend refuses calls without a valid token before spending the key', async () => {
   const env = { FIREBASE_PROJECT_ID: project, GEMINI_API_KEY: 'k' };
   const post = (headers) => new Request('https://w/', { method: 'POST', headers, body: '{"prompt":"p"}' });
   assert.equal((await handle(post({}), env, { keys, now })).status, 401);

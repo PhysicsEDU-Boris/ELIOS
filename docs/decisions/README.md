@@ -55,4 +55,4 @@ their status changed.
 | [0176](0176-cloud-ai-benchmark.md) | Cloud AI benchmark spike: Gemini models on free tier, 3.5 Flash-Lite primary + automatic fallback chain | Accepted |
 | [0177](0177-dashboard-live-network.md) | MaixCAM2 dashboard shows the live SSID (AP/STA) and IP, re-read every 3 s, display-only | Accepted |
 | [0178](0178-robot-wifi-qr-setup.md) | Robot joins a hotspot from a Wi-Fi QR (confirm on screen, 45 s rollback); app QR sheet and Find ELIO | Draft |
-| [0179](0179-gemini-cloud-ai.md) | ELIOS AI on the Gemini API through the `elios-ai` Cloudflare Worker (0176 chain, Firebase token check); on-device Gemma removed, bank is the offline fallback | Accepted |
+| [0179](0179-gemini-cloud-ai.md) | ELIOS AI on the Gemini API through the `ai-backend` Vercel function in Singapore (0176 chain, Firebase token check); on-device Gemma removed, bank is the offline fallback | Accepted |

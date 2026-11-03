@@ -32,5 +32,3 @@ export async function handle(request, env, deps = {}) {
   const out = await generate({ key: env.GEMINI_API_KEY, prompt, system, image, json: json === true });
   return out ? reply(out) : reply({ error: 'Every Gemini model is busy or capped right now.' }, 503);
 }
-
-export default { fetch: (request, env) => handle(request, env) };

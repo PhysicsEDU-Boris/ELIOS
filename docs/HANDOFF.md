@@ -9,9 +9,9 @@
 
 ## Gemini cloud AI (3 Nov, `feat/gemini-cloud-ai`, decision 0179)
 
-- On-device Gemma removed. `lib/services/ai_quiz_service.dart` POSTs identify, questions, essay grading and chat with the Firebase ID token to the `elios-ai` Cloudflare Worker (`worker/`), which checks the token, holds `GEMINI_API_KEY` and runs the 0176 chain (`node --test` in `worker/`, rules and token check break-checked). Blaze was skipped (200k IDR prepayment).
+- On-device Gemma removed. `lib/services/ai_quiz_service.dart` POSTs identify, questions, essay grading and chat with the Firebase ID token to the `ai-backend` Vercel function (`ai-backend/`, team ELIOS, region sin1, https://ai-backend-seven-orpin.vercel.app/api/ai), which checks the token, holds `GEMINI_API_KEY` and runs the 0176 chain (`node --test` in `ai-backend/`, break-checked). Firebase Blaze skipped (200k IDR); Cloudflare dropped (Gemini refuses its locations; the `elios-ai` Worker is still deployed, unused).
 - No AI answer: the quiz uses the bank and says so. ELIOS AI is the default source in every build. Thermal gate, model copy/sideload, Activate card states and the macOS LiteRT-LM phase are gone.
-- **Deploy**: owner `npx wrangler@4 login` + `secret put GEMINI_API_KEY` in `worker/`, then `npx wrangler@4 deploy`; deployed at https://elios-ai.elios-ai-worker.workers.dev (set in `AiQuizService.workerUrl`). Free key for now; paid before students (Google may use free-tier photos/prompts).
+- Phone-verified 3 Nov: identify + 3 AI questions, ~1.6 s each, `source=ai`; a 3.5 Flash-Lite timeout fell to 3.1 Flash-Lite. Phone runs the debug APK from this branch. Free key for now; paid before students. Redeploy: `npx vercel deploy --prod --scope elios5` in `ai-backend/`.
 - `macos/Podfile.lock` still lists the Gemma pods (`pod install` hit a Ruby error here); the next Mac build refreshes it. The phone's pushed Gemma model files (~2.6 GB each, two copies) are now unused; delete only with the owner's OK.
 - Benchmark spike (0176): `tools/cloud_ai_bench/`; resume with the same command, free caps reset 15:00 WIB.
 

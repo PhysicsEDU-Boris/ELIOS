@@ -94,7 +94,7 @@ class PhotoIdentification {
 }
 
 /// Cloud AI (Gemini) for the scan quiz: identify, questions, essay grading and
-/// chat. Each request goes to the `elios-ai` Cloudflare Worker (`worker/`), which
+/// chat. Each request goes to the `ai-backend` Vercel function (`ai-backend/`, Singapore), which
 /// holds the key and runs the 0176 fallback chain (decision 0179).
 ///
 /// Every public method returns `null` instead of throwing, so no internet or
@@ -105,10 +105,10 @@ class AiQuizService {
 
   static const _tag = '[AiQuizService]';
 
-  /// The Worker's address; `--dart-define=ELIOS_AI_URL=...` points a build at another one.
-  static const workerUrl = String.fromEnvironment('ELIOS_AI_URL', defaultValue: 'https://elios-ai.elios-ai-worker.workers.dev');
+  /// The backend's address; `--dart-define=ELIOS_AI_URL=...` points a build at another one.
+  static const workerUrl = String.fromEnvironment('ELIOS_AI_URL', defaultValue: 'https://ai-backend-seven-orpin.vercel.app/api/ai');
 
-  // The Worker tries up to 5 models at about 8 s each; this only stops a hung call.
+  // The backend tries up to 5 models at about 8 s each; this only stops a hung call.
   static const _callTimeout = Duration(seconds: 60);
 
   static const _systemInstruction =
@@ -177,7 +177,7 @@ class AiQuizService {
   Completer<String?>? _pendingCompleter;
   Future<String?> Function()? _pendingTask;
 
-  /// Stands in for the Worker call in tests.
+  /// Stands in for the backend call in tests.
   @visibleForTesting
   Future<String?> Function(String prompt, {Uint8List? imageBytes, bool isUser})? mockSendExecute;
 
@@ -190,8 +190,8 @@ class AiQuizService {
 
   void _log(String msg) => debugPrint('$_tag $msg');
 
-  /// One Worker call, signed with the student's Firebase ID token. [json] asks
-  /// Gemini for a JSON reply, which the Worker checks (one retry, then the next
+  /// One backend call, signed with the student's Firebase ID token. [json] asks
+  /// Gemini for a JSON reply, which the backend checks (one retry, then the next
   /// model). Null on any failure.
   Future<String?> _call(String prompt, Uint8List? photo, bool json) async {
     final sw = Stopwatch()..start();
