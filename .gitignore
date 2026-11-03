@@ -92,3 +92,10 @@ scan-*.jsonl
 
 # MaixVision package build output (rebuild from firmware/maixcam2/app.yaml + main.py)
 firmware/maixcam2/dist/
+
+# Cloud AI bench raw replies and any photos copied in by mistake
+tools/cloud_ai_bench/raw/
+tools/cloud_ai_bench/**/*.jpg
+tools/cloud_ai_bench/**/*.jpeg
+tools/cloud_ai_bench/**/*.png
+tools/cloud_ai_bench/**/*.heic

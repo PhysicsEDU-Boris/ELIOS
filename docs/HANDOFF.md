@@ -1,9 +1,17 @@
 # Handoff — 3 Nov 2026
 
 - 3 Nov: #80 R2, #81 R3 and #82 Q3 merged into `feature/live-scan` (`8b006d7`); `main` = `feature/live-scan` + the owner's module PDF upload (merge `07161c1`).
-- Next: branch `feat/cloud-ai-architecture` from `main` (`07161c1`) for the faster ELIOS AI: MaixCAM2 in STA mode, cloud API detector and cloud quiz generation replacing on-device Gemma. Plan first; nothing built yet.
+- `feat/cloud-ai-architecture` (from `main` `07161c1`) is the faster ELIOS AI work: MaixCAM2 in STA mode, cloud detector and cloud quiz generation replacing on-device Gemma. Step 1, the provider benchmark, is below; nothing in the app is built yet.
 - Merged: #51 U4b essay rubric; #53 banks (decision 0060); #52 History/PDF crops (0070); #54 Android tester build (0040); #55 E1 (0041), with the "Bukan ini?" picker and background load phone-verified.
 - Open PRs: #70 H2 and #71 N2 conflict with the base (rebase needed); #47 firmware (motion disabled); #24 (latency gate failed); docs-only #50, #62, #65, #66.
+
+## Cloud AI benchmark spike (3 Nov, draft PR into `feature/live-scan`, decision 0176)
+
+- `tools/cloud_ai_bench/bench.py` (stdlib + Pillow) benchmarks every Gemini model on the owner's free key; key only from `GEMINI_API_KEY`, never saved. No app change.
+- Photos: 28 Roboflow images in `~/Desktop/elio_bench` (outside the repo, EXIF removed), not robot crops. Run stopped by the owner after 44 calls (daily caps of 20, 503s): too small to separate models.
+- Answering models: 3.5 Flash-Lite 1.8 s, 3 Flash 2.2 s, 3.6 Flash 2.1 s (10/10 bins), Robotics ER 3.7 s; all bins right. 3.8 Flash and Gemma 4 API only 5xx; 2.5 models 404.
+- Proposed: 3.5 Flash-Lite primary + automatic fallback chain (0176). Owner decides: chain, free vs paid tier, backend for the key, finish the run.
+- Resume: rerun the same command; it skips calls that already succeeded. Free caps reset 15:00 WIB.
 
 ## Phone evidence — Edge 60 Fusion, GPU
 
@@ -47,11 +55,3 @@
 
 - Theme switch + Android icon (#79, decision 0146); C1 Config (#77, decision 0145; open: Sound effects/Timer UI only); #78 Control dispose disconnect.
 - N4 top bar/drawer (0143) and L1 Learn v2 (0170-0172) reached `feature/live-scan` via #75. L1 open: Kuis fisika score never saved (pre-existing).
-
-## H1v4 gamified Home (2 Nov, draft PR, on top of N4 catch-up #75)
-
-- #73 (N4) never reached `feature/live-scan`; #75 merges it (only `2dd92db`). #74 (L1 learn v2) was missing too; added to #75 on 2 Nov after the owner saw the old Learn on the phone.
-- New Home from Figma 321:2358 with real scan data only; maths in `lib/models/home_stats.dart`, UI in `home_screen.dart` + `lib/Screens/home/`. Decision 0144 (residu in Anorganik, tree per level). Owner: quest rewards count toward trophies and levels (derived per day from 2 Nov 2026, in `ScanRecordStore.totalTrophies`).
-- Tests: `test/models/home_stats_test.dart` (19, break-checked), `test/screens/home_screen_test.dart` (15). `flutter test` +741 ~20 -2 (the 2 known `elio_tokens_test` failures).
-- Phone (Edge 60 Fusion, tester APK, guest session, owner data untouched): Home = History (26 scans, 202 trophies, B3 8 / Anorganik 17 / Organik 1, 0 today; before the quest-bonus change, which adds nothing to Oct records). Shots in `docs/test-results/h1v4/`.
-- Build hygiene: the 2.59 GB Gemma model sits in `assets/models/` in this checkout and gets bundled; move it out for an APK build and back after.
