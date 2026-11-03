@@ -28,8 +28,10 @@ away with the .mud model).
 - **SCAN** opens the quiz popup for the locked item from the LOCK answer (no second call). With
   nothing locked, SCAN locks first. The popup and History photo are the AI's box cut from the
   frame (the whole frame without a box). No detector label: bank pool and hazard come from the AI.
-- LOCK and SCAN sit at the bottom right of the video (R3 phone). The action bar had no room: with
-  five keys the gripper fader got 27 px on an 800 px phone.
+- LOCK and SCAN sit in the ARM card above Online (owner, 3 Nov), as two small pills (26 px high),
+  the power key at 40 px and tighter gaps: round 44 px keys with captions overflowed the 360 px
+  phone by 73 px, and the action bar had no room either (the gripper fader got 27 px). STOP keeps
+  its 76 px. An earlier build had them on the video.
 - The detector's automatic lock and its popup still run (the "Scan quiz" toggle turns them off)
   until the .mud model is dropped in the firmware step.
 

@@ -578,34 +578,6 @@ class PhoneControlLayout extends StatelessWidget {
         ),
       );
     }
-    if (!skeleton && link == ControlLink.connected) {
-      // LOCK and SCAN (0181) sit on the video: camera actions, and the action bar has no room left.
-      body = Stack(children: [
-        body,
-        Positioned(
-          right: 8,
-          bottom: 8,
-          child: Row(children: [
-            TransportKey(
-              key: const ValueKey('phone_lock'),
-              icon: locked ? Icons.center_focus_weak : Icons.center_focus_strong,
-              label: locked ? 'UNLOCK' : 'LOCK',
-              size: 44,
-              onTap: onLock,
-            ),
-            const SizedBox(width: 18), // room for the UNLOCK and SCAN captions
-            TransportKey(
-              key: const ValueKey('phone_scan'),
-              icon: Icons.quiz_outlined,
-              label: 'SCAN',
-              primary: true,
-              size: 44,
-              onTap: onScan,
-            ),
-          ]),
-        ),
-      ]);
-    }
     return Container(
       key: const ValueKey('phone_video'),
       clipBehavior: Clip.antiAlias,
@@ -774,6 +746,21 @@ class PhoneControlLayout extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      // LOCK and SCAN (0181), above Online (owner, 3 Nov). Pills, not round keys:
+                      // two 44 px keys with captions overflow the 360 px phone by 73 px.
+                      _MiniKey(
+                        key: const ValueKey('phone_lock'),
+                        label: locked ? 'UNLOCK' : 'LOCK',
+                        onTap: onLock,
+                      ),
+                      const SizedBox(height: 4),
+                      _MiniKey(
+                        key: const ValueKey('phone_scan'),
+                        label: 'SCAN',
+                        primary: true,
+                        onTap: onScan,
+                      ),
+                      const SizedBox(height: 6),
                       Tooltip(
                         message: on || link == ControlLink.waiting
                             ? 'Putuskan robot'
@@ -781,11 +768,11 @@ class PhoneControlLayout extends StatelessWidget {
                         child: PhoneGlowButton(
                           key: const ValueKey('robot_power'),
                           kind: on ? GlowKind.powerOn : GlowKind.powerOff,
-                          size: 44,
+                          size: 40,
                           onTap: onPower,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Text(
                         on
                             ? 'Online'
@@ -799,7 +786,7 @@ class PhoneControlLayout extends StatelessWidget {
                           fontSize: 12,
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 8),
                       KeyedSubtree(
                         key: stopKey,
                         child: _showGo
@@ -1405,6 +1392,46 @@ class PhoneGlowButton extends StatelessWidget {
                         ),
                       ),
                     ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A small labelled pill key for the ARM card's narrow column (LOCK, SCAN; 0181). Null [onTap] greys it out.
+class _MiniKey extends StatelessWidget {
+  const _MiniKey({super.key, required this.label, required this.onTap, this.primary = false});
+
+  final String label;
+  final VoidCallback? onTap;
+  final bool primary;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    return Opacity(
+      opacity: onTap == null ? ElioTokens.disabledOpacity : 1,
+      child: Material(
+        color: primary ? p.primary : p.surface,
+        shape: StadiumBorder(side: BorderSide(color: primary ? p.primaryActive : p.borderMedium, width: 1.5)),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            height: 26,
+            child: Center(
+              child: Text(
+                label,
+                maxLines: 1,
+                style: TextStyle(
+                  color: primary ? p.onPrimary : p.primaryText,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                  letterSpacing: .4,
+                ),
+              ),
             ),
           ),
         ),
