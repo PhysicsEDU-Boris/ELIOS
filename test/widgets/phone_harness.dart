@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 // The R3 phone layout wired like ControlScreen._phoneLayout: every motion goes
 // through a real MotionGate into the recording fake robot (reuses the R2 rig).
 import 'package:elio/models/chat_message.dart';
@@ -163,6 +164,7 @@ Future<Rig> pumpPhone(
   bool skeleton = false,
   WasteQuizUiState quiz = const WasteQuizUiState(),
   int? guideStep,
+  Uint8List? frame,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -236,7 +238,7 @@ Future<Rig> pumpPhone(
                             tap('wheels stop');
                             gate.stopWheels();
                           },
-                          frame: null,
+                          frame: frame,
                           fps: 10,
                           scanQuizOn: true,
                           onScanQuiz: (_) => tap('scan quiz'),
@@ -289,6 +291,9 @@ Future<Rig> pumpPhone(
                           stopKey: keys[1],
                           actionKey: keys[2],
                           quizKey: keys[3],
+                          onLock: () => tap('lock'),
+                          lockBox: q.lockBox,
+                          lockLabel: q.scan?.displayName,
                           overlays: [
                             Positioned.fill(
                               child: WasteQuizPopup(onStop: stop, showLauncher: false),

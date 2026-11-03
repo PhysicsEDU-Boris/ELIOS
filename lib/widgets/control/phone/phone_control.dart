@@ -64,6 +64,9 @@ class PhoneControlLayout extends StatelessWidget {
     required this.onGuide,
     this.photoUrl,
     this.overlays = const [],
+    this.onLock,
+    this.lockBox,
+    this.lockLabel,
     this.driveKey,
     this.stopKey,
     this.actionKey,
@@ -102,6 +105,13 @@ class PhoneControlLayout extends StatelessWidget {
 
   /// The quiz popup and the guide, over everything. They keep STOP reachable themselves.
   final List<Widget> overlays;
+
+  /// LOCK (0180): the AI boxes the item in the current frame; null greys the key out.
+  final VoidCallback? onLock;
+
+  /// The AI's box for the open LOCK scan, as fractions (0..1) of the frame, and its item name.
+  final Rect? lockBox;
+  final String? lockLabel;
 
   /// GO replaces STOP only with a live link: offline always shows STOP (Figma 397:2604).
   bool get _showGo => stopped && link == ControlLink.connected;
@@ -552,6 +562,7 @@ class PhoneControlLayout extends StatelessWidget {
       body = SizedBox.expand(
         child: Image.memory(frame!, fit: BoxFit.cover, gaplessPlayback: true),
       );
+      if (lockBox != null) body = Stack(children: [body, Positioned.fill(child: _lockOverlay())]);
     } else {
       body = Center(
         child: Text(
@@ -574,6 +585,39 @@ class PhoneControlLayout extends StatelessWidget {
       child: body,
     );
   }
+
+  /// The AI's box over the video. The square camera frame is shown with BoxFit.cover, so the box
+  /// is scaled by the larger side and shifted by the cropped margin.
+  // ponytail: assumes a square frame (MaixCAM2 streams the model's 640x640); pass the frame size if that changes.
+  Widget _lockOverlay() => LayoutBuilder(builder: (context, c) {
+    final side = c.maxWidth > c.maxHeight ? c.maxWidth : c.maxHeight;
+    final dx = (c.maxWidth - side) / 2, dy = (c.maxHeight - side) / 2;
+    final b = lockBox!;
+    return Stack(children: [
+      Positioned(
+        key: const ValueKey('phone_lock_box'),
+        left: dx + b.left * side,
+        top: dy + b.top * side,
+        width: b.width * side,
+        height: b.height * side,
+        child: DecoratedBox(
+          decoration: BoxDecoration(border: Border.all(color: const Color(0xFF22C55E), width: 3)),
+          child: lockLabel == null
+              ? null
+              : Align(
+                  alignment: Alignment.topLeft,
+                  child: ColoredBox(
+                    color: const Color(0xFF22C55E),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      child: Text(lockLabel!, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ),
+        ),
+      ),
+    ]);
+  });
 
   Widget _actionBar(BuildContext context) {
     final p = context.elio;
@@ -601,6 +645,14 @@ class PhoneControlLayout extends StatelessWidget {
                       label: 'RELEASE',
                       size: 48,
                       onTap: onReleaseGripper,
+                    ),
+                    const SizedBox(width: 12),
+                    TransportKey(
+                      key: const ValueKey('phone_lock'),
+                      icon: Icons.center_focus_strong,
+                      label: 'LOCK',
+                      size: 48,
+                      onTap: onLock,
                     ),
                     const SizedBox(width: 12),
                     Container(width: 1.5, height: 52, color: p.borderSubtle),

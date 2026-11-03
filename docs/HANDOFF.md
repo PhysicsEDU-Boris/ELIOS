@@ -15,6 +15,10 @@
 - Camera Wi-Fi was dead 22:27-23:20 (camera clock): driver left loaded after a system stop, `wifi.sh start` refuses while loaded. Rebooted (owner OK), STA WIFIBOR 192.168.100.135 back; auto-start is `settings`, ELIOS app opened by hand. `wifi.sh` logs the Wi-Fi password to the journal.
 - Real camera: cardboard box locked as E_Waste, Gemini "kardus" + matching box, 23 s (overload); 0012 showed the B3 card, so (owner) the AI may now clear a detector E_Waste with an explicit non-B3 bin and no hazard words (0180); real battery stayed B3 (correct). Phone: APK `4f27083`, MaixCAM2, 192.168.100.135 saved.
 
+## LOCK button (3 Nov, `feat/lock-button`, stacked on PR #87, decision 0181)
+
+- Owner plan: drop the .mud model; LOCK → Gemini box (1 call); camera tracks it after (MixFormerV2, model on the camera; ByteTrack needs a detector); camera hand_detector keeps arm safety; AprilTags (tag36h11 id 0, 18.52 mm) via find_apriltags; calibrate with robotic_hand_sim's HIL toolkit. Step 1 (this) is app only; firmware steps need the owner's OK at test time.
+
 ## Gemini cloud AI (3 Nov, `feat/gemini-cloud-ai`, decision 0179)
 
 - On-device Gemma removed. `lib/services/ai_quiz_service.dart` POSTs identify, questions, essay grading and chat with the Firebase ID token to the `ai-backend` Vercel function (`ai-backend/`, team ELIOS, region sin1, https://ai-backend-seven-orpin.vercel.app/api/ai), which checks the token, holds `GEMINI_API_KEY` and runs the 0176 chain (`node --test` in `ai-backend/`, break-checked). Firebase Blaze skipped (200k IDR); Cloudflare dropped (Gemini refuses its locations; the `elios-ai` Worker was deleted 3 Nov).
@@ -52,8 +56,3 @@
 - Tests: `test/widgets/phone_control_test.dart`, `test/screens/control_phone_test.dart`; GO test break-checked. Results, side-by-sides and the difference list: `docs/test-results/r3/`.
 - Phone (Edge 60 Fusion): debug build with `SCAN_RECORDS_FILE=scan_records_r3test.json` (separate store). Owner `scan_records.json` verified byte-identical (27 records); fake robot over `adb reverse`, removed after. Space/Esc not tested (no keyboard). The Gemma model was moved out and back for the builds; no copy.
 - Open: painted card art and SVG export, 3D joystick, ELIOS AI badge art; essay input / identifying / hazard popups still the old Indonesian popup; owner question: should GO and the logo removal also apply to R2 tablet and Mac?
-
-## Earlier on 2 Nov (merged)
-
-- Theme switch + Android icon (#79, decision 0146); C1 Config (#77, decision 0145; open: Sound effects/Timer UI only); #78 Control dispose disconnect.
-- N4 top bar/drawer (0143) and L1 Learn v2 (0170-0172) reached `feature/live-scan` via #75. L1 open: Kuis fisika score never saved (pre-existing).

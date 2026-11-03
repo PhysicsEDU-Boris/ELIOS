@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' show Rect;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -76,6 +77,9 @@ class WasteQuizUiState {
   /// The photo file saved to Scan History for this session, so the result card's PDF can embed it.
   final String? historyPhotoPath;
 
+  /// A LOCK-button scan only: the AI's box as fractions (0..1) of the locked frame (0180).
+  final Rect? lockBox;
+
   /// The structured explanation for the current question (phase: explaining).
   final QuizExplanation? currentExplanation;
 
@@ -105,6 +109,7 @@ class WasteQuizUiState {
     this.recordedQuestions = const [],
     this.cropBytes,
     this.historyPhotoPath,
+    this.lockBox,
     this.currentExplanation,
     this.explanationLoading = false,
   });
@@ -155,6 +160,7 @@ class WasteQuizUiState {
     Uint8List? cropBytes,
     String? historyPhotoPath,
     bool clearCropBytes = false,
+    Rect? lockBox,
     QuizExplanation? currentExplanation,
     bool clearExplanation = false,
     bool? explanationLoading,
@@ -182,6 +188,7 @@ class WasteQuizUiState {
       recordedQuestions: recordedQuestions ?? this.recordedQuestions,
       cropBytes: clearCropBytes ? null : (cropBytes ?? this.cropBytes),
       historyPhotoPath: historyPhotoPath ?? this.historyPhotoPath,
+      lockBox: lockBox ?? this.lockBox,
       currentExplanation: clearExplanation ? null : (currentExplanation ?? this.currentExplanation),
       explanationLoading: explanationLoading ?? this.explanationLoading,
     );
@@ -339,6 +346,33 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     unawaited(_cropThenIdentify(frame, detection, generation, diagnostics));
   }
 
+  /// LOCK button (0180): the AI names and boxes the main item in the whole frame,
+  /// with or without a detector box. Prefers the paired clean image.
+  void onManualLock(CapturedFrame frame) {
+    if (state.phase != WasteQuizPhase.idle) return;
+    final bytes = frame.hasPairedCleanImage ? frame.cleanBytes! : frame.bytes;
+    _lastShownAt = DateTime.now();
+    _askedQuestions.clear();
+    _recordedQuestions.clear();
+    _cropBytes = bytes;
+    _historyPhotoBytes = bytes;
+    _bankQueues = null;
+    _usedAngles.clear();
+    _cancelPrefetch();
+    final generation = ++_generation;
+    AiQuizService.instance.cancel();
+    loadingSince = DateTime.now();
+    state = _freshSession(phase: WasteQuizPhase.identifying);
+    final diagnostics = kDebugMode ? ScanDiagnostics() : null;
+    _diagnostics = diagnostics;
+    diagnostics?.event('manual_lock', {'frameId': frame.frameId, 'firmwareSha256': frame.firmwareSha256,
+      'imageSource': frame.hasPairedCleanImage ? 'clean_image' : 'preview',
+      'frameWidth': frame.width, 'frameHeight': frame.height});
+    TesterLog.instance.log('scan', 'manual lock frame=${frame.frameId} '
+        'image=${frame.hasPairedCleanImage ? 'clean' : 'preview'}');
+    unawaited(_identifyThenQuiz(bytes, generation, diagnostics: diagnostics, refineCrop: true, wholeFrame: true));
+  }
+
   Future<void> _cropThenIdentify(CapturedFrame frame, TrackedDetection detection, int generation, ScanDiagnostics? diagnostics) async {
     final timing = kDebugMode ? (Stopwatch()..start()) : null;
     final crop = await compute(prepareDetectionCrop, (frame, detection));
@@ -360,9 +394,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   }
 
   /// [refineCrop]: the photo is a padded robot crop, so Gemini's box replaces the detector's crop (0180).
+  /// [wholeFrame]: the photo is the whole frame (LOCK), so the box is also kept as [WasteQuizUiState.lockBox].
   Future<void> _identifyThenQuiz(Uint8List imageBytes, int generation,
       {String? detectorLabel, double? detectorScore, int? frameId, ScanDiagnostics? diagnostics,
-      bool refineCrop = false}) async {
+      bool refineCrop = false, bool wholeFrame = false}) async {
     final result = await AiQuizService.instance.identifyItem(imageBytes, diagnostics: diagnostics);
     diagnostics?.event('identify_result', {'item': result.item, 'material': result.material,
       'category': result.category, 'failure': result.failure, 'stale': generation != _generation});
@@ -392,7 +427,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       if (refined != null) {
         _cropBytes = refined;
         _historyPhotoBytes = refined;
-        state = state.copyWith(cropBytes: refined);
+        state = state.copyWith(cropBytes: refined, lockBox: wholeFrame ? box : null);
       }
     }
     final detectorHazard = detectorLabel != null &&

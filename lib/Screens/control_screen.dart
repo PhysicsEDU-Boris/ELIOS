@@ -70,6 +70,8 @@ class ControlScreen extends ConsumerStatefulWidget {
 class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindingObserver {
   final MaixCamSource _source = MaixCamSource();
   CapturedFrame? _latestFrame;
+  /// The newest frame with an unannotated image, for LOCK (0180).
+  CapturedFrame? _lastCleanFrame;
   StreamSubscription<CapturedFrame>? _frameSubscription;
   ProviderSubscription<AsyncValue<String>>? _statusSubscription;
   late final RobotControlNotifier _robotNotifier;
@@ -253,6 +255,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
       setState(() {
         _latestFrame = frame;
+        if (frame.hasPairedCleanImage) _lastCleanFrame = frame;
         if (frame.detections != null) _hudDetections = frame.detections!;
       });
 
@@ -879,6 +882,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onBack: () => Navigator.of(context).pop(),
       onGuide: () => setState(() => _guideOpen = true),
       photoUrl: user?.photoURL,
+      onLock: link == ControlLink.connected && _latestFrame != null && !quizOpen ? _lock : null,
+      lockBox: quizOpen ? quizState.lockBox : null,
+      lockLabel: quizState.scan?.displayName,
       driveKey: _driveKey,
       stopKey: _stopKey,
       actionKey: _actionKey,
@@ -907,6 +913,15 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           ),
       ],
     );
+  }
+
+  /// LOCK (0180): a clean frame from the last second, else the live preview (it may carry the
+  /// firmware's own boxes until the firmware stops drawing them).
+  void _lock() {
+    final clean = _lastCleanFrame;
+    final fresh = clean != null && DateTime.now().difference(clean.timestamp) < const Duration(seconds: 1);
+    final frame = fresh ? clean : _latestFrame;
+    if (frame != null) ref.read(wasteQuizProvider.notifier).onManualLock(frame);
   }
 
   /// Debug Scan (debug builds only): the live-scan readout, the question

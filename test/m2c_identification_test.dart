@@ -248,6 +248,36 @@ void main() {
       expect(File(store.records.single.cropPhotoPath!).readAsBytesSync(), orderedEquals(expected));
     });
 
+    test('0180 LOCK: the whole clean frame goes to the AI; its box crops the photo and is kept as lockBox', () async {
+      final source = img.Image(width: 40, height: 20);
+      final clean = Uint8List.fromList(img.encodePng(source));
+      final frame = CapturedFrame(bytes: Uint8List.fromList([1, 2, 3]), cleanBytes: clean,
+          frameId: 7, detectionFrameId: 7, width: 40, height: 20, timestamp: DateTime(2026));
+      quiz.onManualLock(frame);
+      expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.identifying);
+      await _until(() => images.isNotEmpty);
+      expect(images.single, orderedEquals(clean), reason: 'the paired clean image, not the preview');
+      identify.complete('{"item":"botol plastik","category":"anorganik","box_2d":[0,0,500,500]}');
+      await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
+      final s = c.read(wasteQuizProvider);
+      expect(s.lockBox, const Rect.fromLTRB(0, 0, .5, .5));
+      expect(s.cropBytes, orderedEquals(cropToBox((clean, const Rect.fromLTRB(0, 0, .5, .5)))!));
+      expect(s.scan?.detectorLabel, isNull);
+      quiz.dismiss();
+      expect(c.read(wasteQuizProvider).lockBox, isNull);
+    });
+
+    test('0180 LOCK without a clean image sends the preview; no box keeps the whole frame', () async {
+      final preview = Uint8List.fromList(img.encodePng(img.Image(width: 40, height: 20)));
+      quiz.onManualLock(CapturedFrame(bytes: preview, width: 40, height: 20, timestamp: DateTime(2026)));
+      await _until(() => images.isNotEmpty);
+      expect(images.single, orderedEquals(preview));
+      identify.complete('{"item":"botol plastik","category":"anorganik"}');
+      await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
+      expect(c.read(wasteQuizProvider).lockBox, isNull);
+      expect(c.read(wasteQuizProvider).cropBytes, orderedEquals(preview));
+    });
+
     test('parseBox reads box_2d and rejects bad or sliver boxes', () {
       expect(AiQuizService.parseBox([100, 200, 600, 900]), const Rect.fromLTRB(.2, .1, .9, .6));
       expect(AiQuizService.parseBox([-50, 0, 1200, 1000]), const Rect.fromLTRB(0, 0, 1, 1));
