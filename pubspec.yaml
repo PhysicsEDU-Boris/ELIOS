@@ -81,6 +81,7 @@ flutter:
     - assets/module/
     - assets/quiz/
     - assets/illustrations/home/
+    - assets/illustrations/control/
 
   fonts:
     - family: JetBrains Mono

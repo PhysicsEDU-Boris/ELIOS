@@ -41,7 +41,7 @@ class ElioTopBar extends StatelessWidget {
         children: [
           // 12 dp + the 4 dp inside the target put the circle on the 16 dp margin.
           const SizedBox(width: 12),
-          _Avatar(
+          ElioAvatar(
             photoUrl: photoUrl,
             onTap: onOpenProfile,
             focusNode: avatarFocusNode,
@@ -84,18 +84,19 @@ class ElioTopBar extends StatelessWidget {
   }
 }
 
-class _Avatar extends StatefulWidget {
-  const _Avatar({required this.photoUrl, required this.onTap, this.focusNode});
+/// The profile avatar; also on the Control screen (R2).
+class ElioAvatar extends StatefulWidget {
+  const ElioAvatar({super.key, required this.photoUrl, required this.onTap, this.focusNode});
 
   final String? photoUrl;
   final VoidCallback onTap;
   final FocusNode? focusNode;
 
   @override
-  State<_Avatar> createState() => _AvatarState();
+  State<ElioAvatar> createState() => _AvatarState();
 }
 
-class _AvatarState extends State<_Avatar> {
+class _AvatarState extends State<ElioAvatar> {
   bool _focused = false, _pressed = false;
 
   @override

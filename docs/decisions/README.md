@@ -49,3 +49,4 @@ their status changed.
 | [0170](0170-learn-v2-layout.md) | Learn tab L1 v2 layout: components, hub, module, lesson, quiz, progress, simulations | Draft |
 | [0171](0171-learn-thumbnail-fallback.md) | Learn thumbnails: Firestore URL first, bundled illustration as placeholder and fallback | Draft |
 | [0172](0172-learn-offline.md) | Learn loading, error, offline cache and empty states | Draft |
+| [0173](0173-r2-control-gamified.md) | R2 gamified Control: joystick quantisation, link views, drive tally, Scan quiz pause, dist_cm-only HUD | Draft |

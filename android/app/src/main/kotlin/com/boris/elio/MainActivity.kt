@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Debug
 import android.os.PowerManager
+import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -42,6 +43,11 @@ class MainActivity : FlutterActivity() {
                             putExtra(Intent.EXTRA_TEXT, call.arguments as String)
                         }
                         startActivity(Intent.createChooser(send, "Bagikan log ELIOS"))
+                        result.success(null)
+                    }
+                    "wifiSettings" -> {
+                        // R2 Control: "Wi-Fi settings" on the disconnected state.
+                        startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
                         result.success(null)
                     }
                     else -> result.notImplemented()

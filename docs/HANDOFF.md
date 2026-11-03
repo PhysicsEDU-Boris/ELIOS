@@ -1,6 +1,6 @@
 # Handoff — 2 Nov 2026
 
-- Base: `feature/live-scan` at `ae67416`.
+- Base: `feature/live-scan` at `c38809d` (#77 C1, #78 Control dispose, #79 theme toggle merged).
 - Merged: #51 U4b essay rubric; #53 banks (decision 0060); #52 History/PDF crops (0070); #54 Android tester build (0040); #55 E1 (0041), with the "Bukan ini?" picker and background load phone-verified.
 - Open PRs: #50 docs wrap-up (content carried into this docs sync); #47 firmware (motion disabled, `ARM_MOTION_ENABLED=false`); #24 (latency gate failed).
 
@@ -23,31 +23,18 @@
 - Follow `CLAUDE.md` Mac build hygiene: reuse the retained app/model, inventory before building and verify one app registration afterwards. No physical robot movement or sharing recipient selection.
 - Overall queue: U4c combined native acceptance, then U7 Firebase sync, then U8 documentation/Figma. See [NEXT_TASK.md](NEXT_TASK.md).
 
-## Theme switch + app icon (2 Nov, draft PR)
+## R2 gamified Control (2 Nov, draft PR on `feature/live-scan`)
 
-- Sidebar Dark mode row in every build (gate removed); Android icon follows the theme via two launcher aliases, switched in `onStop` (an instant switch closed the app). Decision 0146; phone-checked, shots in `docs/test-results/theme-icon/`. iOS icon not changed.
+- Control rebuilt from Figma 358:2358 (light/dark): joystick for the same D-pad commands, faders, gear chips, power + round STOP, camera HUD (bands/pick zone/distance only with `dist_cm`), waiting/disconnected views with the real 2 s / 30-try retry, mission + "This drive" (real records, no reward), ELIO tip, Voice / Scan quiz toggles. Decision 0173; logic in `lib/models/control_session.dart`, UI in `lib/widgets/control/` + `control_layout.dart`.
+- Tests: `test/widgets/control_layout_test.dart` (226, 8 sizes × 3 states × light/dark), `test/screens/control_r2_test.dart`, `test/models/control_session_test.dart`; break-checked (joystick without the gate fails). `flutter test` +1015 ~20 -2 (the 2 known `elio_tokens_test`).
+- A/B fake log (`docs/test-results/r2/`): identical up to Exit; the base build did not disconnect on Exit (reproduced, cause not found), the new one does.
+- Phone: owner session read-only (27 scans unchanged, no quiz answered), fake via `adb reverse`. **The phone now runs the R2 debug build dd429ed** (tester flags), dark mode. Phone has two Gemma copies (app files + external files), both pre-existing; not touched.
+- Owner questions: mission reward; HUD crop hides the 20 cm band on phones; base-build Exit not disconnecting.
 
-## C1 Config screen (2 Nov, draft PR on `feature/live-scan`)
+## Earlier on 2 Nov (merged)
 
-- Config + Settings sheet from Figma 337:2358; decision 0145 (settings audit, battery "—", saved quiz source, real Cancel/failure reason). Logic in `config_link_provider.dart`, UI in `lib/Screens/config/`.
-- Tests: `test/screens/config_screen_test.dart` (28), `test/services/config_connection_test.dart` (10). `flutter test` +818 ~20 -2 (the 2 known `elio_tokens_test` failures).
-- Phone: owner session (no guest; nothing recorded), fake robot via `adb reverse` (phone had no Wi-Fi). Shots + notes in `docs/test-results/c1/`. **The phone now runs the C1 debug build** (was the H1v4 tester build); reinstall a tester build when needed.
-- Merged as #77; Connect opens Control (owner). #78 (merged): leaving Control with a quiz open now disconnects (was a debug-build reconnect loop).
-- Open: Sound effects and Timer are UI only; AI Error/Paused not seen on the phone; dark divider fix not on the phone build.
-
-## N4 profile top bar and drawer (1 Nov, draft PR, stacked on N3 #72)
-
-- `elio_top_bar.dart` + `elio_drawer_host.dart` (custom drawer) wired in `HomeShell`; Home hamburger removed; decision 0143.
-- Tests: `test/widgets/elio_drawer_host_test.dart` (15). `flutter test`: only the 2 `elio_tokens_test` failures, which also fail on the N3 base.
-- Not checked: phone or Mac window, real photo avatar. Open: no wide-layout rail (Learn's second bar removed by L1).
-
-## L1 Learn tab v2 (1 Nov, draft PR, stacked on `feat/n3-bottom-nav`)
-
-- Hub, module, lesson, quiz, My progress and all 9 simulations rebuilt from Figma L1 v2 (light and dark, tokens via theme); components in `lib/widgets/learn/learn_ui.dart`; illustrations in `assets/illustrations/learn/`. Decisions 0170-0172.
-- N4 (#73) was merged into `feat/n3-bottom-nav`, not `feature/live-scan`, so the PR targets `feat/n3-bottom-nav`.
-- Tests: `test/screens/learn_v2_test.dart` (36). `flutter test`: 765 pass, 2 known `elio_tokens_test` failures.
-- Phone (Edge 60 Fusion): video, PDF, sliders, progress, dark mode pass; see `docs/test-results/l1/README.md`.
-- Open: turn the phone inside the video player once; error screen only widget-tested (Firestore cache hides it offline); Kuis fisika score is never saved (pre-existing).
+- Theme switch + Android icon (#79, decision 0146); C1 Config (#77, decision 0145; open: Sound effects/Timer UI only); #78 Control dispose disconnect.
+- N4 top bar/drawer (0143) and L1 Learn v2 (0170-0172) reached `feature/live-scan` via #75. L1 open: Kuis fisika score never saved (pre-existing).
 
 ## H1v4 gamified Home (2 Nov, draft PR, on top of N4 catch-up #75)
 
