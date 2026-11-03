@@ -105,13 +105,23 @@ multi-object video. So: **the model is free; running it is not** (GPU or a paid 
 - Real camera, one object: a cardboard box the detector called E_Waste (0.80); Gemini said "kardus"
   and its box matched the camera's. The label, not the box, was wrong, and the 0012 hazard rule then
   showed "Possibly hazardous (B3): Kardus". Gemini took 23 s (overloaded models skipped).
-- Still open: more objects; latency when Gemini is not overloaded; whether Gemini may downgrade a
-  detector E_Waste (owner question below).
+- Still open: more objects; latency when Gemini is not overloaded.
+
+## Built: the AI may clear a detector E_Waste (owner, 3 Nov 2026: "let Gemini clear")
+
+- Amends 0012. A detector E_Waste no longer forces the B3 card when the AI's identify answer has
+  an explicit `organik`, `anorganik` or `residu` bin **and** its item has no hazard words (the
+  keyword list in `ScannedWaste`: baterai, ponsel, kabel, lampu, ...). Then the scan uses the AI's
+  bin, with no hazard card and no mismatch card.
+- Not cleared: no bin or an unknown bin from the AI, a B3 bin, or a hazard word in the item
+  ("laptop", "ponsel"): the B3 card stays, as before.
+- Logged: diagnostics `resolved.aiClearedHazard`, tester log `detector E_Waste cleared by AI`.
+- Risk accepted by the owner: a hazardous item the AI misnames without hazard words skips the
+  B3 warning. The robot's arm path is not changed by this (quiz only).
+- Tests: `m2c_identification_test.dart` (E_Waste + "kardus" anorganik goes straight to the quiz,
+  break-checked; E_Waste + "laptop" anorganik and E_Waste with no AI bin still show the B3 card).
 
 ## Questions for the owner
-
-0. Should a confident Gemini answer be allowed to clear a detector E_Waste (today it never can,
-   0012), or should the card just say both opinions?
 
 1. May we change the camera firmware (timing line, then F1/F4)? It would be tested on the robot
    with the old `main.py` kept as a backup.

@@ -273,7 +273,8 @@ void main() {
           await _until(() => images.isNotEmpty);
           identify.complete(
             detectorHazard
-                ? '{"item":"kotak plastik","category":"residu"}'
+                // no bin from the AI: nothing clears the detector's E_Waste (0180)
+                ? '{"item":"kotak plastik"}'
                 : '{"item":"baterai","category":"B3"}',
           );
           await _until(
@@ -282,9 +283,6 @@ void main() {
                 WasteQuizPhase.confirmingHazard,
           );
           expect(c.read(wasteQuizProvider).scan?.category?.id, 'hazardous');
-          if (detectorHazard) {
-            expect(c.read(wasteQuizProvider).scan?.rawCategory, 'residu');
-          }
           expect(
             images,
             hasLength(1),
@@ -378,6 +376,16 @@ void main() {
         identify.complete('{"item":"laptop","category":"anorganik"}');
         await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.confirmingHazard);
         expect(logged('category_mismatch'), isEmpty);
+      });
+
+      test('0180: E_Waste + AI "kardus" anorganik goes straight to the quiz, no hazard or mismatch card', () async {
+        quiz.onRobotLocked(_frame(), const TrackedDetection(label: 'E_Waste', x: 40, y: 20, w: 40, h: 20));
+        await _until(() => images.isNotEmpty);
+        identify.complete('{"item":"kardus","material":"kertas","category":"anorganik"}');
+        await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
+        expect(c.read(wasteQuizProvider).scan?.category?.id, 'inorganic');
+        expect(logged('category_mismatch'), isEmpty);
+        expect(logged('resolved'), contains('"aiClearedHazard":true'));
       });
 
       test('Scan ulang on the mismatch card leaves no late quiz', () async {

@@ -397,10 +397,18 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     }
     final detectorHazard = detectorLabel != null &&
         ScannedWaste.fromLabel(detectorLabel).category?.id == 'hazardous';
-    final scan = ScannedWaste.fromLabel(item, material: result.material,
-        categoryHint: result.category, hazardousEvidence: detectorHazard, detectorLabel: detectorLabel);
+    // 0180 (owner, 3 Nov): an AI answer with an explicit non-B3 bin and no hazard words in its item
+    // clears the detector's E_Waste (a cardboard box printed with a camera was locked as E_Waste).
+    final aiClearsHazard = detectorHazard &&
+        const {'organik', 'anorganik', 'residu'}.contains(result.category?.toLowerCase().trim()) &&
+        ScannedWaste.fromLabel(item, categoryHint: result.category).category?.id != 'hazardous';
+    if (aiClearsHazard) {
+      TesterLog.instance.log('scan', 'detector $detectorLabel cleared by AI "$item" (${result.category})');
+    }
+    final scan = ScannedWaste.fromLabel(item, material: result.material, categoryHint: result.category,
+        hazardousEvidence: detectorHazard && !aiClearsHazard, detectorLabel: detectorLabel);
     diagnostics?.event('resolved', {'item': scan.displayName, 'category': scan.category?.id,
-      'detectorHazard': detectorHazard, 'hazard': scan.category?.id == 'hazardous'});
+      'detectorHazard': detectorHazard, 'aiClearedHazard': aiClearsHazard, 'hazard': scan.category?.id == 'hazardous'});
     state = state.copyWith(scan: scan);
     _scanClock = Stopwatch()..start();
     if (scan.category?.id == 'hazardous') {
@@ -408,7 +416,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       return;
     }
     // Hazard wins above; any other detector/AI disagreement waits for the user.
-    if (detectorLabel != null && ScannedWaste.categoryMismatch(detectorLabel, result.category)) {
+    if (!aiClearsHazard && detectorLabel != null && ScannedWaste.categoryMismatch(detectorLabel, result.category)) {
       final detectorChoice = ScannedWaste.fromLabel(item, material: result.material,
           categoryHint: ScannedWaste.detectorCategory(detectorLabel), detectorLabel: detectorLabel);
       _detectorChoice = detectorChoice;
