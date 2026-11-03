@@ -10,14 +10,20 @@ import 'package:image/image.dart' as img;
 Future<Uint8List> cropToViewfinder(Uint8List jpeg, {required Size panel, required Size box, double margin = 1.2}) =>
     compute(_crop, (jpeg, panel.width, panel.height, box.width, box.height, margin));
 
+/// The crop ([x], [y], [w], [h] in image pixels) for an image of [imageW] x [imageH].
+({int x, int y, int w, int h}) viewfinderCropRect(int imageW, int imageH, {required Size panel, required Size box, double margin = 1.2}) {
+  final scale = panel.width / imageW > panel.height / imageH ? panel.width / imageW : panel.height / imageH;
+  final w = (box.width * margin / scale).round().clamp(1, imageW);
+  final h = (box.height * margin / scale).round().clamp(1, imageH);
+  return (x: (imageW - w) ~/ 2, y: (imageH - h) ~/ 2, w: w, h: h);
+}
+
 Uint8List _crop((Uint8List, double, double, double, double, double) a) {
   final (jpeg, pw, ph, bw, bh, margin) = a;
   final image = img.decodeJpg(jpeg);
   if (image == null) return jpeg;
-  final scale = pw / image.width > ph / image.height ? pw / image.width : ph / image.height;
-  final w = (bw * margin / scale).round().clamp(1, image.width);
-  final h = (bh * margin / scale).round().clamp(1, image.height);
-  final cropped = img.copyCrop(image, x: (image.width - w) ~/ 2, y: (image.height - h) ~/ 2, width: w, height: h);
+  final r = viewfinderCropRect(image.width, image.height, panel: Size(pw, ph), box: Size(bw, bh), margin: margin);
+  final cropped = img.copyCrop(image, x: r.x, y: r.y, width: r.w, height: r.h);
   return Uint8List.fromList(img.encodeJpg(cropped, quality: 90));
 }
 

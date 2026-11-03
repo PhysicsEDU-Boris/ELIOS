@@ -844,8 +844,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       gripper: robotState.gripperVal,
       onGripper: (value) {
         final width = value.round();
-        if (_gate.servo('gripper', width))
+        if (_gate.servo('gripper', width)) {
           notifier.setGripperVal(width.toDouble());
+        }
       },
       height: robotState.heightValue,
       onHeight: (value) {

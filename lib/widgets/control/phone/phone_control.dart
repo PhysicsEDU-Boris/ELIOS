@@ -401,7 +401,7 @@ class PhoneControlLayout extends StatelessWidget {
                 color: context.elio.textPrimary,
               ),
               const SizedBox(width: 6),
-              _Trophies(count: trophies),
+              TrophyCount(count: trophies),
             ],
           ),
         ),
@@ -961,8 +961,8 @@ class _StoppedPill extends StatelessWidget {
   }
 }
 
-class _Trophies extends StatelessWidget {
-  const _Trophies({required this.count});
+class TrophyCount extends StatelessWidget {
+  const TrophyCount({super.key, required this.count});
   final int count;
 
   @override

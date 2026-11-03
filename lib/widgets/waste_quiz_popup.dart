@@ -120,8 +120,9 @@ class QuizLauncherButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(wasteQuizProvider);
-    if (state.phase == WasteQuizPhase.idle || !state.minimized)
+    if (state.phase == WasteQuizPhase.idle || !state.minimized) {
       return const SizedBox.shrink();
+    }
     return QuizButton(
       waiting:
           state.phase == WasteQuizPhase.identifying ||

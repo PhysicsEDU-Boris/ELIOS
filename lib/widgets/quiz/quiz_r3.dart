@@ -263,11 +263,17 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
+    // Portrait phones (under 520 dp): the mark without the wordmark, so the actions fit.
+    final narrow = MediaQuery.sizeOf(context).width < 520;
     return SizedBox(
       height: 36,
       child: Row(
         children: [
-          if (logo) ...[
+          if (logo && narrow) ...[
+            const EliosAiBadge(size: 28),
+            const SizedBox(width: 8),
+          ],
+          if (logo && !narrow) ...[
             const EliosAiBadge(size: 32),
             const SizedBox(width: 6),
             Text(
@@ -333,11 +339,15 @@ class _Pill extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.small = false,
+    this.iconOnly = false,
   });
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
   final bool small;
+
+  /// Narrow popups: the icon alone; the label stays the semantics label.
+  final bool iconOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -379,19 +389,21 @@ class _Pill extends StatelessWidget {
                     size: small ? 12 : 16,
                     color: small ? p.primaryText : p.textPrimary,
                   ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: p.textPrimary,
-                        fontSize: small ? 11 : 13,
-                        fontWeight: FontWeight.w700,
+                  if (!iconOnly) ...[
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: p.textPrimary,
+                          fontSize: small ? 11 : 13,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -439,12 +451,16 @@ class _GreenButton extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: p.onPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: p.onPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                   if (icon != null) ...[
@@ -592,24 +608,27 @@ class _QuizBodyState extends ConsumerState<_QuizBody> {
       if (mounted &&
           (ph == WasteQuizPhase.identifying ||
               ph == WasteQuizPhase.loadingQuestion ||
-              widget.state.sendingChat))
+              widget.state.sendingChat)) {
         setState(() {});
+      }
     });
   }
 
   void _onTts() {
     if (QuizTtsService.instance.status.value != TtsStatus.speaking &&
         mounted &&
-        _speaking != null)
+        _speaking != null) {
       setState(() => _speaking = null);
+    }
   }
 
   @override
   void didUpdateWidget(covariant _QuizBody old) {
     super.didUpdateWidget(old);
     if (old.state.questionIndex != widget.state.questionIndex ||
-        old.state.scan != widget.state.scan)
+        old.state.scan != widget.state.scan) {
       _answer.clear();
+    }
   }
 
   @override
@@ -814,12 +833,14 @@ class _LoadingView extends ConsumerWidget {
               decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
             ),
             const SizedBox(width: 14),
-            Container(
-              width: 160,
-              height: 8,
-              decoration: BoxDecoration(
-                color: p.borderMedium,
-                borderRadius: BorderRadius.circular(4),
+            Flexible(
+              child: Container(
+                width: 160,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: p.borderMedium,
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ),
           ],
@@ -1187,10 +1208,38 @@ class _QuestionFooter extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Narrow popups: Read it to me shows its icon only.
+    final compact = MediaQuery.sizeOf(context).width < 820;
     final p = context.elio;
     final n = ref.read(wasteQuizProvider.notifier);
     final skip =
         ref.watch(appPreferencesProvider).skipAllowed && !state.answered;
+    final read = _Pill(
+      key: const ValueKey('quiz_read'),
+      icon: Icons.volume_up_outlined,
+      label: 'Read it to me',
+      iconOnly: compact,
+      onTap: () => n.listen(readText),
+    );
+    if (MediaQuery.sizeOf(context).width < 520) {
+      // Portrait: the actions wrap; progress and the trophy note are left out.
+      return Wrap(
+        alignment: WrapAlignment.end,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          if (skip)
+            TextButton(
+              key: const ValueKey('quiz_skip'),
+              onPressed: n.skipQuestion,
+              child: Text(state.isLastQuestion ? 'Skip and finish' : 'Skip'),
+            ),
+          ...trailing.where((w) => w is! SizedBox),
+          read,
+        ],
+      );
+    }
     return Row(
       children: [
         Expanded(
@@ -1254,12 +1303,7 @@ class _QuestionFooter extends ConsumerWidget {
           const SizedBox(width: 6),
         ],
         ...trailing,
-        _Pill(
-          key: const ValueKey('quiz_read'),
-          icon: Icons.volume_up_outlined,
-          label: 'Read it to me',
-          onTap: () => n.listen(readText),
-        ),
+        read,
       ],
     );
   }
@@ -1295,141 +1339,154 @@ class _EssayInputView extends ConsumerWidget {
         !state.sendingChat &&
         !state.essaySubmitted;
     return _Shell(
-      child: Column(
-        key: const ValueKey('quiz_essay_input'),
-        children: [
-          _Header(
-            logo: true,
-            onStop: onStop,
-            chips: [
-              _InfoChip(
-                'Question ${state.questionIndex + 1} of ${state.totalQuestions}',
-              ),
-              _InfoChip('Scanned: ${state.scan?.displayName ?? '-'}'),
-              ?_notThisChip(context, state, n),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      // The keyboard is open on a short screen when the popup has little height left
+      // (Scaffold resizes the body, so the insets are already gone here).
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final typingShort = c.maxHeight < 200;
+          return Column(
+            key: const ValueKey('quiz_essay_input'),
             children: [
-              ExcludeSemantics(
-                child: SvgPicture.asset(
-                  'assets/illustrations/home/bulb_buddy.svg',
-                  height: 48,
-                ),
+              _Header(
+                logo: true,
+                onStop: onStop,
+                chips: [
+                  _InfoChip(
+                    'Question ${state.questionIndex + 1} of ${state.totalQuestions}',
+                  ),
+                  _InfoChip('Scanned: ${state.scan?.displayName ?? '-'}'),
+                  ?_notThisChip(context, state, n),
+                ],
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
+              // Keyboard open on a short screen: the field and the actions only (the question is above it once closed).
+              if (!typingShort) ...[
+                const SizedBox(height: 6),
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'ESSAY · ${_level(state.difficulty).toUpperCase()} · MAX $wordLimit WORDS',
-                      style: TextStyle(
-                        color: p.primaryText,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.1,
+                    ExcludeSemantics(
+                      child: SvgPicture.asset(
+                        'assets/illustrations/home/bulb_buddy.svg',
+                        height: 48,
                       ),
                     ),
-                    Text(
-                      q.question,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: p.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        height: 1.25,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ESSAY · ${_level(state.difficulty).toUpperCase()} · MAX $wordLimit WORDS',
+                            style: TextStyle(
+                              color: p.primaryText,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
+                          Text(
+                            q.question,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: p.textPrimary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              height: 1.25,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: grading
-                ? Container(
-                    key: const ValueKey('quiz_essay_grading'),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: p.surfaceRaised,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox.square(
-                          dimension: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: p.primary,
+              ],
+              const SizedBox(height: 8),
+              Expanded(
+                child: grading
+                    ? Container(
+                        key: const ValueKey('quiz_essay_grading'),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: p.surfaceRaised,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox.square(
+                              dimension: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: p.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'ELIOS AI is grading your answer…',
+                              style: TextStyle(
+                                color: p.textPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : TextField(
+                        key: const ValueKey('quiz_essay_field'),
+                        controller: controller,
+                        enabled: !state.essaySubmitted,
+                        expands: true,
+                        maxLines: null,
+                        textAlignVertical: TextAlignVertical.top,
+                        style: TextStyle(color: p.textPrimary, fontSize: 15),
+                        decoration: InputDecoration(
+                          hintText: 'Type your answer here…',
+                          filled: true,
+                          fillColor: p.surfaceRaised,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Text(
-                          'ELIOS AI is grading your answer…',
-                          style: TextStyle(
-                            color: p.textPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : TextField(
-                    key: const ValueKey('quiz_essay_field'),
-                    controller: controller,
-                    enabled: !state.essaySubmitted,
-                    expands: true,
-                    maxLines: null,
-                    textAlignVertical: TextAlignVertical.top,
-                    style: TextStyle(color: p.textPrimary, fontSize: 15),
-                    decoration: InputDecoration(
-                      hintText: 'Type your answer here…',
-                      filled: true,
-                      fillColor: p.surfaceRaised,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
                       ),
+              ),
+              const SizedBox(height: 8),
+              _QuestionFooter(
+                state: state,
+                readText: q.question,
+                trailing: [
+                  Text(
+                    '$words / $wordLimit words',
+                    style: TextStyle(
+                      color: words > wordLimit ? p.errorText : p.textSecondary,
+                      fontSize: 12,
                     ),
                   ),
-          ),
-          const SizedBox(height: 8),
-          _QuestionFooter(
-            state: state,
-            readText: q.question,
-            trailing: [
-              Text(
-                '$words / $wordLimit words',
-                style: TextStyle(
-                  color: words > wordLimit ? p.errorText : p.textSecondary,
-                  fontSize: 12,
-                ),
+                  const SizedBox(width: 8),
+                  _Pill(
+                    key: const ValueKey('quiz_essay_clear'),
+                    icon: Icons.backspace_outlined,
+                    label: 'Clear',
+                    iconOnly: MediaQuery.sizeOf(context).width < 820,
+                    onTap: state.essaySubmitted ? null : controller.clear,
+                  ),
+                  const SizedBox(width: 8),
+                  _GreenButton(
+                    key: const ValueKey('quiz_essay_submit'),
+                    label: 'Submit',
+                    icon: Icons.send_rounded,
+                    onTap: canSend
+                        ? () => n.submitEssay(controller.text)
+                        : null,
+                  ),
+                  const SizedBox(width: 8),
+                ],
               ),
-              const SizedBox(width: 8),
-              _Pill(
-                key: const ValueKey('quiz_essay_clear'),
-                icon: Icons.backspace_outlined,
-                label: 'Clear',
-                onTap: state.essaySubmitted ? null : controller.clear,
-              ),
-              const SizedBox(width: 8),
-              _GreenButton(
-                key: const ValueKey('quiz_essay_submit'),
-                label: 'Submit',
-                icon: Icons.send_rounded,
-                onTap: canSend ? () => n.submitEssay(controller.text) : null,
-              ),
-              const SizedBox(width: 8),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -1649,6 +1706,7 @@ class _ReviewView extends ConsumerWidget {
       ] else
         q.explanation,
     ].join(' ');
+    final narrow = MediaQuery.sizeOf(context).width < 520;
     final left = Column(
       children: [
         _ResultBanner(state: state),
@@ -1664,6 +1722,7 @@ class _ReviewView extends ConsumerWidget {
                     key: const ValueKey('quiz_back'),
                     icon: Icons.arrow_back_rounded,
                     label: 'Back',
+                    iconOnly: narrow,
                     onTap: n.minimize,
                   ),
                   const SizedBox(width: 8),
@@ -1672,6 +1731,7 @@ class _ReviewView extends ConsumerWidget {
                       key: const ValueKey('quiz_listen'),
                       icon: Icons.volume_up_outlined,
                       label: 'Listen to explanation',
+                      iconOnly: narrow,
                       onTap: () => onListen(listenText),
                     ),
                   ),
@@ -1679,10 +1739,12 @@ class _ReviewView extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 8),
-            _GreenButton(
-              key: const ValueKey('quiz_next'),
-              label: state.isLastQuestion ? 'Finish quiz' : 'Next question',
-              onTap: state.sendingChat ? null : n.nextQuestion,
+            Flexible(
+              child: _GreenButton(
+                key: const ValueKey('quiz_next'),
+                label: state.isLastQuestion ? 'Finish quiz' : 'Next question',
+                onTap: state.sendingChat ? null : n.nextQuestion,
+              ),
             ),
           ],
         ),
@@ -1704,7 +1766,10 @@ class _ReviewView extends ConsumerWidget {
           Expanded(
             child: LayoutBuilder(
               builder: (context, c) => c.maxWidth < 600
-                  ? left // ponytail: under 600 dp the coach is left out; no phone in landscape is that narrow.
+                  ? _NarrowTabs(
+                      explanation: left,
+                      coach: chat,
+                    ) // portrait: one pane at a time
                   : Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -1722,6 +1787,50 @@ class _ReviewView extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Portrait (under 600 dp): Explanation and ELIOS AI coach as two tabs.
+class _NarrowTabs extends StatefulWidget {
+  const _NarrowTabs({required this.explanation, required this.coach});
+  final Widget explanation, coach;
+
+  @override
+  State<_NarrowTabs> createState() => _NarrowTabsState();
+}
+
+class _NarrowTabsState extends State<_NarrowTabs> {
+  bool _coach = false;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      Row(
+        children: [
+          Flexible(
+            child: _Pill(
+              key: const ValueKey('tab_explanation'),
+              icon: Icons.article_outlined,
+              label: 'Explanation',
+              small: true,
+              onTap: () => setState(() => _coach = false),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: _Pill(
+              key: const ValueKey('tab_coach'),
+              icon: Icons.chat_bubble_outline_rounded,
+              label: 'ELIOS AI coach',
+              small: true,
+              onTap: () => setState(() => _coach = true),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 6),
+      Expanded(child: _coach ? widget.coach : widget.explanation),
+    ],
+  );
 }
 
 class _ResultBanner extends StatelessWidget {
@@ -2048,9 +2157,13 @@ class _DocumentState extends State<_Document> {
               ),
             ),
           ),
-          Text(
-            'QUESTION ${s.questionIndex + 1} OF ${s.totalQuestions} · ${essay ? 'ESSAY' : _level(s.difficulty).toUpperCase()}',
-            style: label(),
+          Flexible(
+            child: Text(
+              'QUESTION ${s.questionIndex + 1} OF ${s.totalQuestions} · ${essay ? 'ESSAY' : _level(s.difficulty).toUpperCase()}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: label(),
+            ),
           ),
         ],
       ),
@@ -2114,9 +2227,11 @@ class _DocumentState extends State<_Document> {
               ),
             ),
             const SizedBox(width: 8),
-            Text(
-              'Loading the explanation…',
-              style: TextStyle(color: p.textSecondary, fontSize: 13),
+            Flexible(
+              child: Text(
+                'Loading the explanation…',
+                style: TextStyle(color: p.textSecondary, fontSize: 13),
+              ),
             ),
           ],
         ),
@@ -2717,6 +2832,7 @@ Future<void> _pickCorrectItem(
       );
     },
   );
-  if (picked != null)
+  if (picked != null) {
     notifier.correctItem(picked.name, category: picked.category);
+  }
 }
