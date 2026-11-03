@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:ui' show Rect;
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -89,8 +90,11 @@ class PhotoIdentification {
   final String? category;
   final String? failure;
 
-  const PhotoIdentification({required this.item, this.material, this.category}) : failure = null;
-  const PhotoIdentification.failed(this.failure) : item = null, material = null, category = null;
+  /// Gemini's tight box around the item, as fractions (0..1) of the sent photo; null if none.
+  final Rect? box;
+
+  const PhotoIdentification({required this.item, this.material, this.category, this.box}) : failure = null;
+  const PhotoIdentification.failed(this.failure) : item = null, material = null, category = null, box = null;
 }
 
 /// Cloud AI (Gemini) for the scan quiz: identify, questions, essay grading and
@@ -335,11 +339,13 @@ class AiQuizService {
   /// prompt to bias it.
   Future<PhotoIdentification> identifyItem(Uint8List imageBytes, {ScanDiagnostics? diagnostics}) async {
     // E1: shorter, and no can among the examples (a battery was named a can).
+    // 0180: also a tight box_2d (Gemini's native [ymin, xmin, ymax, xmax], 0-1000); hands are not the item.
     const prompt =
-        'Sebutkan benda utama di foto, spesifik: "ponsel", "baterai", "kardus", '
+        'Sebutkan benda utama di foto (bukan tangan), spesifik: "ponsel", "baterai", "kardus", '
         '"botol plastik PET", "kulit pisang", "kertas". Jika tidak jelas tulis "tidak jelas". '
         'Balas HANYA JSON: {"item": "nama singkat", "material": "bahan", '
-        '"category": "organik"|"anorganik"|"B3"|"residu"}.';
+        '"category": "organik"|"anorganik"|"B3"|"residu", '
+        '"box_2d": [ymin, xmin, ymax, xmax]} dengan box_2d kotak rapat benda itu, skala 0-1000.';
     final identifyClock = Stopwatch()..start();
     diagnostics?.event('identify_request', {'requestId': '${diagnostics.id}/identify'});
     final raw = await _send(prompt, imageBytes: imageBytes, diagnostics: diagnostics);
@@ -357,13 +363,25 @@ class AiQuizService {
     if (item.isEmpty || item.toLowerCase().contains('tidak jelas')) {
       return const PhotoIdentification.failed('Benda di foto belum dikenali. Dekatkan kamera, pastikan terang, lalu scan lagi.');
     }
+    final box = parseBox(map?['box_2d']);
     _log('photo identified as "$item"');
-    TesterLog.instance.log('ai', 'identified item="$item" material="${map?['material']}" category="${map?['category']}" photo=${imageBytes.length}B');
+    TesterLog.instance.log('ai', 'identified item="$item" material="${map?['material']}" category="${map?['category']}" box=$box photo=${imageBytes.length}B');
     return PhotoIdentification(
       item: item,
       material: map?['material'] is String ? (map!['material'] as String).trim() : null,
       category: map?['category'] is String ? (map!['category'] as String).trim() : null,
+      box: box,
     );
+  }
+
+  /// Gemini's `box_2d` ([ymin, xmin, ymax, xmax], 0-1000) as fractions of the photo,
+  /// or null when it is missing, malformed or a sliver (under 5 % of a side).
+  @visibleForTesting
+  static Rect? parseBox(Object? raw) {
+    if (raw is! List || raw.length != 4 || raw.any((v) => v is! num)) return null;
+    final [y0, x0, y1, x1] = [for (final v in raw) ((v as num) / 1000).clamp(0.0, 1.0).toDouble()];
+    if (x1 - x0 < .05 || y1 - y0 < .05) return null;
+    return Rect.fromLTRB(x0, y0, x1, y1);
   }
 
   /// Builds a question prompt and tries the model, up to 2 attempts on an

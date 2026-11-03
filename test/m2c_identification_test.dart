@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'dart:ui' show Rect;
 import 'package:elio/services/scan_record_store.dart';
 import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
@@ -151,7 +152,7 @@ void main() {
       expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.identifying);
       await _until(() => images.isNotEmpty);
       final crop = img.decodeImage(images.single!)!;
-      expect((crop.width, crop.height), (20, 10));
+      expect((crop.width, crop.height), (30, 16)); // padded 25 % per side for Gemini's box (0180)
       identify.complete(
         '{"item":"kaleng aluminium","material":"aluminium","category":"anorganik"}',
       );
@@ -163,7 +164,7 @@ void main() {
       expect(images.where((image) => image != null), hasLength(1));
     });
 
-    test('identification keeps the original crop while History saves the padded photo', () async {
+    test('Gemini gets the padded crop; with no box the popup and History keep the detector crops', () async {
       final root = await Directory.systemTemp.createTemp('d1-split-photo-');
       const channel = MethodChannel('plugins.flutter.io/path_provider');
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -185,7 +186,7 @@ void main() {
       final submitted = images.single!;
       final source = img.decodeImage(frame.cleanBytes!)!;
       expect(submitted, orderedEquals(img.encodeJpg(
-        img.copyCrop(source, x: 10, y: 5, width: 20, height: 10))));
+        img.copyCrop(source, x: 5, y: 2, width: 30, height: 16))));
       identify.complete('{"item":"botol plastik","material":"plastik","category":"anorganik"}');
       await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
       quiz.state = quiz.state.copyWith(
@@ -204,7 +205,55 @@ void main() {
       expect(saved, orderedEquals(prepareDetectionCrop((frame, _box)).historyBytes!));
       final decoded = img.decodeJpg(saved)!;
       expect((decoded.width, decoded.height), (22, 12));
-      expect(c.read(wasteQuizProvider).cropBytes, orderedEquals(submitted));
+      expect(c.read(wasteQuizProvider).cropBytes, orderedEquals(img.encodeJpg(
+        img.copyCrop(source, x: 10, y: 5, width: 20, height: 10))));
+    });
+
+    test('a Gemini box replaces the popup and History photo with its own crop', () async {
+      final root = await Directory.systemTemp.createTemp('d1-ai-box-');
+      const channel = MethodChannel('plugins.flutter.io/path_provider');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (_) async => root.path);
+      final store = ScanRecordStore(customFile: File('${root.path}/records.json'));
+      ScanRecordStore.setInstanceForTesting(store);
+      addTearDown(() async {
+        quiz.dismiss();
+        await service.cancel();
+        await pumpEventQueue();
+        ScanRecordStore.setInstanceForTesting(null);
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null);
+        await root.delete(recursive: true);
+      });
+      quiz.onRobotLocked(_frame(), _box);
+      await _until(() => images.isNotEmpty);
+      final submitted = images.single!;
+      identify.complete('{"item":"botol plastik","material":"plastik","category":"anorganik",'
+          '"box_2d":[0,0,500,500]}');
+      await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
+      final expected = cropToBox((submitted, const Rect.fromLTRB(0, 0, .5, .5)))!;
+      final shown = img.decodeJpg(c.read(wasteQuizProvider).cropBytes!)!;
+      expect((shown.width, shown.height), (16, 9)); // half of 30x16 plus a 5 % margin
+      expect(c.read(wasteQuizProvider).cropBytes, orderedEquals(expected));
+      quiz.state = quiz.state.copyWith(
+        difficulty: QuizDifficulty.easy, questionIndex: 0,
+        question: const GeneratedQuestion(
+          type: QuizQuestionType.multipleChoice, question: 'Pilah botol?',
+          options: ['Daur ulang', 'Bakar'], correctIndex: 0,
+        ),
+      );
+      quiz.selectOption(0);
+      quiz.nextQuestion();
+      await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.finished);
+      expect(File(store.records.single.cropPhotoPath!).readAsBytesSync(), orderedEquals(expected));
+    });
+
+    test('parseBox reads box_2d and rejects bad or sliver boxes', () {
+      expect(AiQuizService.parseBox([100, 200, 600, 900]), const Rect.fromLTRB(.2, .1, .9, .6));
+      expect(AiQuizService.parseBox([-50, 0, 1200, 1000]), const Rect.fromLTRB(0, 0, 1, 1));
+      for (final bad in [null, 'x', [1, 2, 3], [0, 0, 'a', 10], [500, 0, 520, 1000], [0, 600, 1000, 600]]) {
+        expect(AiQuizService.parseBox(bad), isNull, reason: '$bad');
+      }
     });
 
     for (final detectorHazard in [true, false]) {
@@ -224,7 +273,8 @@ void main() {
           await _until(() => images.isNotEmpty);
           identify.complete(
             detectorHazard
-                ? '{"item":"kotak plastik","category":"residu"}'
+                // no bin from the AI: nothing clears the detector's E_Waste (0180)
+                ? '{"item":"kotak plastik"}'
                 : '{"item":"baterai","category":"B3"}',
           );
           await _until(
@@ -233,9 +283,6 @@ void main() {
                 WasteQuizPhase.confirmingHazard,
           );
           expect(c.read(wasteQuizProvider).scan?.category?.id, 'hazardous');
-          if (detectorHazard) {
-            expect(c.read(wasteQuizProvider).scan?.rawCategory, 'residu');
-          }
           expect(
             images,
             hasLength(1),
@@ -329,6 +376,16 @@ void main() {
         identify.complete('{"item":"laptop","category":"anorganik"}');
         await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.confirmingHazard);
         expect(logged('category_mismatch'), isEmpty);
+      });
+
+      test('0180: E_Waste + AI "kardus" anorganik goes straight to the quiz, no hazard or mismatch card', () async {
+        quiz.onRobotLocked(_frame(), const TrackedDetection(label: 'E_Waste', x: 40, y: 20, w: 40, h: 20));
+        await _until(() => images.isNotEmpty);
+        identify.complete('{"item":"kardus","material":"kertas","category":"anorganik"}');
+        await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
+        expect(c.read(wasteQuizProvider).scan?.category?.id, 'inorganic');
+        expect(logged('category_mismatch'), isEmpty);
+        expect(logged('resolved'), contains('"aiClearedHazard":true'));
       });
 
       test('Scan ulang on the mismatch card leaves no late quiz', () async {

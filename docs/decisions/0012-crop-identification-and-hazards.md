@@ -25,7 +25,8 @@ first crop does not require switching from a text-only loaded model.
 
 If either the detector or Gemma/keyword classification says hazardous, the
 session enters `confirmingHazard` before any question generation. A detector
-E_Waste classification cannot be downgraded by Gemma. The popup warns about
+E_Waste classification cannot be downgraded by Gemma (amended by 0180: the AI may clear it with an
+explicit organik/anorganik/residu bin and no hazard words in its item). The popup warns about
 B3 handling and offers “Lanjut kuis” (generate question 1) or “Scan ulang”
 (dismiss). Label-only and device-photo sessions use the same confirmation.
 Confirmation acknowledges continuing an educational quiz; it does not

@@ -355,12 +355,14 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     }
     _cropBytes = bytes;
     _historyPhotoBytes = crop.historyBytes ?? bytes;
-    await _identifyThenQuiz(bytes, generation, detectorLabel: detection.label,
-        detectorScore: detection.score, frameId: frame.frameId, diagnostics: diagnostics);
+    await _identifyThenQuiz(crop.identifyBytes ?? bytes, generation, detectorLabel: detection.label,
+        detectorScore: detection.score, frameId: frame.frameId, diagnostics: diagnostics, refineCrop: true);
   }
 
+  /// [refineCrop]: the photo is a padded robot crop, so Gemini's box replaces the detector's crop (0180).
   Future<void> _identifyThenQuiz(Uint8List imageBytes, int generation,
-      {String? detectorLabel, double? detectorScore, int? frameId, ScanDiagnostics? diagnostics}) async {
+      {String? detectorLabel, double? detectorScore, int? frameId, ScanDiagnostics? diagnostics,
+      bool refineCrop = false}) async {
     final result = await AiQuizService.instance.identifyItem(imageBytes, diagnostics: diagnostics);
     diagnostics?.event('identify_result', {'item': result.item, 'material': result.material,
       'category': result.category, 'failure': result.failure, 'stale': generation != _generation});
@@ -382,12 +384,31 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       );
       return;
     }
+    final box = result.box;
+    if (refineCrop && box != null) {
+      final refined = await compute(cropToBox, (imageBytes, box));
+      diagnostics?.event('ai_box', {'box': [box.left, box.top, box.right, box.bottom], 'valid': refined != null});
+      if (generation != _generation) return;
+      if (refined != null) {
+        _cropBytes = refined;
+        _historyPhotoBytes = refined;
+        state = state.copyWith(cropBytes: refined);
+      }
+    }
     final detectorHazard = detectorLabel != null &&
         ScannedWaste.fromLabel(detectorLabel).category?.id == 'hazardous';
-    final scan = ScannedWaste.fromLabel(item, material: result.material,
-        categoryHint: result.category, hazardousEvidence: detectorHazard, detectorLabel: detectorLabel);
+    // 0180 (owner, 3 Nov): an AI answer with an explicit non-B3 bin and no hazard words in its item
+    // clears the detector's E_Waste (a cardboard box printed with a camera was locked as E_Waste).
+    final aiClearsHazard = detectorHazard &&
+        const {'organik', 'anorganik', 'residu'}.contains(result.category?.toLowerCase().trim()) &&
+        ScannedWaste.fromLabel(item, categoryHint: result.category).category?.id != 'hazardous';
+    if (aiClearsHazard) {
+      TesterLog.instance.log('scan', 'detector $detectorLabel cleared by AI "$item" (${result.category})');
+    }
+    final scan = ScannedWaste.fromLabel(item, material: result.material, categoryHint: result.category,
+        hazardousEvidence: detectorHazard && !aiClearsHazard, detectorLabel: detectorLabel);
     diagnostics?.event('resolved', {'item': scan.displayName, 'category': scan.category?.id,
-      'detectorHazard': detectorHazard, 'hazard': scan.category?.id == 'hazardous'});
+      'detectorHazard': detectorHazard, 'aiClearedHazard': aiClearsHazard, 'hazard': scan.category?.id == 'hazardous'});
     state = state.copyWith(scan: scan);
     _scanClock = Stopwatch()..start();
     if (scan.category?.id == 'hazardous') {
@@ -395,7 +416,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       return;
     }
     // Hazard wins above; any other detector/AI disagreement waits for the user.
-    if (detectorLabel != null && ScannedWaste.categoryMismatch(detectorLabel, result.category)) {
+    if (!aiClearsHazard && detectorLabel != null && ScannedWaste.categoryMismatch(detectorLabel, result.category)) {
       final detectorChoice = ScannedWaste.fromLabel(item, material: result.material,
           categoryHint: ScannedWaste.detectorCategory(detectorLabel), detectorLabel: detectorLabel);
       _detectorChoice = detectorChoice;
