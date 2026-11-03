@@ -1004,7 +1004,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (photoBytes != null) {
       try {
         final dir = await getApplicationDocumentsDirectory();
-        final scansDir = Directory('${dir.path}/scans');
+        final scansDir = Directory('${dir.path}/$scanPhotosDirName');
         if (!scansDir.existsSync()) scansDir.createSync(recursive: true);
         final file = File('${scansDir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.jpg');
         file.writeAsBytesSync(photoBytes, flush: true);
