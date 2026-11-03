@@ -139,7 +139,7 @@ void main() {
         expect(find.text('Not connected yet'), findsOneWidget);
         expect(find.text('Offline'), findsOneWidget);
         expect(find.text('—'), findsOneWidget, reason: 'no robot battery value: never a fake one');
-        expect(find.text('Join the ELIOS Wi-Fi on this phone first, then tap Connect now.'), findsOneWidget);
+        expect(find.text('Put ELIO and this phone on the same Wi-Fi or hotspot, then tap Connect now.'), findsOneWidget);
         expect(_enabled(t, 'Connect now'), isTrue);
         expect(_enabled(t, 'Disconnect'), isFalse);
         expect(find.text('Activate ELIOS AI'), findsOneWidget);

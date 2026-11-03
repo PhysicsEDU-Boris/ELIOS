@@ -2,10 +2,10 @@
 # Derived from the owner's Maixcam.txt reference; see README.md for its hash.
 # Clean pixels are encoded before drawing; annotated preview remains unchanged.
 # Hardware behavior is inherited from that reference, not deployment-verified.
-# WiFi (AP or STA) is set up by the OS; this script only reads its status.
+# WiFi (AP or STA) is set up by the OS; only the "Wi-Fi setup" QR screen changes it.
 
 from maix import image, display, camera, touchscreen, nn, app, tensor, network, time as mtime
-import json, asyncio, websockets, base64, math, hashlib
+import json, asyncio, websockets, base64, math, hashlib, os, subprocess, threading
 import numpy as np
 
 # Clean vision protocol: image stays annotated for old preview clients.
@@ -44,6 +44,122 @@ def net_cards(now_ms):
         ip, ssid = "", "--"
     _net["ssid"], _net["ip"] = ssid, ip or "--"
     return _net["ssid"], _net["ip"]
+
+# ── Wi-Fi setup by QR (decision 0178) ────────────────────────────────────────
+# The user taps "Wi-Fi setup" and shows a standard WIFI: QR (ELIOS app, or
+# Android's hotspot "Share" QR). After a tap on Join, /boot/wifi.* is rewritten
+# the way /opt/scripts/wifi.sh reads it. No IP within JOIN_TIMEOUT_S puts the
+# old files back, so a wrong password never strands the robot.
+BOOT_DIR = "/boot"
+# Credentials first, markers last: wifi.sta is what switches the mode.
+WIFI_FILES = ("wifi.ssid", "wifi.pass", "wifi.ap", "wifi.sta")
+JOIN_TIMEOUT_S = 45
+SETUP_SCAN_MS = 90000
+
+def parse_wifi_qr(text):
+    """(ssid, password) from a WIFI:T:WPA;S:...;P:...;; QR. ValueError says why not."""
+    if not text.startswith("WIFI:"):
+        raise ValueError("Not a Wi-Fi QR")
+    fields, key, buf, s, i = {}, None, "", text[5:], 0
+    while i < len(s):
+        ch = s[i]
+        if ch == "\\" and i + 1 < len(s):
+            buf += s[i + 1]
+            i += 2
+            continue
+        if ch == ":" and key is None:
+            key, buf = buf.upper(), ""
+        elif ch == ";":
+            if key is not None:
+                fields[key] = buf
+            key, buf = None, ""
+        else:
+            buf += ch
+        i += 1
+    ssid, pw = fields.get("S", ""), fields.get("P", "")
+    if fields.get("T", "WPA").upper() in ("NOPASS", "WEP") or not pw:
+        raise ValueError("Needs a WPA password (open/WEP not supported)")
+    if not 1 <= len(ssid.encode("utf-8")) <= 32 or any(ord(c) < 32 for c in ssid):
+        raise ValueError("Wi-Fi name must be 1-32 bytes")
+    if not 8 <= len(pw) <= 63 or any(not 32 <= ord(c) < 127 for c in pw):
+        raise ValueError("Password must be 8-63 plain characters")
+    return ssid, pw
+
+def _read_wifi_files(boot):
+    files = {}
+    for n in WIFI_FILES:
+        p = os.path.join(boot, n)
+        if os.path.exists(p):
+            with open(p, "rb") as f:
+                files[n] = f.read()
+    return files
+
+def _write_wifi_files(boot, files):
+    """Make /boot/wifi.{ssid,pass,ap,sta} exactly `files` (missing name = deleted)."""
+    for n in WIFI_FILES:
+        p = os.path.join(boot, n)
+        if n in files:
+            with open(p + ".tmp", "wb") as f:
+                f.write(files[n])
+            os.replace(p + ".tmp", p)
+        elif os.path.exists(p):
+            os.remove(p)
+    os.sync()
+
+def _run(args):
+    try:
+        subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
+    except Exception as e:
+        print("[WiFi]", args[0], "failed:", e)
+
+def _restart_wifi(run):
+    run(["systemctl", "stop", "wifi.service"])
+    # wifi.sh stop leaves hostapd and the wlan0 DHCP server up, and its start
+    # gives up while the driver is still loaded: clear all three first.
+    run(["pkill", "hostapd"])
+    run(["pkill", "-f", "udhcpd -S /etc/udhcpd.wlan0.conf"])
+    run(["ip", "addr", "flush", "dev", "wlan0"])
+    run(["rmmod", "aic8800_fdrv"])
+    run(["rmmod", "aic8800_bsp"])
+    run(["systemctl", "start", "--no-block", "wifi.service"])
+    run(["systemctl", "restart", "udhcpc.service"])
+
+def _wait_for_ip(want_ap, timeout_s):
+    """The wlan0 IP once it is up in the wanted mode, or "" after timeout_s."""
+    end = mtime.ticks_ms() + timeout_s * 1000
+    while mtime.ticks_ms() < end:
+        mtime.sleep_ms(1000)
+        try:
+            w = network.wifi.Wifi()
+            ip = w.get_ip()
+            if ip and w.is_ap_mode() == want_ap and (want_ap or w.is_connected()):
+                return ip
+        except Exception:
+            pass
+    return ""
+
+def apply_wifi(ssid, password, boot=BOOT_DIR, run=None, wait=None):
+    """Join ssid; if that gives no IP, restore the old files. (ok, ip or message)."""
+    run, wait = run or _run, wait or _wait_for_ip
+    if os.path.exists(os.path.join(boot, "wpa_supplicant.conf")):
+        return False, "/boot/wpa_supplicant.conf overrides this; remove it first"
+    old = _read_wifi_files(boot)
+    try:
+        _write_wifi_files(boot, {"wifi.ssid": ssid.encode("utf-8"),
+                                 "wifi.pass": password.encode("ascii"), "wifi.sta": b""})
+        _restart_wifi(run)
+        ip = wait(False, JOIN_TIMEOUT_S)
+        if ip:
+            return True, ip
+        why = "no connection"
+    except Exception as e:
+        why = str(e)
+    print("[WiFi] join failed ({}), restoring the previous Wi-Fi".format(why))
+    _write_wifi_files(boot, old)
+    _restart_wifi(run)
+    back = wait("wifi.ap" in old and "wifi.sta" not in old, JOIN_TIMEOUT_S)
+    return False, "Couldn't join {}. Back on the old Wi-Fi{}".format(
+        ssid[:20], " ({})".format(back) if back else "")
 
 # ── AI Model ──────────────────────────────────────────────────────────────────
 # Your trained waste-segmentation model (converted from
@@ -373,6 +489,13 @@ CY4   = CY3 + AH + 10
 FORCE_DC_Y = CY4 + AH + 20
 FORCE_DC_H = 40
 
+# Bottom row: "Wi-Fi setup" on the dashboard; Cancel/Join/OK on the setup screens.
+BTN_H     = 44
+BTN_Y     = H - PAD - BTN_H
+SETUP_BTN = (PAD, BTN_Y, INNER, BTN_H)
+LEFT_BTN  = (PAD, BTN_Y, CW, BTN_H)
+RIGHT_BTN = (PAD+CW+12, BTN_Y, CW, BTN_H)
+
 # ── App state ─────────────────────────────────────────────────────────────────
 tick             = 0
 force_dc_pressed = False
@@ -385,6 +508,10 @@ ws_clients    = set()         # connected websocket clients
 stream_cam    = None          # camera used for streaming
 _ws_loop      = None          # asyncio event loop for WS server
 _ws_server    = None
+cam_lock      = threading.Lock()  # stream_cam: WS pusher thread vs the QR scan
+
+# Wi-Fi setup screen: stage None (dashboard) | scan | confirm | joining | done
+setup = {"stage": None, "until": 0, "ssid": "", "pw": "", "msg": "", "ok": False}
 
 # ── Stream resolution — FIXED, no runtime switching ──────────────────────────
 # The model's own native input size when it loaded successfully, so the
@@ -540,12 +667,12 @@ async def ws_frame_pusher():
     last_render_objs = []  # full-stream-space: x, y, w, h, label, score, seg_mask
 
     while True:
-        if ws_streaming and ws_clients:
+        if ws_streaming and ws_clients and setup["stage"] != "scan":
             try:
-                if stream_cam is None:
-                    stream_cam, cam_w, cam_h = _open_stream_camera(*STREAM_RESOLUTION)
-
-                frame = stream_cam.read()
+                with cam_lock:
+                    if stream_cam is None:
+                        stream_cam, cam_w, cam_h = _open_stream_camera(*STREAM_RESOLUTION)
+                    frame = stream_cam.read()
                 frame_id += 1
                 detection_frame_id = None
                 clean_dets = []
@@ -799,6 +926,85 @@ def draw_dashboard(c, t):
     elif not model_loaded:
         txt(c, PAD, FORCE_DC_Y, "Model load error: {}".format(model_load_error[:48]), C_RED, sc=0.58)
 
+    # Only while no app is connected: the QR scan needs the stream camera.
+    if not ws_clients:
+        button(c, SETUP_BTN, "Wi-Fi setup", C_GREEN, filled=False)
+
+def button(c, rect, label, col, filled=True):
+    x, y, w, h = rect
+    rrect(c, x, y, w, h, h//2, col if filled else C_CARD)
+    rrect(c, x, y, w, h, h//2, col, fill=False, th=1)
+    txt(c, x+(w-len(label)*8)//2, y+(h-16)//2, label, C_WHITE if filled else col, sc=0.7)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DRAW: WI-FI SETUP (scan QR → confirm → joining → done)
+# ══════════════════════════════════════════════════════════════════════════════
+def draw_setup(c, t):
+    global stream_cam
+    st = setup["stage"]
+    c.draw_rect(0,0,W,H, color=C_BG, thickness=-1)
+    txt(c, PAD, 10, "Wi-Fi setup", C_GREEN, sc=1.1)
+    if st == "scan":
+        with cam_lock:
+            if stream_cam is None:
+                stream_cam, _, _ = _open_stream_camera(*STREAM_RESOLUTION)
+            frame = stream_cam.read()
+        for qr in frame.find_qrcodes():
+            try:
+                setup["ssid"], setup["pw"] = parse_wifi_qr(qr.payload())
+                setup["stage"], setup["msg"] = "confirm", ""
+            except ValueError as e:
+                setup["msg"] = str(e)
+        top, room = 44, BTN_Y - 44 - 50
+        s = min(W / frame.width(), room / frame.height())
+        fw, fh = int(frame.width()*s), int(frame.height()*s)
+        c.draw_image((W-fw)//2, top, frame.resize(fw, fh))
+        txt(c, PAD, top+fh+6, "Show the Wi-Fi QR to the camera", C_MUTED, sc=0.62)
+        if setup["msg"]:
+            txt(c, PAD, top+fh+26, setup["msg"][:44], C_RED, sc=0.62)
+        button(c, SETUP_BTN, "Cancel", C_MUTED, filled=False)
+    elif st == "confirm":
+        txt(c, PAD, 70,  "Join this Wi-Fi?", C_MUTED, sc=0.8)
+        txt(c, PAD, 100, setup["ssid"][:24], C_GREEN, sc=1.2)
+        txt(c, PAD, 150, "ELIO leaves the current Wi-Fi.", C_MUTED, sc=0.62)
+        txt(c, PAD, 172, "If it can't connect in {} s,".format(JOIN_TIMEOUT_S), C_MUTED, sc=0.62)
+        txt(c, PAD, 194, "the old Wi-Fi comes back.", C_MUTED, sc=0.62)
+        button(c, LEFT_BTN, "Cancel", C_MUTED, filled=False)
+        button(c, RIGHT_BTN, "Join", C_GREEN)
+    elif st == "joining":
+        txt(c, PAD, 70,  "Joining" + "." * (t//15 % 4), C_BLUE, sc=0.9)
+        txt(c, PAD, 100, setup["ssid"][:24], C_GREEN, sc=1.2)
+        txt(c, PAD, 150, "Up to {} s. The app link drops".format(JOIN_TIMEOUT_S*2), C_MUTED, sc=0.62)
+        txt(c, PAD, 172, "while Wi-Fi restarts.", C_MUTED, sc=0.62)
+    else:
+        if setup["ok"]:
+            txt(c, PAD, 70,  "Connected", C_GREEN, sc=1.1)
+            txt(c, PAD, 110, setup["ssid"][:24], C_GREEN, sc=0.9)
+            txt(c, PAD, 150, "IP  " + setup["msg"], C_GREEN, sc=1.1)
+            txt(c, PAD, 196, "In the app: Find ELIO, or enter", C_MUTED, sc=0.62)
+            txt(c, PAD, 218, "this IP with port {}.".format(WS_PORT), C_MUTED, sc=0.62)
+        else:
+            txt(c, PAD, 70, "Not connected", C_RED, sc=1.1)
+            msg = setup["msg"]
+            txt(c, PAD, 110, msg[:34], C_RED, sc=0.62)
+            txt(c, PAD, 132, msg[34:68], C_RED, sc=0.62)
+        button(c, SETUP_BTN, "OK", C_GREEN)
+
+def _join_worker(ssid, pw):
+    print("[WiFi] joining", ssid)
+    ok, msg = apply_wifi(ssid, pw)
+    print("[WiFi] result:", ok, msg)
+    setup.update(stage="done", ok=ok, msg=msg, pw="")
+    _net["at"] = None
+
+def setup_touch(tx, ty):
+    st = setup["stage"]
+    if st == "confirm" and hit(tx, ty, *RIGHT_BTN):
+        setup["stage"] = "joining"
+        threading.Thread(target=_join_worker, args=(setup["ssid"], setup["pw"]), daemon=True).start()
+    elif (st in ("scan", "done") and hit(tx, ty, *SETUP_BTN)) or (st == "confirm" and hit(tx, ty, *LEFT_BTN)):
+        setup.update(stage=None, pw="", msg="")
+
 # ══════════════════════════════════════════════════════════════════════════════
 # BOOT — AP is already running via OS-level hostapd/dnsmasq; just start the WS
 # server on top of it.
@@ -806,7 +1012,7 @@ def draw_dashboard(c, t):
 start_ws_server_in_thread(WS_PORT)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# MAIN LOOP — dashboard only, no scanning/connecting states
+# MAIN LOOP — dashboard, or the Wi-Fi setup screens while setup["stage"] is set
 # ══════════════════════════════════════════════════════════════════════════════
 while not app.need_exit():
     tick += 1
@@ -815,6 +1021,26 @@ while not app.need_exit():
     tx,ty,pressed = ts.read()
     just_released = last_pressed and not pressed
     last_pressed  = pressed
+
+    if setup["stage"]:
+        if setup["stage"] == "scan" and mtime.ticks_ms() > setup["until"]:
+            setup.update(stage=None, msg="")
+            continue
+        c = image.Image(W,H)
+        try:
+            draw_setup(c,t)
+        except Exception as e:
+            print("[WiFi] setup screen error:", e)
+            setup.update(stage="done", ok=False, pw="", msg="Camera error: {}".format(e))
+        disp.show(c)
+        mtime.sleep_ms(20)
+        if just_released:
+            setup_touch(tx,ty)
+        continue
+
+    if just_released and not ws_clients and hit(tx,ty,*SETUP_BTN):
+        setup.update(stage="scan", until=mtime.ticks_ms() + SETUP_SCAN_MS, msg="")
+        continue
 
     force_dc_pressed = (
         ws_status != "Idle" and pressed and

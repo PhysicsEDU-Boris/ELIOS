@@ -12,12 +12,14 @@ import '../providers/config_link_provider.dart';
 import '../providers/esp_config_provider.dart';
 import '../providers/robot_provider.dart';
 import '../services/gemma_quiz_service.dart';
+import '../services/robot_wifi.dart';
 import '../theme/elio_theme.dart';
 import '../theme/elio_tokens.dart';
 import '../utils/system_ui.dart';
 import '../widgets/learn/learn_ui.dart';
 import '../widgets/tester_panel.dart';
 import 'config/config_parts.dart';
+import 'config/robot_wifi_qr_sheet.dart';
 import 'control_screen.dart';
 import 'device_scan_screen.dart';
 
@@ -50,6 +52,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   final _connectionCard = GlobalKey();
 
   bool saveDefault = true;
+  bool _finding = false;
 
   /// Guards against stomping on user typing when espConfigProvider rebuilds.
   bool _configPopulated = false;
@@ -97,6 +100,19 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   }
 
   void _disconnect() => ref.read(configLinkProvider.notifier).disconnect();
+
+  /// The phone hotspot gives the robot a new IP after a restart; look for it.
+  Future<void> _find() async {
+    setState(() => _finding = true);
+    final ip = await findRobot(port: int.tryParse(_port.text) ?? EspConfig.maixCamPort);
+    if (!mounted) return;
+    setState(() => _finding = false);
+    if (ip != null) _ip.text = ip;
+    ScaffoldMessenger.of(context)
+      ..removeCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+          content: Text(ip != null ? 'Found ELIO at $ip' : 'ELIO not found on this Wi-Fi')));
+  }
 
   /// The failure snackbar is only for a card the user scrolled away from;
   /// the inline alert already says it otherwise.
@@ -321,6 +337,31 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                 ),
               ],
             ),
+            if (view != LinkView.connected) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: ConfigButton(
+                      label: _finding ? 'Searching…' : 'Find ELIO',
+                      icon: Icons.travel_explore_rounded,
+                      busy: _finding,
+                      primary: false,
+                      onPressed: connecting || _finding ? null : _find,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ConfigButton(
+                      label: 'Robot Wi-Fi QR',
+                      icon: Icons.qr_code_2_rounded,
+                      primary: false,
+                      onPressed: () => showRobotWifiQrSheet(context),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             if (view == LinkView.notConnected) ...[
               const SizedBox(height: 12),
               Container(
@@ -332,7 +373,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                     Icon(Icons.info_outline_rounded, size: 20, color: p.textSecondary),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text('Join the ELIOS Wi-Fi on this phone first, then tap Connect now.',
+                      child: Text('Put ELIO and this phone on the same Wi-Fi or hotspot, then tap Connect now.',
                           style: configCaption(p)),
                     ),
                   ],
