@@ -11,6 +11,7 @@
 
 - Research: SAM 3 model is free (SAM License) but needs a GPU or a paid API (fal $0.005/image). FPS fixes (decode filter, JPEG quality, thread, binary frames) need the owner's OK for firmware; camera was offline, time split is an estimate.
 - Built option B (owner's pick): identify gets a padded crop (box + 25 %/side) and returns `box_2d`; live scan re-crops popup + History photo from it; no backend/firmware change. Box tightness and added latency still to check on the phone (tester log `identified ... box=`).
+- Debug APK `666e7a1` (LIVE_SCAN=true) built in this worktree's `build/app/outputs/flutter-apk/`; not installed (phone and camera offline 3 Nov). Install with `adb install -r` (keeps data).
 
 ## Gemini cloud AI (3 Nov, `feat/gemini-cloud-ai`, decision 0179)
 
