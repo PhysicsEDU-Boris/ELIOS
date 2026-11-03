@@ -9,6 +9,7 @@ import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/services/gemma_quiz_service.dart';
 import 'package:elio/services/question_bank.dart';
 import 'package:elio/services/quiz_explanation_service.dart';
+import 'package:elio/services/quiz_pdf_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 final _mc = {
@@ -106,5 +107,11 @@ void main() {
     const fresh = QuizExplanation(summary: 's', correctAnswerReason: 'r', quote: 'q', bankId: 'x', sourcePage: '6');
     final back = QuizExplanation.fromJson(fresh.toJson());
     expect((back.quote, back.bankId, back.sourcePage), ('q', 'x', '6'));
+  });
+
+  test('History and the PDF cite the section, page and bank id', () {
+    const e = QuizExplanation(summary: 's', correctAnswerReason: 'r', sourceTitle: 'Bank Soal ELIO', sourceSection: '1.3', sourcePage: '6', bankId: 'organik-mc-01');
+    expect(QuizPdfService.sourceLine(e), 'Sumber: Bank Soal ELIO · bagian 1.3 · hal. 6 · organik-mc-01');
+    expect(QuizPdfService.sourceLine(const QuizExplanation(summary: 's', correctAnswerReason: 'r')), isNull);
   });
 }

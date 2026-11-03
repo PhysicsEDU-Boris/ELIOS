@@ -1069,7 +1069,11 @@ class _QuestionView extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: HSLColor.fromColor(fills[i]).withLightness(HSLColor.fromColor(fills[i]).lightness * 0.7).toColor(),
+                  color: HSLColor.fromColor(fills[i])
+                      .withLightness(
+                        HSLColor.fromColor(fills[i]).lightness * 0.7,
+                      )
+                      .toColor(),
                   offset: const Offset(0, 4),
                 ),
               ],
@@ -2095,7 +2099,10 @@ class _DocumentState extends State<_Document> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 132, child: Text(l, style: label())),
+          SizedBox(
+            width: MediaQuery.sizeOf(context).width < 520 ? 96 : 132,
+            child: Text(l, style: label()),
+          ),
           Expanded(
             child: Text(
               value,
