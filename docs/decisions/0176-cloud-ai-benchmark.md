@@ -1,6 +1,6 @@
 # 0176: Cloud AI benchmark and a free-tier fallback chain (spike)
 
-- Status: Proposed (no provider chosen; the owner decides)
+- Status: Accepted (owner, 3 Nov 2026): 3.5 Flash-Lite primary and the fallback chain below. Decisions 2-4 at the end are still open.
 - Date: 2026-11-03
 - Code: `tools/cloud_ai_bench/` only (script, README, `report.md`, `results.csv`). No app change.
 
@@ -39,7 +39,7 @@ to identify and 20-41 s per question
 
 ## Proposal
 
-**Primary: `gemini-3.5-flash-lite`.** It was the fastest and cheapest model that answered every
+**Primary: `gemini-3.5-flash-lite`** (accepted by the owner, 3 Nov). It was the fastest and cheapest model that answered every
 call, and it has the largest free daily limit (500). Its evidence is only 3 calls, so it must be
 confirmed before it is accepted.
 
@@ -65,7 +65,7 @@ On the free tier, the chain together gives about 1,060 calls per day and about 4
 
 ## Owner decisions
 
-1. **Primary and chain:** accept, reorder or replace them.
+1. ~~Primary and chain~~: accepted 3 Nov. Re-check if a full run changes the picture.
 2. **Free or paid tier for students:** on the free tier, Google may use the prompts and images to
    improve its products. A paid key also lifts the 20-per-day caps.
 3. **Where the key lives:** a key built into the app can be extracted. The chain should run in a
