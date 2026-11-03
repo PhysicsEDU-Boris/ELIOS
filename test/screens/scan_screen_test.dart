@@ -6,43 +6,53 @@ import 'package:elio/services/gemma_quiz_service.dart';
 import 'package:elio/theme/elio_dark_theme.dart';
 import 'package:elio/theme/elio_light_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../widgets/phone_harness.dart' show loadFonts, phoneSizes, savePng, shotKey;
+import '../widgets/phone_harness.dart'
+    show loadFonts, phoneSizes, savePng, shotKey;
 
 const _pngDir = String.fromEnvironment('R3_PNG');
 
-Future<List<String>> _pump(WidgetTester t, Size size, {required bool dark, required GemmaProgress gemma, bool ready = true}) async {
+Future<List<String>> _pump(
+  WidgetTester t,
+  Size size, {
+  required bool dark,
+  required GemmaProgress gemma,
+  bool ready = true,
+}) async {
   t.view.devicePixelRatio = 1;
   t.view.physicalSize = size;
   addTearDown(t.view.reset);
   final taps = <String>[];
   final wrap = dark ? ElioDarkTheme.wrap : ElioLightTheme.wrap;
   await t.pumpWidget(
-    RepaintBoundary(
-      key: shotKey,
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: wrap(
-          Builder(
-            builder: (context) => Scaffold(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              body: ScanScreenLayout(
-                ready: ready,
-                error: null,
-                cameraName: 'Back camera',
-                preview: const ColoredBox(color: Color(0xFF9CA3AF)),
-                capturing: false,
-                cropGeometry: DeviceScanScreenTestHook.cropGeometry(size),
-                onBack: () => taps.add('back'),
-                onHistory: () => taps.add('history'),
-                avatar: const SizedBox.square(dimension: 38),
-                onScan: () => taps.add('scan'),
-                onSwitchCamera: () => taps.add('switch'),
-                testLabels: const ['Botol plastik'],
-                onTestLabel: (l) => taps.add('test $l'),
-                gemma: ValueNotifier(gemma),
+    ProviderScope(
+      child: RepaintBoundary(
+        key: shotKey,
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          home: wrap(
+            Builder(
+              builder: (context) => Scaffold(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                body: ScanScreenLayout(
+                  ready: ready,
+                  error: null,
+                  cameraName: 'Back camera',
+                  preview: const ColoredBox(color: Color(0xFF9CA3AF)),
+                  capturing: false,
+                  cropGeometry: DeviceScanScreenTestHook.cropGeometry(size),
+                  onBack: () => taps.add('back'),
+                  onHistory: () => taps.add('history'),
+                  avatar: const SizedBox.square(dimension: 38),
+                  onScan: () => taps.add('scan'),
+                  onSwitchCamera: () => taps.add('switch'),
+                  testLabels: const ['Botol plastik'],
+                  onTestLabel: (l) => taps.add('test $l'),
+                  gemma: ValueNotifier(gemma),
+                ),
               ),
             ),
           ),
@@ -65,19 +75,40 @@ void main() {
     expect(g.panel, const Size(675, 412)); // the old 240 dp sidebar
     expect(g.box, const Size(260, 200));
     // Hard-coded from the pre-Q3 code for a 1280x720 photo.
-    expect(viewfinderCropRect(1280, 720, panel: g.panel, box: g.box), (x: 367, y: 150, w: 545, h: 419));
-    expect(viewfinderCropRect(640, 480, panel: g.panel, box: g.box), (x: 172, y: 126, w: 296, h: 228));
+    expect(viewfinderCropRect(1280, 720, panel: g.panel, box: g.box), (
+      x: 367,
+      y: 150,
+      w: 545,
+      h: 419,
+    ));
+    expect(viewfinderCropRect(640, 480, panel: g.panel, box: g.box), (
+      x: 172,
+      y: 126,
+      w: 296,
+      h: 228,
+    ));
   });
 
   for (final size in phoneSizes) {
     for (final dark in [false, true]) {
-      final tag = '${size.width.toInt()}x${size.height.toInt()} ${dark ? 'dark' : 'light'}';
+      final tag =
+          '${size.width.toInt()}x${size.height.toInt()} ${dark ? 'dark' : 'light'}';
       Future<void> shot(WidgetTester t, String name) async {
-        if (_pngDir.isNotEmpty) await savePng(t, _pngDir, 'scan_${name}_${size.width.toInt()}x${size.height.toInt()}_${dark ? 'dark' : 'light'}');
+        if (_pngDir.isNotEmpty)
+          await savePng(
+            t,
+            _pngDir,
+            'scan_${name}_${size.width.toInt()}x${size.height.toInt()}_${dark ? 'dark' : 'light'}',
+          );
       }
 
       testWidgets('camera ready $tag', (t) async {
-        final taps = await _pump(t, size, dark: dark, gemma: const GemmaProgress(GemmaStatus.ready));
+        final taps = await _pump(
+          t,
+          size,
+          dark: dark,
+          gemma: const GemmaProgress(GemmaStatus.ready),
+        );
         expect(t.takeException(), isNull);
         expect(find.text('ELIOS AI ready'), findsOneWidget);
         expect(find.text('Scan & make quiz'), findsOneWidget);
@@ -93,26 +124,61 @@ void main() {
       });
 
       testWidgets('camera model loading $tag', (t) async {
-        final taps = await _pump(t, size, dark: dark, gemma: const GemmaProgress(GemmaStatus.loading));
+        final taps = await _pump(
+          t,
+          size,
+          dark: dark,
+          gemma: const GemmaProgress(GemmaStatus.loading),
+        );
         expect(t.takeException(), isNull);
         expect(find.text('Getting ELIOS AI ready…'), findsOneWidget);
         // The loader reports no progress: an indeterminate bar, no percentage.
-        expect(t.widget<LinearProgressIndicator>(find.byKey(const ValueKey('scan_ai_progress'))).value, isNull);
+        expect(
+          t
+              .widget<LinearProgressIndicator>(
+                find.byKey(const ValueKey('scan_ai_progress')),
+              )
+              .value,
+          isNull,
+        );
         expect(find.textContaining('%'), findsNothing);
         await t.tap(find.byKey(const ValueKey('scan_button')));
         expect(taps, isEmpty); // Scan stays disabled until ready
         await shot(t, 'loading');
       });
 
-      testWidgets('camera model installing shows the real percentage $tag', (t) async {
-        await _pump(t, size, dark: dark, gemma: const GemmaProgress(GemmaStatus.installing, installPercent: 62));
+      testWidgets('camera model installing shows the real percentage $tag', (
+        t,
+      ) async {
+        await _pump(
+          t,
+          size,
+          dark: dark,
+          gemma: const GemmaProgress(
+            GemmaStatus.installing,
+            installPercent: 62,
+          ),
+        );
         expect(t.takeException(), isNull);
         expect(find.text('ELIOS AI loading · 62%'), findsOneWidget);
-        expect(t.widget<LinearProgressIndicator>(find.byKey(const ValueKey('scan_ai_progress'))).value, 0.62);
+        expect(
+          t
+              .widget<LinearProgressIndicator>(
+                find.byKey(const ValueKey('scan_ai_progress')),
+              )
+              .value,
+          0.62,
+        );
       });
 
       testWidgets('camera skeleton $tag', (t) async {
-        await _pump(t, size, dark: dark, gemma: const GemmaProgress(GemmaStatus.loading), ready: false);
+        await _pump(
+          t,
+          size,
+          dark: dark,
+          gemma: const GemmaProgress(GemmaStatus.loading),
+          ready: false,
+        );
         expect(t.takeException(), isNull);
         expect(find.byKey(const ValueKey('scan_skeleton')), findsOneWidget);
         await shot(t, 'skeleton');
@@ -121,7 +187,12 @@ void main() {
   }
 
   testWidgets('no model: Scan still works in bank mode', (t) async {
-    final taps = await _pump(t, const Size(915, 412), dark: false, gemma: const GemmaProgress(GemmaStatus.missing));
+    final taps = await _pump(
+      t,
+      const Size(915, 412),
+      dark: false,
+      gemma: const GemmaProgress(GemmaStatus.missing),
+    );
     await t.tap(find.byKey(const ValueKey('scan_button')));
     expect(taps, ['scan']);
   });

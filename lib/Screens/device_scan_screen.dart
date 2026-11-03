@@ -265,7 +265,7 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
                         ),
                       ),
                     ),
-                  const WasteQuizPopup(),
+                  const WasteQuizPopup(showLauncher: false),
                 ],
               ),
             ),
@@ -464,6 +464,8 @@ class ScanScreenLayout extends StatelessWidget {
                                 ),
                               ),
                               const Spacer(),
+                              const QuizLauncherButton(),
+                              const SizedBox(width: 8),
                               AnimatedBuilder(
                                 animation: ScanRecordStore.instance,
                                 builder: (context, _) => PhonePill(

@@ -736,7 +736,9 @@ class _LoadingView extends ConsumerWidget {
       ),
       (
         'Picked a topic',
-        gemma
+        identifying
+            ? 'After the scan'
+            : gemma
             ? 'ELIOS AI topic'
             : (pool == null ? 'Question bank' : 'Bank pool · $pool'),
         identifying ? 0 : 2,
@@ -1433,6 +1435,44 @@ class _EssayInputView extends ConsumerWidget {
                           ],
                         ),
                       )
+                    : typingShort
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              key: const ValueKey('quiz_essay_field'),
+                              controller: controller,
+                              enabled: !state.essaySubmitted,
+                              expands: true,
+                              maxLines: null,
+                              textAlignVertical: TextAlignVertical.top,
+                              style: TextStyle(
+                                color: p.textPrimary,
+                                fontSize: 15,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Type your answer here…',
+                                filled: true,
+                                fillColor: p.surfaceRaised,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _GreenButton(
+                            key: const ValueKey('quiz_essay_submit'),
+                            label: 'Submit',
+                            icon: Icons.send_rounded,
+                            onTap: canSend
+                                ? () => n.submitEssay(controller.text)
+                                : null,
+                          ),
+                        ],
+                      )
                     : TextField(
                         key: const ValueKey('quiz_essay_field'),
                         controller: controller,
@@ -1452,38 +1492,42 @@ class _EssayInputView extends ConsumerWidget {
                         ),
                       ),
               ),
-              const SizedBox(height: 8),
-              _QuestionFooter(
-                state: state,
-                readText: q.question,
-                trailing: [
-                  Text(
-                    '$words / $wordLimit words',
-                    style: TextStyle(
-                      color: words > wordLimit ? p.errorText : p.textSecondary,
-                      fontSize: 12,
+              if (!typingShort) ...[
+                const SizedBox(height: 8),
+                _QuestionFooter(
+                  state: state,
+                  readText: q.question,
+                  trailing: [
+                    Text(
+                      '$words / $wordLimit words',
+                      style: TextStyle(
+                        color: words > wordLimit
+                            ? p.errorText
+                            : p.textSecondary,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  _Pill(
-                    key: const ValueKey('quiz_essay_clear'),
-                    icon: Icons.backspace_outlined,
-                    label: 'Clear',
-                    iconOnly: MediaQuery.sizeOf(context).width < 820,
-                    onTap: state.essaySubmitted ? null : controller.clear,
-                  ),
-                  const SizedBox(width: 8),
-                  _GreenButton(
-                    key: const ValueKey('quiz_essay_submit'),
-                    label: 'Submit',
-                    icon: Icons.send_rounded,
-                    onTap: canSend
-                        ? () => n.submitEssay(controller.text)
-                        : null,
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ),
+                    const SizedBox(width: 8),
+                    _Pill(
+                      key: const ValueKey('quiz_essay_clear'),
+                      icon: Icons.backspace_outlined,
+                      label: 'Clear',
+                      iconOnly: MediaQuery.sizeOf(context).width < 820,
+                      onTap: state.essaySubmitted ? null : controller.clear,
+                    ),
+                    const SizedBox(width: 8),
+                    _GreenButton(
+                      key: const ValueKey('quiz_essay_submit'),
+                      label: 'Submit',
+                      icon: Icons.send_rounded,
+                      onTap: canSend
+                          ? () => n.submitEssay(controller.text)
+                          : null,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                ),
+              ],
             ],
           );
         },
@@ -1740,10 +1784,13 @@ class _ReviewView extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
             Flexible(
-              child: _GreenButton(
-                key: const ValueKey('quiz_next'),
-                label: state.isLastQuestion ? 'Finish quiz' : 'Next question',
-                onTap: state.sendingChat ? null : n.nextQuestion,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: _GreenButton(
+                  key: const ValueKey('quiz_next'),
+                  label: state.isLastQuestion ? 'Finish quiz' : 'Next question',
+                  onTap: state.sendingChat ? null : n.nextQuestion,
+                ),
               ),
             ),
           ],
@@ -2162,6 +2209,7 @@ class _DocumentState extends State<_Document> {
               'QUESTION ${s.questionIndex + 1} OF ${s.totalQuestions} · ${essay ? 'ESSAY' : _level(s.difficulty).toUpperCase()}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
               style: label(),
             ),
           ),
