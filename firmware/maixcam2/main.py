@@ -861,7 +861,7 @@ def draw_dashboard(c, t):
     c.draw_line(0,38,W,38, color=C_DIV, thickness=1)
     dot = C_GREEN if (t%60)<30 else blend(0,105,76,249,250,248,0.35)
     c.draw_circle(PAD-2,19,5, color=dot, thickness=-1)
-    txt(c,PAD+10,8,"ELIO",C_GREEN,sc=1.35)
+    txt(c,PAD+10,8,"ELIOS",C_GREEN,sc=1.35)
     bx=W-PAD-26
     c.draw_rect(bx,10,22,14,color=C_GREEN,thickness=1)
     c.draw_rect(bx+22,14,3,6,color=C_GREEN,thickness=-1)
@@ -1043,7 +1043,7 @@ def draw_setup(c, t):
         rrect(c, PAD, 90, INNER, 64, 12, C_CARD)
         rrect(c, PAD, 90, INNER, 64, 12, C_GREEN, fill=False, th=2)
         txt(c, PAD+16, 108, setup["ssid"][:chars-4], C_GREEN, sc=1.15)
-        lines(c, PAD, 170, "ELIO leaves its current Wi-Fi. If it can't connect within "
+        lines(c, PAD, 170, "ELIOS leaves its current Wi-Fi. If it can't connect within "
               "{} s, the old Wi-Fi comes back by itself.".format(JOIN_TIMEOUT_S), C_MUTED, chars)
         button(c, LEFT_BTN, "Cancel", C_MUTED, filled=False)
         button(c, RIGHT_BTN, "Join", C_GREEN)

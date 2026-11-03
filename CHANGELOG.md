@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- The robot is called ELIOS: the MaixCAM2 dashboard header and Wi-Fi setup text, the Config screen (tab title, robot card, Find ELIOS, connection texts) and its Settings sheet now say ELIOS instead of ELIO.
+
 - Fix: the MaixCAM2 dashboard showed OFFLINE after the app disconnected, although the robot was still waiting for a connection. It now shows WAITING, and CONNECTED while any app is still connected.
 
 - Robot Wi-Fi by QR: on the camera, tap Wi-Fi setup and show a Wi-Fi QR (from Config > Robot Wi-Fi QR, or Android's hotspot Share QR). After you confirm, the robot joins that hotspot. If it gets no IP within 45 seconds, it puts the old Wi-Fi back. The scan uses the camera's fast QR detector and darkens the picture step by step against phone-screen glare. Success returns to the dashboard with a green banner showing the IP; failure returns to scanning with the reason. Config also has Find ELIO, which finds the robot's new IP on the phone's network and fills it in (decision 0178).

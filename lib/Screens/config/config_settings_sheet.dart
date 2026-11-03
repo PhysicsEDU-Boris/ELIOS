@@ -117,7 +117,7 @@ class ConfigSettingsSheet extends ConsumerWidget {
                     child: _SwitchRow(
                       icon: Icons.sync_rounded,
                       title: 'Auto-reconnect',
-                      subtitle: 'Reconnect when ELIO is available again',
+                      subtitle: 'Reconnect when ELIOS is available again',
                       value: esp.autoReconnect,
                       onChanged: (v) => patchEsp((c) => c.copyWith(autoReconnect: v)),
                     ),

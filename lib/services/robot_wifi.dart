@@ -43,7 +43,7 @@ List<String> candidateHosts(Iterable<String> ownIps) {
   return hosts.toList();
 }
 
-/// The first host on this device's networks with the ELIO WebSocket port open, or null.
+/// The first host on this device's networks with the ELIOS WebSocket port open, or null.
 Future<String?> findRobot({
   int port = EspConfig.maixCamPort,
   Duration timeout = const Duration(milliseconds: 900),

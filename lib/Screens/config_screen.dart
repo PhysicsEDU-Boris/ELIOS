@@ -36,7 +36,7 @@ String? validatePort(String? value) {
   return n == null || n < 1 || n > 65535 ? 'Port 1 to 65535' : null;
 }
 
-/// C1 Config tab "Connect ELIO" (decision 0145, Figma 337:2358). The title and
+/// C1 Config tab "Connect ELIOS" (decision 0145, Figma 337:2358). The title and
 /// the Settings button sit in the shell's top bar.
 class ConfigScreen extends ConsumerStatefulWidget {
   const ConfigScreen({super.key});
@@ -111,7 +111,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     ScaffoldMessenger.of(context)
       ..removeCurrentSnackBar()
       ..showSnackBar(SnackBar(
-          content: Text(ip != null ? 'Found ELIO at $ip' : 'ELIO not found on this Wi-Fi')));
+          content: Text(ip != null ? 'Found ELIOS at $ip' : 'ELIOS not found on this Wi-Fi')));
   }
 
   /// The failure snackbar is only for a card the user scrolled away from;
@@ -274,7 +274,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const ConfigCardHeader(icon: Icons.wifi_rounded, title: 'Connection', subtitle: 'ELIO WebSocket address'),
+            const ConfigCardHeader(icon: Icons.wifi_rounded, title: 'Connection', subtitle: 'ELIOS WebSocket address'),
             if (failed) ...[
               const SizedBox(height: 16),
               Semantics(
@@ -295,7 +295,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Couldn't reach ELIO", style: configStrong(p, color: p.errorText)),
+                            Text("Couldn't reach ELIOS", style: configStrong(p, color: p.errorText)),
                             Text(link.failure!, style: configCaption(p, color: p.textPrimary)),
                           ],
                         ),
@@ -343,7 +343,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                 children: [
                   Expanded(
                     child: ConfigButton(
-                      label: _finding ? 'Searching…' : 'Find ELIO',
+                      label: _finding ? 'Searching…' : 'Find ELIOS',
                       icon: Icons.travel_explore_rounded,
                       busy: _finding,
                       primary: false,
@@ -373,7 +373,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                     Icon(Icons.info_outline_rounded, size: 20, color: p.textSecondary),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text('Put ELIO and this phone on the same Wi-Fi or hotspot, then tap Connect now.',
+                      child: Text('Put ELIOS and this phone on the same Wi-Fi or hotspot, then tap Connect now.',
                           style: configCaption(p)),
                     ),
                   ],
@@ -532,7 +532,7 @@ class _RobotHero extends StatelessWidget {
                     children: [
                       Semantics(
                         header: true,
-                        child: Text('ELIO',
+                        child: Text('ELIOS',
                             style: ElioTokens.bodyLarge.copyWith(
                                 fontSize: 28, fontWeight: FontWeight.w800, height: 1.15, color: onHero)),
                       ),
@@ -583,7 +583,7 @@ class _RobotHero extends StatelessWidget {
                                   child: CircularProgressIndicator(strokeWidth: 2, color: p.secondaryText),
                                 ),
                                 const SizedBox(width: 8),
-                                Text('Looking for ELIO…', style: configCaption(p, color: p.textPrimary)),
+                                Text('Looking for ELIOS…', style: configCaption(p, color: p.textPrimary)),
                               ],
                             ),
                           ),
@@ -652,7 +652,7 @@ class _ElioModelViewerState extends State<_ElioModelViewer> {
     final p = context.elio;
     if (_hasError) return Center(child: Icon(Icons.smart_toy_rounded, size: 72, color: p.primaryText));
     return Semantics(
-      label: 'ELIO robot 3D model, drag to rotate',
+      label: 'ELIOS robot 3D model, drag to rotate',
       child: Stack(
         alignment: Alignment.center,
         children: [

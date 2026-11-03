@@ -84,7 +84,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   String get _pageTitle => switch (_currentIndex) {
     0 => 'Home',
     1 => 'Learn',
-    2 => 'Connect ELIO',
+    2 => 'Connect ELIOS',
     _ => 'History',
   };
 

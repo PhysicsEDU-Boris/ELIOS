@@ -139,7 +139,7 @@ void main() {
         expect(find.text('Not connected yet'), findsOneWidget);
         expect(find.text('Offline'), findsOneWidget);
         expect(find.text('—'), findsOneWidget, reason: 'no robot battery value: never a fake one');
-        expect(find.text('Put ELIO and this phone on the same Wi-Fi or hotspot, then tap Connect now.'), findsOneWidget);
+        expect(find.text('Put ELIOS and this phone on the same Wi-Fi or hotspot, then tap Connect now.'), findsOneWidget);
         expect(_enabled(t, 'Connect now'), isTrue);
         expect(_enabled(t, 'Disconnect'), isFalse);
         expect(find.text('Activate ELIOS AI'), findsOneWidget);
@@ -149,7 +149,7 @@ void main() {
       testWidgets('connecting', (t) async {
         await _pumpConfig(t, dark: dark, status: 'Connecting...');
         _expectPalette(t, dark);
-        expect(find.text('Looking for ELIO…'), findsOneWidget);
+        expect(find.text('Looking for ELIOS…'), findsOneWidget);
         expect(find.text('Connecting'), findsOneWidget);
         expect(_enabled(t, 'Connecting…'), isFalse);
         expect(_enabled(t, 'Cancel'), isTrue);
@@ -174,7 +174,7 @@ void main() {
         await _pumpConfig(t, dark: dark, link: const ConfigLink(failure: _timeoutReason));
         _expectPalette(t, dark);
         expect(find.text('Last try failed'), findsOneWidget);
-        expect(find.text("Couldn't reach ELIO"), findsOneWidget);
+        expect(find.text("Couldn't reach ELIOS"), findsOneWidget);
         expect(find.text(_timeoutReason), findsOneWidget, reason: 'the real reason and timeout');
         expect(_enabled(t, 'Try again'), isTrue);
         expect(_enabled(t, 'Disconnect'), isFalse);
@@ -291,7 +291,7 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
     ScaffoldMessenger.of(t.element(find.byType(ListView))).removeCurrentSnackBar();
     await t.pumpAndSettle();
-    await t.ensureVisible(find.text("Couldn't reach ELIO"));
+    await t.ensureVisible(find.text("Couldn't reach ELIOS"));
     await t.pumpAndSettle();
     _link.fail('second');
     await t.pump();

@@ -36,7 +36,7 @@ comes from the phone's DHCP and changes with the hotspot.
   the same way. A `/boot/wpa_supplicant.conf` override is refused and nothing is touched.
 - The password is never printed by `main.py` and is cleared from memory after the attempt.
 - App: Config gets "Robot Wi-Fi QR" (type the hotspot name and password, nothing is saved) and
-  "Find ELIO", which tries port 8765 on every other address of the phone's private /24 networks
+  "Find ELIOS", which tries port 8765 on every other address of the phone's private /24 networks
   and fills the IP. Android's own hotspot "Share" QR works as well.
 
 ## Consequences
@@ -47,16 +47,16 @@ comes from the phone's DHCP and changes with the hotspot.
   and `/boot/wifi.pass` is plain text. Fixing that means changing the OS script, which is out of scope.
 - Power loss in the middle of the file writes can leave a mixed state with no rollback at boot. The
   window is milliseconds.
-- "Find ELIO" checks for an open port, not an ELIO handshake, and searches /24 networks only.
+- "Find ELIOS" checks for an open port, not an ELIO handshake, and searches /24 networks only.
 
 ## Robot test (3 Nov, USB SSH + adb, Edge 60 Fusion hotspot)
 
 - Camera already on hotspot `boris` (STA). QR with a wrong test password: "Not connected", back on
   `boris` at the same IP by itself, `/boot/wifi.*` byte-identical to before, no `.tmp` left.
 - QR with the real password (typed by the owner): "Connected", `False True 10.51.200.84`, internet up.
-- App: Find ELIO replaced `192.168.4.1` with `10.51.200.84`. Connect gave LIVE 14 fps.
+- App: Find ELIOS (then named Find ELIO) replaced `192.168.4.1` with `10.51.200.84`. Connect gave LIVE 14 fps.
 - Second round (new flow): wrong password went back to scanning with the reason; real password
   went to the dashboard with the green banner. Both left the camera on `boris`, with no `.tmp` files.
 - Home router: QR for `WIFIBOR` (phone on WIFIBOR, hotspot off): joined at 192.168.100.135 with internet.
-  Find ELIO from the phone on WIFIBOR found it; Connect gave LIVE 13 fps.
+  Find ELIOS from the phone on WIFIBOR found it; Connect gave LIVE 13 fps.
 - Not tested on the robot: switching from AP mode (the hostapd/udhcpd cleanup), and someone else's phone.
