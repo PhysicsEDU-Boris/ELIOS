@@ -1,17 +1,15 @@
 %PDF-1.4
-%Äåòåë§ó ÐÄÆ
 1 0 obj
-<< /Pages 2 0 R /Type /Catalog >>
+<< /Type /Catalog /Pages 2 0 R >>
 endobj
 2 0 obj
-<< /Count 1 /Kids [ 3 0 R ] /Type /Pages >>
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
 endobj
 3 0 obj
-<< /Rotate 270 /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R /MediaBox
-[ 0 0 595.276 841.89 ] /Parent 2 0 R /Type /Page >>
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.276 841.890] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
 endobj
-5 0 obj
-<< /Length 12336 >> 
+4 0 obj
+<< /Length 12336 >>
 stream
 BT /F1 10 Tf 59.528 805.039 Td (ELIOS MaixCAM2 calibration board - ChArUco 7x10, DICT_4X4_50 - print at 100 % (Actual size)) Tj ET
 BT /F1 9 Tf 59.528 788.031 Td (Check: each chessboard square must be 24.0 mm. Glue flat on stiff card; it must not bend.) Tj ET
@@ -334,26 +332,19 @@ BT /F1 9 Tf 59.528 788.031 Td (Check: each chessboard square must be 24.0 mm. Gl
 BT /F1 8 Tf 59.528 39.685 Td (Hold 150-400 mm from the lens; tilt it; cover the corners of the picture too.) Tj ET
 endstream
 endobj
-4 0 obj
-<< /BaseFont /Helvetica /Subtype /Type1 /Type /Font >>
-endobj
-6 0 obj
-<< /Producer (macOS Version 27.0 \(Build 26A428\) Quartz PDFDocument, Serializer 1.0)
->>
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
 endobj
 xref
-0 7
+0 6
 0000000000 65535 f 
-0000000022 00000 n 
-0000000071 00000 n 
-0000000130 00000 n 
-0000012667 00000 n 
-0000000277 00000 n 
-0000012737 00000 n 
-
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000249 00000 n 
+0000012638 00000 n 
 trailer
-<< /Info 6 0 R /ID [ <30d46834bdcfc8a00675de39f17ba841> <30d46834bdcfc8a00675de39f17ba841>
-] /Root 1 0 R /Size 7 >> 
+<< /Size 6 /Root 1 0 R >>
 startxref
-12841
+12708
 %%EOF
