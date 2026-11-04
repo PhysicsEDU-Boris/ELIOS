@@ -43,13 +43,10 @@ void main() {
   test('the header names the source of the shown question', () {
     const gemmaQ = GeneratedQuestion(type: QuizQuestionType.multipleChoice, question: 'q', options: ['a', 'b', 'c', 'd']);
     const bankQ = GeneratedQuestion(type: QuizQuestionType.multipleChoice, question: 'q', bankId: 'ponsel-mc-01');
-    expect(questionSourceHeader(const WasteQuizUiState(question: bankQ)), 'SOAL DARI MODUL · BANK SOAL');
-    expect(questionSourceHeader(const WasteQuizUiState(question: gemmaQ, questionSource: QuestionSource.ai)),
-        'SOAL ELIOS AI');
-    expect(questionSourceHeader(const WasteQuizUiState(question: gemmaQ, isFallback: true)),
-        'SOAL UMUM (BENDA BELUM ADA DI BANK SOAL)');
-    expect(questionSourceHeader(const WasteQuizUiState(question: gemmaQ, isFallback: true, questionSource: QuestionSource.ai)),
-        'SOAL CADANGAN (ELIOS AI TIDAK TERSAMBUNG)');
+    expect(questionSourceHeader(const WasteQuizUiState(question: bankQ)), 'MODULE QUESTION · QUESTION BANK');
+    expect(questionSourceHeader(const WasteQuizUiState(question: gemmaQ, questionSource: QuestionSource.ai)), 'ELIOS AI QUESTION');
+    expect(questionSourceHeader(const WasteQuizUiState(question: gemmaQ, isFallback: true)), 'GENERAL QUESTION (ITEM NOT IN THE QUESTION BANK YET)');
+    expect(questionSourceHeader(const WasteQuizUiState(question: gemmaQ, isFallback: true, questionSource: QuestionSource.ai)), 'BACKUP QUESTION (ELIOS AI NOT CONNECTED)');
   });
 
   group('sessions follow the switch', () {
@@ -99,7 +96,7 @@ void main() {
       expect(questionPrompts, isNotEmpty);
       expect(s.question?.question, 'Soal Gemma 1?');
       expect(s.question?.bankId, isNull);
-      expect(questionSourceHeader(s), 'SOAL ELIOS AI');
+      expect(questionSourceHeader(s), 'ELIOS AI QUESTION');
     });
 
     test('ai: no AI answer (offline, every model capped) gives a bank question, said out loud', () async {
@@ -113,7 +110,7 @@ void main() {
       expect(s.isFallback, isFalse);
       expect(s.question?.bankId, 'botol_plastik-mc-01');
       expect(s.questionSource, QuestionSource.bank);
-      expect(questionSourceHeader(s), 'SOAL DARI MODUL · BANK SOAL');
+      expect(questionSourceHeader(s), 'MODULE QUESTION · QUESTION BANK');
       expect(s.messages.first.text, contains('AI tidak tersambung'));
       expect(c.read(appPreferencesProvider).questionSource, QuestionSource.ai,
           reason: 'the saved choice is kept for the next scan');

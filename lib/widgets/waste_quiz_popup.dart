@@ -37,11 +37,11 @@ part 'quiz/quiz_r3.dart';
 /// Where the shown question came from (decisions 0017, 0018). An AI question
 /// never claims to be from the module.
 String questionSourceHeader(WasteQuizUiState state) {
-  if (state.question?.bankId != null) return 'SOAL DARI MODUL · BANK SOAL';
-  if (!state.isFallback) return 'SOAL ELIOS AI';
+  if (state.question?.bankId != null) return l10n.quizSrcBank;
+  if (!state.isFallback) return l10n.quizSrcAi;
   return state.questionSource == QuestionSource.ai
-      ? 'SOAL CADANGAN (ELIOS AI TIDAK TERSAMBUNG)'
-      : 'SOAL UMUM (BENDA BELUM ADA DI BANK SOAL)';
+      ? l10n.quizSrcFallback
+      : l10n.quizSrcGeneric;
 }
 
 class WasteQuizPopup extends ConsumerWidget {
@@ -150,7 +150,7 @@ class QuizButton extends StatelessWidget {
     final p = context.elio;
     return Semantics(
       button: true,
-      label: waiting ? 'Quiz, preparing the question' : 'Quiz, question ready',
+      label: waiting ? l10n.quizPreparing : l10n.quizReady,
       excludeSemantics: true,
       child: Container(
         key: ValueKey(waiting ? 'quiz_button_waiting' : 'quiz_button_ready'),
@@ -173,7 +173,7 @@ class QuizButton extends StatelessWidget {
                 const EliosAiBadge(size: 32),
                 const SizedBox(width: 6),
                 Text(
-                  'Quiz',
+                  l10n.quizWord,
                   style: TextStyle(
                     color: p.textPrimary,
                     fontWeight: FontWeight.w700,
@@ -237,7 +237,7 @@ class _ResultCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Scan belum berhasil',
+              l10n.scanFailed,
               style: GoogleFonts.sora(
                 color: elioInk,
                 fontSize: 16,
@@ -269,7 +269,7 @@ class _ResultCard extends ConsumerWidget {
     }
 
     final scan = state.scan;
-    final itemName = scan?.displayName ?? 'Sampah';
+    final itemName = scan?.displayName ?? l10n.wasteGeneric;
     final category = ScanCategory.fromString(scan?.category?.id);
 
     final earnedTrophies = state.recordedQuestions.isNotEmpty
@@ -363,7 +363,7 @@ class _ResultCard extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '+$earnedTrophies Piala',
+                      l10n.trophiesEarned(earnedTrophies),
                       style: const TextStyle(
                         color: Color(0xFFB45309),
                         fontSize: 13,
@@ -384,7 +384,7 @@ class _ResultCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  gradingPending ? 'Menunggu penilaian' : grade.label,
+                  gradingPending ? l10n.awaitingGrading : grade.label,
                   style: const TextStyle(
                     color: elioPrimary,
                     fontSize: 13,
@@ -422,7 +422,7 @@ class _ResultCard extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '$totalTrophies Total Piala',
+                      l10n.trophiesTotal(totalTrophies),
                       style: GoogleFonts.inter(
                         color: elioMuted,
                         fontSize: 12,
@@ -456,7 +456,7 @@ class _ResultCard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: const Color(0xFFFACC15)),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   SizedBox(
                     width: 14,
@@ -469,7 +469,7 @@ class _ResultCard extends ConsumerWidget {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Robot sedang membuang ke tempat sampah...',
+                      l10n.robotDropping,
                       style: TextStyle(
                         color: Color(0xFF854D0E),
                         fontSize: 12,

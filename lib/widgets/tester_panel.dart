@@ -10,9 +10,9 @@ import 'package:elio/l10n/l10n.dart';
 
 /// Cloud AI state label for the tester panel: the model that last answered.
 String aiStateLabel(AiStatus status, String? model) => switch (status) {
-      AiStatus.idle => 'Belum dipakai',
-      AiStatus.ready => 'Siap (${model ?? '-'})',
-      AiStatus.offline => 'Tidak tersambung, mode bank',
+      AiStatus.idle => l10n.tpNotUsed,
+      AiStatus.ready => l10n.tpReady(model ?? '-'),
+      AiStatus.offline => l10n.tpOffline,
     };
 
 /// Settings block of the tester build (decision 0040): question source switch,

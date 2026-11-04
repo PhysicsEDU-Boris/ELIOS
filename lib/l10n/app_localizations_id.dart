@@ -1421,4 +1421,909 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get dsTestMode => 'Mode uji';
+
+  @override
+  String get histSavedLocal => 'Tersimpan lokal';
+
+  @override
+  String get histTitle => 'Riwayat Scan';
+
+  @override
+  String get histSubtitleShort => 'Hasil kuis & trofi';
+
+  @override
+  String get histSubtitle =>
+      'Semua benda yang kamu scan, dengan hasil kuis dan trofinya';
+
+  @override
+  String get histPickLeft =>
+      'Pilih scan di sebelah kiri untuk melihat detail kuis.';
+
+  @override
+  String get histRecent => 'Scan terbaru';
+
+  @override
+  String get histSeedDebug => 'Isi Contoh Data (Debug)';
+
+  @override
+  String get histRecyclable => 'Daur ulang';
+
+  @override
+  String get histOrganic => 'Organik';
+
+  @override
+  String histScannedAt(Object time, Object count) {
+    return 'Dipindai $time · Foto dan $count soal tersimpan lokal';
+  }
+
+  @override
+  String histDiffPill(Object level, Object count) {
+    return '$level · $count soal';
+  }
+
+  @override
+  String get hist10Trophies => '10 trofi untuk tiap jawaban benar';
+
+  @override
+  String get histQuestions => 'Soal';
+
+  @override
+  String get histPending => 'Menunggu';
+
+  @override
+  String get histCorrect => 'Benar';
+
+  @override
+  String get histWrong => 'Salah';
+
+  @override
+  String get histYourAnswer => 'JAWABANMU';
+
+  @override
+  String get histRightAnswer => 'JAWABAN BENAR';
+
+  @override
+  String get histScore => 'SKOR';
+
+  @override
+  String get awaitingGrading => 'Menunggu penilaian';
+
+  @override
+  String histEssayScore(Object score, Object trophies) {
+    return '$score / 10 · +$trophies Piala';
+  }
+
+  @override
+  String get histHideExplanation => 'Tutup Penjelasan';
+
+  @override
+  String get histShowExplanation => 'Lihat Penjelasan';
+
+  @override
+  String get histNoExplanation => 'Penjelasan tidak tersimpan untuk soal ini.';
+
+  @override
+  String get histEmptyTitle => 'Belum Ada Riwayat Scan';
+
+  @override
+  String get histEmptyBody =>
+      'Setiap sampah yang kamu scan dan kuis yang kamu selesaikan akan muncul di sini.';
+
+  @override
+  String get authUserNotFound =>
+      'Akun dengan email atau username ini tidak ditemukan.';
+
+  @override
+  String get authWrongPassword => 'Kata sandi salah.';
+
+  @override
+  String get authEmailInUse => 'Email ini sudah terdaftar.';
+
+  @override
+  String get authWeakPassword => 'Kata sandi minimal 6 karakter.';
+
+  @override
+  String get authInvalidEmail => 'Masukkan alamat email yang valid.';
+
+  @override
+  String get authTooMany => 'Terlalu banyak percobaan. Coba lagi nanti.';
+
+  @override
+  String get authNoInternet => 'Tidak ada koneksi internet.';
+
+  @override
+  String get authGoogleConfig =>
+      'Masuk dengan Google belum diatur dengan benar. Periksa pengaturan Firebase Android/iOS.';
+
+  @override
+  String get authOtherMethod =>
+      'Email ini sudah terdaftar dengan cara masuk lain.';
+
+  @override
+  String get authGoogleLinked =>
+      'Akun Google ini sudah tertaut ke pengguna lain.';
+
+  @override
+  String get authGoogleInvalid =>
+      'Kredensial Google tidak valid. Periksa konfigurasi Firebase.';
+
+  @override
+  String get authGoogleDisabled =>
+      'Masuk dengan Google belum diaktifkan di Firebase Authentication.';
+
+  @override
+  String get authGeneric => 'Terjadi kesalahan. Silakan coba lagi.';
+
+  @override
+  String get authWelcomeBack => 'Selamat datang kembali!';
+
+  @override
+  String get authSignInFailed => 'Gagal masuk.';
+
+  @override
+  String get authAccountCreated => 'Akun berhasil dibuat!';
+
+  @override
+  String get authCreateFailed => 'Gagal membuat akun.';
+
+  @override
+  String get authNoIdToken =>
+      'Google Sign-In tidak mengembalikan idToken. Periksa konfigurasi platform Firebase.';
+
+  @override
+  String authGoogleFailedCode(Object code) {
+    return 'Gagal masuk dengan Google: $code';
+  }
+
+  @override
+  String get authGoogleFailed =>
+      'Gagal masuk dengan Google. Periksa log debug.';
+
+  @override
+  String get authGuestEntered => 'Masuk sebagai tamu.';
+
+  @override
+  String get authGuestFailed => 'Gagal masuk sebagai tamu.';
+
+  @override
+  String get authEmailFirst => 'Masukkan email yang valid dulu.';
+
+  @override
+  String get authResetSent => 'Tautan reset dikirim ke emailmu.';
+
+  @override
+  String get authResetFailed => 'Gagal mengirim email reset.';
+
+  @override
+  String get authEmailRequired => 'Email wajib diisi';
+
+  @override
+  String get authEmailOrUserRequired => 'Email atau username wajib diisi';
+
+  @override
+  String get authValidEmail => 'Masukkan email yang valid';
+
+  @override
+  String get authPasswordRequired => 'Kata sandi wajib diisi';
+
+  @override
+  String get authMin6 => 'Minimal 6 karakter';
+
+  @override
+  String get authNameRequired => 'Nama wajib diisi';
+
+  @override
+  String get authMin2 => 'Minimal 2 karakter';
+
+  @override
+  String get authForgot => 'Lupa kata sandi?';
+
+  @override
+  String get authCreateAccount => 'Buat Akun';
+
+  @override
+  String get authWelcomeTitle => 'Selamat Datang Kembali';
+
+  @override
+  String get authJoin => 'Gabung ELIOS untuk mulai memilah';
+
+  @override
+  String get authSignInSub => 'Masuk untuk mengontrol ELIOS';
+
+  @override
+  String get authEmail => 'Email';
+
+  @override
+  String get authEmailOrUser => 'Email / Username';
+
+  @override
+  String get authEmailOrUserHint => 'kamu@contoh.com atau username';
+
+  @override
+  String get authSendReset => 'Kirim tautan reset';
+
+  @override
+  String get authSignIn => 'Masuk';
+
+  @override
+  String get authFullName => 'Nama Lengkap';
+
+  @override
+  String get authFullNameHint => 'Budi Santoso';
+
+  @override
+  String get authPassword => 'Kata sandi';
+
+  @override
+  String get authPasswordHint => 'Masukkan kata sandimu';
+
+  @override
+  String get authGoogle => 'Lanjut dengan Google';
+
+  @override
+  String get authGuest => 'Lanjut sebagai Tamu';
+
+  @override
+  String get authGuestNote =>
+      'Mode tamu hanya menyimpan data di perangkat. Masuk untuk menyinkronkan progres.';
+
+  @override
+  String get authHaveAccount => 'Sudah punya akun? ';
+
+  @override
+  String get authNoAccount => 'Belum punya akun? ';
+
+  @override
+  String get authSignUp => 'Daftar';
+
+  @override
+  String get authPleaseWait => 'Mohon tunggu';
+
+  @override
+  String get authOr => 'Atau';
+
+  @override
+  String get quizSrcBank => 'SOAL DARI MODUL · BANK SOAL';
+
+  @override
+  String get quizSrcAi => 'SOAL ELIOS AI';
+
+  @override
+  String get quizSrcFallback => 'SOAL CADANGAN (ELIOS AI TIDAK TERSAMBUNG)';
+
+  @override
+  String get quizSrcGeneric => 'SOAL UMUM (BENDA BELUM ADA DI BANK SOAL)';
+
+  @override
+  String get quizPreparing => 'Kuis, menyiapkan soal';
+
+  @override
+  String get quizReady => 'Kuis, soal siap';
+
+  @override
+  String get quizWord => 'Kuis';
+
+  @override
+  String get scanFailed => 'Scan belum berhasil';
+
+  @override
+  String get wasteGeneric => 'Sampah';
+
+  @override
+  String trophiesEarned(Object count) {
+    return '+$count Piala';
+  }
+
+  @override
+  String trophiesTotal(Object count) {
+    return '$count Total Piala';
+  }
+
+  @override
+  String get robotDropping => 'Robot sedang membuang ke tempat sampah...';
+
+  @override
+  String get qzReadScan => 'Membaca scan';
+
+  @override
+  String get qzAiLooking => 'ELIOS AI sedang melihat';
+
+  @override
+  String get qzPickedTopic => 'Memilih topik';
+
+  @override
+  String get qzAfterScan => 'Setelah scan';
+
+  @override
+  String get qzAiTopic => 'Topik ELIOS AI';
+
+  @override
+  String qzBankPool(Object pool) {
+    return 'Kumpulan bank · $pool';
+  }
+
+  @override
+  String get qzWriting => 'Menulis soal';
+
+  @override
+  String get qzEssay => 'esai';
+
+  @override
+  String get qzMultipleChoice => 'pilihan ganda';
+
+  @override
+  String qzQuestionOfLevel(Object n, Object total, Object level) {
+    return 'Soal $n dari $total · $level';
+  }
+
+  @override
+  String qzQuestionOf(Object n, Object total) {
+    return 'Soal $n dari $total';
+  }
+
+  @override
+  String qzScanned(Object name) {
+    return 'Hasil scan: $name';
+  }
+
+  @override
+  String get qzReading => 'membaca…';
+
+  @override
+  String get qzAiReadingCaps => 'ELIOS AI · MEMBACA SCAN';
+
+  @override
+  String get qzAiWritingCaps => 'ELIOS AI · MENULIS SOALMU';
+
+  @override
+  String get qzReadingScan => 'Membaca scan…';
+
+  @override
+  String get qzPreparingNext => 'Menyiapkan soal berikutnya…';
+
+  @override
+  String get qzAiOnline =>
+      'ELIOS AI menulisnya secara online. Biasanya 2–4 detik.';
+
+  @override
+  String get qzFromBank => 'Dari bank soal yang sudah dicek. Sebentar saja.';
+
+  @override
+  String get qzKeepDriving => 'Terus jalan. ';
+
+  @override
+  String get qzMinimiseHint =>
+      'Kecilkan ini, tombol Kuis akan menyala saat soal siap.';
+
+  @override
+  String qzMcCaps(Object level) {
+    return 'PILIHAN GANDA · $level';
+  }
+
+  @override
+  String get qzSkipFinish => 'Lewati dan selesai';
+
+  @override
+  String get qzSkip => 'Lewati';
+
+  @override
+  String get qzUpTo10 => 'Sampai +10 trofi untuk jawaban lengkap';
+
+  @override
+  String get qz10Right => '+10 trofi untuk jawaban benar';
+
+  @override
+  String qzEssayCaps(Object level, Object words) {
+    return 'ESAI · $level · MAKS $words KATA';
+  }
+
+  @override
+  String get qzGrading => 'ELIOS AI sedang menilai jawabanmu…';
+
+  @override
+  String get qzTypeAnswer => 'Ketik jawabanmu di sini…';
+
+  @override
+  String get qzSubmit => 'Kirim';
+
+  @override
+  String get qzClear => 'Hapus';
+
+  @override
+  String qzHazardTitle(Object name) {
+    return 'Mungkin berbahaya (B3): $name';
+  }
+
+  @override
+  String get qzHazardBody =>
+      'Jangan dibongkar atau dibuang ke tempat sampah biasa. Minta petugas menanganinya. Lanjutkan kuis tentang benda ini?';
+
+  @override
+  String get qzContinueQuiz => 'Lanjutkan kuis';
+
+  @override
+  String get qzWhichBin => 'Tempat sampah mana yang benar?';
+
+  @override
+  String qzMismatchBody(
+    Object detector,
+    Object detectorCategory,
+    Object name,
+    Object aiCategory,
+  ) {
+    return 'Detektor bilang $detector ($detectorCategory). ELIOS AI bilang $name ($aiCategory). Pilih yang benar.';
+  }
+
+  @override
+  String qzUseAi(Object category) {
+    return 'Pakai ELIOS AI ($category)';
+  }
+
+  @override
+  String qzUseDetector(Object category) {
+    return 'Pakai detektor ($category)';
+  }
+
+  @override
+  String get qzScanChip => 'Scan';
+
+  @override
+  String get qzComplete => 'Kuis selesai';
+
+  @override
+  String get qzBack => 'Kembali';
+
+  @override
+  String get qzListenExplanation => 'Dengarkan penjelasan';
+
+  @override
+  String get qzFinish => 'Selesaikan kuis';
+
+  @override
+  String get qzNextQuestion => 'Soal berikutnya';
+
+  @override
+  String get qzEssayReview => 'Ulasan esai';
+
+  @override
+  String get qzReview => 'Ulasan';
+
+  @override
+  String get qzWaitingGrading => 'Menunggu penilaian';
+
+  @override
+  String get qzNotGradedYet =>
+      'ELIOS AI belum menilai jawaban ini. Jawaban disimpan dan dinilai nanti.';
+
+  @override
+  String qzScoreOf10(Object score) {
+    return 'Skor $score / 10';
+  }
+
+  @override
+  String get qzCorrect => 'Benar!';
+
+  @override
+  String qzYouChose(Object picked) {
+    return 'Kamu memilih “$picked”.';
+  }
+
+  @override
+  String get qzNotQuite => 'Kurang tepat';
+
+  @override
+  String qzRightAnswerIs(Object answer) {
+    return 'Jawaban yang benar adalah “$answer”.';
+  }
+
+  @override
+  String get qzAnswerReview => 'Ulasan jawaban';
+
+  @override
+  String get qzDetailed => 'Penjelasan lengkap';
+
+  @override
+  String qzQuestionOfCaps(Object n, Object total, Object kind) {
+    return 'SOAL $n DARI $total · $kind';
+  }
+
+  @override
+  String get qzEssayUpper => 'ESAI';
+
+  @override
+  String get qzQuestionCaps => 'SOAL';
+
+  @override
+  String get qzCorrectAnswerCaps => 'JAWABAN BENAR';
+
+  @override
+  String get qzLoadingExplanation => 'Memuat penjelasan…';
+
+  @override
+  String get qzSavedNoTrophies =>
+      'Jawabanmu disimpan. ELIOS AI menilainya saat siap; belum ada trofi sampai itu.';
+
+  @override
+  String get qzFeedback => 'Masukan';
+
+  @override
+  String get qzWhyWrong => 'Kenapa jawabanmu kurang tepat';
+
+  @override
+  String get qzWhyRight => 'Kenapa jawaban yang benar itu benar';
+
+  @override
+  String get qzElioModule => 'Modul ELIOS';
+
+  @override
+  String get qzScoringTable => 'Tabel 1. Rincian skor';
+
+  @override
+  String get qzCriteria => 'KRITERIA';
+
+  @override
+  String get qzFeedbackCaps => 'MASUKAN';
+
+  @override
+  String qzWhereGoes(Object name) {
+    return 'Tabel 1. Ke mana $name dibuang';
+  }
+
+  @override
+  String get qzThisItem => 'benda ini';
+
+  @override
+  String get qzBin => 'TEMPAT';
+
+  @override
+  String get qzExamples => 'CONTOH';
+
+  @override
+  String get qzAccepts => 'MENERIMA';
+
+  @override
+  String get qzOptionsTable => 'Tabel 1. Pilihan jawaban';
+
+  @override
+  String get qzOption => 'PILIHAN';
+
+  @override
+  String get qzStatus => 'STATUS';
+
+  @override
+  String get qzCorrectAnswer => 'Jawaban benar';
+
+  @override
+  String get qzYourAnswer => 'Jawabanmu';
+
+  @override
+  String get qzAiGraded => 'Dinilai AI · cek dengan gurumu';
+
+  @override
+  String get qzReviewedBank => 'Bank soal yang sudah dicek';
+
+  @override
+  String get qzAiGenerated => 'Dibuat AI · belum dicek';
+
+  @override
+  String get qzSugFullMark => 'Tunjukkan jawaban nilai penuh';
+
+  @override
+  String get qzSugKeyTerms => 'Jelaskan istilah penting';
+
+  @override
+  String get qzSugHint => 'Beri aku petunjuk';
+
+  @override
+  String get qzSugSimpler => 'Jelaskan lebih sederhana';
+
+  @override
+  String get qzCoach => 'Pelatih ELIOS AI';
+
+  @override
+  String get qzSent => 'Terkirim';
+
+  @override
+  String get qzPlaying => 'Diputar';
+
+  @override
+  String get qzAskScore => 'Tanya ELIOS AI tentang skormu…';
+
+  @override
+  String get qzAsk => 'Tanya ELIOS AI…';
+
+  @override
+  String get qzSend => 'Kirim';
+
+  @override
+  String get qzListen => 'Dengarkan';
+
+  @override
+  String get qzCopy => 'Salin';
+
+  @override
+  String get qzWhichItem => 'Benda apa ini?';
+
+  @override
+  String get qzNotThis => 'Bukan ini?';
+
+  @override
+  String get qzMinimise => 'Kecilkan';
+
+  @override
+  String get qzMinimiseQuiz => 'Kecilkan kuis';
+
+  @override
+  String get qzCloseQuiz => 'Tutup kuis';
+
+  @override
+  String get qzReadToMe => 'Bacakan untukku';
+
+  @override
+  String get qzExplanation => 'Penjelasan';
+
+  @override
+  String get ovEssayMax => 'Essay · maks 150 kata';
+
+  @override
+  String get ovPendingSub => 'Jawaban tersimpan. Nilai belum tersedia.';
+
+  @override
+  String ovEssayScore(Object score) {
+    return 'Score: $score/10 · +$score Piala';
+  }
+
+  @override
+  String get ovGood => 'Jawaban sudah baik!';
+
+  @override
+  String get ovNeedsWork => 'Perlu diperbaiki pada beberapa poin.';
+
+  @override
+  String get ovRight => 'Jawaban Benar! +10 Piala';
+
+  @override
+  String get ovWrong => 'Jawaban Kurang Tepat';
+
+  @override
+  String ovRightAnswer(Object answer) {
+    return 'Jawaban benar: $answer';
+  }
+
+  @override
+  String ovExplanationN(Object n) {
+    return 'Penjelasan Soal $n';
+  }
+
+  @override
+  String get ovNoExplanation => 'Penjelasan belum tersedia untuk soal ini.';
+
+  @override
+  String get ovCompareTable => 'Tabel Perbandingan Kategori Sampah';
+
+  @override
+  String ovReference(Object answer) {
+    return 'Referensi jawaban: $answer';
+  }
+
+  @override
+  String get ovCategory => 'Kategori';
+
+  @override
+  String get ovMaterial => 'Material';
+
+  @override
+  String get ovAccepted => 'Diterima';
+
+  @override
+  String get ovCriteria => 'Kriteria';
+
+  @override
+  String get ovMax => 'Maks';
+
+  @override
+  String get ovAwarded => 'Diperoleh';
+
+  @override
+  String get ovComment => 'Komentar';
+
+  @override
+  String get ovFinish => 'Selesai Quiz ✓';
+
+  @override
+  String get ovNext => 'Soal Berikutnya →';
+
+  @override
+  String get ovAssistant => 'Asisten Koreksi AI';
+
+  @override
+  String get ovAskAi => 'Tanya AI...';
+
+  @override
+  String get ovVoice => 'Suara';
+
+  @override
+  String get lqTitle => 'Kuis';
+
+  @override
+  String lqCompletedBest(Object score) {
+    return ' Selesai dengan skor terbaik $score%.';
+  }
+
+  @override
+  String lqBest(Object score) {
+    return ' Skor terbaik $score%.';
+  }
+
+  @override
+  String lqUsedAttempt(Object scoreText) {
+    return 'Kamu sudah memakai satu-satunya kesempatan kuis ini.$scoreText';
+  }
+
+  @override
+  String get lqOnceBody =>
+      'Kuis ini hanya bisa dikerjakan sekali. Setelah mulai, kamu harus menyelesaikannya sebelum keluar.';
+
+  @override
+  String get lqFinishBody =>
+      'Kuis ini hanya punya satu kesempatan. Selesaikan semua soal sebelum keluar.';
+
+  @override
+  String get lqLoading => 'Memuat soal kuis';
+
+  @override
+  String get lqLoadFailed => 'Soal kuis tidak bisa dimuat.';
+
+  @override
+  String get lqCheckFirestore => 'Periksa koneksi Firestore lalu coba lagi.';
+
+  @override
+  String get lqBackToQuizzes => 'Kembali ke Kuis';
+
+  @override
+  String get lqNotAvailable => 'Soal kuis belum tersedia.';
+
+  @override
+  String get lqIntro =>
+      'Uji pemahamanmu tentang pengelolaan sampah dan cara ELIO mengelompokkan material. Tiap kuis punya satu kesempatan.';
+
+  @override
+  String get lqSetsFailed => 'Kumpulan kuis tidak bisa dimuat.';
+
+  @override
+  String get lqNoPublished => 'Belum ada kuis yang diterbitkan.';
+
+  @override
+  String get lqCompleted => 'Selesai';
+
+  @override
+  String get lqAttemptUsed => 'Kesempatan terpakai';
+
+  @override
+  String lqBestScore(Object score) {
+    return 'skor terbaik $score%';
+  }
+
+  @override
+  String get lqReviewNew => 'ulasan hanya untuk percobaan baru';
+
+  @override
+  String lqQuestions(Object count) {
+    return '$count soal';
+  }
+
+  @override
+  String get lqOneAttempt => 'satu kesempatan';
+
+  @override
+  String get lqReview => 'Ulas';
+
+  @override
+  String get lqDone => 'Selesai';
+
+  @override
+  String get lqUsed => 'Terpakai';
+
+  @override
+  String lqCounter(Object n, Object total) {
+    return 'Soal $n / $total';
+  }
+
+  @override
+  String lqCorrectExpl(Object explanation) {
+    return 'Benar: $explanation';
+  }
+
+  @override
+  String lqNotQuiteExpl(Object explanation) {
+    return 'Kurang tepat: $explanation';
+  }
+
+  @override
+  String get lqNotQuite => 'Kurang tepat.';
+
+  @override
+  String get lqViewResults => 'Lihat hasil';
+
+  @override
+  String get lqImageUnavailable => 'Gambar tidak tersedia';
+
+  @override
+  String lqScored(Object score, Object total) {
+    return 'Skormu $score dari $total.';
+  }
+
+  @override
+  String get lqBackLower => 'Kembali ke kuis';
+
+  @override
+  String get lqReviewAnswers => 'Ulas jawaban';
+
+  @override
+  String get rvTitle => 'Ulasan kuis';
+
+  @override
+  String get rvScore => 'Skor';
+
+  @override
+  String get rvPercent => 'Persen';
+
+  @override
+  String get rvPassed => 'Lulus';
+
+  @override
+  String rvQuestionN(Object n) {
+    return 'Soal $n';
+  }
+
+  @override
+  String get rvNotAnswered => 'Tidak dijawab';
+
+  @override
+  String get rvUnknown => 'Jawaban tidak diketahui';
+
+  @override
+  String get pqResultsTitle => 'Hasil Kuis Fisika';
+
+  @override
+  String get pqTitle => 'Kuis fisika';
+
+  @override
+  String pqCounter(Object n, Object total) {
+    return 'Pertanyaan $n / $total';
+  }
+
+  @override
+  String get pqAdvanced => 'Fisika lanjutan';
+
+  @override
+  String get pqWrong => 'Kurang Tepat.';
+
+  @override
+  String get pqSeeResults => 'Lihat Hasil';
+
+  @override
+  String get pqNext => 'Pertanyaan selanjutnya';
+
+  @override
+  String get pqDone => 'Kuis Fisika Selesai';
+
+  @override
+  String pqScore(Object score, Object total) {
+    return 'Skor Anda: $score / $total';
+  }
+
+  @override
+  String get pqBackMenu => 'Kembali ke Menu';
+
+  @override
+  String get tpNotUsed => 'Belum dipakai';
+
+  @override
+  String tpReady(Object model) {
+    return 'Siap ($model)';
+  }
+
+  @override
+  String get tpOffline => 'Tidak tersambung, mode bank';
 }

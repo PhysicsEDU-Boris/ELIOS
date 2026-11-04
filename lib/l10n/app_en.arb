@@ -895,5 +895,587 @@
   "dsTiming": "About 2–4 s · needs internet",
   "dsSwitchCamera": "Switch camera",
   "dsTestModeHint": "Test mode: quiz without the camera",
-  "dsTestMode": "Test mode"
+  "dsTestMode": "Test mode",
+  "histSavedLocal": "Saved locally",
+  "histTitle": "Scan History",
+  "histSubtitleShort": "Quiz results & trophies",
+  "histSubtitle": "Every item you scanned, with its quiz results and trophies",
+  "histPickLeft": "Pick a scan on the left to see the quiz details.",
+  "histRecent": "Recent scans",
+  "histSeedDebug": "Seed Sample Data (Debug)",
+  "histRecyclable": "Recyclable",
+  "histOrganic": "Organic",
+  "histScannedAt": "Scanned {time} · Photo and {count} questions saved locally",
+  "@histScannedAt": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "histDiffPill": "{level} · {count}Q",
+  "@histDiffPill": {
+    "placeholders": {
+      "level": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "hist10Trophies": "10 trophies per right answer",
+  "histQuestions": "Questions",
+  "histPending": "Pending",
+  "histCorrect": "Correct",
+  "histWrong": "Wrong",
+  "histYourAnswer": "YOUR ANSWER",
+  "histRightAnswer": "RIGHT ANSWER",
+  "histScore": "SCORE",
+  "awaitingGrading": "Awaiting grading",
+  "histEssayScore": "{score} / 10 · +{trophies} trophies",
+  "@histEssayScore": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      },
+      "trophies": {
+        "type": "Object"
+      }
+    }
+  },
+  "histHideExplanation": "Hide Explanation",
+  "histShowExplanation": "Show Explanation",
+  "histNoExplanation": "No explanation was saved for this question.",
+  "histEmptyTitle": "No Scan History Yet",
+  "histEmptyBody": "Every item you scan and every quiz you finish will show up here.",
+  "authUserNotFound": "No account found with this email or username.",
+  "authWrongPassword": "Incorrect password.",
+  "authEmailInUse": "This email is already registered.",
+  "authWeakPassword": "Password must be at least 6 characters.",
+  "authInvalidEmail": "Enter a valid email address.",
+  "authTooMany": "Too many attempts. Try again later.",
+  "authNoInternet": "No internet connection.",
+  "authGoogleConfig": "Google sign-in is not configured correctly. Check Android/iOS Firebase setup.",
+  "authOtherMethod": "This email is already registered with another sign-in method.",
+  "authGoogleLinked": "This Google account is already linked to another user.",
+  "authGoogleInvalid": "Google credential is invalid. Check Firebase configuration.",
+  "authGoogleDisabled": "Google sign-in is not enabled in Firebase Authentication.",
+  "authGeneric": "Something went wrong. Please try again.",
+  "authWelcomeBack": "Welcome back!",
+  "authSignInFailed": "Sign in failed.",
+  "authAccountCreated": "Account created!",
+  "authCreateFailed": "Account creation failed.",
+  "authNoIdToken": "Google Sign-In returned no idToken. Check Firebase platform config.",
+  "authGoogleFailedCode": "Google sign-in failed: {code}",
+  "@authGoogleFailedCode": {
+    "placeholders": {
+      "code": {
+        "type": "Object"
+      }
+    }
+  },
+  "authGoogleFailed": "Google sign-in failed. Check debug logs.",
+  "authGuestEntered": "Entered guest mode.",
+  "authGuestFailed": "Guest mode failed.",
+  "authEmailFirst": "Enter a valid email first.",
+  "authResetSent": "Reset link sent to your email.",
+  "authResetFailed": "Failed to send reset email.",
+  "authEmailRequired": "Email is required",
+  "authEmailOrUserRequired": "Email or username is required",
+  "authValidEmail": "Enter a valid email",
+  "authPasswordRequired": "Password is required",
+  "authMin6": "Min 6 characters",
+  "authNameRequired": "Name is required",
+  "authMin2": "Min 2 characters",
+  "authForgot": "Forgot password?",
+  "authCreateAccount": "Create Account",
+  "authWelcomeTitle": "Welcome Back",
+  "authJoin": "Join ELIOS to start sorting",
+  "authSignInSub": "Sign in to control ELIOS",
+  "authEmail": "Email",
+  "authEmailOrUser": "Email / Username",
+  "authEmailOrUserHint": "you@example.com or username",
+  "authSendReset": "Send reset link",
+  "authSignIn": "Sign In",
+  "authFullName": "Full Name",
+  "authFullNameHint": "John Doe",
+  "authPassword": "Password",
+  "authPasswordHint": "Enter your password",
+  "authGoogle": "Continue with Google",
+  "authGuest": "Continue as Guest",
+  "authGuestNote": "Guest mode saves data locally only. Sign in to sync progress.",
+  "authHaveAccount": "Already have an account? ",
+  "authNoAccount": "Don't have an account? ",
+  "authSignUp": "Sign Up",
+  "authPleaseWait": "Please wait",
+  "authOr": "Or",
+  "quizSrcBank": "MODULE QUESTION · QUESTION BANK",
+  "quizSrcAi": "ELIOS AI QUESTION",
+  "quizSrcFallback": "BACKUP QUESTION (ELIOS AI NOT CONNECTED)",
+  "quizSrcGeneric": "GENERAL QUESTION (ITEM NOT IN THE QUESTION BANK YET)",
+  "quizPreparing": "Quiz, preparing the question",
+  "quizReady": "Quiz, question ready",
+  "quizWord": "Quiz",
+  "scanFailed": "Scan did not work",
+  "wasteGeneric": "Waste",
+  "trophiesEarned": "+{count} trophies",
+  "@trophiesEarned": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "trophiesTotal": "{count} total trophies",
+  "@trophiesTotal": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "robotDropping": "The robot is dropping it in the bin...",
+  "qzReadScan": "Read the scan",
+  "qzAiLooking": "ELIOS AI is looking",
+  "qzPickedTopic": "Picked a topic",
+  "qzAfterScan": "After the scan",
+  "qzAiTopic": "ELIOS AI topic",
+  "qzBankPool": "Bank pool · {pool}",
+  "@qzBankPool": {
+    "placeholders": {
+      "pool": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzWriting": "Writing the question",
+  "qzEssay": "essay",
+  "qzMultipleChoice": "multiple choice",
+  "qzQuestionOfLevel": "Question {n} of {total} · {level}",
+  "@qzQuestionOfLevel": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      },
+      "level": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzQuestionOf": "Question {n} of {total}",
+  "@qzQuestionOf": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzScanned": "Scanned: {name}",
+  "@qzScanned": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzReading": "reading…",
+  "qzAiReadingCaps": "ELIOS AI · READING THE SCAN",
+  "qzAiWritingCaps": "ELIOS AI · WRITING YOUR QUESTION",
+  "qzReadingScan": "Reading the scan…",
+  "qzPreparingNext": "Preparing the next question…",
+  "qzAiOnline": "ELIOS AI is writing it online. This usually takes 2–4 seconds.",
+  "qzFromBank": "From the reviewed question bank. This takes a moment.",
+  "qzKeepDriving": "Keep driving. ",
+  "qzMinimiseHint": "Minimise this and the Quiz button lights up when the question is ready.",
+  "qzMcCaps": "MULTIPLE CHOICE · {level}",
+  "@qzMcCaps": {
+    "placeholders": {
+      "level": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzSkipFinish": "Skip and finish",
+  "qzSkip": "Skip",
+  "qzUpTo10": "Up to +10 trophies for a full answer",
+  "qz10Right": "+10 trophies for a right answer",
+  "qzEssayCaps": "ESSAY · {level} · MAX {words} WORDS",
+  "@qzEssayCaps": {
+    "placeholders": {
+      "level": {
+        "type": "Object"
+      },
+      "words": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzGrading": "ELIOS AI is grading your answer…",
+  "qzTypeAnswer": "Type your answer here…",
+  "qzSubmit": "Submit",
+  "qzClear": "Clear",
+  "qzHazardTitle": "Possibly hazardous (B3): {name}",
+  "@qzHazardTitle": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzHazardBody": "Don't take it apart or put it in a normal bin. Ask staff to handle it. Continue the quiz about this item?",
+  "qzContinueQuiz": "Continue quiz",
+  "qzWhichBin": "Which bin is right?",
+  "qzMismatchBody": "The detector says {detector} ({detectorCategory}). ELIOS AI says {name} ({aiCategory}). Pick the right one.",
+  "@qzMismatchBody": {
+    "placeholders": {
+      "detector": {
+        "type": "Object"
+      },
+      "detectorCategory": {
+        "type": "Object"
+      },
+      "name": {
+        "type": "Object"
+      },
+      "aiCategory": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzUseAi": "Use ELIOS AI ({category})",
+  "@qzUseAi": {
+    "placeholders": {
+      "category": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzUseDetector": "Use detector ({category})",
+  "@qzUseDetector": {
+    "placeholders": {
+      "category": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzScanChip": "Scan",
+  "qzComplete": "Quiz complete",
+  "qzBack": "Back",
+  "qzListenExplanation": "Listen to explanation",
+  "qzFinish": "Finish quiz",
+  "qzNextQuestion": "Next question",
+  "qzEssayReview": "Essay review",
+  "qzReview": "Review",
+  "qzWaitingGrading": "Waiting for grading",
+  "qzNotGradedYet": "ELIOS AI has not graded this answer yet. It is saved and graded later.",
+  "qzScoreOf10": "Score {score} / 10",
+  "@qzScoreOf10": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzCorrect": "Correct!",
+  "qzYouChose": "You chose “{picked}”.",
+  "@qzYouChose": {
+    "placeholders": {
+      "picked": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzNotQuite": "Not quite",
+  "qzRightAnswerIs": "The right answer is “{answer}”.",
+  "@qzRightAnswerIs": {
+    "placeholders": {
+      "answer": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzAnswerReview": "Answer review",
+  "qzDetailed": "Detailed explanation",
+  "qzQuestionOfCaps": "QUESTION {n} OF {total} · {kind}",
+  "@qzQuestionOfCaps": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      },
+      "kind": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzEssayUpper": "ESSAY",
+  "qzQuestionCaps": "QUESTION",
+  "qzCorrectAnswerCaps": "CORRECT ANSWER",
+  "qzLoadingExplanation": "Loading the explanation…",
+  "qzSavedNoTrophies": "Your answer is saved. ELIOS AI grades it when it is ready; no trophies until then.",
+  "qzFeedback": "Feedback",
+  "qzWhyWrong": "Why your answer is not right",
+  "qzWhyRight": "Why the correct answer is right",
+  "qzElioModule": "ELIOS module",
+  "qzScoringTable": "Table 1. Scoring breakdown",
+  "qzCriteria": "CRITERIA",
+  "qzFeedbackCaps": "FEEDBACK",
+  "qzWhereGoes": "Table 1. Where {name} goes",
+  "@qzWhereGoes": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzThisItem": "this item",
+  "qzBin": "BIN",
+  "qzExamples": "EXAMPLES",
+  "qzAccepts": "ACCEPTS",
+  "qzOptionsTable": "Table 1. The answer options",
+  "qzOption": "OPTION",
+  "qzStatus": "STATUS",
+  "qzCorrectAnswer": "Correct answer",
+  "qzYourAnswer": "Your answer",
+  "qzAiGraded": "AI graded · check with your teacher",
+  "qzReviewedBank": "Reviewed question bank",
+  "qzAiGenerated": "AI generated · not reviewed",
+  "qzSugFullMark": "Show a full-mark answer",
+  "qzSugKeyTerms": "Explain key terms",
+  "qzSugHint": "Give me a hint",
+  "qzSugSimpler": "Say it simpler",
+  "qzCoach": "ELIOS AI coach",
+  "qzSent": "Sent",
+  "qzPlaying": "Playing",
+  "qzAskScore": "Ask ELIOS AI about your score…",
+  "qzAsk": "Ask ELIOS AI…",
+  "qzSend": "Send",
+  "qzListen": "Listen",
+  "qzCopy": "Copy",
+  "qzWhichItem": "Which item is this?",
+  "qzNotThis": "Not this?",
+  "qzMinimise": "Minimise",
+  "qzMinimiseQuiz": "Minimise quiz",
+  "qzCloseQuiz": "Close quiz",
+  "qzReadToMe": "Read it to me",
+  "qzExplanation": "Explanation",
+  "ovEssayMax": "Essay · max 150 words",
+  "ovPendingSub": "Answer saved. No score yet.",
+  "ovEssayScore": "Score: {score}/10 · +{score} trophies",
+  "@ovEssayScore": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "ovGood": "Good answer!",
+  "ovNeedsWork": "A few points need work.",
+  "ovRight": "Correct! +10 trophies",
+  "ovWrong": "Not quite right",
+  "ovRightAnswer": "Right answer: {answer}",
+  "@ovRightAnswer": {
+    "placeholders": {
+      "answer": {
+        "type": "Object"
+      }
+    }
+  },
+  "ovExplanationN": "Explanation for question {n}",
+  "@ovExplanationN": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "ovNoExplanation": "No explanation for this question yet.",
+  "ovCompareTable": "Waste category comparison",
+  "ovReference": "Reference answer: {answer}",
+  "@ovReference": {
+    "placeholders": {
+      "answer": {
+        "type": "Object"
+      }
+    }
+  },
+  "ovCategory": "Category",
+  "ovMaterial": "Material",
+  "ovAccepted": "Accepted",
+  "ovCriteria": "Criteria",
+  "ovMax": "Max",
+  "ovAwarded": "Awarded",
+  "ovComment": "Comment",
+  "ovFinish": "Finish quiz ✓",
+  "ovNext": "Next question →",
+  "ovAssistant": "AI Correction Assistant",
+  "ovAskAi": "Ask AI...",
+  "ovVoice": "Voice",
+  "lqTitle": "Quiz",
+  "lqCompletedBest": " Completed with best score {score}%.",
+  "@lqCompletedBest": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqBest": " Best score {score}%.",
+  "@lqBest": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqUsedAttempt": "You have already used your one quiz attempt.{scoreText}",
+  "@lqUsedAttempt": {
+    "placeholders": {
+      "scoreText": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqOnceBody": "This quiz can only be attempted once. Once you start, you must finish it before leaving.",
+  "lqFinishBody": "This quiz has only one attempt. Please finish all questions before leaving.",
+  "lqLoading": "Loading quiz questions",
+  "lqLoadFailed": "Quiz questions could not be loaded.",
+  "lqCheckFirestore": "Check the Firestore connection and try again.",
+  "lqBackToQuizzes": "Back to Quizzes",
+  "lqNotAvailable": "Quiz questions are not available yet.",
+  "lqIntro": "Test your understanding of waste management and how ELIO classifies materials. Each quiz has one attempt.",
+  "lqSetsFailed": "Quiz sets could not be loaded.",
+  "lqNoPublished": "No published quizzes are available.",
+  "lqCompleted": "Completed",
+  "lqAttemptUsed": "Attempt used",
+  "lqBestScore": "best score {score}%",
+  "@lqBestScore": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqReviewNew": "review for new attempts only",
+  "lqQuestions": "{count} questions",
+  "@lqQuestions": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqOneAttempt": "one attempt",
+  "lqReview": "Review",
+  "lqDone": "Done",
+  "lqUsed": "Used",
+  "lqCounter": "Question {n} / {total}",
+  "@lqCounter": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqCorrectExpl": "Correct: {explanation}",
+  "@lqCorrectExpl": {
+    "placeholders": {
+      "explanation": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqNotQuiteExpl": "Not quite: {explanation}",
+  "@lqNotQuiteExpl": {
+    "placeholders": {
+      "explanation": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqNotQuite": "Not quite.",
+  "lqViewResults": "View results",
+  "lqImageUnavailable": "Image unavailable",
+  "lqScored": "You scored {score} out of {total}.",
+  "@lqScored": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqBackLower": "Back to quizzes",
+  "lqReviewAnswers": "Review answers",
+  "rvTitle": "Quiz review",
+  "rvScore": "Score",
+  "rvPercent": "Percent",
+  "rvPassed": "Passed",
+  "rvQuestionN": "Question {n}",
+  "@rvQuestionN": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "rvNotAnswered": "Not answered",
+  "rvUnknown": "Unknown answer",
+  "pqResultsTitle": "Physics Quiz Results",
+  "pqTitle": "Physics quiz",
+  "pqCounter": "Question {n} / {total}",
+  "@pqCounter": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "pqAdvanced": "Advanced physics",
+  "pqWrong": "Not quite.",
+  "pqSeeResults": "See results",
+  "pqNext": "Next question",
+  "pqDone": "Physics Quiz Complete",
+  "pqScore": "Your score: {score} / {total}",
+  "@pqScore": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "pqBackMenu": "Back to Menu",
+  "tpNotUsed": "Not used yet",
+  "tpReady": "Ready ({model})",
+  "@tpReady": {
+    "placeholders": {
+      "model": {
+        "type": "Object"
+      }
+    }
+  },
+  "tpOffline": "Not connected, bank mode"
 }

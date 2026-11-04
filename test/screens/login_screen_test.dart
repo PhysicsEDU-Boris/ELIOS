@@ -79,7 +79,7 @@ void main() {
       'Password',
       'Forgot password?',
       'Sign In',
-      'Atau',
+      'Or',
       'Continue with Google',
       'Continue as Guest',
       'Guest mode saves data locally only. Sign in to sync progress.',

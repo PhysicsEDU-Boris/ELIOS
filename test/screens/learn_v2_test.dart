@@ -370,8 +370,8 @@ void main() {
       testWidgets('physics quiz uses the v2 question layout', (t) async {
         await _pump(t, const PhysicsQuizPage(), brightness: b);
         expect(t.takeException(), isNull);
-        expect(find.textContaining('Pertanyaan 1 /'), findsOneWidget);
-        expect(find.text('Fisika lanjutan'), findsOneWidget);
+        expect(find.textContaining('Question 1 /'), findsOneWidget);
+        expect(find.text('Advanced physics'), findsOneWidget);
         expect(find.text('D'), findsOneWidget);
       });
     });

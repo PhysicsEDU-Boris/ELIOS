@@ -1441,4 +1441,910 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dsTestMode => 'Test mode';
+
+  @override
+  String get histSavedLocal => 'Saved locally';
+
+  @override
+  String get histTitle => 'Scan History';
+
+  @override
+  String get histSubtitleShort => 'Quiz results & trophies';
+
+  @override
+  String get histSubtitle =>
+      'Every item you scanned, with its quiz results and trophies';
+
+  @override
+  String get histPickLeft => 'Pick a scan on the left to see the quiz details.';
+
+  @override
+  String get histRecent => 'Recent scans';
+
+  @override
+  String get histSeedDebug => 'Seed Sample Data (Debug)';
+
+  @override
+  String get histRecyclable => 'Recyclable';
+
+  @override
+  String get histOrganic => 'Organic';
+
+  @override
+  String histScannedAt(Object time, Object count) {
+    return 'Scanned $time · Photo and $count questions saved locally';
+  }
+
+  @override
+  String histDiffPill(Object level, Object count) {
+    return '$level · ${count}Q';
+  }
+
+  @override
+  String get hist10Trophies => '10 trophies per right answer';
+
+  @override
+  String get histQuestions => 'Questions';
+
+  @override
+  String get histPending => 'Pending';
+
+  @override
+  String get histCorrect => 'Correct';
+
+  @override
+  String get histWrong => 'Wrong';
+
+  @override
+  String get histYourAnswer => 'YOUR ANSWER';
+
+  @override
+  String get histRightAnswer => 'RIGHT ANSWER';
+
+  @override
+  String get histScore => 'SCORE';
+
+  @override
+  String get awaitingGrading => 'Awaiting grading';
+
+  @override
+  String histEssayScore(Object score, Object trophies) {
+    return '$score / 10 · +$trophies trophies';
+  }
+
+  @override
+  String get histHideExplanation => 'Hide Explanation';
+
+  @override
+  String get histShowExplanation => 'Show Explanation';
+
+  @override
+  String get histNoExplanation => 'No explanation was saved for this question.';
+
+  @override
+  String get histEmptyTitle => 'No Scan History Yet';
+
+  @override
+  String get histEmptyBody =>
+      'Every item you scan and every quiz you finish will show up here.';
+
+  @override
+  String get authUserNotFound =>
+      'No account found with this email or username.';
+
+  @override
+  String get authWrongPassword => 'Incorrect password.';
+
+  @override
+  String get authEmailInUse => 'This email is already registered.';
+
+  @override
+  String get authWeakPassword => 'Password must be at least 6 characters.';
+
+  @override
+  String get authInvalidEmail => 'Enter a valid email address.';
+
+  @override
+  String get authTooMany => 'Too many attempts. Try again later.';
+
+  @override
+  String get authNoInternet => 'No internet connection.';
+
+  @override
+  String get authGoogleConfig =>
+      'Google sign-in is not configured correctly. Check Android/iOS Firebase setup.';
+
+  @override
+  String get authOtherMethod =>
+      'This email is already registered with another sign-in method.';
+
+  @override
+  String get authGoogleLinked =>
+      'This Google account is already linked to another user.';
+
+  @override
+  String get authGoogleInvalid =>
+      'Google credential is invalid. Check Firebase configuration.';
+
+  @override
+  String get authGoogleDisabled =>
+      'Google sign-in is not enabled in Firebase Authentication.';
+
+  @override
+  String get authGeneric => 'Something went wrong. Please try again.';
+
+  @override
+  String get authWelcomeBack => 'Welcome back!';
+
+  @override
+  String get authSignInFailed => 'Sign in failed.';
+
+  @override
+  String get authAccountCreated => 'Account created!';
+
+  @override
+  String get authCreateFailed => 'Account creation failed.';
+
+  @override
+  String get authNoIdToken =>
+      'Google Sign-In returned no idToken. Check Firebase platform config.';
+
+  @override
+  String authGoogleFailedCode(Object code) {
+    return 'Google sign-in failed: $code';
+  }
+
+  @override
+  String get authGoogleFailed => 'Google sign-in failed. Check debug logs.';
+
+  @override
+  String get authGuestEntered => 'Entered guest mode.';
+
+  @override
+  String get authGuestFailed => 'Guest mode failed.';
+
+  @override
+  String get authEmailFirst => 'Enter a valid email first.';
+
+  @override
+  String get authResetSent => 'Reset link sent to your email.';
+
+  @override
+  String get authResetFailed => 'Failed to send reset email.';
+
+  @override
+  String get authEmailRequired => 'Email is required';
+
+  @override
+  String get authEmailOrUserRequired => 'Email or username is required';
+
+  @override
+  String get authValidEmail => 'Enter a valid email';
+
+  @override
+  String get authPasswordRequired => 'Password is required';
+
+  @override
+  String get authMin6 => 'Min 6 characters';
+
+  @override
+  String get authNameRequired => 'Name is required';
+
+  @override
+  String get authMin2 => 'Min 2 characters';
+
+  @override
+  String get authForgot => 'Forgot password?';
+
+  @override
+  String get authCreateAccount => 'Create Account';
+
+  @override
+  String get authWelcomeTitle => 'Welcome Back';
+
+  @override
+  String get authJoin => 'Join ELIOS to start sorting';
+
+  @override
+  String get authSignInSub => 'Sign in to control ELIOS';
+
+  @override
+  String get authEmail => 'Email';
+
+  @override
+  String get authEmailOrUser => 'Email / Username';
+
+  @override
+  String get authEmailOrUserHint => 'you@example.com or username';
+
+  @override
+  String get authSendReset => 'Send reset link';
+
+  @override
+  String get authSignIn => 'Sign In';
+
+  @override
+  String get authFullName => 'Full Name';
+
+  @override
+  String get authFullNameHint => 'John Doe';
+
+  @override
+  String get authPassword => 'Password';
+
+  @override
+  String get authPasswordHint => 'Enter your password';
+
+  @override
+  String get authGoogle => 'Continue with Google';
+
+  @override
+  String get authGuest => 'Continue as Guest';
+
+  @override
+  String get authGuestNote =>
+      'Guest mode saves data locally only. Sign in to sync progress.';
+
+  @override
+  String get authHaveAccount => 'Already have an account? ';
+
+  @override
+  String get authNoAccount => 'Don\'t have an account? ';
+
+  @override
+  String get authSignUp => 'Sign Up';
+
+  @override
+  String get authPleaseWait => 'Please wait';
+
+  @override
+  String get authOr => 'Or';
+
+  @override
+  String get quizSrcBank => 'MODULE QUESTION · QUESTION BANK';
+
+  @override
+  String get quizSrcAi => 'ELIOS AI QUESTION';
+
+  @override
+  String get quizSrcFallback => 'BACKUP QUESTION (ELIOS AI NOT CONNECTED)';
+
+  @override
+  String get quizSrcGeneric =>
+      'GENERAL QUESTION (ITEM NOT IN THE QUESTION BANK YET)';
+
+  @override
+  String get quizPreparing => 'Quiz, preparing the question';
+
+  @override
+  String get quizReady => 'Quiz, question ready';
+
+  @override
+  String get quizWord => 'Quiz';
+
+  @override
+  String get scanFailed => 'Scan did not work';
+
+  @override
+  String get wasteGeneric => 'Waste';
+
+  @override
+  String trophiesEarned(Object count) {
+    return '+$count trophies';
+  }
+
+  @override
+  String trophiesTotal(Object count) {
+    return '$count total trophies';
+  }
+
+  @override
+  String get robotDropping => 'The robot is dropping it in the bin...';
+
+  @override
+  String get qzReadScan => 'Read the scan';
+
+  @override
+  String get qzAiLooking => 'ELIOS AI is looking';
+
+  @override
+  String get qzPickedTopic => 'Picked a topic';
+
+  @override
+  String get qzAfterScan => 'After the scan';
+
+  @override
+  String get qzAiTopic => 'ELIOS AI topic';
+
+  @override
+  String qzBankPool(Object pool) {
+    return 'Bank pool · $pool';
+  }
+
+  @override
+  String get qzWriting => 'Writing the question';
+
+  @override
+  String get qzEssay => 'essay';
+
+  @override
+  String get qzMultipleChoice => 'multiple choice';
+
+  @override
+  String qzQuestionOfLevel(Object n, Object total, Object level) {
+    return 'Question $n of $total · $level';
+  }
+
+  @override
+  String qzQuestionOf(Object n, Object total) {
+    return 'Question $n of $total';
+  }
+
+  @override
+  String qzScanned(Object name) {
+    return 'Scanned: $name';
+  }
+
+  @override
+  String get qzReading => 'reading…';
+
+  @override
+  String get qzAiReadingCaps => 'ELIOS AI · READING THE SCAN';
+
+  @override
+  String get qzAiWritingCaps => 'ELIOS AI · WRITING YOUR QUESTION';
+
+  @override
+  String get qzReadingScan => 'Reading the scan…';
+
+  @override
+  String get qzPreparingNext => 'Preparing the next question…';
+
+  @override
+  String get qzAiOnline =>
+      'ELIOS AI is writing it online. This usually takes 2–4 seconds.';
+
+  @override
+  String get qzFromBank =>
+      'From the reviewed question bank. This takes a moment.';
+
+  @override
+  String get qzKeepDriving => 'Keep driving. ';
+
+  @override
+  String get qzMinimiseHint =>
+      'Minimise this and the Quiz button lights up when the question is ready.';
+
+  @override
+  String qzMcCaps(Object level) {
+    return 'MULTIPLE CHOICE · $level';
+  }
+
+  @override
+  String get qzSkipFinish => 'Skip and finish';
+
+  @override
+  String get qzSkip => 'Skip';
+
+  @override
+  String get qzUpTo10 => 'Up to +10 trophies for a full answer';
+
+  @override
+  String get qz10Right => '+10 trophies for a right answer';
+
+  @override
+  String qzEssayCaps(Object level, Object words) {
+    return 'ESSAY · $level · MAX $words WORDS';
+  }
+
+  @override
+  String get qzGrading => 'ELIOS AI is grading your answer…';
+
+  @override
+  String get qzTypeAnswer => 'Type your answer here…';
+
+  @override
+  String get qzSubmit => 'Submit';
+
+  @override
+  String get qzClear => 'Clear';
+
+  @override
+  String qzHazardTitle(Object name) {
+    return 'Possibly hazardous (B3): $name';
+  }
+
+  @override
+  String get qzHazardBody =>
+      'Don\'t take it apart or put it in a normal bin. Ask staff to handle it. Continue the quiz about this item?';
+
+  @override
+  String get qzContinueQuiz => 'Continue quiz';
+
+  @override
+  String get qzWhichBin => 'Which bin is right?';
+
+  @override
+  String qzMismatchBody(
+    Object detector,
+    Object detectorCategory,
+    Object name,
+    Object aiCategory,
+  ) {
+    return 'The detector says $detector ($detectorCategory). ELIOS AI says $name ($aiCategory). Pick the right one.';
+  }
+
+  @override
+  String qzUseAi(Object category) {
+    return 'Use ELIOS AI ($category)';
+  }
+
+  @override
+  String qzUseDetector(Object category) {
+    return 'Use detector ($category)';
+  }
+
+  @override
+  String get qzScanChip => 'Scan';
+
+  @override
+  String get qzComplete => 'Quiz complete';
+
+  @override
+  String get qzBack => 'Back';
+
+  @override
+  String get qzListenExplanation => 'Listen to explanation';
+
+  @override
+  String get qzFinish => 'Finish quiz';
+
+  @override
+  String get qzNextQuestion => 'Next question';
+
+  @override
+  String get qzEssayReview => 'Essay review';
+
+  @override
+  String get qzReview => 'Review';
+
+  @override
+  String get qzWaitingGrading => 'Waiting for grading';
+
+  @override
+  String get qzNotGradedYet =>
+      'ELIOS AI has not graded this answer yet. It is saved and graded later.';
+
+  @override
+  String qzScoreOf10(Object score) {
+    return 'Score $score / 10';
+  }
+
+  @override
+  String get qzCorrect => 'Correct!';
+
+  @override
+  String qzYouChose(Object picked) {
+    return 'You chose “$picked”.';
+  }
+
+  @override
+  String get qzNotQuite => 'Not quite';
+
+  @override
+  String qzRightAnswerIs(Object answer) {
+    return 'The right answer is “$answer”.';
+  }
+
+  @override
+  String get qzAnswerReview => 'Answer review';
+
+  @override
+  String get qzDetailed => 'Detailed explanation';
+
+  @override
+  String qzQuestionOfCaps(Object n, Object total, Object kind) {
+    return 'QUESTION $n OF $total · $kind';
+  }
+
+  @override
+  String get qzEssayUpper => 'ESSAY';
+
+  @override
+  String get qzQuestionCaps => 'QUESTION';
+
+  @override
+  String get qzCorrectAnswerCaps => 'CORRECT ANSWER';
+
+  @override
+  String get qzLoadingExplanation => 'Loading the explanation…';
+
+  @override
+  String get qzSavedNoTrophies =>
+      'Your answer is saved. ELIOS AI grades it when it is ready; no trophies until then.';
+
+  @override
+  String get qzFeedback => 'Feedback';
+
+  @override
+  String get qzWhyWrong => 'Why your answer is not right';
+
+  @override
+  String get qzWhyRight => 'Why the correct answer is right';
+
+  @override
+  String get qzElioModule => 'ELIOS module';
+
+  @override
+  String get qzScoringTable => 'Table 1. Scoring breakdown';
+
+  @override
+  String get qzCriteria => 'CRITERIA';
+
+  @override
+  String get qzFeedbackCaps => 'FEEDBACK';
+
+  @override
+  String qzWhereGoes(Object name) {
+    return 'Table 1. Where $name goes';
+  }
+
+  @override
+  String get qzThisItem => 'this item';
+
+  @override
+  String get qzBin => 'BIN';
+
+  @override
+  String get qzExamples => 'EXAMPLES';
+
+  @override
+  String get qzAccepts => 'ACCEPTS';
+
+  @override
+  String get qzOptionsTable => 'Table 1. The answer options';
+
+  @override
+  String get qzOption => 'OPTION';
+
+  @override
+  String get qzStatus => 'STATUS';
+
+  @override
+  String get qzCorrectAnswer => 'Correct answer';
+
+  @override
+  String get qzYourAnswer => 'Your answer';
+
+  @override
+  String get qzAiGraded => 'AI graded · check with your teacher';
+
+  @override
+  String get qzReviewedBank => 'Reviewed question bank';
+
+  @override
+  String get qzAiGenerated => 'AI generated · not reviewed';
+
+  @override
+  String get qzSugFullMark => 'Show a full-mark answer';
+
+  @override
+  String get qzSugKeyTerms => 'Explain key terms';
+
+  @override
+  String get qzSugHint => 'Give me a hint';
+
+  @override
+  String get qzSugSimpler => 'Say it simpler';
+
+  @override
+  String get qzCoach => 'ELIOS AI coach';
+
+  @override
+  String get qzSent => 'Sent';
+
+  @override
+  String get qzPlaying => 'Playing';
+
+  @override
+  String get qzAskScore => 'Ask ELIOS AI about your score…';
+
+  @override
+  String get qzAsk => 'Ask ELIOS AI…';
+
+  @override
+  String get qzSend => 'Send';
+
+  @override
+  String get qzListen => 'Listen';
+
+  @override
+  String get qzCopy => 'Copy';
+
+  @override
+  String get qzWhichItem => 'Which item is this?';
+
+  @override
+  String get qzNotThis => 'Not this?';
+
+  @override
+  String get qzMinimise => 'Minimise';
+
+  @override
+  String get qzMinimiseQuiz => 'Minimise quiz';
+
+  @override
+  String get qzCloseQuiz => 'Close quiz';
+
+  @override
+  String get qzReadToMe => 'Read it to me';
+
+  @override
+  String get qzExplanation => 'Explanation';
+
+  @override
+  String get ovEssayMax => 'Essay · max 150 words';
+
+  @override
+  String get ovPendingSub => 'Answer saved. No score yet.';
+
+  @override
+  String ovEssayScore(Object score) {
+    return 'Score: $score/10 · +$score trophies';
+  }
+
+  @override
+  String get ovGood => 'Good answer!';
+
+  @override
+  String get ovNeedsWork => 'A few points need work.';
+
+  @override
+  String get ovRight => 'Correct! +10 trophies';
+
+  @override
+  String get ovWrong => 'Not quite right';
+
+  @override
+  String ovRightAnswer(Object answer) {
+    return 'Right answer: $answer';
+  }
+
+  @override
+  String ovExplanationN(Object n) {
+    return 'Explanation for question $n';
+  }
+
+  @override
+  String get ovNoExplanation => 'No explanation for this question yet.';
+
+  @override
+  String get ovCompareTable => 'Waste category comparison';
+
+  @override
+  String ovReference(Object answer) {
+    return 'Reference answer: $answer';
+  }
+
+  @override
+  String get ovCategory => 'Category';
+
+  @override
+  String get ovMaterial => 'Material';
+
+  @override
+  String get ovAccepted => 'Accepted';
+
+  @override
+  String get ovCriteria => 'Criteria';
+
+  @override
+  String get ovMax => 'Max';
+
+  @override
+  String get ovAwarded => 'Awarded';
+
+  @override
+  String get ovComment => 'Comment';
+
+  @override
+  String get ovFinish => 'Finish quiz ✓';
+
+  @override
+  String get ovNext => 'Next question →';
+
+  @override
+  String get ovAssistant => 'AI Correction Assistant';
+
+  @override
+  String get ovAskAi => 'Ask AI...';
+
+  @override
+  String get ovVoice => 'Voice';
+
+  @override
+  String get lqTitle => 'Quiz';
+
+  @override
+  String lqCompletedBest(Object score) {
+    return ' Completed with best score $score%.';
+  }
+
+  @override
+  String lqBest(Object score) {
+    return ' Best score $score%.';
+  }
+
+  @override
+  String lqUsedAttempt(Object scoreText) {
+    return 'You have already used your one quiz attempt.$scoreText';
+  }
+
+  @override
+  String get lqOnceBody =>
+      'This quiz can only be attempted once. Once you start, you must finish it before leaving.';
+
+  @override
+  String get lqFinishBody =>
+      'This quiz has only one attempt. Please finish all questions before leaving.';
+
+  @override
+  String get lqLoading => 'Loading quiz questions';
+
+  @override
+  String get lqLoadFailed => 'Quiz questions could not be loaded.';
+
+  @override
+  String get lqCheckFirestore =>
+      'Check the Firestore connection and try again.';
+
+  @override
+  String get lqBackToQuizzes => 'Back to Quizzes';
+
+  @override
+  String get lqNotAvailable => 'Quiz questions are not available yet.';
+
+  @override
+  String get lqIntro =>
+      'Test your understanding of waste management and how ELIO classifies materials. Each quiz has one attempt.';
+
+  @override
+  String get lqSetsFailed => 'Quiz sets could not be loaded.';
+
+  @override
+  String get lqNoPublished => 'No published quizzes are available.';
+
+  @override
+  String get lqCompleted => 'Completed';
+
+  @override
+  String get lqAttemptUsed => 'Attempt used';
+
+  @override
+  String lqBestScore(Object score) {
+    return 'best score $score%';
+  }
+
+  @override
+  String get lqReviewNew => 'review for new attempts only';
+
+  @override
+  String lqQuestions(Object count) {
+    return '$count questions';
+  }
+
+  @override
+  String get lqOneAttempt => 'one attempt';
+
+  @override
+  String get lqReview => 'Review';
+
+  @override
+  String get lqDone => 'Done';
+
+  @override
+  String get lqUsed => 'Used';
+
+  @override
+  String lqCounter(Object n, Object total) {
+    return 'Question $n / $total';
+  }
+
+  @override
+  String lqCorrectExpl(Object explanation) {
+    return 'Correct: $explanation';
+  }
+
+  @override
+  String lqNotQuiteExpl(Object explanation) {
+    return 'Not quite: $explanation';
+  }
+
+  @override
+  String get lqNotQuite => 'Not quite.';
+
+  @override
+  String get lqViewResults => 'View results';
+
+  @override
+  String get lqImageUnavailable => 'Image unavailable';
+
+  @override
+  String lqScored(Object score, Object total) {
+    return 'You scored $score out of $total.';
+  }
+
+  @override
+  String get lqBackLower => 'Back to quizzes';
+
+  @override
+  String get lqReviewAnswers => 'Review answers';
+
+  @override
+  String get rvTitle => 'Quiz review';
+
+  @override
+  String get rvScore => 'Score';
+
+  @override
+  String get rvPercent => 'Percent';
+
+  @override
+  String get rvPassed => 'Passed';
+
+  @override
+  String rvQuestionN(Object n) {
+    return 'Question $n';
+  }
+
+  @override
+  String get rvNotAnswered => 'Not answered';
+
+  @override
+  String get rvUnknown => 'Unknown answer';
+
+  @override
+  String get pqResultsTitle => 'Physics Quiz Results';
+
+  @override
+  String get pqTitle => 'Physics quiz';
+
+  @override
+  String pqCounter(Object n, Object total) {
+    return 'Question $n / $total';
+  }
+
+  @override
+  String get pqAdvanced => 'Advanced physics';
+
+  @override
+  String get pqWrong => 'Not quite.';
+
+  @override
+  String get pqSeeResults => 'See results';
+
+  @override
+  String get pqNext => 'Next question';
+
+  @override
+  String get pqDone => 'Physics Quiz Complete';
+
+  @override
+  String pqScore(Object score, Object total) {
+    return 'Your score: $score / $total';
+  }
+
+  @override
+  String get pqBackMenu => 'Back to Menu';
+
+  @override
+  String get tpNotUsed => 'Not used yet';
+
+  @override
+  String tpReady(Object model) {
+    return 'Ready ($model)';
+  }
+
+  @override
+  String get tpOffline => 'Not connected, bank mode';
 }

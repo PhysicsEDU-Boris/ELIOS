@@ -2647,6 +2647,1619 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Test mode'**
   String get dsTestMode;
+
+  /// No description provided for @histSavedLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved locally'**
+  String get histSavedLocal;
+
+  /// No description provided for @histTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan History'**
+  String get histTitle;
+
+  /// No description provided for @histSubtitleShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz results & trophies'**
+  String get histSubtitleShort;
+
+  /// No description provided for @histSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Every item you scanned, with its quiz results and trophies'**
+  String get histSubtitle;
+
+  /// No description provided for @histPickLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a scan on the left to see the quiz details.'**
+  String get histPickLeft;
+
+  /// No description provided for @histRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent scans'**
+  String get histRecent;
+
+  /// No description provided for @histSeedDebug.
+  ///
+  /// In en, this message translates to:
+  /// **'Seed Sample Data (Debug)'**
+  String get histSeedDebug;
+
+  /// No description provided for @histRecyclable.
+  ///
+  /// In en, this message translates to:
+  /// **'Recyclable'**
+  String get histRecyclable;
+
+  /// No description provided for @histOrganic.
+  ///
+  /// In en, this message translates to:
+  /// **'Organic'**
+  String get histOrganic;
+
+  /// No description provided for @histScannedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanned {time} · Photo and {count} questions saved locally'**
+  String histScannedAt(Object time, Object count);
+
+  /// No description provided for @histDiffPill.
+  ///
+  /// In en, this message translates to:
+  /// **'{level} · {count}Q'**
+  String histDiffPill(Object level, Object count);
+
+  /// No description provided for @hist10Trophies.
+  ///
+  /// In en, this message translates to:
+  /// **'10 trophies per right answer'**
+  String get hist10Trophies;
+
+  /// No description provided for @histQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions'**
+  String get histQuestions;
+
+  /// No description provided for @histPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get histPending;
+
+  /// No description provided for @histCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct'**
+  String get histCorrect;
+
+  /// No description provided for @histWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong'**
+  String get histWrong;
+
+  /// No description provided for @histYourAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR ANSWER'**
+  String get histYourAnswer;
+
+  /// No description provided for @histRightAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'RIGHT ANSWER'**
+  String get histRightAnswer;
+
+  /// No description provided for @histScore.
+  ///
+  /// In en, this message translates to:
+  /// **'SCORE'**
+  String get histScore;
+
+  /// No description provided for @awaitingGrading.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting grading'**
+  String get awaitingGrading;
+
+  /// No description provided for @histEssayScore.
+  ///
+  /// In en, this message translates to:
+  /// **'{score} / 10 · +{trophies} trophies'**
+  String histEssayScore(Object score, Object trophies);
+
+  /// No description provided for @histHideExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide Explanation'**
+  String get histHideExplanation;
+
+  /// No description provided for @histShowExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Explanation'**
+  String get histShowExplanation;
+
+  /// No description provided for @histNoExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'No explanation was saved for this question.'**
+  String get histNoExplanation;
+
+  /// No description provided for @histEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No Scan History Yet'**
+  String get histEmptyTitle;
+
+  /// No description provided for @histEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every item you scan and every quiz you finish will show up here.'**
+  String get histEmptyBody;
+
+  /// No description provided for @authUserNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No account found with this email or username.'**
+  String get authUserNotFound;
+
+  /// No description provided for @authWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect password.'**
+  String get authWrongPassword;
+
+  /// No description provided for @authEmailInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'This email is already registered.'**
+  String get authEmailInUse;
+
+  /// No description provided for @authWeakPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters.'**
+  String get authWeakPassword;
+
+  /// No description provided for @authInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address.'**
+  String get authInvalidEmail;
+
+  /// No description provided for @authTooMany.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Try again later.'**
+  String get authTooMany;
+
+  /// No description provided for @authNoInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection.'**
+  String get authNoInternet;
+
+  /// No description provided for @authGoogleConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in is not configured correctly. Check Android/iOS Firebase setup.'**
+  String get authGoogleConfig;
+
+  /// No description provided for @authOtherMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'This email is already registered with another sign-in method.'**
+  String get authOtherMethod;
+
+  /// No description provided for @authGoogleLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'This Google account is already linked to another user.'**
+  String get authGoogleLinked;
+
+  /// No description provided for @authGoogleInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Google credential is invalid. Check Firebase configuration.'**
+  String get authGoogleInvalid;
+
+  /// No description provided for @authGoogleDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in is not enabled in Firebase Authentication.'**
+  String get authGoogleDisabled;
+
+  /// No description provided for @authGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get authGeneric;
+
+  /// No description provided for @authWelcomeBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back!'**
+  String get authWelcomeBack;
+
+  /// No description provided for @authSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in failed.'**
+  String get authSignInFailed;
+
+  /// No description provided for @authAccountCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Account created!'**
+  String get authAccountCreated;
+
+  /// No description provided for @authCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Account creation failed.'**
+  String get authCreateFailed;
+
+  /// No description provided for @authNoIdToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Sign-In returned no idToken. Check Firebase platform config.'**
+  String get authNoIdToken;
+
+  /// No description provided for @authGoogleFailedCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in failed: {code}'**
+  String authGoogleFailedCode(Object code);
+
+  /// No description provided for @authGoogleFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in failed. Check debug logs.'**
+  String get authGoogleFailed;
+
+  /// No description provided for @authGuestEntered.
+  ///
+  /// In en, this message translates to:
+  /// **'Entered guest mode.'**
+  String get authGuestEntered;
+
+  /// No description provided for @authGuestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest mode failed.'**
+  String get authGuestFailed;
+
+  /// No description provided for @authEmailFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email first.'**
+  String get authEmailFirst;
+
+  /// No description provided for @authResetSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset link sent to your email.'**
+  String get authResetSent;
+
+  /// No description provided for @authResetFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send reset email.'**
+  String get authResetFailed;
+
+  /// No description provided for @authEmailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Email is required'**
+  String get authEmailRequired;
+
+  /// No description provided for @authEmailOrUserRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Email or username is required'**
+  String get authEmailOrUserRequired;
+
+  /// No description provided for @authValidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email'**
+  String get authValidEmail;
+
+  /// No description provided for @authPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is required'**
+  String get authPasswordRequired;
+
+  /// No description provided for @authMin6.
+  ///
+  /// In en, this message translates to:
+  /// **'Min 6 characters'**
+  String get authMin6;
+
+  /// No description provided for @authNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required'**
+  String get authNameRequired;
+
+  /// No description provided for @authMin2.
+  ///
+  /// In en, this message translates to:
+  /// **'Min 2 characters'**
+  String get authMin2;
+
+  /// No description provided for @authForgot.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get authForgot;
+
+  /// No description provided for @authCreateAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Account'**
+  String get authCreateAccount;
+
+  /// No description provided for @authWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome Back'**
+  String get authWelcomeTitle;
+
+  /// No description provided for @authJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join ELIOS to start sorting'**
+  String get authJoin;
+
+  /// No description provided for @authSignInSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to control ELIOS'**
+  String get authSignInSub;
+
+  /// No description provided for @authEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get authEmail;
+
+  /// No description provided for @authEmailOrUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Email / Username'**
+  String get authEmailOrUser;
+
+  /// No description provided for @authEmailOrUserHint.
+  ///
+  /// In en, this message translates to:
+  /// **'you@example.com or username'**
+  String get authEmailOrUserHint;
+
+  /// No description provided for @authSendReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Send reset link'**
+  String get authSendReset;
+
+  /// No description provided for @authSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign In'**
+  String get authSignIn;
+
+  /// No description provided for @authFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name'**
+  String get authFullName;
+
+  /// No description provided for @authFullNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'John Doe'**
+  String get authFullNameHint;
+
+  /// No description provided for @authPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get authPassword;
+
+  /// No description provided for @authPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get authPasswordHint;
+
+  /// No description provided for @authGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get authGoogle;
+
+  /// No description provided for @authGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue as Guest'**
+  String get authGuest;
+
+  /// No description provided for @authGuestNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest mode saves data locally only. Sign in to sync progress.'**
+  String get authGuestNote;
+
+  /// No description provided for @authHaveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account? '**
+  String get authHaveAccount;
+
+  /// No description provided for @authNoAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t have an account? '**
+  String get authNoAccount;
+
+  /// No description provided for @authSignUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Up'**
+  String get authSignUp;
+
+  /// No description provided for @authPleaseWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait'**
+  String get authPleaseWait;
+
+  /// No description provided for @authOr.
+  ///
+  /// In en, this message translates to:
+  /// **'Or'**
+  String get authOr;
+
+  /// No description provided for @quizSrcBank.
+  ///
+  /// In en, this message translates to:
+  /// **'MODULE QUESTION · QUESTION BANK'**
+  String get quizSrcBank;
+
+  /// No description provided for @quizSrcAi.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI QUESTION'**
+  String get quizSrcAi;
+
+  /// No description provided for @quizSrcFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'BACKUP QUESTION (ELIOS AI NOT CONNECTED)'**
+  String get quizSrcFallback;
+
+  /// No description provided for @quizSrcGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'GENERAL QUESTION (ITEM NOT IN THE QUESTION BANK YET)'**
+  String get quizSrcGeneric;
+
+  /// No description provided for @quizPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz, preparing the question'**
+  String get quizPreparing;
+
+  /// No description provided for @quizReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz, question ready'**
+  String get quizReady;
+
+  /// No description provided for @quizWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz'**
+  String get quizWord;
+
+  /// No description provided for @scanFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan did not work'**
+  String get scanFailed;
+
+  /// No description provided for @wasteGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Waste'**
+  String get wasteGeneric;
+
+  /// No description provided for @trophiesEarned.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} trophies'**
+  String trophiesEarned(Object count);
+
+  /// No description provided for @trophiesTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} total trophies'**
+  String trophiesTotal(Object count);
+
+  /// No description provided for @robotDropping.
+  ///
+  /// In en, this message translates to:
+  /// **'The robot is dropping it in the bin...'**
+  String get robotDropping;
+
+  /// No description provided for @qzReadScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the scan'**
+  String get qzReadScan;
+
+  /// No description provided for @qzAiLooking.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI is looking'**
+  String get qzAiLooking;
+
+  /// No description provided for @qzPickedTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'Picked a topic'**
+  String get qzPickedTopic;
+
+  /// No description provided for @qzAfterScan.
+  ///
+  /// In en, this message translates to:
+  /// **'After the scan'**
+  String get qzAfterScan;
+
+  /// No description provided for @qzAiTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI topic'**
+  String get qzAiTopic;
+
+  /// No description provided for @qzBankPool.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank pool · {pool}'**
+  String qzBankPool(Object pool);
+
+  /// No description provided for @qzWriting.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing the question'**
+  String get qzWriting;
+
+  /// No description provided for @qzEssay.
+  ///
+  /// In en, this message translates to:
+  /// **'essay'**
+  String get qzEssay;
+
+  /// No description provided for @qzMultipleChoice.
+  ///
+  /// In en, this message translates to:
+  /// **'multiple choice'**
+  String get qzMultipleChoice;
+
+  /// No description provided for @qzQuestionOfLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {n} of {total} · {level}'**
+  String qzQuestionOfLevel(Object n, Object total, Object level);
+
+  /// No description provided for @qzQuestionOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {n} of {total}'**
+  String qzQuestionOf(Object n, Object total);
+
+  /// No description provided for @qzScanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanned: {name}'**
+  String qzScanned(Object name);
+
+  /// No description provided for @qzReading.
+  ///
+  /// In en, this message translates to:
+  /// **'reading…'**
+  String get qzReading;
+
+  /// No description provided for @qzAiReadingCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI · READING THE SCAN'**
+  String get qzAiReadingCaps;
+
+  /// No description provided for @qzAiWritingCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI · WRITING YOUR QUESTION'**
+  String get qzAiWritingCaps;
+
+  /// No description provided for @qzReadingScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the scan…'**
+  String get qzReadingScan;
+
+  /// No description provided for @qzPreparingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing the next question…'**
+  String get qzPreparingNext;
+
+  /// No description provided for @qzAiOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI is writing it online. This usually takes 2–4 seconds.'**
+  String get qzAiOnline;
+
+  /// No description provided for @qzFromBank.
+  ///
+  /// In en, this message translates to:
+  /// **'From the reviewed question bank. This takes a moment.'**
+  String get qzFromBank;
+
+  /// No description provided for @qzKeepDriving.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep driving. '**
+  String get qzKeepDriving;
+
+  /// No description provided for @qzMinimiseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimise this and the Quiz button lights up when the question is ready.'**
+  String get qzMinimiseHint;
+
+  /// No description provided for @qzMcCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'MULTIPLE CHOICE · {level}'**
+  String qzMcCaps(Object level);
+
+  /// No description provided for @qzSkipFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip and finish'**
+  String get qzSkipFinish;
+
+  /// No description provided for @qzSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get qzSkip;
+
+  /// No description provided for @qzUpTo10.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to +10 trophies for a full answer'**
+  String get qzUpTo10;
+
+  /// No description provided for @qz10Right.
+  ///
+  /// In en, this message translates to:
+  /// **'+10 trophies for a right answer'**
+  String get qz10Right;
+
+  /// No description provided for @qzEssayCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'ESSAY · {level} · MAX {words} WORDS'**
+  String qzEssayCaps(Object level, Object words);
+
+  /// No description provided for @qzGrading.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI is grading your answer…'**
+  String get qzGrading;
+
+  /// No description provided for @qzTypeAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your answer here…'**
+  String get qzTypeAnswer;
+
+  /// No description provided for @qzSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get qzSubmit;
+
+  /// No description provided for @qzClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get qzClear;
+
+  /// No description provided for @qzHazardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Possibly hazardous (B3): {name}'**
+  String qzHazardTitle(Object name);
+
+  /// No description provided for @qzHazardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t take it apart or put it in a normal bin. Ask staff to handle it. Continue the quiz about this item?'**
+  String get qzHazardBody;
+
+  /// No description provided for @qzContinueQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue quiz'**
+  String get qzContinueQuiz;
+
+  /// No description provided for @qzWhichBin.
+  ///
+  /// In en, this message translates to:
+  /// **'Which bin is right?'**
+  String get qzWhichBin;
+
+  /// No description provided for @qzMismatchBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The detector says {detector} ({detectorCategory}). ELIOS AI says {name} ({aiCategory}). Pick the right one.'**
+  String qzMismatchBody(
+    Object detector,
+    Object detectorCategory,
+    Object name,
+    Object aiCategory,
+  );
+
+  /// No description provided for @qzUseAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Use ELIOS AI ({category})'**
+  String qzUseAi(Object category);
+
+  /// No description provided for @qzUseDetector.
+  ///
+  /// In en, this message translates to:
+  /// **'Use detector ({category})'**
+  String qzUseDetector(Object category);
+
+  /// No description provided for @qzScanChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan'**
+  String get qzScanChip;
+
+  /// No description provided for @qzComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz complete'**
+  String get qzComplete;
+
+  /// No description provided for @qzBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get qzBack;
+
+  /// No description provided for @qzListenExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen to explanation'**
+  String get qzListenExplanation;
+
+  /// No description provided for @qzFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish quiz'**
+  String get qzFinish;
+
+  /// No description provided for @qzNextQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Next question'**
+  String get qzNextQuestion;
+
+  /// No description provided for @qzEssayReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Essay review'**
+  String get qzEssayReview;
+
+  /// No description provided for @qzReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get qzReview;
+
+  /// No description provided for @qzWaitingGrading.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for grading'**
+  String get qzWaitingGrading;
+
+  /// No description provided for @qzNotGradedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI has not graded this answer yet. It is saved and graded later.'**
+  String get qzNotGradedYet;
+
+  /// No description provided for @qzScoreOf10.
+  ///
+  /// In en, this message translates to:
+  /// **'Score {score} / 10'**
+  String qzScoreOf10(Object score);
+
+  /// No description provided for @qzCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct!'**
+  String get qzCorrect;
+
+  /// No description provided for @qzYouChose.
+  ///
+  /// In en, this message translates to:
+  /// **'You chose “{picked}”.'**
+  String qzYouChose(Object picked);
+
+  /// No description provided for @qzNotQuite.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite'**
+  String get qzNotQuite;
+
+  /// No description provided for @qzRightAnswerIs.
+  ///
+  /// In en, this message translates to:
+  /// **'The right answer is “{answer}”.'**
+  String qzRightAnswerIs(Object answer);
+
+  /// No description provided for @qzAnswerReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer review'**
+  String get qzAnswerReview;
+
+  /// No description provided for @qzDetailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed explanation'**
+  String get qzDetailed;
+
+  /// No description provided for @qzQuestionOfCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'QUESTION {n} OF {total} · {kind}'**
+  String qzQuestionOfCaps(Object n, Object total, Object kind);
+
+  /// No description provided for @qzEssayUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'ESSAY'**
+  String get qzEssayUpper;
+
+  /// No description provided for @qzQuestionCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'QUESTION'**
+  String get qzQuestionCaps;
+
+  /// No description provided for @qzCorrectAnswerCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'CORRECT ANSWER'**
+  String get qzCorrectAnswerCaps;
+
+  /// No description provided for @qzLoadingExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading the explanation…'**
+  String get qzLoadingExplanation;
+
+  /// No description provided for @qzSavedNoTrophies.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answer is saved. ELIOS AI grades it when it is ready; no trophies until then.'**
+  String get qzSavedNoTrophies;
+
+  /// No description provided for @qzFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback'**
+  String get qzFeedback;
+
+  /// No description provided for @qzWhyWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Why your answer is not right'**
+  String get qzWhyWrong;
+
+  /// No description provided for @qzWhyRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Why the correct answer is right'**
+  String get qzWhyRight;
+
+  /// No description provided for @qzElioModule.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS module'**
+  String get qzElioModule;
+
+  /// No description provided for @qzScoringTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Table 1. Scoring breakdown'**
+  String get qzScoringTable;
+
+  /// No description provided for @qzCriteria.
+  ///
+  /// In en, this message translates to:
+  /// **'CRITERIA'**
+  String get qzCriteria;
+
+  /// No description provided for @qzFeedbackCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'FEEDBACK'**
+  String get qzFeedbackCaps;
+
+  /// No description provided for @qzWhereGoes.
+  ///
+  /// In en, this message translates to:
+  /// **'Table 1. Where {name} goes'**
+  String qzWhereGoes(Object name);
+
+  /// No description provided for @qzThisItem.
+  ///
+  /// In en, this message translates to:
+  /// **'this item'**
+  String get qzThisItem;
+
+  /// No description provided for @qzBin.
+  ///
+  /// In en, this message translates to:
+  /// **'BIN'**
+  String get qzBin;
+
+  /// No description provided for @qzExamples.
+  ///
+  /// In en, this message translates to:
+  /// **'EXAMPLES'**
+  String get qzExamples;
+
+  /// No description provided for @qzAccepts.
+  ///
+  /// In en, this message translates to:
+  /// **'ACCEPTS'**
+  String get qzAccepts;
+
+  /// No description provided for @qzOptionsTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Table 1. The answer options'**
+  String get qzOptionsTable;
+
+  /// No description provided for @qzOption.
+  ///
+  /// In en, this message translates to:
+  /// **'OPTION'**
+  String get qzOption;
+
+  /// No description provided for @qzStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'STATUS'**
+  String get qzStatus;
+
+  /// No description provided for @qzCorrectAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct answer'**
+  String get qzCorrectAnswer;
+
+  /// No description provided for @qzYourAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answer'**
+  String get qzYourAnswer;
+
+  /// No description provided for @qzAiGraded.
+  ///
+  /// In en, this message translates to:
+  /// **'AI graded · check with your teacher'**
+  String get qzAiGraded;
+
+  /// No description provided for @qzReviewedBank.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewed question bank'**
+  String get qzReviewedBank;
+
+  /// No description provided for @qzAiGenerated.
+  ///
+  /// In en, this message translates to:
+  /// **'AI generated · not reviewed'**
+  String get qzAiGenerated;
+
+  /// No description provided for @qzSugFullMark.
+  ///
+  /// In en, this message translates to:
+  /// **'Show a full-mark answer'**
+  String get qzSugFullMark;
+
+  /// No description provided for @qzSugKeyTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain key terms'**
+  String get qzSugKeyTerms;
+
+  /// No description provided for @qzSugHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Give me a hint'**
+  String get qzSugHint;
+
+  /// No description provided for @qzSugSimpler.
+  ///
+  /// In en, this message translates to:
+  /// **'Say it simpler'**
+  String get qzSugSimpler;
+
+  /// No description provided for @qzCoach.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI coach'**
+  String get qzCoach;
+
+  /// No description provided for @qzSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get qzSent;
+
+  /// No description provided for @qzPlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing'**
+  String get qzPlaying;
+
+  /// No description provided for @qzAskScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask ELIOS AI about your score…'**
+  String get qzAskScore;
+
+  /// No description provided for @qzAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask ELIOS AI…'**
+  String get qzAsk;
+
+  /// No description provided for @qzSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get qzSend;
+
+  /// No description provided for @qzListen.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get qzListen;
+
+  /// No description provided for @qzCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get qzCopy;
+
+  /// No description provided for @qzWhichItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Which item is this?'**
+  String get qzWhichItem;
+
+  /// No description provided for @qzNotThis.
+  ///
+  /// In en, this message translates to:
+  /// **'Not this?'**
+  String get qzNotThis;
+
+  /// No description provided for @qzMinimise.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimise'**
+  String get qzMinimise;
+
+  /// No description provided for @qzMinimiseQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimise quiz'**
+  String get qzMinimiseQuiz;
+
+  /// No description provided for @qzCloseQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Close quiz'**
+  String get qzCloseQuiz;
+
+  /// No description provided for @qzReadToMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Read it to me'**
+  String get qzReadToMe;
+
+  /// No description provided for @qzExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation'**
+  String get qzExplanation;
+
+  /// No description provided for @ovEssayMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Essay · max 150 words'**
+  String get ovEssayMax;
+
+  /// No description provided for @ovPendingSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer saved. No score yet.'**
+  String get ovPendingSub;
+
+  /// No description provided for @ovEssayScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score: {score}/10 · +{score} trophies'**
+  String ovEssayScore(Object score);
+
+  /// No description provided for @ovGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Good answer!'**
+  String get ovGood;
+
+  /// No description provided for @ovNeedsWork.
+  ///
+  /// In en, this message translates to:
+  /// **'A few points need work.'**
+  String get ovNeedsWork;
+
+  /// No description provided for @ovRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct! +10 trophies'**
+  String get ovRight;
+
+  /// No description provided for @ovWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite right'**
+  String get ovWrong;
+
+  /// No description provided for @ovRightAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Right answer: {answer}'**
+  String ovRightAnswer(Object answer);
+
+  /// No description provided for @ovExplanationN.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation for question {n}'**
+  String ovExplanationN(Object n);
+
+  /// No description provided for @ovNoExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'No explanation for this question yet.'**
+  String get ovNoExplanation;
+
+  /// No description provided for @ovCompareTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Waste category comparison'**
+  String get ovCompareTable;
+
+  /// No description provided for @ovReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference answer: {answer}'**
+  String ovReference(Object answer);
+
+  /// No description provided for @ovCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get ovCategory;
+
+  /// No description provided for @ovMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material'**
+  String get ovMaterial;
+
+  /// No description provided for @ovAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted'**
+  String get ovAccepted;
+
+  /// No description provided for @ovCriteria.
+  ///
+  /// In en, this message translates to:
+  /// **'Criteria'**
+  String get ovCriteria;
+
+  /// No description provided for @ovMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Max'**
+  String get ovMax;
+
+  /// No description provided for @ovAwarded.
+  ///
+  /// In en, this message translates to:
+  /// **'Awarded'**
+  String get ovAwarded;
+
+  /// No description provided for @ovComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment'**
+  String get ovComment;
+
+  /// No description provided for @ovFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish quiz ✓'**
+  String get ovFinish;
+
+  /// No description provided for @ovNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next question →'**
+  String get ovNext;
+
+  /// No description provided for @ovAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Correction Assistant'**
+  String get ovAssistant;
+
+  /// No description provided for @ovAskAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask AI...'**
+  String get ovAskAi;
+
+  /// No description provided for @ovVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get ovVoice;
+
+  /// No description provided for @lqTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz'**
+  String get lqTitle;
+
+  /// No description provided for @lqCompletedBest.
+  ///
+  /// In en, this message translates to:
+  /// **' Completed with best score {score}%.'**
+  String lqCompletedBest(Object score);
+
+  /// No description provided for @lqBest.
+  ///
+  /// In en, this message translates to:
+  /// **' Best score {score}%.'**
+  String lqBest(Object score);
+
+  /// No description provided for @lqUsedAttempt.
+  ///
+  /// In en, this message translates to:
+  /// **'You have already used your one quiz attempt.{scoreText}'**
+  String lqUsedAttempt(Object scoreText);
+
+  /// No description provided for @lqOnceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This quiz can only be attempted once. Once you start, you must finish it before leaving.'**
+  String get lqOnceBody;
+
+  /// No description provided for @lqFinishBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This quiz has only one attempt. Please finish all questions before leaving.'**
+  String get lqFinishBody;
+
+  /// No description provided for @lqLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading quiz questions'**
+  String get lqLoading;
+
+  /// No description provided for @lqLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz questions could not be loaded.'**
+  String get lqLoadFailed;
+
+  /// No description provided for @lqCheckFirestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the Firestore connection and try again.'**
+  String get lqCheckFirestore;
+
+  /// No description provided for @lqBackToQuizzes.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Quizzes'**
+  String get lqBackToQuizzes;
+
+  /// No description provided for @lqNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz questions are not available yet.'**
+  String get lqNotAvailable;
+
+  /// No description provided for @lqIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Test your understanding of waste management and how ELIO classifies materials. Each quiz has one attempt.'**
+  String get lqIntro;
+
+  /// No description provided for @lqSetsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz sets could not be loaded.'**
+  String get lqSetsFailed;
+
+  /// No description provided for @lqNoPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'No published quizzes are available.'**
+  String get lqNoPublished;
+
+  /// No description provided for @lqCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get lqCompleted;
+
+  /// No description provided for @lqAttemptUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Attempt used'**
+  String get lqAttemptUsed;
+
+  /// No description provided for @lqBestScore.
+  ///
+  /// In en, this message translates to:
+  /// **'best score {score}%'**
+  String lqBestScore(Object score);
+
+  /// No description provided for @lqReviewNew.
+  ///
+  /// In en, this message translates to:
+  /// **'review for new attempts only'**
+  String get lqReviewNew;
+
+  /// No description provided for @lqQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} questions'**
+  String lqQuestions(Object count);
+
+  /// No description provided for @lqOneAttempt.
+  ///
+  /// In en, this message translates to:
+  /// **'one attempt'**
+  String get lqOneAttempt;
+
+  /// No description provided for @lqReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get lqReview;
+
+  /// No description provided for @lqDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get lqDone;
+
+  /// No description provided for @lqUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Used'**
+  String get lqUsed;
+
+  /// No description provided for @lqCounter.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {n} / {total}'**
+  String lqCounter(Object n, Object total);
+
+  /// No description provided for @lqCorrectExpl.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct: {explanation}'**
+  String lqCorrectExpl(Object explanation);
+
+  /// No description provided for @lqNotQuiteExpl.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite: {explanation}'**
+  String lqNotQuiteExpl(Object explanation);
+
+  /// No description provided for @lqNotQuite.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite.'**
+  String get lqNotQuite;
+
+  /// No description provided for @lqViewResults.
+  ///
+  /// In en, this message translates to:
+  /// **'View results'**
+  String get lqViewResults;
+
+  /// No description provided for @lqImageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Image unavailable'**
+  String get lqImageUnavailable;
+
+  /// No description provided for @lqScored.
+  ///
+  /// In en, this message translates to:
+  /// **'You scored {score} out of {total}.'**
+  String lqScored(Object score, Object total);
+
+  /// No description provided for @lqBackLower.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to quizzes'**
+  String get lqBackLower;
+
+  /// No description provided for @lqReviewAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'Review answers'**
+  String get lqReviewAnswers;
+
+  /// No description provided for @rvTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz review'**
+  String get rvTitle;
+
+  /// No description provided for @rvScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get rvScore;
+
+  /// No description provided for @rvPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'Percent'**
+  String get rvPercent;
+
+  /// No description provided for @rvPassed.
+  ///
+  /// In en, this message translates to:
+  /// **'Passed'**
+  String get rvPassed;
+
+  /// No description provided for @rvQuestionN.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {n}'**
+  String rvQuestionN(Object n);
+
+  /// No description provided for @rvNotAnswered.
+  ///
+  /// In en, this message translates to:
+  /// **'Not answered'**
+  String get rvNotAnswered;
+
+  /// No description provided for @rvUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown answer'**
+  String get rvUnknown;
+
+  /// No description provided for @pqResultsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Physics Quiz Results'**
+  String get pqResultsTitle;
+
+  /// No description provided for @pqTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Physics quiz'**
+  String get pqTitle;
+
+  /// No description provided for @pqCounter.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {n} / {total}'**
+  String pqCounter(Object n, Object total);
+
+  /// No description provided for @pqAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced physics'**
+  String get pqAdvanced;
+
+  /// No description provided for @pqWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite.'**
+  String get pqWrong;
+
+  /// No description provided for @pqSeeResults.
+  ///
+  /// In en, this message translates to:
+  /// **'See results'**
+  String get pqSeeResults;
+
+  /// No description provided for @pqNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next question'**
+  String get pqNext;
+
+  /// No description provided for @pqDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Physics Quiz Complete'**
+  String get pqDone;
+
+  /// No description provided for @pqScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Your score: {score} / {total}'**
+  String pqScore(Object score, Object total);
+
+  /// No description provided for @pqBackMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Menu'**
+  String get pqBackMenu;
+
+  /// No description provided for @tpNotUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used yet'**
+  String get tpNotUsed;
+
+  /// No description provided for @tpReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready ({model})'**
+  String tpReady(Object model);
+
+  /// No description provided for @tpOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected, bank mode'**
+  String get tpOffline;
 }
 
 class _AppLocalizationsDelegate

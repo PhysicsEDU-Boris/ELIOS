@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../physics/quiz/physics_quiz_state.dart';
 import '../../../../widgets/learn/learn_ui.dart';
 import '../learn_content.dart';
+import 'package:elio/l10n/l10n.dart';
 
 class PhysicsQuizPage extends ConsumerWidget {
   const PhysicsQuizPage({super.key});
@@ -18,7 +19,7 @@ class PhysicsQuizPage extends ConsumerWidget {
 
     if (isFinished) {
       return LearnPageScaffold(
-        title: 'Hasil Kuis Fisika',
+        title: l10n.pqResultsTitle,
         centerTitle: false,
         body: LearnListView(
           children: [
@@ -46,7 +47,7 @@ class PhysicsQuizPage extends ConsumerWidget {
 
     // A key per question index resets the stateful view for each question.
     return LearnPageScaffold(
-      title: 'Kuis fisika',
+      title: l10n.pqTitle,
       centerTitle: false,
       body: _PhysicsQuestionView(
         key: ValueKey(currentQuestionIndex),
@@ -105,8 +106,8 @@ class _PhysicsQuestionViewState extends State<_PhysicsQuestionView> {
           child: LearnListView(
             children: [
               QuizProgressHeader(
-                counter: 'Pertanyaan ${widget.questionIndex + 1} / ${widget.totalQuestions}',
-                level: 'Fisika lanjutan',
+                counter: l10n.pqCounter(widget.questionIndex + 1, widget.totalQuestions),
+                level: l10n.pqAdvanced,
                 value: (widget.questionIndex + 1) / widget.totalQuestions,
               ),
               const SizedBox(height: 16),
@@ -132,7 +133,7 @@ class _PhysicsQuestionViewState extends State<_PhysicsQuestionView> {
                 Semantics(
                   liveRegion: true,
                   child: Text(
-                    selectedIsCorrect ? 'Benar!' : 'Kurang Tepat.',
+                    selectedIsCorrect ? l10n.qzCorrect : l10n.pqWrong,
                     style: context.text.titleSmall?.copyWith(
                       color: selectedIsCorrect ? p.primaryText : p.errorText,
                     ),
@@ -159,7 +160,7 @@ class _PhysicsQuestionViewState extends State<_PhysicsQuestionView> {
               child: FilledButton(
                 onPressed: answered ? () => widget.onNext(_selectedIndex!) : null,
                 style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-                child: Text(isLast ? 'Lihat Hasil' : 'Pertanyaan selanjutnya'),
+                child: Text(isLast ? l10n.pqSeeResults : l10n.pqNext),
               ),
             ),
           ),
@@ -184,11 +185,11 @@ class _QuizResult extends StatelessWidget {
   Widget build(BuildContext context) {
     return LearnStateView(
       asset: LearnArt.mascot,
-      title: 'Kuis Fisika Selesai',
-      message: 'Skor Anda: $score / $total',
-      primaryLabel: 'Coba Lagi',
+      title: l10n.pqDone,
+      message: l10n.pqScore(score, total),
+      primaryLabel: l10n.gradeTryAgain,
       onPrimary: onRetake,
-      secondaryLabel: 'Kembali ke Menu',
+      secondaryLabel: l10n.pqBackMenu,
       onSecondary: () => Navigator.of(context).pop(),
     );
   }

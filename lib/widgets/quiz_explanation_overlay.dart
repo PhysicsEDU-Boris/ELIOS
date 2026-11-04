@@ -287,7 +287,7 @@ class _EssayLeftPanel extends StatelessWidget {
             notifier: notifier,
             extraChips: [
               _InfoChip(
-                label: 'Essay · maks 150 kata',
+                label: l10n.ovEssayMax,
                 bg: _elioGreenLight,
                 fg: _elioSubtext,
               ),
@@ -345,7 +345,7 @@ class _QuizMetaRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _InfoChip(
-                  label: 'Soal ${state.questionIndex + 1} dari ${state.totalQuestions}',
+                  label: l10n.qzQuestionOf(state.questionIndex + 1, state.totalQuestions),
                   bg: _elioGreenLight,
                   fg: _elioInk,
                 ),
@@ -404,18 +404,18 @@ class _ResultBanner extends StatelessWidget {
     final String subtitle;
 
     if (pending) {
-      title = 'Menunggu penilaian';
-      subtitle = 'Jawaban tersimpan. Nilai belum tersedia.';
+      title = l10n.awaitingGrading;
+      subtitle = l10n.ovPendingSub;
     } else if (isEssay) {
       final score = essayScore ?? trophies;
-      title = 'Score: $score/10 · +$score Piala';
-      subtitle = isCorrect ? 'Jawaban sudah baik!' : 'Perlu diperbaiki pada beberapa poin.';
+      title = l10n.ovEssayScore(score);
+      subtitle = isCorrect ? l10n.ovGood : l10n.ovNeedsWork;
     } else if (isCorrect) {
-      title = 'Jawaban Benar! +10 Piala';
+      title = l10n.ovRight;
       subtitle = itemName;
     } else {
-      title = 'Jawaban Kurang Tepat';
-      subtitle = 'Jawaban benar: $correctAnswer';
+      title = l10n.ovWrong;
+      subtitle = l10n.ovRightAnswer(correctAnswer);
     }
 
     return Container(
@@ -513,7 +513,7 @@ class _ExplanationPage extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  'Penjelasan Soal ${questionIndex + 1}',
+                  l10n.ovExplanationN(questionIndex + 1),
                   style: GoogleFonts.manrope(
                     color: _elioSubtext,
                     fontSize: 11,
@@ -532,7 +532,7 @@ class _ExplanationPage extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.all(20),
                           child: Text(
-                            'Penjelasan belum tersedia untuk soal ini.',
+                            l10n.ovNoExplanation,
                             textAlign: TextAlign.center,
                             style: GoogleFonts.inter(
                                 color: _elioCaption, fontSize: 13, fontStyle: FontStyle.italic),
@@ -602,7 +602,7 @@ class ExplanationBody extends StatelessWidget {
         // Essay: rubric rows
         if (explanation.rubricRows != null && explanation.rubricRows!.isNotEmpty) ...[
           Text(
-            'Table 1. Scoring breakdown',
+            l10n.qzScoringTable,
             style: GoogleFonts.manrope(
               color: _elioSubtext,
               fontSize: 12,
@@ -616,7 +616,7 @@ class ExplanationBody extends StatelessWidget {
         // MCQ: comparison rows
         if (explanation.comparisonRows.isNotEmpty) ...[
           Text(
-            'Tabel Perbandingan Kategori Sampah',
+            l10n.ovCompareTable,
             style: GoogleFonts.manrope(
               color: _elioSubtext,
               fontSize: 12,
@@ -641,7 +641,7 @@ class ExplanationBody extends StatelessWidget {
         ],
         if (explanation.referenceAnswer != null) ...[
           Text(
-            'Referensi jawaban: ${explanation.referenceAnswer}',
+            l10n.ovReference(explanation.referenceAnswer ?? ''),
             style: GoogleFonts.inter(color: _elioSubtext, fontSize: 12, height: 1.4),
           ),
           const SizedBox(height: 8),
@@ -681,7 +681,7 @@ class _ComparisonTable extends StatelessWidget {
       children: [
         TableRow(
           decoration: const BoxDecoration(color: _elioGreenLight),
-          children: ['Kategori', 'Material', 'Diterima'].map((h) {
+          children: [l10n.ovCategory, l10n.ovMaterial, l10n.ovAccepted].map((h) {
             return Padding(
               padding: const EdgeInsets.all(6),
               child: Text(
@@ -735,7 +735,7 @@ class _RubricTable extends StatelessWidget {
       children: [
         TableRow(
           decoration: const BoxDecoration(color: _elioGreenLight),
-          children: ['Kriteria', 'Maks', 'Diperoleh', 'Komentar'].map((h) {
+          children: [l10n.ovCriteria, l10n.ovMax, l10n.ovAwarded, l10n.ovComment].map((h) {
             return Padding(
               padding: const EdgeInsets.all(6),
               child: Text(
@@ -813,7 +813,7 @@ class _ActionsRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           ),
           icon: Icon(isLast ? Icons.check_rounded : Icons.arrow_forward_rounded, size: 16),
-          label: Text(isLast ? 'Selesai Quiz ✓' : 'Soal Berikutnya →'),
+          label: Text(isLast ? l10n.ovFinish : l10n.ovNext),
         ),
       ],
     );
@@ -867,7 +867,7 @@ class _ChatRightPanel extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'AI Correction Assistant',
+                    l10n.ovAssistant,
                     style: GoogleFonts.sora(
                         color: _elioInk, fontSize: 16, fontWeight: FontWeight.w600),
                     maxLines: 1,
@@ -878,13 +878,13 @@ class _ChatRightPanel extends StatelessWidget {
                 if (onStop != null) ...[_StopPill(onStop: onStop!), const SizedBox(width: 6)],
                 _WindowIconButton(
                   icon: Icons.remove_rounded,
-                  tooltip: 'Kecilkan',
+                  tooltip: l10n.qzMinimise,
                   onTap: notifier.minimize,
                 ),
                 const SizedBox(width: 6),
                 _WindowIconButton(
                   icon: Icons.close_rounded,
-                  tooltip: 'Tutup',
+                  tooltip: l10n.commonClose,
                   onTap: notifier.dismiss,
                 ),
               ],
@@ -925,7 +925,7 @@ class _ChatRightPanel extends StatelessWidget {
                       isDense: true,
                       filled: true,
                       fillColor: Colors.white,
-                      hintText: 'Tanya AI...',
+                      hintText: l10n.ovAskAi,
                       hintStyle: GoogleFonts.inter(color: elioOutline, fontSize: 13),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                       border: OutlineInputBorder(
@@ -1074,7 +1074,7 @@ class _ListenChip extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                playing ? 'Playing' : 'Listen',
+                playing ? l10n.qzPlaying : l10n.qzListen,
                 style: GoogleFonts.manrope(
                     color: playing ? Colors.white : elioMuted, fontSize: 11, fontWeight: FontWeight.w800),
               ),
@@ -1136,7 +1136,7 @@ class _VoiceToggle extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Suara',
+                l10n.ovVoice,
                 style: GoogleFonts.inter(
                     color: on ? _elioGreen : elioMuted, fontSize: 12, fontWeight: FontWeight.w500),
               ),
@@ -1179,7 +1179,7 @@ class _StopPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Berhenti darurat',
+      label: l10n.ctlEmergencyStop,
       child: Material(
         color: const Color(0xFFD32F2F),
         shape: const StadiumBorder(),

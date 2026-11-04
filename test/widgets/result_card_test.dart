@@ -110,7 +110,7 @@ void main() {
       expect(find.text('1 dari 1 benar'), findsOneWidget);
 
       // Check trophies (+10 Piala)
-      expect(find.text('+10 Piala'), findsOneWidget);
+      expect(find.text('+10 trophies'), findsOneWidget);
 
       // Check grade Sempurna
       expect(find.text('Perfect'), findsOneWidget);
@@ -137,7 +137,7 @@ void main() {
 
       // Check correct count & trophies (+8 Piala)
       expect(find.text('1 dari 1 benar'), findsOneWidget);
-      expect(find.text('+8 Piala'), findsOneWidget);
+      expect(find.text('+8 trophies'), findsOneWidget);
 
       // Check grade Hebat
       expect(find.text('Great'), findsOneWidget);
@@ -238,7 +238,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       // Drop notice shown
-      expect(find.text('Robot sedang membuang ke tempat sampah...'), findsOneWidget);
+      expect(find.text('The robot is dropping it in the bin...'), findsOneWidget);
 
       // Scan lagi is disabled
       final scanLagiButton = tester.widget<FilledButton>(
@@ -274,7 +274,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Drop notice is not shown
-      expect(find.text('Robot sedang membuang ke tempat sampah...'), findsNothing);
+      expect(find.text('The robot is dropping it in the bin...'), findsNothing);
 
       // Scan lagi is enabled and tappable
       final scanLagiButton = tester.widget<FilledButton>(
