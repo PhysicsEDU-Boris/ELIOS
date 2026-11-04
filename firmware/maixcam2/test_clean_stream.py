@@ -153,6 +153,18 @@ class TrackFrameTest(unittest.TestCase):
         self.assertTrue(M['track']['on'])
         self.assertEqual(M['track_frame'](None)['track_id'], 4)  # found again, same id
 
+    def test_a_box_shrinking_under_a_cover_keeps_the_held_box(self):
+        hold = load()['hold']
+        t = {'box': (300, 150, 60, 160), 'still': [], 'odd': False, 'grow': [], 'size': 9600}  # the bottle
+        # A card slides over it: the visible part shrinks every call, each step under 2x, down to a
+        # patch of floor (phone video 4 Nov, 170-183 s).
+        covered = [(300, 190, 60, 120), (305, 230, 55, 85), (320, 260, 40, 60), (340, 280, 25, 40),
+                   (350, 290, 18, 26), (352, 292, 16, 24)]
+        self.assertEqual({hold(t, b) for b in covered}, {(300, 150, 60, 160)})
+        # Smaller for real (the robot drove away and stopped): taken once 5 calls keep one size.
+        far = (310, 170, 40, 107)
+        self.assertEqual([hold(t, far) for _ in range(5)], [(300, 150, 60, 160)] * 4 + [far])
+
     def test_a_box_that_grows_or_shrinks_2x_is_not_sent(self):
         M = load(tracker=SimpleNamespace(init=lambda *a: None,
                                          track=lambda f, th: Obj(x=0, y=0, w=W, h=H, score=0.99)))

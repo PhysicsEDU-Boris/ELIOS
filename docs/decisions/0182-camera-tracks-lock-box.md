@@ -180,6 +180,16 @@ file so the Wi-Fi QR setup stays):
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 
+## Shrink rule (4 Nov, phone video 21:12, decision 0183's branch)
+
+- **Seen.** A tag card slid over the locked bottle. Each tracker box was a bit smaller, every step
+  under the 2x size guard, and `hold()` took a smaller box after two in a row as an ordinary move.
+  The green box ended on a patch of floor (170–183 s).
+- **Rule.** A box more than `GROW_MIN` (1.3x) smaller than the confirmed size now needs
+  `SETTLE_CALLS` (5) agreeing boxes, the same as growth. While the item is covered, the held box
+  stays. An item that is really smaller (the robot drove away and stopped) is taken after about 1 s.
+- **Test.** `test_a_box_shrinking_under_a_cover_keeps_the_held_box`, break-checked.
+
 ## Not in this step
 
 - The arm picking the tracked box (R1 still takes its target from the live scan's lock).

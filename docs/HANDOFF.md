@@ -6,7 +6,7 @@
 2. **#90** `feat/lock-track-follow`: after #89 is merged, set its base to `feature/live-scan` (GitHub does this if #89's branch is deleted), then merge. It has everything newest (camera `9cd825b3`, APK `8c8953d`).
 3. `main` stays the owner's call. New work branches from `feature/live-scan` after #90.
 - Next (own sessions): depth estimation on the camera (Depth-Anything-V2-Small is on it, `nn.DepthAnything`, relative depth, fps not measured).
-- AprilTags + 16:9 (decision 0183): camera has `7e353cca` (640x360, 33 fps, `CAMERA_FX` 374; runs after the app is reopened). Backups `/root/main.py.pre-fx374.bak` = `26049b58` (fx 362), `/root/main.py.pre-169.bak` = `9cd825b3` (4:3). Never open 1920x1080. Board solve from the laptop screen: fx 374.2, cx 303.9, cy 183.0, 81.1x51.4° like the sim (`docs/test-results/0183/maixcam2_intrinsics_640x360.json`). id 1 stays the 6.17 mm print for now (5 % at 100 mm); 8 mm thin-border version in the PDF. Waits for the robot: tags on arm, pose test, camera mount pose.
+- AprilTags + 16:9 (decision 0183): camera has `7e353cca` (640x360, 33 fps, `CAMERA_FX` 374; runs after the app is reopened). Backups `/root/main.py.pre-fx374.bak` = `26049b58` (fx 362), `/root/main.py.pre-169.bak` = `9cd825b3` (4:3). Never open 1920x1080. Board solve from the laptop screen: fx 374.2, cx 303.9, cy 183.0, 81.1x51.4° like the sim (`docs/test-results/0183/maixcam2_intrinsics_640x360.json`). id 1 stays the 6.17 mm print for now (5 % at 100 mm); 8 mm thin-border version in the PDF. Shrink rule (0182): a box >1.3x smaller needs 5 agreeing boxes, like growth; NOT deployed. Waits for the robot: tags on arm, pose test, camera mount pose.
 
 ## Camera tracks the LOCK box (4 Nov, `claude/firmware-track-lock-4de19c`, decision 0182)
 

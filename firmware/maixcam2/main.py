@@ -255,7 +255,7 @@ HOLD_SHIFT   = 0.10   # centre moved this fraction of the box's larger side
 HOLD_SIZE    = 0.30   # or a side changed by this fraction
 SETTLE_CALLS = 5
 SETTLE       = 0.06
-GROW_MIN     = 1.3    # area growth that counts as "grew" (see hold())
+GROW_MIN     = 1.3    # area change either way that counts as "grew" or "shrank" (see hold())
 
 def moved(held, new):
     hx, hy, hw, hh = held
@@ -268,17 +268,19 @@ def median_box(boxes):
 
 def hold(t, new):
     """The box to send for tracker box new (x, y, w, h); t keeps "box" (held), "still", "odd", "grow".
-    A box that grew by more than GROW_MIN in area is taken only once SETTLE_CALLS such boxes in a
-    row agree (within the hold band of their median): hand + item boxes kept changing size
-    (244, 271, 249, 274, 402 px tall, log 4 Nov), a real item, or one the robot drove closer to
+    A box that grew or shrank by more than GROW_MIN in area is taken only once SETTLE_CALLS such
+    boxes in a row agree (within the hold band of their median): hand + item boxes kept changing size
+    (244, 271, 249, 274, 402 px tall, log 4 Nov), and a card slid over the bottle shrank the box step
+    by step to a patch of floor (phone video 4 Nov). A real item, or one the robot drove to or from
     and stopped at, keeps one size."""
     if t["box"] is None:
         t.update(box=new, still=[], odd=False, grow=[], size=new[2] * new[3])
         return new
     if moved(t["box"], new):
-        # Growth counts against the last confirmed size (LOCK, a settle, a confirmed growth), not the
-        # last box: in steps of under GROW_MIN a box walked up to hand size as plain moves.
-        if new[2] * new[3] > GROW_MIN * t.get("size", t["box"][2] * t["box"][3]):
+        # Size changes count against the last confirmed size (LOCK, a settle, a confirmed change), not
+        # the last box: in steps of under GROW_MIN a box walked up to hand size, or down to a patch.
+        area, size = new[2] * new[3], t.get("size", t["box"][2] * t["box"][3])
+        if area > GROW_MIN * size or area * GROW_MIN < size:
             t["grow"] = (t.get("grow", []) + [new])[-SETTLE_CALLS:]
             mid = median_box(t["grow"])
             if len(t["grow"]) == SETTLE_CALLS and not any(moved(mid, b) for b in t["grow"]):
