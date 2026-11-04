@@ -86,3 +86,17 @@
 - **For the sim.** Use 640x360 with these values, or scale fx, fy, cx, cy by 2.0 for 1289x720.
   Mounting position and tilt (extrinsics) wait for the finished robot.
 
+## App: PICK UP and HOME turn the tags on (4 Nov, [screens](../test-results/0183/phone-pickup-home-tags.jpg))
+
+- **Bug.** The app sent `arm_tags` only from the R1 timer, which a build without `R1=true` never
+  runs. So a manual PICK UP never turned the tag search on: 0 of 1898 frames had tags in the
+  first phone test.
+- **Fix.** `ArmTagSwitch` (`lib/services/robot/arm_tag_switch.dart`, unit-tested) syncs on every
+  camera frame. PICK UP and HOME (phone and tablet layout) give 5 s of tags. Debug builds show
+  "Tags: id 0 · 102 mm", or "Tags: searching...", at the top left of the phone video.
+- **Phone test** (APK `1c45dad`, recorded over USB, 170 s):
+  - 14 presses (11 PICK UP, 3 HOME). Each gave a 5 s window with id 0 found in about 60 frames
+    (about 85 % of detection frames) at 70–220 mm, and the label matched.
+  - LIVE 25–34 fps.
+  - The small id 1 (6.17 mm) held very close and blurred, part-covered by a thumb: not found.
+
