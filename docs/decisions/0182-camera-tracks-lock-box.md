@@ -167,6 +167,9 @@ file so the Wi-Fi QR setup stays):
   when 5 calls in a row agree on one size; plain moves still follow after 2 calls. Cost: a real
   growth (driving closer) shows ~1 s late. Each tracked box now carries `raw`, the tracker's own
   box, and `hand: true` when the hand rule kept the held box, for logs (the app ignores both).
+- Robot log (firmware `9cd825b3`, 40 s of grabbing from above, pushing, letting go): boxes over 250 px
+  tall sent 40 -> 4 (the tracker made 15; the hand rule kept the held box 97 times); a box on 339
+  of 344 detection frames (no long gaps); 17.2 fps locked with the logging client attached.
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 
