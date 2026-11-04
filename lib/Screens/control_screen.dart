@@ -22,6 +22,7 @@ import '../providers/robot_provider.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../services/ai_quiz_service.dart';
 import '../services/live_scan_controller.dart';
+import '../services/lock_tracking.dart';
 import '../services/live_scan_state_machine.dart' show LiveScanState;
 import '../services/quiz_tts_service.dart';
 import '../services/robot/motion_gate.dart';
@@ -75,6 +76,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
   /// LOCK (0181): the AI's answer shown on the video until UNLOCK or the next LOCK.
   LockedItem? _locked;
+
+  /// The camera tracker's box for [_locked] (0182), as fractions; null until the first one.
+  Rect? _trackBox;
   bool _locking = false;
   StreamSubscription<CapturedFrame>? _frameSubscription;
   ProviderSubscription<AsyncValue<String>>? _statusSubscription;
@@ -261,6 +265,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         _latestFrame = frame;
         if (frame.hasPairedCleanImage) _lastCleanFrame = frame;
         if (frame.detections != null) _hudDetections = frame.detections!;
+        if (_locked != null && frame.detections != null) {
+          _trackBox = trackedBox(frame.detections!, frame.width.toDouble(), frame.height.toDouble()) ?? _trackBox;
+        }
       });
 
       // Auto-generated waste quiz: only fed by the real MaixCAM2 stream, the
@@ -269,13 +276,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         final liveScan = _liveScan;
         if (liveScan != null) {
           liveScan.onDetections(
-            frame.detections!,
+            untracked(frame.detections!),
             frameSize: Size(frame.width.toDouble(), frame.height.toDouble()),
             armMoving: WebSocketService().armMoving, // same message as the frame (0026)
             capturedFrame: frame,
           );
         } else if (!_gate.stopped && _scanQuizOn) {
-          ref.read(wasteQuizProvider.notifier).onDetections(frame.detections!);
+          ref.read(wasteQuizProvider.notifier).onDetections(untracked(frame.detections!));
         }
       }
     });
@@ -889,7 +896,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onLock: _locked != null || (link == ControlLink.connected && _latestFrame != null && !_locking) ? _lockOrUnlock : null,
       locked: _locked != null,
       onScan: !quizOpen && !_locking && (_locked != null || (link == ControlLink.connected && _latestFrame != null)) ? _scan : null,
-      lockBox: _locked?.box,
+      lockBox: _locked == null ? null : _trackBox ?? _locked!.box,
       lockLabel: _locked == null ? null : ScannedWaste.fromLabel(_locked!.result.item!).displayName,
       driveKey: _driveKey,
       stopKey: _stopKey,
@@ -925,7 +932,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// firmware's own drawings until the firmware stops making them). UNLOCK clears the box.
   Future<LockedItem?> _lockOrUnlock() async {
     if (_locked != null) {
-      setState(() => _locked = null);
+      WebSocketService().sendRobotCommand(trackStopCommand);
+      setState(() {
+        _locked = null;
+        _trackBox = null;
+      });
       return null;
     }
     final clean = _lastCleanFrame;
@@ -935,9 +946,15 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     setState(() => _locking = true);
     final answer = await ref.read(wasteQuizProvider.notifier).lockItem(frame);
     if (!mounted) return null;
+    final lock = answer.lock;
+    // The camera follows the box from here (0182). It is the box of this frame, ~2 s old by now.
+    if (lock?.box != null) {
+      WebSocketService().sendRobotCommand(trackStartCommand(lock!.box!, frame.width, frame.height, lock.result.item!));
+    }
     setState(() {
       _locking = false;
-      _locked = answer.lock;
+      _locked = lock;
+      _trackBox = null;
     });
     if (answer.lock == null) {
       ScaffoldMessenger.of(context)
