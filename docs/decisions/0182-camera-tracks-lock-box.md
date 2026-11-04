@@ -146,6 +146,7 @@ file so the Wi-Fi QR setup stays):
   nothing.
 - Result (firmware `6a70f542`, hotspot -36 dBm): **unlocked 32.7 fps** (was 15.3), **locked
   17.3 fps** (was 10.0).
+- Owner checked the screen: dark while the phone is connected, a tap lights it, dark again after ~15 s.
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 
