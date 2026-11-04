@@ -49,6 +49,7 @@ import '../widgets/segmentation_overlay_painter.dart';
 import '../widgets/waste_quiz_popup.dart';
 import '../services/frame_source/maix_cam_source.dart';
 import '../services/frame_source/frame_source.dart';
+import '../services/robot/arm_tag_switch.dart';
 import 'login_screen.dart';
 
 /// The MaixCAM2 already draws its box, mask and label into the video, so the
@@ -81,10 +82,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   Rect? _trackBox;
   DateTime? _trackSeenAt;
 
-  /// AprilTags (0182): on while R1 grips, and for [_manualTagsFor] after a manual PICK UP.
-  bool? _tagsSent;
-  DateTime? _manualTagsUntil;
-  static const _manualTagsFor = Duration(seconds: 5);
+  /// AprilTags (0182, 0183): on while R1 grips, and for 5 s after PICK UP or HOME.
+  final _tagSwitch = ArmTagSwitch();
   bool _locking = false;
   StreamSubscription<CapturedFrame>? _frameSubscription;
   ProviderSubscription<AsyncValue<String>>? _statusSubscription;
@@ -241,12 +240,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         final r1 = _r1!..tick();
         final text = r1.robotConnected ? 'robot terhubung' : r1.message ?? 'memeriksa robot...';
         if (mounted && text != _r1Status) setState(() => _r1Status = text);
-        final now = DateTime.now();
-        final wantTags = r1.wantsArmTags || (_manualTagsUntil != null && now.isBefore(_manualTagsUntil!));
-        if (wantTags != _tagsSent && WebSocketService().isConnected) {
-          WebSocketService().sendRobotCommand({'cmd': 'arm_tags', 'on': wantTags});
-          _tagsSent = wantTags;
-        }
+        _syncArmTags(DateTime.now());
         final dropPending = r1.state == R1State.sorting || r1.state == R1State.waitBoth;
         if (ref.read(r1DropPendingProvider) != dropPending) {
           ref.read(r1DropPendingProvider.notifier).state = dropPending;
@@ -285,6 +279,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           }
         }
       });
+
+      // Every frame, not only the R1 tick: a build without R1 has no tick, and PICK UP / HOME
+      // never turned the tags on (phone test 4 Nov, 0183).
+      _syncArmTags(now);
 
       // Auto-generated waste quiz: only fed by the real MaixCAM2 stream, the
       // debug phone-camera path triggers it manually instead.
@@ -375,7 +373,26 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _liveScan?.onLinkRestored(); // 0020: a drop can't time absence; harmless on the first connect
     _r1?.linkUp(); // 0023: probe the command link (old firmware: "robot tidak terhubung")
     _gate.robot.status();
-    _tagsSent = null; // the camera starts with tags off: say again what we want
+    _tagSwitch.linkUp(); // the camera starts with tags off: say again what we want
+  }
+
+  void _syncArmTags(DateTime now) => _tagSwitch.sync(now,
+      connected: WebSocketService().isConnected,
+      r1Grips: _r1?.wantsArmTags ?? false,
+      send: WebSocketService().sendRobotCommand);
+
+  /// PICK UP or HOME: the arm moves, so the camera looks for its tags for a while.
+  void _armTagsFor(String why) {
+    _tagSwitch.press(DateTime.now());
+    _syncArmTags(DateTime.now());
+    debugPrint('[Control] arm_tags on for $why');
+  }
+
+  /// Debug builds: what the tag search sees while it is on (0183), over the video.
+  String? _tagLine() {
+    if (!kDebugMode || !_tagSwitch.wanted(DateTime.now(), r1Grips: _r1?.wantsArmTags ?? false)) return null;
+    final tags = WebSocketService().armTags ?? const [];
+    return tags.isEmpty ? 'Tags: searching...' : 'Tags: ${tags.map((t) => 'id ${t.id} · ${t.distMm.round()} mm').join('   ')}';
   }
 
   /// Escape, or space outside a text field: the emergency stop.
@@ -691,7 +708,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                   LayoutBuilder(builder: (context, c) {
                     final key = (c.maxHeight - 26).clamp(36.0, 64.0);
                     return Row(children: [
-                      HomeButton(onConfirmed: _gate.home, enabled: isOperational, size: key),
+                      HomeButton(
+                          onConfirmed: () {
+                            _armTagsFor('HOME');
+                            _gate.home();
+                          },
+                          enabled: isOperational,
+                          size: key),
                       const SizedBox(width: 10),
                       TransportKey(
                         icon: Icons.back_hand_outlined,
@@ -701,6 +724,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                         onTap: isOperational
                             ? () {
                                 if (_gate.servo('gripper', 100)) {
+                                  _armTagsFor('PICK UP');
                                   notifier.setGripperVal(100);
                                   if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
                                 }
@@ -855,10 +879,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       }),
       voiceOn: quizState.voiceOn,
       onVoice: (_) => ref.read(wasteQuizProvider.notifier).toggleVoice(),
-      onHome: _gate.home,
+      onHome: () {
+        _armTagsFor('HOME');
+        _gate.home();
+      },
       onPickUp: () {
         if (_gate.servo('gripper', 100)) {
-          _manualTagsUntil = DateTime.now().add(_manualTagsFor);
+          _armTagsFor('PICK UP');
           notifier.setGripperVal(100);
           if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
         }
@@ -918,6 +945,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           ? null
           : lockOverlayBox(aiBox: _locked!.box, trackBox: _trackBox, trackSeenAt: _trackSeenAt, now: DateTime.now()),
       lockLabel: _locked == null ? null : ScannedWaste.fromLabel(_locked!.result.item!).displayName,
+      tagText: _tagLine(),
       frameAspect: _latestFrame == null || _latestFrame!.height == 0 ? 4 / 3 : _latestFrame!.width / _latestFrame!.height,
       driveKey: _driveKey,
       stopKey: _stopKey,

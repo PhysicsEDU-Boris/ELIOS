@@ -69,6 +69,7 @@ class PhoneControlLayout extends StatelessWidget {
     this.onScan,
     this.lockBox,
     this.lockLabel,
+    this.tagText,
     this.frameAspect = 4 / 3,
     this.driveKey,
     this.stopKey,
@@ -120,6 +121,9 @@ class PhoneControlLayout extends StatelessWidget {
   /// The locked item's box, as fractions (0..1) of the frame, and its name.
   final Rect? lockBox;
   final String? lockLabel;
+
+  /// Debug builds: the arm-tag search's reading while it is on, shown at the top of the video.
+  final String? tagText;
 
   /// The camera frame's width / height, for placing [lockBox] (MaixCAM2 streams 640x480).
   final double frameAspect;
@@ -574,6 +578,23 @@ class PhoneControlLayout extends StatelessWidget {
         child: Image.memory(frame!, fit: BoxFit.cover, gaplessPlayback: true),
       );
       if (lockBox != null) body = Stack(children: [body, Positioned.fill(child: _lockOverlay())]);
+      if (tagText != null) {
+        body = Stack(children: [
+          body,
+          Positioned(
+            key: const ValueKey('phone_tag_text'),
+            left: 8,
+            top: 8,
+            child: ColoredBox(
+              color: Colors.black54,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                child: Text(tagText!, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ),
+        ]);
+      }
     } else {
       body = Center(
         child: Text(

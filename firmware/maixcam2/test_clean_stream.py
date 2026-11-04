@@ -10,7 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE', 'GROW_MIN', 'median_box', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'HAND_GROWTH', 'HAND_MEMORY_MS', 'recent_hands', 'overlaps', 'size_ok', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
-         'TAG_SIZES_MM', 'NOMINAL_FX', 'track', 'parse_track_box', 'box_det', 'track_frame',
+         'TAG_SIZES_MM', 'CAMERA_FX', 'STREAM_RESOLUTION', 'track', 'parse_track_box', 'box_det', 'track_frame',
          'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'tags', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS'}
 
 
@@ -70,9 +70,9 @@ class ArmTagsTest(unittest.TestCase):
     def test_only_arm_ids_with_rough_distance(self):
         tags = self.M['arm_tags']([Tag(0, 40), Tag(7, 40), Tag(1, 20)])
         self.assertEqual([t['id'] for t in tags], [0, 1])
-        fx = 320 / math.tan(math.radians(40.5))
-        self.assertAlmostEqual(tags[0]['dist_mm'], round(fx * 18.52 / 40, 1))
-        self.assertAlmostEqual(tags[1]['dist_mm'], round(fx * 10.0 / 20, 1))
+        # fx 374 at 640x360 (board solve, 0183); id 1 is a 10 mm print with a 6.17 mm black square
+        self.assertEqual(tags[0]['dist_mm'], round(374 * 18.52 / 40, 1))
+        self.assertEqual(tags[1]['dist_mm'], round(374 * 6.17 / 20, 1))
         self.assertTrue(all(t['dist_rough'] for t in tags))
         json.dumps(tags, allow_nan=False)  # 0022: never NaN on the wire
 
@@ -153,6 +153,18 @@ class TrackFrameTest(unittest.TestCase):
         self.assertTrue(M['track']['on'])
         self.assertEqual(M['track_frame'](None)['track_id'], 4)  # found again, same id
 
+    def test_a_box_shrinking_under_a_cover_keeps_the_held_box(self):
+        hold = load()['hold']
+        t = {'box': (300, 150, 60, 160), 'still': [], 'odd': False, 'grow': [], 'size': 9600}  # the bottle
+        # A card slides over it: the visible part shrinks every call, each step under 2x, down to a
+        # patch of floor (phone video 4 Nov, 170-183 s).
+        covered = [(300, 190, 60, 120), (305, 230, 55, 85), (320, 260, 40, 60), (340, 280, 25, 40),
+                   (350, 290, 18, 26), (352, 292, 16, 24)]
+        self.assertEqual({hold(t, b) for b in covered}, {(300, 150, 60, 160)})
+        # Smaller for real (the robot drove away and stopped): taken once 5 calls keep one size.
+        far = (310, 170, 40, 107)
+        self.assertEqual([hold(t, far) for _ in range(5)], [(300, 150, 60, 160)] * 4 + [far])
+
     def test_a_box_that_grows_or_shrinks_2x_is_not_sent(self):
         M = load(tracker=SimpleNamespace(init=lambda *a: None,
                                          track=lambda f, th: Obj(x=0, y=0, w=W, h=H, score=0.99)))
@@ -226,14 +238,14 @@ class StreamTest(unittest.TestCase):
                 return SimpleNamespace(to_bytes=lambda: f'{self.number}@{quality}'.encode())
 
             def resize(self, w, h):
-                assert (w, h) == (320, 240)  # 640x480 crashes find_apriltags on the camera
+                assert (w, h) == (320, 180)  # a full frame crashes find_apriltags on the camera
                 return self
 
             def width(self):
                 return 640
 
             def height(self):
-                return 480
+                return 360
 
             def find_apriltags(self, families):
                 searched.append(self.number)
@@ -257,7 +269,7 @@ class StreamTest(unittest.TestCase):
         M = load(asyncio=asyncio, json=json, base64=base64, print=lambda *a: None,
                  stream_cam=Camera(), ws_streaming=True, ws_clients={Client()},
                  cam_lock=threading.Lock(), setup={'stage': None},
-                 STREAM_RESOLUTION=(640, 480), FIRMWARE_SHA256='test-hash',
+                 FIRMWARE_SHA256='test-hash',
                  mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)),
                  tracker=FakeTracker([0.9, 0.9, 0.9]),
                  hands=SimpleNamespace(detect=lambda frame, conf_th: [hand] if frame.number == 2 else []),
@@ -274,7 +286,7 @@ class StreamTest(unittest.TestCase):
         self.assertEqual(encodes, [(1, 60), (2, 60), (2, 80), (3, 60), (4, 60)])
         for m in messages:
             self.assertEqual(m['vision_protocol'], 1)
-            self.assertEqual((m['img_w'], m['img_h']), (640, 480))
+            self.assertEqual((m['img_w'], m['img_h']), (640, 360))  # the wide 16:9 view (0183)
         self.assertEqual(messages[0]['detections'], [])  # the tracker inits on the next detection frame
         self.assertIsNone(messages[0]['detection_frame_id'])
         self.assertNotIn('clean_image', messages[0])
@@ -285,7 +297,7 @@ class StreamTest(unittest.TestCase):
         self.assertEqual(fresh['detections'][0]['x'], 120)
         self.assertEqual(fresh['detections'][0]['track_id'], 1)
         self.assertEqual(fresh['detections'][1], {'label': 'Human_Hand', 'score': 0.8,
-                                                  'x': 10, 'y': 250, 'w': 10, 'h': 460})
+                                                  'x': 10, 'y': 190, 'w': 10, 'h': 340})  # y clamped to 360
         self.assertEqual(base64.b64decode(fresh['image']), b'2@60')
         self.assertEqual(base64.b64decode(fresh['clean_image']), b'2@80')  # the AI's picture, unchanged quality
         self.assertEqual(fresh['arm_tags'][0]['id'], 0)
@@ -312,7 +324,7 @@ class StreamTest(unittest.TestCase):
                 return 640
 
             def height(self):
-                return 480
+                return 360
 
             def find_apriltags(self, families):
                 searched.append(1)
@@ -328,7 +340,7 @@ class StreamTest(unittest.TestCase):
         M = load(asyncio=asyncio, json=json, base64=base64, print=lambda *a: None,
                  stream_cam=SimpleNamespace(read=Frame), ws_streaming=True, ws_clients={Client()},
                  cam_lock=threading.Lock(), setup={'stage': None},
-                 STREAM_RESOLUTION=(640, 480), FIRMWARE_SHA256='test-hash',
+                 FIRMWARE_SHA256='test-hash',
                  mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)),
                  tracker=None, hands=None,
                  image=SimpleNamespace(ApriltagFamilies=SimpleNamespace(TAG36H11=16)))

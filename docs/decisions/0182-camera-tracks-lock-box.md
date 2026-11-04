@@ -54,6 +54,13 @@ file so the Wi-Fi QR setup stays):
   switch to landmark boxes: an open hand moved around in 162 of 259 frames (17.2 fps), each box
   fitting the hand (`docs/test-results/0182/hand-landmark-boxes.jpg`).
 - AprilTags: none in view, so the tag path ran but `arm_tags` stayed empty; distance not checked.
+- AprilTags, screen test (4 Nov, [report](../test-results/0182/apriltag-screen-test.md)): ids 0
+  and 1 both decode, 100 % of frames when not glared, tags 88–97 px at 640; tags on 21 fps vs
+  45 off. Small tags on the printed arm and `dist_mm` against a real distance not tested yet.
+- Printed tags on a wall (4 Nov, [report](../test-results/0182/apriltag-print-readability-fx.md)):
+  measured fx 487 px (nominal 375 reads 23 % short); id 0 99 % to 200 mm, distance within 2 mm;
+  id 1 (6.17 mm black square) 98 % to 150 mm, 0 % at 200 mm in the half-size search, but
+  OpenCV full-frame reads it. Fix not built yet.
 
 ## App step 3 (owner, 4 Nov: "Yes, step 3")
 
@@ -172,6 +179,27 @@ file so the Wi-Fi QR setup stays):
   of 344 detection frames (no long gaps); 17.2 fps locked with the logging client attached.
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
+
+## Shrink rule (4 Nov, phone video 21:12, decision 0183's branch)
+
+- **Seen.** A tag card slid over the locked bottle. Each tracker box was a bit smaller, every step
+  under the 2x size guard, and `hold()` took a smaller box after two in a row as an ordinary move.
+  The green box ended on a patch of floor (170–183 s).
+- **Rule.** A box more than `GROW_MIN` (1.3x) smaller than the confirmed size now needs
+  `SETTLE_CALLS` (5) agreeing boxes, the same as growth. While the item is covered, the held box
+  stays. An item that is really smaller (the robot drove away and stopped) is taken after about 1 s.
+- **Test.** `test_a_box_shrinking_under_a_cover_keeps_the_held_box`, break-checked.
+- **Phone re-test** (firmware `dcea9b1d`, 170 s, recorded over USB with the camera's own box log;
+  [screenshot](../test-results/0182/shrink-rule-phone-cover.jpg)):
+  - Cup locked and covered by hand and card for about 100 s: the box was on the cup in 767 of
+    791 sent frames (97 %). There was no tiny box. 87 times the held box stayed while the
+    tracker's own box was elsewhere. The box was hidden 23 % of the time (tracker score low
+    while covered).
+  - Earphone case covered by the card: 304 of 304 sent frames on the item.
+  - Left over: three short sideways jumps of the same size (0.3–0.4 s each, at 30, 34 and
+    104 s), where the tracker found a matching patch while the cup was fully covered, twice in
+    a row.
+  - App log: no errors. LIVE 19–21 fps with the Mac recorder as a second client.
 
 ## Not in this step
 
