@@ -54,3 +54,23 @@ it reads 117 mm at 100 mm and 178 mm at 150 mm.
    reaches about 300 mm.
 
 Photos: `apriltag-print-id0-150mm.jpg`, `apriltag-print-id0-id1-200mm.jpg`.
+
+## After the switch to 16:9 (640x360, decision 0183)
+
+The firmware build differs from `26049b58` only by debug log lines. Tags on the wall at 100 mm,
+room light.
+
+| | 640x480 | 640x360 |
+|---|---|---|
+| fps, tags off / on | ~32 / 21 | 33 / 22 |
+| id 0 found / `dist_mm` at 100 mm | 99 % / 97 mm (with corrected fx) | 99 % / 97.9 mm (live) |
+| id 1 (10 mm print) found at 100 mm | 99 % | **5 %**; OpenCV on the full frame 100 % |
+
+- **The wide view matches the sim.** At 100 mm the id 0 tag is 68.5 px wide, so fx is about 370,
+  giving 81.7° x 51.9° x 89.6°. The sim uses 81° x 51° x 90°. The mode-ratio estimate was fx 362
+  (83° x 53°); the board solve will settle the difference.
+- **id 1 at 10 mm is too small for the 320x180 search.** It is 22 px wide, so about 11 px in the
+  search copy. The tag sheet now prints id 1 at 15 mm, a 9.26 mm black square, about 17 px in
+  the search at 100 mm. Once the owner has measured the print, set `TAG_SIZES_MM[1]` to the
+  measured value.
+

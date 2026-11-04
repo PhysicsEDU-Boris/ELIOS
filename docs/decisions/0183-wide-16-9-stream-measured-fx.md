@@ -1,6 +1,7 @@
 # 0183: Wide 16:9 camera stream (640x360) and measured focal length for arm tags
 
-- Status: Accepted (owner chose 16:9, 4 Nov). Code and tests only; not deployed to the camera.
+- Status: Accepted (owner chose 16:9, 4 Nov). Deployed 4 Nov: `26049b58`; the backup is
+  `/root/main.py.pre-169.bak` (`9cd825b3`).
 - Builds on: [0182](0182-camera-tracks-lock-box.md) (tracker, hands, `arm_tags`), [0022](0022-detection-protocol-distance-tags.md).
 - Tests: [apriltag-print-readability-fx.md](../test-results/0182/apriltag-print-readability-fx.md).
 
@@ -51,3 +52,17 @@
   3. Run the ChArUco board solve (`docs/print/maixcam2-calibration-board-charuco-A4.pdf`) at
      640x360 for fx, fy, cx, cy and distortion. That replaces `CAMERA_FX` and gives the sim its
      camera model.
+
+## Robot check (4 Nov)
+
+- **First deploy.** No frames, and WebSocket 1011 errors. It was rolled back.
+- **Why it failed.** Standalone probes found nothing wrong at 640x360: reads 30 ms, hands 5 ms,
+  JPEG 4 ms, tags 50 ms. A diagnostic build then streamed 33 fps. The likely cause is that the
+  camera was left stuck by the earlier mode probe's failed 1920x1080 open (see 0182: a crash can
+  block the camera until the app is reopened).
+- **Rule.** Never open 1920x1080 on this camera, and reopen the app after any camera probe.
+- **Results** ([report](../test-results/0182/apriltag-print-readability-fx.md)):
+  - 33 fps with tags off, 22 fps with tags on;
+  - id 0 is found 99 % of the time and reads 97.9 mm at 100 mm;
+  - the 10 mm id 1 is found 5 % of the time at 100 mm, so the print sheet now makes id 1 15 mm.
+
