@@ -1,4 +1,13 @@
-# Handoff — 3 Nov 2026
+# Handoff — 4 Nov 2026
+
+## Camera tracks the LOCK box (4 Nov, `claude/firmware-track-lock-4de19c`, decision 0182)
+
+- New `firmware/maixcam2/main.py` `m2c-track-v1` from the camera's live wifi-qr file: no seg model, clean 640x480 frames, `track_start`/`track_stop` (MixFormerV2), `Human_Hand` from HandLandmarks, rough AprilTag `arm_tags` (`dist_rough`). Tracker/hands/tags every 2nd frame.
+- **Deployed on the camera** (owner OK), sha256 `c2a2d657…`; backup `/root/main.py.pre-track.bak` + `app.yaml.pre-track.bak`. Rollback: copy back, reopen ELIOS Clean Vision.
+- fps 10.4 → 17 unlocked, 10.5 locked (8.2 with the tracker every frame). find_apriltags at 640x480 kills the process, so tags run on 320x240. A crash left `vi init failed` for other processes until the app was reopened.
+- Box follows a moved pack; a box from an old frame tracks background at score 1.0 → app step 3 must send the box of the frame it gave Gemini. Landmark hand boxes not re-checked on the robot. No tags in view yet.
+- #88 (lock-button) merged into `docs/segmentation-fps-options` after #87 merged, so its 8 commits are NOT in `feature/live-scan`; this branch carries them.
+- Camera Wi-Fi now WIFIBOR 192.168.100.135 (host key = USB key); USB link 10.73.69.1 was down. Measuring client: scratchpad `camclient.py` (not committed).
 
 - 3 Nov: #84 live SSID/IP dashboard merged (0177). `feat/wifi-qr-setup` (0178): camera "Wi-Fi setup" joins a hotspot from a WIFI: QR with a 45 s rollback; app Config gets Robot Wi-Fi QR and Find ELIO. Fast NPU QR scan, glare luma steps, success to dashboard banner / failure back to scan. Robot-tested twice from STA (wrong password rolled back, real one joined); AP-to-STA not tested. A manual exposure/gain probe restarted the camera; touch came back with a `hyn_ts` re-bind.
 - Devices now: camera in STA on the owner's hotspot `boris` (10.51.200.84), running the `feat/wifi-qr-setup` `main.py` in `elios_clean_m2c_v1` (old copy `/root/main.py.pre-wifiqr.bak`, AP files in `/boot/wifi_backup_ap/`). Phone: debug APK from that branch installed in place (data and Gemma model kept), Config camera = MaixCAM2, IP 10.51.200.84.
@@ -35,24 +44,6 @@
 
 - U4c combined native acceptance, U7 Firebase sync, U8 docs/Figma (see NEXT_TASK.md). wrongWhy texts for the bank are still unwritten.
 
-## R2 gamified Control (merged #80, 3 Nov)
+## R2, Q3, R3 (merged #80-#82, 3 Nov)
 
-- Control rebuilt from Figma 358:2358 (light/dark): joystick for the same D-pad commands, faders, gear chips, power + round STOP, camera HUD (bands/pick zone/distance only with `dist_cm`), waiting/disconnected views with the real 2 s / 30-try retry, mission + "This drive" (real records, no reward), ELIO tip, Voice / Scan quiz toggles. Decision 0173; logic in `lib/models/control_session.dart`, UI in `lib/widgets/control/` + `control_layout.dart`.
-- Tests: `test/widgets/control_layout_test.dart` (226, 8 sizes × 3 states × light/dark), `test/screens/control_r2_test.dart`, `test/models/control_session_test.dart`; break-checked (joystick without the gate fails). `flutter test` +1015 ~20 -2 (the 2 known `elio_tokens_test`).
-- A/B fake log (`docs/test-results/r2/`): identical up to Exit; the base build did not disconnect on Exit (reproduced, cause not found), the new one does.
-- Phone: owner session read-only (27 scans unchanged, no quiz answered), fake via `adb reverse`. Phone has two Gemma copies (app files + external files), both pre-existing; not touched.
-- Owner questions: mission reward; HUD crop hides the 20 cm band on phones; base-build Exit not disconnecting.
-
-## Q3 quiz popups + camera scan (merged #82, 3 Nov)
-
-- One R3 popup everywhere (`lib/widgets/quiz/quiz_r3.dart`): question, loading (timer, 3 real steps), skeleton, essay input, review document + coach chat; explanation data from the bank (quote, section, page, id; wrongWhy optional, none written). Camera scan restyled, crop unchanged. Decision 0175.
-- Tests: `phone_control_test` (all popup states, 3 sizes × light/dark), `scan_screen_test` (crop break-checked), `q3_explanation_data_test` (break-checked). `flutter test` only the 2 known failures.
-- Phone: test store `scan_records_q3test.json` (deleted after), owner `scan_records.json` and the R3 test file byte-identical. **The phone runs the Q3 debug build, light mode, Phone camera, Question bank.** No real item was scanned (Gemma identify ran, nothing recognised). Results: `docs/test-results/q3/`.
-- Open: who writes wrongWhy; R2 GO/logo; result card and History detail still the older look.
-
-## R3 Control for phones (merged #81, 3 Nov)
-
-- Phones in landscape (short side < 600 dp) get the R3 layout from Figma 393:2358 (`lib/widgets/control/phone/`: layout, quiz popups, Guide). One round STOP/GO button (GO = `MotionGate.resume` only), no logo in the top bar, nothing on the video, offline presses send nothing, skeleton, 5-step Guide (first run once per device, key `r3_phone_guide_shown`). R2 stays on tablets and the Mac. Decision 0174.
-- Tests: `test/widgets/phone_control_test.dart`, `test/screens/control_phone_test.dart`; GO test break-checked. Results, side-by-sides and the difference list: `docs/test-results/r3/`.
-- Phone (Edge 60 Fusion): debug build with `SCAN_RECORDS_FILE=scan_records_r3test.json` (separate store). Owner `scan_records.json` verified byte-identical (27 records); fake robot over `adb reverse`, removed after. Space/Esc not tested (no keyboard). The Gemma model was moved out and back for the builds; no copy.
-- Open: painted card art and SVG export, 3D joystick, ELIOS AI badge art; essay input / identifying / hazard popups still the old Indonesian popup; owner question: should GO and the logo removal also apply to R2 tablet and Mac?
+- Details in decisions 0173-0175 and `docs/test-results/r2|q3|r3/`.
