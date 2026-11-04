@@ -77,6 +77,15 @@ file so the Wi-Fi QR setup stays):
   disappeared as intended. With the pack back in place there was no box until a new LOCK.
   The video read 10-12 fps while tracking and 16-21 fps otherwise
   (`docs/test-results/0182/phone-lock-follow-retest.jpg`).
+- Firmware `ae18b046` (no give-up, whole-frame re-find after 5 misses): a lost pack came back in
+  under a second (22.0 -> 22.7 s, 86.0 -> 86.7 s). Box size stays approximate after a flip or
+  turn (half the pack, or too big): MixFormerV2 keeps the LOCK shape, it does not measure the
+  outline.
+- Firmware `763bef6c` (`steady()`: a box within 15 % shift and 30 % size of the last one is
+  blended 25 %): the box sat still on a still pack (51-57 s, 116-119 s); a pack laid flat was
+  lost and found again when stood up.
+- For an accurate pick box the plan is a fresh Gemini box once the item is still, before
+  picking (not built).
 
 ## Not in this step
 
