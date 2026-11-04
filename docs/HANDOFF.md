@@ -6,7 +6,7 @@
 2. **#90** `feat/lock-track-follow`: after #89 is merged, set its base to `feature/live-scan` (GitHub does this if #89's branch is deleted), then merge. It has everything newest (camera `9cd825b3`, APK `8c8953d`).
 3. `main` stays the owner's call. New work branches from `feature/live-scan` after #90.
 - Next (own sessions): depth estimation on the camera (Depth-Anything-V2-Small is on it, `nn.DepthAnything`, relative depth, fps not measured).
-- AprilTag screen test done (`docs/test-results/0182/apriltag-screen-test.md`): ids 0 and 1 decode, 21 fps with tags vs 45 without, misses only from screen glare. Next, once tags are printed on the robot: small tags (10 mm at 20 cm ≈ 9 px in the 320x240 search), `dist_mm` against a ruler, app PICK UP/R1 tag switching. Print sheet `docs/print/apriltags-arm-id0-id1-A4.pdf`. id 1 is a 10 mm print = 6.17 mm black square, but firmware `TAG_SIZES_MM` says 10.0 (fix needs owner OK).
+- AprilTags (`docs/test-results/0182/apriltag-print-readability-fx.md`): measured fx 487 px (firmware's 375 reads 23 % short); id 0 99 % to 200 mm; id 1 (6.17 mm, firmware wrongly says 10) lost past 150 mm by the 320x240 search, readable in full frame. Next (owner OK): fx 487 + id 1 6.17 mm; maybe full-res crop for id 1. Print sheet `docs/print/apriltags-arm-id0-id1-A4.pdf`.
 
 ## Camera tracks the LOCK box (4 Nov, `claude/firmware-track-lock-4de19c`, decision 0182)
 

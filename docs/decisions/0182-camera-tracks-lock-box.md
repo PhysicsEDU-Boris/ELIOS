@@ -57,6 +57,10 @@ file so the Wi-Fi QR setup stays):
 - AprilTags, screen test (4 Nov, [report](../test-results/0182/apriltag-screen-test.md)): ids 0
   and 1 both decode, 100 % of frames when not glared, tags 88–97 px at 640; tags on 21 fps vs
   45 off. Small tags on the printed arm and `dist_mm` against a real distance not tested yet.
+- Printed tags on a wall (4 Nov, [report](../test-results/0182/apriltag-print-readability-fx.md)):
+  measured fx 487 px (nominal 375 reads 23 % short); id 0 99 % to 200 mm, distance within 2 mm;
+  id 1 (6.17 mm black square) 98 % to 150 mm, 0 % at 200 mm in the half-size search, but
+  OpenCV full-frame reads it. Fix not built yet.
 
 ## App step 3 (owner, 4 Nov: "Yes, step 3")
 
