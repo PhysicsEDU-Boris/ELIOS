@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// L1 v2 Learn components (Figma 295:2372 to 300:3329). Colours come only
 /// from the active [ElioPalette]; text from the theme's [TextTheme].
@@ -314,7 +315,7 @@ class BinCard extends StatelessWidget {
     final fg = selected ? p.onPrimary : p.textPrimary;
     return LearnCard(
       onTap: onTap,
-      semanticLabel: 'Module $label',
+      semanticLabel: l10n.lnModuleLabel(label),
       color: selected ? p.primary : null,
       borderColor: selected ? p.primary : null,
       padding: const EdgeInsets.all(12),
@@ -670,7 +671,7 @@ class DoneCheck extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.elio;
     return Semantics(
-      label: 'Done',
+      label: l10n.lnDone,
       child: Container(
         width: 24,
         height: 24,
@@ -703,7 +704,7 @@ class VideoCard extends StatelessWidget {
     final p = context.elio;
     return Semantics(
       button: true,
-      label: 'Video $title',
+      label: l10n.lnVideoLabel(title),
       child: InkWell(
         onTap: onTap,
         customBorder: learnShape(learnRadiusM),
@@ -821,7 +822,7 @@ class SimulationRow extends StatelessWidget {
     final p = context.elio;
     return LearnCard(
       onTap: onTap,
-      semanticLabel: 'Simulation $title',
+      semanticLabel: l10n.lnSimLabel(title),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -837,7 +838,7 @@ class SimulationRow extends StatelessWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(tag, style: context.text.labelMedium?.copyWith(color: p.errorText)),
-                    if (done) const LevelChip(label: 'Selesai'),
+                    if (done) LevelChip(label: l10n.lnDone),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -851,7 +852,7 @@ class SimulationRow extends StatelessWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     FormulaChip(formula: formula),
-                    LearnMeta(icon: Icons.schedule_rounded, label: '$minutes min'),
+                    LearnMeta(icon: Icons.schedule_rounded, label: l10n.lnMinutes(minutes)),
                   ],
                 ),
               ],
@@ -907,9 +908,9 @@ class SimulationCard extends StatelessWidget {
       cover: LearnIllustration(canvasAsset, fit: BoxFit.cover),
       meta: tag,
       title: title,
-      leading: LearnMeta(icon: Icons.schedule_rounded, label: '$minutes min'),
+      leading: LearnMeta(icon: Icons.schedule_rounded, label: l10n.lnMinutes(minutes)),
       trailing: done
-          ? LearnMeta(icon: Icons.check_rounded, label: 'Selesai', color: p.primaryText)
+          ? LearnMeta(icon: Icons.check_rounded, label: l10n.lnDone, color: p.primaryText)
           : null,
     );
   }
@@ -1086,7 +1087,7 @@ class LearnHubSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: 'Loading learning modules',
+    label: l10n.lnLoadingModules,
     child: const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1116,15 +1117,15 @@ class LearnHubSkeleton extends StatelessWidget {
 
 /// Spinner that stays static under reduced motion (lesson loading 312:6239).
 class LearnSpinner extends StatelessWidget {
-  const LearnSpinner({super.key, this.label = 'Loading lesson'});
+  const LearnSpinner({super.key, this.label});
 
-  final String label;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
     return Semantics(
-      label: label,
+      label: label ?? l10n.lnLoadingLesson,
       child: SizedBox.square(
         dimension: 40,
         child: CircularProgressIndicator(
@@ -1316,7 +1317,7 @@ class QuizAnswerOption extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: 'Answer $letter: $label${revealCorrect ? ', correct' : revealWrong ? ', wrong' : ''}',
+      label: l10n.lnAnswerLabel(letter, label) + (revealCorrect ? l10n.lnCorrectSuffix : revealWrong ? l10n.lnWrongSuffix : ''),
       excludeSemantics: true,
       child: Material(
         color: fill,

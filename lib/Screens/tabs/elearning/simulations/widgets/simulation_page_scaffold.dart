@@ -5,6 +5,7 @@ import '../../../../../models/physics_module.dart';
 import '../../../../../providers/physics_progress_provider.dart';
 import '../../../../../widgets/learn/learn_ui.dart';
 import '../../learn_content.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// L1 v2 simulation layout (Figma 310:5964): summary card with canvas,
 /// meta, title and stats, then Materi / Rumus / Simulasi tabs holding the
@@ -34,15 +35,15 @@ class SimulationPageScaffold extends StatefulWidget {
 }
 
 class _SimulationPageScaffoldState extends State<SimulationPageScaffold> {
-  String _tab = 'Simulasi';
+  late String _tab = l10n.lnSimulations;
 
   @override
   Widget build(BuildContext context) {
     final tabs = <(String, IconData, Widget)>[
-      if (widget.deepExplainCard case final w?) ('Materi', Icons.menu_book_outlined, w),
-      if (widget.formulaBox case final w?) ('Rumus', Icons.functions_rounded, w),
+      if (widget.deepExplainCard case final w?) (l10n.lnTabTheory, Icons.menu_book_outlined, w),
+      if (widget.formulaBox case final w?) (l10n.lnTabFormula, Icons.functions_rounded, w),
       (
-        'Simulasi',
+        l10n.lnSimulations,
         Icons.science_outlined,
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,7 +54,7 @@ class _SimulationPageScaffoldState extends State<SimulationPageScaffold> {
     final current = tabs.firstWhere((t) => t.$1 == _tab, orElse: () => tabs.last);
 
     return LearnPageScaffold(
-      title: 'Simulasi',
+      title: l10n.lnSimulations,
       body: LearnListView(
         children: [
           LearnCard(
@@ -115,12 +116,12 @@ class _SimStats extends ConsumerWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        stat(Icons.functions_rounded, info.formula, 'Rumus', p.primaryText),
-        stat(Icons.schedule_rounded, '${info.durationMinutes} min', 'Durasi', p.tertiaryText),
+        stat(Icons.functions_rounded, info.formula, l10n.lnTabFormula, p.primaryText),
+        stat(Icons.schedule_rounded, l10n.lnMinutes(info.durationMinutes), l10n.lnDuration, p.tertiaryText),
         stat(
           done ? Icons.check_rounded : Icons.radio_button_unchecked,
-          done ? 'Selesai' : 'Baru',
-          'Status',
+          done ? l10n.lnDone : l10n.lnNew,
+          l10n.lnStatus,
           done ? p.primaryText : p.textSecondary,
         ),
       ],

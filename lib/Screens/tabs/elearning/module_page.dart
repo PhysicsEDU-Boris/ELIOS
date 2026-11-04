@@ -171,23 +171,20 @@ class _ModuleBody extends ConsumerWidget {
           ),
         ),
         // Videos and guides as separate sections (owner request, 1 Nov).
-        for (final (title, isVideo, unit) in const [
-          ('Videos', true, 'videos'),
-          ('Guides', false, 'guides'),
+        for (final (title, isVideo, count, none) in [
+          (l10n.lnVideos, true, l10n.lnVideoCount, l10n.lnNoVideosModule),
+          (l10n.lnGuides, false, l10n.lnGuideCount, l10n.lnNoGuidesModule),
         ]) ...[
           LearnSectionHeader(
             title: title,
             actionLabel: lessons == null
                 ? null
-                : switch (list.where((l) => l.isVideo == isVideo).length) {
-                    1 => '1 ${unit.substring(0, unit.length - 1)}',
-                    final n => '$n $unit',
-                  },
+                : count(list.where((l) => l.isVideo == isVideo).length),
           ),
           if (lessons == null)
             const LearnSkeleton(height: 220)
           else if (!list.any((l) => l.isVideo == isVideo))
-            LearnHintCard(text: 'No $unit in this module yet.')
+            LearnHintCard(text: none)
           else
             LessonCardGrid(
               children: [
@@ -201,7 +198,7 @@ class _ModuleBody extends ConsumerWidget {
               ],
             ),
         ],
-        const LearnSectionHeader(title: 'Simulation for this module'),
+        LearnSectionHeader(title: l10n.lnSimForModule),
         SimulationRow(
           icon: sim.icon,
           tag: sim.tag,
@@ -213,22 +210,22 @@ class _ModuleBody extends ConsumerWidget {
           onTap: () => openSimulation(context, ref, sim),
         ),
         LearnSectionHeader(
-          title: 'Quiz',
-          actionLabel: review == null ? null : 'History',
+          title: l10n.lqTitle,
+          actionLabel: review == null ? null : l10n.navHistory,
           onAction: review == null ? null : () => push(QuizReviewPage(review: review)),
         ),
         if (quizSet case final q?)
           QuizCard(
             title: q.title,
             subtitle: [
-              '${q.questionCount} questions',
-              if (best != null) 'best score $best%',
+              l10n.lqQuestions(q.questionCount),
+              if (best != null) l10n.lqBestScore(best),
             ].join(' · '),
-            buttonLabel: attempted ? 'Open' : 'Start',
+            buttonLabel: attempted ? l10n.lnOpen : l10n.lnStart,
             onPressed: () => push(QuizPage(moduleId: module.id)),
           )
         else
-          const LearnHintCard(text: 'No quiz published for this module yet.'),
+          LearnHintCard(text: l10n.lnNoQuizPublished),
         const SizedBox(height: 24),
       ],
     );

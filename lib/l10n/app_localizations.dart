@@ -4260,6 +4260,648 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not connected, bank mode'**
   String get tpOffline;
+
+  /// No description provided for @lnWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Learn'**
+  String get lnWelcome;
+
+  /// No description provided for @lnWelcomeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with {bin}: {count} short lessons, then try the quiz.'**
+  String lnWelcomeBody(Object bin, Object count);
+
+  /// No description provided for @lnStartModule1.
+  ///
+  /// In en, this message translates to:
+  /// **'Start module 1'**
+  String get lnStartModule1;
+
+  /// No description provided for @lnTestElio.
+  ///
+  /// In en, this message translates to:
+  /// **'Test how ELIO sorts waste.'**
+  String get lnTestElio;
+
+  /// No description provided for @lnQuizzesTest.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} quizzes. Test how ELIO sorts waste.'**
+  String lnQuizzesTest(Object count);
+
+  /// No description provided for @lnTakeQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Take quiz'**
+  String get lnTakeQuiz;
+
+  /// No description provided for @lnYourProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Your learning progress'**
+  String get lnYourProgress;
+
+  /// No description provided for @lnNoModulesStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'No modules started yet'**
+  String get lnNoModulesStarted;
+
+  /// No description provided for @lnModulesInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{started} of {total} modules in progress'**
+  String lnModulesInProgress(Object started, Object total);
+
+  /// No description provided for @lnOverall.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% overall completion'**
+  String lnOverall(Object percent);
+
+  /// No description provided for @lnCourseModules.
+  ///
+  /// In en, this message translates to:
+  /// **'Course modules'**
+  String get lnCourseModules;
+
+  /// No description provided for @lnSeeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get lnSeeAll;
+
+  /// No description provided for @lnContinueLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue learning'**
+  String get lnContinueLearning;
+
+  /// No description provided for @lnAllLessons.
+  ///
+  /// In en, this message translates to:
+  /// **'All lessons'**
+  String get lnAllLessons;
+
+  /// No description provided for @lnNothingInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing in progress yet. Lessons you open will wait for you here.'**
+  String get lnNothingInProgress;
+
+  /// No description provided for @lnWatchLearn.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch and learn'**
+  String get lnWatchLearn;
+
+  /// No description provided for @lnVideoCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 video} other{{count} videos}}'**
+  String lnVideoCount(num count);
+
+  /// No description provided for @lnVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos'**
+  String get lnVideos;
+
+  /// No description provided for @lnNoVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'No videos published yet.'**
+  String get lnNoVideos;
+
+  /// No description provided for @lnPhysicsSims.
+  ///
+  /// In en, this message translates to:
+  /// **'Physics simulations'**
+  String get lnPhysicsSims;
+
+  /// No description provided for @lnModuleCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 module} other{{count} modules}}'**
+  String lnModuleCount(num count);
+
+  /// No description provided for @lnSimTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulation · {tag}'**
+  String lnSimTag(Object tag);
+
+  /// No description provided for @lnGuides.
+  ///
+  /// In en, this message translates to:
+  /// **'Guides'**
+  String get lnGuides;
+
+  /// No description provided for @lnNoGuides.
+  ///
+  /// In en, this message translates to:
+  /// **'No guides published yet.'**
+  String get lnNoGuides;
+
+  /// No description provided for @lnModuleN.
+  ///
+  /// In en, this message translates to:
+  /// **'Module {n}'**
+  String lnModuleN(Object n);
+
+  /// No description provided for @lnGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Guide'**
+  String get lnGuide;
+
+  /// No description provided for @lnDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get lnDone;
+
+  /// No description provided for @lnNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get lnNew;
+
+  /// No description provided for @lnLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning modules could not be loaded.'**
+  String get lnLoadFailed;
+
+  /// No description provided for @lnLoadFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the connection to ELIO or the internet, then try again. Lessons you already opened still work offline.'**
+  String get lnLoadFailedBody;
+
+  /// No description provided for @lnOpenOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Open offline lessons'**
+  String get lnOpenOffline;
+
+  /// No description provided for @lnNoModules.
+  ///
+  /// In en, this message translates to:
+  /// **'No learning modules available yet.'**
+  String get lnNoModules;
+
+  /// No description provided for @lnNoModulesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'New lessons appear here as soon as they are published.'**
+  String get lnNoModulesBody;
+
+  /// No description provided for @lnNothingHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here yet.'**
+  String get lnNothingHere;
+
+  /// No description provided for @lnVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get lnVideo;
+
+  /// No description provided for @lnSimulations.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulations'**
+  String get lnSimulations;
+
+  /// No description provided for @lnOfflineLessons.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline lessons'**
+  String get lnOfflineLessons;
+
+  /// No description provided for @lnLoadingOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading offline lessons'**
+  String get lnLoadingOffline;
+
+  /// No description provided for @lnOfflineNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Guides you opened before work offline. Videos need the internet.'**
+  String get lnOfflineNote;
+
+  /// No description provided for @lnNoSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'No lessons saved on this device yet.'**
+  String get lnNoSaved;
+
+  /// No description provided for @lnPlayVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Play video'**
+  String get lnPlayVideo;
+
+  /// No description provided for @lnOpenGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Open guide'**
+  String get lnOpenGuide;
+
+  /// No description provided for @lnContinueVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue video · {pct}%'**
+  String lnContinueVideo(Object pct);
+
+  /// No description provided for @lnContinueGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue guide · {pct}%'**
+  String lnContinueGuide(Object pct);
+
+  /// No description provided for @lnWatchAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch again'**
+  String get lnWatchAgain;
+
+  /// No description provided for @lnReadAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Read again'**
+  String get lnReadAgain;
+
+  /// No description provided for @lnLesson.
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson'**
+  String get lnLesson;
+
+  /// No description provided for @lnDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get lnDuration;
+
+  /// No description provided for @lnReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get lnReading;
+
+  /// No description provided for @lnPositionOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} of {total}'**
+  String lnPositionOf(Object n, Object total);
+
+  /// No description provided for @lnWatched.
+  ///
+  /// In en, this message translates to:
+  /// **'Watched'**
+  String get lnWatched;
+
+  /// No description provided for @lnRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get lnRead;
+
+  /// No description provided for @lnAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About this lesson'**
+  String get lnAbout;
+
+  /// No description provided for @lnGuidesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Guides'**
+  String lnGuidesTab(Object count);
+
+  /// No description provided for @lnVideosTab.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Videos'**
+  String lnVideosTab(Object count);
+
+  /// No description provided for @lnQuizTab.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Quiz'**
+  String lnQuizTab(Object count);
+
+  /// No description provided for @lnNoQuizModule.
+  ///
+  /// In en, this message translates to:
+  /// **'No quiz for this module yet.'**
+  String get lnNoQuizModule;
+
+  /// No description provided for @lnNothingModule.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here for this module yet.'**
+  String get lnNothingModule;
+
+  /// No description provided for @lnThisLesson.
+  ///
+  /// In en, this message translates to:
+  /// **'this lesson'**
+  String get lnThisLesson;
+
+  /// No description provided for @lnMyProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'My progress'**
+  String get lnMyProgress;
+
+  /// No description provided for @lnNoProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'No progress yet.'**
+  String get lnNoProgress;
+
+  /// No description provided for @lnNoProgressBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a lesson, a simulation or a quiz and your progress shows up here.'**
+  String get lnNoProgressBody;
+
+  /// No description provided for @lnInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get lnInProgress;
+
+  /// No description provided for @lnCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get lnCompleted;
+
+  /// No description provided for @lnSimProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulation progress'**
+  String get lnSimProgress;
+
+  /// No description provided for @lnSimsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} modules done'**
+  String lnSimsDone(Object done, Object total);
+
+  /// No description provided for @lnPercentDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% done'**
+  String lnPercentDone(Object percent);
+
+  /// No description provided for @lnAllComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Every module is complete.'**
+  String get lnAllComplete;
+
+  /// No description provided for @lnNoneComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'No module completed yet.'**
+  String get lnNoneComplete;
+
+  /// No description provided for @lnMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min'**
+  String lnMinutes(Object count);
+
+  /// No description provided for @lnLessonCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lesson} other{{count} lessons}}'**
+  String lnLessonCount(num count);
+
+  /// No description provided for @lnQuizHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz history'**
+  String get lnQuizHistory;
+
+  /// No description provided for @lnQuizHistoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Quizzes you finish are listed here with your best score.'**
+  String get lnQuizHistoryHint;
+
+  /// No description provided for @lnBinQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'{bin} quiz'**
+  String lnBinQuiz(Object bin);
+
+  /// No description provided for @lnBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Best {score}%'**
+  String lnBest(Object score);
+
+  /// No description provided for @lnGuideCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 guide} other{{count} guides}}'**
+  String lnGuideCount(num count);
+
+  /// No description provided for @lnNoVideosModule.
+  ///
+  /// In en, this message translates to:
+  /// **'No videos in this module yet.'**
+  String get lnNoVideosModule;
+
+  /// No description provided for @lnNoGuidesModule.
+  ///
+  /// In en, this message translates to:
+  /// **'No guides in this module yet.'**
+  String get lnNoGuidesModule;
+
+  /// No description provided for @lnSimForModule.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulation for this module'**
+  String get lnSimForModule;
+
+  /// No description provided for @lnOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get lnOpen;
+
+  /// No description provided for @lnNoQuizPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'No quiz published for this module yet.'**
+  String get lnNoQuizPublished;
+
+  /// No description provided for @lnLoadingGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading guide'**
+  String get lnLoadingGuide;
+
+  /// No description provided for @lnCheckOpenAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the connection and open the guide again.'**
+  String get lnCheckOpenAgain;
+
+  /// No description provided for @lnPrevPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous page'**
+  String get lnPrevPage;
+
+  /// No description provided for @lnPageOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {n} of {total}'**
+  String lnPageOf(Object n, Object total);
+
+  /// No description provided for @lnPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {n}'**
+  String lnPage(Object n);
+
+  /// No description provided for @lnNextPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Next page'**
+  String get lnNextPage;
+
+  /// No description provided for @lnVideoTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Video · {tag}'**
+  String lnVideoTag(Object tag);
+
+  /// No description provided for @lnGuidePart.
+  ///
+  /// In en, this message translates to:
+  /// **'Guide · Part {n}'**
+  String lnGuidePart(Object n);
+
+  /// No description provided for @lnStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get lnStart;
+
+  /// No description provided for @lnContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get lnContinue;
+
+  /// No description provided for @lnModuleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Module {label}'**
+  String lnModuleLabel(Object label);
+
+  /// No description provided for @lnVideoLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Video {title}'**
+  String lnVideoLabel(Object title);
+
+  /// No description provided for @lnSimLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulation {title}'**
+  String lnSimLabel(Object title);
+
+  /// No description provided for @lnLoadingModules.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading learning modules'**
+  String get lnLoadingModules;
+
+  /// No description provided for @lnLoadingLesson.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading lesson'**
+  String get lnLoadingLesson;
+
+  /// No description provided for @lnAnswerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer {letter}: {label}'**
+  String lnAnswerLabel(Object letter, Object label);
+
+  /// No description provided for @lnCorrectSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **', correct'**
+  String get lnCorrectSuffix;
+
+  /// No description provided for @lnWrongSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **', wrong'**
+  String get lnWrongSuffix;
+
+  /// No description provided for @lnTabTheory.
+  ///
+  /// In en, this message translates to:
+  /// **'Theory'**
+  String get lnTabTheory;
+
+  /// No description provided for @lnTabFormula.
+  ///
+  /// In en, this message translates to:
+  /// **'Formula'**
+  String get lnTabFormula;
+
+  /// No description provided for @lnStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get lnStatus;
+
+  /// No description provided for @lnBackToHub.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to learning hub'**
+  String get lnBackToHub;
+
+  /// No description provided for @openProfileMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Open profile menu'**
+  String get openProfileMenu;
+
+  /// No description provided for @closeMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Close menu'**
+  String get closeMenu;
+
+  /// No description provided for @navigationMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation menu'**
+  String get navigationMenu;
+
+  /// No description provided for @dismissNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss notification'**
+  String get dismissNotification;
 }
 
 class _AppLocalizationsDelegate

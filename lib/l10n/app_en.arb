@@ -1477,5 +1477,333 @@
       }
     }
   },
-  "tpOffline": "Not connected, bank mode"
+  "tpOffline": "Not connected, bank mode",
+  "lnWelcome": "Welcome to Learn",
+  "lnWelcomeBody": "Start with {bin}: {count} short lessons, then try the quiz.",
+  "@lnWelcomeBody": {
+    "placeholders": {
+      "bin": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnStartModule1": "Start module 1",
+  "lnTestElio": "Test how ELIO sorts waste.",
+  "lnQuizzesTest": "{count} quizzes. Test how ELIO sorts waste.",
+  "@lnQuizzesTest": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnTakeQuiz": "Take quiz",
+  "lnYourProgress": "Your learning progress",
+  "lnNoModulesStarted": "No modules started yet",
+  "lnModulesInProgress": "{started} of {total} modules in progress",
+  "@lnModulesInProgress": {
+    "placeholders": {
+      "started": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnOverall": "{percent}% overall completion",
+  "@lnOverall": {
+    "placeholders": {
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnCourseModules": "Course modules",
+  "lnSeeAll": "See all",
+  "lnContinueLearning": "Continue learning",
+  "lnAllLessons": "All lessons",
+  "lnNothingInProgress": "Nothing in progress yet. Lessons you open will wait for you here.",
+  "lnWatchLearn": "Watch and learn",
+  "lnVideoCount": "{count, plural, =1{1 video} other{{count} videos}}",
+  "@lnVideoCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "lnVideos": "Videos",
+  "lnNoVideos": "No videos published yet.",
+  "lnPhysicsSims": "Physics simulations",
+  "lnModuleCount": "{count, plural, =1{1 module} other{{count} modules}}",
+  "@lnModuleCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "lnSimTag": "Simulation · {tag}",
+  "@lnSimTag": {
+    "placeholders": {
+      "tag": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnGuides": "Guides",
+  "lnNoGuides": "No guides published yet.",
+  "lnModuleN": "Module {n}",
+  "@lnModuleN": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnGuide": "Guide",
+  "lnDone": "Done",
+  "lnNew": "New",
+  "lnLoadFailed": "Learning modules could not be loaded.",
+  "lnLoadFailedBody": "Check the connection to ELIO or the internet, then try again. Lessons you already opened still work offline.",
+  "lnOpenOffline": "Open offline lessons",
+  "lnNoModules": "No learning modules available yet.",
+  "lnNoModulesBody": "New lessons appear here as soon as they are published.",
+  "lnNothingHere": "Nothing here yet.",
+  "lnVideo": "Video",
+  "lnSimulations": "Simulations",
+  "lnOfflineLessons": "Offline lessons",
+  "lnLoadingOffline": "Loading offline lessons",
+  "lnOfflineNote": "Guides you opened before work offline. Videos need the internet.",
+  "lnNoSaved": "No lessons saved on this device yet.",
+  "lnPlayVideo": "Play video",
+  "lnOpenGuide": "Open guide",
+  "lnContinueVideo": "Continue video · {pct}%",
+  "@lnContinueVideo": {
+    "placeholders": {
+      "pct": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnContinueGuide": "Continue guide · {pct}%",
+  "@lnContinueGuide": {
+    "placeholders": {
+      "pct": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnWatchAgain": "Watch again",
+  "lnReadAgain": "Read again",
+  "lnLesson": "Lesson",
+  "lnDuration": "Duration",
+  "lnReading": "Reading",
+  "lnPositionOf": "{n} of {total}",
+  "@lnPositionOf": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnWatched": "Watched",
+  "lnRead": "Read",
+  "lnAbout": "About this lesson",
+  "lnGuidesTab": "{count} Guides",
+  "@lnGuidesTab": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnVideosTab": "{count} Videos",
+  "@lnVideosTab": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnQuizTab": "{count} Quiz",
+  "@lnQuizTab": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnNoQuizModule": "No quiz for this module yet.",
+  "lnNothingModule": "Nothing here for this module yet.",
+  "lnThisLesson": "this lesson",
+  "lnMyProgress": "My progress",
+  "lnNoProgress": "No progress yet.",
+  "lnNoProgressBody": "Open a lesson, a simulation or a quiz and your progress shows up here.",
+  "lnInProgress": "In progress",
+  "lnCompleted": "Completed",
+  "lnSimProgress": "Simulation progress",
+  "lnSimsDone": "{done} of {total} modules done",
+  "@lnSimsDone": {
+    "placeholders": {
+      "done": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnPercentDone": "{percent}% done",
+  "@lnPercentDone": {
+    "placeholders": {
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnAllComplete": "Every module is complete.",
+  "lnNoneComplete": "No module completed yet.",
+  "lnMinutes": "{count} min",
+  "@lnMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnLessonCount": "{count, plural, =1{1 lesson} other{{count} lessons}}",
+  "@lnLessonCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "lnQuizHistory": "Quiz history",
+  "lnQuizHistoryHint": "Quizzes you finish are listed here with your best score.",
+  "lnBinQuiz": "{bin} quiz",
+  "@lnBinQuiz": {
+    "placeholders": {
+      "bin": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnBest": "Best {score}%",
+  "@lnBest": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnGuideCount": "{count, plural, =1{1 guide} other{{count} guides}}",
+  "@lnGuideCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "lnNoVideosModule": "No videos in this module yet.",
+  "lnNoGuidesModule": "No guides in this module yet.",
+  "lnSimForModule": "Simulation for this module",
+  "lnOpen": "Open",
+  "lnNoQuizPublished": "No quiz published for this module yet.",
+  "lnLoadingGuide": "Loading guide",
+  "lnCheckOpenAgain": "Check the connection and open the guide again.",
+  "lnPrevPage": "Previous page",
+  "lnPageOf": "Page {n} of {total}",
+  "@lnPageOf": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnPage": "Page {n}",
+  "@lnPage": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnNextPage": "Next page",
+  "lnVideoTag": "Video · {tag}",
+  "@lnVideoTag": {
+    "placeholders": {
+      "tag": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnGuidePart": "Guide · Part {n}",
+  "@lnGuidePart": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnStart": "Start",
+  "lnContinue": "Continue",
+  "lnModuleLabel": "Module {label}",
+  "@lnModuleLabel": {
+    "placeholders": {
+      "label": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnVideoLabel": "Video {title}",
+  "@lnVideoLabel": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnSimLabel": "Simulation {title}",
+  "@lnSimLabel": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnLoadingModules": "Loading learning modules",
+  "lnLoadingLesson": "Loading lesson",
+  "lnAnswerLabel": "Answer {letter}: {label}",
+  "@lnAnswerLabel": {
+    "placeholders": {
+      "letter": {
+        "type": "Object"
+      },
+      "label": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnCorrectSuffix": ", correct",
+  "lnWrongSuffix": ", wrong",
+  "lnTabTheory": "Theory",
+  "lnTabFormula": "Formula",
+  "lnStatus": "Status",
+  "lnBackToHub": "Back to learning hub",
+  "openProfileMenu": "Open profile menu",
+  "closeMenu": "Close menu",
+  "navigationMenu": "Navigation menu",
+  "dismissNotification": "Dismiss notification"
 }

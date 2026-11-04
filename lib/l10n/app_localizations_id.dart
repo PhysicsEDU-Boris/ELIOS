@@ -2326,4 +2326,390 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get tpOffline => 'Tidak tersambung, mode bank';
+
+  @override
+  String get lnWelcome => 'Selamat datang di Belajar';
+
+  @override
+  String lnWelcomeBody(Object bin, Object count) {
+    return 'Mulai dengan $bin: $count materi singkat, lalu coba kuisnya.';
+  }
+
+  @override
+  String get lnStartModule1 => 'Mulai modul 1';
+
+  @override
+  String get lnTestElio => 'Uji cara ELIO memilah sampah.';
+
+  @override
+  String lnQuizzesTest(Object count) {
+    return '$count kuis. Uji cara ELIO memilah sampah.';
+  }
+
+  @override
+  String get lnTakeQuiz => 'Ikuti kuis';
+
+  @override
+  String get lnYourProgress => 'Progres belajarmu';
+
+  @override
+  String get lnNoModulesStarted => 'Belum ada modul yang dimulai';
+
+  @override
+  String lnModulesInProgress(Object started, Object total) {
+    return '$started dari $total modul sedang berjalan';
+  }
+
+  @override
+  String lnOverall(Object percent) {
+    return '$percent% selesai secara keseluruhan';
+  }
+
+  @override
+  String get lnCourseModules => 'Modul pelajaran';
+
+  @override
+  String get lnSeeAll => 'Lihat semua';
+
+  @override
+  String get lnContinueLearning => 'Lanjutkan belajar';
+
+  @override
+  String get lnAllLessons => 'Semua materi';
+
+  @override
+  String get lnNothingInProgress =>
+      'Belum ada yang berjalan. Materi yang kamu buka akan menunggu di sini.';
+
+  @override
+  String get lnWatchLearn => 'Tonton dan belajar';
+
+  @override
+  String lnVideoCount(num count) {
+    return '$count video';
+  }
+
+  @override
+  String get lnVideos => 'Video';
+
+  @override
+  String get lnNoVideos => 'Belum ada video yang diterbitkan.';
+
+  @override
+  String get lnPhysicsSims => 'Simulasi fisika';
+
+  @override
+  String lnModuleCount(num count) {
+    return '$count modul';
+  }
+
+  @override
+  String lnSimTag(Object tag) {
+    return 'Simulasi · $tag';
+  }
+
+  @override
+  String get lnGuides => 'Panduan';
+
+  @override
+  String get lnNoGuides => 'Belum ada panduan yang diterbitkan.';
+
+  @override
+  String lnModuleN(Object n) {
+    return 'Modul $n';
+  }
+
+  @override
+  String get lnGuide => 'Panduan';
+
+  @override
+  String get lnDone => 'Selesai';
+
+  @override
+  String get lnNew => 'Baru';
+
+  @override
+  String get lnLoadFailed => 'Modul belajar tidak bisa dimuat.';
+
+  @override
+  String get lnLoadFailedBody =>
+      'Periksa koneksi ke ELIO atau internet, lalu coba lagi. Materi yang sudah pernah dibuka tetap bisa dipakai offline.';
+
+  @override
+  String get lnOpenOffline => 'Buka materi offline';
+
+  @override
+  String get lnNoModules => 'Belum ada modul belajar.';
+
+  @override
+  String get lnNoModulesBody =>
+      'Materi baru muncul di sini begitu diterbitkan.';
+
+  @override
+  String get lnNothingHere => 'Belum ada apa-apa di sini.';
+
+  @override
+  String get lnVideo => 'Video';
+
+  @override
+  String get lnSimulations => 'Simulasi';
+
+  @override
+  String get lnOfflineLessons => 'Materi offline';
+
+  @override
+  String get lnLoadingOffline => 'Memuat materi offline';
+
+  @override
+  String get lnOfflineNote =>
+      'Panduan yang pernah dibuka bisa dipakai offline. Video perlu internet.';
+
+  @override
+  String get lnNoSaved => 'Belum ada materi yang tersimpan di perangkat ini.';
+
+  @override
+  String get lnPlayVideo => 'Putar video';
+
+  @override
+  String get lnOpenGuide => 'Buka panduan';
+
+  @override
+  String lnContinueVideo(Object pct) {
+    return 'Lanjutkan video · $pct%';
+  }
+
+  @override
+  String lnContinueGuide(Object pct) {
+    return 'Lanjutkan panduan · $pct%';
+  }
+
+  @override
+  String get lnWatchAgain => 'Tonton lagi';
+
+  @override
+  String get lnReadAgain => 'Baca lagi';
+
+  @override
+  String get lnLesson => 'Materi';
+
+  @override
+  String get lnDuration => 'Durasi';
+
+  @override
+  String get lnReading => 'Bacaan';
+
+  @override
+  String lnPositionOf(Object n, Object total) {
+    return '$n dari $total';
+  }
+
+  @override
+  String get lnWatched => 'Ditonton';
+
+  @override
+  String get lnRead => 'Dibaca';
+
+  @override
+  String get lnAbout => 'Tentang materi ini';
+
+  @override
+  String lnGuidesTab(Object count) {
+    return '$count Panduan';
+  }
+
+  @override
+  String lnVideosTab(Object count) {
+    return '$count Video';
+  }
+
+  @override
+  String lnQuizTab(Object count) {
+    return '$count Kuis';
+  }
+
+  @override
+  String get lnNoQuizModule => 'Belum ada kuis untuk modul ini.';
+
+  @override
+  String get lnNothingModule => 'Belum ada isi untuk modul ini.';
+
+  @override
+  String get lnThisLesson => 'materi ini';
+
+  @override
+  String get lnMyProgress => 'Progresku';
+
+  @override
+  String get lnNoProgress => 'Belum ada progres.';
+
+  @override
+  String get lnNoProgressBody =>
+      'Buka materi, simulasi atau kuis dan progresmu akan muncul di sini.';
+
+  @override
+  String get lnInProgress => 'Sedang berjalan';
+
+  @override
+  String get lnCompleted => 'Selesai';
+
+  @override
+  String get lnSimProgress => 'Progres simulasi';
+
+  @override
+  String lnSimsDone(Object done, Object total) {
+    return '$done dari $total modul selesai';
+  }
+
+  @override
+  String lnPercentDone(Object percent) {
+    return '$percent% selesai';
+  }
+
+  @override
+  String get lnAllComplete => 'Semua modul sudah selesai.';
+
+  @override
+  String get lnNoneComplete => 'Belum ada modul yang selesai.';
+
+  @override
+  String lnMinutes(Object count) {
+    return '$count mnt';
+  }
+
+  @override
+  String lnLessonCount(num count) {
+    return '$count materi';
+  }
+
+  @override
+  String get lnQuizHistory => 'Riwayat kuis';
+
+  @override
+  String get lnQuizHistoryHint =>
+      'Kuis yang kamu selesaikan tercantum di sini dengan skor terbaikmu.';
+
+  @override
+  String lnBinQuiz(Object bin) {
+    return 'Kuis $bin';
+  }
+
+  @override
+  String lnBest(Object score) {
+    return 'Terbaik $score%';
+  }
+
+  @override
+  String lnGuideCount(num count) {
+    return '$count panduan';
+  }
+
+  @override
+  String get lnNoVideosModule => 'Belum ada video di modul ini.';
+
+  @override
+  String get lnNoGuidesModule => 'Belum ada panduan di modul ini.';
+
+  @override
+  String get lnSimForModule => 'Simulasi untuk modul ini';
+
+  @override
+  String get lnOpen => 'Buka';
+
+  @override
+  String get lnNoQuizPublished =>
+      'Belum ada kuis yang diterbitkan untuk modul ini.';
+
+  @override
+  String get lnLoadingGuide => 'Memuat panduan';
+
+  @override
+  String get lnCheckOpenAgain => 'Periksa koneksi lalu buka panduan lagi.';
+
+  @override
+  String get lnPrevPage => 'Halaman sebelumnya';
+
+  @override
+  String lnPageOf(Object n, Object total) {
+    return 'Halaman $n dari $total';
+  }
+
+  @override
+  String lnPage(Object n) {
+    return 'Halaman $n';
+  }
+
+  @override
+  String get lnNextPage => 'Halaman berikutnya';
+
+  @override
+  String lnVideoTag(Object tag) {
+    return 'Video · $tag';
+  }
+
+  @override
+  String lnGuidePart(Object n) {
+    return 'Panduan · Bagian $n';
+  }
+
+  @override
+  String get lnStart => 'Mulai';
+
+  @override
+  String get lnContinue => 'Lanjutkan';
+
+  @override
+  String lnModuleLabel(Object label) {
+    return 'Modul $label';
+  }
+
+  @override
+  String lnVideoLabel(Object title) {
+    return 'Video $title';
+  }
+
+  @override
+  String lnSimLabel(Object title) {
+    return 'Simulasi $title';
+  }
+
+  @override
+  String get lnLoadingModules => 'Memuat modul belajar';
+
+  @override
+  String get lnLoadingLesson => 'Memuat materi';
+
+  @override
+  String lnAnswerLabel(Object letter, Object label) {
+    return 'Jawaban $letter: $label';
+  }
+
+  @override
+  String get lnCorrectSuffix => ', benar';
+
+  @override
+  String get lnWrongSuffix => ', salah';
+
+  @override
+  String get lnTabTheory => 'Materi';
+
+  @override
+  String get lnTabFormula => 'Rumus';
+
+  @override
+  String get lnStatus => 'Status';
+
+  @override
+  String get lnBackToHub => 'Kembali ke pusat belajar';
+
+  @override
+  String get openProfileMenu => 'Buka menu profil';
+
+  @override
+  String get closeMenu => 'Tutup menu';
+
+  @override
+  String get navigationMenu => 'Menu navigasi';
+
+  @override
+  String get dismissNotification => 'Tutup notifikasi';
 }

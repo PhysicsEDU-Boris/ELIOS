@@ -12,6 +12,7 @@ import 'guides_page.dart';
 import 'learn_content.dart';
 import 'quiz_page.dart';
 import 'video_lessons_page.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// Lesson page for videos and guides (Figma 310:5798). The sticky button
 /// opens the existing YouTube player or PDF viewer.
@@ -55,13 +56,13 @@ class _LessonPageState extends ConsumerState<LessonPage> {
     final pct = (lesson.progress(progress) * 100).round();
     final state = lesson.state(progress);
     final buttonLabel = switch (state) {
-      LessonState.start => lesson.isVideo ? 'Play video' : 'Open guide',
-      LessonState.inProgress => lesson.isVideo ? 'Continue video · $pct%' : 'Continue guide · $pct%',
-      LessonState.done => lesson.isVideo ? 'Watch again' : 'Read again',
+      LessonState.start => lesson.isVideo ? l10n.lnPlayVideo : l10n.lnOpenGuide,
+      LessonState.inProgress => lesson.isVideo ? l10n.lnContinueVideo(pct) : l10n.lnContinueGuide(pct),
+      LessonState.done => lesson.isVideo ? l10n.lnWatchAgain : l10n.lnReadAgain,
     };
 
     return LearnPageScaffold(
-      title: 'Lesson',
+      title: l10n.lnLesson,
       bottom: FilledButton.icon(
         onPressed: () => _open(lesson),
         icon: Icon(lesson.isVideo ? Icons.play_circle_outline_rounded : Icons.description_outlined),
@@ -118,8 +119,8 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                           const SizedBox(height: 12),
                           Text(
                             [
-                              lesson.isVideo ? 'Video' : 'Guide',
-                              if (module != null && module.order > 0) 'Module ${module.order}',
+                              lesson.isVideo ? l10n.lnVideo : l10n.lnGuide,
+                              if (module != null && module.order > 0) l10n.lnModuleN(module.order),
                               if (lesson.isVideo && lesson.video!.level.isNotEmpty) lesson.video!.level,
                             ].join(' · '),
                             style: context.text.labelMedium?.copyWith(color: p.textSecondary),
@@ -133,19 +134,19 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                               _Stat(
                                 icon: Icons.schedule_rounded,
                                 value: lesson.lengthLabel.isEmpty ? '–' : lesson.lengthLabel,
-                                label: lesson.isVideo ? 'Duration' : 'Reading',
+                                label: lesson.isVideo ? l10n.lnDuration : l10n.lnReading,
                                 color: p.tertiaryText,
                               ),
                               _Stat(
                                 icon: Icons.menu_book_outlined,
-                                value: position < 0 ? '–' : '${position + 1} of ${siblings.length}',
-                                label: 'Lesson',
+                                value: position < 0 ? '–' : l10n.lnPositionOf(position + 1, siblings.length),
+                                label: l10n.lnLesson,
                                 color: p.primaryText,
                               ),
                               _Stat(
                                 icon: Icons.check_rounded,
                                 value: '$pct%',
-                                label: lesson.isVideo ? 'Watched' : 'Read',
+                                label: lesson.isVideo ? l10n.lnWatched : l10n.lnRead,
                                 color: p.primaryText,
                                 end: true,
                               ),
@@ -171,7 +172,7 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                                   Text(module.title, style: context.text.titleSmall),
                                   Text(
                                     [
-                                      if (module.order > 0) 'Module ${module.order}',
+                                      if (module.order > 0) l10n.lnModuleN(module.order),
                                       if (module.level.isNotEmpty) module.level,
                                       '${(moduleProgress(module.id, siblings, progress) * 100).round()}%',
                                     ].join(' · '),
@@ -184,15 +185,15 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                         ),
                       ),
                     if (lesson.description.isNotEmpty) ...[
-                      const LearnSectionHeader(title: 'About this lesson'),
+                      LearnSectionHeader(title: l10n.lnAbout),
                       Text(lesson.description, style: context.text.bodySmall?.copyWith(color: p.textSecondary)),
                     ],
                     const SizedBox(height: 16),
                     LearnSegmented(
                       labels: [
-                        '${guides.length} Guides',
-                        '${videos.length} Videos',
-                        '${quizzes.length} Quiz',
+                        l10n.lnGuidesTab(guides.length),
+                        l10n.lnVideosTab(videos.length),
+                        l10n.lnQuizTab(quizzes.length),
                       ],
                       icons: const [
                         Icons.menu_book_outlined,
@@ -210,7 +211,7 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                       )
                     else if (_tab == 2)
                       quizzes.isEmpty
-                          ? const LearnHintCard(text: 'No quiz for this module yet.')
+                          ? LearnHintCard(text: l10n.lnNoQuizModule)
                           : LearnListCard(
                               children: [
                                 for (final q in quizzes)
@@ -225,7 +226,7 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                               ],
                             )
                     else if (shown.isEmpty)
-                      const LearnHintCard(text: 'Nothing here for this module yet.')
+                      LearnHintCard(text: l10n.lnNothingModule)
                     else
                       LearnListCard(
                         children: [
@@ -239,7 +240,7 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                               title: l.title,
                               subtitle: [
                                 if (l.lengthLabel.isNotEmpty) l.lengthLabel,
-                                if (l.id == lesson.id) 'this lesson',
+                                if (l.id == lesson.id) l10n.lnThisLesson,
                               ].join(' · '),
                               highlighted: l.id == lesson.id,
                               onTap: l.id == lesson.id ? null : () => setState(() => _lesson = l),

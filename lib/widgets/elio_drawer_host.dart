@@ -5,6 +5,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
+import 'package:elio/l10n/l10n.dart';
 
 const _openMs = Duration(milliseconds: 250);
 const _closeMs = Duration(milliseconds: 200);
@@ -133,7 +134,7 @@ class ElioDrawerHostState extends State<ElioDrawerHost>
                         Positioned.fill(
                           child: Semantics(
                             button: true,
-                            label: 'Close menu',
+                            label: l10n.closeMenu,
                             excludeSemantics: true,
                             onTap: close,
                             child: GestureDetector(
@@ -154,7 +155,7 @@ class ElioDrawerHostState extends State<ElioDrawerHost>
                             scopesRoute: true,
                             namesRoute: true,
                             explicitChildNodes: true,
-                            label: 'Navigation menu',
+                            label: l10n.navigationMenu,
                             child: CallbackShortcuts(
                               bindings: {
                                 const SingleActivator(

@@ -2347,4 +2347,414 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tpOffline => 'Not connected, bank mode';
+
+  @override
+  String get lnWelcome => 'Welcome to Learn';
+
+  @override
+  String lnWelcomeBody(Object bin, Object count) {
+    return 'Start with $bin: $count short lessons, then try the quiz.';
+  }
+
+  @override
+  String get lnStartModule1 => 'Start module 1';
+
+  @override
+  String get lnTestElio => 'Test how ELIO sorts waste.';
+
+  @override
+  String lnQuizzesTest(Object count) {
+    return '$count quizzes. Test how ELIO sorts waste.';
+  }
+
+  @override
+  String get lnTakeQuiz => 'Take quiz';
+
+  @override
+  String get lnYourProgress => 'Your learning progress';
+
+  @override
+  String get lnNoModulesStarted => 'No modules started yet';
+
+  @override
+  String lnModulesInProgress(Object started, Object total) {
+    return '$started of $total modules in progress';
+  }
+
+  @override
+  String lnOverall(Object percent) {
+    return '$percent% overall completion';
+  }
+
+  @override
+  String get lnCourseModules => 'Course modules';
+
+  @override
+  String get lnSeeAll => 'See all';
+
+  @override
+  String get lnContinueLearning => 'Continue learning';
+
+  @override
+  String get lnAllLessons => 'All lessons';
+
+  @override
+  String get lnNothingInProgress =>
+      'Nothing in progress yet. Lessons you open will wait for you here.';
+
+  @override
+  String get lnWatchLearn => 'Watch and learn';
+
+  @override
+  String lnVideoCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count videos',
+      one: '1 video',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lnVideos => 'Videos';
+
+  @override
+  String get lnNoVideos => 'No videos published yet.';
+
+  @override
+  String get lnPhysicsSims => 'Physics simulations';
+
+  @override
+  String lnModuleCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count modules',
+      one: '1 module',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lnSimTag(Object tag) {
+    return 'Simulation · $tag';
+  }
+
+  @override
+  String get lnGuides => 'Guides';
+
+  @override
+  String get lnNoGuides => 'No guides published yet.';
+
+  @override
+  String lnModuleN(Object n) {
+    return 'Module $n';
+  }
+
+  @override
+  String get lnGuide => 'Guide';
+
+  @override
+  String get lnDone => 'Done';
+
+  @override
+  String get lnNew => 'New';
+
+  @override
+  String get lnLoadFailed => 'Learning modules could not be loaded.';
+
+  @override
+  String get lnLoadFailedBody =>
+      'Check the connection to ELIO or the internet, then try again. Lessons you already opened still work offline.';
+
+  @override
+  String get lnOpenOffline => 'Open offline lessons';
+
+  @override
+  String get lnNoModules => 'No learning modules available yet.';
+
+  @override
+  String get lnNoModulesBody =>
+      'New lessons appear here as soon as they are published.';
+
+  @override
+  String get lnNothingHere => 'Nothing here yet.';
+
+  @override
+  String get lnVideo => 'Video';
+
+  @override
+  String get lnSimulations => 'Simulations';
+
+  @override
+  String get lnOfflineLessons => 'Offline lessons';
+
+  @override
+  String get lnLoadingOffline => 'Loading offline lessons';
+
+  @override
+  String get lnOfflineNote =>
+      'Guides you opened before work offline. Videos need the internet.';
+
+  @override
+  String get lnNoSaved => 'No lessons saved on this device yet.';
+
+  @override
+  String get lnPlayVideo => 'Play video';
+
+  @override
+  String get lnOpenGuide => 'Open guide';
+
+  @override
+  String lnContinueVideo(Object pct) {
+    return 'Continue video · $pct%';
+  }
+
+  @override
+  String lnContinueGuide(Object pct) {
+    return 'Continue guide · $pct%';
+  }
+
+  @override
+  String get lnWatchAgain => 'Watch again';
+
+  @override
+  String get lnReadAgain => 'Read again';
+
+  @override
+  String get lnLesson => 'Lesson';
+
+  @override
+  String get lnDuration => 'Duration';
+
+  @override
+  String get lnReading => 'Reading';
+
+  @override
+  String lnPositionOf(Object n, Object total) {
+    return '$n of $total';
+  }
+
+  @override
+  String get lnWatched => 'Watched';
+
+  @override
+  String get lnRead => 'Read';
+
+  @override
+  String get lnAbout => 'About this lesson';
+
+  @override
+  String lnGuidesTab(Object count) {
+    return '$count Guides';
+  }
+
+  @override
+  String lnVideosTab(Object count) {
+    return '$count Videos';
+  }
+
+  @override
+  String lnQuizTab(Object count) {
+    return '$count Quiz';
+  }
+
+  @override
+  String get lnNoQuizModule => 'No quiz for this module yet.';
+
+  @override
+  String get lnNothingModule => 'Nothing here for this module yet.';
+
+  @override
+  String get lnThisLesson => 'this lesson';
+
+  @override
+  String get lnMyProgress => 'My progress';
+
+  @override
+  String get lnNoProgress => 'No progress yet.';
+
+  @override
+  String get lnNoProgressBody =>
+      'Open a lesson, a simulation or a quiz and your progress shows up here.';
+
+  @override
+  String get lnInProgress => 'In progress';
+
+  @override
+  String get lnCompleted => 'Completed';
+
+  @override
+  String get lnSimProgress => 'Simulation progress';
+
+  @override
+  String lnSimsDone(Object done, Object total) {
+    return '$done of $total modules done';
+  }
+
+  @override
+  String lnPercentDone(Object percent) {
+    return '$percent% done';
+  }
+
+  @override
+  String get lnAllComplete => 'Every module is complete.';
+
+  @override
+  String get lnNoneComplete => 'No module completed yet.';
+
+  @override
+  String lnMinutes(Object count) {
+    return '$count min';
+  }
+
+  @override
+  String lnLessonCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lessons',
+      one: '1 lesson',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lnQuizHistory => 'Quiz history';
+
+  @override
+  String get lnQuizHistoryHint =>
+      'Quizzes you finish are listed here with your best score.';
+
+  @override
+  String lnBinQuiz(Object bin) {
+    return '$bin quiz';
+  }
+
+  @override
+  String lnBest(Object score) {
+    return 'Best $score%';
+  }
+
+  @override
+  String lnGuideCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count guides',
+      one: '1 guide',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lnNoVideosModule => 'No videos in this module yet.';
+
+  @override
+  String get lnNoGuidesModule => 'No guides in this module yet.';
+
+  @override
+  String get lnSimForModule => 'Simulation for this module';
+
+  @override
+  String get lnOpen => 'Open';
+
+  @override
+  String get lnNoQuizPublished => 'No quiz published for this module yet.';
+
+  @override
+  String get lnLoadingGuide => 'Loading guide';
+
+  @override
+  String get lnCheckOpenAgain =>
+      'Check the connection and open the guide again.';
+
+  @override
+  String get lnPrevPage => 'Previous page';
+
+  @override
+  String lnPageOf(Object n, Object total) {
+    return 'Page $n of $total';
+  }
+
+  @override
+  String lnPage(Object n) {
+    return 'Page $n';
+  }
+
+  @override
+  String get lnNextPage => 'Next page';
+
+  @override
+  String lnVideoTag(Object tag) {
+    return 'Video · $tag';
+  }
+
+  @override
+  String lnGuidePart(Object n) {
+    return 'Guide · Part $n';
+  }
+
+  @override
+  String get lnStart => 'Start';
+
+  @override
+  String get lnContinue => 'Continue';
+
+  @override
+  String lnModuleLabel(Object label) {
+    return 'Module $label';
+  }
+
+  @override
+  String lnVideoLabel(Object title) {
+    return 'Video $title';
+  }
+
+  @override
+  String lnSimLabel(Object title) {
+    return 'Simulation $title';
+  }
+
+  @override
+  String get lnLoadingModules => 'Loading learning modules';
+
+  @override
+  String get lnLoadingLesson => 'Loading lesson';
+
+  @override
+  String lnAnswerLabel(Object letter, Object label) {
+    return 'Answer $letter: $label';
+  }
+
+  @override
+  String get lnCorrectSuffix => ', correct';
+
+  @override
+  String get lnWrongSuffix => ', wrong';
+
+  @override
+  String get lnTabTheory => 'Theory';
+
+  @override
+  String get lnTabFormula => 'Formula';
+
+  @override
+  String get lnStatus => 'Status';
+
+  @override
+  String get lnBackToHub => 'Back to learning hub';
+
+  @override
+  String get openProfileMenu => 'Open profile menu';
+
+  @override
+  String get closeMenu => 'Close menu';
+
+  @override
+  String get navigationMenu => 'Navigation menu';
+
+  @override
+  String get dismissNotification => 'Dismiss notification';
 }
