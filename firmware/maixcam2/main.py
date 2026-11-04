@@ -1,15 +1,13 @@
-# ELIO MaixCAM2 dashboard / WebSocket server / segmentation (MaixPy v4).
+# ELIOS MaixCAM2 dashboard / WebSocket server / tracker, hands, arm tags (MaixPy v4).
 # Derived from the owner's Maixcam.txt reference; see README.md for its hash.
-# Clean pixels are encoded before drawing; annotated preview remains unchanged.
-# Hardware behavior is inherited from that reference, not deployment-verified.
+# Nothing is drawn on streamed frames (decision 0182): image is the clean frame.
 # WiFi (AP or STA) is set up by the OS; only the "Wi-Fi setup" QR screen changes it.
 
-from maix import image, display, camera, touchscreen, nn, app, tensor, network, time as mtime
+from maix import image, display, camera, touchscreen, nn, app, network, time as mtime
 import json, asyncio, websockets, base64, math, hashlib, os, subprocess, threading, textwrap
-import numpy as np
 
-# Clean vision protocol: image stays annotated for old preview clients.
-FIRMWARE_VERSION = "m2c-clean-v1"
+# vision_protocol 1 is kept, so older apps still pair clean_image (decision 0182).
+FIRMWARE_VERSION = "m2c-track-v1"
 with open(__file__, "rb") as source:
     FIRMWARE_SHA256 = hashlib.sha256(source.read()).hexdigest()
 print("[Firmware]", FIRMWARE_VERSION, FIRMWARE_SHA256)
@@ -166,282 +164,108 @@ def apply_wifi(ssid, password, boot=BOOT_DIR, run=None, wait=None):
     return False, "Couldn't join {}. Back on the old Wi-Fi{}".format(
         ssid[:20], " ({})".format(back) if back else "")
 
-# ── AI Model ──────────────────────────────────────────────────────────────────
-# Your trained waste-segmentation model (converted from
-# ~/maixcam2_convert/out/, deployed to /root/models/ on the device).
-MODEL_PATH = "/root/models/elios_waste_seg.mud"
+# ── Vision (decision 0182) ───────────────────────────────────────────────────
+# No waste model: the app's LOCK asks Gemini for the item and its box, sends
+# track_start, and MixFormerV2 follows that box. Hands keep the arm pause (0027);
+# AprilTags on the arm go out as arm_tags (0022). Nothing is drawn on the frame.
+# elios_waste_seg.mud stays on the camera, unused.
+TRACKER_PATH = "/root/models/mixformer_v2.mud"
+# HandLandmarks loads hand_detector.mud (its detect_model); landmarks run only per hand found.
+HAND_PATH    = "/root/models/hand_landmarks.mud"
 
-# Detection cadence — decoupled from the video frame rate. Decoding a real
-# seg model is far slower than a 640x480→JPEG encode, so running it on
-# every streamed frame would drag the whole stream down to the model's
-# speed. Instead we run it every DET_EVERY_N_FRAMES pushed frames and hold
-# the last result in between — the video keeps moving at full rate, the
-# overlay just updates less often.
-#
-# STREAM_RESOLUTION (below, set once the model is loaded) is now the
-# model's OWN native input size, not a separate 1920x1080 capture — so
-# there is no resize between "what the camera captured" and "what the
-# model saw", and no second resize between "the mask the model produced"
-# and "the mask drawn on screen" either. An earlier revision streamed at
-# 1920x1080 and upscaled the model's mask into that space with a second
-# .resize() call; that extra, unverified upscale is what caused the mask to
-# visibly bleed past the object's real edges. Trade-off: live video is now
-# at the model's resolution (lower than 1080p), not the sensor's full
-# frame — but the mask is pixel-exact with what the model actually decoded,
-# which matters far more for the planned real-world-dimension calculation
-# than video sharpness does.
+# Hands and tags run every DET_EVERY_N_FRAMES pushed frames and are held in
+# between; the tracker runs on every frame so the box keeps up with motion.
 DET_EVERY_N_FRAMES = 2
-DET_IOU_TH  = 0.45
+TRACK_TH       = 0.5   # MixFormerV2 score below this: the box is not sent that frame
+TRACK_LOST_FRAMES = 30 # that many low-score frames in a row (~1.5 s): stop tracking
+TRACK_MIN_SIDE = 8
+HAND_CONF_TH   = 0.7
+HAND_LABEL     = "Human_Hand"   # r1_orchestrator / motion_gate pause on this label
 
-# Object locking — real-world YOLO confidence is noisy frame-to-frame (a
-# real object can read 45% one detection cycle and 35% the next), so a
-# single fixed threshold applied fresh every cycle makes objects flicker in
-# and out. Fix: decode candidates at a LOW floor (RAW_CONF_TH) so a
-# momentary dip is still visible to the tracker, but only let a candidate
-# ENTER the locked set once it has cleared LOCK_CONF_TH (0.4) at least once.
-# Once locked, it's tracked by IoU across cycles and stays displayed through
-# LOCK_GRACE_CYCLES more misses (including score dips below LOCK_CONF_TH,
-# which are IoU-matched and never count as a miss at all) before being
-# dropped — see _update_lock(). Kept LOW (not the original 5) specifically
-# so swinging the camera to a different object clears the old lock almost
-# immediately instead of visibly lingering — a genuine score dip on the
-# SAME object never hits this path, only a total dropout does.
-RAW_CONF_TH = 0.25
-LOCK_CONF_TH = 0.4
-LOCK_IOU_TH = 0.3
-LOCK_GRACE_CYCLES = 1
+# Black-square edge of each arm tag (owner, 3 Nov): id 0 arm5 bottom, id 1 arm3 rear.
+TAG_SIZES_MM = {0: 18.52, 1: 10.0}
+# ponytail: nominal pinhole from the 81 deg horizontal FOV, uncalibrated (the 640x480
+# crop is not measured), so arm_tags carry dist_rough: true. Replace with fx from
+# robotic_hand_sim docs/camera_calibration.md once the camera is calibrated.
+NOMINAL_FX = 320 / math.tan(math.radians(81 / 2))
 
-# Raw output tensor names + decode math — copied unchanged from
-# elios_seg_manual.py, which proved this exact model needs the manual path.
-BOX_NAME = "/model.23/Concat_output_0"          # raw box, pre-DFL, (1,64,8400)
-CLS_NAME = "/model.23/Concat_1_output_0"        # raw class logits, pre-sigmoid, (1,10,8400)
-MASKCOEF_NAME = "/model.23/Concat_2_output_0"   # raw mask coefficients, (1,32,8400)
-PROTO_NAME = "/model.23/proto/cv3/conv/Conv_output_0"  # mask proto, (1,160,160,32)
+def _load(ctor, path):
+    try:
+        m = ctor(model=path)
+        print("[AI] loaded", path)
+        return m, ""
+    except Exception as e:
+        print("[AI] load FAILED:", path, "-", e)
+        return None, str(e)
 
-REG_MAX = 16
-STRIDES = [8, 16, 32]
+tracker, tracker_error = _load(nn.MixFormerV2, TRACKER_PATH)
+hands, hands_error     = _load(nn.HandLandmarks, HAND_PATH)
+model_loaded     = tracker is not None and hands is not None
+model_load_error = tracker_error or hands_error
 
-LABELS = ['Cardboard', 'E_Waste', 'Glass', 'Human_Hand', 'Metal', 'Organic',
-          'Paper', 'Paperboard', 'Plastic', 'Tetra_Pak']
+# The app's LOCK box. pending = (x, y, w, h) waiting for the next frame to init on.
+track = {"pending": None, "on": False, "id": 0, "label": "", "misses": 0}
 
-detector          = None   # kept only for its metadata (input size/format) —
-model             = None   # this is what actually runs inference
-model_loaded      = False
-model_load_error  = ""
-det_input_w       = 0
-det_input_h       = 0
-anchor_x = anchor_y = anchor_stride = None
-mean = scale = None
-try:
-    # `detector` is only used for its already-working metadata (input size) —
-    # detector.detect() must NEVER be called for this model, see header.
-    detector     = nn.YOLO11(model=MODEL_PATH, dual_buff=False)
-    model        = nn.NN(MODEL_PATH, dual_buff=False)
-    det_input_w  = detector.input_width()
-    det_input_h  = detector.input_height()
+def parse_track_box(box, img_w, img_h):
+    """[x, y, w, h] top-left in stream pixels -> ints clipped to the frame. ValueError says why not."""
+    if not isinstance(box, (list, tuple)) or len(box) != 4:
+        raise ValueError("box must be [x, y, w, h]")
+    if not all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) for v in box):
+        raise ValueError("box values must be numbers")
+    x, y, w, h = box
+    x0, y0 = max(0, int(x)), max(0, int(y))
+    x1, y1 = min(img_w, int(x + w)), min(img_h, int(y + h))
+    if x1 - x0 < TRACK_MIN_SIDE or y1 - y0 < TRACK_MIN_SIDE:
+        raise ValueError("box is too small or outside the frame")
+    return x0, y0, x1 - x0, y1 - y0
 
-    extra = model.extra_info()
-    mean  = [float(v) for v in extra["mean"].split(",")]
-    scale = [float(v) for v in extra["scale"].split(",")]
+def box_det(label, x, y, w, h, score):
+    """Wire format: centre x/y (websocket_service.dart reads 'x'/'y' as the centre)."""
+    return {"label": label, "score": round(float(score), 3),
+            "x": int(x + w / 2), "y": int(y + h / 2), "w": int(w), "h": int(h)}
 
-    # Anchor grid, built in the same P3->P4->P5 scale order the model concatenated.
-    ax, ay, astride = [], [], []
-    for s in STRIDES:
-        gh, gw = det_input_h // s, det_input_w // s
-        for gy in range(gh):
-            for gx in range(gw):
-                ax.append(gx); ay.append(gy); astride.append(s)
-    anchor_x = np.array(ax, dtype=np.float32)
-    anchor_y = np.array(ay, dtype=np.float32)
-    anchor_stride = np.array(astride, dtype=np.float32)
+def track_frame(frame):
+    """The tracked box for this frame as a detection, or None (nothing locked, or lost)."""
+    if track["pending"] is not None:
+        x, y, w, h = track["pending"]
+        track.update(pending=None, on=True, misses=0)
+        tracker.init(frame, x, y, w, h)
+        return dict(box_det(track["label"], x, y, w, h, 1.0), track_id=track["id"])
+    if not track["on"]:
+        return None
+    o = tracker.track(frame, TRACK_TH)
+    if o.score >= TRACK_TH and o.w > 0 and o.h > 0:
+        track["misses"] = 0
+        return dict(box_det(track["label"], o.x, o.y, o.w, o.h, o.score), track_id=track["id"])
+    track["misses"] += 1
+    if track["misses"] >= TRACK_LOST_FRAMES:
+        track["on"] = False
+        print("[Track] lost track", track["id"])
+    return None
 
-    model_loaded = True
-    print("[AI] Model loaded:", MODEL_PATH, "input", det_input_w, "x", det_input_h)
-except Exception as _me:
-    model_load_error = str(_me)
-    print("[AI] Model load FAILED:", MODEL_PATH, "-", model_load_error)
+def hand_dets(frame):
+    return [box_det(HAND_LABEL, o.x, o.y, o.w, o.h, o.score)
+            for o in hands.detect(frame, conf_th=HAND_CONF_TH)]
 
-model_name = MODEL_PATH.rsplit("/", 1)[-1] if model_loaded else "Not loaded"
-
-
-def sigmoid(x):
-    return 1.0 / (1.0 + np.exp(-x))
-
-
-def softmax(x, axis):
-    x = x - x.max(axis=axis, keepdims=True)
-    e = np.exp(x)
-    return e / e.sum(axis=axis, keepdims=True)
-
-
-def nms(boxes, scores, classes, iou_th):
-    order = scores.argsort()[::-1]
-    picked = []
-    while order.size > 0:
-        i = order[0]
-        picked.append(i)
-        if order.size == 1:
-            break
-        rest = order[1:]
-        xx1 = np.maximum(boxes[i, 0], boxes[rest, 0])
-        yy1 = np.maximum(boxes[i, 1], boxes[rest, 1])
-        xx2 = np.minimum(boxes[i, 2], boxes[rest, 2])
-        yy2 = np.minimum(boxes[i, 3], boxes[rest, 3])
-        inter = np.maximum(0, xx2 - xx1) * np.maximum(0, yy2 - yy1)
-        area_i = (boxes[i, 2] - boxes[i, 0]) * (boxes[i, 3] - boxes[i, 1])
-        area_r = (boxes[rest, 2] - boxes[rest, 0]) * (boxes[rest, 3] - boxes[rest, 1])
-        iou = inter / (area_i + area_r - inter + 1e-6)
-        suppress = (classes[rest] == classes[i]) & (iou > iou_th)
-        order = rest[~suppress]
-    return picked
-
-
-def decode_seg(outputs, conf_th=RAW_CONF_TH, iou_th=DET_IOU_TH):
-    """Manual YOLO11-seg decode — copied unchanged from elios_seg_manual.py.
-    Returns [{"x","y","w","h","class_id","score","seg_mask"}] in
-    det_input_w x det_input_h space, x/y = TOP-LEFT (ws_frame_pusher scales
-    to full stream size and converts to center coords, same as it did for
-    detector.detect()'s obj.x/obj.y/obj.w/obj.h before)."""
-    box = tensor.tensor_to_numpy_float32(outputs[BOX_NAME], copy=False)[0]           # (64, 8400)
-    cls = tensor.tensor_to_numpy_float32(outputs[CLS_NAME], copy=False)[0]           # (10, 8400)
-    maskcoef = tensor.tensor_to_numpy_float32(outputs[MASKCOEF_NAME], copy=False)[0]  # (32, 8400)
-    proto = tensor.tensor_to_numpy_float32(outputs[PROTO_NAME], copy=False)[0]       # (160, 160, 32)
-
-    bins = box.reshape(4, REG_MAX, -1)                      # (4, 16, 8400): left,top,right,bottom
-    probs = softmax(bins, axis=1)
-    weights = np.arange(REG_MAX, dtype=np.float32).reshape(1, REG_MAX, 1)
-    dist = (probs * weights).sum(axis=1)                    # (4, 8400)
-
-    x1 = (anchor_x + 0.5 - dist[0]) * anchor_stride
-    y1 = (anchor_y + 0.5 - dist[1]) * anchor_stride
-    x2 = (anchor_x + 0.5 + dist[2]) * anchor_stride
-    y2 = (anchor_y + 0.5 + dist[3]) * anchor_stride
-
-    conf = sigmoid(cls)                                      # (10, 8400)
-    class_id = conf.argmax(axis=0)
-    score = conf.max(axis=0)
-
-    idxs = np.nonzero(score > conf_th)[0]
-    if idxs.size == 0:
-        return []
-
-    boxes = np.stack([x1[idxs], y1[idxs], x2[idxs], y2[idxs]], axis=1)
-    scores_k = score[idxs]
-    classes_k = class_id[idxs]
-
-    picked = nms(boxes, scores_k, classes_k, iou_th)
-
-    proto_h, proto_w = proto.shape[0], proto.shape[1]
-    results = []
-    for i in picked:
-        a = idxs[i]
-        bx1, by1, bx2, by2 = boxes[i]
-        bx1 = max(0.0, bx1); by1 = max(0.0, by1)
-        bx2 = min(float(det_input_w), bx2); by2 = min(float(det_input_h), by2)
-        box_w, box_h = int(bx2 - bx1), int(by2 - by1)
-        if box_w <= 1 or box_h <= 1:
+def arm_tags(tags):
+    """0022 arm_tags from find_apriltags results: ids 0 and 1 only, rough distance."""
+    out = []
+    for t in tags:
+        size = TAG_SIZES_MM.get(t.id())
+        if size is None:
             continue
+        c = t.corners()
+        side = sum(math.hypot(c[i][0] - c[i-1][0], c[i][1] - c[i-1][1]) for i in range(4)) / 4
+        tag = {"id": t.id(), "cx": t.cx(), "cy": t.cy()}
+        if side > 1:
+            tag.update(dist_mm=round(NOMINAL_FX * size / side, 1), dist_rough=True)
+        out.append(tag)
+    return out
 
-        mx1 = int(bx1 * proto_w / det_input_w)
-        my1 = int(by1 * proto_h / det_input_h)
-        mx2 = max(mx1 + 1, int(bx2 * proto_w / det_input_w))
-        my2 = max(my1 + 1, int(by2 * proto_h / det_input_h))
+def find_arm_tags(frame):
+    return arm_tags(frame.find_apriltags(families=image.ApriltagFamilies.TAG36H11))
 
-        w_a = maskcoef[:, a]                                          # (32,)
-        mask_crop = proto[my1:my2, mx1:mx2, :] @ w_a                  # (mh, mw), proto-space res
-        mask_prob = sigmoid(mask_crop)
-
-        # draw_seg_mask() needs the mask 1:1 pixel-for-pixel with the box,
-        # so it must already be upscaled from proto-space (1/4 res) to the
-        # box's actual pixel size, or it only ever covers a small corner of
-        # the object. (This upscale is to the box's own det-input-space
-        # size; ws_frame_pusher upscales it again to full-stream-space
-        # right before actually drawing it onto the streamed frame.)
-        mh, mw = mask_prob.shape
-        row_idx = np.minimum((np.arange(box_h) * mh // box_h), mh - 1)
-        col_idx = np.minimum((np.arange(box_w) * mw // box_w), mw - 1)
-        mask_full = mask_prob[row_idx][:, col_idx]                    # (box_h, box_w)
-
-        mask_bytes = (mask_full * 255).astype(np.uint8).tobytes()
-        seg_img = image.from_bytes(box_w, box_h, image.Format.FMT_GRAYSCALE, mask_bytes)
-
-        results.append({
-            "x": int(bx1), "y": int(by1), "w": box_w, "h": box_h,
-            "class_id": int(classes_k[i]), "score": float(scores_k[i]),
-            "seg_mask": seg_img,
-        })
-    return results
-
-
-def _iou_xywh(a, b):
-    """IoU of two top-left x/y/w/h boxes, same det-input-space decode_seg
-    returns — used to match a locked object to this cycle's raw candidates."""
-    ax1, ay1, ax2, ay2 = a["x"], a["y"], a["x"] + a["w"], a["y"] + a["h"]
-    bx1, by1, bx2, by2 = b["x"], b["y"], b["x"] + b["w"], b["y"] + b["h"]
-    ix1, iy1 = max(ax1, bx1), max(ay1, by1)
-    ix2, iy2 = min(ax2, bx2), min(ay2, by2)
-    iw, ih = max(0, ix2 - ix1), max(0, iy2 - iy1)
-    inter = iw * ih
-    if inter <= 0:
-        return 0.0
-    area_a = a["w"] * a["h"]
-    area_b = b["w"] * b["h"]
-    return inter / float(area_a + area_b - inter + 1e-6)
-
-
-_locked_objects = []  # persists across ws_frame_pusher's detection cycles
-
-
-def _update_lock(raw_objs):
-    """Threshold-based locking so a real object doesn't flicker on/off just
-    because its score dipped below LOCK_CONF_TH for one detection cycle.
-
-    - A raw candidate only starts a NEW lock once it clears LOCK_CONF_TH.
-    - An already-locked object is refreshed from whichever raw candidate of
-      the SAME class_id overlaps it most (by IoU) this cycle, regardless of
-      that candidate's own score — so a locked object riding out a 45%->35%
-      dip still gets its position updated, it just isn't re-evaluated
-      against the lock threshold again.
-    - If nothing matches a locked object this cycle (e.g. it dropped below
-      even RAW_CONF_TH and produced no candidate at all), it's held as-is
-      for up to LOCK_GRACE_CYCLES more cycles before being dropped, so a
-      brief total dropout doesn't make it vanish either.
-    """
-    global _locked_objects
-    matched_raw = set()
-    updated = []
-
-    for lo in _locked_objects:
-        best_i, best_iou = -1, 0.0
-        for i, r in enumerate(raw_objs):
-            if i in matched_raw or r["class_id"] != lo["class_id"]:
-                continue
-            iou = _iou_xywh(lo, r)
-            if iou > best_iou:
-                best_iou, best_i = iou, i
-        if best_i >= 0 and best_iou >= LOCK_IOU_TH:
-            matched_raw.add(best_i)
-            refreshed = dict(raw_objs[best_i])
-            refreshed["misses"] = 0
-            updated.append(refreshed)
-        else:
-            held = dict(lo)
-            held["misses"] = held.get("misses", 0) + 1
-            if held["misses"] <= LOCK_GRACE_CYCLES:
-                updated.append(held)
-            # else: expired — dropped from the locked set entirely.
-
-    for i, r in enumerate(raw_objs):
-        if i in matched_raw:
-            continue
-        if r["score"] >= LOCK_CONF_TH:
-            new_lock = dict(r)
-            new_lock["misses"] = 0
-            updated.append(new_lock)
-
-    _locked_objects = updated
-    return updated
-
+model_name = "MixFormerV2 + hands" if model_loaded else "Not loaded"
 
 # ── Colours ───────────────────────────────────────────────────────────────────
 def rgb(r,g,b): return image.Color.from_rgb(r,g,b)
@@ -520,15 +344,9 @@ setup = {"stage": None, "until": 0, "ssid": "", "pw": "", "msg": "", "t0": 0,
          "luma0": None, "lidx": 0, "lat": 0, "banner": "", "banner_col": None, "banner_until": 0}
 
 # ── Stream resolution — FIXED, no runtime switching ──────────────────────────
-# The model's own native input size when it loaded successfully, so the
-# camera captures directly at the resolution the model consumes — no
-# resize between capture and inference, and no second resize between the
-# model's mask output and what gets drawn on screen (see the
-# DET_EVERY_N_FRAMES comment above for why that second resize was the
-# actual cause of the mask bleeding past object edges). Falls back to
-# 1920x1080 only if the model failed to load, since there's nothing to
-# match resolution to in that case.
-STREAM_RESOLUTION = (det_input_w, det_input_h) if model_loaded else (1920, 1080)
+# 640x480 (4:3), the size decision 0022's geometry assumes. The trackers take
+# any size, so nothing is resized before them.
+STREAM_RESOLUTION = (640, 480)
 
 def _open_stream_camera(width, height):
     """
@@ -567,7 +385,7 @@ def force_disconnect_all_clients():
     """
     global ws_status, ws_streaming
     if _ws_loop is None or not ws_clients:
-        ws_status = "Idle"
+        ws_status = "Idle" if _ws_loop is None else "Serving"
         ws_streaming = False
         return
 
@@ -641,6 +459,25 @@ async def ws_handler(websocket):
                     val  = data.get("val", 0)
                     print("[WS] servo part={} val={}".format(part, val))
 
+                elif cmd == "track_start":
+                    # The app's LOCK box (Gemini). The next frame inits MixFormerV2 on it.
+                    try:
+                        if tracker is None:
+                            raise ValueError("tracker not loaded: " + tracker_error)
+                        box = parse_track_box(data.get("box"), *STREAM_RESOLUTION)
+                    except ValueError as e:
+                        await websocket.send(json.dumps({"event": "track_error", "error": str(e)}))
+                    else:
+                        track.update(pending=box, on=False, misses=0, id=track["id"] + 1,
+                                     label=str(data.get("label") or "Item")[:40])
+                        await websocket.send(json.dumps({"event": "track_started", "track_id": track["id"]}))
+                        print("[Track] start", track["id"], track["label"], box)
+
+                elif cmd == "track_stop":
+                    track.update(pending=None, on=False)
+                    await websocket.send(json.dumps({"event": "track_stopped", "track_id": track["id"]}))
+                    print("[Track] stop", track["id"])
+
                 elif cmd == "set_resolution":
                     # Resolution is fixed at STREAM_RESOLUTION. Ignored
                     # (not an error) so an older client build doesn't break.
@@ -653,24 +490,26 @@ async def ws_handler(websocket):
         print("[WS] connection closed:", ce)
     finally:
         ws_clients.discard(websocket)
-        ws_status = "Serving" if ws_clients else "Idle"
+        # The server keeps listening after a client leaves: WAITING, not OFFLINE.
+        ws_status = "Client connected" if ws_clients else "Serving"
         if not ws_clients:
             ws_streaming = False
         print("[WS] clients remaining:", len(ws_clients))
 
 async def ws_frame_pusher():
-    """Keep annotated preview; send clean pixels only on fresh inference frames.
+    """Stream clean frames: detections = the tracked box + hands, plus arm_tags.
 
-    clean_image and clean_detections share frame_id == detection_frame_id.
-    Cached/held detections remain preview-only. One extra JPEG per nonempty
-    inference frame; no second encode or clean transmission between inferences.
+    Nothing is drawn, so image is already clean. Every DET_EVERY_N_FRAMES-th
+    frame is a detection frame (detection_frame_id == frame_id, fresh hands
+    and tags, clean_detections); when that list is nonempty, clean_image is
+    the same JPEG as image (no second encode), so older apps still pair it.
     """
-    global stream_cam, ws_streaming, ws_clients
+    global stream_cam
     cam_w, cam_h = STREAM_RESOLUTION
     det_frame_count = 0
     frame_id = 0
-    last_dets = []
-    last_render_objs = []  # full-stream-space: x, y, w, h, label, score, seg_mask
+    last_hands, last_tags = [], []
+    stats = dict(t0=mtime.ticks_ms(), n=0, track=0, det=0, send=0)
 
     while True:
         if ws_streaming and ws_clients and setup["stage"] != "scan":
@@ -681,98 +520,30 @@ async def ws_frame_pusher():
                     frame = stream_cam.read()
                 frame_id += 1
                 detection_frame_id = None
-                clean_dets = []
-                clean_b64 = None
+                t0 = mtime.ticks_ms()
 
-                if model_loaded and model is not None:
-                    det_frame_count += 1
-                    if det_frame_count >= DET_EVERY_N_FRAMES:
-                        det_frame_count = 0
-                        try:
-                            # frame is ALREADY at det_input_w x det_input_h
-                            # (STREAM_RESOLUTION == the model's own native
-                            # input size, see that constant's comment) — no
-                            # resize needed before forward_image(), exactly
-                            # matching elios_seg_manual.py's own usage.
-                            outputs = model.forward_image(frame, mean, scale, image.Fit.FIT_CONTAIN)
-                            raw_objs = decode_seg(outputs, conf_th=RAW_CONF_TH, iou_th=DET_IOU_TH) if outputs is not None else []
-                            objs = _update_lock(raw_objs)
-
-                            dets = []
-                            render_objs = []
-                            for o in objs:
-                                class_id = o["class_id"]
-                                label = LABELS[class_id] if 0 <= class_id < len(LABELS) else str(class_id)
-                                # No scaling needed — o["x"/"y"/"w"/"h"] are
-                                # already in this same frame's pixel space.
-                                # Convert top-left to center for the wire
-                                # payload (Flutter's overlay expects center
-                                # coordinates, not top-left).
-                                cx = o["x"] + o["w"] / 2.0
-                                cy = o["y"] + o["h"] / 2.0
-
-                                dets.append({
-                                    "class_id": class_id,
-                                    "label":    label,
-                                    "score":    round(float(o["score"]), 3),
-                                    # NOTE: key names must be "x"/"y", not
-                                    # "cx"/"cy" — websocket_service.dart's
-                                    # Detection parser reads item['x']/['y']
-                                    # (falling back to 0.0 if absent), so
-                                    # "cx"/"cy" here silently renders every
-                                    # box at (0,0) on the Android side.
-                                    "x": int(cx), "y": int(cy),
-                                    "w":  int(o["w"]), "h": int(o["h"]),
-                                })
-                                if o.get("misses", 0) == 0:
-                                    clean_dets.append(dets[-1])
-                                render_objs.append({
-                                    "x": o["x"], "y": o["y"],
-                                    "w": o["w"], "h": o["h"],
-                                    "label": label, "score": o["score"],
-                                    "seg_mask": o.get("seg_mask"),
-                                })
-                            last_dets = dets
-                            last_render_objs = render_objs
-                            detection_frame_id = frame_id
-                        except Exception as de:
-                            print("[AI] decode error:", de)
-
-                # Encode original pixels before any mask, box or text mutates them.
-                if detection_frame_id == frame_id and clean_dets:
-                    clean_bytes = frame.to_format(image.Format.FMT_JPEG).to_bytes()
-                    clean_b64 = base64.b64encode(clean_bytes).decode()
-
-                # Bake the last known detections onto THIS frame, every
-                # frame — see the docstring above for why this can't just
-                # run inside the detection-cycle block. seg_mask is already
-                # exactly ro["w"] x ro["h"] (decode_seg() upscales it to the
-                # box's own size, and there is no further resize now that
-                # the stream is already at the model's native resolution),
-                # so it can be drawn directly — the same
-                # draw_seg_mask(img, x, y, seg_mask, threshold=127) call
-                # elios_seg_manual.py already proved correct, unmodified.
-                for ro in last_render_objs:
+                tracked = None
+                if tracker is not None:
                     try:
-                        seg_mask = ro.get("seg_mask")
-                        if seg_mask is not None:
-                            detector.draw_seg_mask(frame, ro["x"], ro["y"], seg_mask, threshold=127)
-                        frame.draw_rect(ro["x"], ro["y"], ro["w"], ro["h"], color=image.COLOR_GREEN)
-                        frame.draw_string(
-                            ro["x"], max(0, ro["y"] - 16),
-                            "{}: {:.2f}".format(ro["label"], ro["score"]),
-                            color=image.COLOR_GREEN,
-                        )
-                    except Exception as draw_e:
-                        print("[AI] draw error:", draw_e)
+                        tracked = track_frame(frame)
+                    except Exception as te:
+                        print("[Track] error, tracking stopped:", te)
+                        track.update(on=False, pending=None)
+                t1 = mtime.ticks_ms()
 
-                # MaixPy v4 JPEG encode path:
-                #   img.to_format(FMT_JPEG) → jpeg image object
-                #   jpeg_img.to_bytes()     → raw JPEG bytes
-                jpeg_img   = frame.to_format(image.Format.FMT_JPEG)
-                jpeg_bytes = jpeg_img.to_bytes()
-                b64        = base64.b64encode(jpeg_bytes).decode()
+                det_frame_count += 1
+                if det_frame_count >= DET_EVERY_N_FRAMES:
+                    det_frame_count = 0
+                    try:
+                        last_hands = hand_dets(frame) if hands is not None else []
+                        last_tags = find_arm_tags(frame)
+                        detection_frame_id = frame_id
+                    except Exception as de:
+                        print("[AI] detect error:", de)
+                t2 = mtime.ticks_ms()
 
+                dets = ([tracked] if tracked else []) + last_hands
+                b64 = base64.b64encode(frame.to_format(image.Format.FMT_JPEG).to_bytes()).decode()
                 message = {
                     "vision_protocol": 1,
                     "firmware_sha256": FIRMWARE_SHA256,
@@ -781,12 +552,13 @@ async def ws_frame_pusher():
                     "image":      b64,
                     "img_w":      cam_w,
                     "img_h":      cam_h,
-                    "detections": last_dets
+                    "detections": dets,
+                    "arm_tags":   last_tags,
                 }
                 if detection_frame_id == frame_id:
-                    message["clean_detections"] = clean_dets
-                    if clean_b64 is not None:
-                        message["clean_image"] = clean_b64
+                    message["clean_detections"] = dets
+                    if dets:
+                        message["clean_image"] = b64
                 payload = json.dumps(message)
 
                 dead = set()
@@ -798,18 +570,30 @@ async def ws_frame_pusher():
                 for d in dead:
                     ws_clients.discard(d)
 
+                # One timing line every 5 s (decision 0180's "step zero").
+                t3 = mtime.ticks_ms()
+                stats["n"] += 1
+                stats["track"] += t1 - t0
+                stats["det"] += t2 - t1
+                stats["send"] += t3 - t2
+                if t3 - stats["t0"] >= 5000:
+                    n = stats["n"]
+                    print("[FPS] {:.1f} fps | ms/frame track {:.0f}, hands+tags {:.0f}, jpeg+send {:.0f}".format(
+                        n * 1000 / (t3 - stats["t0"]), stats["track"] / n, stats["det"] / n, stats["send"] / n))
+                    stats.update(t0=t3, n=0, track=0, det=0, send=0)
+
             except Exception as fe:
                 print("[WS] frame push error:", fe)
                 stream_cam = None
                 await asyncio.sleep(0.2)
         else:
-            # No streaming — release camera.
+            # No streaming — release camera; a lock made on old frames is stale.
             if stream_cam is not None:
                 print("[WS] Releasing stream camera")
                 stream_cam = None
+                track.update(on=False, pending=None)
             det_frame_count = 0
-            last_dets = []
-            last_render_objs = []
+            last_hands, last_tags = [], []
             await asyncio.sleep(0.05)
 
         await asyncio.sleep(0)   # yield to handler coroutines
@@ -860,7 +644,7 @@ def draw_dashboard(c, t):
     c.draw_line(0,38,W,38, color=C_DIV, thickness=1)
     dot = C_GREEN if (t%60)<30 else blend(0,105,76,249,250,248,0.35)
     c.draw_circle(PAD-2,19,5, color=dot, thickness=-1)
-    txt(c,PAD+10,8,"ELIO",C_GREEN,sc=1.35)
+    txt(c,PAD+10,8,"ELIOS",C_GREEN,sc=1.35)
     bx=W-PAD-26
     c.draw_rect(bx,10,22,14,color=C_GREEN,thickness=1)
     c.draw_rect(bx+22,14,3,6,color=C_GREEN,thickness=-1)
@@ -890,9 +674,9 @@ def draw_dashboard(c, t):
     # Row 3 — AI model status
     mcol = C_GREEN if model_loaded else C_RED
     card(PAD,       CY3,"AI Model", model_name, mcol)
-    card(PAD+CW+12, CY3,"Model Input",
-         "{}x{}".format(det_input_w, det_input_h) if model_loaded else "--",
-         mcol)
+    card(PAD+CW+12, CY3,"Tracking",
+         "#{} {}".format(track["id"], track["label"][:12]) if track["on"] else "--",
+         C_GREEN if track["on"] else C_MUTED)
 
     # Row 4 — Flutter connection + streaming status
     flutter_connected = ws_status == "Client connected"
@@ -1042,7 +826,7 @@ def draw_setup(c, t):
         rrect(c, PAD, 90, INNER, 64, 12, C_CARD)
         rrect(c, PAD, 90, INNER, 64, 12, C_GREEN, fill=False, th=2)
         txt(c, PAD+16, 108, setup["ssid"][:chars-4], C_GREEN, sc=1.15)
-        lines(c, PAD, 170, "ELIO leaves its current Wi-Fi. If it can't connect within "
+        lines(c, PAD, 170, "ELIOS leaves its current Wi-Fi. If it can't connect within "
               "{} s, the old Wi-Fi comes back by itself.".format(JOIN_TIMEOUT_S), C_MUTED, chars)
         button(c, LEFT_BTN, "Cancel", C_MUTED, filled=False)
         button(c, RIGHT_BTN, "Join", C_GREEN)

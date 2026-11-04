@@ -1,4 +1,4 @@
-# M2c clean-image firmware
+# MaixCAM2 firmware (m2c-track-v1)
 
 Deployed on the robot 16 Oct 2026: scan JSONL `firmwareSha256`
 `bbb3595e8070d4fab421ce38d5a9becbca26f6bcc8c34be4d7e29ed5c2ab79e6` matches
@@ -25,11 +25,11 @@ verified byte-for-byte against the robot's currently installed script.
    those changes first so device-specific behavior is not lost. This reference's
    motor/servo handlers only print commands; it does not add hardware actuation.
 2. Deploy this directory's `main.py` to that confirmed active entry-point path,
-   retaining the robot's existing model `/root/models/elios_waste_seg.mud`,
+   retaining `/root/models/mixformer_v2.mud`, `hand_landmarks.mud`, `hand_detector.mud`, `anchors.csv`,
    MaixPy, numpy, websockets and AP configuration. Do not deploy the test file.
    Do not run a second server beside the existing port-8765 process.
 3. Restart the existing robot application using your normal deployment workflow.
-   Its console must print `[Firmware] m2c-clean-v1 <sha256>`.
+   Its console must print `[Firmware] m2c-track-v1 <sha256>`.
    Compare that hash with the local result of:
    `shasum -a 256 firmware/maixcam2/main.py`.
    The hash is also returned by `{"cmd":"ping"}` and included in scan JSONL
@@ -42,44 +42,20 @@ verified byte-for-byte against the robot's currently installed script.
    that old annotated-only stream; use the previous app only if needed for
    historical behavior, knowing it sends annotated pixels to Gemma.
 
-## Wire contract
+## Wire contract (m2c-track-v1, decision 0182)
 
-- `image`, `img_w`, `img_h`, `detections`: existing annotated preview contract.
+- No model draws on the frame: `image` is the clean camera JPEG (640x480).
 - `vision_protocol: 1`, increasing `frame_id`, `firmware_sha256`: every message.
-- `detection_frame_id == frame_id` plus `clean_detections`: only a successful
-  inference on this original capture. Fresh matched objects only; boxes held
-  through missed detections remain in the preview list, never the clean list.
-- `clean_image`: base64 JPEG encoded from that original capture BEFORE mask,
-  box and label drawing, only when `clean_detections` is nonempty. Identical
-  dimensions/orientation to preview; center XYWH geometry uses those pixels.
-- Between inference frames, detection_frame_id is null and clean fields are
-  omitted. No cached clean images are retransmitted. A fresh empty list counts
-  as an empty-scene observation; a preview-only frame does not.
-
-One extra JPEG is necessary on nonempty inference frames to retain the proven
-burned-in mask preview without inventing another mask-rendering protocol.
-There is no extra JPEG on intervening, empty or held-only frames. Encoding is
-once per capture, shared across clients; legacy clients ignore the added fields
-but still receive the larger inference messages. Bandwidth/FPS require hardware
-measurement; identification now samples fresh inference frames, not every preview.
-No cooldown, lock or score thresholds changed. No recoloring/inpainting is used.
-
-## Retest gate
-
-- Isolated phone and bottle: inspect exact saved `*-identify.jpg` files, not
-  preview screenshots. No synthetic red mask, green box or detector text may
-  appear. JSONL must show `imageSource: clean_image`, matching frame/detection
-  IDs and the deployed firmware hash. Record returned item/material/category.
-- Preview must retain segmentation and visibly move during Looking, B3
-  confirmation and quiz. Check FPS with the extra inference-frame encoding.
-- E_Waste must still force B3 confirmation when Gemma returns anorganik/residu;
-  Continue must open the quiz, Rescan must not open a late quiz.
-- Close during Looking, wait for the late result, then finish a later scan.
-  After quiz close wait 15 s plus >=2 s empty; hold an item 60 s without repeats.
-- Report crop, identify first-token/completion and question generation separately
-  from human confirmation wait. `hazard_continue` minus `resolved` elapsed time
-  gives confirmation wait. Total lock-to-question includes that wait.
-
-Local check: `python3 firmware/maixcam2/test_clean_stream.py`. This executes the
-actual stream function with fake camera/inference; it does not verify MaixPy's
-native encoder, deployment, performance, or recognition. M2c remains incomplete.
+- `detections`: the tracked box (after `track_start`) plus `Human_Hand` boxes, centre
+  x/y, w, h, label, score; the tracked box also has `track_id`. Hands are held between
+  detection frames; the tracked box is fresh every frame.
+- `arm_tags`: AprilTag TAG36H11 ids 0 and 1 seen at the last detection frame:
+  `id`, `cx`, `cy`, and `dist_mm` with `dist_rough: true` (nominal lens, not calibrated).
+- Every `DET_EVERY_N_FRAMES`-th frame: `detection_frame_id == frame_id` and
+  `clean_detections` (same list). When it is nonempty, `clean_image` is the same JPEG
+  as `image` (no second encode), so older apps keep pairing.
+- Commands: `{"cmd":"track_start","box":[x,y,w,h],"label":"kardus"}` (top-left x/y in
+  stream pixels) answers `{"event":"track_started","track_id":n}` or
+  `{"event":"track_error","error":...}`; `{"cmd":"track_stop"}` answers `track_stopped`.
+  A track stops by itself after `TRACK_LOST_FRAMES` low-score frames.
+- A `[FPS]` line every 5 s on the console gives fps and ms per stage.
