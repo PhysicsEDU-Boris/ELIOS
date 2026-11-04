@@ -80,7 +80,8 @@
   - **81.1° x 51.4° x 88.9°**, the same as the sim's 81° x 51° x 90°;
   - 0.29 px RMS (worst view 0.68).
 - **Stable.** Even and odd views give fx 378 and 367, so fx is 374 ± about 5.
-- **Firmware.** `CAMERA_FX` changes from 362 to **374** (code and test; deploy needs the owner's OK).
+- **Firmware.** `CAMERA_FX` changes from 362 to **374**, deployed 4 Nov as `7e353cca`. The
+  backup of `26049b58` is `/root/main.py.pre-fx374.bak`.
   The 100 mm id 0 reading becomes about 101 mm (it was 97.9 with 362).
 - **For the sim.** Use 640x360 with these values, or scale fx, fy, cx, cy by 2.0 for 1289x720.
   Mounting position and tilt (extrinsics) wait for the finished robot.
