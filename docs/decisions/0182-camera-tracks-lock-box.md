@@ -55,11 +55,20 @@ file so the Wi-Fi QR setup stays):
   fitting the hand (`docs/test-results/0182/hand-landmark-boxes.jpg`).
 - AprilTags: none in view, so the tag path ran but `arm_tags` stayed empty; distance not checked.
 
+## App step 3 (owner, 4 Nov: "Yes, step 3")
+
+- LOCK sends `track_start` with the AI's box in pixels of the frame it sent to the AI
+  (`lib/services/lock_tracking.dart`); UNLOCK sends `track_stop`. Old firmware ignores both.
+- The green box over the video follows the detection that has a `track_id` (only the locked item has
+  one); before the first one, and after the camera loses the item, it stays where it last was.
+- The live scan and its quiz skip the tracked box, so LOCK still opens no quiz (0181); hands still
+  reach it, so the arm pause is unchanged.
+
 ## Not in this step
 
-- App step 3 (LOCK sends `track_start`, the green box follows `track_id`, the arm uses it): only if
-  the owner asks.
-- The live scan's own auto-lock now sees the tracked box (label = the AI's name) and hands only.
+- The arm picking the tracked box (R1 still takes its target from the live scan's lock).
+- When the camera loses the item, the app is not told; the green box stays where it last was until
+  UNLOCK.
 - Calibration (`dist_cm`, `lateral_cm`, exact `dist_mm`).
 
 ## Tests

@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-NAMES = {'TRACK_TH', 'TRACK_LOST_FRAMES', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
+NAMES = {'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_LOST_FRAMES', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'NOMINAL_FX', 'track', 'parse_track_box', 'box_det', 'track_frame',
          'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES'}
 
@@ -116,6 +116,16 @@ class TrackFrameTest(unittest.TestCase):
         self.assertIsNone(M['track_frame'](None))
         self.assertFalse(M['track']['on'])  # lost: stopped, no box until the next track_start
         self.assertIsNone(M['track_frame'](None))
+
+    def test_a_box_that_grows_or_shrinks_3x_is_not_sent(self):
+        M = load(tracker=SimpleNamespace(init=lambda *a: None,
+                                         track=lambda f, th: Obj(x=0, y=0, w=W, h=H, score=0.99)))
+        M['track'].update(pending=(0, 0, 30, 40), id=1, label='kardus')
+        M['track_frame'](None)
+        for W, H in [(30, 130), (10, 30)]:  # 1200 -> 3900 and 300 px^2
+            self.assertIsNone(M['track_frame'](None))
+        W, H = 50, 60  # 2.5x: still the item
+        self.assertEqual(M['track_frame'](None)['w'], 50)
 
     def test_nothing_locked(self):
         M = load(tracker=FakeTracker([]))

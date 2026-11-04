@@ -32,3 +32,13 @@ List<Detection> untracked(List<Detection> detections) => [
   for (final d in detections)
     if (d.trackId == null) d,
 ];
+
+/// How long the green box outlives the last tracked box: after that the camera has lost the item.
+const trackLostAfter = Duration(milliseconds: 1500);
+
+/// The box drawn for a LOCK: the AI's box until the camera tracks it, then the tracked box, and
+/// none once the camera has lost it (robot test 4 Nov: a stale box stayed on screen for 20 s).
+Rect? lockOverlayBox({Rect? aiBox, Rect? trackBox, DateTime? trackSeenAt, required DateTime now}) {
+  if (trackSeenAt == null) return aiBox;
+  return now.difference(trackSeenAt) < trackLostAfter ? trackBox : null;
+}

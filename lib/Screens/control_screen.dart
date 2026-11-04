@@ -79,6 +79,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
   /// The camera tracker's box for [_locked] (0182), as fractions; null until the first one.
   Rect? _trackBox;
+  DateTime? _trackSeenAt;
   bool _locking = false;
   StreamSubscription<CapturedFrame>? _frameSubscription;
   ProviderSubscription<AsyncValue<String>>? _statusSubscription;
@@ -266,7 +267,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         if (frame.hasPairedCleanImage) _lastCleanFrame = frame;
         if (frame.detections != null) _hudDetections = frame.detections!;
         if (_locked != null && frame.detections != null) {
-          _trackBox = trackedBox(frame.detections!, frame.width.toDouble(), frame.height.toDouble()) ?? _trackBox;
+          final tracked = trackedBox(frame.detections!, frame.width.toDouble(), frame.height.toDouble());
+          if (tracked != null) {
+            _trackBox = tracked;
+            _trackSeenAt = now;
+          }
         }
       });
 
@@ -896,7 +901,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onLock: _locked != null || (link == ControlLink.connected && _latestFrame != null && !_locking) ? _lockOrUnlock : null,
       locked: _locked != null,
       onScan: !quizOpen && !_locking && (_locked != null || (link == ControlLink.connected && _latestFrame != null)) ? _scan : null,
-      lockBox: _locked == null ? null : _trackBox ?? _locked!.box,
+      lockBox: _locked == null
+          ? null
+          : lockOverlayBox(aiBox: _locked!.box, trackBox: _trackBox, trackSeenAt: _trackSeenAt, now: DateTime.now()),
       lockLabel: _locked == null ? null : ScannedWaste.fromLabel(_locked!.result.item!).displayName,
       driveKey: _driveKey,
       stopKey: _stopKey,
@@ -936,6 +943,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       setState(() {
         _locked = null;
         _trackBox = null;
+        _trackSeenAt = null;
       });
       return null;
     }
@@ -955,6 +963,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       _locking = false;
       _locked = lock;
       _trackBox = null;
+      _trackSeenAt = null;
     });
     if (answer.lock == null) {
       ScaffoldMessenger.of(context)

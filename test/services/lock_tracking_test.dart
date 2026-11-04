@@ -31,4 +31,13 @@ void main() {
     const tracked = Detection(x: 1, y: 1, w: 1, h: 1, label: 'kardus', trackId: 1);
     expect(untracked([hand, tracked]), [hand]);
   });
+
+  test('the green box: AI box, then the tracked box, then none once the camera lost it', () {
+    const ai = Rect.fromLTRB(.1, .1, .2, .2);
+    const tracked = Rect.fromLTRB(.3, .3, .4, .4);
+    final t0 = DateTime(2026, 11, 4, 9, 30);
+    expect(lockOverlayBox(aiBox: ai, now: t0), ai); // old firmware never tracks
+    expect(lockOverlayBox(aiBox: ai, trackBox: tracked, trackSeenAt: t0, now: t0.add(const Duration(seconds: 1))), tracked);
+    expect(lockOverlayBox(aiBox: ai, trackBox: tracked, trackSeenAt: t0, now: t0.add(trackLostAfter)), isNull);
+  });
 }

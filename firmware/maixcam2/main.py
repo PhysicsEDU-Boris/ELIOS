@@ -180,6 +180,9 @@ DET_EVERY_N_FRAMES = 2
 TRACK_TH       = 0.5   # MixFormerV2 score below this: the box is not sent that frame
 TRACK_LOST_FRAMES = 15 # that many low-score tracker calls in a row (~3 s): stop tracking
 TRACK_MIN_SIDE = 8
+# A box more than 3x larger or smaller in area than the LOCK box is lost, not followed: a hand
+# lifting the item stretched it to twice the height (phone test, 4 Nov).
+TRACK_MAX_GROWTH = 3
 HAND_CONF_TH   = 0.7
 HAND_LABEL     = "Human_Hand"   # r1_orchestrator / motion_gate pause on this label
 
@@ -205,7 +208,7 @@ model_loaded     = tracker is not None and hands is not None
 model_load_error = tracker_error or hands_error
 
 # The app's LOCK box. pending = (x, y, w, h) waiting for the next frame to init on.
-track = {"pending": None, "on": False, "id": 0, "label": "", "misses": 0}
+track = {"pending": None, "on": False, "id": 0, "label": "", "misses": 0, "area": 1}
 
 def parse_track_box(box, img_w, img_h):
     """[x, y, w, h] top-left in stream pixels -> ints clipped to the frame. ValueError says why not."""
@@ -229,13 +232,14 @@ def track_frame(frame):
     """The tracked box for this frame as a detection, or None (nothing locked, or lost)."""
     if track["pending"] is not None:
         x, y, w, h = track["pending"]
-        track.update(pending=None, on=True, misses=0)
+        track.update(pending=None, on=True, misses=0, area=w * h)
         tracker.init(frame, x, y, w, h)
         return dict(box_det(track["label"], x, y, w, h, 1.0), track_id=track["id"])
     if not track["on"]:
         return None
     o = tracker.track(frame, TRACK_TH)
-    if o.score >= TRACK_TH and o.w > 0 and o.h > 0:
+    growth = o.w * o.h / track["area"]
+    if o.score >= TRACK_TH and 1 / TRACK_MAX_GROWTH <= growth <= TRACK_MAX_GROWTH:
         track["misses"] = 0
         return dict(box_det(track["label"], o.x, o.y, o.w, o.h, o.score), track_id=track["id"])
     track["misses"] += 1
