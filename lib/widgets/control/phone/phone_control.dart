@@ -605,32 +605,41 @@ class PhoneControlLayout extends StatelessWidget {
     final fh = fw / frameAspect;
     final dx = (c.maxWidth - fw) / 2, dy = (c.maxHeight - fh) / 2;
     final b = lockBox!;
+    final left = dx + b.left * fw, top = dy + b.top * fh;
+    const green = Color(0xFF22C55E);
     return Stack(children: [
       AnimatedPositioned(
         key: const ValueKey('phone_lock_box'),
         duration: const Duration(milliseconds: 200),
-        left: dx + b.left * fw,
-        top: dy + b.top * fh,
+        left: left,
+        top: top,
         width: b.width * fw,
         height: b.height * fh,
-        child: DecoratedBox(
-          decoration: BoxDecoration(border: Border.all(color: const Color(0xFF22C55E), width: 3)),
-          child: lockLabel == null
-              ? null
-              : Align(
-                  alignment: Alignment.topLeft,
-                  child: ColoredBox(
-                    color: const Color(0xFF22C55E),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      child: Text(lockLabel!, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                ),
+        child: const DecoratedBox(
+          decoration: BoxDecoration(border: Border.fromBorderSide(BorderSide(color: green, width: 3))),
         ),
       ),
+      // The name sits on the box's top edge, outside it (owner, 4 Nov); inside only when the box
+      // touches the top of the video, so it is never cut off.
+      if (lockLabel != null)
+        AnimatedPositioned(
+          key: const ValueKey('phone_lock_label'),
+          duration: const Duration(milliseconds: 200),
+          left: left,
+          top: top >= _lockLabelHeight ? top - _lockLabelHeight : top,
+          height: _lockLabelHeight,
+          child: ColoredBox(
+            color: green,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              child: Text(lockLabel!, style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.2, fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ),
     ]);
   });
+
+  static const _lockLabelHeight = 17.0;
 
   Widget _actionBar(BuildContext context) {
     final p = context.elio;

@@ -96,6 +96,13 @@ file so the Wi-Fi QR setup stays):
   became 6 % of the box instead of 3 px.
 - With the 6 % settle (firmware `ff9918e9`): 69 boxes in 15 s on a still pack, all exactly the
   same box (0 px change in x, y, w, h), score 0.998, 9.1 fps.
+- Owner: a flipped item must not bounce either. A move now needs two calls in a row beyond 10 %
+  shift or 30 % size of the held box (one odd box is ignored); smaller size changes, such as a
+  flip in place, only go through the ~1 s median settle. A flipped-pack sequence gave 9 different
+  boxes in 10 calls before, 2 now (one settle). Cost: a move shows one call (~0.2 s) later, and
+  while the robot drives closer the size can lag up to 30 % until ~1 s after it stops.
+- The item's name sits outside, on the box's top edge (owner); inside only when the box touches
+  the top of the video.
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 

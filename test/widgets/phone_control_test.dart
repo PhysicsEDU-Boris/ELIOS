@@ -258,6 +258,10 @@ void main() {
       expect(box.height, closeTo(shown * 3 / 4 / 2, 2)); // not shown / 2: the frame is 4:3, not square
       expect(box.center.dy, closeTo(video.center.dy, 2));
 
+      // The name sits outside, on the box's top edge (owner, 4 Nov).
+      final label = t.getRect(find.byKey(const ValueKey('phone_lock_label')));
+      expect(label.bottom, closeTo(box.top, 0.5));
+      expect(label.left, closeTo(box.left, 0.5));
       // Each new tracked box glides over ~the time between two (the camera tracks ~5 times a second).
       expect(t.widget<AnimatedPositioned>(find.byKey(const ValueKey('phone_lock_box'))).duration,
           const Duration(milliseconds: 200));
