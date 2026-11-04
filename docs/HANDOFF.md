@@ -6,7 +6,7 @@
 2. **#90** `feat/lock-track-follow`: after #89 is merged, set its base to `feature/live-scan` (GitHub does this if #89's branch is deleted), then merge. It has everything newest (camera `9cd825b3`, APK `8c8953d`).
 3. `main` stays the owner's call. New work branches from `feature/live-scan` after #90.
 - Next (own sessions): depth estimation on the camera (Depth-Anything-V2-Small is on it, `nn.DepthAnything`, relative depth, fps not measured).
-- AprilTags (`docs/test-results/0182/apriltag-print-readability-fx.md`): measured fx 487 px (firmware's 375 reads 23 % short); id 0 99 % to 200 mm; id 1 (6.17 mm, firmware wrongly says 10) lost past 150 mm by the 320x240 search, readable in full frame. Next (owner OK): fx 487 + id 1 6.17 mm; maybe full-res crop for id 1. Print sheet `docs/print/apriltags-arm-id0-id1-A4.pdf`.
+- AprilTags + 16:9 (decision 0183, this branch, NOT deployed): stream 640x360 = full 83° view (640x480 was a 67° crop, 1280x720 a 53° crop); `CAMERA_FX` 362, id 1 6.17 mm; tests break-checked. Next: owner OK → deploy (back up live `main.py`), re-check tag range (id 1 ~110 mm expected) and fps, then the ChArUco board solve (`docs/print/maixcam2-calibration-board-charuco-A4.pdf`) for the sim. Report `docs/test-results/0182/apriltag-print-readability-fx.md`.
 
 ## Camera tracks the LOCK box (4 Nov, `claude/firmware-track-lock-4de19c`, decision 0182)
 

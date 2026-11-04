@@ -199,12 +199,14 @@ TRACK_MAX_GROWTH = 2
 HAND_CONF_TH   = 0.7
 HAND_LABEL     = "Human_Hand"   # r1_orchestrator / motion_gate pause on this label
 
-# Black-square edge of each arm tag (owner, 3 Nov): id 0 arm5 bottom, id 1 arm3 rear.
-TAG_SIZES_MM = {0: 18.52, 1: 10.0}
-# ponytail: nominal pinhole from the 81 deg horizontal FOV, uncalibrated (the 640x480
-# crop is not measured), so arm_tags carry dist_rough: true. Replace with fx from
-# robotic_hand_sim docs/camera_calibration.md once the camera is calibrated.
-NOMINAL_FX = 320 / math.tan(math.radians(81 / 2))
+# Black-square edge of each arm tag, ruler-measured on the print (owner, 4 Nov): id 0 arm5
+# bottom, id 1 arm3 rear (a 10 mm print, so 6.17 mm black).
+TAG_SIZES_MM = {0: 18.52, 1: 6.17}
+# fx in px at STREAM_RESOLUTION 640x360: 487 measured by ruler at 640x480 (id 0, 150-300 mm,
+# within 2 mm), scaled by the tag's width in both modes (decision 0183).
+# ponytail: no distortion or principal point yet, so arm_tags keep dist_rough: true; replace
+# with the ChArUco board solve (docs/print/maixcam2-calibration-board-charuco-A4.pdf).
+CAMERA_FX = 362.0
 
 def _load(ctor, path):
     try:
@@ -362,12 +364,13 @@ def arm_tags(tags, scale=1):
         side = scale * sum(math.hypot(c[i][0] - c[i-1][0], c[i][1] - c[i-1][1]) for i in range(4)) / 4
         tag = {"id": t.id(), "cx": t.cx() * scale, "cy": t.cy() * scale}
         if side > 1:
-            tag.update(dist_mm=round(NOMINAL_FX * size / side, 1), dist_rough=True)
+            tag.update(dist_mm=round(CAMERA_FX * size / side, 1), dist_rough=True)
         out.append(tag)
     return out
 
 # find_apriltags on a 640x480 frame kills the process (no Python error) on this
-# MaixPy (robot test, 4 Nov); 320x240 works in about 40 ms.
+# MaixPy (robot test, 4 Nov); 320x240 works in about 40 ms. At 640x360 it searches 320x180:
+# id 1 (6.17 mm) needs ~10 px there, so about 110 mm at most (0183).
 TAG_SCALE = 2
 
 # AprilTags only around a grip (owner, 4 Nov): the app sends {"cmd":"arm_tags","on":true} while R1
@@ -466,9 +469,10 @@ setup = {"stage": None, "until": 0, "ssid": "", "pw": "", "msg": "", "t0": 0,
          "luma0": None, "lidx": 0, "lat": 0, "banner": "", "banner_col": None, "banner_until": 0}
 
 # ── Stream resolution — FIXED, no runtime switching ──────────────────────────
-# 640x480 (4:3), the size decision 0022's geometry assumes. The trackers take
-# any size, so nothing is resized before them.
-STREAM_RESOLUTION = (640, 480)
+# 640x360 (16:9) is the sensor's full wide view, 83 x 53 deg like the lens spec and
+# robotic_hand_sim's camera; 640x480 is a 67 deg crop and 1280x720 a 53 deg crop
+# (measured 4 Nov, decision 0183). The trackers take any size, so nothing is resized before them.
+STREAM_RESOLUTION = (640, 360)
 
 def _open_stream_camera(width, height):
     """
