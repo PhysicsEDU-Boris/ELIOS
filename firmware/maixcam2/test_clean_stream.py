@@ -104,7 +104,7 @@ class TrackFrameTest(unittest.TestCase):
         noise = [(161, 255, 84, 120), (162, 250, 85, 131), (161, 256, 84, 117), (160, 252, 83, 127),
                  (161, 254, 84, 122), (161, 249, 84, 130), (162, 256, 85, 118), (161, 253, 84, 125)]
         noise += [(161, 253, 79, 124), (161, 253, 80, 124), (161, 253, 79, 125), (161, 253, 80, 124),
-                  (161, 253, 79, 124)]  # width 4-5 px off for 1 s, as measured: not worth a jump
+                  (161, 253, 79, 124)] * 2  # width 4-5 px off for 2 s, as measured: not worth a jump
         sent = {hold(t, b) for b in noise}
         self.assertEqual(sent, {(161, 253, 84, 124)})  # one box, no jiggle (median within 6 %)
         moved_to = (200, 250, 84, 124)  # slid 39 px: followed at once
