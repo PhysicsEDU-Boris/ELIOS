@@ -339,7 +339,7 @@ void main() {
       // 1 video + 1 quiz + 2 scans; no simulation mentions "plas".
       expect(find.text('4 results'), findsOneWidget);
       expect(find.text('All 4'), findsOneWidget);
-      expect(find.text('Simulasi 0'), findsOneWidget);
+      expect(find.text('Simulations 0'), findsOneWidget);
       expect(find.text('Lessons 1'), findsOneWidget);
       expect(find.text('Scans 2'), findsOneWidget);
       expect(find.text('YOUR SCANS'), findsOneWidget);

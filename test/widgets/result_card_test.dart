@@ -113,7 +113,7 @@ void main() {
       expect(find.text('+10 Piala'), findsOneWidget);
 
       // Check grade Sempurna
-      expect(find.text('Sempurna'), findsOneWidget);
+      expect(find.text('Perfect'), findsOneWidget);
 
       // Check action buttons
       expect(find.text('Scan again'), findsOneWidget);
@@ -140,7 +140,7 @@ void main() {
       expect(find.text('+8 Piala'), findsOneWidget);
 
       // Check grade Hebat
-      expect(find.text('Hebat'), findsOneWidget);
+      expect(find.text('Great'), findsOneWidget);
     });
   });
 

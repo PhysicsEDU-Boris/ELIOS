@@ -1,6 +1,7 @@
 // Scan activity (decision 0144): 17-week year grid (Figma 333:4383) and the
 // month calendar with the selected day's scans (Figma 329:3836).
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart' show DateFormat;
 
 import '../../models/home_stats.dart';
 import '../../models/scan_record.dart';
@@ -9,28 +10,15 @@ import '../../widgets/auth/auth_widgets.dart' show authPalette;
 import 'home_parts.dart';
 import 'package:elio/l10n/l10n.dart';
 
-const monthNames = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
+List<String> get monthNames => [
+  for (var m = 1; m <= 12; m++)
+    DateFormat.MMMM(dateLocale).format(DateTime(2000, m)),
 ];
-const weekdayNames = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
+
+/// Monday first (3 Jan 2000 was a Monday).
+List<String> get weekdayNames => [
+  for (var d = 3; d <= 9; d++)
+    DateFormat.EEEE(dateLocale).format(DateTime(2000, 1, d)),
 ];
 
 String shortDate(DateTime d) =>
@@ -62,7 +50,10 @@ class YearGrid extends StatelessWidget {
       fontSize: 11,
     );
     final probe = TextPainter(
-      text: TextSpan(text: 'Wed', style: labelStyle),
+      text: TextSpan(
+        text: l10n.heatmapDayLabels.split(',')[1],
+        style: labelStyle,
+      ),
       textDirection: TextDirection.ltr,
       textScaler: scaler,
     )..layout();
@@ -81,8 +72,8 @@ class YearGrid extends StatelessWidget {
         }
 
         return Semantics(
-          label: '${stats.scansInGrid} scans in the last 17 weeks',
-          hint: 'Use Month to browse days',
+          label: l10n.scansIn17Weeks(l10n.scanCount(stats.scansInGrid)),
+          hint: l10n.activityScansHint,
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTapUp: (d) {
@@ -140,7 +131,10 @@ class _YearGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final step = cell + gap;
-    for (final (row, name) in [(1, 'Mon'), (3, 'Wed'), (5, 'Fri')]) {
+    for (final (row, name) in [
+      for (final (i, n) in l10n.heatmapDayLabels.split(',').indexed)
+        (1 + 2 * i, n),
+    ]) {
       _text(
         canvas,
         name,
@@ -278,7 +272,7 @@ class MonthView extends StatelessWidget {
           children: [
             navButton(
               Icons.chevron_left_rounded,
-              'Previous month',
+              l10n.previousMonth,
               () => onMonth(DateTime(month.year, month.month - 1)),
             ),
             Expanded(
@@ -290,7 +284,7 @@ class MonthView extends StatelessWidget {
             ),
             navButton(
               Icons.chevron_right_rounded,
-              'Next month',
+              l10n.nextMonth,
               isCurrent
                   ? null
                   : () => onMonth(DateTime(month.year, month.month + 1)),
@@ -301,7 +295,7 @@ class MonthView extends StatelessWidget {
         ExcludeSemantics(
           child: Row(
             children: [
-              for (final d in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'])
+              for (final d in l10n.calendarWeekdays.split(','))
                 Expanded(
                   child: Text(
                     d,
@@ -337,8 +331,7 @@ class MonthView extends StatelessWidget {
     return Semantics(
       button: !future,
       selected: isSelected,
-      label:
-          '${day.day} ${monthNames[day.month - 1]}, $n ${n == 1 ? 'scan' : 'scans'}',
+      label: '${day.day} ${monthNames[day.month - 1]}, ${l10n.scanCount(n)}',
       container: true,
       excludeSemantics: true,
       child: InkWell(
@@ -407,7 +400,7 @@ class DayScans extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(
-              '${weekdayNames[day.weekday - 1]}, ${day.day} ${monthNames[day.month - 1]} · $n ${n == 1 ? 'scan' : 'scans'}',
+              '${weekdayNames[day.weekday - 1]}, ${day.day} ${monthNames[day.month - 1]} · ${l10n.scanCount(n)}',
               style: homeTitle(p).copyWith(fontSize: 16),
             ),
             TextButton(
@@ -427,7 +420,10 @@ class DayScans extends StatelessWidget {
           child: n == 0
               ? Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Text(context.l10n.activityNoScans, style: homeSmall(p)),
+                  child: Text(
+                    context.l10n.activityNoScans,
+                    style: homeSmall(p),
+                  ),
                 )
               : Column(
                   children: [

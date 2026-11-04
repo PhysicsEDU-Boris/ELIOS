@@ -10,6 +10,7 @@ import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 
 import '../theme/elio_tokens.dart';
 import 'auth/auth_widgets.dart' show authPalette;
+import 'package:elio/l10n/l10n.dart';
 
 const _barHeight = 64.0;
 const _ringGap = 4.0; // surface-coloured ring round the Control button
@@ -41,7 +42,7 @@ class ElioBottomNav extends StatelessWidget {
     );
     return Semantics(
       container: true,
-      label: 'Main',
+      label: l10n.navMain,
       child: Material(
         color: p.surface,
         shape: RoundedRectangleBorder(
@@ -57,31 +58,31 @@ class ElioBottomNav extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: tab(0, 'Home', Icons.home_outlined, Icons.home)),
+              Expanded(child: tab(0, l10n.navHome, Icons.home_outlined, Icons.home)),
               Expanded(
                 child: tab(
                   1,
-                  'Learn',
+                  l10n.navLearn,
                   Icons.menu_book_outlined,
                   Icons.menu_book,
                 ),
               ),
               Expanded(
                 child: _Cell(
-                  label: 'Control',
-                  semantics: 'Control, opens robot control',
+                  label: l10n.navControl,
+                  semantics: l10n.navControlHint,
                   selected: false,
                   onTap: onControl,
                   icon: const SizedBox.shrink(),
                 ),
               ),
               Expanded(
-                child: tab(2, 'Config', Icons.wifi_outlined, Icons.wifi),
+                child: tab(2, l10n.navConfig, Icons.wifi_outlined, Icons.wifi),
               ),
               Expanded(
                 child: tab(
                   4,
-                  'Riwayat',
+                  l10n.navHistory,
                   Icons.history_rounded,
                   Icons.history_rounded,
                 ),

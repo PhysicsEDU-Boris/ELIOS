@@ -236,5 +236,379 @@
       }
     }
   },
-  "resetScanDebug": "Reset scan (debug)"
+  "resetScanDebug": "Reset scan (debug)",
+  "navMain": "Main",
+  "@navMain": {
+    "description": "Screen-reader name of the bottom navigation bar."
+  },
+  "navHome": "Home",
+  "navLearn": "Learn",
+  "navControl": "Control",
+  "navControlHint": "Control, opens robot control",
+  "navConfig": "Config",
+  "navHistory": "History",
+  "shellConnectElio": "Connect ELIO",
+  "shellConnected": "ELIO connected",
+  "shellConnectedMsg": "Robot connection is ready.",
+  "shellDisconnected": "ELIO disconnected",
+  "shellDisconnectedMsg": "Robot connection was lost. Check the device or network.",
+  "leaveQuizBody": "You have an active quiz. If you leave now, your current quiz progress will be lost.",
+  "homeHello": "Hello, {name}",
+  "@homeHello": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeReady": "Ready to learn with ELIO?",
+  "configTopSubtitle": "Robot, camera and quiz setup",
+  "comingSoon": "{title} — coming soon",
+  "@comingSoon": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeGuest": "Guest",
+  "homeOpenNotifications": "Open notifications",
+  "homeVideo": "Video",
+  "homeGuide": "Guide",
+  "medalExplorer": "Environmental Explorer",
+  "medalExplorerDesc": "Complete at least 3 learning items",
+  "medalExplorerHint": "3 learning items",
+  "medalRobotics": "Robotics Beginner",
+  "medalRoboticsDesc": "Start the Introduction to ELIO module",
+  "medalRoboticsHint": "Start Intro to ELIO",
+  "medalAdvocate": "Sustainability Advocate",
+  "medalAdvocateDesc": "Complete all environmental empathy reflections",
+  "medalAdvocateHint": "All reflections",
+  "homeTapSquare": "Tap any square in the Year view to open that day here.",
+  "scanCount": "{count, plural, =1{1 scan} other{{count} scans}}",
+  "@scanCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "scansInMonth": "{scans} in {month}",
+  "@scansInMonth": {
+    "placeholders": {
+      "scans": {
+        "type": "Object"
+      },
+      "month": {
+        "type": "Object"
+      }
+    }
+  },
+  "noScans17Weeks": "No scans in the last 17 weeks",
+  "scansIn17Weeks": "{scans} in the last 17 weeks",
+  "@scansIn17Weeks": {
+    "placeholders": {
+      "scans": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeYear": "Year",
+  "homeMonth": "Month",
+  "dayCount": "{count, plural, =1{1 day} other{{count} days}}",
+  "@dayCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "homeStreakLine": "Streak {days} · longest {longest}",
+  "@homeStreakLine": {
+    "placeholders": {
+      "days": {
+        "type": "Object"
+      },
+      "longest": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeGuestProgress": "Guest progress is stored on this device. Sign in to sync it across devices.",
+  "levelSemantics": "Level {level}, {title}. {trophies} trophies",
+  "@levelSemantics": {
+    "placeholders": {
+      "level": {
+        "type": "Object"
+      },
+      "title": {
+        "type": "Object"
+      },
+      "trophies": {
+        "type": "Object"
+      }
+    }
+  },
+  "levelSemanticsTop": ", top level",
+  "levelSemanticsNext": ", {count} to level {next}",
+  "@levelSemanticsNext": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "next": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeLevel": "Level {level}",
+  "@homeLevel": {
+    "placeholders": {
+      "level": {
+        "type": "Object"
+      }
+    }
+  },
+  "homePlantFirst": "Plant your first trophy: scan an item.",
+  "homeTreeGrows": "Your tree grows with every trophy.",
+  "homeTopLevel": "Top level",
+  "homeToNextLevel": "{count} to Lv{next}",
+  "@homeToNextLevel": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "next": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeScans": "Scans",
+  "homeDayStreak": "Day streak",
+  "questsDoneLine": "{done} of 3 done · resets at midnight",
+  "@questsDoneLine": {
+    "placeholders": {
+      "done": {
+        "type": "Object"
+      }
+    }
+  },
+  "questsDoneSemantics": "{done} of 3 quests done",
+  "@questsDoneSemantics": {
+    "placeholders": {
+      "done": {
+        "type": "Object"
+      }
+    }
+  },
+  "questSemantics": "{title}, {state}. Reward {reward} trophies",
+  "@questSemantics": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      },
+      "state": {
+        "type": "Object"
+      },
+      "reward": {
+        "type": "Object"
+      }
+    }
+  },
+  "questDone": "done",
+  "percentValue": "{value} percent",
+  "@percentValue": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "binsHungry": "Your bins are hungry: scan an item",
+  "binsFed": "{scans} fed to your 3 bins",
+  "@binsFed": {
+    "placeholders": {
+      "scans": {
+        "type": "Object"
+      }
+    }
+  },
+  "binTop": "Top",
+  "residuNote": "Residu scans count toward Anorganik.",
+  "residuIncluded": "Anorganik includes {count} residu {scans} (the robot sorts residu there).",
+  "@residuIncluded": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "scans": {
+        "type": "Object"
+      }
+    }
+  },
+  "scanWord": "{count, plural, =1{scan} other{scans}}",
+  "@scanWord": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "weekSemantics": "{count} scans this week. {days}",
+  "@weekSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "days": {
+        "type": "Object"
+      }
+    }
+  },
+  "quizAccNoData": "Quiz accuracy: no data",
+  "quizAccSemantics": "Quiz accuracy {acc} percent over the last {count} scans with questions",
+  "@quizAccSemantics": {
+    "placeholders": {
+      "acc": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "quizAccDelta": ", {dir} {count} points",
+  "@quizAccDelta": {
+    "placeholders": {
+      "dir": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "deltaUp": "up",
+  "deltaDown": "down",
+  "noData": "no data",
+  "medalUnlocked": "Unlocked",
+  "homeLoading": "Loading your progress",
+  "homeGrowing": "Growing your tree…",
+  "fact1": "Plastics under 1,0 g/cm³ float in water. Recycling plants use that to separate them.",
+  "fact2": "Batteries are B3 waste: their metals can leak into soil and water, so they need a special drop-off.",
+  "fact3": "Fruit peels and food scraps can turn into compost in a few weeks.",
+  "fact4": "Rinsing a bottle before recycling keeps the rest of the bin clean.",
+  "fact5": "Aluminium cans can be recycled again and again without losing quality.",
+  "heatmapDayLabels": "Mon,Wed,Fri",
+  "@heatmapDayLabels": {
+    "description": "Short Monday, Wednesday, Friday, comma-separated, max 3 letters each."
+  },
+  "calendarWeekdays": "Su,Mo,Tu,We,Th,Fr,Sa",
+  "@calendarWeekdays": {
+    "description": "Two-letter weekday initials Sunday..Saturday, comma-separated."
+  },
+  "activityScansHint": "Use Month to browse days",
+  "previousMonth": "Previous month",
+  "nextMonth": "Next month",
+  "searchAll": "All",
+  "searchLessons": "Lessons",
+  "searchLessonsHeader": "LESSONS",
+  "searchSims": "Simulations",
+  "searchSimsHeader": "SIMULATIONS",
+  "searchQuiz": "Quiz",
+  "searchQuizHeader": "QUIZ",
+  "searchScans": "Scans",
+  "searchScansHeader": "YOUR SCANS",
+  "searchHint": "Search lessons, simulations, scans",
+  "resultCount": "{count, plural, =1{1 result} other{{count} results}}",
+  "@resultCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "clearSearch": "Clear search",
+  "searchIn": "Search in",
+  "noResultsFor": "No results for “{query}”.",
+  "@noResultsFor": {
+    "placeholders": {
+      "query": {
+        "type": "Object"
+      }
+    }
+  },
+  "notifNone": "No notifications right now.",
+  "notifEmptyHint": "Learning reminders, quiz review updates, and progress alerts will appear here.",
+  "notifDismiss": "Dismiss notifications",
+  "notifTitle": "Notifications",
+  "notifClose": "Close notifications",
+  "notifSubtitle": "Learning updates and reminders from ELIO.",
+  "notifMarkAllRead": "Mark all read",
+  "notifClearAll": "Clear all",
+  "notifDone": "Done",
+  "notifOpenLearning": "Open Learning",
+  "notifOpenConfig": "Open Config",
+  "timeJustNow": "Just now",
+  "timeMinutesAgo": "{n}m ago",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "timeHoursAgo": "{n}h ago",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "timeDaysAgo": "{n}d ago",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "timeWeeksAgo": "{n}w ago",
+  "@timeWeeksAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "timeMonthsAgo": "{n}mo ago",
+  "@timeMonthsAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "timeYearsAgo": "{n}y ago",
+  "@timeYearsAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "questScan3": "Scan 3 items today",
+  "questFinishQuiz": "Finish a scan quiz",
+  "questSortB3": "Sort one B3 item safely",
+  "levelEcoStarter": "Eco Starter",
+  "levelWasteSpotter": "Waste Spotter",
+  "levelBinExpert": "Bin Expert",
+  "levelEcoSorter": "Eco Sorter",
+  "levelPlanetGuardian": "Planet Guardian",
+  "gradePerfect": "Perfect",
+  "gradeGreat": "Great",
+  "gradeGood": "Good",
+  "gradeKeepLearning": "Keep Learning",
+  "gradeTryAgain": "Try Again"
 }

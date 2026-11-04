@@ -43,12 +43,12 @@ const _maxContentWidth = 720.0;
 const _trackedLearningModuleIds = ['organic', 'inorganic', 'hazardous'];
 
 /// Rotated by day. The first one is the Figma sample.
-const homeFacts = [
-  'Plastics under 1,0 g/cm³ float in water. Recycling plants use that to separate them.',
-  'Batteries are B3 waste: their metals can leak into soil and water, so they need a special drop-off.',
-  'Fruit peels and food scraps can turn into compost in a few weeks.',
-  'Rinsing a bottle before recycling keeps the rest of the bin clean.',
-  'Aluminium cans can be recycled again and again without losing quality.',
+List<String> get homeFacts => [
+  l10n.fact1,
+  l10n.fact2,
+  l10n.fact3,
+  l10n.fact4,
+  l10n.fact5,
 ];
 
 ElearningContentService? _contentServiceOverride;
@@ -69,7 +69,7 @@ String homeDisplayName(User? user) {
   if (name != null && name.isNotEmpty) return name;
   final email = user?.email?.trim();
   if (email != null && email.isNotEmpty) return email.split('@').first;
-  return 'Guest';
+  return l10n.homeGuest;
 }
 
 /// Trophy pill and bell for the Home top bar.
@@ -130,7 +130,7 @@ class HomeHeaderActions extends ConsumerWidget {
           ),
         ),
         IconButton(
-          tooltip: 'Open notifications',
+          tooltip: l10n.homeOpenNotifications,
           style: IconButton.styleFrom(minimumSize: const Size.square(48)),
           onPressed: () => showNotificationsSheet(
             context: context,
@@ -254,7 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             scope: SearchScope.lessons,
             title: v.title,
             subtitle: [
-              'Video',
+              l10n.homeVideo,
               v.moduleLabel,
               v.durationLabel,
             ].where((s) => s.isNotEmpty).join(' · '),
@@ -267,7 +267,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             scope: SearchScope.lessons,
             title: g.title,
             subtitle: [
-              'Guide',
+              l10n.homeGuide,
               g.moduleTitle,
             ].where((s) => s.isNotEmpty).join(' · '),
             icon: Icons.description_outlined,
@@ -345,23 +345,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
     return [
       _Medal(
-        'Environmental Explorer',
-        'Complete at least 3 learning items',
-        '3 learning items',
+        l10n.medalExplorer,
+        l10n.medalExplorerDesc,
+        l10n.medalExplorerHint,
         completed >= 3,
       ),
       _Medal(
-        'Robotics Beginner',
-        'Start the Introduction to ELIO module',
-        'Start Intro to ELIO',
+        l10n.medalRobotics,
+        l10n.medalRoboticsDesc,
+        l10n.medalRoboticsHint,
         active.any(
           (e) => ['elio', 'robot', 'introduction'].any(text(e).contains),
         ),
       ),
       _Medal(
-        'Sustainability Advocate',
-        'Complete all environmental empathy reflections',
-        'All reflections',
+        l10n.medalAdvocate,
+        l10n.medalAdvocateDesc,
+        l10n.medalAdvocateHint,
         reflections.isNotEmpty &&
             reflections.every((e) => e.value.lessonViewed),
       ),
@@ -482,7 +482,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Tap any square in the Year view to open that day here.',
+          l10n.homeTapSquare,
           style: homeSmall(p),
         ),
       ],
@@ -511,10 +511,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final inGrid = stats.scansInGrid;
     final inMonth = stats.scansInMonth(month.year, month.month);
     final subtitle = _monthMode
-        ? '$inMonth ${inMonth == 1 ? 'scan' : 'scans'} in ${monthNames[month.month - 1]}'
+        ? l10n.scansInMonth(l10n.scanCount(inMonth), monthNames[month.month - 1])
         : inGrid == 0
-        ? 'No scans in the last 17 weeks'
-        : '$inGrid ${inGrid == 1 ? 'scan' : 'scans'} in the last 17 weeks';
+        ? l10n.noScans17Weeks
+        : l10n.scansIn17Weeks(l10n.scanCount(inGrid));
     return HomeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -535,7 +535,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
               _Segmented(
-                labels: const ['Year', 'Month'],
+                labels: [l10n.homeYear, l10n.homeMonth],
                 selected: _monthMode ? 1 : 0,
                 onSelect: (i) => setState(() => _monthMode = i == 1),
               ),
@@ -575,7 +575,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       homeArt('streak_flame', width: 16, height: 19),
                       const SizedBox(width: 6),
                       Text(
-                        'Streak ${stats.currentStreak} ${stats.currentStreak == 1 ? 'day' : 'days'} · longest ${stats.longestStreak}',
+                        l10n.homeStreakLine(l10n.dayCount(stats.currentStreak), stats.longestStreak),
                         style: homeSmall(p),
                       ),
                     ],
@@ -685,7 +685,7 @@ class _GuestBanner extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Guest progress is stored on this device. Sign in to sync it across devices.',
+                l10n.homeGuestProgress,
                 style: ElioTokens.bodySmall.copyWith(
                   color: p.textPrimary,
                   fontSize: 15,
@@ -728,8 +728,8 @@ class _Hero extends StatelessWidget {
     return Semantics(
       container: true,
       label:
-          'Level ${level.levelNumber}, ${level.title}. ${stats.totalTrophies} trophies'
-          '${toNext == null ? ', top level' : ', $toNext to level ${level.levelNumber + 1}'}',
+          l10n.levelSemantics(level.levelNumber, level.title, stats.totalTrophies) +
+          (toNext == null ? l10n.levelSemanticsTop : l10n.levelSemanticsNext(toNext, level.levelNumber + 1)),
       excludeSemantics: true,
       child: HomeCard(
         color: p.primary,
@@ -760,7 +760,7 @@ class _Hero extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'Level ${level.levelNumber}',
+                            l10n.homeLevel(level.levelNumber),
                             style: ElioTokens.bodySmall.copyWith(
                               color: p.textPrimary,
                             ),
@@ -777,8 +777,8 @@ class _Hero extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     stats.totalTrophies == 0
-                        ? 'Plant your first trophy: scan an item.'
-                        : 'Your tree grows with every trophy.',
+                        ? l10n.homePlantFirst
+                        : l10n.homeTreeGrows,
                     style: ElioTokens.body.copyWith(color: ink, height: 1.4),
                   ),
                   const SizedBox(height: 12),
@@ -797,8 +797,8 @@ class _Hero extends StatelessWidget {
                         Text(context.l10n.homeTrophies(stats.totalTrophies), style: label),
                         Text(
                           toNext == null
-                              ? 'Top level'
-                              : '$toNext to Lv${level.levelNumber + 1}',
+                              ? l10n.homeTopLevel
+                              : l10n.homeToNextLevel(toNext, level.levelNumber + 1),
                           style: label,
                         ),
                       ],
@@ -834,14 +834,14 @@ class _StatsRow extends StatelessWidget {
       (
         homeArt('scan_line_art', width: 28, height: 28),
         '${stats.totalScans}',
-        'Scans',
+        l10n.homeScans,
       ),
       (
         Icon(Icons.help_outline_rounded, size: 28, color: p.tertiaryText),
         acc == null ? '—' : '$acc%',
-        'Quiz accuracy',
+        l10n.homeQuizAccuracy,
       ),
-      (homeArt('streak_flame', width: 26, height: 30), '$streak', 'Day streak'),
+      (homeArt('streak_flame', width: 26, height: 30), '$streak', l10n.homeDayStreak),
     ];
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -851,7 +851,7 @@ class _StatsRow extends StatelessWidget {
           Expanded(
             child: Semantics(
               label:
-                  '${tiles[i].$3}: ${tiles[i].$2 == '—' ? 'no data' : tiles[i].$2}',
+                  '${tiles[i].$3}: ${tiles[i].$2 == '—' ? l10n.noData : tiles[i].$2}',
               container: true,
               excludeSemantics: true,
               child: HomeCard(
@@ -921,14 +921,14 @@ class _Quests extends StatelessWidget {
                       child: Text(context.l10n.homeDailyQuests, style: homeTitle(p)),
                     ),
                     Text(
-                      '$done of 3 done · resets at midnight',
+                      l10n.questsDoneLine(done),
                       style: homeSmall(p),
                     ),
                   ],
                 ),
               ),
               Semantics(
-                label: '$done of 3 quests done',
+                label: l10n.questsDoneSemantics(done),
                 container: true,
                 excludeSemantics: true,
                 child: SizedBox.square(
@@ -959,7 +959,7 @@ class _Quests extends StatelessWidget {
             const SizedBox(height: 10),
             Semantics(
               label:
-                  '${q.title}, ${q.done ? 'done' : '${(q.progress * 100).round()} percent'}. Reward ${q.reward} trophies',
+                  l10n.questSemantics(q.title, q.done ? l10n.questDone : l10n.percentValue((q.progress * 100).round()), q.reward),
               container: true,
               excludeSemantics: true,
               child: DecoratedBox(
@@ -1047,8 +1047,8 @@ class _BinBuddies extends StatelessWidget {
           ),
           Text(
             total == 0
-                ? 'Your bins are hungry: scan an item'
-                : '$total ${total == 1 ? 'scan' : 'scans'} fed to your 3 bins',
+                ? l10n.binsHungry
+                : l10n.binsFed(l10n.scanCount(total)),
             style: homeSmall(p),
           ),
           const SizedBox(height: 16),
@@ -1088,7 +1088,7 @@ class _BinBuddies extends StatelessWidget {
                                         vertical: 1,
                                       ),
                                       child: Text(
-                                        'Top',
+                                        l10n.binTop,
                                         style: ElioTokens.label.copyWith(
                                           color: p.field,
                                         ),
@@ -1139,8 +1139,8 @@ class _BinBuddies extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             stats.residuCount == 0
-                ? 'Residu scans count toward Anorganik.'
-                : 'Anorganik includes ${stats.residuCount} residu ${stats.residuCount == 1 ? 'scan' : 'scans'} (the robot sorts residu there).',
+                ? l10n.residuNote
+                : l10n.residuIncluded(stats.residuCount, l10n.scanWord(stats.residuCount)),
             style: homeSmall(p),
           ),
         ],
@@ -1177,8 +1177,7 @@ class _ThisWeek extends StatelessWidget {
           const SizedBox(height: 8),
           Semantics(
             label:
-                '${stats.weekTotal} scans this week. '
-                '${[for (var i = 0; i < 7; i++) '${weekdayNames[i]} ${perDay[i]}'].join(', ')}',
+                l10n.weekSemantics(stats.weekTotal, [for (var i = 0; i < 7; i++) '${weekdayNames[i]} ${perDay[i]}'].join(', ')),
             container: true,
             excludeSemantics: true,
             child: Column(
@@ -1223,9 +1222,9 @@ class _QuizAccuracy extends StatelessWidget {
     final points = stats.quizPercents;
     return Semantics(
       label: acc == null
-          ? 'Quiz accuracy: no data'
-          : 'Quiz accuracy $acc percent over the last ${points.length} scans with questions'
-                '${delta == null ? '' : ', ${delta >= 0 ? 'up' : 'down'} ${delta.abs()} points'}',
+          ? l10n.quizAccNoData
+          : l10n.quizAccSemantics(acc, points.length) +
+                (delta == null ? '' : l10n.quizAccDelta(delta >= 0 ? l10n.deltaUp : l10n.deltaDown, delta.abs())),
       container: true,
       excludeSemantics: true,
       child: HomeCard(
@@ -1254,7 +1253,7 @@ class _QuizAccuracy extends StatelessWidget {
                       const SizedBox(width: 2),
                       Text(
                         acc == null
-                            ? 'no data'
+                            ? l10n.noData
                             : delta == null
                             ? '±0'
                             : '${delta >= 0 ? '+' : ''}$delta',
@@ -1364,7 +1363,7 @@ class _Medals extends StatelessWidget {
       ),
       const SizedBox(height: 4),
       Text(
-        m.unlocked ? 'Unlocked' : m.hint,
+        m.unlocked ? l10n.medalUnlocked : m.hint,
         textAlign: align,
         style: homeSmall(
           p,
@@ -1486,14 +1485,14 @@ class _LoadingSkeletonState extends State<_LoadingSkeleton>
       ),
     );
     return Semantics(
-      label: 'Loading your progress',
+      label: l10n.homeLoading,
       container: true,
       excludeSemantics: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Growing your tree…',
+            l10n.homeGrowing,
             textAlign: TextAlign.center,
             style: homeSmall(p),
           ),

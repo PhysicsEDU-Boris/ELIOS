@@ -9,15 +9,27 @@ import 'home_parts.dart';
 import 'package:elio/l10n/l10n.dart';
 
 enum SearchScope {
-  all('All', null),
-  lessons('Lessons', 'LESSONS'),
-  simulasi('Simulasi', 'SIMULASI'),
-  quiz('Quiz', 'QUIZ'),
-  scans('Scans', 'YOUR SCANS');
+  all,
+  lessons,
+  simulasi,
+  quiz,
+  scans;
 
-  const SearchScope(this.label, this.header);
-  final String label;
-  final String? header;
+  String get label => switch (this) {
+    all => l10n.searchAll,
+    lessons => l10n.searchLessons,
+    simulasi => l10n.searchSims,
+    quiz => l10n.searchQuiz,
+    scans => l10n.searchScans,
+  };
+
+  String? get header => switch (this) {
+    all => null,
+    lessons => l10n.searchLessonsHeader,
+    simulasi => l10n.searchSimsHeader,
+    quiz => l10n.searchQuizHeader,
+    scans => l10n.searchScansHeader,
+  };
 }
 
 class SearchItem {
@@ -76,7 +88,7 @@ class HomeSearchField extends StatelessWidget {
       decoration: InputDecoration(
         filled: true,
         fillColor: p.field,
-        hintText: 'Search lessons, simulations, scans',
+        hintText: l10n.searchHint,
         hintStyle: ElioTokens.body.copyWith(color: p.textTertiary),
         hintMaxLines: 1,
         contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -93,12 +105,9 @@ class HomeSearchField extends StatelessWidget {
             ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    '$resultCount ${resultCount == 1 ? 'result' : 'results'}',
-                    style: homeSmall(p),
-                  ),
+                  Text(l10n.resultCount(resultCount ?? 0), style: homeSmall(p)),
                   IconButton(
-                    tooltip: 'Clear search',
+                    tooltip: l10n.clearSearch,
                     onPressed: controller.clear,
                     icon: Icon(Icons.close_rounded, color: p.textSecondary),
                   ),
@@ -107,7 +116,7 @@ class HomeSearchField extends StatelessWidget {
             : Padding(
                 padding: const EdgeInsets.only(right: 6),
                 child: PopupMenuButton<SearchScope>(
-                  tooltip: 'Search in',
+                  tooltip: l10n.searchIn,
                   initialValue: scope,
                   onSelected: onScope,
                   itemBuilder: (_) => [
@@ -218,7 +227,7 @@ class HomeSearchResults extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
             child: Text(
-              'No results for “${query.trim()}”.',
+              l10n.noResultsFor(query.trim()),
               textAlign: TextAlign.center,
               style: ElioTokens.body.copyWith(color: p.textSecondary),
             ),

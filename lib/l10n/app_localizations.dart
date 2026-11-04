@@ -859,6 +859,762 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reset scan (debug)'**
   String get resetScanDebug;
+
+  /// Screen-reader name of the bottom navigation bar.
+  ///
+  /// In en, this message translates to:
+  /// **'Main'**
+  String get navMain;
+
+  /// No description provided for @navHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get navHome;
+
+  /// No description provided for @navLearn.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn'**
+  String get navLearn;
+
+  /// No description provided for @navControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Control'**
+  String get navControl;
+
+  /// No description provided for @navControlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Control, opens robot control'**
+  String get navControlHint;
+
+  /// No description provided for @navConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Config'**
+  String get navConfig;
+
+  /// No description provided for @navHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get navHistory;
+
+  /// No description provided for @shellConnectElio.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect ELIO'**
+  String get shellConnectElio;
+
+  /// No description provided for @shellConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIO connected'**
+  String get shellConnected;
+
+  /// No description provided for @shellConnectedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot connection is ready.'**
+  String get shellConnectedMsg;
+
+  /// No description provided for @shellDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIO disconnected'**
+  String get shellDisconnected;
+
+  /// No description provided for @shellDisconnectedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot connection was lost. Check the device or network.'**
+  String get shellDisconnectedMsg;
+
+  /// No description provided for @leaveQuizBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You have an active quiz. If you leave now, your current quiz progress will be lost.'**
+  String get leaveQuizBody;
+
+  /// No description provided for @homeHello.
+  ///
+  /// In en, this message translates to:
+  /// **'Hello, {name}'**
+  String homeHello(Object name);
+
+  /// No description provided for @homeReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to learn with ELIO?'**
+  String get homeReady;
+
+  /// No description provided for @configTopSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot, camera and quiz setup'**
+  String get configTopSubtitle;
+
+  /// No description provided for @comingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} — coming soon'**
+  String comingSoon(Object title);
+
+  /// No description provided for @homeGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest'**
+  String get homeGuest;
+
+  /// No description provided for @homeOpenNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Open notifications'**
+  String get homeOpenNotifications;
+
+  /// No description provided for @homeVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get homeVideo;
+
+  /// No description provided for @homeGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Guide'**
+  String get homeGuide;
+
+  /// No description provided for @medalExplorer.
+  ///
+  /// In en, this message translates to:
+  /// **'Environmental Explorer'**
+  String get medalExplorer;
+
+  /// No description provided for @medalExplorerDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete at least 3 learning items'**
+  String get medalExplorerDesc;
+
+  /// No description provided for @medalExplorerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'3 learning items'**
+  String get medalExplorerHint;
+
+  /// No description provided for @medalRobotics.
+  ///
+  /// In en, this message translates to:
+  /// **'Robotics Beginner'**
+  String get medalRobotics;
+
+  /// No description provided for @medalRoboticsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the Introduction to ELIO module'**
+  String get medalRoboticsDesc;
+
+  /// No description provided for @medalRoboticsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Intro to ELIO'**
+  String get medalRoboticsHint;
+
+  /// No description provided for @medalAdvocate.
+  ///
+  /// In en, this message translates to:
+  /// **'Sustainability Advocate'**
+  String get medalAdvocate;
+
+  /// No description provided for @medalAdvocateDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete all environmental empathy reflections'**
+  String get medalAdvocateDesc;
+
+  /// No description provided for @medalAdvocateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'All reflections'**
+  String get medalAdvocateHint;
+
+  /// No description provided for @homeTapSquare.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap any square in the Year view to open that day here.'**
+  String get homeTapSquare;
+
+  /// No description provided for @scanCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 scan} other{{count} scans}}'**
+  String scanCount(num count);
+
+  /// No description provided for @scansInMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'{scans} in {month}'**
+  String scansInMonth(Object scans, Object month);
+
+  /// No description provided for @noScans17Weeks.
+  ///
+  /// In en, this message translates to:
+  /// **'No scans in the last 17 weeks'**
+  String get noScans17Weeks;
+
+  /// No description provided for @scansIn17Weeks.
+  ///
+  /// In en, this message translates to:
+  /// **'{scans} in the last 17 weeks'**
+  String scansIn17Weeks(Object scans);
+
+  /// No description provided for @homeYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get homeYear;
+
+  /// No description provided for @homeMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get homeMonth;
+
+  /// No description provided for @dayCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day} other{{count} days}}'**
+  String dayCount(num count);
+
+  /// No description provided for @homeStreakLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Streak {days} · longest {longest}'**
+  String homeStreakLine(Object days, Object longest);
+
+  /// No description provided for @homeGuestProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest progress is stored on this device. Sign in to sync it across devices.'**
+  String get homeGuestProgress;
+
+  /// No description provided for @levelSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Level {level}, {title}. {trophies} trophies'**
+  String levelSemantics(Object level, Object title, Object trophies);
+
+  /// No description provided for @levelSemanticsTop.
+  ///
+  /// In en, this message translates to:
+  /// **', top level'**
+  String get levelSemanticsTop;
+
+  /// No description provided for @levelSemanticsNext.
+  ///
+  /// In en, this message translates to:
+  /// **', {count} to level {next}'**
+  String levelSemanticsNext(Object count, Object next);
+
+  /// No description provided for @homeLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level {level}'**
+  String homeLevel(Object level);
+
+  /// No description provided for @homePlantFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Plant your first trophy: scan an item.'**
+  String get homePlantFirst;
+
+  /// No description provided for @homeTreeGrows.
+  ///
+  /// In en, this message translates to:
+  /// **'Your tree grows with every trophy.'**
+  String get homeTreeGrows;
+
+  /// No description provided for @homeTopLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Top level'**
+  String get homeTopLevel;
+
+  /// No description provided for @homeToNextLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} to Lv{next}'**
+  String homeToNextLevel(Object count, Object next);
+
+  /// No description provided for @homeScans.
+  ///
+  /// In en, this message translates to:
+  /// **'Scans'**
+  String get homeScans;
+
+  /// No description provided for @homeDayStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Day streak'**
+  String get homeDayStreak;
+
+  /// No description provided for @questsDoneLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of 3 done · resets at midnight'**
+  String questsDoneLine(Object done);
+
+  /// No description provided for @questsDoneSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of 3 quests done'**
+  String questsDoneSemantics(Object done);
+
+  /// No description provided for @questSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, {state}. Reward {reward} trophies'**
+  String questSemantics(Object title, Object state, Object reward);
+
+  /// No description provided for @questDone.
+  ///
+  /// In en, this message translates to:
+  /// **'done'**
+  String get questDone;
+
+  /// No description provided for @percentValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} percent'**
+  String percentValue(Object value);
+
+  /// No description provided for @binsHungry.
+  ///
+  /// In en, this message translates to:
+  /// **'Your bins are hungry: scan an item'**
+  String get binsHungry;
+
+  /// No description provided for @binsFed.
+  ///
+  /// In en, this message translates to:
+  /// **'{scans} fed to your 3 bins'**
+  String binsFed(Object scans);
+
+  /// No description provided for @binTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Top'**
+  String get binTop;
+
+  /// No description provided for @residuNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Residu scans count toward Anorganik.'**
+  String get residuNote;
+
+  /// No description provided for @residuIncluded.
+  ///
+  /// In en, this message translates to:
+  /// **'Anorganik includes {count} residu {scans} (the robot sorts residu there).'**
+  String residuIncluded(Object count, Object scans);
+
+  /// No description provided for @scanWord.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{scan} other{scans}}'**
+  String scanWord(num count);
+
+  /// No description provided for @weekSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} scans this week. {days}'**
+  String weekSemantics(Object count, Object days);
+
+  /// No description provided for @quizAccNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz accuracy: no data'**
+  String get quizAccNoData;
+
+  /// No description provided for @quizAccSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz accuracy {acc} percent over the last {count} scans with questions'**
+  String quizAccSemantics(Object acc, Object count);
+
+  /// No description provided for @quizAccDelta.
+  ///
+  /// In en, this message translates to:
+  /// **', {dir} {count} points'**
+  String quizAccDelta(Object dir, Object count);
+
+  /// No description provided for @deltaUp.
+  ///
+  /// In en, this message translates to:
+  /// **'up'**
+  String get deltaUp;
+
+  /// No description provided for @deltaDown.
+  ///
+  /// In en, this message translates to:
+  /// **'down'**
+  String get deltaDown;
+
+  /// No description provided for @noData.
+  ///
+  /// In en, this message translates to:
+  /// **'no data'**
+  String get noData;
+
+  /// No description provided for @medalUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked'**
+  String get medalUnlocked;
+
+  /// No description provided for @homeLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading your progress'**
+  String get homeLoading;
+
+  /// No description provided for @homeGrowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Growing your tree…'**
+  String get homeGrowing;
+
+  /// No description provided for @fact1.
+  ///
+  /// In en, this message translates to:
+  /// **'Plastics under 1,0 g/cm³ float in water. Recycling plants use that to separate them.'**
+  String get fact1;
+
+  /// No description provided for @fact2.
+  ///
+  /// In en, this message translates to:
+  /// **'Batteries are B3 waste: their metals can leak into soil and water, so they need a special drop-off.'**
+  String get fact2;
+
+  /// No description provided for @fact3.
+  ///
+  /// In en, this message translates to:
+  /// **'Fruit peels and food scraps can turn into compost in a few weeks.'**
+  String get fact3;
+
+  /// No description provided for @fact4.
+  ///
+  /// In en, this message translates to:
+  /// **'Rinsing a bottle before recycling keeps the rest of the bin clean.'**
+  String get fact4;
+
+  /// No description provided for @fact5.
+  ///
+  /// In en, this message translates to:
+  /// **'Aluminium cans can be recycled again and again without losing quality.'**
+  String get fact5;
+
+  /// Short Monday, Wednesday, Friday, comma-separated, max 3 letters each.
+  ///
+  /// In en, this message translates to:
+  /// **'Mon,Wed,Fri'**
+  String get heatmapDayLabels;
+
+  /// Two-letter weekday initials Sunday..Saturday, comma-separated.
+  ///
+  /// In en, this message translates to:
+  /// **'Su,Mo,Tu,We,Th,Fr,Sa'**
+  String get calendarWeekdays;
+
+  /// No description provided for @activityScansHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Month to browse days'**
+  String get activityScansHint;
+
+  /// No description provided for @previousMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous month'**
+  String get previousMonth;
+
+  /// No description provided for @nextMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Next month'**
+  String get nextMonth;
+
+  /// No description provided for @searchAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get searchAll;
+
+  /// No description provided for @searchLessons.
+  ///
+  /// In en, this message translates to:
+  /// **'Lessons'**
+  String get searchLessons;
+
+  /// No description provided for @searchLessonsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'LESSONS'**
+  String get searchLessonsHeader;
+
+  /// No description provided for @searchSims.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulations'**
+  String get searchSims;
+
+  /// No description provided for @searchSimsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'SIMULATIONS'**
+  String get searchSimsHeader;
+
+  /// No description provided for @searchQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz'**
+  String get searchQuiz;
+
+  /// No description provided for @searchQuizHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'QUIZ'**
+  String get searchQuizHeader;
+
+  /// No description provided for @searchScans.
+  ///
+  /// In en, this message translates to:
+  /// **'Scans'**
+  String get searchScans;
+
+  /// No description provided for @searchScansHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR SCANS'**
+  String get searchScansHeader;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search lessons, simulations, scans'**
+  String get searchHint;
+
+  /// No description provided for @resultCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 result} other{{count} results}}'**
+  String resultCount(num count);
+
+  /// No description provided for @clearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get clearSearch;
+
+  /// No description provided for @searchIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Search in'**
+  String get searchIn;
+
+  /// No description provided for @noResultsFor.
+  ///
+  /// In en, this message translates to:
+  /// **'No results for “{query}”.'**
+  String noResultsFor(Object query);
+
+  /// No description provided for @notifNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications right now.'**
+  String get notifNone;
+
+  /// No description provided for @notifEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning reminders, quiz review updates, and progress alerts will appear here.'**
+  String get notifEmptyHint;
+
+  /// No description provided for @notifDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss notifications'**
+  String get notifDismiss;
+
+  /// No description provided for @notifTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifTitle;
+
+  /// No description provided for @notifClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close notifications'**
+  String get notifClose;
+
+  /// No description provided for @notifSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning updates and reminders from ELIO.'**
+  String get notifSubtitle;
+
+  /// No description provided for @notifMarkAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all read'**
+  String get notifMarkAllRead;
+
+  /// No description provided for @notifClearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get notifClearAll;
+
+  /// No description provided for @notifDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get notifDone;
+
+  /// No description provided for @notifOpenLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Learning'**
+  String get notifOpenLearning;
+
+  /// No description provided for @notifOpenConfig.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Config'**
+  String get notifOpenConfig;
+
+  /// No description provided for @timeJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get timeJustNow;
+
+  /// No description provided for @timeMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}m ago'**
+  String timeMinutesAgo(Object n);
+
+  /// No description provided for @timeHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}h ago'**
+  String timeHoursAgo(Object n);
+
+  /// No description provided for @timeDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}d ago'**
+  String timeDaysAgo(Object n);
+
+  /// No description provided for @timeWeeksAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}w ago'**
+  String timeWeeksAgo(Object n);
+
+  /// No description provided for @timeMonthsAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}mo ago'**
+  String timeMonthsAgo(Object n);
+
+  /// No description provided for @timeYearsAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}y ago'**
+  String timeYearsAgo(Object n);
+
+  /// No description provided for @questScan3.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan 3 items today'**
+  String get questScan3;
+
+  /// No description provided for @questFinishQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish a scan quiz'**
+  String get questFinishQuiz;
+
+  /// No description provided for @questSortB3.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort one B3 item safely'**
+  String get questSortB3;
+
+  /// No description provided for @levelEcoStarter.
+  ///
+  /// In en, this message translates to:
+  /// **'Eco Starter'**
+  String get levelEcoStarter;
+
+  /// No description provided for @levelWasteSpotter.
+  ///
+  /// In en, this message translates to:
+  /// **'Waste Spotter'**
+  String get levelWasteSpotter;
+
+  /// No description provided for @levelBinExpert.
+  ///
+  /// In en, this message translates to:
+  /// **'Bin Expert'**
+  String get levelBinExpert;
+
+  /// No description provided for @levelEcoSorter.
+  ///
+  /// In en, this message translates to:
+  /// **'Eco Sorter'**
+  String get levelEcoSorter;
+
+  /// No description provided for @levelPlanetGuardian.
+  ///
+  /// In en, this message translates to:
+  /// **'Planet Guardian'**
+  String get levelPlanetGuardian;
+
+  /// No description provided for @gradePerfect.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect'**
+  String get gradePerfect;
+
+  /// No description provided for @gradeGreat.
+  ///
+  /// In en, this message translates to:
+  /// **'Great'**
+  String get gradeGreat;
+
+  /// No description provided for @gradeGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get gradeGood;
+
+  /// No description provided for @gradeKeepLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Learning'**
+  String get gradeKeepLearning;
+
+  /// No description provided for @gradeTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get gradeTryAgain;
 }
 
 class _AppLocalizationsDelegate

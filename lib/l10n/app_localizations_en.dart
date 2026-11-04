@@ -415,4 +415,475 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetScanDebug => 'Reset scan (debug)';
+
+  @override
+  String get navMain => 'Main';
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get navLearn => 'Learn';
+
+  @override
+  String get navControl => 'Control';
+
+  @override
+  String get navControlHint => 'Control, opens robot control';
+
+  @override
+  String get navConfig => 'Config';
+
+  @override
+  String get navHistory => 'History';
+
+  @override
+  String get shellConnectElio => 'Connect ELIO';
+
+  @override
+  String get shellConnected => 'ELIO connected';
+
+  @override
+  String get shellConnectedMsg => 'Robot connection is ready.';
+
+  @override
+  String get shellDisconnected => 'ELIO disconnected';
+
+  @override
+  String get shellDisconnectedMsg =>
+      'Robot connection was lost. Check the device or network.';
+
+  @override
+  String get leaveQuizBody =>
+      'You have an active quiz. If you leave now, your current quiz progress will be lost.';
+
+  @override
+  String homeHello(Object name) {
+    return 'Hello, $name';
+  }
+
+  @override
+  String get homeReady => 'Ready to learn with ELIO?';
+
+  @override
+  String get configTopSubtitle => 'Robot, camera and quiz setup';
+
+  @override
+  String comingSoon(Object title) {
+    return '$title — coming soon';
+  }
+
+  @override
+  String get homeGuest => 'Guest';
+
+  @override
+  String get homeOpenNotifications => 'Open notifications';
+
+  @override
+  String get homeVideo => 'Video';
+
+  @override
+  String get homeGuide => 'Guide';
+
+  @override
+  String get medalExplorer => 'Environmental Explorer';
+
+  @override
+  String get medalExplorerDesc => 'Complete at least 3 learning items';
+
+  @override
+  String get medalExplorerHint => '3 learning items';
+
+  @override
+  String get medalRobotics => 'Robotics Beginner';
+
+  @override
+  String get medalRoboticsDesc => 'Start the Introduction to ELIO module';
+
+  @override
+  String get medalRoboticsHint => 'Start Intro to ELIO';
+
+  @override
+  String get medalAdvocate => 'Sustainability Advocate';
+
+  @override
+  String get medalAdvocateDesc =>
+      'Complete all environmental empathy reflections';
+
+  @override
+  String get medalAdvocateHint => 'All reflections';
+
+  @override
+  String get homeTapSquare =>
+      'Tap any square in the Year view to open that day here.';
+
+  @override
+  String scanCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count scans',
+      one: '1 scan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String scansInMonth(Object scans, Object month) {
+    return '$scans in $month';
+  }
+
+  @override
+  String get noScans17Weeks => 'No scans in the last 17 weeks';
+
+  @override
+  String scansIn17Weeks(Object scans) {
+    return '$scans in the last 17 weeks';
+  }
+
+  @override
+  String get homeYear => 'Year';
+
+  @override
+  String get homeMonth => 'Month';
+
+  @override
+  String dayCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String homeStreakLine(Object days, Object longest) {
+    return 'Streak $days · longest $longest';
+  }
+
+  @override
+  String get homeGuestProgress =>
+      'Guest progress is stored on this device. Sign in to sync it across devices.';
+
+  @override
+  String levelSemantics(Object level, Object title, Object trophies) {
+    return 'Level $level, $title. $trophies trophies';
+  }
+
+  @override
+  String get levelSemanticsTop => ', top level';
+
+  @override
+  String levelSemanticsNext(Object count, Object next) {
+    return ', $count to level $next';
+  }
+
+  @override
+  String homeLevel(Object level) {
+    return 'Level $level';
+  }
+
+  @override
+  String get homePlantFirst => 'Plant your first trophy: scan an item.';
+
+  @override
+  String get homeTreeGrows => 'Your tree grows with every trophy.';
+
+  @override
+  String get homeTopLevel => 'Top level';
+
+  @override
+  String homeToNextLevel(Object count, Object next) {
+    return '$count to Lv$next';
+  }
+
+  @override
+  String get homeScans => 'Scans';
+
+  @override
+  String get homeDayStreak => 'Day streak';
+
+  @override
+  String questsDoneLine(Object done) {
+    return '$done of 3 done · resets at midnight';
+  }
+
+  @override
+  String questsDoneSemantics(Object done) {
+    return '$done of 3 quests done';
+  }
+
+  @override
+  String questSemantics(Object title, Object state, Object reward) {
+    return '$title, $state. Reward $reward trophies';
+  }
+
+  @override
+  String get questDone => 'done';
+
+  @override
+  String percentValue(Object value) {
+    return '$value percent';
+  }
+
+  @override
+  String get binsHungry => 'Your bins are hungry: scan an item';
+
+  @override
+  String binsFed(Object scans) {
+    return '$scans fed to your 3 bins';
+  }
+
+  @override
+  String get binTop => 'Top';
+
+  @override
+  String get residuNote => 'Residu scans count toward Anorganik.';
+
+  @override
+  String residuIncluded(Object count, Object scans) {
+    return 'Anorganik includes $count residu $scans (the robot sorts residu there).';
+  }
+
+  @override
+  String scanWord(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'scans',
+      one: 'scan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String weekSemantics(Object count, Object days) {
+    return '$count scans this week. $days';
+  }
+
+  @override
+  String get quizAccNoData => 'Quiz accuracy: no data';
+
+  @override
+  String quizAccSemantics(Object acc, Object count) {
+    return 'Quiz accuracy $acc percent over the last $count scans with questions';
+  }
+
+  @override
+  String quizAccDelta(Object dir, Object count) {
+    return ', $dir $count points';
+  }
+
+  @override
+  String get deltaUp => 'up';
+
+  @override
+  String get deltaDown => 'down';
+
+  @override
+  String get noData => 'no data';
+
+  @override
+  String get medalUnlocked => 'Unlocked';
+
+  @override
+  String get homeLoading => 'Loading your progress';
+
+  @override
+  String get homeGrowing => 'Growing your tree…';
+
+  @override
+  String get fact1 =>
+      'Plastics under 1,0 g/cm³ float in water. Recycling plants use that to separate them.';
+
+  @override
+  String get fact2 =>
+      'Batteries are B3 waste: their metals can leak into soil and water, so they need a special drop-off.';
+
+  @override
+  String get fact3 =>
+      'Fruit peels and food scraps can turn into compost in a few weeks.';
+
+  @override
+  String get fact4 =>
+      'Rinsing a bottle before recycling keeps the rest of the bin clean.';
+
+  @override
+  String get fact5 =>
+      'Aluminium cans can be recycled again and again without losing quality.';
+
+  @override
+  String get heatmapDayLabels => 'Mon,Wed,Fri';
+
+  @override
+  String get calendarWeekdays => 'Su,Mo,Tu,We,Th,Fr,Sa';
+
+  @override
+  String get activityScansHint => 'Use Month to browse days';
+
+  @override
+  String get previousMonth => 'Previous month';
+
+  @override
+  String get nextMonth => 'Next month';
+
+  @override
+  String get searchAll => 'All';
+
+  @override
+  String get searchLessons => 'Lessons';
+
+  @override
+  String get searchLessonsHeader => 'LESSONS';
+
+  @override
+  String get searchSims => 'Simulations';
+
+  @override
+  String get searchSimsHeader => 'SIMULATIONS';
+
+  @override
+  String get searchQuiz => 'Quiz';
+
+  @override
+  String get searchQuizHeader => 'QUIZ';
+
+  @override
+  String get searchScans => 'Scans';
+
+  @override
+  String get searchScansHeader => 'YOUR SCANS';
+
+  @override
+  String get searchHint => 'Search lessons, simulations, scans';
+
+  @override
+  String resultCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count results',
+      one: '1 result',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get clearSearch => 'Clear search';
+
+  @override
+  String get searchIn => 'Search in';
+
+  @override
+  String noResultsFor(Object query) {
+    return 'No results for “$query”.';
+  }
+
+  @override
+  String get notifNone => 'No notifications right now.';
+
+  @override
+  String get notifEmptyHint =>
+      'Learning reminders, quiz review updates, and progress alerts will appear here.';
+
+  @override
+  String get notifDismiss => 'Dismiss notifications';
+
+  @override
+  String get notifTitle => 'Notifications';
+
+  @override
+  String get notifClose => 'Close notifications';
+
+  @override
+  String get notifSubtitle => 'Learning updates and reminders from ELIO.';
+
+  @override
+  String get notifMarkAllRead => 'Mark all read';
+
+  @override
+  String get notifClearAll => 'Clear all';
+
+  @override
+  String get notifDone => 'Done';
+
+  @override
+  String get notifOpenLearning => 'Open Learning';
+
+  @override
+  String get notifOpenConfig => 'Open Config';
+
+  @override
+  String get timeJustNow => 'Just now';
+
+  @override
+  String timeMinutesAgo(Object n) {
+    return '${n}m ago';
+  }
+
+  @override
+  String timeHoursAgo(Object n) {
+    return '${n}h ago';
+  }
+
+  @override
+  String timeDaysAgo(Object n) {
+    return '${n}d ago';
+  }
+
+  @override
+  String timeWeeksAgo(Object n) {
+    return '${n}w ago';
+  }
+
+  @override
+  String timeMonthsAgo(Object n) {
+    return '${n}mo ago';
+  }
+
+  @override
+  String timeYearsAgo(Object n) {
+    return '${n}y ago';
+  }
+
+  @override
+  String get questScan3 => 'Scan 3 items today';
+
+  @override
+  String get questFinishQuiz => 'Finish a scan quiz';
+
+  @override
+  String get questSortB3 => 'Sort one B3 item safely';
+
+  @override
+  String get levelEcoStarter => 'Eco Starter';
+
+  @override
+  String get levelWasteSpotter => 'Waste Spotter';
+
+  @override
+  String get levelBinExpert => 'Bin Expert';
+
+  @override
+  String get levelEcoSorter => 'Eco Sorter';
+
+  @override
+  String get levelPlanetGuardian => 'Planet Guardian';
+
+  @override
+  String get gradePerfect => 'Perfect';
+
+  @override
+  String get gradeGreat => 'Great';
+
+  @override
+  String get gradeGood => 'Good';
+
+  @override
+  String get gradeKeepLearning => 'Keep Learning';
+
+  @override
+  String get gradeTryAgain => 'Try Again';
 }

@@ -416,4 +416,450 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get resetScanDebug => 'Reset scan (debug)';
+
+  @override
+  String get navMain => 'Utama';
+
+  @override
+  String get navHome => 'Beranda';
+
+  @override
+  String get navLearn => 'Belajar';
+
+  @override
+  String get navControl => 'Kontrol';
+
+  @override
+  String get navControlHint => 'Kontrol, membuka kontrol robot';
+
+  @override
+  String get navConfig => 'Atur';
+
+  @override
+  String get navHistory => 'Riwayat';
+
+  @override
+  String get shellConnectElio => 'Hubungkan ELIO';
+
+  @override
+  String get shellConnected => 'ELIO terhubung';
+
+  @override
+  String get shellConnectedMsg => 'Koneksi robot siap.';
+
+  @override
+  String get shellDisconnected => 'ELIO terputus';
+
+  @override
+  String get shellDisconnectedMsg =>
+      'Koneksi robot terputus. Periksa perangkat atau jaringan.';
+
+  @override
+  String get leaveQuizBody =>
+      'Kamu sedang mengerjakan kuis. Jika keluar sekarang, progres kuis ini akan hilang.';
+
+  @override
+  String homeHello(Object name) {
+    return 'Halo, $name';
+  }
+
+  @override
+  String get homeReady => 'Siap belajar bersama ELIO?';
+
+  @override
+  String get configTopSubtitle => 'Atur robot, kamera dan kuis';
+
+  @override
+  String comingSoon(Object title) {
+    return '$title — segera hadir';
+  }
+
+  @override
+  String get homeGuest => 'Tamu';
+
+  @override
+  String get homeOpenNotifications => 'Buka notifikasi';
+
+  @override
+  String get homeVideo => 'Video';
+
+  @override
+  String get homeGuide => 'Panduan';
+
+  @override
+  String get medalExplorer => 'Penjelajah Lingkungan';
+
+  @override
+  String get medalExplorerDesc => 'Selesaikan minimal 3 materi belajar';
+
+  @override
+  String get medalExplorerHint => '3 materi belajar';
+
+  @override
+  String get medalRobotics => 'Pemula Robotika';
+
+  @override
+  String get medalRoboticsDesc => 'Mulai modul Pengenalan ELIO';
+
+  @override
+  String get medalRoboticsHint => 'Mulai Pengenalan ELIO';
+
+  @override
+  String get medalAdvocate => 'Pejuang Keberlanjutan';
+
+  @override
+  String get medalAdvocateDesc => 'Selesaikan semua refleksi empati lingkungan';
+
+  @override
+  String get medalAdvocateHint => 'Semua refleksi';
+
+  @override
+  String get homeTapSquare =>
+      'Ketuk kotak mana pun di tampilan Tahun untuk membuka hari itu di sini.';
+
+  @override
+  String scanCount(num count) {
+    return '$count scan';
+  }
+
+  @override
+  String scansInMonth(Object scans, Object month) {
+    return '$scans di bulan $month';
+  }
+
+  @override
+  String get noScans17Weeks => 'Belum ada scan dalam 17 minggu terakhir';
+
+  @override
+  String scansIn17Weeks(Object scans) {
+    return '$scans dalam 17 minggu terakhir';
+  }
+
+  @override
+  String get homeYear => 'Tahun';
+
+  @override
+  String get homeMonth => 'Bulan';
+
+  @override
+  String dayCount(num count) {
+    return '$count hari';
+  }
+
+  @override
+  String homeStreakLine(Object days, Object longest) {
+    return 'Beruntun $days · terlama $longest';
+  }
+
+  @override
+  String get homeGuestProgress =>
+      'Progres tamu disimpan di perangkat ini. Masuk untuk menyinkronkannya ke perangkat lain.';
+
+  @override
+  String levelSemantics(Object level, Object title, Object trophies) {
+    return 'Level $level, $title. $trophies trofi';
+  }
+
+  @override
+  String get levelSemanticsTop => ', level tertinggi';
+
+  @override
+  String levelSemanticsNext(Object count, Object next) {
+    return ', $count lagi ke level $next';
+  }
+
+  @override
+  String homeLevel(Object level) {
+    return 'Level $level';
+  }
+
+  @override
+  String get homePlantFirst => 'Tanam trofi pertamamu: scan sebuah benda.';
+
+  @override
+  String get homeTreeGrows => 'Pohonmu tumbuh dengan setiap trofi.';
+
+  @override
+  String get homeTopLevel => 'Level tertinggi';
+
+  @override
+  String homeToNextLevel(Object count, Object next) {
+    return '$count lagi ke Lv$next';
+  }
+
+  @override
+  String get homeScans => 'Scan';
+
+  @override
+  String get homeDayStreak => 'Hari beruntun';
+
+  @override
+  String questsDoneLine(Object done) {
+    return '$done dari 3 selesai · direset tengah malam';
+  }
+
+  @override
+  String questsDoneSemantics(Object done) {
+    return '$done dari 3 misi selesai';
+  }
+
+  @override
+  String questSemantics(Object title, Object state, Object reward) {
+    return '$title, $state. Hadiah $reward trofi';
+  }
+
+  @override
+  String get questDone => 'selesai';
+
+  @override
+  String percentValue(Object value) {
+    return '$value persen';
+  }
+
+  @override
+  String get binsHungry => 'Tempat sampahmu lapar: scan sebuah benda';
+
+  @override
+  String binsFed(Object scans) {
+    return '$scans masuk ke 3 tempat sampahmu';
+  }
+
+  @override
+  String get binTop => 'Teratas';
+
+  @override
+  String get residuNote => 'Scan residu dihitung sebagai Anorganik.';
+
+  @override
+  String residuIncluded(Object count, Object scans) {
+    return 'Anorganik termasuk $count $scans residu (robot memilah residu ke sana).';
+  }
+
+  @override
+  String scanWord(num count) {
+    return 'scan';
+  }
+
+  @override
+  String weekSemantics(Object count, Object days) {
+    return '$count scan minggu ini. $days';
+  }
+
+  @override
+  String get quizAccNoData => 'Akurasi kuis: belum ada data';
+
+  @override
+  String quizAccSemantics(Object acc, Object count) {
+    return 'Akurasi kuis $acc persen dari $count scan terakhir yang punya soal';
+  }
+
+  @override
+  String quizAccDelta(Object dir, Object count) {
+    return ', $dir $count poin';
+  }
+
+  @override
+  String get deltaUp => 'naik';
+
+  @override
+  String get deltaDown => 'turun';
+
+  @override
+  String get noData => 'belum ada data';
+
+  @override
+  String get medalUnlocked => 'Terbuka';
+
+  @override
+  String get homeLoading => 'Memuat progresmu';
+
+  @override
+  String get homeGrowing => 'Menumbuhkan pohonmu…';
+
+  @override
+  String get fact1 =>
+      'Plastik dengan massa jenis di bawah 1,0 g/cm³ mengapung di air. Pabrik daur ulang memakai itu untuk memisahkannya.';
+
+  @override
+  String get fact2 =>
+      'Baterai termasuk sampah B3: logamnya bisa meresap ke tanah dan air, jadi perlu tempat buang khusus.';
+
+  @override
+  String get fact3 =>
+      'Kulit buah dan sisa makanan bisa menjadi kompos dalam beberapa minggu.';
+
+  @override
+  String get fact4 =>
+      'Membilas botol sebelum didaur ulang menjaga isi tempat sampah lain tetap bersih.';
+
+  @override
+  String get fact5 =>
+      'Kaleng aluminium bisa didaur ulang berkali-kali tanpa turun kualitasnya.';
+
+  @override
+  String get heatmapDayLabels => 'Sen,Rab,Jum';
+
+  @override
+  String get calendarWeekdays => 'Mg,Sn,Sl,Rb,Km,Jm,Sb';
+
+  @override
+  String get activityScansHint => 'Pakai Bulan untuk melihat per hari';
+
+  @override
+  String get previousMonth => 'Bulan sebelumnya';
+
+  @override
+  String get nextMonth => 'Bulan berikutnya';
+
+  @override
+  String get searchAll => 'Semua';
+
+  @override
+  String get searchLessons => 'Materi';
+
+  @override
+  String get searchLessonsHeader => 'MATERI';
+
+  @override
+  String get searchSims => 'Simulasi';
+
+  @override
+  String get searchSimsHeader => 'SIMULASI';
+
+  @override
+  String get searchQuiz => 'Kuis';
+
+  @override
+  String get searchQuizHeader => 'KUIS';
+
+  @override
+  String get searchScans => 'Scan';
+
+  @override
+  String get searchScansHeader => 'SCAN KAMU';
+
+  @override
+  String get searchHint => 'Cari materi, simulasi, scan';
+
+  @override
+  String resultCount(num count) {
+    return '$count hasil';
+  }
+
+  @override
+  String get clearSearch => 'Hapus pencarian';
+
+  @override
+  String get searchIn => 'Cari di';
+
+  @override
+  String noResultsFor(Object query) {
+    return 'Tidak ada hasil untuk “$query”.';
+  }
+
+  @override
+  String get notifNone => 'Belum ada notifikasi.';
+
+  @override
+  String get notifEmptyHint =>
+      'Pengingat belajar, kabar ulasan kuis, dan info progres akan muncul di sini.';
+
+  @override
+  String get notifDismiss => 'Tutup notifikasi';
+
+  @override
+  String get notifTitle => 'Notifikasi';
+
+  @override
+  String get notifClose => 'Tutup notifikasi';
+
+  @override
+  String get notifSubtitle => 'Kabar belajar dan pengingat dari ELIO.';
+
+  @override
+  String get notifMarkAllRead => 'Tandai semua dibaca';
+
+  @override
+  String get notifClearAll => 'Hapus semua';
+
+  @override
+  String get notifDone => 'Selesai';
+
+  @override
+  String get notifOpenLearning => 'Buka Belajar';
+
+  @override
+  String get notifOpenConfig => 'Buka Atur';
+
+  @override
+  String get timeJustNow => 'Baru saja';
+
+  @override
+  String timeMinutesAgo(Object n) {
+    return '$n mnt lalu';
+  }
+
+  @override
+  String timeHoursAgo(Object n) {
+    return '$n jam lalu';
+  }
+
+  @override
+  String timeDaysAgo(Object n) {
+    return '$n hr lalu';
+  }
+
+  @override
+  String timeWeeksAgo(Object n) {
+    return '$n mgg lalu';
+  }
+
+  @override
+  String timeMonthsAgo(Object n) {
+    return '$n bln lalu';
+  }
+
+  @override
+  String timeYearsAgo(Object n) {
+    return '$n thn lalu';
+  }
+
+  @override
+  String get questScan3 => 'Scan 3 benda hari ini';
+
+  @override
+  String get questFinishQuiz => 'Selesaikan satu kuis scan';
+
+  @override
+  String get questSortB3 => 'Pilah satu benda B3 dengan aman';
+
+  @override
+  String get levelEcoStarter => 'Pemula Eco';
+
+  @override
+  String get levelWasteSpotter => 'Pengamat Sampah';
+
+  @override
+  String get levelBinExpert => 'Ahli Tempat Sampah';
+
+  @override
+  String get levelEcoSorter => 'Pemilah Eco';
+
+  @override
+  String get levelPlanetGuardian => 'Penjaga Planet';
+
+  @override
+  String get gradePerfect => 'Sempurna';
+
+  @override
+  String get gradeGreat => 'Hebat';
+
+  @override
+  String get gradeGood => 'Bagus';
+
+  @override
+  String get gradeKeepLearning => 'Belajar Lagi';
+
+  @override
+  String get gradeTryAgain => 'Coba Lagi';
 }

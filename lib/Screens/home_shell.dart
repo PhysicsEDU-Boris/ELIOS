@@ -83,10 +83,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   }
 
   String get _pageTitle => switch (_currentIndex) {
-    0 => 'Home',
-    1 => 'Learn',
-    2 => 'Connect ELIO',
-    _ => 'Riwayat',
+    0 => l10n.navHome,
+    1 => l10n.navLearn,
+    2 => l10n.shellConnectElio,
+    _ => l10n.navHistory,
   };
 
   Widget _buildCurrentScreen() {
@@ -148,8 +148,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     if (!wasConnected && isConnected) {
       notifications.push(
         type: AppNotificationType.robot,
-        title: 'ELIO connected',
-        message: 'Robot connection is ready.',
+        title: l10n.shellConnected,
+        message: l10n.shellConnectedMsg,
         routeHint: 'robot',
       );
       return;
@@ -158,8 +158,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     if (wasConnected && isDisconnected) {
       notifications.push(
         type: AppNotificationType.warning,
-        title: 'ELIO disconnected',
-        message: 'Robot connection was lost. Check the device or network.',
+        title: l10n.shellDisconnected,
+        message: l10n.shellDisconnectedMsg,
         routeHint: 'robot',
       );
       return;
@@ -199,10 +199,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(context.l10n.leaveQuizTitle),
-        content: const Text(
-          'You have an active quiz. If you leave now, your current quiz '
-          'progress will be lost.',
-        ),
+        content: Text(l10n.leaveQuizBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -318,12 +315,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                       bottom: false,
                       child: ElioTopBar(
                         title: _currentIndex == 0
-                            ? 'Hello, ${homeDisplayName(user)}'
+                            ? l10n.homeHello(homeDisplayName(user))
                             : _pageTitle,
                         subtitle: switch (_currentIndex) {
-                          0 => 'Ready to learn with ELIO?',
-                          2 => 'Robot, camera and quiz setup',
-                          _historyIndex => 'Hasil scan, kuis, dan piala',
+                          0 => l10n.homeReady,
+                          2 => l10n.configTopSubtitle,
                           _ => null,
                         },
                         trailing: switch (_currentIndex) {
@@ -402,7 +398,7 @@ class PlaceholderScreen extends StatelessWidget {
           Icon(icon, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
-            '$title — coming soon',
+            l10n.comingSoon(title),
             style: TextStyle(
               color: Colors.grey.shade500,
               fontSize: 18,
