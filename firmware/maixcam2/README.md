@@ -57,5 +57,6 @@ verified byte-for-byte against the robot's currently installed script.
 - Commands: `{"cmd":"track_start","box":[x,y,w,h],"label":"kardus"}` (top-left x/y in
   stream pixels) answers `{"event":"track_started","track_id":n}` or
   `{"event":"track_error","error":...}`; `{"cmd":"track_stop"}` answers `track_stopped`.
-  A track stops by itself after `TRACK_LOST_FRAMES` low-score frames.
+  A lost item is not dropped: after `TRACK_REFIND_AFTER` low-score calls the tracker searches
+  the whole frame, and the box comes back with the same `track_id` when it finds the item.
 - A `[FPS]` line every 5 s on the console gives fps and ms per stage.

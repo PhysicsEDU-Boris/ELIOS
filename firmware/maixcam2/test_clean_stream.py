@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-NAMES = {'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_LOST_FRAMES', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
+NAMES = {'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'NOMINAL_FX', 'track', 'parse_track_box', 'box_det', 'track_frame',
          'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES'}
 
@@ -97,25 +97,19 @@ class FakeTracker:
 
 
 class TrackFrameTest(unittest.TestCase):
-    def test_init_follow_and_lose(self):
-        tracker = FakeTracker([0.9, 0.2, 0.2, 0.9])
+    def test_init_follow_lose_and_find_again(self):
+        tracker = FakeTracker([0.9] + [0.2] * 50 + [0.9])
         M = load(tracker=tracker, print=lambda *a: None)
-        M['TRACK_LOST_FRAMES'] = 3
         M['track'].update(pending=(5, 6, 20, 30), id=4, label='kardus')
         first = M['track_frame'](None)
         self.assertEqual(tracker.inits, [(5, 6, 20, 30)])
         self.assertEqual(first, {'label': 'kardus', 'score': 1.0, 'x': 15, 'y': 21, 'w': 20, 'h': 30,
                                  'track_id': 4})
         self.assertEqual(M['track_frame'](None)['x'], 25)  # centre of the tracked box
-        self.assertIsNone(M['track_frame'](None))  # low score: not sent, still tracking
+        for _ in range(50):  # lost for ~10 s: nothing sent, but still searching
+            self.assertIsNone(M['track_frame'](None))
         self.assertTrue(M['track']['on'])
-        self.assertIsNone(M['track_frame'](None))
-        self.assertTrue(M['track']['on'])
-        M['track']['misses'] = 2
-        tracker.scores.insert(0, 0.1)
-        self.assertIsNone(M['track_frame'](None))
-        self.assertFalse(M['track']['on'])  # lost: stopped, no box until the next track_start
-        self.assertIsNone(M['track_frame'](None))
+        self.assertEqual(M['track_frame'](None)['track_id'], 4)  # found again, same id
 
     def test_a_box_that_grows_or_shrinks_3x_is_not_sent(self):
         M = load(tracker=SimpleNamespace(init=lambda *a: None,

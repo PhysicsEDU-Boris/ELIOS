@@ -178,7 +178,10 @@ HAND_PATH    = "/root/models/hand_landmarks.mud"
 # fell to 8 fps (robot test, 4 Nov), every 2nd frame keeps it near 11.
 DET_EVERY_N_FRAMES = 2
 TRACK_TH       = 0.5   # MixFormerV2 score below this: the box is not sent that frame
-TRACK_LOST_FRAMES = 15 # that many low-score tracker calls in a row (~3 s): stop tracking
+# MixFormerV2 searches 4.5x the box around its last good position; after this many low-score
+# calls it searches the whole frame once (MaixCDK maix_nn_mixformer_v2.hpp). The default 60 was
+# never reached (a fast lift lost the item for good, phone test 4 Nov); 5 is ~1 s.
+TRACK_REFIND_AFTER = 5
 TRACK_MIN_SIDE = 8
 # A box more than 3x larger or smaller in area than the LOCK box is lost, not followed: a hand
 # lifting the item stretched it to twice the height (phone test, 4 Nov).
@@ -202,13 +205,14 @@ def _load(ctor, path):
         print("[AI] load FAILED:", path, "-", e)
         return None, str(e)
 
-tracker, tracker_error = _load(nn.MixFormerV2, TRACKER_PATH)
+tracker, tracker_error = _load(lambda model: nn.MixFormerV2(model=model, lost_find_interval=TRACK_REFIND_AFTER), TRACKER_PATH)
 hands, hands_error     = _load(nn.HandLandmarks, HAND_PATH)
 model_loaded     = tracker is not None and hands is not None
 model_load_error = tracker_error or hands_error
 
 # The app's LOCK box. pending = (x, y, w, h) waiting for the next frame to init on.
-track = {"pending": None, "on": False, "id": 0, "label": "", "misses": 0, "area": 1}
+# Tracking runs until track_stop or the next track_start: a lost item is searched for, not dropped.
+track = {"pending": None, "on": False, "id": 0, "label": "", "area": 1}
 
 def parse_track_box(box, img_w, img_h):
     """[x, y, w, h] top-left in stream pixels -> ints clipped to the frame. ValueError says why not."""
@@ -232,7 +236,7 @@ def track_frame(frame):
     """The tracked box for this frame as a detection, or None (nothing locked, or lost)."""
     if track["pending"] is not None:
         x, y, w, h = track["pending"]
-        track.update(pending=None, on=True, misses=0, area=w * h)
+        track.update(pending=None, on=True, area=w * h)
         tracker.init(frame, x, y, w, h)
         return dict(box_det(track["label"], x, y, w, h, 1.0), track_id=track["id"])
     if not track["on"]:
@@ -240,12 +244,7 @@ def track_frame(frame):
     o = tracker.track(frame, TRACK_TH)
     growth = o.w * o.h / track["area"]
     if o.score >= TRACK_TH and 1 / TRACK_MAX_GROWTH <= growth <= TRACK_MAX_GROWTH:
-        track["misses"] = 0
         return dict(box_det(track["label"], o.x, o.y, o.w, o.h, o.score), track_id=track["id"])
-    track["misses"] += 1
-    if track["misses"] >= TRACK_LOST_FRAMES:
-        track["on"] = False
-        print("[Track] lost track", track["id"])
     return None
 
 def hand_dets(frame):
@@ -486,7 +485,7 @@ async def ws_handler(websocket):
                     except ValueError as e:
                         await websocket.send(json.dumps({"event": "track_error", "error": str(e)}))
                     else:
-                        track.update(pending=box, on=False, misses=0, id=track["id"] + 1,
+                        track.update(pending=box, on=False, id=track["id"] + 1,
                                      label=str(data.get("label") or "Item")[:40])
                         await websocket.send(json.dumps({"event": "track_started", "track_id": track["id"]}))
                         print("[Track] start", track["id"], track["label"], box)
