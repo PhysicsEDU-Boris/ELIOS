@@ -10,6 +10,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../models/control_session.dart';
 import '../../theme/elio_tokens.dart';
 import '../learn/learn_ui.dart' show LearnTheme;
+import 'package:elio/l10n/l10n.dart';
 
 /// Dimmed and inert: disabled controls send nothing (R2, waiting/disconnected).
 Widget controlEnabled(bool enabled, Widget child) => Opacity(
@@ -188,7 +189,7 @@ class _DriveJoystickState extends State<DriveJoystick> {
         );
         return Center(
           child: Semantics(
-            label: 'Joystick: geser untuk menyetir, lepas untuk berhenti',
+            label: l10n.r2JoystickHint,
             // Claims the drag first, so a scrolling page (portrait) doesn't move under the thumb.
             child: GestureDetector(
               onVerticalDragStart: (_) {},
@@ -388,7 +389,7 @@ class GearChips extends StatelessWidget {
             child: Semantics(
               button: true,
               selected: speed.round() == g,
-              label: 'Kecepatan $g',
+              label: l10n.r2SpeedValue(g),
               excludeSemantics: true,
               child: Material(
                 color: speed.round() == g ? p.primary : p.surfaceRaised,
@@ -525,15 +526,15 @@ class PowerGlowButton extends StatelessWidget {
     final p = context.elio;
     final on = link == ControlLink.connected;
     final (word, color) = switch (link) {
-      ControlLink.connected => ('Online', p.primaryText),
-      ControlLink.waiting => ('Connecting...', p.secondaryText),
-      ControlLink.disconnected => ('Offline', p.errorText),
+      ControlLink.connected => (l10n.cfgOnline, p.primaryText),
+      ControlLink.waiting => (l10n.ctlConnecting, p.secondaryText),
+      ControlLink.disconnected => (l10n.ctlOffline, p.errorText),
     };
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Tooltip(
-          message: on || link == ControlLink.waiting ? 'Putuskan robot' : 'Hubungkan robot',
+          message: on || link == ControlLink.waiting ? l10n.ctlDisconnectRobot : l10n.ctlConnectRobot,
           child: Container(
             width: size,
             height: size,
@@ -561,7 +562,7 @@ class PowerGlowButton extends StatelessWidget {
             TextSpan(
               children: [
                 TextSpan(
-                  text: 'Robot ',
+                  text: l10n.r2RobotPrefix,
                   style: TextStyle(color: p.textSecondary),
                 ),
                 TextSpan(

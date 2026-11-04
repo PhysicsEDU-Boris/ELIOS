@@ -397,7 +397,7 @@ class EliosAiCard extends StatelessWidget {
         AiCardState.error => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _alertLine(p, Icons.cloud_off_rounded, 'ELIOS AI is not reachable', p.errorText),
+              _alertLine(p, Icons.cloud_off_rounded, l10n.cfgAiUnreachable, p.errorText),
               Padding(
                 padding: const EdgeInsets.only(left: 28, top: 2),
                 child: Text(context.l10n.aiUnavailable, style: configCaption(p, color: p.textPrimary)),

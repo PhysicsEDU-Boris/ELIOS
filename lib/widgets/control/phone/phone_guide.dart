@@ -8,29 +8,18 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../theme/elio_tokens.dart';
 import '../../learn/learn_ui.dart' show LearnTheme;
+import 'package:elio/l10n/l10n.dart';
 
 class _Step {
   const _Step(this.title, this.body);
   final String title, body;
 }
 
-const _steps = [
-  _Step(
-    'Drive the robot',
-    'Push the green knob the way you want to go. Let go and the robot stops.',
-  ),
-  _Step(
-    'Big red STOP',
-    'Tap it any time something looks unsafe. Space or Esc work too.',
-  ),
-  _Step(
-    'Grab the item',
-    'When the item is close, press PICK UP. RELEASE drops it. HOME parks the arm.',
-  ),
-  _Step(
-    'Answer the quiz',
-    'After each scan ELIOS AI asks a question. Tap here to open it and win trophies!',
-  ),
+List<_Step> get _steps => [
+  _Step(l10n.guideDriveTitle, l10n.guideDriveBody),
+  _Step(l10n.guideStopTitle, l10n.guideStopBody),
+  _Step(l10n.guideGrabTitle, l10n.guideGrabBody),
+  _Step(l10n.guideQuizTitle, l10n.guideQuizBody),
 ];
 
 const guideStepCount = 5;
@@ -133,7 +122,7 @@ class _PhoneGuideState extends State<PhoneGuide> {
                 rect: stopRect,
                 child: Semantics(
                   button: true,
-                  label: 'Berhenti darurat',
+                  label: l10n.ctlEmergencyStop,
                   excludeSemantics: true,
                   onTap: widget.onStop,
                   child: GestureDetector(
@@ -320,7 +309,7 @@ class _StepCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'STEP ${step + 1} OF $guideStepCount',
+                      l10n.guideStepOf(step + 1, guideStepCount),
                       style: TextStyle(
                         color: p.primaryText,
                         fontSize: 11,
@@ -369,15 +358,15 @@ class _StepCard extends StatelessWidget {
                   backgroundColor: Colors.transparent,
                   minimumSize: const Size(44, 36),
                 ),
-                child: const Text(
-                  'Skip',
+                child: Text(
+                  l10n.guideSkip,
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
               const SizedBox(width: 4),
               _GreenButton(
                 key: const ValueKey('guide_next'),
-                label: 'Next',
+                label: l10n.guideNext,
                 onTap: onNext,
               ),
             ],
@@ -420,7 +409,7 @@ class _FinalCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Drive to an item, grab it, sort it, then answer ELIOS AI to earn trophies. Tap Guide any time to replay this.',
+            l10n.guideIntro,
             textAlign: TextAlign.center,
             style: TextStyle(color: p.textSecondary, fontSize: 13, height: 1.4),
           ),

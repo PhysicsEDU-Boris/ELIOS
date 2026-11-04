@@ -1615,6 +1615,1038 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try Again'**
   String get gradeTryAgain;
+
+  /// No description provided for @cfgIpHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an IP like 192.168.4.1'**
+  String get cfgIpHint;
+
+  /// No description provided for @cfgPortRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Port 1 to 65535'**
+  String get cfgPortRange;
+
+  /// No description provided for @cfgFoundAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Found ELIO at {ip}'**
+  String cfgFoundAt(Object ip);
+
+  /// No description provided for @cfgNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIO not found on this Wi-Fi'**
+  String get cfgNotFound;
+
+  /// No description provided for @cfgRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get cfgRetry;
+
+  /// No description provided for @cfgCameraSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera source'**
+  String get cfgCameraSource;
+
+  /// No description provided for @cfgCameraSourceSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Which camera takes the scan photo'**
+  String get cfgCameraSourceSub;
+
+  /// No description provided for @cfgMaixDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot camera over the ELIOS Wi-Fi'**
+  String get cfgMaixDesc;
+
+  /// No description provided for @cfgPhoneCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone camera'**
+  String get cfgPhoneCamera;
+
+  /// No description provided for @cfgPhoneCameraDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan with this phone, no robot needed'**
+  String get cfgPhoneCameraDesc;
+
+  /// No description provided for @cfgQuizQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz questions'**
+  String get cfgQuizQuestions;
+
+  /// No description provided for @cfgQuizQuestionsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Where the scan quiz gets its questions'**
+  String get cfgQuizQuestionsSub;
+
+  /// No description provided for @cfgStartScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Start scan'**
+  String get cfgStartScan;
+
+  /// No description provided for @cfgConnectNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect now'**
+  String get cfgConnectNow;
+
+  /// No description provided for @cfgDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get cfgDisconnect;
+
+  /// No description provided for @cfgConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get cfgConnecting;
+
+  /// No description provided for @cfgCancelConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel connecting'**
+  String get cfgCancelConnecting;
+
+  /// No description provided for @cfgConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get cfgConnected;
+
+  /// No description provided for @cfgTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get cfgTryAgain;
+
+  /// No description provided for @cfgConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection'**
+  String get cfgConnection;
+
+  /// No description provided for @cfgWsAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIO WebSocket address'**
+  String get cfgWsAddress;
+
+  /// No description provided for @cfgPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get cfgPort;
+
+  /// No description provided for @cfgSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching…'**
+  String get cfgSearching;
+
+  /// No description provided for @cfgFindElio.
+  ///
+  /// In en, this message translates to:
+  /// **'Find ELIO'**
+  String get cfgFindElio;
+
+  /// No description provided for @cfgRobotNotUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot not used'**
+  String get cfgRobotNotUsed;
+
+  /// No description provided for @cfgConnectingTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to {endpoint}'**
+  String cfgConnectingTo(Object endpoint);
+
+  /// No description provided for @cfgLastTryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Last try failed'**
+  String get cfgLastTryFailed;
+
+  /// No description provided for @cfgNotConnectedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected yet'**
+  String get cfgNotConnectedYet;
+
+  /// No description provided for @cfgNotUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not used'**
+  String get cfgNotUsed;
+
+  /// No description provided for @cfgOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get cfgOnline;
+
+  /// No description provided for @cfgConnectingShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting'**
+  String get cfgConnectingShort;
+
+  /// No description provided for @cfgOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get cfgOffline;
+
+  /// No description provided for @cfgStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get cfgStatus;
+
+  /// No description provided for @cfgBattery.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery'**
+  String get cfgBattery;
+
+  /// No description provided for @cfgNotReported.
+  ///
+  /// In en, this message translates to:
+  /// **'not reported'**
+  String get cfgNotReported;
+
+  /// No description provided for @cfgCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get cfgCamera;
+
+  /// No description provided for @cfgPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get cfgPhone;
+
+  /// No description provided for @cfgRobotModel.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIO robot 3D model, drag to rotate'**
+  String get cfgRobotModel;
+
+  /// No description provided for @cfgQuestionBankDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked questions, instant'**
+  String get cfgQuestionBankDesc;
+
+  /// No description provided for @cfgAiDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'New questions each scan, needs internet'**
+  String get cfgAiDesc;
+
+  /// No description provided for @cfgAiUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI is not reachable'**
+  String get cfgAiUnreachable;
+
+  /// No description provided for @setConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection'**
+  String get setConnection;
+
+  /// No description provided for @setAutoReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-reconnect'**
+  String get setAutoReconnect;
+
+  /// No description provided for @setAutoReconnectSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect when ELIO is available again'**
+  String get setAutoReconnectSub;
+
+  /// No description provided for @setVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get setVideo;
+
+  /// No description provided for @setResolution.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolution'**
+  String get setResolution;
+
+  /// No description provided for @setResolutionSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher looks sharper but uses more Wi-Fi'**
+  String get setResolutionSub;
+
+  /// No description provided for @setShowFps.
+  ///
+  /// In en, this message translates to:
+  /// **'Show FPS overlay'**
+  String get setShowFps;
+
+  /// No description provided for @setShowFpsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show stream speed while viewing'**
+  String get setShowFpsSub;
+
+  /// No description provided for @setSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound'**
+  String get setSound;
+
+  /// No description provided for @setSoundEffects.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound effects'**
+  String get setSoundEffects;
+
+  /// No description provided for @setSoundEffectsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'UI and robot feedback sounds'**
+  String get setSoundEffectsSub;
+
+  /// No description provided for @setMasterVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Master volume'**
+  String get setMasterVolume;
+
+  /// No description provided for @setMasterVolumeValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Master volume {percent}%'**
+  String setMasterVolumeValue(Object percent);
+
+  /// No description provided for @setQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz'**
+  String get setQuiz;
+
+  /// No description provided for @setDifficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty'**
+  String get setDifficulty;
+
+  /// No description provided for @setEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get setEasy;
+
+  /// No description provided for @setMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get setMedium;
+
+  /// No description provided for @setHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get setHard;
+
+  /// No description provided for @setTimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Timer'**
+  String get setTimer;
+
+  /// No description provided for @setTimerSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Time for each question'**
+  String get setTimerSub;
+
+  /// No description provided for @setAllowSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow skipping'**
+  String get setAllowSkip;
+
+  /// No description provided for @setAllowSkipSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Learners can skip a question'**
+  String get setAllowSkipSub;
+
+  /// No description provided for @qrIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on this phone\'s hotspot (2.4 GHz) and type its name and password. On the robot screen tap Wi-Fi setup, then hold this QR in front of the camera.'**
+  String get qrIntro;
+
+  /// No description provided for @qrSsid.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotspot name (SSID)'**
+  String get qrSsid;
+
+  /// No description provided for @qrPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotspot password'**
+  String get qrPassword;
+
+  /// No description provided for @qrShowPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get qrShowPassword;
+
+  /// No description provided for @qrHidePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get qrHidePassword;
+
+  /// No description provided for @qrShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show QR'**
+  String get qrShow;
+
+  /// No description provided for @qrSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Wi-Fi QR code for {ssid}'**
+  String qrSemantics(Object ssid);
+
+  /// No description provided for @ctlWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get ctlWaiting;
+
+  /// No description provided for @ctlOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get ctlOffline;
+
+  /// No description provided for @ctlStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get ctlStopped;
+
+  /// No description provided for @ctlForward.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward'**
+  String get ctlForward;
+
+  /// No description provided for @ctlBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get ctlBack;
+
+  /// No description provided for @ctlLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Left'**
+  String get ctlLeft;
+
+  /// No description provided for @ctlRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Right'**
+  String get ctlRight;
+
+  /// No description provided for @ctlReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get ctlReady;
+
+  /// No description provided for @ctlHoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Homing'**
+  String get ctlHoming;
+
+  /// No description provided for @ctlExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get ctlExit;
+
+  /// No description provided for @ctlDebugScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Debug Scan'**
+  String get ctlDebugScan;
+
+  /// No description provided for @ctlPushToDrive.
+  ///
+  /// In en, this message translates to:
+  /// **'Push to drive · let go to stop'**
+  String get ctlPushToDrive;
+
+  /// No description provided for @ctlUnlocksOnConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocks when the robot connects'**
+  String get ctlUnlocksOnConnect;
+
+  /// No description provided for @ctlSpeedPwm.
+  ///
+  /// In en, this message translates to:
+  /// **'SPEED (PWM)'**
+  String get ctlSpeedPwm;
+
+  /// No description provided for @ctlSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get ctlSpeed;
+
+  /// No description provided for @ctlPickUp.
+  ///
+  /// In en, this message translates to:
+  /// **'PICK UP'**
+  String get ctlPickUp;
+
+  /// No description provided for @ctlRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'RELEASE'**
+  String get ctlRelease;
+
+  /// No description provided for @ctlGripperCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'GRIPPER'**
+  String get ctlGripperCaps;
+
+  /// No description provided for @ctlGripper.
+  ///
+  /// In en, this message translates to:
+  /// **'Gripper'**
+  String get ctlGripper;
+
+  /// No description provided for @ctlHeight.
+  ///
+  /// In en, this message translates to:
+  /// **'HEIGHT'**
+  String get ctlHeight;
+
+  /// No description provided for @ctlUpDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Up / Down'**
+  String get ctlUpDown;
+
+  /// No description provided for @ctlReach.
+  ///
+  /// In en, this message translates to:
+  /// **'REACH'**
+  String get ctlReach;
+
+  /// No description provided for @ctlFwdBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Fwd / Back'**
+  String get ctlFwdBack;
+
+  /// No description provided for @ctlArmHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Slide up to lift, slide forward to reach. The arm only moves when the robot is not STOPPED.'**
+  String get ctlArmHint;
+
+  /// No description provided for @ctlArmLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Arm controls unlock when the robot is connected. STOP always works.'**
+  String get ctlArmLocked;
+
+  /// No description provided for @ctlAiBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI is busy. Try LOCK again in a moment.'**
+  String get ctlAiBusy;
+
+  /// No description provided for @ctlNoItem.
+  ///
+  /// In en, this message translates to:
+  /// **'No item found. Point the camera at one item and try again.'**
+  String get ctlNoItem;
+
+  /// No description provided for @ctlBaseLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Base left'**
+  String get ctlBaseLeft;
+
+  /// No description provided for @ctlBaseRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Base right'**
+  String get ctlBaseRight;
+
+  /// No description provided for @ctlRobotControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot Control'**
+  String get ctlRobotControl;
+
+  /// No description provided for @ctlDrive.
+  ///
+  /// In en, this message translates to:
+  /// **'DRIVE'**
+  String get ctlDrive;
+
+  /// No description provided for @ctlLiveScanPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'LIVE · scan paused'**
+  String get ctlLiveScanPaused;
+
+  /// No description provided for @ctlLiveFps.
+  ///
+  /// In en, this message translates to:
+  /// **'LIVE · {fps} fps'**
+  String ctlLiveFps(Object fps);
+
+  /// No description provided for @ctlNoVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'No video'**
+  String get ctlNoVideo;
+
+  /// No description provided for @ctlNoVideoCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'NO VIDEO'**
+  String get ctlNoVideoCaps;
+
+  /// No description provided for @ctlConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting...'**
+  String get ctlConnecting;
+
+  /// No description provided for @ctlScanQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan quiz'**
+  String get ctlScanQuiz;
+
+  /// No description provided for @ctlVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get ctlVoice;
+
+  /// No description provided for @ctlWaitingFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected. Waiting for camera frames...'**
+  String get ctlWaitingFrames;
+
+  /// No description provided for @ctlArm.
+  ///
+  /// In en, this message translates to:
+  /// **'ARM'**
+  String get ctlArm;
+
+  /// No description provided for @ctlUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'UNLOCK'**
+  String get ctlUnlock;
+
+  /// No description provided for @ctlLock.
+  ///
+  /// In en, this message translates to:
+  /// **'LOCK'**
+  String get ctlLock;
+
+  /// No description provided for @ctlScan.
+  ///
+  /// In en, this message translates to:
+  /// **'SCAN'**
+  String get ctlScan;
+
+  /// No description provided for @ctlDisconnectRobot.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect robot'**
+  String get ctlDisconnectRobot;
+
+  /// No description provided for @ctlConnectRobot.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect robot'**
+  String get ctlConnectRobot;
+
+  /// No description provided for @ctlGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Guide'**
+  String get ctlGuide;
+
+  /// No description provided for @ctlStoppedPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot stopped · scanning paused'**
+  String get ctlStoppedPaused;
+
+  /// No description provided for @ctlRobotOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot offline'**
+  String get ctlRobotOffline;
+
+  /// No description provided for @ctlTurnOnRobot.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on the robot and join the ELIOS Wi-Fi.'**
+  String get ctlTurnOnRobot;
+
+  /// No description provided for @ctlConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get ctlConnect;
+
+  /// No description provided for @ctlEmergencyStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency stop'**
+  String get ctlEmergencyStop;
+
+  /// No description provided for @ctlPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Power'**
+  String get ctlPower;
+
+  /// No description provided for @ctlMaixConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'MaixCAM2 connected'**
+  String get ctlMaixConnected;
+
+  /// No description provided for @ctlDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnected'**
+  String get ctlDisconnected;
+
+  /// No description provided for @ctlPickZone.
+  ///
+  /// In en, this message translates to:
+  /// **'PICK ZONE'**
+  String get ctlPickZone;
+
+  /// No description provided for @ctlKeepTabletOnWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn the robot on and keep this tablet on the ELIOS Wi-Fi.'**
+  String get ctlKeepTabletOnWifi;
+
+  /// No description provided for @ctlRetryingIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying in {s} s · attempt {attempt} of {max}'**
+  String ctlRetryingIn(Object s, Object attempt, Object max);
+
+  /// No description provided for @ctlAutoReconnectOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-reconnect is off'**
+  String get ctlAutoReconnectOff;
+
+  /// No description provided for @ctlStoppedRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped retrying after {max} tries'**
+  String ctlStoppedRetrying(Object max);
+
+  /// No description provided for @ctlTryingAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Trying again · attempt {attempt} of {max}'**
+  String ctlTryingAgain(Object attempt, Object max);
+
+  /// No description provided for @ctlLinkDropped.
+  ///
+  /// In en, this message translates to:
+  /// **'The robot link dropped, so the robot stopped for safety.'**
+  String get ctlLinkDropped;
+
+  /// No description provided for @ctlOpenQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Open quiz'**
+  String get ctlOpenQuiz;
+
+  /// No description provided for @ctlMission.
+  ///
+  /// In en, this message translates to:
+  /// **'MISSION'**
+  String get ctlMission;
+
+  /// No description provided for @ctlSortItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort {count} items this drive'**
+  String ctlSortItems(Object count);
+
+  /// No description provided for @ctlThisDrive.
+  ///
+  /// In en, this message translates to:
+  /// **'THIS DRIVE'**
+  String get ctlThisDrive;
+
+  /// No description provided for @ctlElioSays.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIO SAYS'**
+  String get ctlElioSays;
+
+  /// No description provided for @ctlMissionOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Mission {done} of {target}'**
+  String ctlMissionOf(Object done, Object target);
+
+  /// No description provided for @ctlSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drive close, pick it up, sort it right!'**
+  String get ctlSubtitle;
+
+  /// No description provided for @ctlLinkLost.
+  ///
+  /// In en, this message translates to:
+  /// **'link lost'**
+  String get ctlLinkLost;
+
+  /// No description provided for @ctlStopButton.
+  ///
+  /// In en, this message translates to:
+  /// **'STOP button'**
+  String get ctlStopButton;
+
+  /// No description provided for @ctlRobotError.
+  ///
+  /// In en, this message translates to:
+  /// **'robot error'**
+  String get ctlRobotError;
+
+  /// No description provided for @ctlRobotStoppedWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot STOPPED · {why}'**
+  String ctlRobotStoppedWhy(Object why);
+
+  /// No description provided for @ctlHoldForHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold 1 second for HOME'**
+  String get ctlHoldForHome;
+
+  /// No description provided for @ctlRobotStoppedLong.
+  ///
+  /// In en, this message translates to:
+  /// **'ROBOT STOPPED ({why}). Scanning stopped; an open quiz can still be answered.'**
+  String ctlRobotStoppedLong(Object why);
+
+  /// No description provided for @guideDriveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drive the robot'**
+  String get guideDriveTitle;
+
+  /// No description provided for @guideDriveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Push the green knob the way you want to go. Let go and the robot stops.'**
+  String get guideDriveBody;
+
+  /// No description provided for @guideStopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Big red STOP'**
+  String get guideStopTitle;
+
+  /// No description provided for @guideStopBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap it any time something looks unsafe. Space or Esc work too.'**
+  String get guideStopBody;
+
+  /// No description provided for @guideGrabTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Grab the item'**
+  String get guideGrabTitle;
+
+  /// No description provided for @guideGrabBody.
+  ///
+  /// In en, this message translates to:
+  /// **'When the item is close, press PICK UP. RELEASE drops it. HOME parks the arm.'**
+  String get guideGrabBody;
+
+  /// No description provided for @guideQuizTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer the quiz'**
+  String get guideQuizTitle;
+
+  /// No description provided for @guideQuizBody.
+  ///
+  /// In en, this message translates to:
+  /// **'After each scan ELIOS AI asks a question. Tap here to open it and win trophies!'**
+  String get guideQuizBody;
+
+  /// No description provided for @guideStepOf.
+  ///
+  /// In en, this message translates to:
+  /// **'STEP {step} OF {total}'**
+  String guideStepOf(Object step, Object total);
+
+  /// No description provided for @guideSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get guideSkip;
+
+  /// No description provided for @guideNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get guideNext;
+
+  /// No description provided for @guideIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Drive to an item, grab it, sort it, then answer ELIOS AI to earn trophies. Tap Guide any time to replay this.'**
+  String get guideIntro;
+
+  /// No description provided for @r2JoystickHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Joystick: slide to steer, let go to stop'**
+  String get r2JoystickHint;
+
+  /// No description provided for @r2SpeedValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed {value}'**
+  String r2SpeedValue(Object value);
+
+  /// No description provided for @r2RobotPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot '**
+  String get r2RobotPrefix;
+
+  /// No description provided for @dsAiOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI offline · question bank'**
+  String get dsAiOffline;
+
+  /// No description provided for @dsAiReady.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI ready'**
+  String get dsAiReady;
+
+  /// No description provided for @dsBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get dsBack;
+
+  /// No description provided for @dsLive.
+  ///
+  /// In en, this message translates to:
+  /// **'LIVE'**
+  String get dsLive;
+
+  /// No description provided for @dsNoCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'No camera'**
+  String get dsNoCamera;
+
+  /// No description provided for @dsBankMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank mode'**
+  String get dsBankMode;
+
+  /// No description provided for @dsPutItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Put one item inside the white box, then tap Scan.'**
+  String get dsPutItem;
+
+  /// No description provided for @dsScanMakeQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan and make quiz'**
+  String get dsScanMakeQuiz;
+
+  /// No description provided for @dsScanMakeQuizShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan & make quiz'**
+  String get dsScanMakeQuizShort;
+
+  /// No description provided for @dsTiming.
+  ///
+  /// In en, this message translates to:
+  /// **'About 2–4 s · needs internet'**
+  String get dsTiming;
+
+  /// No description provided for @dsSwitchCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch camera'**
+  String get dsSwitchCamera;
+
+  /// No description provided for @dsTestModeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Test mode: quiz without the camera'**
+  String get dsTestModeHint;
+
+  /// No description provided for @dsTestMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Test mode'**
+  String get dsTestMode;
 }
 
 class _AppLocalizationsDelegate

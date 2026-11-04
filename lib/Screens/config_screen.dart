@@ -29,12 +29,12 @@ String? validateIp(String? value) {
   final parts = (value ?? '').trim().split('.');
   final ok = parts.length == 4 &&
       parts.every((s) => s.isNotEmpty && s.length <= 3 && (int.tryParse(s) ?? 256) <= 255);
-  return ok ? null : 'Enter an IP like 192.168.4.1';
+  return ok ? null : l10n.cfgIpHint;
 }
 
 String? validatePort(String? value) {
   final n = int.tryParse(value ?? '');
-  return n == null || n < 1 || n > 65535 ? 'Port 1 to 65535' : null;
+  return n == null || n < 1 || n > 65535 ? l10n.cfgPortRange : null;
 }
 
 /// C1 Config tab "Connect ELIO" (decision 0145, Figma 337:2358). The title and
@@ -112,7 +112,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     ScaffoldMessenger.of(context)
       ..removeCurrentSnackBar()
       ..showSnackBar(SnackBar(
-          content: Text(ip != null ? 'Found ELIO at $ip' : 'ELIO not found on this Wi-Fi')));
+          content: Text(ip != null ? l10n.cfgFoundAt(ip) : l10n.cfgNotFound)));
   }
 
   /// The failure snackbar is only for a card the user scrolled away from;
@@ -137,7 +137,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
             Expanded(child: Text(context.l10n.configConnectionFailed)),
           ],
         ),
-        action: SnackBarAction(label: 'Retry', textColor: p.primaryText, onPressed: _connect),
+        action: SnackBarAction(label: l10n.cfgRetry, textColor: p.primaryText, onPressed: _connect),
       ));
   }
 
@@ -192,20 +192,20 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                       const EliosAiCard(),
                       if (testerBuild) const TesterPanel(),
                       const SizedBox(height: 24),
-                      const ConfigSectionHeader('Camera source', 'Which camera takes the scan photo'),
+                      ConfigSectionHeader(l10n.cfgCameraSource, l10n.cfgCameraSourceSub),
                       const SizedBox(height: 12),
                       _TilePair(
                         left: ChoiceTile(
                           icon: Icons.photo_camera_outlined,
                           title: 'MaixCAM2',
-                          description: 'Robot camera over the ELIOS Wi-Fi',
+                          description: l10n.cfgMaixDesc,
                           selected: !deviceMode,
                           onTap: () => _setCameraSource(CameraSource.maixCam2),
                         ),
                         right: ChoiceTile(
                           icon: Icons.smartphone_outlined,
-                          title: 'Phone camera',
-                          description: 'Scan with this phone, no robot needed',
+                          title: l10n.cfgPhoneCamera,
+                          description: l10n.cfgPhoneCameraDesc,
                           selected: deviceMode,
                           onTap: () => _setCameraSource(CameraSource.device),
                         ),
@@ -213,7 +213,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                       const SizedBox(height: 12),
                       if (deviceMode) _startScanCard(p) else _connectionCardFor(p, view, link),
                       const SizedBox(height: 24),
-                      const ConfigSectionHeader('Quiz questions', 'Where the scan quiz gets its questions'),
+                      ConfigSectionHeader(l10n.cfgQuizQuestions, l10n.cfgQuizQuestionsSub),
                       const SizedBox(height: 12),
                       const _QuizSourceTiles(),
                     ],
@@ -236,7 +236,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
           children: [
             Text(context.l10n.configPhoneOnlyHint, style: configBody(p)),
             const SizedBox(height: 12),
-            ConfigButton(label: 'Start scan', icon: Icons.center_focus_strong_outlined, onPressed: _openDeviceScan),
+            ConfigButton(label: l10n.cfgStartScan, icon: Icons.center_focus_strong_outlined, onPressed: _openDeviceScan),
           ],
         ),
       );
@@ -246,26 +246,26 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     final failed = view == LinkView.failed;
     final (Widget first, Widget second) = switch (view) {
       LinkView.notConnected => (
-          ConfigButton(label: 'Connect now', icon: Icons.power_outlined, onPressed: _connect),
-          const ConfigButton(label: 'Disconnect', icon: Icons.link_off_rounded, primary: false, destructive: true, onPressed: null),
+          ConfigButton(label: l10n.cfgConnectNow, icon: Icons.power_outlined, onPressed: _connect),
+          ConfigButton(label: l10n.cfgDisconnect, icon: Icons.link_off_rounded, primary: false, destructive: true, onPressed: null),
         ),
       LinkView.connecting => (
-          const ConfigButton(label: 'Connecting…', busy: true, onPressed: null),
+          ConfigButton(label: l10n.cfgConnecting, busy: true, onPressed: null),
           ConfigButton(
-            label: 'Cancel',
+            label: l10n.commonCancel,
             icon: Icons.link_off_rounded,
             primary: false,
             onPressed: _disconnect,
-            semanticsLabel: 'Cancel connecting',
+            semanticsLabel: l10n.cfgCancelConnecting,
           ),
         ),
       LinkView.connected => (
-          const ConfigButton(label: 'Connected', icon: Icons.check_rounded, onPressed: null),
-          ConfigButton(label: 'Disconnect', icon: Icons.link_off_rounded, primary: false, destructive: true, onPressed: _disconnect),
+          ConfigButton(label: l10n.cfgConnected, icon: Icons.check_rounded, onPressed: null),
+          ConfigButton(label: l10n.cfgDisconnect, icon: Icons.link_off_rounded, primary: false, destructive: true, onPressed: _disconnect),
         ),
       LinkView.failed => (
-          ConfigButton(label: 'Try again', icon: Icons.refresh_rounded, onPressed: _connect),
-          const ConfigButton(label: 'Disconnect', icon: Icons.link_off_rounded, primary: false, destructive: true, onPressed: null),
+          ConfigButton(label: l10n.cfgTryAgain, icon: Icons.refresh_rounded, onPressed: _connect),
+          ConfigButton(label: l10n.cfgDisconnect, icon: Icons.link_off_rounded, primary: false, destructive: true, onPressed: null),
         ),
     };
     return ConfigCard(
@@ -275,7 +275,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const ConfigCardHeader(icon: Icons.wifi_rounded, title: 'Connection', subtitle: 'ELIO WebSocket address'),
+            ConfigCardHeader(icon: Icons.wifi_rounded, title: l10n.cfgConnection, subtitle: l10n.cfgWsAddress),
             if (failed) ...[
               const SizedBox(height: 16),
               Semantics(
@@ -326,7 +326,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                 SizedBox(
                   width: 116,
                   child: _AddressField(
-                    label: 'Port',
+                    label: l10n.cfgPort,
                     controller: _port,
                     icon: Icons.tag_rounded,
                     enabled: !connecting,
@@ -344,7 +344,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                 children: [
                   Expanded(
                     child: ConfigButton(
-                      label: _finding ? 'Searching…' : 'Find ELIO',
+                      label: _finding ? l10n.cfgSearching : l10n.cfgFindElio,
                       icon: Icons.travel_explore_rounded,
                       busy: _finding,
                       primary: false,
@@ -354,7 +354,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ConfigButton(
-                      label: 'Robot Wi-Fi QR',
+                      label: l10n.robotWifiQr,
                       icon: Icons.qr_code_2_rounded,
                       primary: false,
                       onPressed: () => showRobotWifiQrSheet(context),
@@ -499,20 +499,20 @@ class _RobotHero extends StatelessWidget {
     final connected = !deviceMode && view == LinkView.connected;
     final onHero = connected ? p.onPrimary : p.textPrimary;
     final subtitle = deviceMode
-        ? 'Robot not used'
+        ? l10n.cfgRobotNotUsed
         : switch (view) {
             LinkView.connected => '$endpoint · MaixCAM2',
-            LinkView.connecting => 'Connecting to $endpoint',
-            LinkView.failed => 'Last try failed',
-            LinkView.notConnected => 'Not connected yet',
+            LinkView.connecting => l10n.cfgConnectingTo(endpoint),
+            LinkView.failed => l10n.cfgLastTryFailed,
+            LinkView.notConnected => l10n.cfgNotConnectedYet,
           };
     final (statusText, dot) = deviceMode
-        ? ('Not used', p.textTertiary)
+        ? (l10n.cfgNotUsed, p.textTertiary)
         : switch (view) {
-            LinkView.connected => ('Online', p.primaryText),
-            LinkView.connecting => ('Connecting', p.secondaryText),
-            LinkView.failed => ('Offline', p.errorText),
-            LinkView.notConnected => ('Offline', p.textTertiary),
+            LinkView.connected => (l10n.cfgOnline, p.primaryText),
+            LinkView.connecting => (l10n.cfgConnectingShort, p.secondaryText),
+            LinkView.failed => (l10n.cfgOffline, p.errorText),
+            LinkView.notConnected => (l10n.cfgOffline, p.textTertiary),
           };
     return DecoratedBox(
       decoration: ShapeDecoration(
@@ -601,7 +601,7 @@ class _RobotHero extends StatelessWidget {
                   child: Semantics(
                     liveRegion: true,
                     child: StatusTile(
-                      label: 'Status',
+                      label: l10n.cfgStatus,
                       value: statusText,
                       leading: Container(
                         width: 8,
@@ -615,9 +615,9 @@ class _RobotHero extends StatelessWidget {
                 // The robot does not report its battery: never show a made-up value.
                 Expanded(
                   child: StatusTile(
-                    label: 'Battery',
+                    label: l10n.cfgBattery,
                     value: '—',
-                    semanticsValue: 'not reported',
+                    semanticsValue: l10n.cfgNotReported,
                     leading: RotatedBox(
                       quarterTurns: 1,
                       child: Icon(Icons.battery_3_bar_rounded, size: 16, color: p.textSecondary),
@@ -625,7 +625,7 @@ class _RobotHero extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Expanded(child: StatusTile(label: 'Camera', value: deviceMode ? 'Phone' : 'MaixCAM2')),
+                Expanded(child: StatusTile(label: l10n.cfgCamera, value: deviceMode ? l10n.cfgPhone : 'MaixCAM2')),
               ],
             ),
           ],
@@ -653,7 +653,7 @@ class _ElioModelViewerState extends State<_ElioModelViewer> {
     final p = context.elio;
     if (_hasError) return Center(child: Icon(Icons.smart_toy_rounded, size: 72, color: p.primaryText));
     return Semantics(
-      label: 'ELIO robot 3D model, drag to rotate',
+      label: l10n.cfgRobotModel,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -699,8 +699,8 @@ class _QuizSourceTiles extends ConsumerWidget {
         return _TilePair(
           left: ChoiceTile(
             icon: Icons.storage_rounded,
-            title: 'Question bank',
-            description: 'Checked questions, instant',
+            title: l10n.questionBank,
+            description: l10n.cfgQuestionBankDesc,
             selected: shown == QuestionSource.bank,
             onTap: () => choose(QuestionSource.bank),
           ),
@@ -716,7 +716,7 @@ class _QuizSourceTiles extends ConsumerWidget {
               child: Center(child: EliosAiLogo(state: aiCardState(status), size: 26)),
             ),
             title: 'ELIOS AI',
-            description: 'New questions each scan, needs internet',
+            description: l10n.cfgAiDesc,
             selected: shown == QuestionSource.ai,
             onTap: () => choose(QuestionSource.ai),
           ),

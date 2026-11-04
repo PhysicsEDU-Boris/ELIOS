@@ -31,7 +31,7 @@ class ConfigSettingsButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 12),
       child: IconButton(
-        tooltip: 'Settings',
+        tooltip: l10n.settingsTitle,
         onPressed: () => showConfigSettingsSheet(context),
         style: IconButton.styleFrom(
           minimumSize: const Size.square(48),
@@ -96,7 +96,7 @@ class ConfigSettingsSheet extends ConsumerWidget {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Close',
+                    tooltip: l10n.commonClose,
                     onPressed: () => Navigator.of(context).pop(),
                     style: IconButton.styleFrom(
                       minimumSize: const Size.square(48),
@@ -113,28 +113,28 @@ class ConfigSettingsSheet extends ConsumerWidget {
                 controller: scroll,
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 children: [
-                  const _Overline('Connection'),
+                  _Overline(l10n.setConnection),
                   ConfigCard(
                     child: _SwitchRow(
                       icon: Icons.sync_rounded,
-                      title: 'Auto-reconnect',
-                      subtitle: 'Reconnect when ELIO is available again',
+                      title: l10n.setAutoReconnect,
+                      subtitle: l10n.setAutoReconnectSub,
                       value: esp.autoReconnect,
                       onChanged: (v) => patchEsp((c) => c.copyWith(autoReconnect: v)),
                     ),
                   ),
-                  const _Overline('Video'),
+                  _Overline(l10n.setVideo),
                   ConfigCard(
                     child: Column(
                       children: [
-                        const _RowHeader(
+                        _RowHeader(
                           icon: Icons.desktop_windows_outlined,
-                          title: 'Resolution',
-                          subtitle: 'Higher looks sharper but uses more Wi-Fi',
+                          title: l10n.setResolution,
+                          subtitle: l10n.setResolutionSub,
                         ),
                         const SizedBox(height: 12),
                         ConfigSegmented(
-                          label: 'Resolution',
+                          label: l10n.setResolution,
                           options: const ['480p', '720p'],
                           selected: esp.resolutionPreset,
                           onSelected: (v) => patchEsp((c) => c.copyWith(resolutionPreset: v)),
@@ -142,29 +142,29 @@ class ConfigSettingsSheet extends ConsumerWidget {
                         const _Divider(),
                         _SwitchRow(
                           icon: Icons.speed_rounded,
-                          title: 'Show FPS overlay',
-                          subtitle: 'Show stream speed while viewing',
+                          title: l10n.setShowFps,
+                          subtitle: l10n.setShowFpsSub,
                           value: esp.showFpsOverlay,
                           onChanged: (v) => patchEsp((c) => c.copyWith(showFpsOverlay: v)),
                         ),
                       ],
                     ),
                   ),
-                  const _Overline('Sound'),
+                  _Overline(l10n.setSound),
                   ConfigCard(
                     child: Column(
                       children: [
                         _SwitchRow(
                           icon: Icons.music_note_outlined,
-                          title: 'Sound effects',
-                          subtitle: 'UI and robot feedback sounds',
+                          title: l10n.setSoundEffects,
+                          subtitle: l10n.setSoundEffectsSub,
                           value: prefs.soundEffects,
                           onChanged: (v) => patchPrefs((s) => s.copyWith(soundEffects: v)),
                         ),
                         const _Divider(),
                         _RowHeader(
                           icon: Icons.volume_up_outlined,
-                          title: 'Master volume',
+                          title: l10n.setMasterVolume,
                           trailing: Text('${(prefs.masterVolume * 100).round()}%',
                               style: configStrong(p, color: p.primaryText)),
                         ),
@@ -176,7 +176,7 @@ class ConfigSettingsSheet extends ConsumerWidget {
                                 value: prefs.masterVolume,
                                 activeColor: p.primary,
                                 inactiveColor: p.surfaceRaised,
-                                semanticFormatterCallback: (v) => 'Master volume ${(v * 100).round()}%',
+                                semanticFormatterCallback: (v) => l10n.setMasterVolumeValue((v * 100).round()),
                                 onChanged: (v) => patchPrefs((s) => s.copyWith(masterVolume: v)),
                               ),
                             ),
@@ -186,23 +186,23 @@ class ConfigSettingsSheet extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const _Overline('Quiz'),
+                  _Overline(l10n.setQuiz),
                   ConfigCard(
                     child: Column(
                       children: [
-                        const _RowHeader(icon: Icons.signal_cellular_alt_rounded, title: 'Difficulty'),
+                        _RowHeader(icon: Icons.signal_cellular_alt_rounded, title: l10n.setDifficulty),
                         const SizedBox(height: 12),
                         ConfigSegmented(
-                          label: 'Difficulty',
-                          options: const ['Easy', 'Medium', 'Hard'],
+                          label: l10n.setDifficulty,
+                          options: [l10n.setEasy, l10n.setMedium, l10n.setHard],
                           selected: prefs.quizDifficulty,
                           onSelected: (v) => patchPrefs((s) => s.copyWith(quizDifficulty: v)),
                         ),
                         const _Divider(),
-                        const _RowHeader(icon: Icons.schedule_rounded, title: 'Timer', subtitle: 'Time for each question'),
+                        _RowHeader(icon: Icons.schedule_rounded, title: l10n.setTimer, subtitle: l10n.setTimerSub),
                         const SizedBox(height: 12),
                         ConfigSegmented(
-                          label: 'Timer',
+                          label: l10n.setTimer,
                           options: const ['30s', '60s', '90s', '120s'],
                           selected: prefs.quizTimer,
                           onSelected: (v) => patchPrefs((s) => s.copyWith(quizTimer: v)),
@@ -210,8 +210,8 @@ class ConfigSettingsSheet extends ConsumerWidget {
                         const _Divider(),
                         _SwitchRow(
                           icon: Icons.skip_next_outlined,
-                          title: 'Allow skipping',
-                          subtitle: 'Learners can skip a question',
+                          title: l10n.setAllowSkip,
+                          subtitle: l10n.setAllowSkipSub,
                           value: prefs.skipAllowed,
                           onChanged: (v) => patchPrefs((s) => s.copyWith(skipAllowed: v)),
                         ),
@@ -228,7 +228,7 @@ class ConfigSettingsSheet extends ConsumerWidget {
                 child: SizedBox(
                   width: double.infinity,
                   child: ConfigButton(
-                    label: 'Done',
+                    label: l10n.notifDone,
                     icon: Icons.check_rounded,
                     onPressed: () => Navigator.of(context).pop(),
                   ),

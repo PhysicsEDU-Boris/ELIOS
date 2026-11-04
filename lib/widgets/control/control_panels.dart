@@ -93,8 +93,8 @@ class ControlCameraHud extends StatelessWidget {
             if (frame != null && link == ControlLink.connected)
               Image.memory(frame!, fit: BoxFit.cover, gaplessPlayback: true)
             else if (link == ControlLink.connected)
-              const Center(
-                child: _HudLine(icon: Icons.videocam_outlined, text: 'Connected. Waiting for camera frames...'),
+              Center(
+                child: _HudLine(icon: Icons.videocam_outlined, text: l10n.ctlWaitingFrames),
               ),
             ?debugBoxes,
             if (live)
@@ -108,7 +108,7 @@ class ControlCameraHud extends StatelessWidget {
             Positioned(
               left: 12,
               top: 12,
-              child: _HudChip(dot: live ? _hudRed : _hudMuted, text: live ? 'LIVE · ${fps.round()} fps' : 'NO VIDEO'),
+              child: _HudChip(dot: live ? _hudRed : _hudMuted, text: live ? l10n.ctlLiveFps(fps.round()) : l10n.ctlNoVideoCaps),
             ),
             Positioned(
               right: 12,
@@ -120,9 +120,9 @@ class ControlCameraHud extends StatelessWidget {
                   ControlLink.disconnected => _hudRed,
                 },
                 text: switch (link) {
-                  ControlLink.connected => 'MaixCAM2 connected',
-                  ControlLink.waiting => 'Connecting...',
-                  ControlLink.disconnected => 'Disconnected',
+                  ControlLink.connected => l10n.ctlMaixConnected,
+                  ControlLink.waiting => l10n.ctlConnecting,
+                  ControlLink.disconnected => l10n.ctlDisconnected,
                 },
               ),
             ),
@@ -245,8 +245,8 @@ class HudFloorPainter extends CustomPainter {
         tp.paint(canvas, at);
       }
       final tp = TextPainter(
-        text: const TextSpan(
-          text: 'PICK ZONE',
+        text: TextSpan(
+          text: l10n.ctlPickZone,
           style: TextStyle(color: _hudGreen, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1),
         ),
         textDirection: TextDirection.ltr,
@@ -375,8 +375,8 @@ class _WaitingPanel extends StatelessWidget {
     children: [
       Text(context.l10n.lookingForMaixcam, style: _title, textAlign: TextAlign.center),
       const SizedBox(height: 8),
-      const Text(
-        'Turn the robot on and keep this tablet on the ELIOS Wi-Fi.',
+      Text(
+        l10n.ctlKeepTabletOnWifi,
         style: _body,
         textAlign: TextAlign.center,
       ),
@@ -422,21 +422,21 @@ class _DisconnectedPanelState extends State<_DisconnectedPanel> {
     final String retryLine;
     if (next != null) {
       final s = math.max(0, (next.difference(DateTime.now()).inMilliseconds / 1000).ceil());
-      retryLine = 'Retrying in $s s · attempt ${r.attempt} of ${r.maxAttempts}';
+      retryLine = l10n.ctlRetryingIn(s, r.attempt, r.maxAttempts);
     } else if (!r.autoReconnect) {
-      retryLine = 'Auto-reconnect is off';
+      retryLine = l10n.ctlAutoReconnectOff;
     } else if (r.attempt >= r.maxAttempts) {
-      retryLine = 'Stopped retrying after ${r.maxAttempts} tries';
+      retryLine = l10n.ctlStoppedRetrying(r.maxAttempts);
     } else {
-      retryLine = 'Trying again · attempt ${r.attempt} of ${r.maxAttempts}';
+      retryLine = l10n.ctlTryingAgain(r.attempt, r.maxAttempts);
     }
     return _HudPanel(
       art: Padding(padding: const EdgeInsets.only(bottom: 8), child: controlArt('elio_disconnected', height: 96)),
       children: [
         Text(context.l10n.lostConnection, style: _title, textAlign: TextAlign.center),
         const SizedBox(height: 6),
-        const Text(
-          'The robot link dropped, so the robot stopped for safety.',
+        Text(
+          l10n.ctlLinkDropped,
           style: _body,
           textAlign: TextAlign.center,
         ),
@@ -485,7 +485,7 @@ class QuizReopenButton extends ConsumerWidget {
     final state = ref.watch(wasteQuizProvider);
     if (state.phase == WasteQuizPhase.idle || !state.minimized) return const SizedBox.shrink();
     return Tooltip(
-      message: 'Buka kuis',
+      message: l10n.ctlOpenQuiz,
       child: SizedBox.square(
         dimension: 64,
         child: Stack(
@@ -555,10 +555,10 @@ class MissionCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const ControlCaps('MISSION'),
+                  ControlCaps(l10n.ctlMission),
                   const SizedBox(height: 4),
                   Text(
-                    'Sort $missionTarget items this drive',
+                    l10n.ctlSortItems(missionTarget),
                     maxLines: 2,
                     style: TextStyle(color: p.textPrimary, fontSize: 17, fontWeight: FontWeight.w700),
                   ),
@@ -608,7 +608,7 @@ class DriveTallyCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Expanded(child: ControlCaps('THIS DRIVE')),
+                Expanded(child: ControlCaps(l10n.ctlThisDrive)),
                 if (trophies > 0)
                   Text(
                     '+$trophies trophies',
@@ -694,7 +694,7 @@ class ElioTipCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ControlCaps('ELIO SAYS', color: p.primaryText),
+                    ControlCaps(l10n.ctlElioSays, color: p.primaryText),
                     const SizedBox(height: 4),
                     Text(
                       text,
@@ -734,7 +734,7 @@ class ControlTogglesCard extends StatelessWidget {
         children: [
           RockerToggle(
             key: const ValueKey('toggle_scan_quiz'),
-            label: 'Scan quiz',
+            label: l10n.ctlScanQuiz,
             value: scanQuiz,
             onChanged: onScanQuiz,
           ),
@@ -790,7 +790,7 @@ class ControlCompactStrip extends StatelessWidget {
           Text(
             '${math.min(missionDone, missionTarget)}/$missionTarget',
             style: small,
-            semanticsLabel: 'Misi ${math.min(missionDone, missionTarget)} dari $missionTarget',
+            semanticsLabel: l10n.ctlMissionOf(math.min(missionDone, missionTarget), missionTarget),
           ),
           const SizedBox(width: 10),
           for (final b in HomeBin.values) ...[
@@ -810,7 +810,7 @@ class ControlCompactStrip extends StatelessWidget {
               style: TextStyle(color: p.textPrimary, fontSize: 12, height: 1.2),
             ),
           ),
-          toggle('Scan quiz', Icons.quiz_outlined, scanQuiz, onScanQuiz, const ValueKey('toggle_scan_quiz')),
+          toggle(l10n.ctlScanQuiz, Icons.quiz_outlined, scanQuiz, onScanQuiz, const ValueKey('toggle_scan_quiz')),
           toggle('Voice', Icons.volume_up_outlined, voice, onVoice, const ValueKey('toggle_voice')),
         ],
       ),

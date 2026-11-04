@@ -886,4 +886,559 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gradeTryAgain => 'Try Again';
+
+  @override
+  String get cfgIpHint => 'Enter an IP like 192.168.4.1';
+
+  @override
+  String get cfgPortRange => 'Port 1 to 65535';
+
+  @override
+  String cfgFoundAt(Object ip) {
+    return 'Found ELIO at $ip';
+  }
+
+  @override
+  String get cfgNotFound => 'ELIO not found on this Wi-Fi';
+
+  @override
+  String get cfgRetry => 'Retry';
+
+  @override
+  String get cfgCameraSource => 'Camera source';
+
+  @override
+  String get cfgCameraSourceSub => 'Which camera takes the scan photo';
+
+  @override
+  String get cfgMaixDesc => 'Robot camera over the ELIOS Wi-Fi';
+
+  @override
+  String get cfgPhoneCamera => 'Phone camera';
+
+  @override
+  String get cfgPhoneCameraDesc => 'Scan with this phone, no robot needed';
+
+  @override
+  String get cfgQuizQuestions => 'Quiz questions';
+
+  @override
+  String get cfgQuizQuestionsSub => 'Where the scan quiz gets its questions';
+
+  @override
+  String get cfgStartScan => 'Start scan';
+
+  @override
+  String get cfgConnectNow => 'Connect now';
+
+  @override
+  String get cfgDisconnect => 'Disconnect';
+
+  @override
+  String get cfgConnecting => 'Connecting…';
+
+  @override
+  String get cfgCancelConnecting => 'Cancel connecting';
+
+  @override
+  String get cfgConnected => 'Connected';
+
+  @override
+  String get cfgTryAgain => 'Try again';
+
+  @override
+  String get cfgConnection => 'Connection';
+
+  @override
+  String get cfgWsAddress => 'ELIO WebSocket address';
+
+  @override
+  String get cfgPort => 'Port';
+
+  @override
+  String get cfgSearching => 'Searching…';
+
+  @override
+  String get cfgFindElio => 'Find ELIO';
+
+  @override
+  String get cfgRobotNotUsed => 'Robot not used';
+
+  @override
+  String cfgConnectingTo(Object endpoint) {
+    return 'Connecting to $endpoint';
+  }
+
+  @override
+  String get cfgLastTryFailed => 'Last try failed';
+
+  @override
+  String get cfgNotConnectedYet => 'Not connected yet';
+
+  @override
+  String get cfgNotUsed => 'Not used';
+
+  @override
+  String get cfgOnline => 'Online';
+
+  @override
+  String get cfgConnectingShort => 'Connecting';
+
+  @override
+  String get cfgOffline => 'Offline';
+
+  @override
+  String get cfgStatus => 'Status';
+
+  @override
+  String get cfgBattery => 'Battery';
+
+  @override
+  String get cfgNotReported => 'not reported';
+
+  @override
+  String get cfgCamera => 'Camera';
+
+  @override
+  String get cfgPhone => 'Phone';
+
+  @override
+  String get cfgRobotModel => 'ELIO robot 3D model, drag to rotate';
+
+  @override
+  String get cfgQuestionBankDesc => 'Checked questions, instant';
+
+  @override
+  String get cfgAiDesc => 'New questions each scan, needs internet';
+
+  @override
+  String get cfgAiUnreachable => 'ELIOS AI is not reachable';
+
+  @override
+  String get setConnection => 'Connection';
+
+  @override
+  String get setAutoReconnect => 'Auto-reconnect';
+
+  @override
+  String get setAutoReconnectSub => 'Reconnect when ELIO is available again';
+
+  @override
+  String get setVideo => 'Video';
+
+  @override
+  String get setResolution => 'Resolution';
+
+  @override
+  String get setResolutionSub => 'Higher looks sharper but uses more Wi-Fi';
+
+  @override
+  String get setShowFps => 'Show FPS overlay';
+
+  @override
+  String get setShowFpsSub => 'Show stream speed while viewing';
+
+  @override
+  String get setSound => 'Sound';
+
+  @override
+  String get setSoundEffects => 'Sound effects';
+
+  @override
+  String get setSoundEffectsSub => 'UI and robot feedback sounds';
+
+  @override
+  String get setMasterVolume => 'Master volume';
+
+  @override
+  String setMasterVolumeValue(Object percent) {
+    return 'Master volume $percent%';
+  }
+
+  @override
+  String get setQuiz => 'Quiz';
+
+  @override
+  String get setDifficulty => 'Difficulty';
+
+  @override
+  String get setEasy => 'Easy';
+
+  @override
+  String get setMedium => 'Medium';
+
+  @override
+  String get setHard => 'Hard';
+
+  @override
+  String get setTimer => 'Timer';
+
+  @override
+  String get setTimerSub => 'Time for each question';
+
+  @override
+  String get setAllowSkip => 'Allow skipping';
+
+  @override
+  String get setAllowSkipSub => 'Learners can skip a question';
+
+  @override
+  String get qrIntro =>
+      'Turn on this phone\'s hotspot (2.4 GHz) and type its name and password. On the robot screen tap Wi-Fi setup, then hold this QR in front of the camera.';
+
+  @override
+  String get qrSsid => 'Hotspot name (SSID)';
+
+  @override
+  String get qrPassword => 'Hotspot password';
+
+  @override
+  String get qrShowPassword => 'Show password';
+
+  @override
+  String get qrHidePassword => 'Hide password';
+
+  @override
+  String get qrShow => 'Show QR';
+
+  @override
+  String qrSemantics(Object ssid) {
+    return 'Wi-Fi QR code for $ssid';
+  }
+
+  @override
+  String get ctlWaiting => 'Waiting';
+
+  @override
+  String get ctlOffline => 'Offline';
+
+  @override
+  String get ctlStopped => 'Stopped';
+
+  @override
+  String get ctlForward => 'Forward';
+
+  @override
+  String get ctlBack => 'Back';
+
+  @override
+  String get ctlLeft => 'Left';
+
+  @override
+  String get ctlRight => 'Right';
+
+  @override
+  String get ctlReady => 'Ready';
+
+  @override
+  String get ctlHoming => 'Homing';
+
+  @override
+  String get ctlExit => 'Exit';
+
+  @override
+  String get ctlDebugScan => 'Debug Scan';
+
+  @override
+  String get ctlPushToDrive => 'Push to drive · let go to stop';
+
+  @override
+  String get ctlUnlocksOnConnect => 'Unlocks when the robot connects';
+
+  @override
+  String get ctlSpeedPwm => 'SPEED (PWM)';
+
+  @override
+  String get ctlSpeed => 'Speed';
+
+  @override
+  String get ctlPickUp => 'PICK UP';
+
+  @override
+  String get ctlRelease => 'RELEASE';
+
+  @override
+  String get ctlGripperCaps => 'GRIPPER';
+
+  @override
+  String get ctlGripper => 'Gripper';
+
+  @override
+  String get ctlHeight => 'HEIGHT';
+
+  @override
+  String get ctlUpDown => 'Up / Down';
+
+  @override
+  String get ctlReach => 'REACH';
+
+  @override
+  String get ctlFwdBack => 'Fwd / Back';
+
+  @override
+  String get ctlArmHint =>
+      'Slide up to lift, slide forward to reach. The arm only moves when the robot is not STOPPED.';
+
+  @override
+  String get ctlArmLocked =>
+      'Arm controls unlock when the robot is connected. STOP always works.';
+
+  @override
+  String get ctlAiBusy => 'ELIOS AI is busy. Try LOCK again in a moment.';
+
+  @override
+  String get ctlNoItem =>
+      'No item found. Point the camera at one item and try again.';
+
+  @override
+  String get ctlBaseLeft => 'Base left';
+
+  @override
+  String get ctlBaseRight => 'Base right';
+
+  @override
+  String get ctlRobotControl => 'Robot Control';
+
+  @override
+  String get ctlDrive => 'DRIVE';
+
+  @override
+  String get ctlLiveScanPaused => 'LIVE · scan paused';
+
+  @override
+  String ctlLiveFps(Object fps) {
+    return 'LIVE · $fps fps';
+  }
+
+  @override
+  String get ctlNoVideo => 'No video';
+
+  @override
+  String get ctlNoVideoCaps => 'NO VIDEO';
+
+  @override
+  String get ctlConnecting => 'Connecting...';
+
+  @override
+  String get ctlScanQuiz => 'Scan quiz';
+
+  @override
+  String get ctlVoice => 'Voice';
+
+  @override
+  String get ctlWaitingFrames => 'Connected. Waiting for camera frames...';
+
+  @override
+  String get ctlArm => 'ARM';
+
+  @override
+  String get ctlUnlock => 'UNLOCK';
+
+  @override
+  String get ctlLock => 'LOCK';
+
+  @override
+  String get ctlScan => 'SCAN';
+
+  @override
+  String get ctlDisconnectRobot => 'Disconnect robot';
+
+  @override
+  String get ctlConnectRobot => 'Connect robot';
+
+  @override
+  String get ctlGuide => 'Guide';
+
+  @override
+  String get ctlStoppedPaused => 'Robot stopped · scanning paused';
+
+  @override
+  String get ctlRobotOffline => 'Robot offline';
+
+  @override
+  String get ctlTurnOnRobot => 'Turn on the robot and join the ELIOS Wi-Fi.';
+
+  @override
+  String get ctlConnect => 'Connect';
+
+  @override
+  String get ctlEmergencyStop => 'Emergency stop';
+
+  @override
+  String get ctlPower => 'Power';
+
+  @override
+  String get ctlMaixConnected => 'MaixCAM2 connected';
+
+  @override
+  String get ctlDisconnected => 'Disconnected';
+
+  @override
+  String get ctlPickZone => 'PICK ZONE';
+
+  @override
+  String get ctlKeepTabletOnWifi =>
+      'Turn the robot on and keep this tablet on the ELIOS Wi-Fi.';
+
+  @override
+  String ctlRetryingIn(Object s, Object attempt, Object max) {
+    return 'Retrying in $s s · attempt $attempt of $max';
+  }
+
+  @override
+  String get ctlAutoReconnectOff => 'Auto-reconnect is off';
+
+  @override
+  String ctlStoppedRetrying(Object max) {
+    return 'Stopped retrying after $max tries';
+  }
+
+  @override
+  String ctlTryingAgain(Object attempt, Object max) {
+    return 'Trying again · attempt $attempt of $max';
+  }
+
+  @override
+  String get ctlLinkDropped =>
+      'The robot link dropped, so the robot stopped for safety.';
+
+  @override
+  String get ctlOpenQuiz => 'Open quiz';
+
+  @override
+  String get ctlMission => 'MISSION';
+
+  @override
+  String ctlSortItems(Object count) {
+    return 'Sort $count items this drive';
+  }
+
+  @override
+  String get ctlThisDrive => 'THIS DRIVE';
+
+  @override
+  String get ctlElioSays => 'ELIO SAYS';
+
+  @override
+  String ctlMissionOf(Object done, Object target) {
+    return 'Mission $done of $target';
+  }
+
+  @override
+  String get ctlSubtitle => 'Drive close, pick it up, sort it right!';
+
+  @override
+  String get ctlLinkLost => 'link lost';
+
+  @override
+  String get ctlStopButton => 'STOP button';
+
+  @override
+  String get ctlRobotError => 'robot error';
+
+  @override
+  String ctlRobotStoppedWhy(Object why) {
+    return 'Robot STOPPED · $why';
+  }
+
+  @override
+  String get ctlHoldForHome => 'Hold 1 second for HOME';
+
+  @override
+  String ctlRobotStoppedLong(Object why) {
+    return 'ROBOT STOPPED ($why). Scanning stopped; an open quiz can still be answered.';
+  }
+
+  @override
+  String get guideDriveTitle => 'Drive the robot';
+
+  @override
+  String get guideDriveBody =>
+      'Push the green knob the way you want to go. Let go and the robot stops.';
+
+  @override
+  String get guideStopTitle => 'Big red STOP';
+
+  @override
+  String get guideStopBody =>
+      'Tap it any time something looks unsafe. Space or Esc work too.';
+
+  @override
+  String get guideGrabTitle => 'Grab the item';
+
+  @override
+  String get guideGrabBody =>
+      'When the item is close, press PICK UP. RELEASE drops it. HOME parks the arm.';
+
+  @override
+  String get guideQuizTitle => 'Answer the quiz';
+
+  @override
+  String get guideQuizBody =>
+      'After each scan ELIOS AI asks a question. Tap here to open it and win trophies!';
+
+  @override
+  String guideStepOf(Object step, Object total) {
+    return 'STEP $step OF $total';
+  }
+
+  @override
+  String get guideSkip => 'Skip';
+
+  @override
+  String get guideNext => 'Next';
+
+  @override
+  String get guideIntro =>
+      'Drive to an item, grab it, sort it, then answer ELIOS AI to earn trophies. Tap Guide any time to replay this.';
+
+  @override
+  String get r2JoystickHint => 'Joystick: slide to steer, let go to stop';
+
+  @override
+  String r2SpeedValue(Object value) {
+    return 'Speed $value';
+  }
+
+  @override
+  String get r2RobotPrefix => 'Robot ';
+
+  @override
+  String get dsAiOffline => 'ELIOS AI offline · question bank';
+
+  @override
+  String get dsAiReady => 'ELIOS AI ready';
+
+  @override
+  String get dsBack => 'Back';
+
+  @override
+  String get dsLive => 'LIVE';
+
+  @override
+  String get dsNoCamera => 'No camera';
+
+  @override
+  String get dsBankMode => 'Bank mode';
+
+  @override
+  String get dsPutItem => 'Put one item inside the white box, then tap Scan.';
+
+  @override
+  String get dsScanMakeQuiz => 'Scan and make quiz';
+
+  @override
+  String get dsScanMakeQuizShort => 'Scan & make quiz';
+
+  @override
+  String get dsTiming => 'About 2–4 s · needs internet';
+
+  @override
+  String get dsSwitchCamera => 'Switch camera';
+
+  @override
+  String get dsTestModeHint => 'Test mode: quiz without the camera';
+
+  @override
+  String get dsTestMode => 'Test mode';
 }

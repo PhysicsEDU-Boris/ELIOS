@@ -610,5 +610,290 @@
   "gradeGreat": "Great",
   "gradeGood": "Good",
   "gradeKeepLearning": "Keep Learning",
-  "gradeTryAgain": "Try Again"
+  "gradeTryAgain": "Try Again",
+  "cfgIpHint": "Enter an IP like 192.168.4.1",
+  "cfgPortRange": "Port 1 to 65535",
+  "cfgFoundAt": "Found ELIO at {ip}",
+  "@cfgFoundAt": {
+    "placeholders": {
+      "ip": {
+        "type": "Object"
+      }
+    }
+  },
+  "cfgNotFound": "ELIO not found on this Wi-Fi",
+  "cfgRetry": "Retry",
+  "cfgCameraSource": "Camera source",
+  "cfgCameraSourceSub": "Which camera takes the scan photo",
+  "cfgMaixDesc": "Robot camera over the ELIOS Wi-Fi",
+  "cfgPhoneCamera": "Phone camera",
+  "cfgPhoneCameraDesc": "Scan with this phone, no robot needed",
+  "cfgQuizQuestions": "Quiz questions",
+  "cfgQuizQuestionsSub": "Where the scan quiz gets its questions",
+  "cfgStartScan": "Start scan",
+  "cfgConnectNow": "Connect now",
+  "cfgDisconnect": "Disconnect",
+  "cfgConnecting": "Connecting…",
+  "cfgCancelConnecting": "Cancel connecting",
+  "cfgConnected": "Connected",
+  "cfgTryAgain": "Try again",
+  "cfgConnection": "Connection",
+  "cfgWsAddress": "ELIO WebSocket address",
+  "cfgPort": "Port",
+  "cfgSearching": "Searching…",
+  "cfgFindElio": "Find ELIO",
+  "cfgRobotNotUsed": "Robot not used",
+  "cfgConnectingTo": "Connecting to {endpoint}",
+  "@cfgConnectingTo": {
+    "placeholders": {
+      "endpoint": {
+        "type": "Object"
+      }
+    }
+  },
+  "cfgLastTryFailed": "Last try failed",
+  "cfgNotConnectedYet": "Not connected yet",
+  "cfgNotUsed": "Not used",
+  "cfgOnline": "Online",
+  "cfgConnectingShort": "Connecting",
+  "cfgOffline": "Offline",
+  "cfgStatus": "Status",
+  "cfgBattery": "Battery",
+  "cfgNotReported": "not reported",
+  "cfgCamera": "Camera",
+  "cfgPhone": "Phone",
+  "cfgRobotModel": "ELIO robot 3D model, drag to rotate",
+  "cfgQuestionBankDesc": "Checked questions, instant",
+  "cfgAiDesc": "New questions each scan, needs internet",
+  "cfgAiUnreachable": "ELIOS AI is not reachable",
+  "setConnection": "Connection",
+  "setAutoReconnect": "Auto-reconnect",
+  "setAutoReconnectSub": "Reconnect when ELIO is available again",
+  "setVideo": "Video",
+  "setResolution": "Resolution",
+  "setResolutionSub": "Higher looks sharper but uses more Wi-Fi",
+  "setShowFps": "Show FPS overlay",
+  "setShowFpsSub": "Show stream speed while viewing",
+  "setSound": "Sound",
+  "setSoundEffects": "Sound effects",
+  "setSoundEffectsSub": "UI and robot feedback sounds",
+  "setMasterVolume": "Master volume",
+  "setMasterVolumeValue": "Master volume {percent}%",
+  "@setMasterVolumeValue": {
+    "placeholders": {
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "setQuiz": "Quiz",
+  "setDifficulty": "Difficulty",
+  "setEasy": "Easy",
+  "setMedium": "Medium",
+  "setHard": "Hard",
+  "setTimer": "Timer",
+  "setTimerSub": "Time for each question",
+  "setAllowSkip": "Allow skipping",
+  "setAllowSkipSub": "Learners can skip a question",
+  "qrIntro": "Turn on this phone's hotspot (2.4 GHz) and type its name and password. On the robot screen tap Wi-Fi setup, then hold this QR in front of the camera.",
+  "qrSsid": "Hotspot name (SSID)",
+  "qrPassword": "Hotspot password",
+  "qrShowPassword": "Show password",
+  "qrHidePassword": "Hide password",
+  "qrShow": "Show QR",
+  "qrSemantics": "Wi-Fi QR code for {ssid}",
+  "@qrSemantics": {
+    "placeholders": {
+      "ssid": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlWaiting": "Waiting",
+  "ctlOffline": "Offline",
+  "ctlStopped": "Stopped",
+  "ctlForward": "Forward",
+  "ctlBack": "Back",
+  "ctlLeft": "Left",
+  "ctlRight": "Right",
+  "ctlReady": "Ready",
+  "ctlHoming": "Homing",
+  "ctlExit": "Exit",
+  "ctlDebugScan": "Debug Scan",
+  "ctlPushToDrive": "Push to drive · let go to stop",
+  "ctlUnlocksOnConnect": "Unlocks when the robot connects",
+  "ctlSpeedPwm": "SPEED (PWM)",
+  "ctlSpeed": "Speed",
+  "ctlPickUp": "PICK UP",
+  "ctlRelease": "RELEASE",
+  "ctlGripperCaps": "GRIPPER",
+  "ctlGripper": "Gripper",
+  "ctlHeight": "HEIGHT",
+  "ctlUpDown": "Up / Down",
+  "ctlReach": "REACH",
+  "ctlFwdBack": "Fwd / Back",
+  "ctlArmHint": "Slide up to lift, slide forward to reach. The arm only moves when the robot is not STOPPED.",
+  "ctlArmLocked": "Arm controls unlock when the robot is connected. STOP always works.",
+  "ctlAiBusy": "ELIOS AI is busy. Try LOCK again in a moment.",
+  "ctlNoItem": "No item found. Point the camera at one item and try again.",
+  "ctlBaseLeft": "Base left",
+  "ctlBaseRight": "Base right",
+  "ctlRobotControl": "Robot Control",
+  "ctlDrive": "DRIVE",
+  "ctlLiveScanPaused": "LIVE · scan paused",
+  "ctlLiveFps": "LIVE · {fps} fps",
+  "@ctlLiveFps": {
+    "placeholders": {
+      "fps": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlNoVideo": "No video",
+  "ctlNoVideoCaps": "NO VIDEO",
+  "ctlConnecting": "Connecting...",
+  "ctlScanQuiz": "Scan quiz",
+  "ctlVoice": "Voice",
+  "ctlWaitingFrames": "Connected. Waiting for camera frames...",
+  "ctlArm": "ARM",
+  "ctlUnlock": "UNLOCK",
+  "ctlLock": "LOCK",
+  "ctlScan": "SCAN",
+  "ctlDisconnectRobot": "Disconnect robot",
+  "ctlConnectRobot": "Connect robot",
+  "ctlGuide": "Guide",
+  "ctlStoppedPaused": "Robot stopped · scanning paused",
+  "ctlRobotOffline": "Robot offline",
+  "ctlTurnOnRobot": "Turn on the robot and join the ELIOS Wi-Fi.",
+  "ctlConnect": "Connect",
+  "ctlEmergencyStop": "Emergency stop",
+  "ctlPower": "Power",
+  "ctlMaixConnected": "MaixCAM2 connected",
+  "ctlDisconnected": "Disconnected",
+  "ctlPickZone": "PICK ZONE",
+  "ctlKeepTabletOnWifi": "Turn the robot on and keep this tablet on the ELIOS Wi-Fi.",
+  "ctlRetryingIn": "Retrying in {s} s · attempt {attempt} of {max}",
+  "@ctlRetryingIn": {
+    "placeholders": {
+      "s": {
+        "type": "Object"
+      },
+      "attempt": {
+        "type": "Object"
+      },
+      "max": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlAutoReconnectOff": "Auto-reconnect is off",
+  "ctlStoppedRetrying": "Stopped retrying after {max} tries",
+  "@ctlStoppedRetrying": {
+    "placeholders": {
+      "max": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlTryingAgain": "Trying again · attempt {attempt} of {max}",
+  "@ctlTryingAgain": {
+    "placeholders": {
+      "attempt": {
+        "type": "Object"
+      },
+      "max": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlLinkDropped": "The robot link dropped, so the robot stopped for safety.",
+  "ctlOpenQuiz": "Open quiz",
+  "ctlMission": "MISSION",
+  "ctlSortItems": "Sort {count} items this drive",
+  "@ctlSortItems": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlThisDrive": "THIS DRIVE",
+  "ctlElioSays": "ELIO SAYS",
+  "ctlMissionOf": "Mission {done} of {target}",
+  "@ctlMissionOf": {
+    "placeholders": {
+      "done": {
+        "type": "Object"
+      },
+      "target": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlSubtitle": "Drive close, pick it up, sort it right!",
+  "ctlLinkLost": "link lost",
+  "ctlStopButton": "STOP button",
+  "ctlRobotError": "robot error",
+  "ctlRobotStoppedWhy": "Robot STOPPED · {why}",
+  "@ctlRobotStoppedWhy": {
+    "placeholders": {
+      "why": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlHoldForHome": "Hold 1 second for HOME",
+  "ctlRobotStoppedLong": "ROBOT STOPPED ({why}). Scanning stopped; an open quiz can still be answered.",
+  "@ctlRobotStoppedLong": {
+    "placeholders": {
+      "why": {
+        "type": "Object"
+      }
+    }
+  },
+  "guideDriveTitle": "Drive the robot",
+  "guideDriveBody": "Push the green knob the way you want to go. Let go and the robot stops.",
+  "guideStopTitle": "Big red STOP",
+  "guideStopBody": "Tap it any time something looks unsafe. Space or Esc work too.",
+  "guideGrabTitle": "Grab the item",
+  "guideGrabBody": "When the item is close, press PICK UP. RELEASE drops it. HOME parks the arm.",
+  "guideQuizTitle": "Answer the quiz",
+  "guideQuizBody": "After each scan ELIOS AI asks a question. Tap here to open it and win trophies!",
+  "guideStepOf": "STEP {step} OF {total}",
+  "@guideStepOf": {
+    "placeholders": {
+      "step": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "guideSkip": "Skip",
+  "guideNext": "Next",
+  "guideIntro": "Drive to an item, grab it, sort it, then answer ELIOS AI to earn trophies. Tap Guide any time to replay this.",
+  "r2JoystickHint": "Joystick: slide to steer, let go to stop",
+  "r2SpeedValue": "Speed {value}",
+  "@r2SpeedValue": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "r2RobotPrefix": "Robot ",
+  "dsAiOffline": "ELIOS AI offline · question bank",
+  "dsAiReady": "ELIOS AI ready",
+  "dsBack": "Back",
+  "dsLive": "LIVE",
+  "dsNoCamera": "No camera",
+  "dsBankMode": "Bank mode",
+  "dsPutItem": "Put one item inside the white box, then tap Scan.",
+  "dsScanMakeQuiz": "Scan and make quiz",
+  "dsScanMakeQuizShort": "Scan & make quiz",
+  "dsTiming": "About 2–4 s · needs internet",
+  "dsSwitchCamera": "Switch camera",
+  "dsTestModeHint": "Test mode: quiz without the camera",
+  "dsTestMode": "Test mode"
 }

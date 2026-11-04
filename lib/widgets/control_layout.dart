@@ -143,13 +143,13 @@ class ControlLayout extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Robot Control',
+                      l10n.ctlRobotControl,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: p.textPrimary, fontSize: 20, fontWeight: FontWeight.w700),
                     ),
                     Text(
-                      'Drive close, pick it up, sort it right!',
+                      l10n.ctlSubtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: p.textSecondary, fontSize: 13),
@@ -179,7 +179,7 @@ class ControlLayout extends StatelessWidget {
     padding: EdgeInsets.all(roomy ? 16 : 10),
     child: Column(
       children: [
-        _cardHeader(Icons.speed_rounded, 'DRIVE', driveStatus),
+        _cardHeader(Icons.speed_rounded, l10n.ctlDrive, driveStatus),
         SizedBox(height: roomy ? 8 : 4),
         Expanded(child: joystick),
         if (roomy && driveHint != null) ...[const SizedBox(height: 6), driveHint!],
@@ -202,7 +202,7 @@ class ControlLayout extends StatelessWidget {
       padding: EdgeInsets.all(roomy ? 16 : 10),
       child: Column(
         children: [
-          _cardHeader(Icons.precision_manufacturing_outlined, 'ARM', armStatus),
+          _cardHeader(Icons.precision_manufacturing_outlined, l10n.ctlArm, armStatus),
           SizedBox(height: roomy ? 8 : 4),
           Expanded(
             child: Row(
@@ -408,9 +408,9 @@ class StoppedPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.elio;
     final why = switch (reason) {
-      'link_lost' => 'link lost',
+      'link_lost' => l10n.ctlLinkLost,
       'button' => 'STOP',
-      'error' => 'robot error',
+      'error' => l10n.ctlRobotError,
       _ => reason ?? '-',
     };
     return DecoratedBox(
@@ -428,7 +428,7 @@ class StoppedPill extends StatelessWidget {
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                'Robot STOPPED · $why',
+                l10n.ctlRobotStoppedWhy(why),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: p.onError, fontWeight: FontWeight.w700, fontSize: 14),
@@ -497,7 +497,7 @@ class _HomeButtonState extends State<HomeButton> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: 'Tahan 1 detik untuk HOME',
+      message: l10n.ctlHoldForHome,
       child: Listener(
         behavior: HitTestBehavior.opaque,
         onPointerDown: (_) => _onDown(),
@@ -536,7 +536,7 @@ class HistoryPill extends StatelessWidget {
         final p = context.elio;
         return ControlPill(
           icon: Icons.history_rounded,
-          label: 'History',
+          label: l10n.navHistory,
           onTap:
               onTap ??
               () {
@@ -590,7 +590,7 @@ class EmergencyStopButton extends StatelessWidget {
       children: [
         Semantics(
           button: true,
-          label: 'Berhenti darurat',
+          label: l10n.ctlEmergencyStop,
           child: Container(
             width: d,
             height: d,
@@ -646,9 +646,9 @@ class StoppedBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final why = switch (reason) {
-      'link_lost' => 'koneksi terputus',
-      'button' => 'tombol STOP',
-      'error' => 'robot error',
+      'link_lost' => l10n.ctlLinkLost,
+      'button' => l10n.ctlStopButton,
+      'error' => l10n.ctlRobotError,
       _ => reason ?? '-',
     };
     final isShort = MediaQuery.maybeSizeOf(context)?.height != null && MediaQuery.sizeOf(context).height < 500;
@@ -662,7 +662,7 @@ class StoppedBanner extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'ROBOT DIHENTIKAN ($why). Pemindaian berhenti; kuis yang terbuka tetap bisa dijawab.',
+                l10n.ctlRobotStoppedLong(why),
                 maxLines: isShort ? 1 : 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: isShort ? 11.5 : 14),

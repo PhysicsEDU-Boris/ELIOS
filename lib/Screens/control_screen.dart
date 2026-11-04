@@ -544,22 +544,22 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       final p = context.elio;
       final tall = MediaQuery.sizeOf(context).height >= 700;
       final (driveWord, driveColor) = switch (link) {
-        ControlLink.waiting => ('Waiting', p.secondaryText),
-        ControlLink.disconnected => ('Offline', p.errorText),
-        _ when _gate.stopped => ('Stopped', p.errorText),
+        ControlLink.waiting => (l10n.ctlWaiting, p.secondaryText),
+        ControlLink.disconnected => (l10n.ctlOffline, p.errorText),
+        _ when _gate.stopped => (l10n.ctlStopped, p.errorText),
         _ => (switch (_driveDir) {
-            DriveDir.forward => 'Forward',
-            DriveDir.back => 'Back',
-            DriveDir.left => 'Left',
-            DriveDir.right => 'Right',
-            null => 'Ready',
+            DriveDir.forward => l10n.ctlForward,
+            DriveDir.back => l10n.ctlBack,
+            DriveDir.left => l10n.ctlLeft,
+            DriveDir.right => l10n.ctlRight,
+            null => l10n.ctlReady,
           }, p.primaryText),
       };
       final (armWord, armColor) = switch (link) {
-        ControlLink.waiting => ('Waiting', p.secondaryText),
-        ControlLink.disconnected => ('Offline', p.errorText),
-        _ when _gate.stopped => ('Stopped', p.errorText),
-        _ => (_gate.isHoming ? 'Homing' : 'Ready', p.primaryText),
+        ControlLink.waiting => (l10n.ctlWaiting, p.secondaryText),
+        ControlLink.disconnected => (l10n.ctlOffline, p.errorText),
+        _ when _gate.stopped => (l10n.ctlStopped, p.errorText),
+        _ => (_gate.isHoming ? l10n.ctlHoming : l10n.ctlReady, p.primaryText),
       };
       Widget hint(String art, String text) => Container(
             padding: const EdgeInsets.all(8),
@@ -641,10 +641,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                   : ControlLayout(
                 stoppedBanner: _gate.stopped ? StoppedBanner(reason: _gate.stopReason, onResume: _resumeAfterStop) : null,
                 stoppedPill: _gate.stopped ? StoppedPill(reason: _gate.stopReason) : null,
-                exitButton: ControlPill(icon: Icons.arrow_back_rounded, label: 'Exit', onTap: () => Navigator.of(context).pop()),
+                exitButton: ControlPill(icon: Icons.arrow_back_rounded, label: l10n.ctlExit, onTap: () => Navigator.of(context).pop()),
                 debugScanButton: ControlPill(
                   icon: Icons.bug_report_outlined,
-                  label: 'Debug Scan',
+                  label: l10n.ctlDebugScan,
                   dashed: true,
                   onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
                 ),
@@ -665,17 +665,17 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                     },
                   ),
                 ),
-                driveHint: hint('tyre_buddy', isOperational ? 'Push to drive · let go to stop' : 'Unlocks when the robot connects'),
+                driveHint: hint('tyre_buddy', isOperational ? l10n.ctlPushToDrive : l10n.ctlUnlocksOnConnect),
                 speed: controlEnabled(
                   isOperational,
                   Column(mainAxisSize: MainAxisSize.min, children: [
                     Row(children: [
-                      const Expanded(child: ControlCaps('SPEED (PWM)')),
+                      Expanded(child: ControlCaps(l10n.ctlSpeedPwm)),
                       Text('${speed.toInt()}%', style: TextStyle(color: p.primaryText, fontWeight: FontWeight.w700, fontSize: 14)),
                     ]),
                     SizedBox(
                       height: 40,
-                      child: ControlFader(value: speed, max: 100, semanticLabel: 'Speed', onChanged: isOperational ? notifier.setPwmSpeed : null),
+                      child: ControlFader(value: speed, max: 100, semanticLabel: l10n.ctlSpeed, onChanged: isOperational ? notifier.setPwmSpeed : null),
                     ),
                     const SizedBox(height: 4),
                     GearChips(speed: speed, onSelect: isOperational ? notifier.setPwmSpeed : null),
@@ -719,7 +719,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                       const SizedBox(width: 10),
                       TransportKey(
                         icon: Icons.back_hand_outlined,
-                        label: 'PICK UP',
+                        label: l10n.ctlPickUp,
                         primary: true,
                         size: key,
                         onTap: isOperational
@@ -735,7 +735,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                       const SizedBox(width: 10),
                       TransportKey(
                         icon: Icons.front_hand_outlined,
-                        label: 'RELEASE',
+                        label: l10n.ctlRelease,
                         size: key,
                         onTap: isOperational
                             ? () {
@@ -747,7 +747,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                       Expanded(
                         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                           Row(children: [
-                            const Expanded(child: ControlCaps('GRIPPER')),
+                            Expanded(child: ControlCaps(l10n.ctlGripperCaps)),
                             Text('${robotState.gripperVal.round()}%',
                                 style: TextStyle(color: p.primaryText, fontWeight: FontWeight.w700, fontSize: 14)),
                           ]),
@@ -756,7 +756,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                             child: ControlFader(
                               value: robotState.gripperVal,
                               max: 100,
-                              semanticLabel: 'Gripper',
+                              semanticLabel: l10n.ctlGripper,
                               onChanged: isOperational
                                   ? (value) {
                                       final width = value.round();
@@ -779,7 +779,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                 armStatus: ControlStatusChip(label: armWord, color: armColor),
                 armHeight: controlEnabled(
                   isOperational,
-                  armFader('HEIGHT', 'Up / Down', (robotState.heightValue / 180).clamp(0.0, 1.0), (value) {
+                  armFader(l10n.ctlHeight, l10n.ctlUpDown, (robotState.heightValue / 180).clamp(0.0, 1.0), (value) {
                     if (_gate.servo('height', (value * 180).toInt())) {
                       notifier.setHeightValue(value * 180);
                       _scheduleStatusRequest();
@@ -788,7 +788,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                 ),
                 armReach: controlEnabled(
                   isOperational,
-                  armFader('REACH', 'Fwd / Back', (robotState.reachValue / 180).clamp(0.0, 1.0), (value) {
+                  armFader(l10n.ctlReach, l10n.ctlFwdBack, (robotState.reachValue / 180).clamp(0.0, 1.0), (value) {
                     if (_gate.servo('reach', (value * 180).toInt())) {
                       notifier.setReachValue(value * 180);
                       _scheduleStatusRequest();
@@ -806,8 +806,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                 armTip: hint(
                   'gear_buddy',
                   isOperational
-                      ? 'Slide up to lift, slide forward to reach. The arm only moves when the robot is not STOPPED.'
-                      : 'Arm controls unlock when the robot is connected. STOP always works.',
+                      ? l10n.ctlArmHint
+                      : l10n.ctlArmLocked,
                 ),
                 bottomCards: [
                   MissionCard(done: missionDone),
@@ -1012,8 +1012,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       ScaffoldMessenger.of(context)
         ..removeCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(answer.failure == 'busy'
-            ? 'ELIOS AI is busy. Try LOCK again in a moment.'
-            : answer.failure ?? 'No item found. Point the camera at one item and try again.')));
+            ? l10n.ctlAiBusy
+            : answer.failure ?? l10n.ctlNoItem)));
     }
     return answer.lock;
   }
@@ -1036,8 +1036,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           children: [
             Row(mainAxisSize: MainAxisSize.min, children: [
               Text(context.l10n.controlBase, style: TextStyle(color: Colors.white)),
-              IconButton(onPressed: () => _nudgeBase(-2), icon: const Icon(Icons.chevron_left, color: Colors.white), tooltip: 'Base left'),
-              IconButton(onPressed: () => _nudgeBase(2), icon: const Icon(Icons.chevron_right, color: Colors.white), tooltip: 'Base right'),
+              IconButton(onPressed: () => _nudgeBase(-2), icon: const Icon(Icons.chevron_left, color: Colors.white), tooltip: l10n.ctlBaseLeft),
+              IconButton(onPressed: () => _nudgeBase(2), icon: const Icon(Icons.chevron_right, color: Colors.white), tooltip: l10n.ctlBaseRight),
               const SizedBox(width: 8),
               OutlinedButton.icon(
                 key: const ValueKey('debug_home_button'),

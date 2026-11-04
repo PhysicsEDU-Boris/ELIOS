@@ -862,4 +862,563 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get gradeTryAgain => 'Coba Lagi';
+
+  @override
+  String get cfgIpHint => 'Masukkan IP seperti 192.168.4.1';
+
+  @override
+  String get cfgPortRange => 'Port 1 sampai 65535';
+
+  @override
+  String cfgFoundAt(Object ip) {
+    return 'ELIO ditemukan di $ip';
+  }
+
+  @override
+  String get cfgNotFound => 'ELIO tidak ditemukan di Wi-Fi ini';
+
+  @override
+  String get cfgRetry => 'Coba lagi';
+
+  @override
+  String get cfgCameraSource => 'Sumber kamera';
+
+  @override
+  String get cfgCameraSourceSub => 'Kamera yang mengambil foto scan';
+
+  @override
+  String get cfgMaixDesc => 'Kamera robot lewat Wi-Fi ELIOS';
+
+  @override
+  String get cfgPhoneCamera => 'Kamera HP';
+
+  @override
+  String get cfgPhoneCameraDesc => 'Scan dengan HP ini, tanpa robot';
+
+  @override
+  String get cfgQuizQuestions => 'Soal kuis';
+
+  @override
+  String get cfgQuizQuestionsSub => 'Asal soal kuis scan';
+
+  @override
+  String get cfgStartScan => 'Mulai scan';
+
+  @override
+  String get cfgConnectNow => 'Hubungkan sekarang';
+
+  @override
+  String get cfgDisconnect => 'Putuskan';
+
+  @override
+  String get cfgConnecting => 'Menghubungkan…';
+
+  @override
+  String get cfgCancelConnecting => 'Batalkan koneksi';
+
+  @override
+  String get cfgConnected => 'Terhubung';
+
+  @override
+  String get cfgTryAgain => 'Coba lagi';
+
+  @override
+  String get cfgConnection => 'Koneksi';
+
+  @override
+  String get cfgWsAddress => 'Alamat WebSocket ELIO';
+
+  @override
+  String get cfgPort => 'Port';
+
+  @override
+  String get cfgSearching => 'Mencari…';
+
+  @override
+  String get cfgFindElio => 'Cari ELIO';
+
+  @override
+  String get cfgRobotNotUsed => 'Robot tidak dipakai';
+
+  @override
+  String cfgConnectingTo(Object endpoint) {
+    return 'Menghubungkan ke $endpoint';
+  }
+
+  @override
+  String get cfgLastTryFailed => 'Percobaan terakhir gagal';
+
+  @override
+  String get cfgNotConnectedYet => 'Belum terhubung';
+
+  @override
+  String get cfgNotUsed => 'Tidak dipakai';
+
+  @override
+  String get cfgOnline => 'Online';
+
+  @override
+  String get cfgConnectingShort => 'Menghubungkan';
+
+  @override
+  String get cfgOffline => 'Offline';
+
+  @override
+  String get cfgStatus => 'Status';
+
+  @override
+  String get cfgBattery => 'Baterai';
+
+  @override
+  String get cfgNotReported => 'tidak dilaporkan';
+
+  @override
+  String get cfgCamera => 'Kamera';
+
+  @override
+  String get cfgPhone => 'HP';
+
+  @override
+  String get cfgRobotModel => 'Model 3D robot ELIO, geser untuk memutar';
+
+  @override
+  String get cfgQuestionBankDesc => 'Soal yang sudah dicek, langsung';
+
+  @override
+  String get cfgAiDesc => 'Soal baru tiap scan, perlu internet';
+
+  @override
+  String get cfgAiUnreachable => 'ELIOS AI tidak bisa dihubungi';
+
+  @override
+  String get setConnection => 'Koneksi';
+
+  @override
+  String get setAutoReconnect => 'Sambung ulang otomatis';
+
+  @override
+  String get setAutoReconnectSub => 'Sambung lagi saat ELIO tersedia';
+
+  @override
+  String get setVideo => 'Video';
+
+  @override
+  String get setResolution => 'Resolusi';
+
+  @override
+  String get setResolutionSub =>
+      'Lebih tinggi lebih tajam tapi memakai lebih banyak Wi-Fi';
+
+  @override
+  String get setShowFps => 'Tampilkan FPS';
+
+  @override
+  String get setShowFpsSub => 'Tampilkan kecepatan stream saat menonton';
+
+  @override
+  String get setSound => 'Suara';
+
+  @override
+  String get setSoundEffects => 'Efek suara';
+
+  @override
+  String get setSoundEffectsSub => 'Suara antarmuka dan robot';
+
+  @override
+  String get setMasterVolume => 'Volume utama';
+
+  @override
+  String setMasterVolumeValue(Object percent) {
+    return 'Volume utama $percent%';
+  }
+
+  @override
+  String get setQuiz => 'Kuis';
+
+  @override
+  String get setDifficulty => 'Tingkat kesulitan';
+
+  @override
+  String get setEasy => 'Mudah';
+
+  @override
+  String get setMedium => 'Sedang';
+
+  @override
+  String get setHard => 'Sulit';
+
+  @override
+  String get setTimer => 'Waktu';
+
+  @override
+  String get setTimerSub => 'Waktu untuk tiap soal';
+
+  @override
+  String get setAllowSkip => 'Boleh lewati soal';
+
+  @override
+  String get setAllowSkipSub => 'Siswa boleh melewati soal';
+
+  @override
+  String get qrIntro =>
+      'Nyalakan hotspot HP ini (2.4 GHz) lalu ketik nama dan kata sandinya. Di layar robot ketuk Wi-Fi setup, lalu arahkan QR ini ke kamera.';
+
+  @override
+  String get qrSsid => 'Nama hotspot (SSID)';
+
+  @override
+  String get qrPassword => 'Kata sandi hotspot';
+
+  @override
+  String get qrShowPassword => 'Tampilkan kata sandi';
+
+  @override
+  String get qrHidePassword => 'Sembunyikan kata sandi';
+
+  @override
+  String get qrShow => 'Tampilkan QR';
+
+  @override
+  String qrSemantics(Object ssid) {
+    return 'Kode QR Wi-Fi untuk $ssid';
+  }
+
+  @override
+  String get ctlWaiting => 'Menunggu';
+
+  @override
+  String get ctlOffline => 'Offline';
+
+  @override
+  String get ctlStopped => 'Berhenti';
+
+  @override
+  String get ctlForward => 'Maju';
+
+  @override
+  String get ctlBack => 'Mundur';
+
+  @override
+  String get ctlLeft => 'Kiri';
+
+  @override
+  String get ctlRight => 'Kanan';
+
+  @override
+  String get ctlReady => 'Siap';
+
+  @override
+  String get ctlHoming => 'Kembali ke awal';
+
+  @override
+  String get ctlExit => 'Keluar';
+
+  @override
+  String get ctlDebugScan => 'Debug Scan';
+
+  @override
+  String get ctlPushToDrive => 'Dorong untuk jalan · lepas untuk berhenti';
+
+  @override
+  String get ctlUnlocksOnConnect => 'Aktif saat robot terhubung';
+
+  @override
+  String get ctlSpeedPwm => 'KECEPATAN (PWM)';
+
+  @override
+  String get ctlSpeed => 'Kecepatan';
+
+  @override
+  String get ctlPickUp => 'AMBIL';
+
+  @override
+  String get ctlRelease => 'LEPAS';
+
+  @override
+  String get ctlGripperCaps => 'PENJEPIT';
+
+  @override
+  String get ctlGripper => 'Penjepit';
+
+  @override
+  String get ctlHeight => 'TINGGI';
+
+  @override
+  String get ctlUpDown => 'Naik / Turun';
+
+  @override
+  String get ctlReach => 'JANGKAU';
+
+  @override
+  String get ctlFwdBack => 'Maju / Mundur';
+
+  @override
+  String get ctlArmHint =>
+      'Geser ke atas untuk mengangkat, ke depan untuk menjangkau. Lengan hanya bergerak saat robot tidak BERHENTI.';
+
+  @override
+  String get ctlArmLocked =>
+      'Kontrol lengan aktif saat robot terhubung. STOP selalu berfungsi.';
+
+  @override
+  String get ctlAiBusy =>
+      'ELIOS AI sedang sibuk. Coba LOCK lagi sebentar lagi.';
+
+  @override
+  String get ctlNoItem =>
+      'Tidak ada benda. Arahkan kamera ke satu benda lalu coba lagi.';
+
+  @override
+  String get ctlBaseLeft => 'Basis ke kiri';
+
+  @override
+  String get ctlBaseRight => 'Basis ke kanan';
+
+  @override
+  String get ctlRobotControl => 'Kontrol Robot';
+
+  @override
+  String get ctlDrive => 'KEMUDI';
+
+  @override
+  String get ctlLiveScanPaused => 'LIVE · scan dijeda';
+
+  @override
+  String ctlLiveFps(Object fps) {
+    return 'LIVE · $fps fps';
+  }
+
+  @override
+  String get ctlNoVideo => 'Tidak ada video';
+
+  @override
+  String get ctlNoVideoCaps => 'TIDAK ADA VIDEO';
+
+  @override
+  String get ctlConnecting => 'Menghubungkan...';
+
+  @override
+  String get ctlScanQuiz => 'Kuis scan';
+
+  @override
+  String get ctlVoice => 'Suara';
+
+  @override
+  String get ctlWaitingFrames => 'Terhubung. Menunggu gambar kamera...';
+
+  @override
+  String get ctlArm => 'LENGAN';
+
+  @override
+  String get ctlUnlock => 'LEPAS KUNCI';
+
+  @override
+  String get ctlLock => 'KUNCI';
+
+  @override
+  String get ctlScan => 'SCAN';
+
+  @override
+  String get ctlDisconnectRobot => 'Putuskan robot';
+
+  @override
+  String get ctlConnectRobot => 'Hubungkan robot';
+
+  @override
+  String get ctlGuide => 'Panduan';
+
+  @override
+  String get ctlStoppedPaused => 'Robot berhenti · scan dijeda';
+
+  @override
+  String get ctlRobotOffline => 'Robot offline';
+
+  @override
+  String get ctlTurnOnRobot => 'Nyalakan robot dan sambungkan ke Wi-Fi ELIOS.';
+
+  @override
+  String get ctlConnect => 'Hubungkan';
+
+  @override
+  String get ctlEmergencyStop => 'Berhenti darurat';
+
+  @override
+  String get ctlPower => 'Daya';
+
+  @override
+  String get ctlMaixConnected => 'MaixCAM2 terhubung';
+
+  @override
+  String get ctlDisconnected => 'Terputus';
+
+  @override
+  String get ctlPickZone => 'ZONA AMBIL';
+
+  @override
+  String get ctlKeepTabletOnWifi =>
+      'Nyalakan robot dan tetap sambungkan tablet ini ke Wi-Fi ELIOS.';
+
+  @override
+  String ctlRetryingIn(Object s, Object attempt, Object max) {
+    return 'Mencoba lagi dalam $s dtk · percobaan $attempt dari $max';
+  }
+
+  @override
+  String get ctlAutoReconnectOff => 'Sambung ulang otomatis mati';
+
+  @override
+  String ctlStoppedRetrying(Object max) {
+    return 'Berhenti mencoba setelah $max kali';
+  }
+
+  @override
+  String ctlTryingAgain(Object attempt, Object max) {
+    return 'Mencoba lagi · percobaan $attempt dari $max';
+  }
+
+  @override
+  String get ctlLinkDropped =>
+      'Koneksi robot terputus, jadi robot berhenti demi keamanan.';
+
+  @override
+  String get ctlOpenQuiz => 'Buka kuis';
+
+  @override
+  String get ctlMission => 'MISI';
+
+  @override
+  String ctlSortItems(Object count) {
+    return 'Pilah $count benda di perjalanan ini';
+  }
+
+  @override
+  String get ctlThisDrive => 'PERJALANAN INI';
+
+  @override
+  String get ctlElioSays => 'KATA ELIO';
+
+  @override
+  String ctlMissionOf(Object done, Object target) {
+    return 'Misi $done dari $target';
+  }
+
+  @override
+  String get ctlSubtitle => 'Dekati, ambil, pilah dengan benar!';
+
+  @override
+  String get ctlLinkLost => 'koneksi terputus';
+
+  @override
+  String get ctlStopButton => 'tombol STOP';
+
+  @override
+  String get ctlRobotError => 'robot error';
+
+  @override
+  String ctlRobotStoppedWhy(Object why) {
+    return 'Robot BERHENTI · $why';
+  }
+
+  @override
+  String get ctlHoldForHome => 'Tahan 1 detik untuk HOME';
+
+  @override
+  String ctlRobotStoppedLong(Object why) {
+    return 'ROBOT DIHENTIKAN ($why). Pemindaian berhenti; kuis yang terbuka tetap bisa dijawab.';
+  }
+
+  @override
+  String get guideDriveTitle => 'Kemudikan robot';
+
+  @override
+  String get guideDriveBody =>
+      'Dorong tombol hijau ke arah tujuanmu. Lepas, robot berhenti.';
+
+  @override
+  String get guideStopTitle => 'STOP merah besar';
+
+  @override
+  String get guideStopBody =>
+      'Ketuk kapan saja jika ada yang tidak aman. Space atau Esc juga bisa.';
+
+  @override
+  String get guideGrabTitle => 'Ambil bendanya';
+
+  @override
+  String get guideGrabBody =>
+      'Saat benda sudah dekat, tekan AMBIL. LEPAS menjatuhkannya. HOME memarkir lengan.';
+
+  @override
+  String get guideQuizTitle => 'Jawab kuisnya';
+
+  @override
+  String get guideQuizBody =>
+      'Setelah tiap scan ELIOS AI memberi pertanyaan. Ketuk di sini untuk membukanya dan menangkan trofi!';
+
+  @override
+  String guideStepOf(Object step, Object total) {
+    return 'LANGKAH $step DARI $total';
+  }
+
+  @override
+  String get guideSkip => 'Lewati';
+
+  @override
+  String get guideNext => 'Lanjut';
+
+  @override
+  String get guideIntro =>
+      'Kemudikan ke sebuah benda, ambil, pilah, lalu jawab ELIOS AI untuk mendapat trofi. Ketuk Panduan kapan saja untuk mengulang ini.';
+
+  @override
+  String get r2JoystickHint =>
+      'Joystick: geser untuk menyetir, lepas untuk berhenti';
+
+  @override
+  String r2SpeedValue(Object value) {
+    return 'Kecepatan $value';
+  }
+
+  @override
+  String get r2RobotPrefix => 'Robot ';
+
+  @override
+  String get dsAiOffline => 'ELIOS AI offline · bank soal';
+
+  @override
+  String get dsAiReady => 'ELIOS AI siap';
+
+  @override
+  String get dsBack => 'Kembali';
+
+  @override
+  String get dsLive => 'LIVE';
+
+  @override
+  String get dsNoCamera => 'Tidak ada kamera';
+
+  @override
+  String get dsBankMode => 'Mode bank';
+
+  @override
+  String get dsPutItem =>
+      'Letakkan satu benda di dalam kotak putih, lalu ketuk Scan.';
+
+  @override
+  String get dsScanMakeQuiz => 'Scan dan buat kuis';
+
+  @override
+  String get dsScanMakeQuizShort => 'Scan & buat kuis';
+
+  @override
+  String get dsTiming => 'Sekitar 2–4 dtk · perlu internet';
+
+  @override
+  String get dsSwitchCamera => 'Ganti kamera';
+
+  @override
+  String get dsTestModeHint => 'Mode uji: kuis tanpa kamera';
+
+  @override
+  String get dsTestMode => 'Mode uji';
 }
