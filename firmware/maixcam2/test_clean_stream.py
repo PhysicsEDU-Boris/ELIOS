@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 NAMES = {'TRACK_TH', 'TRACK_LOST_FRAMES', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'NOMINAL_FX', 'track', 'parse_track_box', 'box_det', 'track_frame',
-         'hand_dets', 'arm_tags', 'find_arm_tags', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES'}
+         'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES'}
 
 
 class EndStream(BaseException):
@@ -76,6 +76,11 @@ class ArmTagsTest(unittest.TestCase):
         self.assertTrue(all(t['dist_rough'] for t in tags))
         json.dumps(tags, allow_nan=False)  # 0022: never NaN on the wire
 
+    def test_half_size_search_scales_back(self):
+        tags = self.M['arm_tags']([Tag(0, 20, cx=50, cy=40)], 2)
+        self.assertEqual((tags[0]['cx'], tags[0]['cy']), (100, 80))
+        self.assertEqual(tags[0]['dist_mm'], self.M['arm_tags']([Tag(0, 40)])[0]['dist_mm'])
+
     def test_degenerate_corners_leave_dist_out(self):
         self.assertEqual(self.M['arm_tags']([Tag(0, 0)]), [{'id': 0, 'cx': 100, 'cy': 80}])
 
@@ -129,8 +134,18 @@ class StreamTest(unittest.TestCase):
                 encodes.append(self.number)
                 return SimpleNamespace(to_bytes=lambda: str(self.number).encode())
 
+            def resize(self, w, h):
+                assert (w, h) == (320, 240)  # 640x480 crashes find_apriltags on the camera
+                return self
+
+            def width(self):
+                return 640
+
+            def height(self):
+                return 480
+
             def find_apriltags(self, families):
-                return [Tag(0, 40)] if self.number == 2 else []
+                return [Tag(0, 20)] if self.number == 2 else []
 
         class Camera:
             def read(self):

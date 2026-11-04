@@ -247,23 +247,28 @@ def hand_dets(frame):
     return [box_det(HAND_LABEL, o.x, o.y, o.w, o.h, o.score)
             for o in hands.detect(frame, conf_th=HAND_CONF_TH)]
 
-def arm_tags(tags):
-    """0022 arm_tags from find_apriltags results: ids 0 and 1 only, rough distance."""
+def arm_tags(tags, scale=1):
+    """0022 arm_tags from find_apriltags results (on a 1/scale image): ids 0 and 1, rough distance."""
     out = []
     for t in tags:
         size = TAG_SIZES_MM.get(t.id())
         if size is None:
             continue
         c = t.corners()
-        side = sum(math.hypot(c[i][0] - c[i-1][0], c[i][1] - c[i-1][1]) for i in range(4)) / 4
-        tag = {"id": t.id(), "cx": t.cx(), "cy": t.cy()}
+        side = scale * sum(math.hypot(c[i][0] - c[i-1][0], c[i][1] - c[i-1][1]) for i in range(4)) / 4
+        tag = {"id": t.id(), "cx": t.cx() * scale, "cy": t.cy() * scale}
         if side > 1:
             tag.update(dist_mm=round(NOMINAL_FX * size / side, 1), dist_rough=True)
         out.append(tag)
     return out
 
+# find_apriltags on a 640x480 frame kills the process (no Python error) on this
+# MaixPy (robot test, 4 Nov); 320x240 works in about 40 ms.
+TAG_SCALE = 2
+
 def find_arm_tags(frame):
-    return arm_tags(frame.find_apriltags(families=image.ApriltagFamilies.TAG36H11))
+    small = frame.resize(frame.width() // TAG_SCALE, frame.height() // TAG_SCALE)
+    return arm_tags(small.find_apriltags(families=image.ApriltagFamilies.TAG36H11), TAG_SCALE)
 
 model_name = "MixFormerV2 + hands" if model_loaded else "Not loaded"
 
