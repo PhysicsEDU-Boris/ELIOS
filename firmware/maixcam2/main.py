@@ -237,11 +237,12 @@ def box_det(label, x, y, w, h, score):
 # Tracker noise on a still pack: centre x +-0.5 px, y +-4.5 px, height +-7 px of 124 (robot
 # test 4 Nov). A new box within HOLD_SHIFT / HOLD_SIZE of the held box is that noise: the held
 # box is sent unchanged. Beyond it the item moved: the box follows at once. After SETTLE_CALLS
-# still calls (~1 s) the held box moves once to their median, if that is SETTLE_PX away.
+# still calls (~1 s) the held box moves once to their median, if that is SETTLE of the box away
+# (3 px was too fussy: width noise re-settled the box 3 times in 15 s, robot test 4 Nov).
 HOLD_SHIFT   = 0.10   # centre moved less than this fraction of the box's larger side
 HOLD_SIZE    = 0.15   # and width and height changed less than this fraction
 SETTLE_CALLS = 5
-SETTLE_PX    = 3
+SETTLE       = 0.06
 
 def moved(held, new):
     hx, hy, hw, hh = held
@@ -258,7 +259,7 @@ def hold(t, new):
     if len(t["still"]) >= SETTLE_CALLS:
         mid = tuple(sorted(v)[len(v) // 2] for v in zip(*t["still"]))
         t["still"] = []
-        if max(abs(a - b) for a, b in zip(mid, t["box"])) > SETTLE_PX:
+        if max(abs(a - b) for a, b in zip(mid, t["box"])) > SETTLE * max(t["box"][2:]):
             t["box"] = mid
     return t["box"]
 

@@ -91,6 +91,9 @@ file so the Wi-Fi QR setup stays):
   once; after 5 still calls (~1 s) it moves once to their median if that is more than 3 px away.
   The 3x size guard now compares with the previous box, not the LOCK box, so driving closer
   after LOCK is followed.
+- Hold measured on the camera (68 boxes, 15 s, still pack): height range 14 -> 1 px, centre y
+  9 -> 1 px; the box changed 4 times, 3 of them width re-settles of 4-5 px, so the settle step
+  became 6 % of the box instead of 3 px.
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 

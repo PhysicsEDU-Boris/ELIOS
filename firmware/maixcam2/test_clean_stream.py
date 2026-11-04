@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE_PX', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
+NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'NOMINAL_FX', 'track', 'parse_track_box', 'box_det', 'track_frame',
          'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES'}
 
@@ -103,15 +103,17 @@ class TrackFrameTest(unittest.TestCase):
         # The robot's measured noise on a still pack: y +-4 px, height +-7 px, x/w +-1 px.
         noise = [(161, 255, 84, 120), (162, 250, 85, 131), (161, 256, 84, 117), (160, 252, 83, 127),
                  (161, 254, 84, 122), (161, 249, 84, 130), (162, 256, 85, 118), (161, 253, 84, 125)]
+        noise += [(161, 253, 79, 124), (161, 253, 80, 124), (161, 253, 79, 125), (161, 253, 80, 124),
+                  (161, 253, 79, 124)]  # width 4-5 px off for 1 s, as measured: not worth a jump
         sent = {hold(t, b) for b in noise}
-        self.assertEqual(sent, {(161, 253, 84, 124)})  # one box, no jiggle (median within 3 px)
+        self.assertEqual(sent, {(161, 253, 84, 124)})  # one box, no jiggle (median within 6 %)
         moved_to = (200, 250, 84, 124)  # slid 39 px: followed at once
         self.assertEqual(hold(t, moved_to), moved_to)
-        after = [(201, 248, 85, 128), (200, 247, 84, 129), (201, 248, 84, 130), (200, 249, 84, 128),
-                 (201, 248, 85, 129), (200, 247, 84, 130)]
+        after = [(201, 242, 85, 133), (200, 241, 84, 134), (201, 242, 84, 135), (200, 243, 84, 133),
+                 (201, 242, 85, 134), (200, 241, 84, 135)]
         sent = [hold(t, b) for b in after]
         self.assertEqual(sent[:4], [moved_to] * 4)
-        self.assertEqual(sent[4], (201, 248, 84, 129))  # settled once to the median, then held
+        self.assertEqual(sent[4], (201, 242, 84, 134))  # 10 px taller: settled once, then held
         self.assertEqual(sent[5], sent[4])
 
     def test_driving_closer_is_followed(self):
