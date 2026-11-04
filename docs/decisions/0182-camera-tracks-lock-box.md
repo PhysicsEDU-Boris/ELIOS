@@ -132,6 +132,9 @@ file so the Wi-Fi QR setup stays):
   desk frame, hardly visible), and the AI picture `clean_image` stays at 80 but goes out at most
   every 700 ms instead of as a second copy on every frame with a box. LOCK and refine use a clean
   picture up to 1 s old. Estimate: -48 % data while locked, -22 % unlocked.
+- Measured on the hotspot (-46 dBm): unlocked 13.5 -> 15.3 fps, 760 -> 660 KB/s (preview 56 -> 38 KB);
+  locked 10.0 fps at 456 KB/s (old firmware ~840 KB/s at that rate). Locked fps is now the
+  camera's limit (MixFormerV2 ~63 ms every 2nd frame), not the Wi-Fi.
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 
