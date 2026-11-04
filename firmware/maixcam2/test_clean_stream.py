@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-NAMES = {'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
+NAMES = {'STEADY_SHIFT', 'STEADY_SIZE', 'STEADY_BLEND', 'steady', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'NOMINAL_FX', 'track', 'parse_track_box', 'box_det', 'track_frame',
          'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES'}
 
@@ -97,6 +97,16 @@ class FakeTracker:
 
 
 class TrackFrameTest(unittest.TestCase):
+    def test_noise_on_a_still_item_is_smoothed_a_real_move_is_not(self):
+        steady = load()['steady']
+        prev = (100, 100, 60, 120)
+        self.assertEqual(steady(None, prev), prev)
+        x, y, w, h = steady(prev, (106, 96, 66, 104))  # +-6 px, -13 % height: noise
+        self.assertAlmostEqual(x, 101.5)
+        self.assertAlmostEqual(h, 116)
+        self.assertEqual(steady(prev, (140, 100, 60, 120)), (140, 100, 60, 120))  # moved 1/3 box
+        self.assertEqual(steady(prev, (100, 100, 60, 170)), (100, 100, 60, 170))  # grew 42 %
+
     def test_init_follow_lose_and_find_again(self):
         tracker = FakeTracker([0.9] + [0.2] * 50 + [0.9])
         M = load(tracker=tracker, print=lambda *a: None)

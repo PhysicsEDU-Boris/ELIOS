@@ -212,7 +212,7 @@ model_load_error = tracker_error or hands_error
 
 # The app's LOCK box. pending = (x, y, w, h) waiting for the next frame to init on.
 # Tracking runs until track_stop or the next track_start: a lost item is searched for, not dropped.
-track = {"pending": None, "on": False, "id": 0, "label": "", "area": 1}
+track = {"pending": None, "on": False, "id": 0, "label": "", "area": 1, "box": None}
 
 def parse_track_box(box, img_w, img_h):
     """[x, y, w, h] top-left in stream pixels -> ints clipped to the frame. ValueError says why not."""
@@ -232,11 +232,29 @@ def box_det(label, x, y, w, h, score):
     return {"label": label, "score": round(float(score), 3),
             "x": int(x + w / 2), "y": int(y + h / 2), "w": int(w), "h": int(h)}
 
+# Tracker noise on a still item: centre +-7 px and size +-20 % between calls (robot test 4 Nov).
+# A box this close to the last one is blended in (STEADY_BLEND of the new box); a real move is
+# taken at once, so following is not slowed.
+STEADY_SHIFT = 0.15   # centre moved less than this fraction of the box's larger side
+STEADY_SIZE  = 0.30   # and width and height changed less than this fraction
+STEADY_BLEND = 0.25
+
+def steady(prev, new):
+    """new (x, y, w, h), blended into prev when the difference is only tracker noise."""
+    if prev is None:
+        return new
+    px, py, pw, ph = prev
+    nx, ny, nw, nh = new
+    shift = math.hypot(nx + nw / 2 - px - pw / 2, ny + nh / 2 - py - ph / 2) / max(pw, ph)
+    if shift >= STEADY_SHIFT or abs(nw / pw - 1) >= STEADY_SIZE or abs(nh / ph - 1) >= STEADY_SIZE:
+        return new
+    return tuple(p + STEADY_BLEND * (n - p) for p, n in zip(prev, new))
+
 def track_frame(frame):
     """The tracked box for this frame as a detection, or None (nothing locked, or lost)."""
     if track["pending"] is not None:
         x, y, w, h = track["pending"]
-        track.update(pending=None, on=True, area=w * h)
+        track.update(pending=None, on=True, area=w * h, box=(x, y, w, h))
         tracker.init(frame, x, y, w, h)
         return dict(box_det(track["label"], x, y, w, h, 1.0), track_id=track["id"])
     if not track["on"]:
@@ -244,7 +262,8 @@ def track_frame(frame):
     o = tracker.track(frame, TRACK_TH)
     growth = o.w * o.h / track["area"]
     if o.score >= TRACK_TH and 1 / TRACK_MAX_GROWTH <= growth <= TRACK_MAX_GROWTH:
-        return dict(box_det(track["label"], o.x, o.y, o.w, o.h, o.score), track_id=track["id"])
+        track["box"] = steady(track["box"], (o.x, o.y, o.w, o.h))
+        return dict(box_det(track["label"], *track["box"], o.score), track_id=track["id"])
     return None
 
 def hand_dets(frame):
