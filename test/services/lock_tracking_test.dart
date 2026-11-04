@@ -65,4 +65,13 @@ void main() {
     expect(stillThere(const Rect.fromLTRB(.55, .4, .75, .6), then), isFalse); // moved on
     expect(stillThere(null, then), isFalse); // lost
   });
+
+  test('unsettled: moving or lost after tracking; never with old firmware', () {
+    Detection d(bool? held) => Detection(x: 1, y: 1, w: 1, h: 1, trackId: 1, held: held);
+    expect(unsettled(d(false), seenTracking: true), isTrue); // moving / odd boxes
+    expect(unsettled(d(true), seenTracking: true), isFalse); // held
+    expect(unsettled(null, seenTracking: true), isTrue); // lost
+    expect(unsettled(null, seenTracking: false), isFalse); // old firmware: never tracked
+    expect(unsettled(d(null), seenTracking: true), isFalse); // old firmware: no `held`
+  });
 }

@@ -353,15 +353,16 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     return (lock: LockedItem(result, crop ?? bytes, box), failure: null);
   }
 
-  /// Refine (0182): a tight AI box for the item around [tracked] (fractions of [frame]), as
-  /// fractions of the frame; null when the AI finds no item or no box.
-  Future<Rect?> refineLockBox(Uint8List frame, Rect tracked) async {
-    final area = refineArea(tracked);
-    final crop = await compute(cropToBox, (frame, area));
-    if (crop == null) return null;
-    final result = await AiQuizService.instance.identifyItem(crop, wholeFrame: true);
-    final box = result.box == null ? null : fromCrop(cropArea(area), result.box!);
-    TesterLog.instance.log('scan', 'refine item="${result.item}" box=$box');
+  /// Refine (0182): a tight AI box for the item around [tracked] (fractions of [frame]), or in the
+  /// whole frame when [tracked] is null, as fractions of the frame; null when the AI finds no item
+  /// or no box.
+  Future<Rect?> refineLockBox(Uint8List frame, Rect? tracked) async {
+    final area = tracked == null ? null : refineArea(tracked);
+    final photo = area == null ? frame : await compute(cropToBox, (frame, area));
+    if (photo == null) return null;
+    final result = await AiQuizService.instance.identifyItem(photo, wholeFrame: true);
+    final box = result.box == null || area == null ? result.box : fromCrop(cropArea(area), result.box!);
+    TesterLog.instance.log('scan', 'refine ${area == null ? 'whole frame' : 'around'} item="${result.item}" box=$box');
     return box;
   }
 

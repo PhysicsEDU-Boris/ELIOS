@@ -56,6 +56,16 @@ Rect? lockOverlayBox({Rect? aiBox, Rect? trackBox, DateTime? trackSeenAt, requir
 /// At most one refine per this long (each is one AI call, ~2-3 s).
 const refineEvery = Duration(seconds: 3);
 
+/// No settled box for this long (lost, or only odd boxes: a pack laid flat is not recognised and
+/// never settles, robot test 4 Nov): the AI looks for the item in the whole frame instead.
+const unsettledRefineAfter = Duration(seconds: 2);
+
+/// The locked item has no settled box on this detection frame: the tracked box is moving
+/// (`held` false), or missing although the camera tracked it before. Old firmware (no tracking,
+/// or no `held`) is never unsettled, so it never triggers a refine.
+bool unsettled(Detection? tracked, {required bool seenTracking}) =>
+    tracked == null ? seenTracking : tracked.held == false;
+
 /// The area sent to the AI: the tracked box with half its size added on every side, in the frame.
 Rect refineArea(Rect tracked) => Rect.fromLTRB(
   (tracked.left - tracked.width / 2).clamp(0.0, 1.0),
