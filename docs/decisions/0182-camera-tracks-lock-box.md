@@ -63,7 +63,7 @@ file so the Wi-Fi QR setup stays):
   one); before the first one, and after the camera loses the item, it stays where it last was.
 - The live scan and its quiz skip the tracked box, so LOCK still opens no quiz (0181); hands still
   reach it, so the arm pause is unchanged.
-- A box more than 3x larger or smaller in area than the LOCK box counts as lost in the firmware
+- A box more than 2x larger or smaller in area than the previous box is dropped in the firmware
   (`TRACK_MAX_GROWTH`), and the app hides the green box 1.5 s after the last tracked box
   (`lockOverlayBox`).
 
@@ -103,6 +103,10 @@ file so the Wi-Fi QR setup stays):
   while the robot drives closer the size can lag up to 30 % until ~1 s after it stops.
 - The item's name sits outside, on the box's top edge (owner); inside only when the box touches
   the top of the video.
+- Robot check (firmware `f3f8073a`, 15 s): one fixed box for 8.3 s; flipped in the hand, lost
+  2 s, found again, one move and one settle, then fixed again. After a second loss the
+  whole-frame re-find took a box 2.8x the pack's area (a hand), so the per-call size guard went
+  from 3x to 2x (driving closer grows it ~1.3x a call).
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 

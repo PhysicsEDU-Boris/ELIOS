@@ -183,10 +183,11 @@ TRACK_TH       = 0.5   # MixFormerV2 score below this: the box is not sent that 
 # never reached (a fast lift lost the item for good, phone test 4 Nov); 5 is ~1 s.
 TRACK_REFIND_AFTER = 5
 TRACK_MIN_SIDE = 8
-# A box more than 3x larger or smaller in area than the last good one (~0.2 s earlier) is a
-# tracker jump, not the item: dropped. Against the LOCK box instead, driving from 50 to 20 cm
-# after LOCK would have dropped the item.
-TRACK_MAX_GROWTH = 3
+# A box more than 2x larger or smaller in area than the last good one (~0.2 s earlier) is a
+# tracker jump, not the item: dropped. Driving closer grows it ~1.3x a call; after a flip the
+# whole-frame re-find took a hand at 2.8x (robot test 4 Nov). Against the LOCK box instead,
+# driving from 50 to 20 cm after LOCK would have dropped the item.
+TRACK_MAX_GROWTH = 2
 HAND_CONF_TH   = 0.7
 HAND_LABEL     = "Human_Hand"   # r1_orchestrator / motion_gate pause on this label
 

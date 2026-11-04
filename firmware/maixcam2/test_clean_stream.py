@@ -153,16 +153,16 @@ class TrackFrameTest(unittest.TestCase):
         self.assertTrue(M['track']['on'])
         self.assertEqual(M['track_frame'](None)['track_id'], 4)  # found again, same id
 
-    def test_a_box_that_grows_or_shrinks_3x_is_not_sent(self):
+    def test_a_box_that_grows_or_shrinks_2x_is_not_sent(self):
         M = load(tracker=SimpleNamespace(init=lambda *a: None,
                                          track=lambda f, th: Obj(x=0, y=0, w=W, h=H, score=0.99)))
         M['track'].update(pending=(0, 0, 30, 40), id=1, label='kardus')
         M['track_frame'](None)
-        for W, H in [(30, 130), (10, 30)]:  # 1200 -> 3900 and 300 px^2
+        for W, H in [(30, 90), (15, 30), (30, 130)]:  # 1200 -> 2700, 450, 3900 px^2 (a hand at 2.8x)
             self.assertIsNone(M['track_frame'](None))
-        W, H = 50, 60  # 2.5x: still the item
+        W, H = 45, 50  # 1.9x: still the item
         M['track_frame'](None)
-        self.assertEqual(M['track_frame'](None)['w'], 50)
+        self.assertEqual(M['track_frame'](None)['w'], 45)
 
     def test_nothing_locked(self):
         M = load(tracker=FakeTracker([]))
@@ -219,7 +219,7 @@ class StreamTest(unittest.TestCase):
                  image=SimpleNamespace(Format=SimpleNamespace(FMT_JPEG=1),
                                        ApriltagFamilies=SimpleNamespace(TAG36H11=16)))
         M['hold'] = lambda t, box: box  # hold() is tested on its own; here the raw box
-        M['track'].update(pending=(100, 100, 50, 60), id=1, label='kardus')
+        M['track'].update(pending=(100, 100, 40, 50), id=1, label='kardus')  # FakeTracker's box is 0.6x its area
         with self.assertRaises(EndStream):
             asyncio.run(M['ws_frame_pusher']())
 
@@ -234,7 +234,7 @@ class StreamTest(unittest.TestCase):
         fresh = messages[1]
         self.assertEqual(fresh['frame_id'], fresh['detection_frame_id'])
         self.assertEqual([d['label'] for d in fresh['clean_detections']], ['kardus', 'Human_Hand'])
-        self.assertEqual(fresh['detections'][0]['x'], 125)
+        self.assertEqual(fresh['detections'][0]['x'], 120)
         self.assertEqual(fresh['detections'][0]['track_id'], 1)
         self.assertEqual(fresh['detections'][1], {'label': 'Human_Hand', 'score': 0.8,
                                                   'x': 10, 'y': 250, 'w': 10, 'h': 460})
