@@ -22,6 +22,7 @@ import '../providers/robot_provider.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../services/ai_quiz_service.dart';
 import '../services/live_scan_controller.dart';
+import '../services/lock_tracking.dart';
 import '../services/live_scan_state_machine.dart' show LiveScanState;
 import '../services/quiz_tts_service.dart';
 import '../services/robot/motion_gate.dart';
@@ -75,6 +76,15 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
   /// LOCK (0181): the AI's answer shown on the video until UNLOCK or the next LOCK.
   LockedItem? _locked;
+
+  /// The camera tracker's box for [_locked] (0182), as fractions; null until the first one.
+  Rect? _trackBox;
+  DateTime? _trackSeenAt;
+
+  /// AprilTags (0182): on while R1 grips, and for [_manualTagsFor] after a manual PICK UP.
+  bool? _tagsSent;
+  DateTime? _manualTagsUntil;
+  static const _manualTagsFor = Duration(seconds: 5);
   bool _locking = false;
   StreamSubscription<CapturedFrame>? _frameSubscription;
   ProviderSubscription<AsyncValue<String>>? _statusSubscription;
@@ -231,6 +241,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         final r1 = _r1!..tick();
         final text = r1.robotConnected ? 'robot terhubung' : r1.message ?? 'memeriksa robot...';
         if (mounted && text != _r1Status) setState(() => _r1Status = text);
+        final now = DateTime.now();
+        final wantTags = r1.wantsArmTags || (_manualTagsUntil != null && now.isBefore(_manualTagsUntil!));
+        if (wantTags != _tagsSent && WebSocketService().isConnected) {
+          WebSocketService().sendRobotCommand({'cmd': 'arm_tags', 'on': wantTags});
+          _tagsSent = wantTags;
+        }
         final dropPending = r1.state == R1State.sorting || r1.state == R1State.waitBoth;
         if (ref.read(r1DropPendingProvider) != dropPending) {
           ref.read(r1DropPendingProvider.notifier).state = dropPending;
@@ -261,6 +277,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         _latestFrame = frame;
         if (frame.hasPairedCleanImage) _lastCleanFrame = frame;
         if (frame.detections != null) _hudDetections = frame.detections!;
+        if (_locked != null && frame.detections != null) {
+          final tracked = trackedBox(frame.detections!, frame.width.toDouble(), frame.height.toDouble());
+          if (tracked != null) {
+            _trackBox = tracked;
+            _trackSeenAt = now;
+          }
+        }
       });
 
       // Auto-generated waste quiz: only fed by the real MaixCAM2 stream, the
@@ -269,13 +292,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         final liveScan = _liveScan;
         if (liveScan != null) {
           liveScan.onDetections(
-            frame.detections!,
+            untracked(frame.detections!),
             frameSize: Size(frame.width.toDouble(), frame.height.toDouble()),
             armMoving: WebSocketService().armMoving, // same message as the frame (0026)
             capturedFrame: frame,
           );
         } else if (!_gate.stopped && _scanQuizOn) {
-          ref.read(wasteQuizProvider.notifier).onDetections(frame.detections!);
+          ref.read(wasteQuizProvider.notifier).onDetections(untracked(frame.detections!));
         }
       }
     });
@@ -352,6 +375,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _liveScan?.onLinkRestored(); // 0020: a drop can't time absence; harmless on the first connect
     _r1?.linkUp(); // 0023: probe the command link (old firmware: "robot tidak terhubung")
     _gate.robot.status();
+    _tagsSent = null; // the camera starts with tags off: say again what we want
   }
 
   /// Escape, or space outside a text field: the emergency stop.
@@ -834,6 +858,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onHome: _gate.home,
       onPickUp: () {
         if (_gate.servo('gripper', 100)) {
+          _manualTagsUntil = DateTime.now().add(_manualTagsFor);
           notifier.setGripperVal(100);
           if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
         }
@@ -889,8 +914,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onLock: _locked != null || (link == ControlLink.connected && _latestFrame != null && !_locking) ? _lockOrUnlock : null,
       locked: _locked != null,
       onScan: !quizOpen && !_locking && (_locked != null || (link == ControlLink.connected && _latestFrame != null)) ? _scan : null,
-      lockBox: _locked?.box,
+      lockBox: _locked == null
+          ? null
+          : lockOverlayBox(aiBox: _locked!.box, trackBox: _trackBox, trackSeenAt: _trackSeenAt, now: DateTime.now()),
       lockLabel: _locked == null ? null : ScannedWaste.fromLabel(_locked!.result.item!).displayName,
+      frameAspect: _latestFrame == null || _latestFrame!.height == 0 ? 4 / 3 : _latestFrame!.width / _latestFrame!.height,
       driveKey: _driveKey,
       stopKey: _stopKey,
       actionKey: _actionKey,
@@ -925,7 +953,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// firmware's own drawings until the firmware stops making them). UNLOCK clears the box.
   Future<LockedItem?> _lockOrUnlock() async {
     if (_locked != null) {
-      setState(() => _locked = null);
+      WebSocketService().sendRobotCommand(trackStopCommand);
+      setState(() {
+        _locked = null;
+        _trackBox = null;
+        _trackSeenAt = null;
+      });
       return null;
     }
     final clean = _lastCleanFrame;
@@ -935,9 +968,16 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     setState(() => _locking = true);
     final answer = await ref.read(wasteQuizProvider.notifier).lockItem(frame);
     if (!mounted) return null;
+    final lock = answer.lock;
+    // The camera follows the box from here (0182). It is the box of this frame, ~2 s old by now.
+    if (lock?.box != null) {
+      WebSocketService().sendRobotCommand(trackStartCommand(lock!.box!, frame.width, frame.height, lock.result.item!));
+    }
     setState(() {
       _locking = false;
-      _locked = answer.lock;
+      _locked = lock;
+      _trackBox = null;
+      _trackSeenAt = null;
     });
     if (answer.lock == null) {
       ScaffoldMessenger.of(context)

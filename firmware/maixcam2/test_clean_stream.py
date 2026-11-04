@@ -9,9 +9,9 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-NAMES = {'TRACK_TH', 'TRACK_LOST_FRAMES', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
+NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE', 'GROW_MIN', 'median_box', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'HAND_GROWTH', 'HAND_MEMORY_MS', 'recent_hands', 'overlaps', 'size_ok', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'NOMINAL_FX', 'track', 'parse_track_box', 'box_det', 'track_frame',
-         'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES'}
+         'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'tags', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS'}
 
 
 class EndStream(BaseException):
@@ -97,25 +97,116 @@ class FakeTracker:
 
 
 class TrackFrameTest(unittest.TestCase):
-    def test_init_follow_and_lose(self):
-        tracker = FakeTracker([0.9, 0.2, 0.2, 0.9])
+    def test_a_still_item_keeps_one_box_a_move_is_followed_then_held(self):
+        hold = load()['hold']
+        t = {'box': (161, 253, 84, 124), 'still': [], 'odd': False}  # the LOCK box
+        # The robot's measured noise on a still pack: y +-4 px, height +-7 px, x/w +-1 px.
+        noise = [(161, 255, 84, 120), (162, 250, 85, 131), (161, 256, 84, 117), (160, 252, 83, 127),
+                 (161, 254, 84, 122), (161, 249, 84, 130), (162, 256, 85, 118), (161, 253, 84, 125)]
+        noise += [(161, 253, 79, 124), (161, 253, 80, 124), (161, 253, 79, 125), (161, 253, 80, 124),
+                  (161, 253, 79, 124)] * 2  # width 4-5 px off for 2 s, as measured: not worth a jump
+        sent = {hold(t, b) for b in noise}
+        self.assertEqual(sent, {(161, 253, 84, 124)})  # one box, no jiggle (median within 6 %)
+        moved_to = (200, 250, 84, 124)  # slid 39 px
+        self.assertEqual(hold(t, moved_to), (161, 253, 84, 124))  # one odd box: not yet
+        self.assertEqual(hold(t, moved_to), moved_to)  # twice: a real move, followed
+        after = [(201, 242, 85, 133), (200, 241, 84, 134), (201, 242, 84, 135), (200, 243, 84, 133),
+                 (201, 242, 85, 134), (200, 241, 84, 135)]
+        sent = [hold(t, b) for b in after]
+        self.assertEqual(sent[:4], [moved_to] * 4)
+        self.assertEqual(sent[4], (201, 242, 84, 134))  # 10 px taller: settled once, then held
+        self.assertEqual(sent[5], sent[4])
+
+    def test_a_flipped_item_in_place_does_not_bounce(self):
+        hold = load()['hold']
+        t = {'box': (160, 250, 90, 130), 'still': [], 'odd': False}
+        # Flipped in place: the tracker's box swings 15-40 % in height, with single wild ones.
+        flipped = [(160, 260, 90, 110), (158, 240, 92, 150), (160, 300, 90, 60), (161, 255, 89, 118),
+                   (160, 245, 90, 140), (159, 258, 91, 112), (160, 248, 90, 145), (160, 310, 90, 40),
+                   (161, 252, 90, 125), (160, 256, 90, 115)]
+        sent = [hold(t, b) for b in flipped]
+        self.assertEqual(len(set(sent)), 2)  # one settle to the flipped size, no bounce
+        self.assertEqual(sent[-5:], [sent[-1]] * 5)
+
+    def test_driving_closer_is_followed(self):
+        boxes = iter([(300, 200, 40, 50), (295, 195, 52, 65), (288, 188, 68, 85), (280, 180, 88, 110)]
+                     + [(280, 180, 88, 110)] * 6)  # then the robot stops
+        M = load(tracker=SimpleNamespace(init=lambda *a: None,
+                                         track=lambda f, th: Obj(**dict(zip('xywh', next(boxes))), score=0.99)))
+        M['track'].update(pending=(300, 200, 40, 50), id=1, label='kardus')
+        M['track_frame'](None)
+        widths = [M['track_frame'](None)['w'] for _ in range(9)]
+        self.assertEqual(widths[-1], 88)  # 4.8x the LOCK area: still the item, settled ~1 s after stopping
+
+    def test_init_follow_lose_and_find_again(self):
+        tracker = FakeTracker([0.9] * 5 + [0.2] * 50 + [0.9])
         M = load(tracker=tracker, print=lambda *a: None)
-        M['TRACK_LOST_FRAMES'] = 3
         M['track'].update(pending=(5, 6, 20, 30), id=4, label='kardus')
         first = M['track_frame'](None)
         self.assertEqual(tracker.inits, [(5, 6, 20, 30)])
         self.assertEqual(first, {'label': 'kardus', 'score': 1.0, 'x': 15, 'y': 21, 'w': 20, 'h': 30,
                                  'track_id': 4})
-        self.assertEqual(M['track_frame'](None)['x'], 25)  # centre of the tracked box
-        self.assertIsNone(M['track_frame'](None))  # low score: not sent, still tracking
+        # FakeTracker's box is 2x the LOCK area: a growth, taken once 5 calls in a row agree.
+        self.assertEqual([M['track_frame'](None)['x'] for _ in range(5)], [15, 15, 15, 15, 25])
+        for _ in range(50):  # lost for ~10 s: nothing sent, but still searching
+            self.assertIsNone(M['track_frame'](None))
         self.assertTrue(M['track']['on'])
-        self.assertIsNone(M['track_frame'](None))
-        self.assertTrue(M['track']['on'])
-        M['track']['misses'] = 2
-        tracker.scores.insert(0, 0.1)
-        self.assertIsNone(M['track_frame'](None))
-        self.assertFalse(M['track']['on'])  # lost: stopped, no box until the next track_start
-        self.assertIsNone(M['track_frame'](None))
+        self.assertEqual(M['track_frame'](None)['track_id'], 4)  # found again, same id
+
+    def test_a_box_that_grows_or_shrinks_2x_is_not_sent(self):
+        M = load(tracker=SimpleNamespace(init=lambda *a: None,
+                                         track=lambda f, th: Obj(x=0, y=0, w=W, h=H, score=0.99)))
+        M['track'].update(pending=(0, 0, 30, 40), id=1, label='kardus')
+        M['track_frame'](None)
+        for W, H in [(30, 90), (15, 30), (30, 130)]:  # 1200 -> 2700, 450, 3900 px^2 (a hand at 2.8x)
+            self.assertIsNone(M['track_frame'](None))
+        W, H = 45, 50  # 1.9x: still the item
+        self.assertEqual([M['track_frame'](None)['w'] for _ in range(5)], [30, 30, 30, 30, 45])  # a growth: 5 calls
+
+    def test_after_a_hand_sized_box_the_real_item_is_taken_again(self):
+        boxes = iter([(100, 100, 50, 50), (100, 100, 50, 50)])
+        M = load(tracker=SimpleNamespace(init=lambda *a: None,
+                                         track=lambda f, th: Obj(**dict(zip('xywh', next(boxes))), score=0.9)))
+        M['track'].update(pending=(100, 100, 50, 50), id=1, label='kardus')  # LOCK: 2500 px^2
+        M['track_frame'](None)
+        M['track']['area'] = 6500  # the last good box was hand + pack (video 15:21)
+        self.assertIsNotNone(M['track_frame'](None))  # 0.38x the last box, but the LOCK size: taken
+
+    def test_a_box_that_balloons_over_a_hand_keeps_the_held_box(self):
+        grown = (60, 40, 120, 130)  # pack + hand: 15600 px^2, 3.1x the held box
+        M = load(tracker=SimpleNamespace(init=lambda *a: None,
+                                         track=lambda f, th: Obj(**dict(zip('xywh', grown)), score=0.9)))
+        M['TRACK_MAX_GROWTH'] = 8  # let the box past the size guard: here the hand rule is under test
+        M['track'].update(pending=(100, 100, 50, 50), id=1, label='kardus')
+        M['track_frame'](None)
+        hand = [(150, 30, 60, 60)]
+        for _ in range(3):  # two in a row would be a move; with the hand it never is
+            self.assertEqual(M['track_frame'](None, hand)['w'], 50)
+        self.assertEqual(M['track']['area'], 2500)
+        # The hand is gone: the grown box counts again once it keeps one size for 5 calls.
+        self.assertEqual([M['track_frame'](None)['w'] for _ in range(5)], [50, 50, 50, 50, 120])
+
+    def test_a_growing_box_is_taken_only_when_it_keeps_one_size(self):
+        hold = load()['hold']
+        t = {'box': (300, 300, 80, 120), 'still': [], 'odd': False, 'grow': [], 'size': 9600}
+        # Hand + pack: taller every call, then a hand-sized jump (log 4 Nov) - never one size.
+        for box in [(300, 250, 90, 170), (295, 230, 95, 200), (290, 200, 100, 240), (285, 120, 110, 330),
+                    (290, 180, 100, 260), (285, 100, 110, 360), (290, 210, 100, 220)]:
+            self.assertEqual(hold(t, box), (300, 300, 80, 120))
+        # Small steps (each under 1.3x of the box before) still count as growth against the held size.
+        t = {'box': (300, 300, 80, 120), 'still': [], 'odd': False, 'grow': [], 'size': 9600}
+        for k in range(1, 6):
+            self.assertEqual(hold(t, (300, 300 - 15 * k, 80, 120 + 15 * k)), (300, 300, 80, 120))
+
+    def test_a_hand_counts_for_a_second_through_detector_misses(self):
+        recent = load()['recent_hands']
+        hand = (300, 40, 150, 150)
+        seen = recent([], 0, [hand])
+        seen = recent(seen, 200, [])  # missed on the next detection frame (as logged)
+        self.assertEqual([b for _, b in seen], [hand])
+        seen = recent(seen, 900, [])
+        self.assertEqual([b for _, b in seen], [hand])
+        self.assertEqual(recent(seen, 1000, []), [])  # gone after HAND_MEMORY_MS
 
     def test_nothing_locked(self):
         M = load(tracker=FakeTracker([]))
@@ -124,15 +215,15 @@ class TrackFrameTest(unittest.TestCase):
 
 class StreamTest(unittest.TestCase):
     def test_clean_frames_tracked_box_hands_and_tags(self):
-        frames, messages, encodes = [], [], []
+        frames, messages, encodes, searched = [], [], [], []
 
         class Frame:
             def __init__(self, number):
                 self.number = number
 
-            def to_format(self, _format):
-                encodes.append(self.number)
-                return SimpleNamespace(to_bytes=lambda: str(self.number).encode())
+            def to_jpeg(self, quality):
+                encodes.append((self.number, quality))
+                return SimpleNamespace(to_bytes=lambda: f'{self.number}@{quality}'.encode())
 
             def resize(self, w, h):
                 assert (w, h) == (320, 240)  # 640x480 crashes find_apriltags on the camera
@@ -145,6 +236,7 @@ class StreamTest(unittest.TestCase):
                 return 480
 
             def find_apriltags(self, families):
+                searched.append(self.number)
                 return [Tag(0, 20)] if self.number == 2 else []
 
         class Camera:
@@ -171,11 +263,15 @@ class StreamTest(unittest.TestCase):
                  hands=SimpleNamespace(detect=lambda frame, conf_th: [hand] if frame.number == 2 else []),
                  image=SimpleNamespace(Format=SimpleNamespace(FMT_JPEG=1),
                                        ApriltagFamilies=SimpleNamespace(TAG36H11=16)))
-        M['track'].update(pending=(100, 100, 50, 60), id=1, label='kardus')
+        M['hold'] = lambda t, box: box  # hold() is tested on its own; here the raw box
+        M['track'].update(pending=(100, 100, 40, 50), id=1, label='kardus')  # FakeTracker's box is 0.6x its area
+        M['tags']['on'] = True  # the app turned tags on for a grip
         with self.assertRaises(EndStream):
             asyncio.run(M['ws_frame_pusher']())
 
-        self.assertEqual(encodes, [1, 2, 3, 4])  # one JPEG per frame, never a second one
+        # A quality-60 preview per frame; the quality-80 AI picture only on the first detection frame:
+        # the second comes ~0.2 s later, within CLEAN_EVERY_MS.
+        self.assertEqual(encodes, [(1, 60), (2, 60), (2, 80), (3, 60), (4, 60)])
         for m in messages:
             self.assertEqual(m['vision_protocol'], 1)
             self.assertEqual((m['img_w'], m['img_h']), (640, 480))
@@ -186,19 +282,60 @@ class StreamTest(unittest.TestCase):
         fresh = messages[1]
         self.assertEqual(fresh['frame_id'], fresh['detection_frame_id'])
         self.assertEqual([d['label'] for d in fresh['clean_detections']], ['kardus', 'Human_Hand'])
-        self.assertEqual(fresh['detections'][0]['x'], 125)
+        self.assertEqual(fresh['detections'][0]['x'], 120)
         self.assertEqual(fresh['detections'][0]['track_id'], 1)
         self.assertEqual(fresh['detections'][1], {'label': 'Human_Hand', 'score': 0.8,
                                                   'x': 10, 'y': 250, 'w': 10, 'h': 460})
-        self.assertEqual(fresh['clean_image'], fresh['image'])
-        self.assertEqual(base64.b64decode(fresh['clean_image']), b'2')
+        self.assertEqual(base64.b64decode(fresh['image']), b'2@60')
+        self.assertEqual(base64.b64decode(fresh['clean_image']), b'2@80')  # the AI's picture, unchanged quality
         self.assertEqual(fresh['arm_tags'][0]['id'], 0)
 
         self.assertEqual(messages[2]['detections'], fresh['detections'])  # held between detection frames
         self.assertEqual(messages[2]['arm_tags'][0]['id'], 0)  # held until the next detection frame
         self.assertEqual([d['label'] for d in messages[3]['clean_detections']], ['kardus'])
+        self.assertNotIn('clean_image', messages[3])  # within CLEAN_EVERY_MS of the last one
         self.assertEqual(messages[3]['detections'][0]['x'], 25)  # FakeTracker's box
         self.assertEqual(messages[3]['arm_tags'], [])
+        self.assertEqual(searched, [2, 4])  # only on detection frames while on
+
+    def test_no_tag_search_unless_the_app_asks(self):
+        searched, messages = [], []
+
+        class Frame:
+            def to_jpeg(self, quality):
+                return SimpleNamespace(to_bytes=lambda: b'x')
+
+            def resize(self, w, h):
+                return self
+
+            def width(self):
+                return 640
+
+            def height(self):
+                return 480
+
+            def find_apriltags(self, families):
+                searched.append(1)
+                return []
+
+        class Client:
+            async def send(self, payload):
+                messages.append(json.loads(payload))
+                if len(messages) == 6:
+                    raise EndStream()
+
+        ticks = iter(range(0, 10 ** 6, 7))
+        M = load(asyncio=asyncio, json=json, base64=base64, print=lambda *a: None,
+                 stream_cam=SimpleNamespace(read=Frame), ws_streaming=True, ws_clients={Client()},
+                 cam_lock=threading.Lock(), setup={'stage': None},
+                 STREAM_RESOLUTION=(640, 480), FIRMWARE_SHA256='test-hash',
+                 mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)),
+                 tracker=None, hands=None,
+                 image=SimpleNamespace(ApriltagFamilies=SimpleNamespace(TAG36H11=16)))
+        with self.assertRaises(EndStream):
+            asyncio.run(M['ws_frame_pusher']())
+        self.assertEqual(searched, [])  # tags off by default: ~40 ms saved per detection frame
+        self.assertTrue(all(m['arm_tags'] == [] for m in messages))
 
 
 if __name__ == '__main__':

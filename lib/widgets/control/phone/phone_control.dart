@@ -69,6 +69,7 @@ class PhoneControlLayout extends StatelessWidget {
     this.onScan,
     this.lockBox,
     this.lockLabel,
+    this.frameAspect = 4 / 3,
     this.driveKey,
     this.stopKey,
     this.actionKey,
@@ -119,6 +120,9 @@ class PhoneControlLayout extends StatelessWidget {
   /// The locked item's box, as fractions (0..1) of the frame, and its name.
   final Rect? lockBox;
   final String? lockLabel;
+
+  /// The camera frame's width / height, for placing [lockBox] (MaixCAM2 streams 640x480).
+  final double frameAspect;
 
   /// GO replaces STOP only with a live link: offline always shows STOP (Figma 397:2604).
   bool get _showGo => stopped && link == ControlLink.connected;
@@ -593,38 +597,49 @@ class PhoneControlLayout extends StatelessWidget {
     );
   }
 
-  /// The AI's box over the video. The square camera frame is shown with BoxFit.cover, so the box
-  /// is scaled by the larger side and shifted by the cropped margin.
-  // ponytail: assumes a square frame (MaixCAM2 streams the model's 640x640); pass the frame size if that changes.
+  /// The locked item's box over the video. The frame is shown with BoxFit.cover, so the box is
+  /// scaled like the frame and shifted by the cropped margin. It glides to each new tracked box
+  /// over about the time between two (the camera tracks every 2nd frame, ~5 times a second).
   Widget _lockOverlay() => LayoutBuilder(builder: (context, c) {
-    final side = c.maxWidth > c.maxHeight ? c.maxWidth : c.maxHeight;
-    final dx = (c.maxWidth - side) / 2, dy = (c.maxHeight - side) / 2;
+    final fw = c.maxWidth / c.maxHeight > frameAspect ? c.maxWidth : c.maxHeight * frameAspect;
+    final fh = fw / frameAspect;
+    final dx = (c.maxWidth - fw) / 2, dy = (c.maxHeight - fh) / 2;
     final b = lockBox!;
+    final left = dx + b.left * fw, top = dy + b.top * fh;
+    const green = Color(0xFF22C55E);
     return Stack(children: [
-      Positioned(
+      AnimatedPositioned(
         key: const ValueKey('phone_lock_box'),
-        left: dx + b.left * side,
-        top: dy + b.top * side,
-        width: b.width * side,
-        height: b.height * side,
-        child: DecoratedBox(
-          decoration: BoxDecoration(border: Border.all(color: const Color(0xFF22C55E), width: 3)),
-          child: lockLabel == null
-              ? null
-              : Align(
-                  alignment: Alignment.topLeft,
-                  child: ColoredBox(
-                    color: const Color(0xFF22C55E),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      child: Text(lockLabel!, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                ),
+        duration: const Duration(milliseconds: 200),
+        left: left,
+        top: top,
+        width: b.width * fw,
+        height: b.height * fh,
+        child: const DecoratedBox(
+          decoration: BoxDecoration(border: Border.fromBorderSide(BorderSide(color: green, width: 3))),
         ),
       ),
+      // The name sits on the box's top edge, outside it (owner, 4 Nov); inside only when the box
+      // touches the top of the video, so it is never cut off.
+      if (lockLabel != null)
+        AnimatedPositioned(
+          key: const ValueKey('phone_lock_label'),
+          duration: const Duration(milliseconds: 200),
+          left: left,
+          top: top >= _lockLabelHeight ? top - _lockLabelHeight : top,
+          height: _lockLabelHeight,
+          child: ColoredBox(
+            color: green,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              child: Text(lockLabel!, style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.2, fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ),
     ]);
   });
+
+  static const _lockLabelHeight = 17.0;
 
   Widget _actionBar(BuildContext context) {
     final p = context.elio;

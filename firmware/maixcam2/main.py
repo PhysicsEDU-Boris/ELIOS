@@ -177,9 +177,25 @@ HAND_PATH    = "/root/models/hand_landmarks.mud"
 # held in between. MixFormerV2 costs ~63 ms a call: on every frame the stream
 # fell to 8 fps (robot test, 4 Nov), every 2nd frame keeps it near 11.
 DET_EVERY_N_FRAMES = 2
+# Smaller live video, the AI's picture unchanged (owner, 4 Nov: "better fps without hurting the AI").
+# The preview is JPEG quality 60 (-37 % bytes against 80 on a desk frame, hardly visible); the AI
+# picture (clean_image) stays at 80, what to_format(FMT_JPEG) gave before, but goes out only on a
+# detection frame at most every CLEAN_EVERY_MS (it was a second copy on every frame with a box).
+# The app uses a clean picture up to 1 s old for LOCK and refine.
+PREVIEW_QUALITY = 60
+CLEAN_QUALITY   = 80
+CLEAN_EVERY_MS  = 700
 TRACK_TH       = 0.5   # MixFormerV2 score below this: the box is not sent that frame
-TRACK_LOST_FRAMES = 15 # that many low-score tracker calls in a row (~3 s): stop tracking
+# MixFormerV2 searches 4.5x the box around its last good position; after this many low-score
+# calls it searches the whole frame once (MaixCDK maix_nn_mixformer_v2.hpp). The default 60 was
+# never reached (a fast lift lost the item for good, phone test 4 Nov); 5 is ~1 s.
+TRACK_REFIND_AFTER = 5
 TRACK_MIN_SIDE = 8
+# A box more than 2x larger or smaller in area than the last good one (~0.2 s earlier) is a
+# tracker jump, not the item: dropped. Driving closer grows it ~1.3x a call; after a flip the
+# whole-frame re-find took a hand at 2.8x (robot test 4 Nov). Against the LOCK box instead,
+# driving from 50 to 20 cm after LOCK would have dropped the item.
+TRACK_MAX_GROWTH = 2
 HAND_CONF_TH   = 0.7
 HAND_LABEL     = "Human_Hand"   # r1_orchestrator / motion_gate pause on this label
 
@@ -199,13 +215,14 @@ def _load(ctor, path):
         print("[AI] load FAILED:", path, "-", e)
         return None, str(e)
 
-tracker, tracker_error = _load(nn.MixFormerV2, TRACKER_PATH)
+tracker, tracker_error = _load(lambda model: nn.MixFormerV2(model=model, lost_find_interval=TRACK_REFIND_AFTER), TRACKER_PATH)
 hands, hands_error     = _load(nn.HandLandmarks, HAND_PATH)
 model_loaded     = tracker is not None and hands is not None
 model_load_error = tracker_error or hands_error
 
 # The app's LOCK box. pending = (x, y, w, h) waiting for the next frame to init on.
-track = {"pending": None, "on": False, "id": 0, "label": "", "misses": 0}
+# Tracking runs until track_stop or the next track_start: a lost item is searched for, not dropped.
+track = {"pending": None, "on": False, "id": 0, "label": "", "area": 1, "lock_area": 1, "box": None, "still": [], "odd": False}
 
 def parse_track_box(box, img_w, img_h):
     """[x, y, w, h] top-left in stream pixels -> ints clipped to the frame. ValueError says why not."""
@@ -225,24 +242,102 @@ def box_det(label, x, y, w, h, score):
     return {"label": label, "score": round(float(score), 3),
             "x": int(x + w / 2), "y": int(y + h / 2), "w": int(w), "h": int(h)}
 
-def track_frame(frame):
-    """The tracked box for this frame as a detection, or None (nothing locked, or lost)."""
+# Hold a still item's box (owner, 4 Nov: "the lock needs a fixed box, not a jiggling one", and
+# "not bouncing when the item is flipped"). Tracker noise on a still pack: centre x +-0.5 px,
+# y +-4.5 px, height +-7 px of 124 (robot test 4 Nov); a flipped item gives larger, odd boxes.
+# The held box is sent unchanged unless the item really moved: two calls in a row beyond
+# HOLD_SHIFT of the centre or HOLD_SIZE of a side (one odd box is ignored). Smaller size
+# changes, such as a flip in place, go through the settle: after SETTLE_CALLS still calls
+# (~1 s) the held box moves once to their median, if that is more than SETTLE of the box away.
+HOLD_SHIFT   = 0.10   # centre moved this fraction of the box's larger side
+HOLD_SIZE    = 0.30   # or a side changed by this fraction
+SETTLE_CALLS = 5
+SETTLE       = 0.06
+GROW_MIN     = 1.3    # area growth that counts as "grew" (see hold())
+
+def moved(held, new):
+    hx, hy, hw, hh = held
+    nx, ny, nw, nh = new
+    shift = math.hypot(nx + nw / 2 - hx - hw / 2, ny + nh / 2 - hy - hh / 2) / max(hw, hh)
+    return shift >= HOLD_SHIFT or abs(nw / hw - 1) >= HOLD_SIZE or abs(nh / hh - 1) >= HOLD_SIZE
+
+def median_box(boxes):
+    return tuple(sorted(v)[len(v) // 2] for v in zip(*boxes))
+
+def hold(t, new):
+    """The box to send for tracker box new (x, y, w, h); t keeps "box" (held), "still", "odd", "grow".
+    A box that grew by more than GROW_MIN in area is taken only once SETTLE_CALLS such boxes in a
+    row agree (within the hold band of their median): hand + item boxes kept changing size
+    (244, 271, 249, 274, 402 px tall, log 4 Nov), a real item, or one the robot drove closer to
+    and stopped at, keeps one size."""
+    if t["box"] is None:
+        t.update(box=new, still=[], odd=False, grow=[], size=new[2] * new[3])
+        return new
+    if moved(t["box"], new):
+        # Growth counts against the last confirmed size (LOCK, a settle, a confirmed growth), not the
+        # last box: in steps of under GROW_MIN a box walked up to hand size as plain moves.
+        if new[2] * new[3] > GROW_MIN * t.get("size", t["box"][2] * t["box"][3]):
+            t["grow"] = (t.get("grow", []) + [new])[-SETTLE_CALLS:]
+            mid = median_box(t["grow"])
+            if len(t["grow"]) == SETTLE_CALLS and not any(moved(mid, b) for b in t["grow"]):
+                t.update(box=mid, still=[], odd=False, grow=[], size=mid[2] * mid[3])
+            return t["box"]
+        t["grow"] = []
+        if t["odd"]:  # the second in a row: a real move
+            t.update(box=new, still=[], odd=False)
+        else:
+            t["odd"] = True
+        return t["box"]
+    t.update(odd=False, grow=[])
+    t["still"].append(new)
+    if len(t["still"]) >= SETTLE_CALLS:
+        mid = median_box(t["still"])
+        t["still"] = []
+        if max(abs(a - b) for a, b in zip(mid, t["box"])) > SETTLE * max(t["box"][2:]):
+            t.update(box=mid, size=mid[2] * mid[3])
+    return t["box"]
+
+# While a detected hand touches the item, the tracker box grows over hand and item together
+# (owner video 15:21: 2-3x the pack). A box that grew by more than HAND_GROWTH in area while a hand
+# overlaps it is not taken: the held box stays until the hand lets go.
+HAND_GROWTH = 1.3
+# The hand detector finds a hand over the pack on only about every other detection frame (log,
+# 4 Nov), and the box ballooned exactly on the misses: a hand counts for HAND_MEMORY_MS.
+HAND_MEMORY_MS = 1000
+
+def recent_hands(seen, now, hands):
+    """seen [(ms, box)] with this frame's hand boxes added and those older than HAND_MEMORY_MS dropped."""
+    return [(t, b) for t, b in seen if now - t < HAND_MEMORY_MS] + [(now, b) for b in hands]
+
+def overlaps(a, b):
+    return a[0] < b[0] + b[2] and b[0] < a[0] + a[2] and a[1] < b[1] + b[3] and b[1] < a[1] + a[3]
+
+def size_ok(area, ref):
+    return 1 / TRACK_MAX_GROWTH <= area / ref <= TRACK_MAX_GROWTH
+
+def track_frame(frame, hand_boxes=()):
+    """The tracked box for this frame as a detection, or None (nothing locked, or lost).
+    hand_boxes: this frame's hands, top-left (x, y, w, h)."""
     if track["pending"] is not None:
         x, y, w, h = track["pending"]
-        track.update(pending=None, on=True, misses=0)
+        track.update(pending=None, on=True, area=w * h, lock_area=w * h, box=(x, y, w, h), still=[], odd=False,
+                     grow=[], size=w * h)
         tracker.init(frame, x, y, w, h)
         return dict(box_det(track["label"], x, y, w, h, 1.0), track_id=track["id"])
     if not track["on"]:
         return None
     o = tracker.track(frame, TRACK_TH)
-    if o.score >= TRACK_TH and o.w > 0 and o.h > 0:
-        track["misses"] = 0
-        return dict(box_det(track["label"], o.x, o.y, o.w, o.h, o.score), track_id=track["id"])
-    track["misses"] += 1
-    if track["misses"] >= TRACK_LOST_FRAMES:
-        track["on"] = False
-        print("[Track] lost track", track["id"])
-    return None
+    new, area = (o.x, o.y, o.w, o.h), o.w * o.h
+    # Against the last good box (driving closer grows it ~1.3x a call) or the LOCK box: after a
+    # hand-sized box the real item, less than half that size, was refused for 15 s (video 15:21).
+    if o.score < TRACK_TH or not (size_ok(area, track["area"]) or size_ok(area, track["lock_area"])):
+        return None
+    held = track["box"]
+    if held is not None and area > HAND_GROWTH * held[2] * held[3] and any(overlaps(new, h) for h in hand_boxes):
+        return dict(box_det(track["label"], *held, o.score), track_id=track["id"], raw=[int(v) for v in new], hand=True)
+    track["area"] = area
+    # raw: the tracker's own box this call (top-left x, y, w, h), for logs; the app ignores it.
+    return dict(box_det(track["label"], *hold(track, new), o.score), track_id=track["id"], raw=[int(v) for v in new])
 
 def hand_dets(frame):
     """Hands as Human_Hand, boxed by their 21 landmarks: obj x/y/w/h is the model's
@@ -274,6 +369,10 @@ def arm_tags(tags, scale=1):
 # find_apriltags on a 640x480 frame kills the process (no Python error) on this
 # MaixPy (robot test, 4 Nov); 320x240 works in about 40 ms.
 TAG_SCALE = 2
+
+# AprilTags only around a grip (owner, 4 Nov): the app sends {"cmd":"arm_tags","on":true} while R1
+# positions, picks and sorts, and for a manual PICK UP; off otherwise (the search costs ~40 ms).
+tags = {"on": False}
 
 def find_arm_tags(frame):
     small = frame.resize(frame.width() // TAG_SCALE, frame.height() // TAG_SCALE)
@@ -340,6 +439,15 @@ LEFT_BTN  = (PAD, BTN_Y, CW, BTN_H)
 RIGHT_BTN = (PAD+CW+12, BTN_Y, CW, BTN_H)
 
 # ── App state ─────────────────────────────────────────────────────────────────
+# Screen off while a phone is connected (owner, 4 Nov): saves battery and leaves the CPU to the
+# stream. A tap wakes it for SCREEN_WAKE_MS; that tap only wakes it, it presses no button.
+SCREEN_WAKE_MS = 15000
+screen = {"on": True, "level": 50, "awake_until": 0, "swallow": False}
+try:
+    screen["level"] = disp.get_backlight() or 50
+except Exception as e:
+    print("[Screen] backlight read failed:", e)
+
 tick             = 0
 force_dc_pressed = False
 last_pressed     = False
@@ -482,10 +590,14 @@ async def ws_handler(websocket):
                     except ValueError as e:
                         await websocket.send(json.dumps({"event": "track_error", "error": str(e)}))
                     else:
-                        track.update(pending=box, on=False, misses=0, id=track["id"] + 1,
+                        track.update(pending=box, on=False, id=track["id"] + 1,
                                      label=str(data.get("label") or "Item")[:40])
                         await websocket.send(json.dumps({"event": "track_started", "track_id": track["id"]}))
                         print("[Track] start", track["id"], track["label"], box)
+
+                elif cmd == "arm_tags":
+                    tags["on"] = data.get("on") is True
+                    print("[Tags]", "on" if tags["on"] else "off")
 
                 elif cmd == "track_stop":
                     track.update(pending=None, on=False)
@@ -513,17 +625,20 @@ async def ws_handler(websocket):
 async def ws_frame_pusher():
     """Stream clean frames: detections = the tracked box + hands, plus arm_tags.
 
-    Nothing is drawn, so image is already clean. Every DET_EVERY_N_FRAMES-th
-    frame is a detection frame (detection_frame_id == frame_id, fresh box,
-    hands and tags, clean_detections); when that list is nonempty, clean_image
-    is the same JPEG as image (no second encode), so older apps still pair it.
+    Nothing is drawn. image is the preview JPEG (PREVIEW_QUALITY). Every
+    DET_EVERY_N_FRAMES-th frame is a detection frame (detection_frame_id ==
+    frame_id, fresh box, hands and tags, clean_detections); at most every
+    CLEAN_EVERY_MS one of them also carries clean_image, the same frame at
+    CLEAN_QUALITY for the AI, so older apps still pair it.
     """
     global stream_cam
     cam_w, cam_h = STREAM_RESOLUTION
     det_frame_count = 0
     frame_id = 0
     last_tracked, last_hands, last_tags = None, [], []
+    hands_seen = []
     stats = dict(t0=mtime.ticks_ms(), n=0, track=0, det=0, send=0)
+    clean_at = None
 
     while True:
         if ws_streaming and ws_clients and setup["stage"] != "scan":
@@ -539,26 +654,28 @@ async def ws_frame_pusher():
                 det_frame_count += 1
                 if det_frame_count >= DET_EVERY_N_FRAMES:
                     det_frame_count = 0
-                    last_tracked = None
-                    if tracker is not None:
-                        try:
-                            last_tracked = track_frame(frame)
-                        except Exception as te:
-                            print("[Track] error, tracking stopped:", te)
-                            track.update(on=False, pending=None)
-                    t1 = mtime.ticks_ms()
                     try:
                         last_hands = hand_dets(frame) if hands is not None else []
-                        last_tags = find_arm_tags(frame)
+                        last_tags = find_arm_tags(frame) if tags["on"] else []
                         detection_frame_id = frame_id
                     except Exception as de:
                         print("[AI] detect error:", de)
+                    t1 = mtime.ticks_ms()
+                    last_tracked = None
+                    if tracker is not None:
+                        try:
+                            hands_seen = recent_hands(hands_seen, t1, [(d["x"] - d["w"] / 2, d["y"] - d["h"] / 2, d["w"], d["h"])
+                                                                       for d in last_hands])
+                            last_tracked = track_frame(frame, [b for _, b in hands_seen])
+                        except Exception as te:
+                            print("[Track] error, tracking stopped:", te)
+                            track.update(on=False, pending=None)
                 t2 = mtime.ticks_ms()
 
                 if not (track["on"] or track["pending"]):
                     last_tracked = None  # track_stop shows at once, not at the next detection frame
                 dets = ([last_tracked] if last_tracked else []) + last_hands
-                b64 = base64.b64encode(frame.to_format(image.Format.FMT_JPEG).to_bytes()).decode()
+                b64 = base64.b64encode(frame.to_jpeg(quality=PREVIEW_QUALITY).to_bytes()).decode()
                 message = {
                     "vision_protocol": 1,
                     "firmware_sha256": FIRMWARE_SHA256,
@@ -572,8 +689,10 @@ async def ws_frame_pusher():
                 }
                 if detection_frame_id == frame_id:
                     message["clean_detections"] = dets
-                    if dets:
-                        message["clean_image"] = b64
+                    if clean_at is None or t2 - clean_at >= CLEAN_EVERY_MS:
+                        clean_at = t2
+                        message["clean_image"] = base64.b64encode(
+                            frame.to_jpeg(quality=CLEAN_QUALITY).to_bytes()).decode()
                 payload = json.dumps(message)
 
                 dead = set()
@@ -588,8 +707,8 @@ async def ws_frame_pusher():
                 # One timing line every 5 s (decision 0180's "step zero").
                 t3 = mtime.ticks_ms()
                 stats["n"] += 1
-                stats["track"] += t1 - t0
-                stats["det"] += t2 - t1
+                stats["det"] += t1 - t0     # hands + tags
+                stats["track"] += t2 - t1   # tracker
                 stats["send"] += t3 - t2
                 if t3 - stats["t0"] >= 5000:
                     n = stats["n"]
@@ -607,6 +726,7 @@ async def ws_frame_pusher():
                 print("[WS] Releasing stream camera")
                 stream_cam = None
                 track.update(on=False, pending=None)
+                tags["on"] = False
             det_frame_count = 0
             last_tracked, last_hands, last_tags = None, [], []
             await asyncio.sleep(0.05)
@@ -915,6 +1035,23 @@ while not app.need_exit():
         if just_released:
             setup_touch(tx,ty)
         continue
+
+    if ws_clients and mtime.ticks_ms() > screen["awake_until"]:
+        if pressed:  # wake for a while; this touch presses nothing
+            screen.update(awake_until=mtime.ticks_ms() + SCREEN_WAKE_MS, swallow=True)
+        else:
+            if screen["on"]:
+                disp.set_backlight(0)
+                screen["on"] = False
+            mtime.sleep_ms(100)
+            continue
+    if not screen["on"]:
+        disp.set_backlight(screen["level"])
+        screen["on"] = True
+    if screen["swallow"]:
+        if just_released:
+            screen["swallow"] = False
+        just_released = False
 
     if just_released and not ws_clients and hit(tx,ty,*SETUP_BTN):
         start_scan()
