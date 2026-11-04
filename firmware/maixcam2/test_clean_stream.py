@@ -152,9 +152,10 @@ class TrackFrameTest(unittest.TestCase):
         first = M['track_frame'](None)
         self.assertEqual(tracker.inits, [(5, 6, 20, 30)])
         self.assertEqual(first, {'label': 'kardus', 'score': 1.0, 'x': 15, 'y': 21, 'w': 20, 'h': 30,
-                                 'track_id': 4})
+                                 'track_id': 4, 'held': True})
         self.assertEqual(M['track_frame'](None)['x'], 15)  # moved: one odd box is held back
-        self.assertEqual(M['track_frame'](None)['x'], 25)  # the second: followed (centre of the box)
+        second = M['track_frame'](None)
+        self.assertEqual((second['x'], second['held']), (25, False))  # the second: followed, moving
         for _ in range(50):  # lost for ~10 s: nothing sent, but still searching
             self.assertIsNone(M['track_frame'](None))
         self.assertTrue(M['track']['on'])

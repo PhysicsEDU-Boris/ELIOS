@@ -12,6 +12,7 @@ import '../models/quiz_explanation.dart';
 import '../models/scan_record.dart';
 import '../models/scanned_waste.dart';
 import '../services/detection_crop.dart';
+import '../services/lock_tracking.dart';
 import '../services/detection_stabilizer.dart';
 import '../services/frame_source/frame_source.dart';
 import '../services/ai_quiz_service.dart';
@@ -350,6 +351,18 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final box = result.box;
     final crop = box == null ? null : await compute(cropToBox, (bytes, box));
     return (lock: LockedItem(result, crop ?? bytes, box), failure: null);
+  }
+
+  /// Refine (0182): a tight AI box for the item around [tracked] (fractions of [frame]), as
+  /// fractions of the frame; null when the AI finds no item or no box.
+  Future<Rect?> refineLockBox(Uint8List frame, Rect tracked) async {
+    final area = refineArea(tracked);
+    final crop = await compute(cropToBox, (frame, area));
+    if (crop == null) return null;
+    final result = await AiQuizService.instance.identifyItem(crop, wholeFrame: true);
+    final box = result.box == null ? null : fromCrop(cropArea(area), result.box!);
+    TesterLog.instance.log('scan', 'refine item="${result.item}" box=$box');
+    return box;
   }
 
   /// SCAN (0181): the quiz for a locked item, from its LOCK answer (no second identify call).

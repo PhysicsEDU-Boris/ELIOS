@@ -626,6 +626,9 @@ class Detection {
   /// Sideways floor offset (cm) from the optical axis.
   final double? lateralCm;
 
+  /// The tracked box only (0182): true while the item is still, false while it moves.
+  final bool? held;
+
   const Detection({
     required this.x,
     required this.y,
@@ -636,6 +639,7 @@ class Detection {
     this.trackId,
     this.distCm,
     this.lateralCm,
+    this.held,
   });
 
   factory Detection.fromJson(Map<String, dynamic> item) => Detection(
@@ -648,6 +652,7 @@ class Detection {
     trackId: _optInt(item['track_id']),
     distCm: _optDouble(item['dist_cm']),
     lateralCm: _optDouble(item['lateral_cm']),
+    held: item['held'] is bool ? item['held'] as bool : null,
   );
 
   @override

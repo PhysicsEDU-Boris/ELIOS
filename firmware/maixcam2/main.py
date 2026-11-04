@@ -292,14 +292,17 @@ def track_frame(frame):
         x, y, w, h = track["pending"]
         track.update(pending=None, on=True, area=w * h, box=(x, y, w, h), still=[], odd=False, follow=False)
         tracker.init(frame, x, y, w, h)
-        return dict(box_det(track["label"], x, y, w, h, 1.0), track_id=track["id"])
+        return dict(box_det(track["label"], x, y, w, h, 1.0), track_id=track["id"], held=True)
     if not track["on"]:
         return None
     o = tracker.track(frame, TRACK_TH)
     growth = o.w * o.h / track["area"]
     if o.score >= TRACK_TH and 1 / TRACK_MAX_GROWTH <= growth <= TRACK_MAX_GROWTH:
         track["area"] = o.w * o.h
-        return dict(box_det(track["label"], *hold(track, (o.x, o.y, o.w, o.h)), o.score), track_id=track["id"])
+        box = hold(track, (o.x, o.y, o.w, o.h))
+        # held: the item is still (hold mode). A false -> true change tells the app it just settled
+        # after a move, turn or re-find, so it can ask the AI for a fresh, tight box (0182).
+        return dict(box_det(track["label"], *box, o.score), track_id=track["id"], held=not track["follow"])
     return None
 
 def hand_dets(frame):

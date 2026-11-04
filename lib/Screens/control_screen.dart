@@ -80,6 +80,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// The camera tracker's box for [_locked] (0182), as fractions; null until the first one.
   Rect? _trackBox;
   DateTime? _trackSeenAt;
+
+  /// Refine (0182): the tracked box's last `held`, a refine in flight, and when the last one began.
+  bool? _trackHeld;
+  bool _refining = false;
+  DateTime? _refinedAt;
   bool _locking = false;
   StreamSubscription<CapturedFrame>? _frameSubscription;
   ProviderSubscription<AsyncValue<String>>? _statusSubscription;
@@ -274,6 +279,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           }
         }
       });
+      final td = _locked == null || frame.detections == null ? null : trackedDetection(frame.detections!);
+      if (td != null) {
+        if (td.held == true && _trackHeld == false) unawaited(_refine(frame));
+        _trackHeld = td.held;
+      }
 
       // Auto-generated waste quiz: only fed by the real MaixCAM2 stream, the
       // debug phone-camera path triggers it manually instead.
@@ -945,6 +955,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         _locked = null;
         _trackBox = null;
         _trackSeenAt = null;
+        _trackHeld = null;
+        _refinedAt = null;
       });
       return null;
     }
@@ -965,6 +977,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       _locked = lock;
       _trackBox = null;
       _trackSeenAt = null;
+      _trackHeld = null;
+      _refinedAt = null;
     });
     if (answer.lock == null) {
       ScaffoldMessenger.of(context)
@@ -974,6 +988,21 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             : answer.failure ?? 'No item found. Point the camera at one item and try again.')));
     }
     return answer.lock;
+  }
+
+  /// Refine (0182): the item just settled after a move, turn or re-find; one AI call for a tight
+  /// box around it, then the camera tracks from that box. Skipped while one runs or within
+  /// [refineEvery]; a late answer is dropped if the lock changed or the item moved since.
+  Future<void> _refine(CapturedFrame frame) async {
+    final lock = _locked, around = _trackBox, last = _refinedAt;
+    final now = DateTime.now();
+    if (lock == null || around == null || _refining || (last != null && now.difference(last) < refineEvery)) return;
+    _refining = true;
+    _refinedAt = now;
+    final box = await ref.read(wasteQuizProvider.notifier).refineLockBox(frame.cleanBytes ?? frame.bytes, around);
+    _refining = false;
+    if (!mounted || box == null || _locked != lock || _trackHeld != true || !stillThere(_trackBox, around)) return;
+    WebSocketService().sendRobotCommand(trackStartCommand(box, frame.width, frame.height, lock.result.item!));
   }
 
   /// SCAN (0181): the quiz popup for the locked item; with nothing locked, LOCK first.
