@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
+NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE', 'moved', 'median_box', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'NOMINAL_FX', 'track', 'parse_track_box', 'box_det', 'track_frame',
          'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES'}
 
@@ -97,35 +97,42 @@ class FakeTracker:
 
 
 class TrackFrameTest(unittest.TestCase):
-    def test_a_still_item_keeps_one_box_a_move_is_followed_then_held(self):
+    def test_a_still_item_keeps_one_box(self):
         hold = load()['hold']
-        t = {'box': (161, 253, 84, 124), 'still': [], 'odd': False}  # the LOCK box
+        t = {'box': (161, 253, 84, 124), 'still': [], 'odd': False, 'follow': False}  # the LOCK box
         # The robot's measured noise on a still pack: y +-4 px, height +-7 px, x/w +-1 px.
         noise = [(161, 255, 84, 120), (162, 250, 85, 131), (161, 256, 84, 117), (160, 252, 83, 127),
                  (161, 254, 84, 122), (161, 249, 84, 130), (162, 256, 85, 118), (161, 253, 84, 125)]
         noise += [(161, 253, 79, 124), (161, 253, 80, 124), (161, 253, 79, 125), (161, 253, 80, 124),
                   (161, 253, 79, 124)] * 2  # width 4-5 px off for 2 s, as measured: not worth a jump
-        sent = {hold(t, b) for b in noise}
-        self.assertEqual(sent, {(161, 253, 84, 124)})  # one box, no jiggle (median within 6 %)
-        moved_to = (200, 250, 84, 124)  # slid 39 px
-        self.assertEqual(hold(t, moved_to), (161, 253, 84, 124))  # one odd box: not yet
-        self.assertEqual(hold(t, moved_to), moved_to)  # twice: a real move, followed
-        after = [(201, 242, 85, 133), (200, 241, 84, 134), (201, 242, 84, 135), (200, 243, 84, 133),
-                 (201, 242, 85, 134), (200, 241, 84, 135)]
-        sent = [hold(t, b) for b in after]
-        self.assertEqual(sent[:4], [moved_to] * 4)
-        self.assertEqual(sent[4], (201, 242, 84, 134))  # 10 px taller: settled once, then held
-        self.assertEqual(sent[5], sent[4])
+        self.assertEqual({hold(t, b) for b in noise}, {(161, 253, 84, 124)})  # one box, no jiggle
+        self.assertEqual(hold(t, (200, 250, 84, 124)), (161, 253, 84, 124))  # one odd box: ignored
+        self.assertEqual(hold(t, (161, 254, 84, 123)), (161, 253, 84, 124))
 
-    def test_a_flipped_item_in_place_does_not_bounce(self):
+    def test_a_slide_is_followed_every_call_then_held(self):
         hold = load()['hold']
-        t = {'box': (160, 250, 90, 130), 'still': [], 'odd': False}
+        t = {'box': (100, 250, 84, 124), 'still': [], 'odd': False, 'follow': False}
+        slide = [(113 + 13 * k, 250, 84, 124) for k in range(8)]  # 13 px a call
+        sent = [hold(t, b) for b in slide]
+        self.assertEqual(sent[0], (100, 250, 84, 124))  # first odd box: not yet
+        self.assertEqual(sent[1:], slide[1:])  # then every box, no steps
+        stopped = [(203, 251, 85, 126), (205, 249, 84, 122), (204, 250, 84, 124), (203, 252, 83, 125),
+                   (204, 250, 84, 124), (205, 251, 84, 123), (204, 249, 85, 124)]
+        sent = [hold(t, b) for b in stopped]
+        held = sent[-1]
+        self.assertEqual(sent[-3:], [held] * 3)  # held within ~1 s of stopping
+        self.assertLessEqual(max(abs(a - b) for a, b in zip(held, (204, 250, 84, 124))), 2)  # on the pack
+        self.assertFalse(t['follow'])
+
+    def test_a_flipped_item_in_place_settles_to_one_box(self):
+        hold = load()['hold']
+        t = {'box': (160, 250, 90, 130), 'still': [], 'odd': False, 'follow': False}
         # Flipped in place: the tracker's box swings 15-40 % in height, with single wild ones.
         flipped = [(160, 260, 90, 110), (158, 240, 92, 150), (160, 300, 90, 60), (161, 255, 89, 118),
                    (160, 245, 90, 140), (159, 258, 91, 112), (160, 248, 90, 145), (160, 310, 90, 40),
                    (161, 252, 90, 125), (160, 256, 90, 115)]
         sent = [hold(t, b) for b in flipped]
-        self.assertEqual(len(set(sent)), 2)  # one settle to the flipped size, no bounce
+        self.assertLessEqual(len(set(sent)), 2)  # at most one settle, no bounce
         self.assertEqual(sent[-5:], [sent[-1]] * 5)
 
     def test_driving_closer_is_followed(self):

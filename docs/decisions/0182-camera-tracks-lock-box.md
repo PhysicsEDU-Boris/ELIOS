@@ -107,6 +107,11 @@ file so the Wi-Fi QR setup stays):
   2 s, found again, one move and one settle, then fixed again. After a second loss the
   whole-frame re-find took a box 2.8x the pack's area (a hand), so the per-call size guard went
   from 3x to 2x (driving closer grows it ~1.3x a call).
+- Owner's video (11:04): with hold only, a sliding pack's box moved in steps and trailed it; a
+  pack laid flat kept the upright LOCK shape (too tall, half off). So `hold()` got a follow mode:
+  two odd boxes in a row switch to follow (every box sent, as before); five boxes in a row within
+  the band of their median (one odd allowed) switch back to hold on that median. The flat-pack
+  shape needs a fresh measurement (Gemini), not the tracker.
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 
