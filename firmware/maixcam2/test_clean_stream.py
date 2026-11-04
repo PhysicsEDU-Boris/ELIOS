@@ -158,7 +158,9 @@ class StreamTest(unittest.TestCase):
                 if len(messages) == 4:
                     raise EndStream()
 
-        hand = Obj(x=0, y=0, w=10, h=10, score=0.8)
+        # Square crop 0..300, landmarks spanning x 5..15, y 20..60 (one past the frame edge).
+        hand = Obj(x=0, y=0, w=300, h=300, score=0.8,
+                   points=[0] * 8 + [5, 20, 0, 15, 60, 0] + [10, 500, 0] * 19)
         ticks = iter(range(0, 10 ** 6, 7))
         M = load(asyncio=asyncio, json=json, base64=base64, print=lambda *a: None,
                  stream_cam=Camera(), ws_streaming=True, ws_clients={Client()},
@@ -186,6 +188,8 @@ class StreamTest(unittest.TestCase):
         self.assertEqual([d['label'] for d in fresh['clean_detections']], ['kardus', 'Human_Hand'])
         self.assertEqual(fresh['detections'][0]['x'], 125)
         self.assertEqual(fresh['detections'][0]['track_id'], 1)
+        self.assertEqual(fresh['detections'][1], {'label': 'Human_Hand', 'score': 0.8,
+                                                  'x': 10, 'y': 250, 'w': 10, 'h': 460})
         self.assertEqual(fresh['clean_image'], fresh['image'])
         self.assertEqual(base64.b64decode(fresh['clean_image']), b'2')
         self.assertEqual(fresh['arm_tags'][0]['id'], 0)

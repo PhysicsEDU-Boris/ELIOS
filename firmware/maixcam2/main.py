@@ -245,8 +245,16 @@ def track_frame(frame):
     return None
 
 def hand_dets(frame):
-    return [box_det(HAND_LABEL, o.x, o.y, o.w, o.h, o.score)
-            for o in hands.detect(frame, conf_th=HAND_CONF_TH)]
+    """Hands as Human_Hand, boxed by their 21 landmarks: obj x/y/w/h is the model's
+    large square crop (300-770 px on a 640x480 frame, robot test 4 Nov)."""
+    out = []
+    for o in hands.detect(frame, conf_th=HAND_CONF_TH):
+        pts = o.points[8:8 + 63]  # after the 4 crop corners: x, y, z per landmark
+        xs = [min(max(v, 0), frame.width()) for v in pts[0::3]]
+        ys = [min(max(v, 0), frame.height()) for v in pts[1::3]]
+        if xs and max(xs) > min(xs) and max(ys) > min(ys):
+            out.append(box_det(HAND_LABEL, min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys), o.score))
+    return out
 
 def arm_tags(tags, scale=1):
     """0022 arm_tags from find_apriltags results (on a 1/scale image): ids 0 and 1, rough distance."""
