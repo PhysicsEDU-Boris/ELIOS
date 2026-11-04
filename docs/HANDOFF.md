@@ -5,7 +5,7 @@
 - New `firmware/maixcam2/main.py` `m2c-track-v1` from the camera's live wifi-qr file: no seg model, clean 640x480 frames, `track_start`/`track_stop` (MixFormerV2), `Human_Hand` from HandLandmarks, rough AprilTag `arm_tags` (`dist_rough`). Tracker/hands/tags every 2nd frame.
 - **Deployed on the camera** (owner OK), sha256 `c2a2d657…`; backup `/root/main.py.pre-track.bak` + `app.yaml.pre-track.bak`. Rollback: copy back, reopen ELIOS Clean Vision.
 - fps 10.4 → 17 unlocked, 10.5 locked (8.2 with the tracker every frame). find_apriltags at 640x480 kills the process, so tags run on 320x240. A crash left `vi init failed` for other processes until the app was reopened.
-- Box follows a moved pack; a box from an old frame tracks background at score 1.0 → app step 3 must send the box of the frame it gave Gemini. Landmark hand boxes not re-checked on the robot. No tags in view yet.
+- Box follows a moved pack; a box from an old frame tracks background at score 1.0 → app step 3 must send the box of the frame it gave Gemini. Landmark hand boxes fit the hand on the robot (162/259 frames). No tags in view yet.
 - #88 (lock-button) merged into `docs/segmentation-fps-options` after #87 merged, so its 8 commits are NOT in `feature/live-scan`; this branch carries them.
 - Camera Wi-Fi now WIFIBOR 192.168.100.135 (host key = USB key); USB link 10.73.69.1 was down. Measuring client: scratchpad `camclient.py` (not committed).
 

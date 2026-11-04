@@ -46,12 +46,13 @@ file so the Wi-Fi QR setup stays):
 
 - A cigarette pack locked from a fresh frame: the box followed it while it was moved and lifted by
   hand (score 0.65–1.0). An open palm over it lost the track; the box did not jump to the hand,
-  and tracking stopped 3 s later.
+  and tracking stopped 3 s later. (`docs/test-results/0182/track-pack-and-hand.jpg`)
 - A box sent from an older frame (the scene had shifted) was tracked on background at score 1.0:
   MixFormerV2 follows whatever patch it gets. **App step 3 must send the box of the frame it gave
   Gemini**, and the item should stay still until LOCK answers (~2 s).
-- Hands: 58 of 644 frames, score 0.81–0.996. The square-crop boxes led to the landmark boxes
-  above; the landmark boxes are covered by a unit test and have not been checked again on the robot.
+- Hands: 58 of 644 frames, score 0.81–0.996, but boxed by the model's square crop. After the
+  switch to landmark boxes: an open hand moved around in 162 of 259 frames (17.2 fps), each box
+  fitting the hand (`docs/test-results/0182/hand-landmark-boxes.jpg`).
 - AprilTags: none in view, so the tag path ran but `arm_tags` stayed empty; distance not checked.
 
 ## Not in this step
