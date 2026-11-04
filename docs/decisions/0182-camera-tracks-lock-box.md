@@ -189,6 +189,17 @@ file so the Wi-Fi QR setup stays):
   `SETTLE_CALLS` (5) agreeing boxes, the same as growth. While the item is covered, the held box
   stays. An item that is really smaller (the robot drove away and stopped) is taken after about 1 s.
 - **Test.** `test_a_box_shrinking_under_a_cover_keeps_the_held_box`, break-checked.
+- **Phone re-test** (firmware `dcea9b1d`, 170 s, recorded over USB with the camera's own box log;
+  [screenshot](../test-results/0182/shrink-rule-phone-cover.jpg)):
+  - Cup locked and covered by hand and card for about 100 s: the box was on the cup in 767 of
+    791 sent frames (97 %). There was no tiny box. 87 times the held box stayed while the
+    tracker's own box was elsewhere. The box was hidden 23 % of the time (tracker score low
+    while covered).
+  - Earphone case covered by the card: 304 of 304 sent frames on the item.
+  - Left over: three short sideways jumps of the same size (0.3–0.4 s each, at 30, 34 and
+    104 s), where the tracker found a matching patch while the cup was fully covered, twice in
+    a row.
+  - App log: no errors. LIVE 19–21 fps with the Mac recorder as a second client.
 
 ## Not in this step
 
