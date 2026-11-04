@@ -2757,4 +2757,174 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dismissNotification => 'Dismiss notification';
+
+  @override
+  String get wqCannotCrop =>
+      'The item could not be cut out of the photo. Try scanning again.';
+
+  @override
+  String get wqNoCleanPhoto =>
+      'The original photo without annotations is not available yet. Update the camera firmware, then scan again.';
+
+  @override
+  String get wqNotRecognised => 'The item in the photo was not recognised yet.';
+
+  @override
+  String get wqPickFirst =>
+      'Pick one answer first. After that you can ask anything about this question.';
+
+  @override
+  String get wqWriteFirst =>
+      'Write your answer and send it. After it is graded you can ask more.';
+
+  @override
+  String wqFallbackAi(Object reason) {
+    return 'This is a backup question because the AI couldn\'t write one. $reason';
+  }
+
+  @override
+  String get wqFallbackGeneric =>
+      'This is a general question because this item is not in the question bank yet.';
+
+  @override
+  String get wqBankNotice =>
+      'The AI is not connected, so this question is from the question bank. Check the internet.';
+
+  @override
+  String get wqRight => 'Correct!';
+
+  @override
+  String wqWrong(Object answer) {
+    return 'Not quite. The right answer: $answer.';
+  }
+
+  @override
+  String get wqEssayAnswer => 'Essay answer';
+
+  @override
+  String wqSavedNotGraded(Object reason) {
+    return 'Answer saved, but the AI couldn\'t grade it yet. $reason';
+  }
+
+  @override
+  String wqForFullMarks(Object tip) {
+    return 'For full marks: $tip';
+  }
+
+  @override
+  String wqScore(Object score) {
+    return 'Score: $score/10.';
+  }
+
+  @override
+  String get wqAnswerFirstMc =>
+      'Answer the question first. Once you pick an answer, I\'ll explain it and answer your questions about it.';
+
+  @override
+  String get wqAnswerFirstEssay =>
+      'Send your essay answer first. Then I\'ll grade it and we can talk about it.';
+
+  @override
+  String get wqScanFirst =>
+      'Scan an item first to start the quiz, then we can talk.';
+
+  @override
+  String wqAiCannotAnswer(Object reason) {
+    return 'The AI can\'t answer yet. $reason';
+  }
+
+  @override
+  String get wqCheckInternet =>
+      'Check the internet connection, then try again.';
+
+  @override
+  String get wqTryAgain => 'Try again.';
+
+  @override
+  String wqSkipped(Object n) {
+    return 'Question $n skipped.';
+  }
+
+  @override
+  String wqSkippedCount(Object count) {
+    return ' $count questions skipped.';
+  }
+
+  @override
+  String wqSessionDone(Object correct, Object total, Object skipped) {
+    return 'Session done! Correct answers: $correct of $total.$skipped Scan another item for new questions.';
+  }
+
+  @override
+  String get wqQuestionReady => 'Question ready';
+
+  @override
+  String get r1LinkLost => 'The robot connection dropped. The robot stopped.';
+
+  @override
+  String get r1NotConnected => 'robot not connected';
+
+  @override
+  String r1Stopped(Object reason) {
+    return 'Robot stopped ($reason). Press \"Continue\" when it is safe.';
+  }
+
+  @override
+  String get r1Stop => 'Stop';
+
+  @override
+  String get r1Picking => 'The robot is picking up the item';
+
+  @override
+  String get r1NotIdentified => 'The item could not be identified. Drive on.';
+
+  @override
+  String get r1NoConfirm =>
+      'No confirmation. The robot did not pick up the item.';
+
+  @override
+  String get r1Timeout => 'Time is up. The robot did not pick up the item.';
+
+  @override
+  String get r1TooLong => 'The robot took too long. The robot stopped.';
+
+  @override
+  String get r1Resuming => 'The robot is carrying on';
+
+  @override
+  String get r1PickFailed => 'The item was not picked up. The robot stopped.';
+
+  @override
+  String get r1Done => 'Done! The robot can drive again.';
+
+  @override
+  String get r1ConfirmFirst => 'Confirm first';
+
+  @override
+  String get r1WhichBin => 'Which bin does it go in?';
+
+  @override
+  String r1RobotChose(Object bin) {
+    return 'The robot chose: $bin';
+  }
+
+  @override
+  String get r1PositionOk => 'Is the position right?';
+
+  @override
+  String get r1Forward => 'Forward a little';
+
+  @override
+  String get r1Back => 'Back up';
+
+  @override
+  String get r1PressPick => 'Press Pick up';
+
+  @override
+  String get r1Hand => 'A hand! The robot is pausing.';
+
+  @override
+  String r1NoReply(Object cmd, Object reason) {
+    return 'The robot did not reply ($cmd: $reason). The robot stopped.';
+  }
 }

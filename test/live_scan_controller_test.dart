@@ -539,7 +539,7 @@ void main() {
     expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.loadingQuestion);
 
     await quiz.sendChatMessage('ini sampah apa?');
-    expect(container.read(wasteQuizProvider).messages.last.text, startsWith('Scan sampah dulu'));
+    expect(container.read(wasteQuizProvider).messages.last.text, startsWith('Scan an item first'));
     expect(c.machine.state, LiveScanState.asking);
 
     question.complete('{"question": "Bahan utama botol ini?", "correct": "PET", "wrong": ["Kaca", "Logam", "Kertas"], '

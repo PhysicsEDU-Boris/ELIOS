@@ -142,7 +142,7 @@ void main() {
     await pumpEventQueue(times: 50);
     final state = container.read(wasteQuizProvider);
     expect(state.phase, WasteQuizPhase.finished);
-    expect(state.messages.last.text, contains('Jawaban benar: 1 dari 1.'));
+    expect(state.messages.last.text, contains('Correct answers: 1 of 1.'));
     expect(store.totalTrophies, 8 + questBonus(store.records));
   });
 

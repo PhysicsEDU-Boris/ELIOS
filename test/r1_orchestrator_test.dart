@@ -148,7 +148,7 @@ void main() {
       r.toPosition();
       expect(r.r1.state, R1State.position);
       expect(r.r1.showPositionButton, isTrue);
-      expect(r.r1.message, 'Posisi sudah pas?');
+      expect(r.r1.message, 'Is the position right?');
       r.r1.onPositionConfirmed();
       expect(r.r1.state, R1State.ready);
       expect(r.count('UNLOCK_DRIVE'), 0);
@@ -157,7 +157,7 @@ void main() {
     test('too far: "Maju sedikit", nudges at capped speed, re-locked inside the band', () {
       final r = _Rig(setup: (s) => s.objectDistCm = 31);
       r.toPosition();
-      expect(r.r1.message, 'Maju sedikit');
+      expect(r.r1.message, 'Forward a little');
       expect(r.cmds.last, 'UNLOCK_DRIVE');
       expect(r.robot.driveLocked, isFalse);
       r.run(300);
@@ -175,7 +175,7 @@ void main() {
     test('too close: "Mundur"', () {
       final r = _Rig(setup: (s) => s.objectDistCm = 17);
       r.toPosition();
-      expect(r.r1.message, 'Mundur');
+      expect(r.r1.message, 'Back up');
     });
 
     test('driving stays locked from the lock to READY: DRIVE is never sent', () {
@@ -391,7 +391,7 @@ void main() {
       expect(r.r1.onLock(_lockBox), isFalse, reason: 'still probing');
       r.run(ackTimeout.inMilliseconds + 200);
       expect(r.r1.robotConnected, isFalse);
-      expect(r.r1.message, 'robot tidak terhubung');
+      expect(r.r1.message, 'robot not connected');
       expect(r.r1.onLock(_lockBox), isFalse);
       expect(r.cmds, ['STATUS']);
       expect(r.robot.drive(75, 75), isTrue, reason: 'driving works as today');
@@ -504,7 +504,7 @@ void main() {
       r3.run(200);
       expect(r3.r1.handInView, isTrue);
       expect(r3.r1.home(), isFalse, reason: 'hand in view pauses HOME');
-      expect(r3.r1.message, contains('Ada tangan!'));
+      expect(r3.r1.message, contains('A hand!'));
       expect(r3.count('HOLD'), greaterThanOrEqualTo(1));
     });
   });

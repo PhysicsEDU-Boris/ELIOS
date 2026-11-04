@@ -1805,5 +1805,143 @@
   "openProfileMenu": "Open profile menu",
   "closeMenu": "Close menu",
   "navigationMenu": "Navigation menu",
-  "dismissNotification": "Dismiss notification"
+  "dismissNotification": "Dismiss notification",
+  "wqCannotCrop": "The item could not be cut out of the photo. Try scanning again.",
+  "wqNoCleanPhoto": "The original photo without annotations is not available yet. Update the camera firmware, then scan again.",
+  "wqNotRecognised": "The item in the photo was not recognised yet.",
+  "wqPickFirst": "Pick one answer first. After that you can ask anything about this question.",
+  "wqWriteFirst": "Write your answer and send it. After it is graded you can ask more.",
+  "wqFallbackAi": "This is a backup question because the AI couldn't write one. {reason}",
+  "@wqFallbackAi": {
+    "placeholders": {
+      "reason": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqFallbackGeneric": "This is a general question because this item is not in the question bank yet.",
+  "wqBankNotice": "The AI is not connected, so this question is from the question bank. Check the internet.",
+  "wqRight": "Correct!",
+  "wqWrong": "Not quite. The right answer: {answer}.",
+  "@wqWrong": {
+    "placeholders": {
+      "answer": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqEssayAnswer": "Essay answer",
+  "wqSavedNotGraded": "Answer saved, but the AI couldn't grade it yet. {reason}",
+  "@wqSavedNotGraded": {
+    "placeholders": {
+      "reason": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqForFullMarks": "For full marks: {tip}",
+  "@wqForFullMarks": {
+    "placeholders": {
+      "tip": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqScore": "Score: {score}/10.",
+  "@wqScore": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqAnswerFirstMc": "Answer the question first. Once you pick an answer, I'll explain it and answer your questions about it.",
+  "wqAnswerFirstEssay": "Send your essay answer first. Then I'll grade it and we can talk about it.",
+  "wqScanFirst": "Scan an item first to start the quiz, then we can talk.",
+  "wqAiCannotAnswer": "The AI can't answer yet. {reason}",
+  "@wqAiCannotAnswer": {
+    "placeholders": {
+      "reason": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqCheckInternet": "Check the internet connection, then try again.",
+  "wqTryAgain": "Try again.",
+  "wqSkipped": "Question {n} skipped.",
+  "@wqSkipped": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqSkippedCount": " {count} questions skipped.",
+  "@wqSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqSessionDone": "Session done! Correct answers: {correct} of {total}.{skipped} Scan another item for new questions.",
+  "@wqSessionDone": {
+    "placeholders": {
+      "correct": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      },
+      "skipped": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqQuestionReady": "Question ready",
+  "r1LinkLost": "The robot connection dropped. The robot stopped.",
+  "r1NotConnected": "robot not connected",
+  "r1Stopped": "Robot stopped ({reason}). Press \"Continue\" when it is safe.",
+  "@r1Stopped": {
+    "placeholders": {
+      "reason": {
+        "type": "Object"
+      }
+    }
+  },
+  "r1Stop": "Stop",
+  "r1Picking": "The robot is picking up the item",
+  "r1NotIdentified": "The item could not be identified. Drive on.",
+  "r1NoConfirm": "No confirmation. The robot did not pick up the item.",
+  "r1Timeout": "Time is up. The robot did not pick up the item.",
+  "r1TooLong": "The robot took too long. The robot stopped.",
+  "r1Resuming": "The robot is carrying on",
+  "r1PickFailed": "The item was not picked up. The robot stopped.",
+  "r1Done": "Done! The robot can drive again.",
+  "r1ConfirmFirst": "Confirm first",
+  "r1WhichBin": "Which bin does it go in?",
+  "r1RobotChose": "The robot chose: {bin}",
+  "@r1RobotChose": {
+    "placeholders": {
+      "bin": {
+        "type": "Object"
+      }
+    }
+  },
+  "r1PositionOk": "Is the position right?",
+  "r1Forward": "Forward a little",
+  "r1Back": "Back up",
+  "r1PressPick": "Press Pick up",
+  "r1Hand": "A hand! The robot is pausing.",
+  "r1NoReply": "The robot did not reply ({cmd}: {reason}). The robot stopped.",
+  "@r1NoReply": {
+    "placeholders": {
+      "cmd": {
+        "type": "Object"
+      },
+      "reason": {
+        "type": "Object"
+      }
+    }
+  }
 }

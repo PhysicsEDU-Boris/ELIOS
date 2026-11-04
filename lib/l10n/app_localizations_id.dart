@@ -2712,4 +2712,174 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get dismissNotification => 'Tutup notifikasi';
+
+  @override
+  String get wqCannotCrop =>
+      'Benda belum bisa dipotong dari foto. Coba scan lagi.';
+
+  @override
+  String get wqNoCleanPhoto =>
+      'Foto asli tanpa anotasi belum tersedia. Perbarui firmware kamera, lalu scan lagi.';
+
+  @override
+  String get wqNotRecognised => 'Benda di foto belum dikenali.';
+
+  @override
+  String get wqPickFirst =>
+      'Pilih satu jawaban dulu. Setelah itu kamu bisa bertanya apa saja tentang soal ini.';
+
+  @override
+  String get wqWriteFirst =>
+      'Tulis jawabanmu lalu kirim. Setelah dikoreksi, kamu bisa bertanya lebih lanjut.';
+
+  @override
+  String wqFallbackAi(Object reason) {
+    return 'Ini soal cadangan karena AI belum bisa membuat soal. $reason';
+  }
+
+  @override
+  String get wqFallbackGeneric =>
+      'Ini soal umum karena benda ini belum ada di bank soal.';
+
+  @override
+  String get wqBankNotice =>
+      'AI tidak tersambung, jadi soal ini dari bank soal. Periksa internet.';
+
+  @override
+  String get wqRight => 'Benar!';
+
+  @override
+  String wqWrong(Object answer) {
+    return 'Kurang tepat. Jawaban yang benar: $answer.';
+  }
+
+  @override
+  String get wqEssayAnswer => 'Jawaban Essay';
+
+  @override
+  String wqSavedNotGraded(Object reason) {
+    return 'Jawaban tersimpan, tapi AI belum bisa mengoreksi. $reason';
+  }
+
+  @override
+  String wqForFullMarks(Object tip) {
+    return 'Untuk nilai penuh: $tip';
+  }
+
+  @override
+  String wqScore(Object score) {
+    return 'Skor: $score/10.';
+  }
+
+  @override
+  String get wqAnswerFirstMc =>
+      'Jawab soalnya dulu, ya. Setelah kamu memilih jawaban, aku akan menjelaskan dan menjawab pertanyaanmu tentang soal ini.';
+
+  @override
+  String get wqAnswerFirstEssay =>
+      'Kirim jawaban essay-mu dulu, ya. Setelah itu aku koreksi dan kita bisa membahasnya.';
+
+  @override
+  String get wqScanFirst =>
+      'Scan sampah dulu untuk memulai kuis, lalu kita bisa berdiskusi.';
+
+  @override
+  String wqAiCannotAnswer(Object reason) {
+    return 'AI belum bisa menjawab. $reason';
+  }
+
+  @override
+  String get wqCheckInternet => 'Periksa koneksi internet, lalu coba lagi.';
+
+  @override
+  String get wqTryAgain => 'Coba lagi.';
+
+  @override
+  String wqSkipped(Object n) {
+    return 'Soal $n dilewati.';
+  }
+
+  @override
+  String wqSkippedCount(Object count) {
+    return ' $count soal dilewati.';
+  }
+
+  @override
+  String wqSessionDone(Object correct, Object total, Object skipped) {
+    return 'Sesi selesai! Jawaban benar: $correct dari $total.$skipped Scan sampah lain untuk soal baru.';
+  }
+
+  @override
+  String get wqQuestionReady => 'Soal siap';
+
+  @override
+  String get r1LinkLost => 'Koneksi ke robot terputus. Robot berhenti.';
+
+  @override
+  String get r1NotConnected => 'robot tidak terhubung';
+
+  @override
+  String r1Stopped(Object reason) {
+    return 'Robot dihentikan ($reason). Tekan \"Lanjutkan\" jika sudah aman.';
+  }
+
+  @override
+  String get r1Stop => 'Berhenti';
+
+  @override
+  String get r1Picking => 'Robot mengambil benda';
+
+  @override
+  String get r1NotIdentified =>
+      'Benda tidak bisa dikenali. Silakan jalan lagi.';
+
+  @override
+  String get r1NoConfirm =>
+      'Tidak ada konfirmasi. Robot tidak mengambil benda.';
+
+  @override
+  String get r1Timeout => 'Waktu habis. Robot tidak mengambil benda.';
+
+  @override
+  String get r1TooLong => 'Robot terlalu lama. Robot berhenti.';
+
+  @override
+  String get r1Resuming => 'Robot melanjutkan';
+
+  @override
+  String get r1PickFailed => 'Benda tidak terambil. Robot berhenti.';
+
+  @override
+  String get r1Done => 'Selesai! Robot boleh jalan lagi.';
+
+  @override
+  String get r1ConfirmFirst => 'Konfirmasi dulu';
+
+  @override
+  String get r1WhichBin => 'Masuk tempat sampah mana?';
+
+  @override
+  String r1RobotChose(Object bin) {
+    return 'Robot memilih: $bin';
+  }
+
+  @override
+  String get r1PositionOk => 'Posisi sudah pas?';
+
+  @override
+  String get r1Forward => 'Maju sedikit';
+
+  @override
+  String get r1Back => 'Mundur';
+
+  @override
+  String get r1PressPick => 'Tekan Ambil';
+
+  @override
+  String get r1Hand => 'Ada tangan! Robot berhenti sebentar.';
+
+  @override
+  String r1NoReply(Object cmd, Object reason) {
+    return 'Robot tidak menjawab ($cmd: $reason). Robot berhenti.';
+  }
 }

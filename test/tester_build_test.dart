@@ -101,7 +101,7 @@ void main() {
       expect(s.question?.bankId, isNotNull);
       expect(s.isFallback, isFalse);
       expect(s.questionSource, QuestionSource.bank);
-      expect(s.messages.last.text, contains('AI tidak tersambung'));
+      expect(s.messages.last.text, contains('The AI is not connected'));
     });
 
     test('a real call without Firebase fails soft: null, status offline', () async {

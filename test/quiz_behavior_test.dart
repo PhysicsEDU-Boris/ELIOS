@@ -86,7 +86,7 @@ void main() {
     await c.read(wasteQuizProvider.notifier).sendChatMessage('lalu dibuang kemana?');
     final last = c.read(wasteQuizProvider).messages.last;
     expect(last.isUser, isFalse);
-    expect(last.text, startsWith('Jawab soalnya dulu'));
+    expect(last.text, startsWith('Answer the question first'));
   });
 
   test('skip works only when "Skip Allowed" is on', () async {
@@ -221,7 +221,7 @@ void main() {
       await pumpEventQueue();
 
       expect(spoken, hasLength(1), reason: 'identical text spoken only once per quiz');
-      expect(spoken.single, startsWith('Jawab soalnya dulu'));
+      expect(spoken.single, startsWith('Answer the question first'));
     });
 
     test('a genuinely different reply is still spoken', () async {
@@ -233,7 +233,7 @@ void main() {
       await pumpEventQueue(); // _appendAiReply's speak() is unawaited
 
       expect(spoken, hasLength(1));
-      expect(spoken.single, contains('Sesi selesai'));
+      expect(spoken.single, contains('Session done'));
     });
 
     test('closing the quiz stops speech', () async {

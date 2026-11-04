@@ -236,7 +236,7 @@ void main() {
       expect(robot.commands.sublist(before), ['STOP'], reason: 'no UNLOCK_DRIVE yet');
       expect(robot.driveLocked, isTrue);
       expect(r1.state, R1State.searching);
-      expect(r1.message, contains('Lanjutkan'));
+      expect(r1.message, contains('Continue'));
       r1.linkUp(); // a reconnect alone does not unlock
       expect(robot.commands.sublist(before), ['STOP', 'STATUS']);
       r1.resumeAfterStop();

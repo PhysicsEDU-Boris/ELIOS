@@ -4902,6 +4902,276 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dismiss notification'**
   String get dismissNotification;
+
+  /// No description provided for @wqCannotCrop.
+  ///
+  /// In en, this message translates to:
+  /// **'The item could not be cut out of the photo. Try scanning again.'**
+  String get wqCannotCrop;
+
+  /// No description provided for @wqNoCleanPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'The original photo without annotations is not available yet. Update the camera firmware, then scan again.'**
+  String get wqNoCleanPhoto;
+
+  /// No description provided for @wqNotRecognised.
+  ///
+  /// In en, this message translates to:
+  /// **'The item in the photo was not recognised yet.'**
+  String get wqNotRecognised;
+
+  /// No description provided for @wqPickFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick one answer first. After that you can ask anything about this question.'**
+  String get wqPickFirst;
+
+  /// No description provided for @wqWriteFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your answer and send it. After it is graded you can ask more.'**
+  String get wqWriteFirst;
+
+  /// No description provided for @wqFallbackAi.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a backup question because the AI couldn\'t write one. {reason}'**
+  String wqFallbackAi(Object reason);
+
+  /// No description provided for @wqFallbackGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a general question because this item is not in the question bank yet.'**
+  String get wqFallbackGeneric;
+
+  /// No description provided for @wqBankNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI is not connected, so this question is from the question bank. Check the internet.'**
+  String get wqBankNotice;
+
+  /// No description provided for @wqRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct!'**
+  String get wqRight;
+
+  /// No description provided for @wqWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite. The right answer: {answer}.'**
+  String wqWrong(Object answer);
+
+  /// No description provided for @wqEssayAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Essay answer'**
+  String get wqEssayAnswer;
+
+  /// No description provided for @wqSavedNotGraded.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer saved, but the AI couldn\'t grade it yet. {reason}'**
+  String wqSavedNotGraded(Object reason);
+
+  /// No description provided for @wqForFullMarks.
+  ///
+  /// In en, this message translates to:
+  /// **'For full marks: {tip}'**
+  String wqForFullMarks(Object tip);
+
+  /// No description provided for @wqScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score: {score}/10.'**
+  String wqScore(Object score);
+
+  /// No description provided for @wqAnswerFirstMc.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer the question first. Once you pick an answer, I\'ll explain it and answer your questions about it.'**
+  String get wqAnswerFirstMc;
+
+  /// No description provided for @wqAnswerFirstEssay.
+  ///
+  /// In en, this message translates to:
+  /// **'Send your essay answer first. Then I\'ll grade it and we can talk about it.'**
+  String get wqAnswerFirstEssay;
+
+  /// No description provided for @wqScanFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan an item first to start the quiz, then we can talk.'**
+  String get wqScanFirst;
+
+  /// No description provided for @wqAiCannotAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI can\'t answer yet. {reason}'**
+  String wqAiCannotAnswer(Object reason);
+
+  /// No description provided for @wqCheckInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the internet connection, then try again.'**
+  String get wqCheckInternet;
+
+  /// No description provided for @wqTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again.'**
+  String get wqTryAgain;
+
+  /// No description provided for @wqSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {n} skipped.'**
+  String wqSkipped(Object n);
+
+  /// No description provided for @wqSkippedCount.
+  ///
+  /// In en, this message translates to:
+  /// **' {count} questions skipped.'**
+  String wqSkippedCount(Object count);
+
+  /// No description provided for @wqSessionDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Session done! Correct answers: {correct} of {total}.{skipped} Scan another item for new questions.'**
+  String wqSessionDone(Object correct, Object total, Object skipped);
+
+  /// No description provided for @wqQuestionReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Question ready'**
+  String get wqQuestionReady;
+
+  /// No description provided for @r1LinkLost.
+  ///
+  /// In en, this message translates to:
+  /// **'The robot connection dropped. The robot stopped.'**
+  String get r1LinkLost;
+
+  /// No description provided for @r1NotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'robot not connected'**
+  String get r1NotConnected;
+
+  /// No description provided for @r1Stopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot stopped ({reason}). Press \"Continue\" when it is safe.'**
+  String r1Stopped(Object reason);
+
+  /// No description provided for @r1Stop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get r1Stop;
+
+  /// No description provided for @r1Picking.
+  ///
+  /// In en, this message translates to:
+  /// **'The robot is picking up the item'**
+  String get r1Picking;
+
+  /// No description provided for @r1NotIdentified.
+  ///
+  /// In en, this message translates to:
+  /// **'The item could not be identified. Drive on.'**
+  String get r1NotIdentified;
+
+  /// No description provided for @r1NoConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'No confirmation. The robot did not pick up the item.'**
+  String get r1NoConfirm;
+
+  /// No description provided for @r1Timeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Time is up. The robot did not pick up the item.'**
+  String get r1Timeout;
+
+  /// No description provided for @r1TooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'The robot took too long. The robot stopped.'**
+  String get r1TooLong;
+
+  /// No description provided for @r1Resuming.
+  ///
+  /// In en, this message translates to:
+  /// **'The robot is carrying on'**
+  String get r1Resuming;
+
+  /// No description provided for @r1PickFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The item was not picked up. The robot stopped.'**
+  String get r1PickFailed;
+
+  /// No description provided for @r1Done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done! The robot can drive again.'**
+  String get r1Done;
+
+  /// No description provided for @r1ConfirmFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm first'**
+  String get r1ConfirmFirst;
+
+  /// No description provided for @r1WhichBin.
+  ///
+  /// In en, this message translates to:
+  /// **'Which bin does it go in?'**
+  String get r1WhichBin;
+
+  /// No description provided for @r1RobotChose.
+  ///
+  /// In en, this message translates to:
+  /// **'The robot chose: {bin}'**
+  String r1RobotChose(Object bin);
+
+  /// No description provided for @r1PositionOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Is the position right?'**
+  String get r1PositionOk;
+
+  /// No description provided for @r1Forward.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward a little'**
+  String get r1Forward;
+
+  /// No description provided for @r1Back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back up'**
+  String get r1Back;
+
+  /// No description provided for @r1PressPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Press Pick up'**
+  String get r1PressPick;
+
+  /// No description provided for @r1Hand.
+  ///
+  /// In en, this message translates to:
+  /// **'A hand! The robot is pausing.'**
+  String get r1Hand;
+
+  /// No description provided for @r1NoReply.
+  ///
+  /// In en, this message translates to:
+  /// **'The robot did not reply ({cmd}: {reason}). The robot stopped.'**
+  String r1NoReply(Object cmd, Object reason);
 }
 
 class _AppLocalizationsDelegate

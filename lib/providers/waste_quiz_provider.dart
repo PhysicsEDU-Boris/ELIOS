@@ -23,6 +23,7 @@ import '../services/scan_record_store.dart';
 import '../services/tester_log.dart';
 import '../services/websocket_service.dart';
 import 'app_preferences_provider.dart';
+import 'package:elio/l10n/l10n.dart';
 
 enum WasteQuizPhase { idle, identifying, confirmingHazard, confirmingMismatch, loadingQuestion, active, explaining, finished }
 
@@ -382,8 +383,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (bytes == null) {
       state = state.copyWith(phase: WasteQuizPhase.finished,
           notice: frame.hasPairedCleanImage
-              ? 'Benda belum bisa dipotong dari foto. Coba scan lagi.'
-              : 'Foto asli tanpa anotasi belum tersedia. Perbarui firmware kamera, lalu scan lagi.');
+              ? l10n.wqCannotCrop
+              : l10n.wqNoCleanPhoto);
       return;
     }
     _cropBytes = bytes;
@@ -409,7 +410,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       // Not dismissed, so the cancel came from a chat request taking the slot.
       final reason = result.failure == 'cancelled'
           ? AiQuizService.notReadyMessage
-          : result.failure ?? 'Benda di foto belum dikenali.';
+          : result.failure ?? l10n.wqNotRecognised;
       state = state.copyWith(
         phase: WasteQuizPhase.finished,
         notice: reason,
@@ -595,8 +596,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         (generated == null
             ? _fallbackIntro()
             : type == QuizQuestionType.multipleChoice
-                ? 'Pilih satu jawaban dulu. Setelah itu kamu bisa bertanya apa saja tentang soal ini.'
-                : 'Tulis jawabanmu lalu kirim. Setelah dikoreksi, kamu bisa bertanya lebih lanjut.');
+                ? l10n.wqPickFirst
+                : l10n.wqWriteFirst);
     state = state.copyWith(
       phase: WasteQuizPhase.active,
       question: question,
@@ -639,10 +640,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   }
 
   String _fallbackIntro() => _ai
-      ? 'Ini soal cadangan karena AI belum bisa membuat soal. ${_aiUnavailableReason()}'
-      : 'Ini soal umum karena benda ini belum ada di bank soal.';
+      ? l10n.wqFallbackAi(_aiUnavailableReason())
+      : l10n.wqFallbackGeneric;
 
-  static const _bankNotice = 'AI tidak tersambung, jadi soal ini dari bank soal. Periksa internet.';
+  static String get _bankNotice => l10n.wqBankNotice;
 
   /// Starts filling questions 2..N in the background through the single
   /// AI slot, one at a time, the instant question 1 shows.
@@ -753,8 +754,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final intro = bankNotice ?? (generated == null
         ? _fallbackIntro()
         : type == QuizQuestionType.multipleChoice
-            ? 'Pilih satu jawaban dulu. Setelah itu kamu bisa bertanya apa saja tentang soal ini.'
-            : 'Tulis jawabanmu lalu kirim. Setelah dikoreksi, kamu bisa bertanya lebih lanjut.');
+            ? l10n.wqPickFirst
+            : l10n.wqWriteFirst);
     state = state.copyWith(
       phase: WasteQuizPhase.active,
       question: question,
@@ -875,8 +876,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       clearExplanation: true,
     );
     final verdict = correct
-        ? 'Benar!'
-        : 'Kurang tepat. Jawaban yang benar: ${q.options[q.correctIndex]}.';
+        ? l10n.wqRight
+        : l10n.wqWrong(q.options[q.correctIndex]);
     _appendAiReply(q.explanation.isEmpty || (q.bankId != null && !q.bankReviewed)
         ? verdict : '$verdict ${q.explanation}');
     unawaited(loadExplanation());
@@ -893,7 +894,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       essaySubmitted: true,
       essayAnswer: trimmed,
       sendingChat: true,
-      messages: [...state.messages, ChatMessage(isUser: true, text: trimmed, caption: 'Jawaban Essay')],
+      messages: [...state.messages, ChatMessage(isUser: true, text: trimmed, caption: l10n.wqEssayAnswer)],
     );
     final reply = score == null
         ? await AiQuizService.instance.reviewEssay(
@@ -926,11 +927,11 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       clearExplanation: true,
     );
     _appendAiReply(grade == null
-        ? 'Jawaban tersimpan, tapi AI belum bisa mengoreksi. ${_aiUnavailableReason()}'
+        ? l10n.wqSavedNotGraded(_aiUnavailableReason())
         : [
             if (grade.feedback.isNotEmpty) grade.feedback,
-            if (grade.improvement.isNotEmpty) 'Untuk nilai penuh: ${grade.improvement}',
-            if (grade.feedback.isEmpty && grade.improvement.isEmpty) 'Skor: ${grade.score}/10.',
+            if (grade.improvement.isNotEmpty) l10n.wqForFullMarks(grade.improvement),
+            if (grade.feedback.isEmpty && grade.improvement.isEmpty) l10n.wqScore(grade.score),
           ].join(' '));
     unawaited(loadExplanation(essayGrade: grade));
   }
@@ -946,13 +947,12 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final q = state.question;
     if (state.phase == WasteQuizPhase.active && q != null && !state.answered) {
       _appendAiReply(q.type == QuizQuestionType.multipleChoice
-          ? 'Jawab soalnya dulu, ya. Setelah kamu memilih jawaban, aku akan menjelaskan '
-              'dan menjawab pertanyaanmu tentang soal ini.'
-          : 'Kirim jawaban essay-mu dulu, ya. Setelah itu aku koreksi dan kita bisa membahasnya.');
+          ? l10n.wqAnswerFirstMc
+          : l10n.wqAnswerFirstEssay);
       return;
     }
     if (q == null) {
-      _appendAiReply('Scan sampah dulu untuk memulai kuis, lalu kita bisa berdiskusi.');
+      _appendAiReply(l10n.wqScanFirst);
       return;
     }
 
@@ -964,7 +964,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       message: trimmed,
     );
     if (generation != _generation) return;
-    _appendAiReply(reply ?? 'AI belum bisa menjawab. ${_aiUnavailableReason()}');
+    _appendAiReply(reply ?? l10n.wqAiCannotAnswer(_aiUnavailableReason()));
   }
 
   String _quizContext(GeneratedQuestion q) {
@@ -989,8 +989,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   /// Short, specific reason shown when the AI couldn't answer.
   String _aiUnavailableReason() => AiQuizService.instance.status.value == AiStatus.offline
-      ? 'Periksa koneksi internet, lalu coba lagi.'
-      : 'Coba lagi.';
+      ? l10n.wqCheckInternet
+      : l10n.wqTryAgain;
 
   /// Only allowed when Config Settings → Quiz → Skip Allowed is on.
   void skipQuestion() {
@@ -1011,7 +1011,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     ));
     state = state.copyWith(
       skippedCount: state.skippedCount + 1,
-      messages: [...state.messages, ChatMessage(isUser: false, text: 'Soal ${state.questionIndex + 1} dilewati.')],
+      messages: [...state.messages, ChatMessage(isUser: false, text: l10n.wqSkipped(state.questionIndex + 1))],
       recordedQuestions: List.unmodifiable(_recordedQuestions),
     );
     _advance();
@@ -1103,7 +1103,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       final record = ScanRecord(
         id: 'scan-${DateTime.now().millisecondsSinceEpoch}',
         time: DateTime.now(),
-        itemName: scan?.displayName ?? 'Sampah',
+        itemName: scan?.displayName ?? l10n.wasteGeneric,
         category: ScanCategory.fromString(scan?.category?.id),
         cropPhotoPath: photoPath,
         difficulty: state.difficulty,
@@ -1131,9 +1131,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       cropBytes: _cropBytes,
       historyPhotoPath: photoPath,
     );
-    final skipped = state.skippedCount > 0 ? ' ${state.skippedCount} soal dilewati.' : '';
-    _appendAiReply('Sesi selesai! Jawaban benar: '
-        '${state.correctCount} dari ${state.totalQuestions}.$skipped Scan sampah lain untuk soal baru.');
+    final skipped = state.skippedCount > 0 ? l10n.wqSkippedCount(state.skippedCount) : '';
+    _appendAiReply(l10n.wqSessionDone(state.correctCount, state.totalQuestions, skipped));
   }
 
   void logRescanTapped() {
@@ -1158,7 +1157,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// A question arrived while the quiz was minimised: the Quiz button shows its badge,
   /// and with Voice on TTS says so (decision 0175).
   void _announceReady() {
-    if (state.minimized && state.voiceOn) unawaited(QuizTtsService.instance.speak('Question ready'));
+    if (state.minimized && state.voiceOn) unawaited(QuizTtsService.instance.speak(l10n.wqQuestionReady));
   }
 
   void listen(String text) => unawaited(QuizTtsService.instance.speak(text));

@@ -111,7 +111,7 @@ void main() {
       expect(s.question?.bankId, 'botol_plastik-mc-01');
       expect(s.questionSource, QuestionSource.bank);
       expect(questionSourceHeader(s), 'MODULE QUESTION · QUESTION BANK');
-      expect(s.messages.first.text, contains('AI tidak tersambung'));
+      expect(s.messages.first.text, contains('The AI is not connected'));
       expect(c.read(appPreferencesProvider).questionSource, QuestionSource.ai,
           reason: 'the saved choice is kept for the next scan');
     });
@@ -129,7 +129,7 @@ void main() {
       await settle(c);
       final s = c.read(wasteQuizProvider);
       expect(s.question?.bankId, isNotNull);
-      expect(s.messages.last.text, contains('AI tidak tersambung'));
+      expect(s.messages.last.text, contains('The AI is not connected'));
     });
 
     test('bank -> gemma -> bank across scans, and a stale prefetch is never shown', () async {
