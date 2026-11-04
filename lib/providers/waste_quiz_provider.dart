@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' show Rect;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -339,6 +340,38 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     unawaited(_cropThenIdentify(frame, detection, generation, diagnostics));
   }
 
+  /// LOCK (0181): the AI names and boxes the main item in the whole frame. Opens no quiz; the
+  /// result is shown on the video and can start one with [scanLocked]. Prefers the paired clean image.
+  Future<({LockedItem? lock, String? failure})> lockItem(CapturedFrame frame) async {
+    final bytes = frame.hasPairedCleanImage ? frame.cleanBytes! : frame.bytes;
+    TesterLog.instance.log('scan', 'lock frame=${frame.frameId} image=${frame.hasPairedCleanImage ? 'clean' : 'preview'}');
+    final result = await AiQuizService.instance.identifyItem(bytes, wholeFrame: true);
+    if (result.item == null) return (lock: null, failure: result.failure);
+    final box = result.box;
+    final crop = box == null ? null : await compute(cropToBox, (bytes, box));
+    return (lock: LockedItem(result, crop ?? bytes, box), failure: null);
+  }
+
+  /// SCAN (0181): the quiz for a locked item, from its LOCK answer (no second identify call).
+  void scanLocked(LockedItem lock) {
+    if (state.phase != WasteQuizPhase.idle) return;
+    _lastShownAt = DateTime.now();
+    _askedQuestions.clear();
+    _recordedQuestions.clear();
+    _cropBytes = lock.photo;
+    _historyPhotoBytes = lock.photo;
+    _bankQueues = null;
+    _usedAngles.clear();
+    _cancelPrefetch();
+    final generation = ++_generation;
+    loadingSince = DateTime.now();
+    state = _freshSession(phase: WasteQuizPhase.identifying);
+    final diagnostics = kDebugMode ? ScanDiagnostics() : null;
+    _diagnostics = diagnostics;
+    diagnostics?.event('scan_locked', {'item': lock.result.item, 'category': lock.result.category});
+    _quizFor(lock.result, lock.result.item!, generation, diagnostics: diagnostics);
+  }
+
   Future<void> _cropThenIdentify(CapturedFrame frame, TrackedDetection detection, int generation, ScanDiagnostics? diagnostics) async {
     final timing = kDebugMode ? (Stopwatch()..start()) : null;
     final crop = await compute(prepareDetectionCrop, (frame, detection));
@@ -395,6 +428,13 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         state = state.copyWith(cropBytes: refined);
       }
     }
+    _quizFor(result, item, generation, detectorLabel: detectorLabel, detectorScore: detectorScore,
+        frameId: frameId, diagnostics: diagnostics);
+  }
+
+  /// From an identified item to the hazard card, the mismatch card or the first question.
+  void _quizFor(PhotoIdentification result, String item, int generation,
+      {String? detectorLabel, double? detectorScore, int? frameId, ScanDiagnostics? diagnostics}) {
     final detectorHazard = detectorLabel != null &&
         ScannedWaste.fromLabel(detectorLabel).category?.id == 'hazardous';
     // 0180 (owner, 3 Nov): an AI answer with an explicit non-B3 bin and no hazard words in its item
@@ -1129,3 +1169,12 @@ final wasteQuizProvider = NotifierProvider<WasteQuizNotifier, WasteQuizUiState>(
 final debugQuizSourceProvider = StateProvider<WasteQuizSource>(
   (ref) => WasteQuizSource.maixCam2,
 );
+
+/// A LOCK answer (0181): the AI's item, the photo cut to its box (else the whole frame), and the
+/// box as fractions (0..1) of the frame.
+class LockedItem {
+  const LockedItem(this.result, this.photo, this.box);
+  final PhotoIdentification result;
+  final Uint8List photo;
+  final Rect? box;
+}

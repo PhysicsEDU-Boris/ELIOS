@@ -57,3 +57,5 @@ their status changed.
 | [0178](0178-robot-wifi-qr-setup.md) | Robot joins a hotspot from a Wi-Fi QR (confirm on screen, 45 s rollback); app QR sheet and Find ELIO | Draft |
 | [0179](0179-gemini-cloud-ai.md) | ELIOS AI on the Gemini API through the `ai-backend` Vercel function in Singapore (0176 chain, Firebase token check); on-device Gemma removed, bank is the offline fallback | Accepted |
 | [0180](0180-segmentation-and-fps-options.md) | Options for better segmentation and higher camera FPS; built: Gemini returns a tight box with the identify answer and re-crops the locked object | Accepted (B) |
+| [0181](0181-lock-button-ai-box.md) | LOCK on phone Control: the AI labels and boxes the item (one call, green box on the video, no quiz); SCAN opens its quiz | Accepted |
+| [0182](0182-camera-tracks-lock-box.md) | Camera firmware without the waste model: MixFormerV2 tracks the LOCK box (`track_start`), hands as `Human_Hand`, rough AprilTag `arm_tags`, clean 640x480 frames | Accepted |
