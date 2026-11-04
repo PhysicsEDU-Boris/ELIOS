@@ -238,7 +238,7 @@ void main() {
 
     testWidgets('0181: a locked item reads UNLOCK and its box is drawn over the video', (t) async {
       final frame = Uint8List.fromList(img.encodePng(img.Image(width: 64, height: 64)));
-      await pumpPhone(t, size, frame: frame, locked: true, lockBox: const Rect.fromLTRB(.25, .25, .75, .75));
+      await pumpPhone(t, size, frame: frame, locked: true, lockBox: const Rect.fromLTRB(.25, .25, .75, .75), frameAspect: 1);
       expect(find.text('UNLOCK'), findsOneWidget);
       final box = t.getRect(find.byKey(const ValueKey('phone_lock_box')));
       final video = t.getRect(find.byKey(const ValueKey('phone_video')));
@@ -246,6 +246,21 @@ void main() {
       expect(box.width, closeTo(video.width / 2, 2));
       expect(box.center.dx, closeTo(video.center.dx, 2));
       expect(find.text('Kardus'), findsOneWidget);
+    });
+
+    testWidgets('0182: a 640x480 frame places the box by its own aspect, and the box glides', (t) async {
+      final frame = Uint8List.fromList(img.encodePng(img.Image(width: 64, height: 48)));
+      await pumpPhone(t, size, frame: frame, locked: true, lockBox: const Rect.fromLTRB(.25, .25, .75, .75));
+      final video = t.getRect(find.byKey(const ValueKey('phone_video')));
+      final shown = video.width / video.height > 4 / 3 ? video.width : video.height * 4 / 3;
+      var box = t.getRect(find.byKey(const ValueKey('phone_lock_box')));
+      expect(box.width, closeTo(shown / 2, 2));
+      expect(box.height, closeTo(shown * 3 / 4 / 2, 2)); // not shown / 2: the frame is 4:3, not square
+      expect(box.center.dy, closeTo(video.center.dy, 2));
+
+      // Each new tracked box glides over ~the time between two (the camera tracks ~5 times a second).
+      expect(t.widget<AnimatedPositioned>(find.byKey(const ValueKey('phone_lock_box'))).duration,
+          const Duration(milliseconds: 200));
     });
 
     testWidgets('nothing on top of the video', (t) async {

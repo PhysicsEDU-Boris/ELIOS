@@ -166,6 +166,7 @@ Future<Rig> pumpPhone(
   int? guideStep,
   Uint8List? frame,
   Rect? lockBox,
+  double frameAspect = 4 / 3,
   bool locked = false,
 }) async {
   tester.view.devicePixelRatio = 1;
@@ -298,6 +299,7 @@ Future<Rig> pumpPhone(
                           onScan: () => tap('scan'),
                           lockBox: lockBox,
                           lockLabel: lockBox == null ? null : 'Kardus',
+                          frameAspect: frameAspect,
                           overlays: [
                             Positioned.fill(
                               child: WasteQuizPopup(onStop: stop, showLauncher: false),
