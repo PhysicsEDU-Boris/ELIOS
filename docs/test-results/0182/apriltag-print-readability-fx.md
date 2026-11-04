@@ -70,7 +70,9 @@ room light.
   giving 81.7° x 51.9° x 89.6°. The sim uses 81° x 51° x 90°. The mode-ratio estimate was fx 362
   (83° x 53°); the board solve will settle the difference.
 - **id 1 at 10 mm is too small for the 320x180 search.** It is 22 px wide, so about 11 px in the
-  search copy. The tag sheet now prints id 1 at 15 mm, a 9.26 mm black square, about 17 px in
-  the search at 100 mm. Once the owner has measured the print, set `TAG_SIZES_MM[1]` to the
-  measured value.
+  search copy.
+- **The arm3 rear face fits only a 10 mm print** (owner). So the tag sheet now prints id 1 at
+  10 mm with a one-cell white border (10x10 grid) instead of the PNG's wide border. The black
+  square grows from 6.17 to 8.0 mm (+30 %), about 29 px at 100 mm, or 14–15 px in the search
+  copy. Once the owner has measured the print, set `TAG_SIZES_MM[1]` to the measured value.
 

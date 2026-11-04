@@ -64,5 +64,8 @@
 - **Results** ([report](../test-results/0182/apriltag-print-readability-fx.md)):
   - 33 fps with tags off, 22 fps with tags on;
   - id 0 is found 99 % of the time and reads 97.9 mm at 100 mm;
-  - the 10 mm id 1 is found 5 % of the time at 100 mm, so the print sheet now makes id 1 15 mm.
+  - the 10 mm id 1 is found 5 % of the time at 100 mm.
+- **id 1 fix.** arm3 rear fits only 10 mm, so the print sheet keeps 10 mm but uses a
+  one-cell white border: the black square is 8.0 mm instead of 6.17 mm. robotic_hand_sim's
+  `tag_model.py` derives id 1's black square from the PNG (6.17 mm), so it must use 8.0 mm too.
 
