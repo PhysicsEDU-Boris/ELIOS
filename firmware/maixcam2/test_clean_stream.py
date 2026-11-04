@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
+NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'HAND_GROWTH', 'overlaps', 'size_ok', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'NOMINAL_FX', 'track', 'parse_track_box', 'box_det', 'track_frame',
          'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'tags', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS'}
 
@@ -163,6 +163,29 @@ class TrackFrameTest(unittest.TestCase):
         W, H = 45, 50  # 1.9x: still the item
         M['track_frame'](None)
         self.assertEqual(M['track_frame'](None)['w'], 45)
+
+    def test_after_a_hand_sized_box_the_real_item_is_taken_again(self):
+        boxes = iter([(100, 100, 50, 50), (100, 100, 50, 50)])
+        M = load(tracker=SimpleNamespace(init=lambda *a: None,
+                                         track=lambda f, th: Obj(**dict(zip('xywh', next(boxes))), score=0.9)))
+        M['track'].update(pending=(100, 100, 50, 50), id=1, label='kardus')  # LOCK: 2500 px^2
+        M['track_frame'](None)
+        M['track']['area'] = 6500  # the last good box was hand + pack (video 15:21)
+        self.assertIsNotNone(M['track_frame'](None))  # 0.38x the last box, but the LOCK size: taken
+
+    def test_a_box_that_balloons_over_a_hand_keeps_the_held_box(self):
+        grown = (60, 40, 120, 130)  # pack + hand: 15600 px^2, 3.1x the held box
+        M = load(tracker=SimpleNamespace(init=lambda *a: None,
+                                         track=lambda f, th: Obj(**dict(zip('xywh', grown)), score=0.9)))
+        M['TRACK_MAX_GROWTH'] = 8  # let the box past the size guard: here the hand rule is under test
+        M['track'].update(pending=(100, 100, 50, 50), id=1, label='kardus')
+        M['track_frame'](None)
+        hand = [(150, 30, 60, 60)]
+        for _ in range(3):  # two in a row would be a move; with the hand it never is
+            self.assertEqual(M['track_frame'](None, hand)['w'], 50)
+        self.assertEqual(M['track']['area'], 2500)
+        M['track_frame'](None)  # the hand is gone: the tracker's box counts again
+        self.assertEqual(M['track_frame'](None)['w'], 120)
 
     def test_nothing_locked(self):
         M = load(tracker=FakeTracker([]))

@@ -154,6 +154,12 @@ file so the Wi-Fi QR setup stays):
   call per LOCK**: follow mode, the AI refine (`held`, settle and unsettled calls, ~8 calls/min while
   handling) and "the AI box moved by the tracker" are removed. Kept: lighter JPEG, AI picture
   every 0.7 s, tags only around a grip, screen off, the name above the box.
+- Owner video 15:21 (that setup, 1 AI call, 33 fps unlocked / ~20 locked): a hand holding the pack
+  made the tracker box grow over hand and pack (2-3x), and afterwards the real pack was refused by
+  the 2x guard for up to 15 s (it compared with that oversized box). Now a box is also taken when
+  it is within 2x of the LOCK box, and a box that grew more than 1.3x while a detected hand
+  overlaps it is not taken (the held box stays until the hand lets go). Hands now run before the
+  tracker on a detection frame so the tracker sees this frame's hands.
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 

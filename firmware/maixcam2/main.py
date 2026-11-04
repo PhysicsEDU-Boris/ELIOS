@@ -222,7 +222,7 @@ model_load_error = tracker_error or hands_error
 
 # The app's LOCK box. pending = (x, y, w, h) waiting for the next frame to init on.
 # Tracking runs until track_stop or the next track_start: a lost item is searched for, not dropped.
-track = {"pending": None, "on": False, "id": 0, "label": "", "area": 1, "box": None, "still": [], "odd": False}
+track = {"pending": None, "on": False, "id": 0, "label": "", "area": 1, "lock_area": 1, "box": None, "still": [], "odd": False}
 
 def parse_track_box(box, img_w, img_h):
     """[x, y, w, h] top-left in stream pixels -> ints clipped to the frame. ValueError says why not."""
@@ -280,21 +280,38 @@ def hold(t, new):
             t["box"] = mid
     return t["box"]
 
-def track_frame(frame):
-    """The tracked box for this frame as a detection, or None (nothing locked, or lost)."""
+# While a detected hand touches the item, the tracker box grows over hand and item together
+# (owner video 15:21: 2-3x the pack). A box that grew by more than HAND_GROWTH in area while a hand
+# overlaps it is not taken: the held box stays until the hand lets go.
+HAND_GROWTH = 1.3
+
+def overlaps(a, b):
+    return a[0] < b[0] + b[2] and b[0] < a[0] + a[2] and a[1] < b[1] + b[3] and b[1] < a[1] + a[3]
+
+def size_ok(area, ref):
+    return 1 / TRACK_MAX_GROWTH <= area / ref <= TRACK_MAX_GROWTH
+
+def track_frame(frame, hand_boxes=()):
+    """The tracked box for this frame as a detection, or None (nothing locked, or lost).
+    hand_boxes: this frame's hands, top-left (x, y, w, h)."""
     if track["pending"] is not None:
         x, y, w, h = track["pending"]
-        track.update(pending=None, on=True, area=w * h, box=(x, y, w, h), still=[], odd=False)
+        track.update(pending=None, on=True, area=w * h, lock_area=w * h, box=(x, y, w, h), still=[], odd=False)
         tracker.init(frame, x, y, w, h)
         return dict(box_det(track["label"], x, y, w, h, 1.0), track_id=track["id"])
     if not track["on"]:
         return None
     o = tracker.track(frame, TRACK_TH)
-    growth = o.w * o.h / track["area"]
-    if o.score >= TRACK_TH and 1 / TRACK_MAX_GROWTH <= growth <= TRACK_MAX_GROWTH:
-        track["area"] = o.w * o.h
-        return dict(box_det(track["label"], *hold(track, (o.x, o.y, o.w, o.h)), o.score), track_id=track["id"])
-    return None
+    new, area = (o.x, o.y, o.w, o.h), o.w * o.h
+    # Against the last good box (driving closer grows it ~1.3x a call) or the LOCK box: after a
+    # hand-sized box the real item, less than half that size, was refused for 15 s (video 15:21).
+    if o.score < TRACK_TH or not (size_ok(area, track["area"]) or size_ok(area, track["lock_area"])):
+        return None
+    held = track["box"]
+    if held is not None and area > HAND_GROWTH * held[2] * held[3] and any(overlaps(new, h) for h in hand_boxes):
+        return dict(box_det(track["label"], *held, o.score), track_id=track["id"])
+    track["area"] = area
+    return dict(box_det(track["label"], *hold(track, new), o.score), track_id=track["id"])
 
 def hand_dets(frame):
     """Hands as Human_Hand, boxed by their 21 landmarks: obj x/y/w/h is the model's
@@ -610,20 +627,21 @@ async def ws_frame_pusher():
                 det_frame_count += 1
                 if det_frame_count >= DET_EVERY_N_FRAMES:
                     det_frame_count = 0
-                    last_tracked = None
-                    if tracker is not None:
-                        try:
-                            last_tracked = track_frame(frame)
-                        except Exception as te:
-                            print("[Track] error, tracking stopped:", te)
-                            track.update(on=False, pending=None)
-                    t1 = mtime.ticks_ms()
                     try:
                         last_hands = hand_dets(frame) if hands is not None else []
                         last_tags = find_arm_tags(frame) if tags["on"] else []
                         detection_frame_id = frame_id
                     except Exception as de:
                         print("[AI] detect error:", de)
+                    t1 = mtime.ticks_ms()
+                    last_tracked = None
+                    if tracker is not None:
+                        try:
+                            last_tracked = track_frame(frame, [(d["x"] - d["w"] / 2, d["y"] - d["h"] / 2, d["w"], d["h"])
+                                                               for d in last_hands])
+                        except Exception as te:
+                            print("[Track] error, tracking stopped:", te)
+                            track.update(on=False, pending=None)
                 t2 = mtime.ticks_ms()
 
                 if not (track["on"] or track["pending"]):
@@ -661,8 +679,8 @@ async def ws_frame_pusher():
                 # One timing line every 5 s (decision 0180's "step zero").
                 t3 = mtime.ticks_ms()
                 stats["n"] += 1
-                stats["track"] += t1 - t0
-                stats["det"] += t2 - t1
+                stats["det"] += t1 - t0     # hands + tags
+                stats["track"] += t2 - t1   # tracker
                 stats["send"] += t3 - t2
                 if t3 - stats["t0"] >= 5000:
                     n = stats["n"]
