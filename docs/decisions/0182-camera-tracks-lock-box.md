@@ -94,6 +94,8 @@ file so the Wi-Fi QR setup stays):
 - Hold measured on the camera (68 boxes, 15 s, still pack): height range 14 -> 1 px, centre y
   9 -> 1 px; the box changed 4 times, 3 of them width re-settles of 4-5 px, so the settle step
   became 6 % of the box instead of 3 px.
+- With the 6 % settle (firmware `ff9918e9`): 69 boxes in 15 s on a still pack, all exactly the
+  same box (0 px change in x, y, w, h), score 0.998, 9.1 fps.
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 
