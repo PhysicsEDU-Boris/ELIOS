@@ -33,3 +33,8 @@ by the owner. No firmware change.
   640x480 frame, because that kills the process.
 - `dist_mm` against a measured distance. It stays rough until the camera is calibrated.
 - The app turning tags on for a manual PICK UP (5 s) and during R1 grips.
+- **id 1 size mismatch.** robotic_hand_sim `tag_model.py` prints id 1 at 10 mm, so its black square
+  is 6.17 mm. Firmware `TAG_SIZES_MM` uses 10.0 as the black square, so id 1 `dist_mm` reads 1.6x
+  too far. Fix (`1: 6.17`) needs the owner's OK. Print sheet: `docs/print/apriltags-arm-id0-id1-A4.pdf`
+  (A4, vector, at 100 %; id 0 printed 30 mm with an 18.52 mm black square, id 1 printed 10 mm with a 6.17 mm black square;
+  all 8 decode from a 300 dpi render).
