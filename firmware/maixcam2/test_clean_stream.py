@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'moved', 'median_box', 'place', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'NOMINAL_FX', 'track', 'parse_track_box', 'box_det', 'track_frame',
-         'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES'}
+         'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS'}
 
 
 class EndStream(BaseException):
@@ -191,9 +191,9 @@ class StreamTest(unittest.TestCase):
             def __init__(self, number):
                 self.number = number
 
-            def to_format(self, _format):
-                encodes.append(self.number)
-                return SimpleNamespace(to_bytes=lambda: str(self.number).encode())
+            def to_jpeg(self, quality):
+                encodes.append((self.number, quality))
+                return SimpleNamespace(to_bytes=lambda: f'{self.number}@{quality}'.encode())
 
             def resize(self, w, h):
                 assert (w, h) == (320, 240)  # 640x480 crashes find_apriltags on the camera
@@ -237,7 +237,9 @@ class StreamTest(unittest.TestCase):
         with self.assertRaises(EndStream):
             asyncio.run(M['ws_frame_pusher']())
 
-        self.assertEqual(encodes, [1, 2, 3, 4])  # one JPEG per frame, never a second one
+        # A quality-60 preview per frame; the quality-80 AI picture only on the first detection frame:
+        # the second comes ~0.2 s later, within CLEAN_EVERY_MS.
+        self.assertEqual(encodes, [(1, 60), (2, 60), (2, 80), (3, 60), (4, 60)])
         for m in messages:
             self.assertEqual(m['vision_protocol'], 1)
             self.assertEqual((m['img_w'], m['img_h']), (640, 480))
@@ -252,13 +254,14 @@ class StreamTest(unittest.TestCase):
         self.assertEqual(fresh['detections'][0]['track_id'], 1)
         self.assertEqual(fresh['detections'][1], {'label': 'Human_Hand', 'score': 0.8,
                                                   'x': 10, 'y': 250, 'w': 10, 'h': 460})
-        self.assertEqual(fresh['clean_image'], fresh['image'])
-        self.assertEqual(base64.b64decode(fresh['clean_image']), b'2')
+        self.assertEqual(base64.b64decode(fresh['image']), b'2@60')
+        self.assertEqual(base64.b64decode(fresh['clean_image']), b'2@80')  # the AI's picture, unchanged quality
         self.assertEqual(fresh['arm_tags'][0]['id'], 0)
 
         self.assertEqual(messages[2]['detections'], fresh['detections'])  # held between detection frames
         self.assertEqual(messages[2]['arm_tags'][0]['id'], 0)  # held until the next detection frame
         self.assertEqual([d['label'] for d in messages[3]['clean_detections']], ['kardus'])
+        self.assertNotIn('clean_image', messages[3])  # within CLEAN_EVERY_MS of the last one
         self.assertEqual(messages[3]['detections'][0]['x'], 25)  # FakeTracker's box
         self.assertEqual(messages[3]['arm_tags'], [])
 

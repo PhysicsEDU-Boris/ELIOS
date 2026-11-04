@@ -52,9 +52,10 @@ verified byte-for-byte against the robot's currently installed script.
   detection frames and held in between (MixFormerV2 costs ~63 ms a call).
 - `arm_tags`: AprilTag TAG36H11 ids 0 and 1 seen at the last detection frame:
   `id`, `cx`, `cy`, and `dist_mm` with `dist_rough: true` (nominal lens, not calibrated).
-- Every `DET_EVERY_N_FRAMES`-th frame: `detection_frame_id == frame_id` and
-  `clean_detections` (same list). When it is nonempty, `clean_image` is the same JPEG
-  as `image` (no second encode), so older apps keep pairing.
+- `image` is the live preview at JPEG quality 60. Every `DET_EVERY_N_FRAMES`-th frame:
+  `detection_frame_id == frame_id` and `clean_detections` (same list). At most every
+  `CLEAN_EVERY_MS` (700 ms) one of them also carries `clean_image`: the same frame at quality 80
+  for the AI (LOCK and refine use one up to 1 s old).
 - Commands: `{"cmd":"track_start","box":[x,y,w,h],"label":"kardus"}` (top-left x/y in
   stream pixels) answers `{"event":"track_started","track_id":n}` or
   `{"event":"track_error","error":...}`; `{"cmd":"track_stop"}` answers `track_stopped`.

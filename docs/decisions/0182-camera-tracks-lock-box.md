@@ -126,6 +126,12 @@ file so the Wi-Fi QR setup stays):
   by the tracker's motion (`place()`); the tracker is trusted for motion only. While still the AI
   box is sent unchanged; while moving it follows the tracker; when it settles it is held there and
   the app asks the AI for the new shape.
+- Low fps in another room (2.4 fps unlocked on WIFIBOR at -58..-73 dBm, 13.3 fps on the owner's
+  hotspot at -46 dBm, same spot) was the Wi-Fi. To carry more frames on any link (owner: "better
+  fps without hurting the AI"): the preview is JPEG quality 60 (to_format gave 80; -37 % bytes on a
+  desk frame, hardly visible), and the AI picture `clean_image` stays at 80 but goes out at most
+  every 700 ms instead of as a second copy on every frame with a box. LOCK and refine use a clean
+  picture up to 1 s old. Estimate: -48 % data while locked, -22 % unlocked.
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 

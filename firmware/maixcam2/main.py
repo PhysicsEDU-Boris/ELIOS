@@ -177,6 +177,14 @@ HAND_PATH    = "/root/models/hand_landmarks.mud"
 # held in between. MixFormerV2 costs ~63 ms a call: on every frame the stream
 # fell to 8 fps (robot test, 4 Nov), every 2nd frame keeps it near 11.
 DET_EVERY_N_FRAMES = 2
+# Smaller live video, the AI's picture unchanged (owner, 4 Nov: "better fps without hurting the AI").
+# The preview is JPEG quality 60 (-37 % bytes against 80 on a desk frame, hardly visible); the AI
+# picture (clean_image) stays at 80, what to_format(FMT_JPEG) gave before, but goes out only on a
+# detection frame at most every CLEAN_EVERY_MS (it was a second copy on every frame with a box).
+# The app uses a clean picture up to 1 s old for LOCK and refine.
+PREVIEW_QUALITY = 60
+CLEAN_QUALITY   = 80
+CLEAN_EVERY_MS  = 700
 TRACK_TH       = 0.5   # MixFormerV2 score below this: the box is not sent that frame
 # MixFormerV2 searches 4.5x the box around its last good position; after this many low-score
 # calls it searches the whole frame once (MaixCDK maix_nn_mixformer_v2.hpp). The default 60 was
@@ -578,10 +586,11 @@ async def ws_handler(websocket):
 async def ws_frame_pusher():
     """Stream clean frames: detections = the tracked box + hands, plus arm_tags.
 
-    Nothing is drawn, so image is already clean. Every DET_EVERY_N_FRAMES-th
-    frame is a detection frame (detection_frame_id == frame_id, fresh box,
-    hands and tags, clean_detections); when that list is nonempty, clean_image
-    is the same JPEG as image (no second encode), so older apps still pair it.
+    Nothing is drawn. image is the preview JPEG (PREVIEW_QUALITY). Every
+    DET_EVERY_N_FRAMES-th frame is a detection frame (detection_frame_id ==
+    frame_id, fresh box, hands and tags, clean_detections); at most every
+    CLEAN_EVERY_MS one of them also carries clean_image, the same frame at
+    CLEAN_QUALITY for the AI, so older apps still pair it.
     """
     global stream_cam
     cam_w, cam_h = STREAM_RESOLUTION
@@ -589,6 +598,7 @@ async def ws_frame_pusher():
     frame_id = 0
     last_tracked, last_hands, last_tags = None, [], []
     stats = dict(t0=mtime.ticks_ms(), n=0, track=0, det=0, send=0)
+    clean_at = None
 
     while True:
         if ws_streaming and ws_clients and setup["stage"] != "scan":
@@ -623,7 +633,7 @@ async def ws_frame_pusher():
                 if not (track["on"] or track["pending"]):
                     last_tracked = None  # track_stop shows at once, not at the next detection frame
                 dets = ([last_tracked] if last_tracked else []) + last_hands
-                b64 = base64.b64encode(frame.to_format(image.Format.FMT_JPEG).to_bytes()).decode()
+                b64 = base64.b64encode(frame.to_jpeg(quality=PREVIEW_QUALITY).to_bytes()).decode()
                 message = {
                     "vision_protocol": 1,
                     "firmware_sha256": FIRMWARE_SHA256,
@@ -637,8 +647,10 @@ async def ws_frame_pusher():
                 }
                 if detection_frame_id == frame_id:
                     message["clean_detections"] = dets
-                    if dets:
-                        message["clean_image"] = b64
+                    if clean_at is None or t2 - clean_at >= CLEAN_EVERY_MS:
+                        clean_at = t2
+                        message["clean_image"] = base64.b64encode(
+                            frame.to_jpeg(quality=CLEAN_QUALITY).to_bytes()).decode()
                 payload = json.dumps(message)
 
                 dead = set()

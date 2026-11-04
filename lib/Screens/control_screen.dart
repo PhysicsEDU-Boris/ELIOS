@@ -1009,7 +1009,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     if (lock == null || (around && box0 == null) || _refining || (last != null && now.difference(last) < refineEvery)) return;
     _refining = true;
     _refinedAt = now;
-    final box = await ref.read(wasteQuizProvider.notifier).refineLockBox(frame.cleanBytes ?? frame.bytes, box0);
+    // The AI's picture (clean_image, full quality) comes every ~0.7 s; the preview is smaller (0182).
+    final clean = _lastCleanFrame;
+    final photo = clean != null && now.difference(clean.timestamp) < const Duration(seconds: 1) ? clean.cleanBytes! : frame.bytes;
+    final box = await ref.read(wasteQuizProvider.notifier).refineLockBox(photo, box0);
     _refining = false;
     if (!mounted || box == null || _locked != lock) return;
     if (box0 != null && (_trackHeld != true || !stillThere(_trackBox, box0))) return;
