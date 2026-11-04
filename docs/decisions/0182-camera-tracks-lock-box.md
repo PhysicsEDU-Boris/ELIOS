@@ -135,6 +135,17 @@ file so the Wi-Fi QR setup stays):
 - Measured on the hotspot (-46 dBm): unlocked 13.5 -> 15.3 fps, 760 -> 660 KB/s (preview 56 -> 38 KB);
   locked 10.0 fps at 456 KB/s (old firmware ~840 KB/s at that rate). Locked fps is now the
   camera's limit (MixFormerV2 ~63 ms every 2nd frame), not the Wi-Fi.
+- Step benchmark on the camera (4 Nov, app closed): camera read waits 32 ms (30 fps sensor), JPEG
+  q60 7.7 ms, pack 0.9 ms, hands 5.9 ms, **AprilTags 50 ms**, tracker 30 ms (Sipeed's figure). The
+  "63 ms" above was tags + tracker together. A tracker thread does not run in parallel (video
+  32.7 -> 16 fps). fps comes in steps of the 33 ms frame time, so 100 ms of work meant 10 fps.
+- Owner: AprilTags only around a grip, and the camera screen off while a phone is connected. The
+  app sends `{"cmd":"arm_tags","on":bool}`: on from R1 POSITION until the grip is done and for 5 s
+  after a manual PICK UP; the camera starts with tags off and turns them off when the stream
+  stops. The screen goes dark while a client is connected; a tap wakes it for 15 s and presses
+  nothing.
+- Result (firmware `6a70f542`, hotspot -36 dBm): **unlocked 32.7 fps** (was 15.3), **locked
+  17.3 fps** (was 10.0).
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 
