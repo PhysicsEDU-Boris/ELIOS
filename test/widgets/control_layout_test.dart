@@ -122,7 +122,7 @@ void main() {
                 }
               }
               if (stopped) {
-                await tester.tap(find.text('Lanjutkan'));
+                await tester.tap(find.text('Continue'));
                 await tester.pump();
                 expect(taps['resume'], 1, reason: 'one tap on Lanjutkan');
               }

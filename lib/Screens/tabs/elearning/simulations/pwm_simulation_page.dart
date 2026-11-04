@@ -13,6 +13,7 @@ import 'widgets/labeled_slider.dart';
 import 'widgets/calc_box.dart';
 import 'widgets/deep_explain_card.dart';
 import 'widgets/simulation_page_scaffold.dart';
+import 'package:elio/l10n/l10n.dart';
 
 class PwmSimulationPage extends ConsumerStatefulWidget {
   const PwmSimulationPage({super.key});
@@ -125,12 +126,12 @@ class _PwmSimulationPageState extends ConsumerState<PwmSimulationPage> with Sing
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Kecepatan Motor (RPM)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.elio.textSecondary)),
+                              Text(context.l10n.simMotorSpeed, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.elio.textSecondary)),
                               const SizedBox(height: 4),
                               Text('${state.approxRpm.toStringAsFixed(0)} RPM', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: context.elio.primaryText)),
                               const SizedBox(height: 4),
                               // REQUIRED LABEL: DO NOT REMOVE
-                              Text('Perkiraan (aproksimasi linear)', style: TextStyle(fontSize: 10, color: context.elio.secondaryText, fontStyle: FontStyle.italic)),
+                              Text(context.l10n.simLinearEstimate, style: TextStyle(fontSize: 10, color: context.elio.secondaryText, fontStyle: FontStyle.italic)),
                             ],
                           ),
                         ),

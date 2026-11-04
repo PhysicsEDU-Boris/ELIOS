@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'firebase_options_loader.dart';
+import 'l10n/app_localizations.dart';
+import 'providers/app_locale_provider.dart';
 import 'providers/app_preferences_provider.dart' show testerBuild;
 import 'services/tester_log.dart';
 import 'services/scan_record_store.dart';
@@ -94,8 +96,12 @@ class ElioApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
-      child: MaterialApp(
+      child: Consumer(
+        builder: (context, ref, _) => MaterialApp(
         title: 'ELIOS',
+        locale: ref.watch(appLocaleProvider),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0F6E56)),
@@ -103,6 +109,7 @@ class ElioApp extends StatelessWidget {
         ),
         builder: (context, child) => DesktopViewport(child: child!),
         home: SplashScreen(auth: auth ?? FirebaseAuth.instance),
+        ),
       ),
     );
   }

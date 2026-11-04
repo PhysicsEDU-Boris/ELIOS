@@ -11,6 +11,7 @@ import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/learn/learn_ui.dart';
 import 'config_parts.dart';
+import 'package:elio/l10n/l10n.dart';
 
 Future<void> showConfigSettingsSheet(BuildContext context) => showModalBottomSheet<void>(
       context: context,
@@ -86,11 +87,11 @@ class ConfigSettingsSheet extends ConsumerWidget {
                       children: [
                         Semantics(
                           header: true,
-                          child: Text('Settings',
+                          child: Text(context.l10n.settingsTitle,
                               style: ElioTokens.bodyLarge.copyWith(
                                   fontSize: 24, fontWeight: FontWeight.w700, height: 1.2, color: p.textPrimary)),
                         ),
-                        Text('Connection, video, sound and quiz', style: configCaption(p)),
+                        Text(context.l10n.settingsSubtitle, style: configCaption(p)),
                       ],
                     ),
                   ),

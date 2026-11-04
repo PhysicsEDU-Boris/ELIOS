@@ -46,7 +46,7 @@ void main() {
         container: c,
         child: const MaterialApp(home: Scaffold(body: SingleChildScrollView(child: TesterPanel()))),
       ));
-      expect(find.text('Sumber soal'), findsOneWidget);
+      expect(find.text('Question source'), findsOneWidget);
       expect(find.text('AI: Belum dipakai'), findsOneWidget);
       expect(c.read(appPreferencesProvider).questionSource, QuestionSource.ai);
       await tester.tap(find.text('Bank'));

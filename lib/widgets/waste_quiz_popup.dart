@@ -24,6 +24,7 @@ import '../services/scan_record_store.dart';
 import '../theme/elio_learning_colors.dart';
 import '../theme/elio_tokens.dart';
 import 'learn/learn_ui.dart' show LearnTheme;
+import 'package:elio/l10n/l10n.dart';
 
 part 'quiz/quiz_r3.dart';
 
@@ -259,7 +260,7 @@ class _ResultCard extends ConsumerWidget {
                 key: const Key('result_card_close_button'),
                 onPressed: onClose,
                 style: FilledButton.styleFrom(backgroundColor: elioPrimary),
-                child: const Text('Tutup'),
+                child: Text(context.l10n.commonClose),
               ),
             ),
           ],
@@ -496,7 +497,7 @@ class _ResultCard extends ConsumerWidget {
                         onClose();
                       },
                 icon: const Icon(Icons.qr_code_scanner_rounded, size: 16),
-                label: const Text('Scan lagi'),
+                label: Text(context.l10n.scanAgain),
                 style: FilledButton.styleFrom(backgroundColor: elioPrimary),
               ),
               OutlinedButton.icon(
@@ -516,21 +517,21 @@ class _ResultCard extends ConsumerWidget {
                     await QuizPdfService.shareOrSave(record);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Laporan PDF berhasil diekspor'),
+                        SnackBar(
+                          content: Text(context.l10n.pdfExported),
                         ),
                       );
                     }
                   } catch (e) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Gagal mengekspor PDF: $e')),
+                        SnackBar(content: Text(context.l10n.pdfExportFailed(e))),
                       );
                     }
                   }
                 },
                 icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
-                label: const Text('Export PDF'),
+                label: Text(context.l10n.exportPdf),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: elioOutlineVariant),
                 ),
@@ -541,7 +542,7 @@ class _ResultCard extends ConsumerWidget {
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: elioOutlineVariant),
                 ),
-                child: const Text('Tutup'),
+                child: Text(context.l10n.commonClose),
               ),
             ],
           ),

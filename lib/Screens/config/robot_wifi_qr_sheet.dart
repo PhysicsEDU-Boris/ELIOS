@@ -7,6 +7,7 @@ import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/learn/learn_ui.dart';
 import 'config_parts.dart';
+import 'package:elio/l10n/l10n.dart';
 
 Future<void> showRobotWifiQrSheet(BuildContext context) => showModalBottomSheet<void>(
       context: context,
@@ -69,7 +70,7 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                     Expanded(
                       child: Semantics(
                         header: true,
-                        child: Text('Robot Wi-Fi QR',
+                        child: Text(context.l10n.robotWifiQr,
                             style: ElioTokens.bodyLarge.copyWith(
                                 fontSize: 22, fontWeight: FontWeight.w700, color: p.textPrimary)),
                       ),
@@ -137,7 +138,7 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text('Robot not reading it? Lower the screen brightness or tilt the phone a little.',
+                  Text(context.l10n.robotQrHint,
                       textAlign: TextAlign.center, style: configCaption(p)),
                 ],
               ],

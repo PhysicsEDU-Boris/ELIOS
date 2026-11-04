@@ -28,6 +28,7 @@ import '../widgets/learn/learn_ui.dart' show LearnTheme;
 import '../widgets/waste_quiz_popup.dart';
 import 'login_screen.dart';
 import 'scan_history_screen.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// Scan waste with this device's own camera (no robot needed) and get the
 /// ELIOS AI quiz. Figma: "Device Scan · Kamera perangkat (landscape)".
@@ -107,7 +108,7 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Gagal memotret: $e')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.photoFailed(e))));
       }
     } finally {
       if (mounted) setState(() => _capturing = false);

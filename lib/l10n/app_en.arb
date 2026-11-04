@@ -1,0 +1,240 @@
+{
+  "@@locale": "en",
+  "languageName": "English",
+  "@languageName": {
+    "description": "The name of this language, written in this language itself (e.g. \"Français\" for French)."
+  },
+  "sidebarLanguage": "Language",
+  "@sidebarLanguage": {
+    "description": "Sidebar label for the app language picker."
+  },
+  "sidebarGuestUser": "Guest User",
+  "sidebarLocalSession": "Local session",
+  "sidebarClose": "Close sidebar",
+  "sidebarNavigate": "NAVIGATE",
+  "sidebarHome": "Home",
+  "sidebarLearn": "Learn",
+  "sidebarLearnSubtitle": "Waste types & quizzes",
+  "sidebarConfigure": "Configure",
+  "sidebarConfigureSubtitle": "Setup ESP32 WebSocket",
+  "sidebarControl": "Control",
+  "sidebarControlSubtitle": "Drive robot & Camera",
+  "sidebarGuestBadge": "GUEST",
+  "sidebarDarkMode": "Dark mode",
+  "signOut": "Sign Out",
+  "signIn": "Sign in",
+  "commonCancel": "Cancel",
+  "commonClose": "Close",
+  "commonContinue": "Continue",
+  "leaveQuizTitle": "Leave quiz?",
+  "leaveQuiz": "Leave Quiz",
+  "photoFailed": "Could not take the photo: {error}",
+  "@photoFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeScanActivity": "Scan activity",
+  "homeFirstScanToday": "Your first scan lights up today",
+  "homeScanItem": "Scan an item",
+  "homeTrophies": "{count} trophies",
+  "@homeTrophies": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeDailyQuests": "Daily quests",
+  "homeBinBuddies": "Bin buddies",
+  "homeThisWeek": "This week",
+  "homeQuizAccuracy": "Quiz accuracy",
+  "homeMedals": "Medals",
+  "homeDidYouKnow": "DID YOU KNOW?",
+  "historyBackToList": "Back to list",
+  "historyPhoto": "PHOTO",
+  "historyAddSampleData": "Add Sample Data (Debug)",
+  "pdfExported": "PDF report exported",
+  "pdfExportFailed": "Could not export PDF: {error}",
+  "@pdfExportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "exportPdf": "Export PDF",
+  "moduleProgress": "Module progress",
+  "controlGripOpen": "Open",
+  "@controlGripOpen": {
+    "description": "Gripper fully open."
+  },
+  "controlGripClosed": "Closed",
+  "@controlGripClosed": {
+    "description": "Gripper fully closed."
+  },
+  "controlBase": "Base",
+  "@controlBase": {
+    "description": "Robot arm base joint."
+  },
+  "controlHome": "HOME",
+  "@controlHome": {
+    "description": "Button that moves the robot arm to its home position."
+  },
+  "controlR1Status": "R1: {status}",
+  "@controlR1Status": {
+    "placeholders": {
+      "status": {
+        "type": "Object"
+      }
+    }
+  },
+  "controlCheckingRobot": "checking robot...",
+  "controlPhoneScan": "Scan with phone camera",
+  "configConnectionFailed": "Connection failed",
+  "configPhoneOnlyHint": "The robot is not used. Point the phone at one item and tap Start scan.",
+  "configSameWifiHint": "Put ELIO and this phone on the same Wi-Fi or hotspot, then tap Connect now.",
+  "configSaveDefault": "Save as default config",
+  "configUseAddressNextTime": "Use this address next time",
+  "configDragToRotate": "Drag to rotate",
+  "configLookingForElio": "Looking for ELIO…",
+  "guidePdfUnavailable": "Guide PDF is not available yet.",
+  "videoUnavailable": "Video is not available yet.",
+  "simulationComingSoon": "{title} is coming soon.",
+  "@simulationComingSoon": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "quizStartTitle": "Start Quiz?",
+  "quizNotNow": "Not Now",
+  "quizStart": "Start",
+  "quizFinishFirst": "Finish quiz first",
+  "quizContinue": "Continue Quiz",
+  "quizKnowledgeChallenge": "Knowledge challenge",
+  "quizFinishToExit": "Finish quiz to exit",
+  "simWork": "Work (W)",
+  "@simWork": {
+    "description": "Physics: work, symbol W."
+  },
+  "simBattery": "Battery",
+  "simLiveTimer": "Live Timer:",
+  "simRun": "RUN",
+  "simBonusUam": "Bonus: What about uniformly accelerated motion?",
+  "simSortMode": "Sort Mode",
+  "simExploreMode": "Explore Mode",
+  "simIdle": "Idle",
+  "simCamera": "Camera (10W)",
+  "simDriveMotor": "Drive Motor (36W)",
+  "simArmMotor": "Arm Motor (18W)",
+  "simBatteryLeft": "Battery Left",
+  "simMotorSpeed": "Motor Speed (RPM)",
+  "simLinearEstimate": "Estimate (linear approximation)",
+  "deepOrganicCard": "Organic Card — Porosity & Oxygen Flow",
+  "deepInorganicCard": "Inorganic Card — Hooke, NIR, & Eddy Current",
+  "deepB3Card": "B3 Card — Vapor Pressure, Incinerator, Radiation",
+  "@deepB3Card": {
+    "description": "B3 = Indonesian hazardous-waste category; keep \"B3\"."
+  },
+  "deepCoreConcept": "Core Concept",
+  "deepKeyPhysics": "Key Physics",
+  "deepWhyDifferent": "Why is the treatment different?",
+  "deepHardnessTest": "1. Hardness Test (Hooke Spring)",
+  "deepReactionForce": "Reaction Force (F = k·x): {force} N (k=50 N/m)",
+  "@deepReactionForce": {
+    "placeholders": {
+      "force": {
+        "type": "Object"
+      }
+    }
+  },
+  "deepNir": "2. Near-Infrared (NIR) Reflectance",
+  "deepSpectrumPeak": "Spectrum Peak: ≈{nm} nm",
+  "@deepSpectrumPeak": {
+    "placeholders": {
+      "nm": {
+        "type": "Object"
+      }
+    }
+  },
+  "deepEddy": "3. Eddy Current (Non-Ferromagnetic Metal)",
+  "deepVaporPressure": "1. Vapor Pressure",
+  "deepRelativeVapor": "Relative Vapor Pressure: {value} (Arbiter)",
+  "@deepRelativeVapor": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "deepIncinerator": "2. Incinerator (Breaking Chemical Bonds)",
+  "deepRadiationShield": "3. Radiation Shielding",
+  "activityLess": "Less",
+  "@activityLess": {
+    "description": "Heatmap legend: fewer scans."
+  },
+  "activityMore": "More",
+  "@activityMore": {
+    "description": "Heatmap legend: more scans."
+  },
+  "activityOpenInHistory": "Open in History",
+  "activityNoScans": "No scans on this day.",
+  "settingsTitle": "Settings",
+  "settingsSubtitle": "Connection, video, sound and quiz",
+  "aiNeedsInternet": "Gemini · needs internet",
+  "aiOffHint": "Identifies scans and writes new quiz questions, about 2 to 4 s each.",
+  "aiActiveHint": "Identifying scans and writing quiz questions.",
+  "aiActive": "Active · {model}",
+  "@aiActive": {
+    "placeholders": {
+      "model": {
+        "type": "Object"
+      }
+    }
+  },
+  "aiCloud": "cloud",
+  "aiUnavailable": "No internet, or every AI model is busy. The quiz uses the question bank and tries the AI again on the next scan.",
+  "robotWifiQr": "Robot Wi-Fi QR",
+  "robotQrHint": "Robot not reading it? Lower the screen brightness or tilt the phone a little.",
+  "searchSeeAll": "See all {count} results",
+  "@searchSeeAll": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "waitingForStream": "Waiting for MaixCAM2 stream...",
+  "questionBank": "Question bank",
+  "backToQuestion": "Back to Question",
+  "scanAgain": "Scan again",
+  "testerMode": "Tester mode",
+  "testerQuestionSource": "Question source",
+  "testerBank": "Bank",
+  "testerShareLog": "Share log",
+  "testerLogCopied": "Log copied",
+  "testerCopyLog": "Copy log",
+  "testerLog": "Tester log",
+  "testerViewLog": "View log",
+  "testerClearLog": "Clear log",
+  "lookingForMaixcam": "Looking for MaixCAM2...",
+  "lostConnection": "Lost connection to ELIOS",
+  "reconnectNow": "Reconnect now",
+  "wifiSettings": "Wi-Fi settings",
+  "missionProgress": "{done} of {target} done",
+  "@missionProgress": {
+    "placeholders": {
+      "done": {
+        "type": "Object"
+      },
+      "target": {
+        "type": "Object"
+      }
+    }
+  },
+  "resetScanDebug": "Reset scan (debug)"
+}

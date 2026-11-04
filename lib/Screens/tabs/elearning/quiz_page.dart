@@ -12,6 +12,7 @@ import '../../../services/elearning_content_service.dart';
 import '../../../widgets/learn/learn_ui.dart';
 import 'learn_content.dart';
 import 'quiz_review_page.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// Quiz list, question and result (L1 v2). [moduleId] narrows the list to
 /// one module's quiz (module page "Quiz").
@@ -105,7 +106,7 @@ class _QuizContentState extends ConsumerState<QuizContent> {
     final shouldStart = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Start Quiz?'),
+        title: Text(context.l10n.quizStartTitle),
         content: const Text(
           'This quiz can only be attempted once. Once you start, you must '
           'finish it before leaving.',
@@ -113,11 +114,11 @@ class _QuizContentState extends ConsumerState<QuizContent> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Not Now'),
+            child: Text(context.l10n.quizNotNow),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Start'),
+            child: Text(context.l10n.quizStart),
           ),
         ],
       ),
@@ -264,7 +265,7 @@ class _QuizContentState extends ConsumerState<QuizContent> {
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Finish quiz first'),
+        title: Text(context.l10n.quizFinishFirst),
         content: const Text(
           'This quiz has only one attempt. Please finish all questions before '
           'leaving.',
@@ -272,7 +273,7 @@ class _QuizContentState extends ConsumerState<QuizContent> {
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Continue Quiz'),
+            child: Text(context.l10n.quizContinue),
           ),
         ],
       ),
@@ -378,7 +379,7 @@ class _QuizContentState extends ConsumerState<QuizContent> {
       builder: (context, snapshot) {
         return LearnListView(
           children: [
-            Text('Knowledge challenge', style: context.text.headlineLarge),
+            Text(context.l10n.quizKnowledgeChallenge, style: context.text.headlineLarge),
             const SizedBox(height: 8),
             Text(
               'Test your understanding of waste management and how ELIO '
@@ -582,7 +583,7 @@ class _QuizQuestionView extends StatelessWidget {
                 child: TextButton.icon(
                   onPressed: onBack,
                   icon: const Icon(Icons.lock_outline_rounded),
-                  label: const Text('Finish quiz to exit'),
+                  label: Text(context.l10n.quizFinishToExit),
                 ),
               ),
             ],

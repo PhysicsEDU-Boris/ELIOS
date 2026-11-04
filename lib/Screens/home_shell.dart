@@ -28,6 +28,7 @@ import 'tabs/elearning_tab.dart';
 import 'config/config_settings_sheet.dart' show ConfigSettingsButton;
 import 'config_screen.dart';
 import 'control_screen.dart';
+import 'package:elio/l10n/l10n.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   final FirebaseAuth auth;
@@ -197,7 +198,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     final shouldLeave = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Leave quiz?'),
+        title: Text(context.l10n.leaveQuizTitle),
         content: const Text(
           'You have an active quiz. If you leave now, your current quiz '
           'progress will be lost.',
@@ -205,11 +206,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Leave Quiz'),
+            child: Text(context.l10n.leaveQuiz),
           ),
         ],
       ),

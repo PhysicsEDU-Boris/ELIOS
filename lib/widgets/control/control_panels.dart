@@ -17,6 +17,7 @@ import '../../services/websocket_service.dart' show Detection;
 import '../../theme/elio_tokens.dart';
 import '../learn/learn_ui.dart' show LearnTheme;
 import 'r2_controls.dart';
+import 'package:elio/l10n/l10n.dart';
 
 // The camera overlay is the one place with fixed colours (dark glass on video).
 const _glass = Color(0xCC0F172A);
@@ -372,7 +373,7 @@ class _WaitingPanel extends StatelessWidget {
   Widget build(BuildContext context) => _HudPanel(
     art: Padding(padding: const EdgeInsets.only(bottom: 10), child: controlArt('elio_searching', height: 104)),
     children: [
-      const Text('Looking for MaixCAM2...', style: _title, textAlign: TextAlign.center),
+      Text(context.l10n.lookingForMaixcam, style: _title, textAlign: TextAlign.center),
       const SizedBox(height: 8),
       const Text(
         'Turn the robot on and keep this tablet on the ELIOS Wi-Fi.',
@@ -432,7 +433,7 @@ class _DisconnectedPanelState extends State<_DisconnectedPanel> {
     return _HudPanel(
       art: Padding(padding: const EdgeInsets.only(bottom: 8), child: controlArt('elio_disconnected', height: 96)),
       children: [
-        const Text('Lost connection to ELIOS', style: _title, textAlign: TextAlign.center),
+        Text(context.l10n.lostConnection, style: _title, textAlign: TextAlign.center),
         const SizedBox(height: 6),
         const Text(
           'The robot link dropped, so the robot stopped for safety.',
@@ -455,7 +456,7 @@ class _DisconnectedPanelState extends State<_DisconnectedPanel> {
               onPressed: widget.onReconnect,
               style: FilledButton.styleFrom(backgroundColor: _hudGreen, foregroundColor: const Color(0xFF0F172A)),
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Reconnect now'),
+              label: Text(context.l10n.reconnectNow),
             ),
             if (widget.onWifiSettings != null)
               OutlinedButton.icon(
@@ -466,7 +467,7 @@ class _DisconnectedPanelState extends State<_DisconnectedPanel> {
                   side: const BorderSide(color: _hudMuted),
                 ),
                 icon: const Icon(Icons.wifi_rounded),
-                label: const Text('Wi-Fi settings'),
+                label: Text(context.l10n.wifiSettings),
               ),
           ],
         ),
@@ -580,7 +581,7 @@ class MissionCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text('$n of $missionTarget done', style: TextStyle(color: p.textSecondary, fontSize: 13)),
+                  Text(context.l10n.missionProgress(n, missionTarget), style: TextStyle(color: p.textSecondary, fontSize: 13)),
                 ],
               ),
             ),

@@ -47,7 +47,7 @@ void main() {
         expectStopReachable(t, size);
         expect(find.text('Robot Control'), findsOneWidget);
         expect(find.text('Resume driving'), findsNothing);
-        expect(find.text('Lanjutkan'), findsNothing);
+        expect(find.text('Continue'), findsNothing);
         await shot(t, 'driving', size, dark);
       });
 
@@ -209,7 +209,7 @@ void main() {
       (t) async {
         await pumpPhone(t, size, stopped: true);
         expect(find.textContaining('Resume'), findsNothing);
-        expect(find.textContaining('Lanjutkan'), findsNothing);
+        expect(find.textContaining('Continue'), findsNothing);
         expect(
           find.byType(EliosAiBadge),
           findsNothing,

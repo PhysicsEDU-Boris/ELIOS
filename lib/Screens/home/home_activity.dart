@@ -7,6 +7,7 @@ import '../../models/scan_record.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/auth/auth_widgets.dart' show authPalette;
 import 'home_parts.dart';
+import 'package:elio/l10n/l10n.dart';
 
 const monthNames = [
   'January',
@@ -219,11 +220,11 @@ class ActivityLegend extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Less', style: homeSmall(p)),
+          Text(context.l10n.activityLess, style: homeSmall(p)),
           const SizedBox(width: 6),
           for (final n in [0, 1, 2, 3, 4]) box(activityAlpha(n)),
           const SizedBox(width: 6),
-          Text('More', style: homeSmall(p)),
+          Text(context.l10n.activityMore, style: homeSmall(p)),
         ],
       ),
     );
@@ -416,7 +417,7 @@ class DayScans extends StatelessWidget {
                 foregroundColor: p.primaryText,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
               ),
-              child: const Text('Open in History'),
+              child: Text(context.l10n.activityOpenInHistory),
             ),
           ],
         ),
@@ -426,7 +427,7 @@ class DayScans extends StatelessWidget {
           child: n == 0
               ? Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Text('No scans on this day.', style: homeSmall(p)),
+                  child: Text(context.l10n.activityNoScans, style: homeSmall(p)),
                 )
               : Column(
                   children: [

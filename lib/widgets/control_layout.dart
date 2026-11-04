@@ -7,6 +7,7 @@ import '../services/scan_record_store.dart';
 import '../theme/elio_tokens.dart';
 import 'control/r2_controls.dart';
 import 'learn/learn_ui.dart' show LearnTheme;
+import 'package:elio/l10n/l10n.dart';
 
 /// The R2 gamified Control screen layout (Figma 358:2358, decision 0173; the
 /// STOP rules of 0026 hold at every size).
@@ -678,7 +679,7 @@ class StoppedBanner extends StatelessWidget {
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: Text('Lanjutkan', style: TextStyle(fontSize: isShort ? 12 : 14)),
+              child: Text(context.l10n.commonContinue, style: TextStyle(fontSize: isShort ? 12 : 14)),
             ),
           ],
         ),

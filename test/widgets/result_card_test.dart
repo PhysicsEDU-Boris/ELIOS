@@ -116,8 +116,8 @@ void main() {
       expect(find.text('Sempurna'), findsOneWidget);
 
       // Check action buttons
-      expect(find.text('Scan lagi'), findsOneWidget);
-      expect(find.text('Tutup'), findsOneWidget);
+      expect(find.text('Scan again'), findsOneWidget);
+      expect(find.text('Close'), findsOneWidget);
     });
 
     testWidgets('essay score out of 10 awarded directly as trophies', (tester) async {
@@ -242,12 +242,12 @@ void main() {
 
       // Scan lagi is disabled
       final scanLagiButton = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Scan lagi'),
+        find.widgetWithText(FilledButton, 'Scan again'),
       );
       expect(scanLagiButton.onPressed, isNull);
 
       // Tap should do nothing
-      await tester.tap(find.widgetWithText(FilledButton, 'Scan lagi'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Scan again'));
       await tester.pump();
       expect(rescanCalled, isFalse);
     });
@@ -278,11 +278,11 @@ void main() {
 
       // Scan lagi is enabled and tappable
       final scanLagiButton = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Scan lagi'),
+        find.widgetWithText(FilledButton, 'Scan again'),
       );
       expect(scanLagiButton.onPressed, isNotNull);
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Scan lagi'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Scan again'));
       await tester.pump();
       expect(rescanCalled, isTrue);
     });
@@ -388,10 +388,10 @@ void main() {
         expect(tester.takeException(), isNull);
 
         // 2. Scan lagi is reachable and on top
-        await _expectTappable(tester, find.widgetWithText(FilledButton, 'Scan lagi'), 'Scan lagi button');
+        await _expectTappable(tester, find.widgetWithText(FilledButton, 'Scan again'), 'Scan lagi button');
 
         // 3. Tutup is reachable and on top
-        await _expectTappable(tester, find.widgetWithText(OutlinedButton, 'Tutup'), 'Tutup button');
+        await _expectTappable(tester, find.widgetWithText(OutlinedButton, 'Close'), 'Tutup button');
 
         // 4. STOP button in quiz header is reachable and on top (decision 0026)
         final quizStop = find.descendant(of: find.byType(WasteQuizPopup), matching: find.text('STOP'));
@@ -401,7 +401,7 @@ void main() {
         expect(stoppedTapped, isTrue);
 
         // 5. Buttons invoke callbacks
-        await tester.tap(find.widgetWithText(FilledButton, 'Scan lagi'));
+        await tester.tap(find.widgetWithText(FilledButton, 'Scan again'));
         await tester.pump();
         expect(rescanTapped, isTrue);
       });

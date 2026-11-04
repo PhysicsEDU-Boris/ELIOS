@@ -51,6 +51,7 @@ import '../services/frame_source/maix_cam_source.dart';
 import '../services/frame_source/frame_source.dart';
 import '../services/robot/arm_tag_switch.dart';
 import 'login_screen.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// The MaixCAM2 already draws its box, mask and label into the video, so the
 /// app's own box is a debug aid, shown with the live-scan debug overlay only.
@@ -766,9 +767,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                           ),
                           if (c.maxHeight >= 90)
                             Row(children: [
-                              Text('Open', style: TextStyle(color: p.textTertiary, fontSize: 11)),
+                              Text(context.l10n.controlGripOpen, style: TextStyle(color: p.textTertiary, fontSize: 11)),
                               const Spacer(),
-                              Text('Closed', style: TextStyle(color: p.textTertiary, fontSize: 11)),
+                              Text(context.l10n.controlGripClosed, style: TextStyle(color: p.textTertiary, fontSize: 11)),
                             ]),
                         ]),
                       ),
@@ -1034,7 +1035,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           padding: const EdgeInsets.all(12),
           children: [
             Row(mainAxisSize: MainAxisSize.min, children: [
-              const Text('Base', style: TextStyle(color: Colors.white)),
+              Text(context.l10n.controlBase, style: TextStyle(color: Colors.white)),
               IconButton(onPressed: () => _nudgeBase(-2), icon: const Icon(Icons.chevron_left, color: Colors.white), tooltip: 'Base left'),
               IconButton(onPressed: () => _nudgeBase(2), icon: const Icon(Icons.chevron_right, color: Colors.white), tooltip: 'Base right'),
               const SizedBox(width: 8),
@@ -1042,7 +1043,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                 key: const ValueKey('debug_home_button'),
                 onPressed: () => _gate.home(),
                 icon: const Icon(Icons.home_outlined, size: 18),
-                label: const Text('HOME'),
+                label: Text(context.l10n.controlHome),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: const BorderSide(color: Colors.white54),
@@ -1062,7 +1063,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
               ),
             if (_r1 != null) ...[
               const SizedBox(height: 6),
-              Text('R1: ${_r1Status ?? 'memeriksa robot...'}',
+              Text(context.l10n.controlR1Status(_r1Status ?? context.l10n.controlCheckingRobot),
                   style: const TextStyle(color: Colors.white, fontSize: 12, backgroundColor: Colors.black54)),
             ],
             const SizedBox(height: 6),
@@ -1082,7 +1083,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                   builder: (_) => const DebugPhoneCameraSheet(),
                 ),
                 icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                label: const Text('Scan dengan kamera HP'),
+                label: Text(context.l10n.controlPhoneScan),
                 style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white54)),
               ),
             ),

@@ -8,6 +8,7 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../models/video_lesson.dart';
 import '../../../providers/learning_progress_provider.dart';
 import '../../../widgets/learn/learn_ui.dart';
+import 'package:elio/l10n/l10n.dart';
 
 
 /// Opens the YouTube player for [lesson] (youtubeId, else parsed from
@@ -20,7 +21,7 @@ Future<void> openVideoLesson(
   final youtubeId = lesson.resolvedYoutubeId;
   if (youtubeId.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Video is not available yet.')),
+      SnackBar(content: Text(context.l10n.videoUnavailable)),
     );
     return;
   }

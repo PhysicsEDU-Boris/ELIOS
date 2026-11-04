@@ -22,6 +22,7 @@ import 'config/config_parts.dart';
 import 'config/robot_wifi_qr_sheet.dart';
 import 'control_screen.dart';
 import 'device_scan_screen.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// "Enter an IP like 192.168.4.1", or null when [value] is a dotted IPv4.
 String? validateIp(String? value) {
@@ -133,7 +134,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
           children: [
             Icon(Icons.error_outline_rounded, color: p.errorText),
             const SizedBox(width: 12),
-            const Expanded(child: Text('Connection failed')),
+            Expanded(child: Text(context.l10n.configConnectionFailed)),
           ],
         ),
         action: SnackBarAction(label: 'Retry', textColor: p.primaryText, onPressed: _connect),
@@ -233,7 +234,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('The robot is not used. Point the phone at one item and tap Start scan.', style: configBody(p)),
+            Text(context.l10n.configPhoneOnlyHint, style: configBody(p)),
             const SizedBox(height: 12),
             ConfigButton(label: 'Start scan', icon: Icons.center_focus_strong_outlined, onPressed: _openDeviceScan),
           ],
@@ -373,7 +374,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                     Icon(Icons.info_outline_rounded, size: 20, color: p.textSecondary),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text('Put ELIO and this phone on the same Wi-Fi or hotspot, then tap Connect now.',
+                      child: Text(context.l10n.configSameWifiHint,
                           style: configCaption(p)),
                     ),
                   ],
@@ -388,8 +389,8 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Save as default config', style: configStrong(p)),
-                        Text('Use this address next time', style: configCaption(p)),
+                        Text(context.l10n.configSaveDefault, style: configStrong(p)),
+                        Text(context.l10n.configUseAddressNextTime, style: configCaption(p)),
                       ],
                     ),
                   ),
@@ -550,7 +551,7 @@ class _RobotHero extends StatelessWidget {
                       children: [
                         Icon(Icons.threesixty_rounded, size: 18, color: p.textPrimary),
                         const SizedBox(width: 6),
-                        Text('Drag to rotate', style: configCaption(p, color: p.textPrimary)),
+                        Text(context.l10n.configDragToRotate, style: configCaption(p, color: p.textPrimary)),
                       ],
                     ),
                   ),
@@ -583,7 +584,7 @@ class _RobotHero extends StatelessWidget {
                                   child: CircularProgressIndicator(strokeWidth: 2, color: p.secondaryText),
                                 ),
                                 const SizedBox(width: 8),
-                                Text('Looking for ELIO…', style: configCaption(p, color: p.textPrimary)),
+                                Text(context.l10n.configLookingForElio, style: configCaption(p, color: p.textPrimary)),
                               ],
                             ),
                           ),

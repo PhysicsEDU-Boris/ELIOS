@@ -10,6 +10,7 @@ import 'widgets/labeled_slider.dart';
 import 'widgets/calc_box.dart';
 import 'widgets/deep_explain_card.dart';
 import 'widgets/simulation_page_scaffold.dart';
+import 'package:elio/l10n/l10n.dart';
 
 class PowerBudgetSimulationPage extends ConsumerWidget {
   const PowerBudgetSimulationPage({super.key});
@@ -59,19 +60,19 @@ class PowerBudgetSimulationPage extends ConsumerWidget {
                     runSpacing: 8,
                     children: [
                       ActionChip(
-                        label: const Text('Mode Sortir'),
+                        label: Text(context.l10n.simSortMode),
                         backgroundColor: (state.cameraOn && state.armOn && !state.driveOn) ? context.elio.primaryText.withValues(alpha: 0.1) : context.elio.surface,
                         side: BorderSide(color: (state.cameraOn && state.armOn && !state.driveOn) ? context.elio.primaryText : context.elio.borderSubtle),
                         onPressed: () => notifier.applyScenarioSortir(),
                       ),
                       ActionChip(
-                        label: const Text('Mode Jelajah'),
+                        label: Text(context.l10n.simExploreMode),
                         backgroundColor: (state.cameraOn && state.driveOn && !state.armOn) ? context.elio.primaryText.withValues(alpha: 0.1) : context.elio.surface,
                         side: BorderSide(color: (state.cameraOn && state.driveOn && !state.armOn) ? context.elio.primaryText : context.elio.borderSubtle),
                         onPressed: () => notifier.applyScenarioJelajah(),
                       ),
                       ActionChip(
-                        label: const Text('Idle'),
+                        label: Text(context.l10n.simIdle),
                         backgroundColor: (state.cameraOn && !state.driveOn && !state.armOn) ? context.elio.primaryText.withValues(alpha: 0.1) : context.elio.surface,
                         side: BorderSide(color: (state.cameraOn && !state.driveOn && !state.armOn) ? context.elio.primaryText : context.elio.borderSubtle),
                         onPressed: () => notifier.applyScenarioIdle(),
@@ -93,21 +94,21 @@ class PowerBudgetSimulationPage extends ConsumerWidget {
                       child: Column(
                         children: [
                           SwitchListTile(
-                            title: const Text('Kamera (10W)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                            title: Text(context.l10n.simCamera, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                             value: state.cameraOn,
                             onChanged: notifier.toggleCamera,
                             activeThumbColor: context.elio.primary,
                           ),
                           const Divider(height: 1),
                           SwitchListTile(
-                            title: const Text('Motor Penggerak (36W)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                            title: Text(context.l10n.simDriveMotor, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                             value: state.driveOn,
                             onChanged: notifier.toggleDrive,
                             activeThumbColor: context.elio.primary,
                           ),
                           const Divider(height: 1),
                           SwitchListTile(
-                            title: const Text('Motor Lengan (18W)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                            title: Text(context.l10n.simArmMotor, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                             value: state.armOn,
                             onChanged: notifier.toggleArm,
                             activeThumbColor: context.elio.primary,
@@ -143,7 +144,7 @@ class PowerBudgetSimulationPage extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Sisa Baterai', style: TextStyle(color: context.elio.textSecondary, fontSize: 12)),
+                            Text(context.l10n.simBatteryLeft, style: TextStyle(color: context.elio.textSecondary, fontSize: 12)),
                             Text('${state.remainingPercent.toStringAsFixed(1)}%', style: TextStyle(color: context.elio.textPrimary, fontSize: 14, fontWeight: FontWeight.bold)),
                           ],
                         ),

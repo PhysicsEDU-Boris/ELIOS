@@ -14,6 +14,7 @@ import 'widgets/labeled_slider.dart';
 import 'widgets/calc_box.dart';
 import 'widgets/deep_explain_card.dart';
 import 'widgets/simulation_page_scaffold.dart';
+import 'package:elio/l10n/l10n.dart';
 
 class WorkEnergySimulationPage extends ConsumerWidget {
   const WorkEnergySimulationPage({super.key});
@@ -129,7 +130,7 @@ class _WorkEnergyCanvas extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('Usaha (W)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: context.elio.textSecondary)),
+                      Text(context.l10n.simWork, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: context.elio.textSecondary)),
                       const SizedBox(height: 4),
                       Expanded(
                         child: RotatedBox(
@@ -147,7 +148,7 @@ class _WorkEnergyCanvas extends StatelessWidget {
                       
                       const SizedBox(height: 20),
                       
-                      Text('Baterai', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: context.elio.textSecondary)),
+                      Text(context.l10n.simBattery, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: context.elio.textSecondary)),
                       const SizedBox(height: 4),
                       Expanded(
                         child: RotatedBox(

@@ -6,6 +6,7 @@ import '../../models/home_stats.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/auth/auth_widgets.dart' show authPalette;
 import 'home_parts.dart';
+import 'package:elio/l10n/l10n.dart';
 
 enum SearchScope {
   all('All', null),
@@ -251,7 +252,7 @@ class HomeSearchResults extends StatelessWidget {
                 minimumSize: const Size(48, 48),
                 foregroundColor: p.primaryText,
               ),
-              child: Text('See all ${items.length} results'),
+              child: Text(context.l10n.searchSeeAll(items.length)),
             ),
           ),
       ],

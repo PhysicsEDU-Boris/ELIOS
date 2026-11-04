@@ -13,6 +13,7 @@ import 'widgets/labeled_slider.dart';
 import 'widgets/calc_box.dart';
 import 'widgets/deep_explain_card.dart';
 import 'widgets/simulation_page_scaffold.dart';
+import 'package:elio/l10n/l10n.dart';
 
 class KinematicsSimulationPage extends ConsumerStatefulWidget {
   const KinematicsSimulationPage({super.key});
@@ -123,7 +124,7 @@ class _KinematicsSimulationPageState extends ConsumerState<KinematicsSimulationP
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Icon(Icons.timer_rounded, color: context.elio.primaryText, size: 24),
-                              Text('Live Timer:', style: TextStyle(color: context.elio.textSecondary, fontSize: 14)),
+                              Text(context.l10n.simLiveTimer, style: TextStyle(color: context.elio.textSecondary, fontSize: 14)),
                               Text('${state.elapsedS.toStringAsFixed(2)} s', style: TextStyle(color: context.elio.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
                             ],
                           ),
@@ -131,7 +132,7 @@ class _KinematicsSimulationPageState extends ConsumerState<KinematicsSimulationP
                         ElevatedButton.icon(
                           onPressed: state.isRunning ? null : () => notifier.run(),
                           icon: const Icon(Icons.play_arrow_rounded),
-                          label: const Text('JALANKAN'),
+                          label: Text(context.l10n.simRun),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: context.elio.primary,
                             foregroundColor: context.elio.onPrimary,
@@ -197,7 +198,7 @@ class _KinematicsSimulationPageState extends ConsumerState<KinematicsSimulationP
                     child: Theme(
                       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
-                        title: Text('Bonus: Bagaimana dengan GLBB?', style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
+                        title: Text(context.l10n.simBonusUam, style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
                         iconColor: context.elio.primaryText,
                         collapsedIconColor: context.elio.textSecondary,
                         children: [

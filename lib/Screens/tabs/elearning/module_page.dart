@@ -17,6 +17,7 @@ import 'lesson_page.dart';
 import 'quiz_page.dart';
 import 'quiz_review_page.dart';
 import 'simulations/simulations_page.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// One page for every waste module (Figma 309:5927).
 class ModulePage extends ConsumerStatefulWidget {
@@ -142,7 +143,7 @@ class _ModuleBody extends ConsumerWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(child: Text('Module progress', style: context.text.labelMedium)),
+                  Expanded(child: Text(context.l10n.moduleProgress, style: context.text.labelMedium)),
                   Text(
                     '${(value * 100).round()}%',
                     style: context.text.labelLarge?.copyWith(color: p.primaryText),

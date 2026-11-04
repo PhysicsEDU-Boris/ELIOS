@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import '../websocket_service.dart';
 import 'frame_source.dart';
+import 'package:elio/l10n/l10n.dart';
 
 class MaixCamSource extends FrameSource {
   final WebSocketService _ws = WebSocketService();
@@ -50,7 +51,7 @@ class MaixCamSource extends FrameSource {
             gaplessPlayback: true,
           );
         }
-        return const Center(child: Text('Waiting for MaixCAM2 stream...', style: TextStyle(color: Color(0xFF7F8C8D))));
+        return Center(child: Text(context.l10n.waitingForStream, style: const TextStyle(color: Color(0xFF7F8C8D))));
       },
     );
   }

@@ -15,6 +15,7 @@ import 'widgets/labeled_slider.dart';
 import 'widgets/simulation_page_scaffold.dart';
 import 'painters/inorganic_painters.dart';
 import 'painters/b3_painters.dart';
+import 'package:elio/l10n/l10n.dart';
 
 class DeepDiveSimulationPage extends ConsumerStatefulWidget {
   const DeepDiveSimulationPage({super.key});
@@ -53,7 +54,7 @@ class _DeepDiveSimulationPageState extends ConsumerState<DeepDiveSimulationPage>
                         backgroundColor: context.elio.surface,
                         collapsedBackgroundColor: context.elio.surface,
                         initiallyExpanded: false,
-                        title: Text('Kartu Organik — Porositas & Aliran Oksigen', style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
+                        title: Text(context.l10n.deepOrganicCard, style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
                         iconColor: const Color(0xFF10B981),
                         collapsedIconColor: context.elio.textSecondary,
                         onExpansionChanged: (v) => setState(() => _organicExpanded = v),
@@ -82,7 +83,7 @@ class _DeepDiveSimulationPageState extends ConsumerState<DeepDiveSimulationPage>
                         backgroundColor: context.elio.surface,
                         collapsedBackgroundColor: context.elio.surface,
                         initiallyExpanded: false,
-                        title: Text('Kartu Inorganik — Hooke, NIR, & Eddy Current', style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
+                        title: Text(context.l10n.deepInorganicCard, style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
                         iconColor: const Color(0xFF3B82F6),
                         collapsedIconColor: context.elio.textSecondary,
                         onExpansionChanged: (v) => setState(() => _inorganicExpanded = v),
@@ -111,7 +112,7 @@ class _DeepDiveSimulationPageState extends ConsumerState<DeepDiveSimulationPage>
                         backgroundColor: context.elio.surface,
                         collapsedBackgroundColor: context.elio.surface,
                         initiallyExpanded: false,
-                        title: Text('Kartu B3 — Tekanan Uap, Insinerator, Radiasi', style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
+                        title: Text(context.l10n.deepB3Card, style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
                         iconColor: const Color(0xFFEF4444),
                         collapsedIconColor: context.elio.textSecondary,
                         onExpansionChanged: (v) => setState(() => _b3Expanded = v),
@@ -183,7 +184,7 @@ class _OrganicDeepDiveContent extends ConsumerWidget {
         const SizedBox(height: 24),
         
         // Physics details
-        Text('Konsep Inti', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
+        Text(context.l10n.deepCoreConcept, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
         const SizedBox(height: 8),
         Text(
           'Porositas adalah persentase ruang kosong (berisi udara) di antara partikel padat dalam tumpukan kompos. Porositas tinggi = udara bisa mengalir bebas ke seluruh tumpukan = proses aerobik (butuh oksigen) berjalan sehat. Porositas rendah = tumpukan terlalu padat = oksigen cepat habis di bagian dalam = mikroba anaerobik mengambil alih.',
@@ -191,7 +192,7 @@ class _OrganicDeepDiveContent extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         
-        Text('Fisika Kunci', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
+        Text(context.l10n.deepKeyPhysics, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
         const SizedBox(height: 8),
         Text(
           '• Hukum Fick (difusi) — laju perpindahan oksigen ke dalam tumpukan sebanding dengan luas jalur pori dan berbanding terbalik dengan jarak tempuh; tumpukan padat = jalur difusi lebih panjang dan sempit = laju oksigen masuk melambat drastis.\n'
@@ -215,7 +216,7 @@ class _OrganicDeepDiveContent extends ConsumerWidget {
                 children: [
                   Icon(Icons.lightbulb_outline_rounded, color: context.elio.textPrimary, size: 20),
                   SizedBox(width: 8),
-                  Text('Mengapa perlakuan berbeda?', style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
+                  Text(context.l10n.deepWhyDifferent, style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
                 ],
               ),
               SizedBox(height: 8),
@@ -272,7 +273,7 @@ class _InorganicDeepDiveContentState extends ConsumerState<_InorganicDeepDiveCon
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('1. Uji Kekerasan (Pegas Hooke)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
+        Text(context.l10n.deepHardnessTest, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
         const SizedBox(height: 8),
         Text(
           'Prinsip ini dipakai ELIO pada mekanisme penjepit/pendorong berpegas untuk menguji kekerasan/elastisitas benda.',
@@ -295,10 +296,10 @@ class _InorganicDeepDiveContentState extends ConsumerState<_InorganicDeepDiveCon
           onChanged: hookeNotifier.setCompression,
         ),
         const SizedBox(height: 8),
-        Text('Gaya Reaksi (F = k·x): ${hookeState.forceN.toStringAsFixed(1)} N (k=50 N/m)', style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.primaryText)),
+        Text(context.l10n.deepReactionForce(hookeState.forceN.toStringAsFixed(1)), style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.primaryText)),
         const Divider(height: 32),
         
-        Text('2. Reflektansi Near-Infrared (NIR)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
+        Text(context.l10n.deepNir, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
         const SizedBox(height: 8),
         Text(
           'Setiap jenis plastik menyerap dan memantulkan cahaya inframerah-dekat pada panjang gelombang karakteristik yang berbeda, membentuk semacam "sidik jari optik."',
@@ -345,10 +346,10 @@ class _InorganicDeepDiveContentState extends ConsumerState<_InorganicDeepDiveCon
           child: CustomPaint(painter: NirCurvePainter(peakNm: nirState.peakWavelengthNm)),
         ),
         const SizedBox(height: 8),
-        Text('Puncak Spektrum: ≈${nirState.peakWavelengthNm.toStringAsFixed(0)} nm', style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.primaryText)),
+        Text(context.l10n.deepSpectrumPeak(nirState.peakWavelengthNm.toStringAsFixed(0)), style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.primaryText)),
         const Divider(height: 32),
         
-        Text('3. Arus Eddy (Logam Non-Feromagnetik)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
+        Text(context.l10n.deepEddy, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
         const SizedBox(height: 8),
         Text(
           'Ketika logam bergerak melalui medan magnet yang berubah, arus pusar (eddy current) terinduksi di dalam logam tersebut, menciptakan medan magnet lawan yang menolak logam non-magnetik seperti aluminium menjauh dari sumber magnet.',
@@ -377,7 +378,7 @@ class _InorganicDeepDiveContentState extends ConsumerState<_InorganicDeepDiveCon
                 children: [
                   Icon(Icons.lightbulb_outline_rounded, color: context.elio.textPrimary, size: 20),
                   SizedBox(width: 8),
-                  Text('Mengapa perlakuan berbeda?', style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
+                  Text(context.l10n.deepWhyDifferent, style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
                 ],
               ),
               SizedBox(height: 8),
@@ -410,7 +411,7 @@ class _B3DeepDiveContent extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('1. Tekanan Uap (Vapor Pressure)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
+        Text(context.l10n.deepVaporPressure, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
         const SizedBox(height: 8),
         Text(
           'Semakin tinggi suhu suatu cairan/zat, semakin besar kecenderungannya menguap menjadi gas — inilah tekanan uap. Persamaan Clausius-Clapeyron menjelaskan hubungan non-linear (eksponensial) ini.',
@@ -452,10 +453,10 @@ class _B3DeepDiveContent extends ConsumerWidget {
           onChanged: vaporNotifier.setTemperature,
         ),
         const SizedBox(height: 8),
-        Text('Relative Vapor Pressure: ${vaporState.relativePressure.toStringAsFixed(4)} (Arbiter)', style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.errorText)),
+        Text(context.l10n.deepRelativeVapor(vaporState.relativePressure.toStringAsFixed(4)), style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.errorText)),
         const Divider(height: 32),
         
-        Text('2. Insinerator (Penghancuran Ikatan Kimia)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
+        Text(context.l10n.deepIncinerator, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
         const SizedBox(height: 8),
         Text(
           'Insinerasi bahan berbahaya membutuhkan suhu jauh lebih tinggi dibanding pembakaran sampah biasa untuk memutus ikatan kimia molekul beracun (misalnya senyawa organik persisten). Ambang 1000°C di sini adalah ilustrasi titik dekomposisi termal.',
@@ -484,7 +485,7 @@ class _B3DeepDiveContent extends ConsumerWidget {
         ),
         const Divider(height: 32),
         
-        Text('3. Perisai Radiasi (Radiation Shielding)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
+        Text(context.l10n.deepRadiationShield, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.elio.textPrimary)),
         const SizedBox(height: 8),
         Text(
           'Intensitas radiasi (I) berkurang secara eksponensial seiring bertambahnya ketebalan perisai (x).',
@@ -555,7 +556,7 @@ class _B3DeepDiveContent extends ConsumerWidget {
                 children: [
                   Icon(Icons.lightbulb_outline_rounded, color: context.elio.textPrimary, size: 20),
                   SizedBox(width: 8),
-                  Text('Mengapa perlakuan berbeda?', style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
+                  Text(context.l10n.deepWhyDifferent, style: TextStyle(fontWeight: FontWeight.bold, color: context.elio.textPrimary)),
                 ],
               ),
               SizedBox(height: 8),

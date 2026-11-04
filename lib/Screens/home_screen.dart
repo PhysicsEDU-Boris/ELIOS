@@ -33,6 +33,7 @@ import 'home/home_activity.dart';
 import 'home/home_parts.dart';
 import 'home/home_search.dart';
 import 'login_screen.dart';
+import 'package:elio/l10n/l10n.dart';
 import 'tabs/elearning/simulations/simulations_page.dart'
     show openSimulation;
 
@@ -527,7 +528,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Semantics(
                       header: true,
-                      child: Text('Scan activity', style: homeTitle(p)),
+                      child: Text(context.l10n.homeScanActivity, style: homeTitle(p)),
                     ),
                     Text(subtitle, style: homeSmall(p)),
                   ],
@@ -566,7 +567,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               spacing: 12,
               children: [
                 if (stats.isEmpty)
-                  Text('Your first scan lights up today', style: homeSmall(p))
+                  Text(context.l10n.homeFirstScanToday, style: homeSmall(p))
                 else
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -590,7 +591,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   minimumSize: const Size.fromHeight(48),
                   shape: homeShape(999),
                 ),
-                child: const Text('Scan an item'),
+                child: Text(context.l10n.homeScanItem),
               ),
             ],
           ],
@@ -701,7 +702,7 @@ class _GuestBanner extends StatelessWidget {
                 side: BorderSide(color: p.borderSubtle),
                 shape: homeShape(999),
               ),
-              child: const Text('Sign in'),
+              child: Text(context.l10n.signIn),
             ),
           ],
         ),
@@ -793,7 +794,7 @@ class _Hero extends StatelessWidget {
                       alignment: WrapAlignment.spaceBetween,
                       spacing: 8,
                       children: [
-                        Text('${stats.totalTrophies} trophies', style: label),
+                        Text(context.l10n.homeTrophies(stats.totalTrophies), style: label),
                         Text(
                           toNext == null
                               ? 'Top level'
@@ -917,7 +918,7 @@ class _Quests extends StatelessWidget {
                   children: [
                     Semantics(
                       header: true,
-                      child: Text('Daily quests', style: homeTitle(p)),
+                      child: Text(context.l10n.homeDailyQuests, style: homeTitle(p)),
                     ),
                     Text(
                       '$done of 3 done · resets at midnight',
@@ -1042,7 +1043,7 @@ class _BinBuddies extends StatelessWidget {
         children: [
           Semantics(
             header: true,
-            child: Text('Bin buddies', style: homeTitle(p)),
+            child: Text(context.l10n.homeBinBuddies, style: homeTitle(p)),
           ),
           Text(
             total == 0
@@ -1163,7 +1164,7 @@ class _ThisWeek extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('This week', style: homeSmall(p)),
+          Text(context.l10n.homeThisWeek, style: homeSmall(p)),
           Text.rich(
             TextSpan(
               children: [
@@ -1232,7 +1233,7 @@ class _QuizAccuracy extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Quiz accuracy', style: homeSmall(p)),
+            Text(context.l10n.homeQuizAccuracy, style: homeSmall(p)),
             Wrap(
               crossAxisAlignment: WrapCrossAlignment.end,
               spacing: 6,
@@ -1302,7 +1303,7 @@ class _Medals extends StatelessWidget {
               Expanded(
                 child: Semantics(
                   header: true,
-                  child: Text('Medals', style: homeTitle(p)),
+                  child: Text(context.l10n.homeMedals, style: homeTitle(p)),
                 ),
               ),
               Text(
@@ -1424,7 +1425,7 @@ class _DidYouKnow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('DID YOU KNOW?', style: homeOverline(p.secondaryText)),
+                  Text(context.l10n.homeDidYouKnow, style: homeOverline(p.secondaryText)),
                   const SizedBox(height: 4),
                   Text(
                     fact,

@@ -7,6 +7,7 @@ import '../models/quiz_explanation.dart';
 import '../services/quiz_pdf_service.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../theme/elio_learning_colors.dart';
+import 'package:elio/l10n/l10n.dart';
 
 // ---------------------------------------------------------------------------
 // Design tokens (Figma node 96:130 / 96:246)
@@ -801,7 +802,7 @@ class _ActionsRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           ),
           icon: const Icon(Icons.arrow_back_rounded, size: 16),
-          label: const Text('Kembali ke Soal'),
+          label: Text(context.l10n.backToQuestion),
         ),
         // Primary: next or finish
         FilledButton.icon(

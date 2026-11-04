@@ -10,6 +10,7 @@ import '../../../models/guide_lesson.dart';
 import '../../../providers/learning_progress_provider.dart';
 import '../../../widgets/learn/learn_ui.dart';
 import 'learn_content.dart';
+import 'package:elio/l10n/l10n.dart';
 
 
 Future<void> openGuideLesson({
@@ -45,7 +46,7 @@ Future<void> openGuideLesson({
 
 void _showGuideUnavailableMessage(BuildContext context) {
   ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Guide PDF is not available yet.')),
+    SnackBar(content: Text(context.l10n.guidePdfUnavailable)),
   );
 }
 
