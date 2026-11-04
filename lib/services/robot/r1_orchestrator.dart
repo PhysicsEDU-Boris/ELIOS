@@ -72,6 +72,10 @@ class R1Orchestrator {
   bool get showPositionButton => _state == R1State.position && _manualPosition;
   bool get canAmbil => _state == R1State.ready;
 
+  /// The camera's AprilTag search is on only around a grip (owner, 4 Nov; 0182): from POSITION
+  /// until the arm is done. Elsewhere it would cost ~40 ms a detection frame for nothing.
+  bool get wantsArmTags => const {R1State.position, R1State.ready, R1State.sorting, R1State.waitBoth}.contains(_state);
+
   DateTime? _settleUntil;
 
   /// Camera lock and re-arm events are ignored now: the arm moves the camera (J1).

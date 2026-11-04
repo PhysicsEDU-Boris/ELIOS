@@ -134,6 +134,15 @@ void main() {
   });
 
   group('POSITION', () {
+    test('0182: AprilTags are wanted only from POSITION through the grip', () {
+      final r = _Rig(setup: (s) => s.objectDistCm = null);
+      expect(r.r1.wantsArmTags, isFalse); // searching
+      r.toPosition();
+      expect(r.r1.wantsArmTags, isTrue);
+      r.r1.onPositionConfirmed();
+      expect((r.r1.state, r.r1.wantsArmTags), (R1State.ready, true));
+    });
+
     test('no dist_cm (current firmware): the manual button, then READY', () {
       final r = _Rig(setup: (s) => s.objectDistCm = null);
       r.toPosition();

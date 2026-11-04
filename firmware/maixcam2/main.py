@@ -348,6 +348,10 @@ def arm_tags(tags, scale=1):
 # MaixPy (robot test, 4 Nov); 320x240 works in about 40 ms.
 TAG_SCALE = 2
 
+# AprilTags only around a grip (owner, 4 Nov): the app sends {"cmd":"arm_tags","on":true} while R1
+# positions, picks and sorts, and for a manual PICK UP; off otherwise (the search costs ~40 ms).
+tags = {"on": False}
+
 def find_arm_tags(frame):
     small = frame.resize(frame.width() // TAG_SCALE, frame.height() // TAG_SCALE)
     return arm_tags(small.find_apriltags(families=image.ApriltagFamilies.TAG36H11), TAG_SCALE)
@@ -413,6 +417,15 @@ LEFT_BTN  = (PAD, BTN_Y, CW, BTN_H)
 RIGHT_BTN = (PAD+CW+12, BTN_Y, CW, BTN_H)
 
 # ── App state ─────────────────────────────────────────────────────────────────
+# Screen off while a phone is connected (owner, 4 Nov): saves battery and leaves the CPU to the
+# stream. A tap wakes it for SCREEN_WAKE_MS; that tap only wakes it, it presses no button.
+SCREEN_WAKE_MS = 15000
+screen = {"on": True, "level": 50, "awake_until": 0, "swallow": False}
+try:
+    screen["level"] = disp.get_backlight() or 50
+except Exception as e:
+    print("[Screen] backlight read failed:", e)
+
 tick             = 0
 force_dc_pressed = False
 last_pressed     = False
@@ -560,6 +573,10 @@ async def ws_handler(websocket):
                         await websocket.send(json.dumps({"event": "track_started", "track_id": track["id"]}))
                         print("[Track] start", track["id"], track["label"], box)
 
+                elif cmd == "arm_tags":
+                    tags["on"] = data.get("on") is True
+                    print("[Tags]", "on" if tags["on"] else "off")
+
                 elif cmd == "track_stop":
                     track.update(pending=None, on=False)
                     await websocket.send(json.dumps({"event": "track_stopped", "track_id": track["id"]}))
@@ -624,7 +641,7 @@ async def ws_frame_pusher():
                     t1 = mtime.ticks_ms()
                     try:
                         last_hands = hand_dets(frame) if hands is not None else []
-                        last_tags = find_arm_tags(frame)
+                        last_tags = find_arm_tags(frame) if tags["on"] else []
                         detection_frame_id = frame_id
                     except Exception as de:
                         print("[AI] detect error:", de)
@@ -684,6 +701,7 @@ async def ws_frame_pusher():
                 print("[WS] Releasing stream camera")
                 stream_cam = None
                 track.update(on=False, pending=None)
+                tags["on"] = False
             det_frame_count = 0
             last_tracked, last_hands, last_tags = None, [], []
             await asyncio.sleep(0.05)
@@ -992,6 +1010,23 @@ while not app.need_exit():
         if just_released:
             setup_touch(tx,ty)
         continue
+
+    if ws_clients and mtime.ticks_ms() > screen["awake_until"]:
+        if pressed:  # wake for a while; this touch presses nothing
+            screen.update(awake_until=mtime.ticks_ms() + SCREEN_WAKE_MS, swallow=True)
+        else:
+            if screen["on"]:
+                disp.set_backlight(0)
+                screen["on"] = False
+            mtime.sleep_ms(100)
+            continue
+    if not screen["on"]:
+        disp.set_backlight(screen["level"])
+        screen["on"] = True
+    if screen["swallow"]:
+        if just_released:
+            screen["swallow"] = False
+        just_released = False
 
     if just_released and not ws_clients and hit(tx,ty,*SETUP_BTN):
         start_scan()

@@ -83,6 +83,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
   /// Refine (0182): the tracked box's last `held`, a refine in flight, and when the last one began.
   bool? _trackHeld;
+
+  /// AprilTags (0182): on while R1 grips, and for [_manualTagsFor] after a manual PICK UP.
+  bool? _tagsSent;
+  DateTime? _manualTagsUntil;
+  static const _manualTagsFor = Duration(seconds: 5);
   bool _refining = false;
   DateTime? _refinedAt, _unsettledSince;
   bool _locking = false;
@@ -241,6 +246,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         final r1 = _r1!..tick();
         final text = r1.robotConnected ? 'robot terhubung' : r1.message ?? 'memeriksa robot...';
         if (mounted && text != _r1Status) setState(() => _r1Status = text);
+        final now = DateTime.now();
+        final wantTags = r1.wantsArmTags || (_manualTagsUntil != null && now.isBefore(_manualTagsUntil!));
+        if (wantTags != _tagsSent && WebSocketService().isConnected) {
+          WebSocketService().sendRobotCommand({'cmd': 'arm_tags', 'on': wantTags});
+          _tagsSent = wantTags;
+        }
         final dropPending = r1.state == R1State.sorting || r1.state == R1State.waitBoth;
         if (ref.read(r1DropPendingProvider) != dropPending) {
           ref.read(r1DropPendingProvider.notifier).state = dropPending;
@@ -379,6 +390,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _liveScan?.onLinkRestored(); // 0020: a drop can't time absence; harmless on the first connect
     _r1?.linkUp(); // 0023: probe the command link (old firmware: "robot tidak terhubung")
     _gate.robot.status();
+    _tagsSent = null; // the camera starts with tags off: say again what we want
   }
 
   /// Escape, or space outside a text field: the emergency stop.
@@ -861,6 +873,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onHome: _gate.home,
       onPickUp: () {
         if (_gate.servo('gripper', 100)) {
+          _manualTagsUntil = DateTime.now().add(_manualTagsFor);
           notifier.setGripperVal(100);
           if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
         }

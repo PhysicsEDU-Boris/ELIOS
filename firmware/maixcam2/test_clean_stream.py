@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'moved', 'median_box', 'place', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'NOMINAL_FX', 'track', 'parse_track_box', 'box_det', 'track_frame',
-         'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS'}
+         'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'tags', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS'}
 
 
 class EndStream(BaseException):
@@ -185,7 +185,7 @@ class TrackFrameTest(unittest.TestCase):
 
 class StreamTest(unittest.TestCase):
     def test_clean_frames_tracked_box_hands_and_tags(self):
-        frames, messages, encodes = [], [], []
+        frames, messages, encodes, searched = [], [], [], []
 
         class Frame:
             def __init__(self, number):
@@ -206,6 +206,7 @@ class StreamTest(unittest.TestCase):
                 return 480
 
             def find_apriltags(self, families):
+                searched.append(self.number)
                 return [Tag(0, 20)] if self.number == 2 else []
 
         class Camera:
@@ -234,6 +235,7 @@ class StreamTest(unittest.TestCase):
                                        ApriltagFamilies=SimpleNamespace(TAG36H11=16)))
         M['hold'] = lambda t, box: box  # hold() is tested on its own; here the raw box
         M['track'].update(pending=(100, 100, 40, 50), id=1, label='kardus')  # FakeTracker's box is 0.6x its area
+        M['tags']['on'] = True  # the app turned tags on for a grip
         with self.assertRaises(EndStream):
             asyncio.run(M['ws_frame_pusher']())
 
@@ -264,6 +266,46 @@ class StreamTest(unittest.TestCase):
         self.assertNotIn('clean_image', messages[3])  # within CLEAN_EVERY_MS of the last one
         self.assertEqual(messages[3]['detections'][0]['x'], 25)  # FakeTracker's box
         self.assertEqual(messages[3]['arm_tags'], [])
+        self.assertEqual(searched, [2, 4])  # only on detection frames while on
+
+    def test_no_tag_search_unless_the_app_asks(self):
+        searched, messages = [], []
+
+        class Frame:
+            def to_jpeg(self, quality):
+                return SimpleNamespace(to_bytes=lambda: b'x')
+
+            def resize(self, w, h):
+                return self
+
+            def width(self):
+                return 640
+
+            def height(self):
+                return 480
+
+            def find_apriltags(self, families):
+                searched.append(1)
+                return []
+
+        class Client:
+            async def send(self, payload):
+                messages.append(json.loads(payload))
+                if len(messages) == 6:
+                    raise EndStream()
+
+        ticks = iter(range(0, 10 ** 6, 7))
+        M = load(asyncio=asyncio, json=json, base64=base64, print=lambda *a: None,
+                 stream_cam=SimpleNamespace(read=Frame), ws_streaming=True, ws_clients={Client()},
+                 cam_lock=threading.Lock(), setup={'stage': None},
+                 STREAM_RESOLUTION=(640, 480), FIRMWARE_SHA256='test-hash',
+                 mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)),
+                 tracker=None, hands=None,
+                 image=SimpleNamespace(ApriltagFamilies=SimpleNamespace(TAG36H11=16)))
+        with self.assertRaises(EndStream):
+            asyncio.run(M['ws_frame_pusher']())
+        self.assertEqual(searched, [])  # tags off by default: ~40 ms saved per detection frame
+        self.assertTrue(all(m['arm_tags'] == [] for m in messages))
 
 
 if __name__ == '__main__':
