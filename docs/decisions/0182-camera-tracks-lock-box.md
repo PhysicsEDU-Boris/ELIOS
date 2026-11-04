@@ -160,6 +160,13 @@ file so the Wi-Fi QR setup stays):
   it is within 2x of the LOCK box, and a box that grew more than 1.3x while a detected hand
   overlaps it is not taken (the held box stays until the hand lets go). Hands now run before the
   tracker on a detection frame so the tracker sees this frame's hands.
+- Owner video 15:36: boxes still ballooned over a hand from above. A 40 s log showed the hand
+  detected (0.80-0.99) on only about every other detection frame, and the box grew exactly on the
+  misses (158 -> 402 px tall). Now a hand counts for 1 s after it was seen, and a box that grew by
+  more than 1.3x against the last confirmed size (LOCK, a settle, a confirmed growth) is taken only
+  when 5 calls in a row agree on one size; plain moves still follow after 2 calls. Cost: a real
+  growth (driving closer) shows ~1 s late. Each tracked box now carries `raw`, the tracker's own
+  box, and `hand: true` when the hand rule kept the held box, for logs (the app ignores both).
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 

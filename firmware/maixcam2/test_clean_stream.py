@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'HAND_GROWTH', 'overlaps', 'size_ok', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
+NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE', 'GROW_MIN', 'median_box', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'HAND_GROWTH', 'HAND_MEMORY_MS', 'recent_hands', 'overlaps', 'size_ok', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'NOMINAL_FX', 'track', 'parse_track_box', 'box_det', 'track_frame',
          'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'tags', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS'}
 
@@ -139,15 +139,15 @@ class TrackFrameTest(unittest.TestCase):
         self.assertEqual(widths[-1], 88)  # 4.8x the LOCK area: still the item, settled ~1 s after stopping
 
     def test_init_follow_lose_and_find_again(self):
-        tracker = FakeTracker([0.9, 0.9] + [0.2] * 50 + [0.9])
+        tracker = FakeTracker([0.9] * 5 + [0.2] * 50 + [0.9])
         M = load(tracker=tracker, print=lambda *a: None)
         M['track'].update(pending=(5, 6, 20, 30), id=4, label='kardus')
         first = M['track_frame'](None)
         self.assertEqual(tracker.inits, [(5, 6, 20, 30)])
         self.assertEqual(first, {'label': 'kardus', 'score': 1.0, 'x': 15, 'y': 21, 'w': 20, 'h': 30,
                                  'track_id': 4})
-        self.assertEqual(M['track_frame'](None)['x'], 15)  # moved: one odd box is held back
-        self.assertEqual(M['track_frame'](None)['x'], 25)  # the second: followed (centre of the box)
+        # FakeTracker's box is 2x the LOCK area: a growth, taken once 5 calls in a row agree.
+        self.assertEqual([M['track_frame'](None)['x'] for _ in range(5)], [15, 15, 15, 15, 25])
         for _ in range(50):  # lost for ~10 s: nothing sent, but still searching
             self.assertIsNone(M['track_frame'](None))
         self.assertTrue(M['track']['on'])
@@ -161,8 +161,7 @@ class TrackFrameTest(unittest.TestCase):
         for W, H in [(30, 90), (15, 30), (30, 130)]:  # 1200 -> 2700, 450, 3900 px^2 (a hand at 2.8x)
             self.assertIsNone(M['track_frame'](None))
         W, H = 45, 50  # 1.9x: still the item
-        M['track_frame'](None)
-        self.assertEqual(M['track_frame'](None)['w'], 45)
+        self.assertEqual([M['track_frame'](None)['w'] for _ in range(5)], [30, 30, 30, 30, 45])  # a growth: 5 calls
 
     def test_after_a_hand_sized_box_the_real_item_is_taken_again(self):
         boxes = iter([(100, 100, 50, 50), (100, 100, 50, 50)])
@@ -184,8 +183,30 @@ class TrackFrameTest(unittest.TestCase):
         for _ in range(3):  # two in a row would be a move; with the hand it never is
             self.assertEqual(M['track_frame'](None, hand)['w'], 50)
         self.assertEqual(M['track']['area'], 2500)
-        M['track_frame'](None)  # the hand is gone: the tracker's box counts again
-        self.assertEqual(M['track_frame'](None)['w'], 120)
+        # The hand is gone: the grown box counts again once it keeps one size for 5 calls.
+        self.assertEqual([M['track_frame'](None)['w'] for _ in range(5)], [50, 50, 50, 50, 120])
+
+    def test_a_growing_box_is_taken_only_when_it_keeps_one_size(self):
+        hold = load()['hold']
+        t = {'box': (300, 300, 80, 120), 'still': [], 'odd': False, 'grow': [], 'size': 9600}
+        # Hand + pack: taller every call, then a hand-sized jump (log 4 Nov) - never one size.
+        for box in [(300, 250, 90, 170), (295, 230, 95, 200), (290, 200, 100, 240), (285, 120, 110, 330),
+                    (290, 180, 100, 260), (285, 100, 110, 360), (290, 210, 100, 220)]:
+            self.assertEqual(hold(t, box), (300, 300, 80, 120))
+        # Small steps (each under 1.3x of the box before) still count as growth against the held size.
+        t = {'box': (300, 300, 80, 120), 'still': [], 'odd': False, 'grow': [], 'size': 9600}
+        for k in range(1, 6):
+            self.assertEqual(hold(t, (300, 300 - 15 * k, 80, 120 + 15 * k)), (300, 300, 80, 120))
+
+    def test_a_hand_counts_for_a_second_through_detector_misses(self):
+        recent = load()['recent_hands']
+        hand = (300, 40, 150, 150)
+        seen = recent([], 0, [hand])
+        seen = recent(seen, 200, [])  # missed on the next detection frame (as logged)
+        self.assertEqual([b for _, b in seen], [hand])
+        seen = recent(seen, 900, [])
+        self.assertEqual([b for _, b in seen], [hand])
+        self.assertEqual(recent(seen, 1000, []), [])  # gone after HAND_MEMORY_MS
 
     def test_nothing_locked(self):
         M = load(tracker=FakeTracker([]))

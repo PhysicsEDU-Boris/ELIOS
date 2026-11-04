@@ -253,6 +253,7 @@ HOLD_SHIFT   = 0.10   # centre moved this fraction of the box's larger side
 HOLD_SIZE    = 0.30   # or a side changed by this fraction
 SETTLE_CALLS = 5
 SETTLE       = 0.06
+GROW_MIN     = 1.3    # area growth that counts as "grew" (see hold())
 
 def moved(held, new):
     hx, hy, hw, hh = held
@@ -260,30 +261,53 @@ def moved(held, new):
     shift = math.hypot(nx + nw / 2 - hx - hw / 2, ny + nh / 2 - hy - hh / 2) / max(hw, hh)
     return shift >= HOLD_SHIFT or abs(nw / hw - 1) >= HOLD_SIZE or abs(nh / hh - 1) >= HOLD_SIZE
 
+def median_box(boxes):
+    return tuple(sorted(v)[len(v) // 2] for v in zip(*boxes))
+
 def hold(t, new):
-    """The box to send for tracker box new (x, y, w, h); t keeps "box" (held), "still", "odd"."""
+    """The box to send for tracker box new (x, y, w, h); t keeps "box" (held), "still", "odd", "grow".
+    A box that grew by more than GROW_MIN in area is taken only once SETTLE_CALLS such boxes in a
+    row agree (within the hold band of their median): hand + item boxes kept changing size
+    (244, 271, 249, 274, 402 px tall, log 4 Nov), a real item, or one the robot drove closer to
+    and stopped at, keeps one size."""
     if t["box"] is None:
-        t.update(box=new, still=[], odd=False)
+        t.update(box=new, still=[], odd=False, grow=[], size=new[2] * new[3])
         return new
     if moved(t["box"], new):
+        # Growth counts against the last confirmed size (LOCK, a settle, a confirmed growth), not the
+        # last box: in steps of under GROW_MIN a box walked up to hand size as plain moves.
+        if new[2] * new[3] > GROW_MIN * t.get("size", t["box"][2] * t["box"][3]):
+            t["grow"] = (t.get("grow", []) + [new])[-SETTLE_CALLS:]
+            mid = median_box(t["grow"])
+            if len(t["grow"]) == SETTLE_CALLS and not any(moved(mid, b) for b in t["grow"]):
+                t.update(box=mid, still=[], odd=False, grow=[], size=mid[2] * mid[3])
+            return t["box"]
+        t["grow"] = []
         if t["odd"]:  # the second in a row: a real move
             t.update(box=new, still=[], odd=False)
         else:
             t["odd"] = True
         return t["box"]
-    t["odd"] = False
+    t.update(odd=False, grow=[])
     t["still"].append(new)
     if len(t["still"]) >= SETTLE_CALLS:
-        mid = tuple(sorted(v)[len(v) // 2] for v in zip(*t["still"]))
+        mid = median_box(t["still"])
         t["still"] = []
         if max(abs(a - b) for a, b in zip(mid, t["box"])) > SETTLE * max(t["box"][2:]):
-            t["box"] = mid
+            t.update(box=mid, size=mid[2] * mid[3])
     return t["box"]
 
 # While a detected hand touches the item, the tracker box grows over hand and item together
 # (owner video 15:21: 2-3x the pack). A box that grew by more than HAND_GROWTH in area while a hand
 # overlaps it is not taken: the held box stays until the hand lets go.
 HAND_GROWTH = 1.3
+# The hand detector finds a hand over the pack on only about every other detection frame (log,
+# 4 Nov), and the box ballooned exactly on the misses: a hand counts for HAND_MEMORY_MS.
+HAND_MEMORY_MS = 1000
+
+def recent_hands(seen, now, hands):
+    """seen [(ms, box)] with this frame's hand boxes added and those older than HAND_MEMORY_MS dropped."""
+    return [(t, b) for t, b in seen if now - t < HAND_MEMORY_MS] + [(now, b) for b in hands]
 
 def overlaps(a, b):
     return a[0] < b[0] + b[2] and b[0] < a[0] + a[2] and a[1] < b[1] + b[3] and b[1] < a[1] + a[3]
@@ -296,7 +320,8 @@ def track_frame(frame, hand_boxes=()):
     hand_boxes: this frame's hands, top-left (x, y, w, h)."""
     if track["pending"] is not None:
         x, y, w, h = track["pending"]
-        track.update(pending=None, on=True, area=w * h, lock_area=w * h, box=(x, y, w, h), still=[], odd=False)
+        track.update(pending=None, on=True, area=w * h, lock_area=w * h, box=(x, y, w, h), still=[], odd=False,
+                     grow=[], size=w * h)
         tracker.init(frame, x, y, w, h)
         return dict(box_det(track["label"], x, y, w, h, 1.0), track_id=track["id"])
     if not track["on"]:
@@ -309,9 +334,10 @@ def track_frame(frame, hand_boxes=()):
         return None
     held = track["box"]
     if held is not None and area > HAND_GROWTH * held[2] * held[3] and any(overlaps(new, h) for h in hand_boxes):
-        return dict(box_det(track["label"], *held, o.score), track_id=track["id"])
+        return dict(box_det(track["label"], *held, o.score), track_id=track["id"], raw=[int(v) for v in new], hand=True)
     track["area"] = area
-    return dict(box_det(track["label"], *hold(track, new), o.score), track_id=track["id"])
+    # raw: the tracker's own box this call (top-left x, y, w, h), for logs; the app ignores it.
+    return dict(box_det(track["label"], *hold(track, new), o.score), track_id=track["id"], raw=[int(v) for v in new])
 
 def hand_dets(frame):
     """Hands as Human_Hand, boxed by their 21 landmarks: obj x/y/w/h is the model's
@@ -610,6 +636,7 @@ async def ws_frame_pusher():
     det_frame_count = 0
     frame_id = 0
     last_tracked, last_hands, last_tags = None, [], []
+    hands_seen = []
     stats = dict(t0=mtime.ticks_ms(), n=0, track=0, det=0, send=0)
     clean_at = None
 
@@ -637,8 +664,9 @@ async def ws_frame_pusher():
                     last_tracked = None
                     if tracker is not None:
                         try:
-                            last_tracked = track_frame(frame, [(d["x"] - d["w"] / 2, d["y"] - d["h"] / 2, d["w"], d["h"])
-                                                               for d in last_hands])
+                            hands_seen = recent_hands(hands_seen, t1, [(d["x"] - d["w"] / 2, d["y"] - d["h"] / 2, d["w"], d["h"])
+                                                                       for d in last_hands])
+                            last_tracked = track_frame(frame, [b for _, b in hands_seen])
                         except Exception as te:
                             print("[Track] error, tracking stopped:", te)
                             track.update(on=False, pending=None)
