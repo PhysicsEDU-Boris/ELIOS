@@ -214,7 +214,7 @@ model_load_error = tracker_error or hands_error
 
 # The app's LOCK box. pending = (x, y, w, h) waiting for the next frame to init on.
 # Tracking runs until track_stop or the next track_start: a lost item is searched for, not dropped.
-track = {"pending": None, "on": False, "id": 0, "label": "", "area": 1, "box": None, "still": [], "odd": False, "follow": False}
+track = {"pending": None, "on": False, "id": 0, "label": "", "area": 1, "box": None, "base": None, "ref": None, "still": [], "odd": False, "follow": False}
 
 def parse_track_box(box, img_w, img_h):
     """[x, y, w, h] top-left in stream pixels -> ints clipped to the frame. ValueError says why not."""
@@ -234,23 +234,22 @@ def box_det(label, x, y, w, h, score):
     return {"label": label, "score": round(float(score), 3),
             "x": int(x + w / 2), "y": int(y + h / 2), "w": int(w), "h": int(h)}
 
-# Hold a still item's box, follow a moving one (owner, 4 Nov: "a fixed box, not a jiggling one",
-# "not bouncing when flipped", and "smooth tracking like before").
-# Tracker noise on a still pack: centre x +-0.5 px, y +-4.5 px, height +-7 px of 124 (robot
-# test 4 Nov); a flipped item gives larger, odd boxes.
-# - hold: the held box is sent unchanged. Two calls in a row beyond HOLD_SHIFT of the centre or
-#   HOLD_SIZE of a side switch to follow (one odd box is ignored). Inside the band, every
-#   SETTLE_CALLS calls (~1 s) the held box moves once to their median if that is SETTLE away.
-# - follow: every tracker box is sent, as before the hold (a hold-only box trailed a sliding
-#   pack in steps). Once SETTLE_CALLS boxes in a row sit within the band of their median (at
-#   most one odd box), that median is held.
+# The box sent is the AI's box (track_start), moved and scaled by the tracker's motion: the
+# tracker is trusted for motion only. After a restart MixFormerV2 often shrinks onto the part of
+# the item it follows best (half of a pack lying flat, owner video 11:23) or keeps the LOCK shape
+# after a turn, so its own box is not the item's size.
+# - hold: the item is still; the sent box does not change at all (tracker noise on a still pack:
+#   centre x +-0.5 px, y +-4.5 px, height +-7 px of 124, robot test 4 Nov).
+# - follow: two tracker boxes in a row beyond HOLD_SHIFT of the centre or HOLD_SIZE of a side from
+#   the reference (one odd box is ignored). Every call the AI box is placed by the tracker's box.
+#   Once SETTLE_CALLS tracker boxes in a row sit within the band of their median (at most one odd
+#   box), the item is still again: held at that place. The app then asks the AI for a fresh box.
 HOLD_SHIFT   = 0.10   # centre moved this fraction of the box's larger side
 HOLD_SIZE    = 0.30   # or a side changed by this fraction
 SETTLE_CALLS = 5
-SETTLE       = 0.06
 
-def moved(held, new):
-    hx, hy, hw, hh = held
+def moved(ref, new):
+    hx, hy, hw, hh = ref
     nx, ny, nw, nh = new
     shift = math.hypot(nx + nw / 2 - hx - hw / 2, ny + nh / 2 - hy - hh / 2) / max(hw, hh)
     return shift >= HOLD_SHIFT or abs(nw / hw - 1) >= HOLD_SIZE or abs(nh / hh - 1) >= HOLD_SIZE
@@ -258,39 +257,44 @@ def moved(held, new):
 def median_box(boxes):
     return tuple(sorted(v)[len(v) // 2] for v in zip(*boxes))
 
+def place(base, ref, new):
+    """base (the AI's box when the tracker gave ref) moved and scaled as ref became new."""
+    sx, sy = new[2] / ref[2], new[3] / ref[3]
+    cx = new[0] + new[2] / 2 + (base[0] + base[2] / 2 - ref[0] - ref[2] / 2) * sx
+    cy = new[1] + new[3] / 2 + (base[1] + base[3] / 2 - ref[1] - ref[3] / 2) * sy
+    w, h = base[2] * sx, base[3] * sy
+    return (cx - w / 2, cy - h / 2, w, h)
+
 def hold(t, new):
-    """The box to send for tracker box new (x, y, w, h); t keeps box, follow, odd, still."""
-    if t["box"] is None:
-        t.update(box=new, follow=False, odd=False, still=[])
-        return new
+    """The box to send for tracker box new. t: box (sent), base + ref (the AI box and the tracker
+    box it goes with; ref None until the first tracker box after track_start), follow, odd, still."""
+    if t["ref"] is None:
+        t.update(ref=new, follow=False, odd=False, still=[])
+        return t["box"]
     if t["follow"]:
-        t["box"] = new
         t["still"] = (t["still"] + [new])[-SETTLE_CALLS:]
         if len(t["still"]) == SETTLE_CALLS:
             mid = median_box(t["still"])
             if sum(moved(mid, b) for b in t["still"]) <= 1:
-                t.update(box=mid, follow=False, odd=False, still=[])
+                box = place(t["base"], t["ref"], mid)
+                t.update(box=box, base=box, ref=mid, follow=False, odd=False, still=[])
+                return box
+        t["box"] = place(t["base"], t["ref"], new)
         return t["box"]
-    if moved(t["box"], new):
+    if moved(t["ref"], new):
         if t["odd"]:  # the second in a row: the item moves
-            t.update(box=new, follow=True, odd=False, still=[new])
-            return new
-        t["odd"] = True
+            t.update(follow=True, odd=False, still=[new], box=place(t["base"], t["ref"], new))
+        else:
+            t["odd"] = True
         return t["box"]
     t["odd"] = False
-    t["still"].append(new)
-    if len(t["still"]) >= SETTLE_CALLS:
-        mid = median_box(t["still"])
-        t["still"] = []
-        if max(abs(a - b) for a, b in zip(mid, t["box"])) > SETTLE * max(t["box"][2:]):
-            t["box"] = mid
     return t["box"]
 
 def track_frame(frame):
     """The tracked box for this frame as a detection, or None (nothing locked, or lost)."""
     if track["pending"] is not None:
         x, y, w, h = track["pending"]
-        track.update(pending=None, on=True, area=w * h, box=(x, y, w, h), still=[], odd=False, follow=False)
+        track.update(pending=None, on=True, area=w * h, box=(x, y, w, h), base=(x, y, w, h), ref=None, still=[], odd=False, follow=False)
         tracker.init(frame, x, y, w, h)
         return dict(box_det(track["label"], x, y, w, h, 1.0), track_id=track["id"], held=True)
     if not track["on"]:

@@ -121,6 +121,11 @@ file so the Wi-Fi QR setup stays):
 - Robot check (firmware `8369627a`, APK `4afd591`, 45 s of handling): upright pack held 92x138;
   laid flat, lost, whole-frame refine at 13 s gave a flat 141x99 box; slid and settled, refine
   156x99; moved again, refine at 38.7 s. 3 AI calls in 45 s, none while the pack sat still.
+- Owner video 11:23: after a refine the tracker often shrank onto half of a flat pack, and the
+  camera then held the tracker's half box. So the sent box is now the AI's box, moved and scaled
+  by the tracker's motion (`place()`); the tracker is trusted for motion only. While still the AI
+  box is sent unchanged; while moving it follows the tracker; when it settles it is held there and
+  the app asks the AI for the new shape.
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 
