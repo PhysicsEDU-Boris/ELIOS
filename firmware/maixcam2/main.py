@@ -202,11 +202,11 @@ HAND_LABEL     = "Human_Hand"   # r1_orchestrator / motion_gate pause on this la
 # Black-square edge of each arm tag, ruler-measured on the print (owner, 4 Nov): id 0 arm5
 # bottom, id 1 arm3 rear (a 10 mm print, so 6.17 mm black).
 TAG_SIZES_MM = {0: 18.52, 1: 6.17}
-# fx in px at STREAM_RESOLUTION 640x360: 487 measured by ruler at 640x480 (id 0, 150-300 mm,
-# within 2 mm), scaled by the tag's width in both modes (decision 0183).
-# ponytail: no distortion or principal point yet, so arm_tags keep dist_rough: true; replace
-# with the ChArUco board solve (docs/print/maixcam2-calibration-board-charuco-A4.pdf).
-CAMERA_FX = 362.0
+# fx in px at STREAM_RESOLUTION 640x360 from the ChArUco board solve (27 views, 0.29 px RMS,
+# docs/test-results/0183/maixcam2_intrinsics_640x360.json): 81.1 x 51.4 deg like the sim.
+# ponytail: pinhole only (no tilt, no distortion; the corner is off by ~6 px), so arm_tags keep
+# dist_rough: true until PnP with the full model is worth it.
+CAMERA_FX = 374.0
 
 def _load(ctor, path):
     try:

@@ -6,7 +6,7 @@
 2. **#90** `feat/lock-track-follow`: after #89 is merged, set its base to `feature/live-scan` (GitHub does this if #89's branch is deleted), then merge. It has everything newest (camera `9cd825b3`, APK `8c8953d`).
 3. `main` stays the owner's call. New work branches from `feature/live-scan` after #90.
 - Next (own sessions): depth estimation on the camera (Depth-Anything-V2-Small is on it, `nn.DepthAnything`, relative depth, fps not measured).
-- AprilTags + 16:9 (decision 0183): **camera now runs `26049b58`** (640x360, the full 81-83° view like the sim; 33 fps, 22 with tags; id 0 99 %, 97.9 mm at 100 mm). Backup `/root/main.py.pre-169.bak` (`9cd825b3`); rollback: copy it back, reopen the app. Never open 1920x1080 (it left the camera stuck once). id 1 at 10 mm is lost (5 %): arm3 rear fits only 10 mm, so the print sheet has id 1 at 10 mm with a 1-cell white border (black 8.0 mm, was 6.17); set `TAG_SIZES_MM[1]` (and the sim's tag_model) to the measured black square. Next: ChArUco board solve at 640x360 for the sim (`docs/print/maixcam2-calibration-board-charuco-A4.pdf`).
+- AprilTags + 16:9 (decision 0183): camera runs `26049b58` (640x360, 33 fps; backup `/root/main.py.pre-169.bak` = `9cd825b3`, never open 1920x1080). Board solve from the laptop screen: fx 374.2, cx 303.9, cy 183.0, 81.1x51.4° like the sim (`docs/test-results/0183/maixcam2_intrinsics_640x360.json`). This branch sets `CAMERA_FX` 374 (NOT deployed yet). id 1 stays the 6.17 mm print for now (5 % at 100 mm); 8 mm thin-border version in the PDF. Waits for the robot: tags on arm, pose test, camera mount pose.
 
 ## Camera tracks the LOCK box (4 Nov, `claude/firmware-track-lock-4de19c`, decision 0182)
 

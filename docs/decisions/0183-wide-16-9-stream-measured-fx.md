@@ -69,3 +69,19 @@
   one-cell white border: the black square is 8.0 mm instead of 6.17 mm. robotic_hand_sim's
   `tag_model.py` derives id 1's black square from the PNG (6.17 mm), so it must use 8.0 mm too.
 
+## Board calibration (4 Nov, [maixcam2_intrinsics_640x360.json](../test-results/0183/maixcam2_intrinsics_640x360.json))
+
+- **Setup.** A ChArUco board shown full-screen on the owner's MacBook Air (about 19.5 mm squares,
+  brightness about a third), moved in front of the camera for 90 s. 27 views, 613 corners.
+- **Result.**
+  - fx = fy = **374.2 px**;
+  - cx 303.9, cy 183.0 (the optical centre is 16 px left of the image centre);
+  - distortion small: the image corner moves about 6 px;
+  - **81.1° x 51.4° x 88.9°**, the same as the sim's 81° x 51° x 90°;
+  - 0.29 px RMS (worst view 0.68).
+- **Stable.** Even and odd views give fx 378 and 367, so fx is 374 ± about 5.
+- **Firmware.** `CAMERA_FX` changes from 362 to **374** (code and test; deploy needs the owner's OK).
+  The 100 mm id 0 reading becomes about 101 mm (it was 97.9 with 362).
+- **For the sim.** Use 640x360 with these values, or scale fx, fy, cx, cy by 2.0 for 1289x720.
+  Mounting position and tilt (extrinsics) wait for the finished robot.
+

@@ -70,9 +70,9 @@ class ArmTagsTest(unittest.TestCase):
     def test_only_arm_ids_with_rough_distance(self):
         tags = self.M['arm_tags']([Tag(0, 40), Tag(7, 40), Tag(1, 20)])
         self.assertEqual([t['id'] for t in tags], [0, 1])
-        # fx 362 at 640x360 (measured, 0183); id 1 is a 10 mm print with a 6.17 mm black square
-        self.assertEqual(tags[0]['dist_mm'], round(362 * 18.52 / 40, 1))
-        self.assertEqual(tags[1]['dist_mm'], round(362 * 6.17 / 20, 1))
+        # fx 374 at 640x360 (board solve, 0183); id 1 is a 10 mm print with a 6.17 mm black square
+        self.assertEqual(tags[0]['dist_mm'], round(374 * 18.52 / 40, 1))
+        self.assertEqual(tags[1]['dist_mm'], round(374 * 6.17 / 20, 1))
         self.assertTrue(all(t['dist_rough'] for t in tags))
         json.dumps(tags, allow_nan=False)  # 0022: never NaN on the wire
 
