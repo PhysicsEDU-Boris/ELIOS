@@ -112,6 +112,15 @@ file so the Wi-Fi QR setup stays):
   two odd boxes in a row switch to follow (every box sent, as before); five boxes in a row within
   the band of their median (one odd allowed) switch back to hold on that median. The flat-pack
   shape needs a fresh measurement (Gemini), not the tracker.
+- **Refine** (owner, 4 Nov: "yes, build it"): the camera adds `held` to the tracked box (true while
+  still). On `held` false -> true the app asks Gemini once for a tight box in a crop of the
+  tracked box with half its size around it, and sends `track_start` with it; if the item has had
+  no settled box for 2 s (lost, or a shape the tracker does not know: a pack laid flat never
+  settled), it asks in the whole frame. At most one call per 3 s; a late answer is dropped if
+  the lock changed or the item moved. Old firmware (no `held`) never refines.
+- Robot check (firmware `8369627a`, APK `4afd591`, 45 s of handling): upright pack held 92x138;
+  laid flat, lost, whole-frame refine at 13 s gave a flat 141x99 box; slid and settled, refine
+  156x99; moved again, refine at 38.7 s. 3 AI calls in 45 s, none while the pack sat still.
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 
