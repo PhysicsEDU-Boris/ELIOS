@@ -177,21 +177,23 @@ class StreamTest(unittest.TestCase):
         for m in messages:
             self.assertEqual(m['vision_protocol'], 1)
             self.assertEqual((m['img_w'], m['img_h']), (640, 480))
-            self.assertEqual(m['detections'][0]['track_id'], 1)
-        self.assertEqual(messages[0]['detections'][0]['x'], 125)
+        self.assertEqual(messages[0]['detections'], [])  # the tracker inits on the next detection frame
         self.assertIsNone(messages[0]['detection_frame_id'])
         self.assertNotIn('clean_image', messages[0])
 
         fresh = messages[1]
         self.assertEqual(fresh['frame_id'], fresh['detection_frame_id'])
         self.assertEqual([d['label'] for d in fresh['clean_detections']], ['kardus', 'Human_Hand'])
+        self.assertEqual(fresh['detections'][0]['x'], 125)
+        self.assertEqual(fresh['detections'][0]['track_id'], 1)
         self.assertEqual(fresh['clean_image'], fresh['image'])
         self.assertEqual(base64.b64decode(fresh['clean_image']), b'2')
         self.assertEqual(fresh['arm_tags'][0]['id'], 0)
 
-        self.assertEqual([d['label'] for d in messages[2]['detections']], ['kardus', 'Human_Hand'])  # held
+        self.assertEqual(messages[2]['detections'], fresh['detections'])  # held between detection frames
         self.assertEqual(messages[2]['arm_tags'][0]['id'], 0)  # held until the next detection frame
         self.assertEqual([d['label'] for d in messages[3]['clean_detections']], ['kardus'])
+        self.assertEqual(messages[3]['detections'][0]['x'], 25)  # FakeTracker's box
         self.assertEqual(messages[3]['arm_tags'], [])
 
 

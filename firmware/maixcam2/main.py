@@ -173,11 +173,12 @@ TRACKER_PATH = "/root/models/mixformer_v2.mud"
 # HandLandmarks loads hand_detector.mud (its detect_model); landmarks run only per hand found.
 HAND_PATH    = "/root/models/hand_landmarks.mud"
 
-# Hands and tags run every DET_EVERY_N_FRAMES pushed frames and are held in
-# between; the tracker runs on every frame so the box keeps up with motion.
+# Tracker, hands and tags run every DET_EVERY_N_FRAMES pushed frames and are
+# held in between. MixFormerV2 costs ~63 ms a call: on every frame the stream
+# fell to 8 fps (robot test, 4 Nov), every 2nd frame keeps it near 11.
 DET_EVERY_N_FRAMES = 2
 TRACK_TH       = 0.5   # MixFormerV2 score below this: the box is not sent that frame
-TRACK_LOST_FRAMES = 30 # that many low-score frames in a row (~1.5 s): stop tracking
+TRACK_LOST_FRAMES = 15 # that many low-score tracker calls in a row (~3 s): stop tracking
 TRACK_MIN_SIDE = 8
 HAND_CONF_TH   = 0.7
 HAND_LABEL     = "Human_Hand"   # r1_orchestrator / motion_gate pause on this label
@@ -505,15 +506,15 @@ async def ws_frame_pusher():
     """Stream clean frames: detections = the tracked box + hands, plus arm_tags.
 
     Nothing is drawn, so image is already clean. Every DET_EVERY_N_FRAMES-th
-    frame is a detection frame (detection_frame_id == frame_id, fresh hands
-    and tags, clean_detections); when that list is nonempty, clean_image is
-    the same JPEG as image (no second encode), so older apps still pair it.
+    frame is a detection frame (detection_frame_id == frame_id, fresh box,
+    hands and tags, clean_detections); when that list is nonempty, clean_image
+    is the same JPEG as image (no second encode), so older apps still pair it.
     """
     global stream_cam
     cam_w, cam_h = STREAM_RESOLUTION
     det_frame_count = 0
     frame_id = 0
-    last_hands, last_tags = [], []
+    last_tracked, last_hands, last_tags = None, [], []
     stats = dict(t0=mtime.ticks_ms(), n=0, track=0, det=0, send=0)
 
     while True:
@@ -525,20 +526,19 @@ async def ws_frame_pusher():
                     frame = stream_cam.read()
                 frame_id += 1
                 detection_frame_id = None
-                t0 = mtime.ticks_ms()
-
-                tracked = None
-                if tracker is not None:
-                    try:
-                        tracked = track_frame(frame)
-                    except Exception as te:
-                        print("[Track] error, tracking stopped:", te)
-                        track.update(on=False, pending=None)
-                t1 = mtime.ticks_ms()
+                t0 = t1 = mtime.ticks_ms()
 
                 det_frame_count += 1
                 if det_frame_count >= DET_EVERY_N_FRAMES:
                     det_frame_count = 0
+                    last_tracked = None
+                    if tracker is not None:
+                        try:
+                            last_tracked = track_frame(frame)
+                        except Exception as te:
+                            print("[Track] error, tracking stopped:", te)
+                            track.update(on=False, pending=None)
+                    t1 = mtime.ticks_ms()
                     try:
                         last_hands = hand_dets(frame) if hands is not None else []
                         last_tags = find_arm_tags(frame)
@@ -547,7 +547,9 @@ async def ws_frame_pusher():
                         print("[AI] detect error:", de)
                 t2 = mtime.ticks_ms()
 
-                dets = ([tracked] if tracked else []) + last_hands
+                if not (track["on"] or track["pending"]):
+                    last_tracked = None  # track_stop shows at once, not at the next detection frame
+                dets = ([last_tracked] if last_tracked else []) + last_hands
                 b64 = base64.b64encode(frame.to_format(image.Format.FMT_JPEG).to_bytes()).decode()
                 message = {
                     "vision_protocol": 1,
@@ -598,7 +600,7 @@ async def ws_frame_pusher():
                 stream_cam = None
                 track.update(on=False, pending=None)
             det_frame_count = 0
-            last_hands, last_tags = [], []
+            last_tracked, last_hands, last_tags = None, [], []
             await asyncio.sleep(0.05)
 
         await asyncio.sleep(0)   # yield to handler coroutines
