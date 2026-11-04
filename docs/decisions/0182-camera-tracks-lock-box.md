@@ -84,6 +84,13 @@ file so the Wi-Fi QR setup stays):
 - Firmware `763bef6c` (`steady()`: a box within 15 % shift and 30 % size of the last one is
   blended 25 %): the box sat still on a still pack (51-57 s, 116-119 s); a pack laid flat was
   lost and found again when stood up.
+- Measured on the camera with the pack still (69 boxes, 15 s): centre x +-0.5 px, width +-1 px,
+  centre y +-4.5 px, height +-7 px of 124. Owner: after LOCK a still item needs one fixed box;
+  moving may bounce, settling must not bounce much. So `steady()` became `hold()`: within 10 %
+  shift / 15 % size of the held box the held box is sent unchanged; beyond it the box follows at
+  once; after 5 still calls (~1 s) it moves once to their median if that is more than 3 px away.
+  The 3x size guard now compares with the previous box, not the LOCK box, so driving closer
+  after LOCK is followed.
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 

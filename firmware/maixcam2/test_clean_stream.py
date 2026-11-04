@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-NAMES = {'STEADY_SHIFT', 'STEADY_SIZE', 'STEADY_BLEND', 'steady', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
+NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE_PX', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'NOMINAL_FX', 'track', 'parse_track_box', 'box_det', 'track_frame',
          'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES'}
 
@@ -97,15 +97,31 @@ class FakeTracker:
 
 
 class TrackFrameTest(unittest.TestCase):
-    def test_noise_on_a_still_item_is_smoothed_a_real_move_is_not(self):
-        steady = load()['steady']
-        prev = (100, 100, 60, 120)
-        self.assertEqual(steady(None, prev), prev)
-        x, y, w, h = steady(prev, (106, 96, 66, 104))  # +-6 px, -13 % height: noise
-        self.assertAlmostEqual(x, 101.5)
-        self.assertAlmostEqual(h, 116)
-        self.assertEqual(steady(prev, (140, 100, 60, 120)), (140, 100, 60, 120))  # moved 1/3 box
-        self.assertEqual(steady(prev, (100, 100, 60, 170)), (100, 100, 60, 170))  # grew 42 %
+    def test_a_still_item_keeps_one_box_a_move_is_followed_then_held(self):
+        hold = load()['hold']
+        t = {'box': (161, 253, 84, 124), 'still': []}  # the LOCK box
+        # The robot's measured noise on a still pack: y +-4 px, height +-7 px, x/w +-1 px.
+        noise = [(161, 255, 84, 120), (162, 250, 85, 131), (161, 256, 84, 117), (160, 252, 83, 127),
+                 (161, 254, 84, 122), (161, 249, 84, 130), (162, 256, 85, 118), (161, 253, 84, 125)]
+        sent = {hold(t, b) for b in noise}
+        self.assertEqual(sent, {(161, 253, 84, 124)})  # one box, no jiggle (median within 3 px)
+        moved_to = (200, 250, 84, 124)  # slid 39 px: followed at once
+        self.assertEqual(hold(t, moved_to), moved_to)
+        after = [(201, 248, 85, 128), (200, 247, 84, 129), (201, 248, 84, 130), (200, 249, 84, 128),
+                 (201, 248, 85, 129), (200, 247, 84, 130)]
+        sent = [hold(t, b) for b in after]
+        self.assertEqual(sent[:4], [moved_to] * 4)
+        self.assertEqual(sent[4], (201, 248, 84, 129))  # settled once to the median, then held
+        self.assertEqual(sent[5], sent[4])
+
+    def test_driving_closer_is_followed(self):
+        boxes = iter([(300, 200, 40, 50), (295, 195, 52, 65), (288, 188, 68, 85), (280, 180, 88, 110)])
+        M = load(tracker=SimpleNamespace(init=lambda *a: None,
+                                         track=lambda f, th: Obj(**dict(zip('xywh', next(boxes))), score=0.99)))
+        M['track'].update(pending=(300, 200, 40, 50), id=1, label='kardus')
+        M['track_frame'](None)
+        widths = [M['track_frame'](None)['w'] for _ in range(4)]
+        self.assertEqual(widths[-1], 88)  # 4.8x the LOCK area, ~1.7x per call: still the item
 
     def test_init_follow_lose_and_find_again(self):
         tracker = FakeTracker([0.9] + [0.2] * 50 + [0.9])
