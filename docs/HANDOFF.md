@@ -1,5 +1,12 @@
 # Handoff — 4 Nov 2026
 
+## Merge order (owner merges; merge commits, not squash)
+
+1. **#89** `claude/firmware-track-lock-4de19c` → `feature/live-scan`: firmware 0182 plus the 8 LOCK/SCAN commits of #88, which reached only the old `docs/segmentation-fps-options` branch.
+2. **#90** `feat/lock-track-follow`: after #89 is merged, set its base to `feature/live-scan` (GitHub does this if #89's branch is deleted), then merge. It has everything newest (camera `9cd825b3`, APK `8c8953d`).
+3. `main` stays the owner's call. New work branches from `feature/live-scan` after #90.
+- Next (own sessions): depth estimation on the camera (Depth-Anything-V2-Small is on it, `nn.DepthAnything`, relative depth, fps not measured); AprilTag test (tags off unless `arm_tags` on; image `docs/test-results/0182/apriltags-36h11-id0-id1.png`).
+
 ## Camera tracks the LOCK box (4 Nov, `claude/firmware-track-lock-4de19c`, decision 0182)
 
 - New `firmware/maixcam2/main.py` `m2c-track-v1` from the camera's live wifi-qr file: no seg model, clean 640x480 frames, `track_start`/`track_stop` (MixFormerV2), `Human_Hand` from HandLandmarks, rough AprilTag `arm_tags` (`dist_rough`). Tracker/hands/tags every 2nd frame.
