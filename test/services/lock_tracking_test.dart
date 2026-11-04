@@ -40,38 +40,4 @@ void main() {
     expect(lockOverlayBox(aiBox: ai, trackBox: tracked, trackSeenAt: t0, now: t0.add(const Duration(seconds: 1))), tracked);
     expect(lockOverlayBox(aiBox: ai, trackBox: tracked, trackSeenAt: t0, now: t0.add(trackLostAfter)), isNull);
   });
-
-  test('held comes through from the wire; old firmware leaves it null', () {
-    final d = Detection.fromJson({'x': 1, 'y': 1, 'w': 2, 'h': 2, 'label': 'kardus', 'track_id': 3, 'held': false});
-    expect(trackedDetection([d])!.held, isFalse);
-    expect(Detection.fromJson({'x': 1, 'y': 1, 'w': 2, 'h': 2, 'track_id': 3}).held, isNull);
-  });
-
-  test('refine: the AI sees the box with half its size around it, and its box maps back', () {
-    const tracked = Rect.fromLTRB(.4, .4, .6, .6);
-    final area = refineArea(tracked);
-    expect(area, rectMoreOrLessEquals(const Rect.fromLTRB(.3, .3, .7, .7)));
-    expect(refineArea(const Rect.fromLTRB(0, .9, .2, 1)).bottom, 1.0); // clipped to the frame
-    final crop = cropArea(area); // cropToBox adds 5 % margins: .28 .. .72
-    expect(crop, rectMoreOrLessEquals(const Rect.fromLTRB(.28, .28, .72, .72)));
-    // The AI's tight box in the middle half of the crop is the middle of the frame.
-    expect(fromCrop(crop, const Rect.fromLTRB(.25, .25, .75, .75)), rectMoreOrLessEquals(const Rect.fromLTRB(.39, .39, .61, .61)));
-  });
-
-  test('a late refine answer applies only if the item is still where it was', () {
-    const then = Rect.fromLTRB(.4, .4, .6, .6);
-    expect(stillThere(then, then), isTrue);
-    expect(stillThere(const Rect.fromLTRB(.42, .41, .62, .61), then), isTrue); // settled a bit
-    expect(stillThere(const Rect.fromLTRB(.55, .4, .75, .6), then), isFalse); // moved on
-    expect(stillThere(null, then), isFalse); // lost
-  });
-
-  test('unsettled: moving or lost after tracking; never with old firmware', () {
-    Detection d(bool? held) => Detection(x: 1, y: 1, w: 1, h: 1, trackId: 1, held: held);
-    expect(unsettled(d(false), seenTracking: true), isTrue); // moving / odd boxes
-    expect(unsettled(d(true), seenTracking: true), isFalse); // held
-    expect(unsettled(null, seenTracking: true), isTrue); // lost
-    expect(unsettled(null, seenTracking: false), isFalse); // old firmware: never tracked
-    expect(unsettled(d(null), seenTracking: true), isFalse); // old firmware: no `held`
-  });
 }

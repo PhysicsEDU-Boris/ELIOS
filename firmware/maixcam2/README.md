@@ -47,8 +47,7 @@ verified byte-for-byte against the robot's currently installed script.
 - No model draws on the frame: `image` is the clean camera JPEG (640x480).
 - `vision_protocol: 1`, increasing `frame_id`, `firmware_sha256`: every message.
 - `detections`: the tracked box (after `track_start`) plus `Human_Hand` boxes, centre
-  x/y, w, h, label, score; the tracked box also has `track_id` and `held` (true while the item
-  is still, false while it moves: a false -> true change means it just settled). Both are fresh on
+  x/y, w, h, label, score; the tracked box also has `track_id`. Both are fresh on
   detection frames and held in between (MixFormerV2 costs ~63 ms a call).
 - `arm_tags`: AprilTag TAG36H11 ids 0 and 1 seen at the last detection frame:
   `id`, `cx`, `cy`, and `dist_mm` with `dist_rough: true` (nominal lens, not calibrated).

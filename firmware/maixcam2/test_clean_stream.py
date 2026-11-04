@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'moved', 'median_box', 'place', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
+NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'NOMINAL_FX', 'track', 'parse_track_box', 'box_det', 'track_frame',
          'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'tags', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS'}
 
@@ -97,51 +97,36 @@ class FakeTracker:
 
 
 class TrackFrameTest(unittest.TestCase):
-    @staticmethod
-    def locked(ai_box):
-        """Tracker state right after track_start with the AI's box."""
-        return {'box': ai_box, 'base': ai_box, 'ref': None, 'still': [], 'odd': False, 'follow': False}
-
-    def test_a_still_item_keeps_the_ai_box_whatever_the_tracker_draws(self):
+    def test_a_still_item_keeps_one_box_a_move_is_followed_then_held(self):
         hold = load()['hold']
-        ai = (161, 253, 84, 124)
-        t = self.locked(ai)
-        # The tracker sits on the right half of the pack (owner video 11:23), with the robot's
-        # measured noise: y +-4 px, height +-7 px, x/w +-1 px.
-        half = [(203, 255, 42, 120), (204, 250, 43, 131), (203, 256, 42, 117), (202, 252, 41, 127),
-                (203, 254, 42, 122), (203, 249, 42, 130), (204, 256, 43, 118), (203, 253, 42, 125)]
-        self.assertEqual({hold(t, b) for b in half}, {ai})  # the AI box, unchanged
-        self.assertEqual(hold(t, (240, 250, 42, 124)), ai)  # one odd box: ignored
-        self.assertEqual(hold(t, (203, 254, 42, 123)), ai)
+        t = {'box': (161, 253, 84, 124), 'still': [], 'odd': False}  # the LOCK box
+        # The robot's measured noise on a still pack: y +-4 px, height +-7 px, x/w +-1 px.
+        noise = [(161, 255, 84, 120), (162, 250, 85, 131), (161, 256, 84, 117), (160, 252, 83, 127),
+                 (161, 254, 84, 122), (161, 249, 84, 130), (162, 256, 85, 118), (161, 253, 84, 125)]
+        noise += [(161, 253, 79, 124), (161, 253, 80, 124), (161, 253, 79, 125), (161, 253, 80, 124),
+                  (161, 253, 79, 124)] * 2  # width 4-5 px off for 2 s, as measured: not worth a jump
+        sent = {hold(t, b) for b in noise}
+        self.assertEqual(sent, {(161, 253, 84, 124)})  # one box, no jiggle (median within 6 %)
+        moved_to = (200, 250, 84, 124)  # slid 39 px
+        self.assertEqual(hold(t, moved_to), (161, 253, 84, 124))  # one odd box: not yet
+        self.assertEqual(hold(t, moved_to), moved_to)  # twice: a real move, followed
+        after = [(201, 242, 85, 133), (200, 241, 84, 134), (201, 242, 84, 135), (200, 243, 84, 133),
+                 (201, 242, 85, 134), (200, 241, 84, 135)]
+        sent = [hold(t, b) for b in after]
+        self.assertEqual(sent[:4], [moved_to] * 4)
+        self.assertEqual(sent[4], (201, 242, 84, 134))  # 10 px taller: settled once, then held
+        self.assertEqual(sent[5], sent[4])
 
-    def test_a_slide_moves_the_ai_box_every_call_then_holds_it(self):
+    def test_a_flipped_item_in_place_does_not_bounce(self):
         hold = load()['hold']
-        ai = (100, 250, 84, 124)
-        t = self.locked(ai)
-        hold(t, (142, 250, 42, 124))  # the tracker's half box goes with the AI box
-        slide = [(155 + 13 * k, 250, 42, 124) for k in range(8)]  # 13 px a call
-        sent = [hold(t, b) for b in slide]
-        self.assertEqual(sent[0], ai)  # first odd box: not yet
-        for k, box in enumerate(sent[1:], 1):  # then every call: the AI box, moved like the tracker
-            self.assertEqual(box, (113 + 13 * k, 250, 84, 124))
-        stopped = [(246, 251, 42, 126), (248, 249, 42, 122), (247, 250, 42, 124), (246, 252, 41, 125),
-                   (247, 250, 42, 124), (248, 251, 42, 123), (247, 249, 43, 124)]
-        sent = [hold(t, b) for b in stopped]
-        self.assertEqual(sent[-3:], [sent[-1]] * 3)  # held within ~1 s of stopping
-        x, y, w, h = sent[-1]
-        self.assertLessEqual(abs(x - 205), 2)  # the whole pack, not the tracker's half
-        self.assertEqual((round(w), round(h)), (84, 124))
-        self.assertFalse(t['follow'])
-
-    def test_a_flipped_item_in_place_settles_without_bouncing(self):
-        hold = load()['hold']
-        t = self.locked((160, 250, 90, 130))
+        t = {'box': (160, 250, 90, 130), 'still': [], 'odd': False}
         # Flipped in place: the tracker's box swings 15-40 % in height, with single wild ones.
-        flipped = [(160, 250, 90, 130), (160, 260, 90, 110), (158, 240, 92, 150), (160, 300, 90, 60),
-                   (161, 255, 89, 118), (160, 245, 90, 140), (159, 258, 91, 112), (160, 248, 90, 145),
-                   (160, 310, 90, 40), (161, 252, 90, 125), (160, 256, 90, 115)]
+        flipped = [(160, 260, 90, 110), (158, 240, 92, 150), (160, 300, 90, 60), (161, 255, 89, 118),
+                   (160, 245, 90, 140), (159, 258, 91, 112), (160, 248, 90, 145), (160, 310, 90, 40),
+                   (161, 252, 90, 125), (160, 256, 90, 115)]
         sent = [hold(t, b) for b in flipped]
-        self.assertEqual(set(sent), {(160, 250, 90, 130)})  # never moved: the AI box stays
+        self.assertEqual(len(set(sent)), 2)  # one settle to the flipped size, no bounce
+        self.assertEqual(sent[-5:], [sent[-1]] * 5)
 
     def test_driving_closer_is_followed(self):
         boxes = iter([(300, 200, 40, 50), (295, 195, 52, 65), (288, 188, 68, 85), (280, 180, 88, 110)]
@@ -154,15 +139,15 @@ class TrackFrameTest(unittest.TestCase):
         self.assertEqual(widths[-1], 88)  # 4.8x the LOCK area: still the item, settled ~1 s after stopping
 
     def test_init_follow_lose_and_find_again(self):
-        tracker = FakeTracker([0.9] + [0.2] * 50 + [0.9])
+        tracker = FakeTracker([0.9, 0.9] + [0.2] * 50 + [0.9])
         M = load(tracker=tracker, print=lambda *a: None)
         M['track'].update(pending=(5, 6, 20, 30), id=4, label='kardus')
         first = M['track_frame'](None)
         self.assertEqual(tracker.inits, [(5, 6, 20, 30)])
         self.assertEqual(first, {'label': 'kardus', 'score': 1.0, 'x': 15, 'y': 21, 'w': 20, 'h': 30,
-                                 'track_id': 4, 'held': True})
-        second = M['track_frame'](None)  # the first tracker box goes with the AI box
-        self.assertEqual((second['x'], second['w'], second['held']), (15, 20, True))
+                                 'track_id': 4})
+        self.assertEqual(M['track_frame'](None)['x'], 15)  # moved: one odd box is held back
+        self.assertEqual(M['track_frame'](None)['x'], 25)  # the second: followed (centre of the box)
         for _ in range(50):  # lost for ~10 s: nothing sent, but still searching
             self.assertIsNone(M['track_frame'](None))
         self.assertTrue(M['track']['on'])
@@ -176,7 +161,8 @@ class TrackFrameTest(unittest.TestCase):
         for W, H in [(30, 90), (15, 30), (30, 130)]:  # 1200 -> 2700, 450, 3900 px^2 (a hand at 2.8x)
             self.assertIsNone(M['track_frame'](None))
         W, H = 45, 50  # 1.9x: still the item
-        self.assertEqual(M['track_frame'](None)['w'], 30)  # sent: the AI box, placed by the tracker
+        M['track_frame'](None)
+        self.assertEqual(M['track_frame'](None)['w'], 45)
 
     def test_nothing_locked(self):
         M = load(tracker=FakeTracker([]))

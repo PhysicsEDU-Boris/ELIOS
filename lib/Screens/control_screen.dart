@@ -81,15 +81,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   Rect? _trackBox;
   DateTime? _trackSeenAt;
 
-  /// Refine (0182): the tracked box's last `held`, a refine in flight, and when the last one began.
-  bool? _trackHeld;
-
   /// AprilTags (0182): on while R1 grips, and for [_manualTagsFor] after a manual PICK UP.
   bool? _tagsSent;
   DateTime? _manualTagsUntil;
   static const _manualTagsFor = Duration(seconds: 5);
-  bool _refining = false;
-  DateTime? _refinedAt, _unsettledSince;
   bool _locking = false;
   StreamSubscription<CapturedFrame>? _frameSubscription;
   ProviderSubscription<AsyncValue<String>>? _statusSubscription;
@@ -290,16 +285,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           }
         }
       });
-      if (_locked != null && frame.detections != null) {
-        final td = trackedDetection(frame.detections!);
-        if (td != null && td.held == true && _trackHeld == false) unawaited(_refine(frame, around: true));
-        _trackHeld = td?.held;
-        if (!unsettled(td, seenTracking: _trackSeenAt != null)) {
-          _unsettledSince = null;
-        } else if (now.difference(_unsettledSince ??= now) >= unsettledRefineAfter) {
-          unawaited(_refine(frame, around: false));
-        }
-      }
 
       // Auto-generated waste quiz: only fed by the real MaixCAM2 stream, the
       // debug phone-camera path triggers it manually instead.
@@ -973,9 +958,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         _locked = null;
         _trackBox = null;
         _trackSeenAt = null;
-        _trackHeld = null;
-        _refinedAt = null;
-        _unsettledSince = null;
       });
       return null;
     }
@@ -996,9 +978,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       _locked = lock;
       _trackBox = null;
       _trackSeenAt = null;
-      _trackHeld = null;
-      _refinedAt = null;
-      _unsettledSince = null;
     });
     if (answer.lock == null) {
       ScaffoldMessenger.of(context)
@@ -1008,29 +987,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             : answer.failure ?? 'No item found. Point the camera at one item and try again.')));
     }
     return answer.lock;
-  }
-
-  /// Refine (0182): the item just settled after a move, turn or re-find; one AI call for a tight
-  /// box around it, then the camera tracks from that box. Skipped while one runs or within
-  /// [refineEvery]; a late answer is dropped if the lock changed or the item moved since.
-  /// [around]: the item just settled, so the AI looks around its box; otherwise the item has not
-  /// settled for [unsettledRefineAfter] (lost, or a shape the tracker does not know), so the AI
-  /// looks in the whole frame.
-  Future<void> _refine(CapturedFrame frame, {required bool around}) async {
-    final lock = _locked, box0 = around ? _trackBox : null, last = _refinedAt;
-    final now = DateTime.now();
-    if (lock == null || (around && box0 == null) || _refining || (last != null && now.difference(last) < refineEvery)) return;
-    _refining = true;
-    _refinedAt = now;
-    // The AI's picture (clean_image, full quality) comes every ~0.7 s; the preview is smaller (0182).
-    final clean = _lastCleanFrame;
-    final photo = clean != null && now.difference(clean.timestamp) < const Duration(seconds: 1) ? clean.cleanBytes! : frame.bytes;
-    final box = await ref.read(wasteQuizProvider.notifier).refineLockBox(photo, box0);
-    _refining = false;
-    if (!mounted || box == null || _locked != lock) return;
-    if (box0 != null && (_trackHeld != true || !stillThere(_trackBox, box0))) return;
-    _unsettledSince = null;
-    WebSocketService().sendRobotCommand(trackStartCommand(box, frame.width, frame.height, lock.result.item!));
   }
 
   /// SCAN (0181): the quiz popup for the locked item; with nothing locked, LOCK first.

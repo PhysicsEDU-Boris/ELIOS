@@ -147,6 +147,13 @@ file so the Wi-Fi QR setup stays):
 - Result (firmware `6a70f542`, hotspot -36 dBm): **unlocked 32.7 fps** (was 15.3), **locked
   17.3 fps** (was 10.0).
 - Owner checked the screen: dark while the phone is connected, a tap lights it, dark again after ~15 s.
+- **Back to the 11:04 tracking** (owner, 4 Nov: "I like that one: it doesn't burn much API and
+  follows smoothly"). The tracking code and tests are the `77a4b3e` version again (camera
+  `97acb390` at 11:04): the tracker's own box, `hold()` with two odd boxes in a row before a move
+  and a once-a-second median settle, 2x size guard, whole-frame re-find. The app makes **one AI
+  call per LOCK**: follow mode, the AI refine (`held`, settle and unsettled calls, ~8 calls/min while
+  handling) and "the AI box moved by the tracker" are removed. Kept: lighter JPEG, AI picture
+  every 0.7 s, tags only around a grip, screen off, the name above the box.
 - For an accurate pick box the plan is a fresh Gemini box once the item is still, before
   picking (not built).
 
