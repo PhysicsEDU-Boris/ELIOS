@@ -63,12 +63,26 @@ file so the Wi-Fi QR setup stays):
   one); before the first one, and after the camera loses the item, it stays where it last was.
 - The live scan and its quiz skip the tracked box, so LOCK still opens no quiz (0181); hands still
   reach it, so the arm pause is unchanged.
+- A box more than 3x larger or smaller in area than the LOCK box counts as lost in the firmware
+  (`TRACK_MAX_GROWTH`), and the app hides the green box 1.5 s after the last tracked box
+  (`lockOverlayBox`).
+
+### Phone tests (4 Nov, Motorola, debug APK, real MaixCAM2; owner's screen recordings)
+
+- APK `4674d13`: LOCK boxed the pack ("Kardus"), and the box followed it. A hand lifting it from the top
+  stretched the box to twice the height, the camera then lost it, and the phone kept drawing that
+  stale box for 20 s. This led to the two fixes above.
+- APK `478cb47`, firmware `5adb4417`: the box followed the pack while it stood, was pushed, and
+  was lifted and carried up-left (20-35 s). At 36 s a fast lift with a twist lost it, and the box
+  disappeared as intended. With the pack back in place there was no box until a new LOCK.
+  The video read 10-12 fps while tracking and 16-21 fps otherwise
+  (`docs/test-results/0182/phone-lock-follow-retest.jpg`).
 
 ## Not in this step
 
 - The arm picking the tracked box (R1 still takes its target from the live scan's lock).
-- When the camera loses the item, the app is not told; the green box stays where it last was until
-  UNLOCK.
+- A lost item is not found again by itself: the green box goes away and the user presses UNLOCK and
+  LOCK again. No message says so yet.
 - Calibration (`dist_cm`, `lateral_cm`, exact `dist_mm`).
 
 ## Tests
