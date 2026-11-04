@@ -54,6 +54,9 @@ file so the Wi-Fi QR setup stays):
   switch to landmark boxes: an open hand moved around in 162 of 259 frames (17.2 fps), each box
   fitting the hand (`docs/test-results/0182/hand-landmark-boxes.jpg`).
 - AprilTags: none in view, so the tag path ran but `arm_tags` stayed empty; distance not checked.
+- AprilTags, screen test (4 Nov, [report](../test-results/0182/apriltag-screen-test.md)): ids 0
+  and 1 both decode, 100 % of frames when not glared, tags 88–97 px at 640; tags on 21 fps vs
+  45 off. Small tags on the printed arm and `dist_mm` against a real distance not tested yet.
 
 ## App step 3 (owner, 4 Nov: "Yes, step 3")
 
