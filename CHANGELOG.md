@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- Fonts: the whole app now uses the bundled Google Sans Flex (UI and headings) and Google Sans Code (code), both SIL OFL 1.1, instead of Inter and JetBrains Mono. Headings, overlines and chips are no longer monospaced. No runtime font download (decision 0091).
+
 - H3 phone acceptance: History filters and empty action keep their rounded design, detail titles use the theme sans font, and question-PDF note lines stay with their heading across page breaks. Android Simpan PDF writes to the browsable Download/ELIOS folder. Verified over USB on Motorola Edge 60 Fusion (Android 16), including live Gemini, offline retry/cache, TTS and Android PDF save/share.
 
 - History H3: Indonesian scan list and detail with saved photos, real trophy totals, category filters, light/dark palettes and reduced-motion skeletons. Each saved question opens its own explanation route with ELIOS AI or reviewed bank text, section listening, next question and configurable per-question A4 export. Explanations are validated and saved once; offline failures offer Coba lagi without local educational templates. Old records migrate to schema 4 while retaining answers and source metadata; source/module links are hidden on the new screens and question PDF (decision 0184).

@@ -53,10 +53,10 @@ abstract final class ElioTokens {
   static const onAnswerGreen = Color(0xFFFFFFFF);
 
   // Fonts (bundled in assets/fonts, declared in pubspec.yaml)
-  static const fontMono = 'JetBrains Mono';
-  static const fontSans = 'Inter';
-  static const _monoFallback = ['Fira Code', 'Cascadia Code', 'Consolas', 'monospace'];
-  static const _sansFallback = ['-apple-system', 'Segoe UI', 'Helvetica', 'sans-serif'];
+  static const fontMono = 'Google Sans Code';
+  static const fontSans = 'Google Sans Flex';
+  static const _monoFallback = ['Consolas', 'monospace'];
+  static const _sansFallback = ['Google Sans', '-apple-system', 'Segoe UI', 'Helvetica', 'sans-serif'];
 
   static TextStyle _t(String family, double size, double weight, double height,
           double emSpacing) =>
@@ -71,19 +71,19 @@ abstract final class ElioTokens {
       );
 
   // Type scale (colour is applied by the theme)
-  static final display = _t(fontMono, 36, 700, 1.2, -0.02);
-  static final headline = _t(fontMono, 28, 700, 1.3, -0.01);
-  static final subhead = _t(fontMono, 20, 600, 1.4, 0);
+  static final display = _t(fontSans, 36, 700, 1.2, -0.02);
+  static final headline = _t(fontSans, 28, 700, 1.3, -0.01);
+  static final subhead = _t(fontSans, 20, 600, 1.4, 0);
   static final bodyLarge = _t(fontSans, 18, 400, 1.7, 0);
   static final body = _t(fontSans, 16, 400, 1.7, 0);
   static final bodySmall = _t(fontSans, 14, 400, 1.6, 0);
   static final caption = _t(fontSans, 12, 500, 1.5, 0.01);
-  static final overline = _t(fontMono, 11, 600, 1.4, 0.1);
+  static final overline = _t(fontSans, 11, 600, 1.4, 0.1);
   static final code = _t(fontMono, 14, 400, 1.65, 0);
   // Component fonts
   static final button = _t(fontSans, 14, 600, 1.2, 0);
   static final label = _t(fontSans, 12, 600, 1.5, 0);
-  static final chip = _t(fontMono, 12, 500, 1.4, 0);
+  static final chip = _t(fontSans, 12, 500, 1.4, 0);
 
   // Spacing
   static const spaceBase = 8.0;

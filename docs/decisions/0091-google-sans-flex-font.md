@@ -1,6 +1,6 @@
 # 0091 Design file: Google Sans Flex font and rounded shape scale
 
-Status: draft, design file only. Code adoption is a later task.
+Status: fonts adopted in code (5 Nov 2026, H3-fix); shape scale still design file only.
 
 ## Decision
 - `docs/design.md` now specifies Google Sans Flex for headings and UI text and Google Sans Code for code. It replaces JetBrains Mono (headings, code) and Inter (UI/body). Google Sans Flex is proportional, so Display, Headline and Overline are no longer monospaced.
@@ -13,3 +13,8 @@ Status: draft, design file only. Code adoption is a later task.
 - No Flutter change (fonts and radii). `assets/fonts/` and `pubspec.yaml` still bundle JetBrains Mono and Inter, `ElioTokens` still names them, and `home_screen.dart` still uses Sora and Manrope through `google_fonts`. Decision 0090 describes the current code and stays true until the adoption task.
 - The Google Sans Flex and Google Sans Code licences have not been checked for bundling. Check them before adding the files.
 - The wordmark animation in the splash was laid out for a proportional font in Figma; the Flutter version must measure each letter, not assume a fixed advance.
+
+## Code adoption (fonts, 5 Nov 2026)
+- `assets/fonts/GoogleSansFlex-Variable.ttf` and `GoogleSansCode-Variable.ttf` (variable, from github.com/google/fonts `ofl/`) with their `OFL-*.txt`; Inter and JetBrains Mono removed. Licence checked: both SIL OFL 1.1, bundling allowed.
+- `ElioTokens.fontSans` = Google Sans Flex, `fontMono` = Google Sans Code. Every type style except Code uses the sans family; weights via the `wght` axis, letter spacing as a fraction of the size (Caption 1 %, Overline 10 %, Display -2 %, Headline -1 %).
+- Token test: type scale now passes; the radii test still fails because the M3 radius scale is not adopted yet. `home_screen.dart` Sora/Manrope via `google_fonts` is unchanged.

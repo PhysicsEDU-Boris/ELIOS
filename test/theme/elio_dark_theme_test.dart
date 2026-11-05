@@ -137,7 +137,7 @@ void main() {
     expect((c.shape! as RoundedRectangleBorder).borderRadius, BorderRadius.circular(4));
     expect(c.labelStyle!.color, ElioTokens.textSecondary);
     expect(c.secondaryLabelStyle!.color, ElioTokens.background);
-    expect(c.labelStyle!.fontFamily, ElioTokens.fontMono);
+    expect(c.labelStyle!.fontFamily, ElioTokens.fontSans);
   });
 
   testWidgets('list tile', (tester) async {
@@ -245,9 +245,9 @@ void main() {
 
   test('fonts are bundled and declared, no runtime fetching', () {
     final pub = File('pubspec.yaml').readAsStringSync();
-    expect(pub, contains('assets/fonts/JetBrainsMono-Variable.ttf'));
-    expect(pub, contains('assets/fonts/Inter-Variable.ttf'));
-    for (final f in ['JetBrainsMono-Variable.ttf', 'Inter-Variable.ttf', 'OFL-Inter.txt', 'OFL-JetBrainsMono.txt']) {
+    expect(pub, contains('assets/fonts/GoogleSansCode-Variable.ttf'));
+    expect(pub, contains('assets/fonts/GoogleSansFlex-Variable.ttf'));
+    for (final f in ['GoogleSansCode-Variable.ttf', 'GoogleSansFlex-Variable.ttf', 'OFL-GoogleSansFlex.txt', 'OFL-GoogleSansCode.txt']) {
       expect(File('assets/fonts/$f').existsSync(), isTrue, reason: f);
     }
     final themeSrc = File('lib/theme/elio_dark_theme.dart').readAsStringSync() +

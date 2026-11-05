@@ -82,12 +82,12 @@ flutter:
     - assets/illustrations/control/
 
   fonts:
-    - family: JetBrains Mono
+    - family: Google Sans Code
       fonts:
-        - asset: assets/fonts/JetBrainsMono-Variable.ttf
-    - family: Inter
+        - asset: assets/fonts/GoogleSansCode-Variable.ttf
+    - family: Google Sans Flex
       fonts:
-        - asset: assets/fonts/Inter-Variable.ttf
+        - asset: assets/fonts/GoogleSansFlex-Variable.ttf
 
 flutter_launcher_icons:
   android: "launcher_icon"
