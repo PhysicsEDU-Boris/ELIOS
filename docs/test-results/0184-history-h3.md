@@ -2,11 +2,11 @@
 
 ## Automated checks
 
-- `flutter test --no-pub`: **1,226 passed, 20 skipped, 2 baseline failures**. The failing `test/theme/elio_tokens_test.dart` cases are “type scale matches the table” and “spacing scale and radii match the tables”. Both this test file and `lib/theme/elio_tokens.dart` are byte-identical to `origin/feature/live-scan`.
+- `flutter test --no-pub`: **1,235 passed, 20 skipped, 2 baseline failures**. The failing `test/theme/elio_tokens_test.dart` cases are “type scale matches the table” and “spacing scale and radii match the tables”. Both this test file and `lib/theme/elio_tokens.dart` are byte-identical to `origin/feature/live-scan`.
 - `flutter analyze --no-pub`: no errors/warnings; two existing informational findings in unchanged `test/m2c_identification_test.dart:7` and `test/question_bank_integrity_test.dart:104` (exit 1 because infos count).
-- Focused H3/compatibility run: **110 passed**; H3-only matrix: **75 passed**.
+- Focused H3/compatibility run: **110 passed**; original H3-only matrix: **75 passed**. Native-QA refinements add nine passing regressions (six styles, note pagination and two Android-save paths); the PDF group now passes 19 cases.
 - `git diff --check`: clean. `scripts/check-secrets.sh`: clean on the staged task diff.
-- Per-question A4 PDF rendered with bundled Poppler and visually inspected, including the photo and notes. No native Mac build, phone install or live Gemini request.
+- Per-question A4 PDF rendered with bundled Poppler and visually inspected, including the photo and notes. Native USB acceptance, live Gemini and downloaded PDF evidence: [phone report](0184-history-h3-phone.md). No Mac build.
 
 Coverage: explanation JSON validation and caps; correct-option protection; reviewed wrongWhy precedence; one retry; exact saved answer input; shared request slot; concurrent opens; durable cache/reopen/PDF; unavailable result persistence and explicit retry; schema migration; failed writes; late TTS setup; all 16 PDF include combinations with source exclusion; light/dark list, detail, explanation, sheet, empty and three skeleton layouts; timeout/retry; crop containment and damaged/missing files; section switching, pause, background and route exit; one selected History nav tab.
 
@@ -30,6 +30,9 @@ The initial offline regression test failed against the old implementation: it ge
 | draft bank answer announcement | 1 |
 | essay AI provenance | 1 |
 | Indonesian nav copy | 2 |
+| Native chip/title/action styling | 6 |
+| PDF notes pagination | 1 |
+| Android public save / storage failure | 2 |
 
 Examples include removing validation, bank precedence, durable cache/migration/write failure reporting, PDF options/source exclusion, phone/wide navigation and filtering, single selected tab, timeouts/reduced motion, TTS stop/race guards, crop containment and essay presentation.
 
@@ -66,4 +69,4 @@ flutter build apk --debug --dart-define=LIVE_SCAN=true --dart-define=TESTER_BUIL
 6. Open Ekspor PDF, toggle each include option, share and save. Inspect `ELIOS_<item>_Q<n>.pdf`; only this question, the selected content and the saved explanation should appear. Whole-record Ekspor PDF should still export the record.
 7. Check empty History starts a scan, skeletons stop animating with reduced motion, and a failed/stalled load offers Coba lagi. History must be the only selected nav tab.
 
-No Mac debug build or phone installation was performed. Existing app bundles, LaunchServices registrations and model stores were not changed.
+USB acceptance was performed on Motorola Edge 60 Fusion / Android 16; see the [phone report](0184-history-h3-phone.md). No Mac build or LaunchServices/model-store changes.

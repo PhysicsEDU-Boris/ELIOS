@@ -11,6 +11,9 @@
 - Live AI: Q1 used Gemini 3.1 Flash-Lite after 3.5 Flash-Lite returned 503 (5.86 s); Q2 retry used 3.5 Flash-Lite. Saved explanations carry source/model/generatedAt. No fake records inserted.
 - Native TTS inspected through the debug VM: one service instance, `id-ID`, speaking → idle on pause, exit and background; section switching advances the cancellation epoch. Audio pronunciation was not independently heard.
 - Offline test temporarily disabled mobile data, then restored the original network state (Wi-Fi off, mobile data on). Cached explanation opened without loading; uncached question offered Coba lagi in 2.9 s, and retry succeeded online.
-- Question PDF saved in the app reports directory; both question and whole-record export opened Android's share chooser. No recipient selected or file sent.
+- Initial question PDF saved in the app reports directory; USB QA identified that Files could not browse it. Refinement switches Android Save to MediaStore Download/ELIOS; both question and whole-record export opened Android's share chooser. No recipient selected or file sent.
 - Phone QA found inherited rectangular chips/action and mono detail title, plus PDF notes splitting away from their heading. Regression tests reproduced these before the fixes.
 - No Mac ELIOS app built/launched, no LaunchServices changes, no model-store, Keychain or signing changes. Existing `~/Applications/ELIOS.app` and owner model copies were not touched.
+
+- Final refinement APK built from `500ae5a` with the same flags, output, package and signing identity. `assembleDebug` completed in 87.2 s. No dependency, model, Mac bundle or signing changes.
+- H3-fix APK (5 Nov): built from `642e5c4` with the same flags/output/package/signing, `adb install -r` over the existing app; `scan_records.json` unchanged (113,543 bytes). An interim build without TESTER_BUILD/DARK_MODE_OPTION was replaced by the flagged build. No Mac bundle, model or signing change.

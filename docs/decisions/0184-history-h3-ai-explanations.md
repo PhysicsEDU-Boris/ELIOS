@@ -8,7 +8,7 @@
 
 ## Decision
 
-History uses the existing theme palettes and bundled Inter for the Figma sans text styles, as Home already does. The phone list pushes a scan-detail route; wide windows keep two panes. Both use saved crops with containment, real store trophies, category filters, and the same question cards. Empty History starts a scan. No History records are invented or restored. Debug sample creation is absent from the UI and guarded against release/tester builds.
+History uses the existing theme palettes and the bundled Google Sans Flex (decision 0091). The phone list pushes a scan-detail route; wide windows keep two panes. Both use saved crops (cover-fit, H3-fix), real store trophies, category filters, and the same question cards. Empty History starts a scan. No History records are invented or restored. Debug sample creation is absent from the UI and guarded against release/tester builds.
 
 A question has a full-screen explanation with its saved answers, score, explanation sections, category buddy, small listen controls, next-question action and per-question export sheet. Source metadata remains stored but is absent from this route and its PDF. The existing whole-record PDF API remains available.
 
@@ -25,6 +25,18 @@ Each explanation request has a 20-second slot deadline and at most two attempts.
 TTS uses the existing service. A request epoch prevents delayed setup from speaking after a newer request or stop. Whole-question playback progresses through the saved sections; a section button speaks only that section. Switching, pause, route exit, export and app backgrounding stop playback. The current section receives a success tint and “Sedang dibacakan”. No read-aloud card/switch is added.
 
 Per-question PDFs use saved text only and honor independent answer/explanation/photo/notes options. They are A4, named `ELIOS_<item>_Q<n>.pdf`, and contain no source/module/guide/simulation metadata. On Android, Save publishes through MediaStore to Download/ELIOS without storage permission; failed writes remove only their own incomplete file. Other platforms retain the application reports directory. Share uses the platform share sheet. The sheet preview is the design's compact A4 file thumbnail, not a second generated explanation.
+
+## H3-fix: Figma match (5 Nov 2026)
+
+The screens now follow `docs/design/h3-figma/README.md` and its PNGs through shared components in `lib/widgets/history_ui.dart` (chip, filter chip, section header, scan row, trophy summary, score card, question card, listen button, explanation section, key idea, steps, actions bar, skeleton, top bar). Colours come from palette tokens; chip tints use the Figma variable alphas. Fixed colours are only the white A4 thumbnail and the `#0F172A` 55 % scrim. Visible choices that differ from the earlier H3 build:
+
+- Saved crops are cover-fit in list and detail (README spec), replacing containment.
+- Key idea and Steps have no listen button; they are still read in the whole-question listen and highlight while read. Text sections keep their own listen buttons.
+- The reading state is a "SEDANG DIBACAKAN" overline row above the section title; Pause is a filled primary circle.
+- Detail difficulty chips use "Mudah · 1Q" (as the Figma "Easy · 1Q" and the Q badges) so the three stay on one row; the B3 category chip reads "B3 · Berbahaya".
+- The skeleton base is opaque `border/medium` (the README's 60 % rendered visibly lighter than the PNGs).
+
+AI flow, cache/schema 4, TTS slot rules, PDF content, retry/offline states and routes are unchanged. Evidence: [H3-fix results](../test-results/0184-h3-fix/README.md).
 
 ## Verification and limits
 
