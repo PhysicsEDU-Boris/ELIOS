@@ -60,4 +60,5 @@ their status changed.
 | [0181](0181-lock-button-ai-box.md) | LOCK on phone Control: the AI labels and boxes the item (one call, green box on the video, no quiz); SCAN opens its quiz | Accepted |
 | [0182](0182-camera-tracks-lock-box.md) | Camera firmware without the waste model: MixFormerV2 tracks the LOCK box (`track_start`), hands as `Human_Hand`, rough AprilTag `arm_tags`, clean 640x480 frames | Accepted |
 | [0183](0183-wide-16-9-stream-measured-fx.md) | Camera streams the wide 16:9 view (640x360, 83° like the sim; 640x480 was a 67° crop); measured fx 362 and id 1 6.17 mm for `arm_tags` | Accepted |
-| [0184](0184-ui-localization-gen-l10n.md) | UI languages: gen-l10n with English ARB as source, Gemini script fills other ARB files, language picker under Dark mode in the sidebar | Proposed |
+| [0184](0184-history-h3-ai-explanations.md) | H3 History: scan list/detail, per-question explanation route with saved ELIOS AI explanations, TTS and per-question PDF | Accepted |
+| [0185](0185-ui-localization-gen-l10n.md) | UI languages: gen-l10n with English ARB as source, Gemini script fills other ARB files, language picker under Dark mode in the sidebar; L2 live switch of all content and ELIO→ELIOS rename | Proposed |

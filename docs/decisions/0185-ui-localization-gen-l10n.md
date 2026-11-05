@@ -1,4 +1,4 @@
-# 0184: UI languages with gen-l10n, a sidebar picker and Gemini-filled ARB files
+# 0185: UI languages with gen-l10n, a sidebar picker and Gemini-filled ARB files
 
 - Status: Proposed (owner asked for it, 5 Nov). Not yet checked on the robot or a phone.
 - Builds on: [0176](0176-cloud-ai-benchmark.md) / [0179](0179-gemini-cloud-ai.md) (same Gemini free key and Flash-Lite model).
