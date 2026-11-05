@@ -2,7 +2,8 @@
 ## Essay keyboard fix — 5 Nov 2026 (`codex/fix-essay-keyboard`, decision 0186)
 - Android landscape keyboard closed because the compact essay layout disposed the focused field. One stable editor now survives keyboard resizing; draft and cursor stay intact.
 - Regression break-check: old editor disposed (fails); fixed editor passes. Full suite: 1255 passed / 20 skipped / 1 unrelated token-radius failure (also reproduced alone; token/test files identical to base). Analyze: 2 existing test style infos. Secret scan and diff check clean.
-- Robot check: open an essay in landscape, type, hide/reopen the keyboard repeatedly, then submit. No build/install, app/model/data or firmware changes.
+- Installed in place on the only connected phone, Motorola Edge 60 Fusion (21:16:59 Jakarta): localized PR #93 source + fix, APP_COMMIT `ffdb236`, same LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION flags. Cold launch OK; both History files unchanged. See local build notes. No Mac/model/firmware changes.
+- Phone follow-up: open an essay in landscape, type, hide/reopen the keyboard repeatedly, then submit. Physical IME interaction remains unchecked.
 ## H3 History — `feat/history-h3` (decision 0184)
 - PR #94 targets `feature/live-scan`; owner merges. No merge or Mac build by this task.
 - H3 phone list → detail → question explanation; wide two-pane detail, saved crops, real trophies, Indonesian copy, light/dark tokens, skeletons/timeouts, section TTS and per-question PDF.

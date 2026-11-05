@@ -17,3 +17,12 @@
 
 - Final refinement APK built from `500ae5a` with the same flags, output, package and signing identity. `assembleDebug` completed in 87.2 s. No dependency, model, Mac bundle or signing changes.
 - H3-fix APK (5 Nov): built from `642e5c4` with the same flags/output/package/signing, `adb install -r` over the existing app; `scan_records.json` unchanged (113,543 bytes). An interim build without TESTER_BUILD/DARK_MODE_OPTION was replaced by the flagged build. No Mac bundle, model or signing change.
+
+## 5 Nov 2026 — Essay keyboard fix phone install (PR #95)
+
+- Only connected phone: Motorola Edge 60 Fusion, Android 16; package `com.boris.elio`, existing debug signing, version 1.0.0+1. `adb install -r` returned Success; lastUpdateTime 21:16:59 (Asia/Jakarta). No uninstall/data clear.
+- Preserved the installed PR #93 localization/features: built localized source `d67aba3` plus the PR #95 editor/test change as local integration commit `ffdb236`; localization strings retained. The localized keyboard regression passes. PR source remains `aac5a94` on `feature/live-scan`, with no unrelated localization changes added to #95.
+- Reused `build/app/outputs/flutter-apk/app-debug.apk` (~2.3 GiB). `flutter build apk --debug --target-platform android-arm64 --dart-define=LIVE_SCAN=true --dart-define=TESTER_BUILD=true --dart-define=DARK_MODE_OPTION=true --dart-define=APP_COMMIT=ffdb236` succeeded (Gradle 83.7 s; existing Kotlin migration warning).
+- Private History/photo/settings backup and reproducible localized source patch: task temp directory `elios-essay-install-5y3bzk0q` under the macOS temporary directory (`phone-data-before.tar`, `localized-build-source.patch`). Existing model assets retained; no downloads/copies.
+- App cold launch returned Status ok (3615 ms). After launch, both History files exactly match the backup: main 125309 bytes, R3 test 11455 bytes. No owner records inserted. Physical essay/IME interaction not exercised; owner to type in landscape, hide/reopen keyboard, then submit.
+- No Mac app build/registration, firmware, model-store, Keychain, signing or private configuration changes. Only one phone was connected and installed.
