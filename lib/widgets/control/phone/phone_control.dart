@@ -756,7 +756,9 @@ class PhoneControlLayout extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              ControlCaps(label),
+              // Longer Indonesian captions ("JANGKAU") may use the gap beside
+              // the 48 dp column instead of being cut (decision 0185).
+              OverflowBox(maxWidth: 64, child: ControlCaps(label)),
             ],
           ),
         );
