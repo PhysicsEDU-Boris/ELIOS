@@ -224,7 +224,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
         appBar: HistoryTopBar(
           title: context.l10n.h3ExplanationTitle,
           subtitle: context.l10n.h3ExplanationMeta(
-            _record.itemName,
+            _shown.itemName,
             _index + 1,
             _record.questions.length,
           ),

@@ -90,11 +90,11 @@ class QuizPdfService {
     final doc = pw.Document();
     doc.addPage(pw.MultiPage(pageFormat: PdfPageFormat.a4,
       margin: const pw.EdgeInsets.all(32), build: (_) => [
-        pw.Text(l10n.pdfQuestionHeader(record.itemName, index + 1),
+        _text(l10n.pdfQuestionHeader(record.itemName, index + 1),
           style: pw.TextStyle(fontSize: 12, color: _green, fontWeight: pw.FontWeight.bold)),
         pw.SizedBox(height: 16),
         if (options.answers) ...[
-          pw.Text(q.question, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+          _text(q.question, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 12),
           ..._answerRow(l10n.h3YourAnswer, q.yourAnswer, _ink),
           ..._answerRow(q.isEssay ? l10n.h3ReferenceAnswer : l10n.h3CorrectAnswer, q.rightAnswer, _correctGreen),
@@ -109,16 +109,16 @@ class QuizPdfService {
               (l10n.h3KeyIdeaTitle, exp.keyIdea),
             ]) if (section.$2.isNotEmpty) ...[
               pw.SizedBox(height: 14), _sectionTitle(section.$1),
-              pw.SizedBox(height: 6), pw.Text(section.$2, overflow: pw.TextOverflow.span),
+              pw.SizedBox(height: 6), _text(section.$2, overflow: pw.TextOverflow.span),
             ],
             if (exp.steps.isNotEmpty) ...[
               pw.SizedBox(height: 14), _sectionTitle(l10n.h3HowTo),
               for (var i = 0; i < exp.steps.length; i++)
-                pw.Padding(padding: const pw.EdgeInsets.only(top: 6), child: pw.Text('${i + 1}. ${exp.steps[i]}')),
+                pw.Padding(padding: const pw.EdgeInsets.only(top: 6), child: _text('${i + 1}. ${exp.steps[i]}')),
             ],
           ],
           if (exp == null || (!exp.isComplete && !q.isEssay)) ...[
-            pw.SizedBox(height: 14), pw.Text(l10n.h3ExplanationUnavailable),
+            pw.SizedBox(height: 14), _text(l10n.h3ExplanationUnavailable),
           ],
         ],
         if (crop != null) ...[pw.SizedBox(height: 16), pw.Image(crop, height: 160, fit: pw.BoxFit.contain)],
@@ -194,7 +194,7 @@ class QuizPdfService {
           pw.Row(
             children: [
               pw.Expanded(
-                child: pw.Text(
+                child: _text(
                   l10n.pdfReportTitle,
                   style: pw.TextStyle(
                     fontSize: 20,
@@ -203,7 +203,7 @@ class QuizPdfService {
                   ),
                 ),
               ),
-              pw.Text(
+              _text(
                 _dateTime(record.time),
                 style: pw.TextStyle(fontSize: 10, color: _caption),
               ),
@@ -219,12 +219,12 @@ class QuizPdfService {
       children: [
         pw.Row(
           children: [
-            pw.Text(
+            _text(
               'ELIOS - ${record.itemName}',
               style: pw.TextStyle(fontSize: 11, color: _subtext, fontWeight: pw.FontWeight.bold),
             ),
             pw.Spacer(),
-            pw.Text(l10n.pdfPageShort(page, total), style: pw.TextStyle(fontSize: 10, color: _caption)),
+            _text(l10n.pdfPageShort(page, total), style: pw.TextStyle(fontSize: 10, color: _caption)),
           ],
         ),
         pw.Divider(color: _borderGray),
@@ -240,7 +240,7 @@ class QuizPdfService {
         pw.Row(
           children: [
             pw.Expanded(
-              child: pw.Text(
+              child: _text(
                 l10n.pdfFooter(page, total, record.id),
                 style: pw.TextStyle(fontSize: 8, color: _caption),
               ),
@@ -281,7 +281,7 @@ class QuizPdfService {
             color: PdfColor.fromHex('EAECEE'),
             alignment: pw.Alignment.center,
             child: crop == null
-                ? pw.Text(l10n.pdfPhoto, style: pw.TextStyle(fontSize: 10, color: _caption))
+                ? _text(l10n.pdfPhoto, style: pw.TextStyle(fontSize: 10, color: _caption))
                 : pw.Image(crop, width: 120, height: 120, fit: pw.BoxFit.contain),
           ),
           pw.SizedBox(width: 12),
@@ -301,7 +301,7 @@ class QuizPdfService {
   static String _dateTime(DateTime t) =>
       DateFormat.yMMMd(dateLocale).add_Hm().format(t.toLocal());
 
-  static pw.Widget _sectionTitle(String title) => pw.Text(
+  static pw.Widget _sectionTitle(String title) => _text(
         title,
         style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: _green),
       );
@@ -328,12 +328,12 @@ class QuizPdfService {
         return pw.TableRow(children: [
           pw.Padding(
             padding: const pw.EdgeInsets.all(5),
-            child: pw.Text(row[0],
+            child: _text(row[0],
                 style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: _subtext)),
           ),
           pw.Padding(
             padding: const pw.EdgeInsets.all(5),
-            child: pw.Text(row[1], style: pw.TextStyle(fontSize: 10, color: _ink)),
+            child: _text(row[1], style: pw.TextStyle(fontSize: 10, color: _ink)),
           ),
         ]);
       }).toList(),
@@ -351,7 +351,7 @@ class QuizPdfService {
             border: pw.Border.all(color: q.isCorrect ? _correctGreen : _incorrectRed, width: 0.5),
             borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
           ),
-          child: pw.Text(
+          child: _text(
             l10n.pdfQuestionLine(index, q.question),
             style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _ink),
           ),
@@ -367,7 +367,7 @@ class QuizPdfService {
         if (exp != null && !exp.isUnavailable) ...[
           ..._explanationSection(exp),
         ] else ...[
-          pw.Text(
+          _text(
             l10n.pdfNoExplanation,
             style: pw.TextStyle(fontSize: 10, color: _caption, fontStyle: pw.FontStyle.italic),
           ),
@@ -378,9 +378,9 @@ class QuizPdfService {
 
   // Keep variable-length text directly in MultiPage so it can span pages.
   static List<pw.Widget> _answerRow(String label, String value, PdfColor color) => [
-    pw.Text(label.toUpperCase(), style: pw.TextStyle(fontSize: 9,
+    _text(label.toUpperCase(), style: pw.TextStyle(fontSize: 9,
         fontWeight: pw.FontWeight.bold, color: _caption)),
-    pw.Text(value, overflow: pw.TextOverflow.span,
+    _text(value, overflow: pw.TextOverflow.span,
         style: pw.TextStyle(fontSize: 10, color: color, fontWeight: pw.FontWeight.bold)),
     pw.SizedBox(height: 4),
   ];
@@ -402,41 +402,41 @@ class QuizPdfService {
 
   static List<pw.Widget> _explanationSection(QuizExplanation exp) {
     return [
-        pw.Text(l10n.h3ExplanationTitle,
+        _text(l10n.h3ExplanationTitle,
             overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: _green)),
         pw.SizedBox(height: 4),
         if (exp.summary.isNotEmpty)
-          pw.Text(exp.summary, overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 10, color: _ink)),
+          _text(exp.summary, overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 10, color: _ink)),
         if (exp.correctAnswerReason.isNotEmpty) ...[
           pw.SizedBox(height: 4),
-          pw.Text(exp.correctAnswerReason, overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 10, color: _ink)),
+          _text(exp.correctAnswerReason, overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 10, color: _ink)),
         ],
         if (exp.selectedAnswerFeedback.isNotEmpty) ...[
           pw.SizedBox(height: 4),
-          pw.Text(exp.selectedAnswerFeedback,
+          _text(exp.selectedAnswerFeedback,
               overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 10, color: _incorrectRed)),
         ],
         if (exp.conceptExplanation.isNotEmpty) ...[
           pw.SizedBox(height: 4),
-          pw.Text(exp.conceptExplanation, overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 10, color: _ink)),
+          _text(exp.conceptExplanation, overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 10, color: _ink)),
         ],
         if (exp.comparisonRows.isNotEmpty) ...[
           pw.SizedBox(height: 6),
-          pw.Text(l10n.pdfTableCategories,
+          _text(l10n.pdfTableCategories,
               overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _subtext)),
           pw.SizedBox(height: 4),
           _comparisonTable(exp.comparisonRows),
         ],
         if (exp.rubricRows != null && exp.rubricRows!.isNotEmpty) ...[
           pw.SizedBox(height: 6),
-          pw.Text(l10n.pdfTableScoring,
+          _text(l10n.pdfTableScoring,
               overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _subtext)),
           pw.SizedBox(height: 4),
           _rubricTable(exp.rubricRows!),
         ],
         if (exp.learningTakeaway.isNotEmpty) ...[
           pw.SizedBox(height: 6),
-          pw.Text(
+          _text(
             exp.learningTakeaway,
             overflow: pw.TextOverflow.span, style: pw.TextStyle(
                 fontSize: 10, fontStyle: pw.FontStyle.italic, color: _subtext),
@@ -444,12 +444,12 @@ class QuizPdfService {
         ],
         if (exp.quote != null) ...[
           pw.SizedBox(height: 4),
-          pw.Text('"${exp.quote}"',
+          _text('"${exp.quote}"',
               overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: _subtext)),
         ],
         if (sourceLine(exp) != null) ...[
           pw.SizedBox(height: 4),
-          pw.Text(sourceLine(exp)!, overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 9, color: _caption)),
+          _text(sourceLine(exp)!, overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 9, color: _caption)),
         ],
     ];
   }
@@ -468,7 +468,7 @@ class QuizPdfService {
           children: [l10n.pdfColCategory, l10n.pdfColMaterial, l10n.pdfColAccepted].map((h) {
             return pw.Padding(
               padding: const pw.EdgeInsets.all(4),
-              child: pw.Text(h,
+              child: _text(h,
                   style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _ink)),
             );
           }).toList(),
@@ -480,7 +480,7 @@ class QuizPdfService {
             children: [row.bin, row.material, row.accepted].map((cell) {
               return pw.Padding(
                 padding: const pw.EdgeInsets.all(4),
-                child: pw.Text(cell,
+                child: _text(cell,
                     style: pw.TextStyle(
                         fontSize: 9,
                         color: highlight ? _green : _ink,
@@ -508,7 +508,7 @@ class QuizPdfService {
           children: [l10n.pdfColCriterion, l10n.pdfColMax, l10n.pdfColAwarded, l10n.pdfColComment].map((h) {
             return pw.Padding(
               padding: const pw.EdgeInsets.all(4),
-              child: pw.Text(h,
+              child: _text(h,
                   style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _ink)),
             );
           }).toList(),
@@ -517,20 +517,20 @@ class QuizPdfService {
           return pw.TableRow(children: [
             pw.Padding(
                 padding: const pw.EdgeInsets.all(4),
-                child: pw.Text(row.criterion, style: pw.TextStyle(fontSize: 9, color: _ink))),
+                child: _text(row.criterion, style: pw.TextStyle(fontSize: 9, color: _ink))),
             pw.Padding(
                 padding: const pw.EdgeInsets.all(4),
-                child: pw.Text('${row.maxScore}', style: pw.TextStyle(fontSize: 9, color: _ink))),
+                child: _text('${row.maxScore}', style: pw.TextStyle(fontSize: 9, color: _ink))),
             pw.Padding(
                 padding: const pw.EdgeInsets.all(4),
-                child: pw.Text('${row.awardedScore}',
+                child: _text('${row.awardedScore}',
                     style: pw.TextStyle(
                         fontSize: 9,
                         color: row.awardedScore >= row.maxScore * 0.6 ? _correctGreen : _incorrectRed,
                         fontWeight: pw.FontWeight.bold))),
             pw.Padding(
                 padding: const pw.EdgeInsets.all(4),
-                child: pw.Text(row.comment, style: pw.TextStyle(fontSize: 9, color: _caption))),
+                child: _text(row.comment, style: pw.TextStyle(fontSize: 9, color: _caption))),
           ]);
         }),
       ],
@@ -555,3 +555,14 @@ class QuizPdfService {
     return 'elio_quiz_$namePart$safeId.pdf';
   }
 }
+
+/// pdf's built-in Helvetica covers Latin-1 only: curly quotes and dashes from
+/// AI or ARB text would print as gaps (decision 0185 phone check).
+String pdfSafe(String s) => s
+    .replaceAll(RegExp('[\u2018\u2019]'), "'")
+    .replaceAll(RegExp('[\u201C\u201D]'), '"')
+    .replaceAll(RegExp('[\u2013\u2014]'), '-')
+    .replaceAll('\u2026', '...');
+
+pw.Widget _text(String text, {pw.TextStyle? style, pw.TextOverflow? overflow, pw.TextAlign? textAlign}) =>
+    pw.Text(pdfSafe(text), style: style, overflow: overflow, textAlign: textAlign);

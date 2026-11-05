@@ -5488,7 +5488,7 @@ abstract class AppLocalizations {
   /// No description provided for @h3WhyWrong.
   ///
   /// In en, this message translates to:
-  /// **'Why your answer isn’t right'**
+  /// **'Why your answer isn\'t right'**
   String get h3WhyWrong;
 
   /// No description provided for @h3Feedback.

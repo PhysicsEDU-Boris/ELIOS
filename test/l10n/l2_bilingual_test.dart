@@ -14,6 +14,7 @@ import 'package:elio/providers/app_locale_provider.dart';
 import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/history_translation_service.dart';
 import 'package:elio/services/question_bank.dart';
+import 'package:elio/services/quiz_pdf_service.dart' show pdfSafe;
 import 'package:elio/services/quiz_tts_service.dart';
 import 'package:elio/services/scan_record_store.dart';
 import 'package:flutter/widgets.dart';
@@ -474,6 +475,10 @@ void main() {
     final before = stops;
     c.read(appLocaleProvider.notifier).setLocale(const Locale('id'));
     expect(stops, greaterThan(before));
+  });
+
+  test('PDF text keeps apostrophes the built-in font cannot draw', () {
+    expect(pdfSafe('Why your answer isn\u2019t right \u2014 \u201Cok\u201D'), 'Why your answer isn\'t right - "ok"');
   });
 
   test('no user-visible ELIO left in the ARB files', () {

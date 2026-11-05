@@ -3128,7 +3128,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get h3WhyCorrect => 'Why this is the right answer';
 
   @override
-  String get h3WhyWrong => 'Why your answer isn’t right';
+  String get h3WhyWrong => 'Why your answer isn\'t right';
 
   @override
   String get h3Feedback => 'Feedback';
