@@ -8,7 +8,9 @@ import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/quiz_tts_service.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:elio/l10n/l10n.dart';
 
 class _SeededQuiz extends WasteQuizNotifier {
   _SeededQuiz(this.seed);
@@ -61,10 +63,12 @@ void main() {
     expect(AiQuizService.toPlainText('**Benar.** Kardus didaur ulang.'), 'Benar. Kardus didaur ulang.');
   });
 
-  test('Indonesian replies are spoken with the Indonesian voice', () {
-    expect(QuizTtsService.detectLanguage('Benar! Plastik dapat mencemari laut dan merusak ekosistem perairan.'), 'id-ID');
-    expect(QuizTtsService.detectLanguage('Benar!'), 'id-ID');
-    expect(QuizTtsService.detectLanguage('This is the correct answer because the plastic is recyclable.'), 'en-US');
+  test('the TTS voice follows the app language, or the text language when given', () {
+    debugSetL10n(const Locale('id'));
+    expect(QuizTtsService.voiceFor(), 'id-ID');
+    debugSetL10n(const Locale('en'));
+    expect(QuizTtsService.voiceFor(), 'en-US');
+    expect(QuizTtsService.voiceFor('id'), 'id-ID');
     expect(QuizTtsService.speakableText('Benar! 🎉 **Plastik**'), 'Benar! Plastik');
   });
 

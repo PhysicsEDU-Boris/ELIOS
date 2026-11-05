@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/quiz_explanation.dart';
 import '../models/scan_record.dart';
 import '../services/history_explanation_service.dart';
+import '../services/history_translation_service.dart';
 import '../services/quiz_pdf_service.dart';
 import '../services/quiz_tts_service.dart';
 import '../services/scan_record_store.dart';
@@ -35,18 +36,37 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
   late int _index = widget.questionIndex;
   QuizExplanation? _explanation;
   bool _loading = true, _whole = false;
+
+  /// The app language shown ('en'/'id'); [_original]: its translation is not
+  /// available (offline), so the record's own language is shown with a note.
+  String? _lang;
+  bool _original = false;
   String? _playing;
   int _loadEpoch = 0, _speechEpoch = 0;
   final _scroll = ScrollController();
   ScanRecord get _record =>
       widget.store.records.where((r) => r.id == widget.record.id).firstOrNull ??
       widget.record;
-  RecordQuestion get _q => _record.questions[_index];
+  ScanRecord get _shown => _record.localized(_lang ?? _record.lang);
+  RecordQuestion get _q => _shown.questions[_index];
+  String get _speechLang => _original ? _record.lang : _lang!;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    unawaited(_load());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final lang = context.l10n.localeName == 'en' ? 'en' : 'id';
+    if (lang == _lang) return;
+    // A live language switch stops speech and shows the record in the new language.
+    if (_lang != null) _stop();
+    _lang = lang;
+    _loading = true;
+    Future.microtask(_load);
   }
 
   @override
@@ -71,21 +91,45 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
       _explanation = _q.explanation;
     });
     try {
+      final lang = _lang!;
       final result = await HistoryExplanationService.load(
         widget.store,
         _record,
         _index,
         retry: retry,
       ).timeout(widget.loadTimeout);
+      // Texts made in another language are translated once and cached.
+      final translated = await HistoryTranslationService.ensure(
+        widget.store,
+        _record,
+        lang,
+      ).timeout(widget.loadTimeout);
       if (mounted && epoch == _loadEpoch) {
         setState(() {
           _loading = false;
-          _explanation = result;
+          _original = !translated;
+          _explanation = _inLanguage(result, lang);
         });
       }
     } catch (_) {
-      if (mounted && epoch == _loadEpoch) setState(() => _loading = false);
+      if (mounted && epoch == _loadEpoch) {
+        setState(() {
+          _loading = false;
+          _original = _record.needsTranslation(_lang!);
+        });
+      }
     }
+  }
+
+  /// [result] when it is already in [lang], else its cached translation, else
+  /// the original (shown with the "connect to translate" note).
+  QuizExplanation _inLanguage(QuizExplanation result, String lang) {
+    if ((result.lang ?? _record.lang) == lang) return result;
+    if (result.alt?.lang == lang) return result.alt!;
+    final cached = _record.localized(lang).questions[_index].explanation;
+    return cached != null && (cached.lang ?? _record.lang) == lang
+        ? cached
+        : result;
   }
 
   void _stop() {
@@ -128,7 +172,10 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
     for (final part in parts) {
       if (!mounted || epoch != _speechEpoch) return;
       setState(() => _playing = part.$1);
-      await QuizTtsService.instance.speak('${part.$2} ${part.$3}');
+      await QuizTtsService.instance.speak(
+        '${part.$2} ${part.$3}',
+        lang: _speechLang,
+      );
     }
     if (mounted && epoch == _speechEpoch) {
       setState(() {
@@ -156,7 +203,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
       ),
       builder: (_) => Theme(
         data: theme,
-        child: QuestionExportSheet(record: _record, questionIndex: _index),
+        child: QuestionExportSheet(record: _shown, questionIndex: _index),
       ),
     );
   }
@@ -193,6 +240,11 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                 controller: _scroll,
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
+                  if (_original)
+                    HistoryOriginalNote(
+                      lang: _record.lang,
+                      onRetry: () => unawaited(_load()),
+                    ),
                   ConstrainedBox(
                     // Figma meta row is 100 high with the chips centred.
                     constraints: const BoxConstraints(minHeight: 100),

@@ -162,7 +162,7 @@ class _DensitySimulationPageState extends ConsumerState<DensitySimulationPage> {
           l10n.simDensity23,
           l10n.simDensity24,
           l10n.simDensity18,
-          'Beban tipikal organik ELIO adalah $kTypicalOrganicLoadKg kg. Karena organik jauh lebih padat dari plastik, mengangkat volume organik yang sama membutuhkan usaha energi lebih besar (Lihat Modul D).',
+          l10n.simDensityLoad(fmtNum(kTypicalOrganicLoadKg, 1)),
         ],
       ),
     );

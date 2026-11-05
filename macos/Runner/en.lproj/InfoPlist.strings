@@ -1,0 +1,2 @@
+/* macOS permission texts in English (decision 0185). */
+"NSCameraUsageDescription" = "ELIOS needs camera access for local camera test mode and object detection preview.";

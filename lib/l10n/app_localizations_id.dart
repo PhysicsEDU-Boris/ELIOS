@@ -4158,4 +4158,39 @@ class AppLocalizationsId extends AppLocalizations {
   String physQPower(Object i, Object v) {
     return 'Sebuah subsistem menarik arus sebesar $i A dari baterai $v V. Berapa daya yang dikonsumsi?';
   }
+
+  @override
+  String simDensityLoad(Object kg) {
+    return 'Beban tipikal organik ELIOS adalah $kg kg. Karena organik jauh lebih padat dari plastik, mengangkat volume organik yang sama membutuhkan usaha energi lebih besar (Lihat Modul D).';
+  }
+
+  @override
+  String simWorkOrganic(Object kg) {
+    return 'Sampah organik cenderung memiliki massa lebih besar per volume dibanding plastik. Untuk beban tipikal organik seberat $kg kg, mengangkatnya ke ketinggian yang sama dengan plastik ringan membutuhkan usaha jauh lebih besar.';
+  }
+
+  @override
+  String simWorkBattery(Object joules) {
+    return 'Kapasitas baterai ELIOS yang dipakai dalam simulasi ini adalah $joules Joule. %tersisa = 100 - (W / $joules) × 100.';
+  }
+
+  @override
+  String get aiNotReady =>
+      'AI belum bisa membaca foto. Periksa internet, lalu coba lagi.';
+
+  @override
+  String get aiNotRecognised =>
+      'Benda di foto belum dikenali. Dekatkan kamera, pastikan terang, lalu scan lagi.';
+
+  @override
+  String get essaySavedPending =>
+      'Jawaban tersimpan. Menunggu penilaian karena AI belum tersedia.';
+
+  @override
+  String essayScoreLine(Object score) {
+    return 'Skor: $score/10.';
+  }
+
+  @override
+  String get quizSkippedAnswer => '(dilewati)';
 }

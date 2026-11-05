@@ -92,8 +92,8 @@ class WorkEnergySimulationPage extends ConsumerWidget {
         bulletPoints: [
           l10n.simWorkEnergy13,
           l10n.simWorkEnergy14,
-          'Sampah organik cenderung memiliki massa lebih besar per volume dibanding plastik. Untuk beban tipikal organik seberat $kTypicalOrganicLoadKg kg, mengangkatnya ke ketinggian yang sama dengan plastik ringan membutuhkan usaha jauh lebih besar.',
-          'Kapasitas baterai ELIO yang dipakai dalam simulasi ini adalah $kBatteryCapacityJ Joule. %tersisa = 100 - (W / $kBatteryCapacityJ) × 100.',
+          l10n.simWorkOrganic(fmtNum(kTypicalOrganicLoadKg, 1)),
+          l10n.simWorkBattery(fmtNum(kBatteryCapacityJ)),
         ],
         // Fixed the math typo in the UI copy (12 J is 99.976% remaining of 50,000 J, not 96.0%)
       ),

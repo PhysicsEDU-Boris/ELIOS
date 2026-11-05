@@ -1087,6 +1087,46 @@ class HistoryActionsBar extends StatelessWidget {
   }
 }
 
+/// "Shown in Bahasa Indonesia, connect to translate" with a retry, when a
+/// record's translation could not be made (offline). Never invents text.
+class HistoryOriginalNote extends StatelessWidget {
+  const HistoryOriginalNote({
+    super.key,
+    required this.lang,
+    required this.onRetry,
+  });
+  final String lang;
+  final VoidCallback onRetry;
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context), t = historyTint(p, HistoryTone.info);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
+      decoration: ShapeDecoration(color: t.bg, shape: _shape(12, t.border)),
+      child: Row(
+        children: [
+          Icon(Icons.translate_rounded, size: 16, color: t.fg),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.h3ShownInOriginal(
+                lookupAppLocalizations(Locale(lang)).languageName,
+              ),
+              style: ElioTokens.caption.copyWith(color: p.textPrimary),
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            style: TextButton.styleFrom(foregroundColor: p.primaryText),
+            child: Text(context.l10n.h3TryAgain),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class HistoryError extends StatelessWidget {
   const HistoryError({super.key, required this.onRetry, this.message});
   final VoidCallback onRetry;

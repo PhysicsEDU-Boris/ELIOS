@@ -62,7 +62,7 @@ void main() {
         ProviderScope(
           overrides: [wasteQuizProvider.overrideWith(() => SeededQuiz(state))],
           child: const MaterialApp(
-        locale: const Locale('id'),
+        locale: Locale('id'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(body: QuizExplanationOverlay()),
@@ -204,7 +204,7 @@ void main() {
       ProviderScope(
         overrides: [wasteQuizProvider.overrideWith(() => SeededQuiz(state))],
         child: const MaterialApp(
-        locale: const Locale('id'),
+        locale: Locale('id'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(body: QuizEssayExplanationOverlay()),

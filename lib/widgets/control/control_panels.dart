@@ -583,8 +583,9 @@ class QuizReopenButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(wasteQuizProvider);
-    if (state.phase == WasteQuizPhase.idle || !state.minimized)
+    if (state.phase == WasteQuizPhase.idle || !state.minimized) {
       return const SizedBox.shrink();
+    }
     return Tooltip(
       message: l10n.ctlOpenQuiz,
       child: SizedBox.square(

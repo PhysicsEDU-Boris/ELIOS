@@ -94,8 +94,9 @@ class PhoneFrameSource extends FrameSource {
     );
     try {
       await controller.initialize();
-      if (_useStream)
+      if (_useStream) {
         await controller.startImageStream((image) => _latest = image);
+      }
       _controller = controller;
       _errorMsg = null;
       notifyListeners();
@@ -155,8 +156,9 @@ class PhoneFrameSource extends FrameSource {
   Future<({Uint8List bytes, int width, int height})> _jpegFromLatest() async {
     final image = _latest;
     final controller = _controller!;
-    if (image == null || image.planes.length < 3)
+    if (image == null || image.planes.length < 3) {
       throw StateError('Kamera belum mengirim gambar');
+    }
     final yPlane = image.planes[0];
     final degrees = switch (controller.value.deviceOrientation) {
       DeviceOrientation.landscapeLeft => 90,
@@ -195,8 +197,9 @@ class PhoneFrameSource extends FrameSource {
     } else {
       if (_controller != null && _controller!.value.isInitialized) {
         // Stop the stream too: nothing needs frames while the quiz covers the preview.
-        if (_useStream && _controller!.value.isStreamingImages)
+        if (_useStream && _controller!.value.isStreamingImages) {
           await _controller!.stopImageStream();
+        }
         await _controller!.pausePreview();
       }
     }

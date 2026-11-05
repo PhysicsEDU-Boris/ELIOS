@@ -1203,5 +1203,13 @@
   "physQWork": "ELIOS mengangkat beban {m} kg setinggi {h} m. Berapa usaha yang dilakukan melawan gravitasi (g = 10 m/s²)?",
   "physQSpeed": "ELIOS bergerak lurus sejauh {s} meter dalam waktu {t} detik menuju target. Berapa kecepatan rata-ratanya?",
   "physQPwm": "Sinyal PWM mengatur tegangan motor dengan Duty Cycle (D) sebesar {d}%. Jika tegangan maksimal baterai adalah {vmax} V, berapa tegangan rata-rata motor?",
-  "physQPower": "Sebuah subsistem menarik arus sebesar {i} A dari baterai {v} V. Berapa daya yang dikonsumsi?"
+  "physQPower": "Sebuah subsistem menarik arus sebesar {i} A dari baterai {v} V. Berapa daya yang dikonsumsi?",
+  "simDensityLoad": "Beban tipikal organik ELIOS adalah {kg} kg. Karena organik jauh lebih padat dari plastik, mengangkat volume organik yang sama membutuhkan usaha energi lebih besar (Lihat Modul D).",
+  "simWorkOrganic": "Sampah organik cenderung memiliki massa lebih besar per volume dibanding plastik. Untuk beban tipikal organik seberat {kg} kg, mengangkatnya ke ketinggian yang sama dengan plastik ringan membutuhkan usaha jauh lebih besar.",
+  "simWorkBattery": "Kapasitas baterai ELIOS yang dipakai dalam simulasi ini adalah {joules} Joule. %tersisa = 100 - (W / {joules}) × 100.",
+  "aiNotReady": "AI belum bisa membaca foto. Periksa internet, lalu coba lagi.",
+  "aiNotRecognised": "Benda di foto belum dikenali. Dekatkan kamera, pastikan terang, lalu scan lagi.",
+  "essaySavedPending": "Jawaban tersimpan. Menunggu penilaian karena AI belum tersedia.",
+  "essayScoreLine": "Skor: {score}/10.",
+  "quizSkippedAnswer": "(dilewati)"
 }

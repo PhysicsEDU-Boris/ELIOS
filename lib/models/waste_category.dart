@@ -54,7 +54,7 @@ const List<WasteCategory> wasteCategories = [
       'Can be turned into biogas energy',
     ],
     aiInfo:
-        'ELIO uses YOLOv segmentation to identify organic waste by color, texture, and shape. Green and brown organic matter is detected with 94% accuracy.',
+        'ELIOS uses YOLOv segmentation to identify organic waste by color, texture, and shape. Green and brown organic matter is detected with 94% accuracy.',
     quiz: [
       QuizQuestion(
         question: 'Which of these is organic waste?',
@@ -99,7 +99,7 @@ const List<WasteCategory> wasteCategories = [
       'Check recycling codes on plastics (1-7)',
     ],
     aiInfo:
-        'ELIO detects inorganic waste using reflectivity and edge detection. Plastic and metal surfaces have distinct optical signatures that the AI recognizes.',
+        'ELIOS detects inorganic waste using reflectivity and edge detection. Plastic and metal surfaces have distinct optical signatures that the AI recognizes.',
     quiz: [
       QuizQuestion(
         question: 'What does recycling code "1" mean?',
@@ -144,7 +144,7 @@ const List<WasteCategory> wasteCategories = [
       'Keep away from children and pets',
     ],
     aiInfo:
-        'ELIO identifies hazardous items using shape recognition and warning symbol detection. Battery and electronic shapes are classified with special care.',
+        'ELIOS identifies hazardous items using shape recognition and warning symbol detection. Battery and electronic shapes are classified with special care.',
     quiz: [
       QuizQuestion(
         question: 'Where should you dispose of old batteries?',

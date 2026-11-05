@@ -4235,4 +4235,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String physQPower(Object i, Object v) {
     return 'A subsystem draws $i A from a $v V battery. How much power does it use?';
   }
+
+  @override
+  String simDensityLoad(Object kg) {
+    return 'A typical organic load for ELIOS is $kg kg. Because organic waste is much denser than plastic, lifting the same volume of organic waste takes more energy (see Module D).';
+  }
+
+  @override
+  String simWorkOrganic(Object kg) {
+    return 'Organic waste tends to have more mass per volume than plastic. For a typical organic load of $kg kg, lifting it to the same height as light plastic takes much more work.';
+  }
+
+  @override
+  String simWorkBattery(Object joules) {
+    return 'The ELIOS battery capacity used in this simulation is $joules joules. % left = 100 - (W / $joules) × 100.';
+  }
+
+  @override
+  String get aiNotReady =>
+      'The AI couldn\'t read the photo yet. Check the internet, then try again.';
+
+  @override
+  String get aiNotRecognised =>
+      'The item in the photo was not recognised yet. Move the camera closer, make sure it is bright, then scan again.';
+
+  @override
+  String get essaySavedPending =>
+      'Answer saved. Waiting for grading because the AI is not available yet.';
+
+  @override
+  String essayScoreLine(Object score) {
+    return 'Score: $score/10.';
+  }
+
+  @override
+  String get quizSkippedAnswer => '(skipped)';
 }

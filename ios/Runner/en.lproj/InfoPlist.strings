@@ -1,0 +1,4 @@
+/* iOS permission texts in English (decision 0185). */
+"CFBundleDisplayName" = "ELIOS";
+"NSCameraUsageDescription" = "ELIOS needs camera access for local camera test mode and object detection preview.";
+"NSLocalNetworkUsageDescription" = "ELIOS needs local network access to connect to the robot over Wi-Fi.";

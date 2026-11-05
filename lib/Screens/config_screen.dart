@@ -105,8 +105,9 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
         .read(configLinkProvider.notifier)
         .connect(ip, port, autoReconnect: autoReconnect);
     debugPrint('[Config] Connect result: $ok');
-    if (ok && save)
+    if (ok && save) {
       await esp.patch((c) => c.copyWith(esp32IpAddress: ip, port: port));
+    }
     // As before C1: a successful connect goes straight to Control (owner, 2 Nov).
     if (ok && mounted) await _openControlScreen();
   }
@@ -195,8 +196,9 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
       next,
     ) {
       final ws = WebSocketService();
-      if (next != null && prev != null && ws.isConnected)
+      if (next != null && prev != null && ws.isConnected) {
         ws.setAutoReconnect(next);
+      }
     });
 
     return ElioTheme.wrap(
@@ -845,10 +847,11 @@ class _ElioModelViewerState extends State<_ElioModelViewer> {
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
-    if (_hasError)
+    if (_hasError) {
       return Center(
         child: Icon(Icons.smart_toy_rounded, size: 72, color: p.primaryText),
       );
+    }
     return Semantics(
       label: l10n.cfgRobotModel,
       child: Stack(

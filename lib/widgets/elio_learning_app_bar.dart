@@ -49,9 +49,9 @@ class ElioLearningAppBar extends StatelessWidget
         title,
         style: GoogleFonts.inter(
           color: _learningGreen,
-          fontSize: title == 'ELIO' ? 22 : 18,
+          fontSize: title == 'ELIOS' ? 22 : 18,
           fontWeight: FontWeight.w800,
-          letterSpacing: title == 'ELIO' ? -0.5 : -0.2,
+          letterSpacing: title == 'ELIOS' ? -0.5 : -0.2,
         ),
       ),
       actions: [

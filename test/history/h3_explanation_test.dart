@@ -217,7 +217,7 @@ void main() {
         'sourceSection': '1.3',
       };
       final old = ScanRecord.fromJson(raw);
-      expect(old.schemaVersion, 4);
+      expect(old.schemaVersion, 5);
       expect(old.questions.single.explanation!.correctAnswerReason, isEmpty);
       expect(old.questions.single.explanation!.sourceSection, '1.3');
       (questions.single as Map)['explanation'] = {

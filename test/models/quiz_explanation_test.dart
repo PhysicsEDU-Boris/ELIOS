@@ -40,9 +40,12 @@ void main() {
     test('serializes and deserializes QuizExplanation cleanly with all fields', () {
       const exp = QuizExplanation(
         summary: 'Botol plastik adalah bahan daur ulang yang berharga.',
-        correctAnswerReason: 'Daur ulang plastik menghemat energi dan mengurangi timbunan sampah.',
-        selectedAnswerFeedback: 'Pilihan Anda kurang tepat karena residu akan dibakar/ditimbun.',
-        conceptExplanation: 'PET (Polyethylene Terephthalate) dapat didaur ulang menjadi serat tekstil.',
+        correctAnswerReason:
+            'Daur ulang plastik menghemat energi dan mengurangi timbunan sampah.',
+        selectedAnswerFeedback:
+            'Pilihan Anda kurang tepat karena residu akan dibakar/ditimbun.',
+        conceptExplanation:
+            'PET (Polyethylene Terephthalate) dapat didaur ulang menjadi serat tekstil.',
         comparisonRows: [
           ComparisonRow(
             bin: 'Daur Ulang',
@@ -57,7 +60,8 @@ void main() {
             isCorrect: false,
           ),
         ],
-        learningTakeaway: 'Bilas botol sebelum dimasukkan ke tempat daur ulang.',
+        learningTakeaway:
+            'Bilas botol sebelum dimasukkan ke tempat daur ulang.',
         sourceTitle: 'Modul Fisika Lingkungan',
         sourceSection: 'Bab 4: Termodinamika Daur Ulang',
         sourcePage: '42',
@@ -78,7 +82,8 @@ void main() {
             comment: 'Sistematika penulisan jelas',
           ),
         ],
-        referenceAnswer: 'Botol plastik dibersihkan, dicacah, lalu dilelehkan kembali.',
+        referenceAnswer:
+            'Botol plastik dibersihkan, dicacah, lalu dilelehkan kembali.',
       );
 
       final json = exp.toJson();
@@ -105,7 +110,10 @@ void main() {
 
     test('QuizExplanation.unavailable sentinel behaves as expected', () {
       expect(QuizExplanation.unavailable.isUnavailable, true);
-      expect(QuizExplanation.unavailable.groundingStatus, GroundingStatus.unavailable);
+      expect(
+        QuizExplanation.unavailable.groundingStatus,
+        GroundingStatus.unavailable,
+      );
     });
   });
 
@@ -134,20 +142,23 @@ void main() {
       expect(revived.explanation!.correctAnswerReason, 'Alasan benar');
     });
 
-    test('Legacy RecordQuestion JSON without explanation loads without error', () {
-      final legacyJson = {
-        'question': 'Soal lama tanpa penjelasan',
-        'yourAnswer': 'A',
-        'rightAnswer': 'A',
-        'isCorrect': true,
-        'trophies': 10,
-        'isEssay': false,
-      };
+    test(
+      'Legacy RecordQuestion JSON without explanation loads without error',
+      () {
+        final legacyJson = {
+          'question': 'Soal lama tanpa penjelasan',
+          'yourAnswer': 'A',
+          'rightAnswer': 'A',
+          'isCorrect': true,
+          'trophies': 10,
+          'isEssay': false,
+        };
 
-      final revived = RecordQuestion.fromJson(legacyJson);
-      expect(revived.question, 'Soal lama tanpa penjelasan');
-      expect(revived.explanation, isNull);
-    });
+        final revived = RecordQuestion.fromJson(legacyJson);
+        expect(revived.question, 'Soal lama tanpa penjelasan');
+        expect(revived.explanation, isNull);
+      },
+    );
 
     test('ScanRecord schemaVersion forward and backward compatibility', () {
       // New and legacy records use schemaVersion 4
@@ -166,8 +177,8 @@ void main() {
           ),
         ],
       );
-      expect(newRecord.schemaVersion, 4);
-      expect(newRecord.toJson()['schemaVersion'], 4);
+      expect(newRecord.schemaVersion, 5);
+      expect(newRecord.toJson()['schemaVersion'], 5);
 
       // Legacy record JSON migrates to schemaVersion 4
       final legacyRecordJson = {
@@ -183,13 +194,13 @@ void main() {
             'rightAnswer': 'Beracun',
             'isCorrect': true,
             'trophies': 10,
-          }
+          },
         ],
         'trophies': 10,
       };
 
       final legacyRecord = ScanRecord.fromJson(legacyRecordJson);
-      expect(legacyRecord.schemaVersion, 4);
+      expect(legacyRecord.schemaVersion, 5);
       expect(legacyRecord.questions.first.explanation, isNull);
     });
   });

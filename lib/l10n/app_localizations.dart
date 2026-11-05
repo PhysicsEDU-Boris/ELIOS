@@ -7326,6 +7326,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A subsystem draws {i} A from a {v} V battery. How much power does it use?'**
   String physQPower(Object i, Object v);
+
+  /// No description provided for @simDensityLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'A typical organic load for ELIOS is {kg} kg. Because organic waste is much denser than plastic, lifting the same volume of organic waste takes more energy (see Module D).'**
+  String simDensityLoad(Object kg);
+
+  /// No description provided for @simWorkOrganic.
+  ///
+  /// In en, this message translates to:
+  /// **'Organic waste tends to have more mass per volume than plastic. For a typical organic load of {kg} kg, lifting it to the same height as light plastic takes much more work.'**
+  String simWorkOrganic(Object kg);
+
+  /// No description provided for @simWorkBattery.
+  ///
+  /// In en, this message translates to:
+  /// **'The ELIOS battery capacity used in this simulation is {joules} joules. % left = 100 - (W / {joules}) × 100.'**
+  String simWorkBattery(Object joules);
+
+  /// No description provided for @aiNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI couldn\'t read the photo yet. Check the internet, then try again.'**
+  String get aiNotReady;
+
+  /// No description provided for @aiNotRecognised.
+  ///
+  /// In en, this message translates to:
+  /// **'The item in the photo was not recognised yet. Move the camera closer, make sure it is bright, then scan again.'**
+  String get aiNotRecognised;
+
+  /// No description provided for @essaySavedPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer saved. Waiting for grading because the AI is not available yet.'**
+  String get essaySavedPending;
+
+  /// No description provided for @essayScoreLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Score: {score}/10.'**
+  String essayScoreLine(Object score);
+
+  /// No description provided for @quizSkippedAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'(skipped)'**
+  String get quizSkippedAnswer;
 }
 
 class _AppLocalizationsDelegate

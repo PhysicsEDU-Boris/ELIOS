@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../services/quiz_tts_service.dart';
 
 /// The UI language picked in the sidebar; null = follow the device language.
 final appLocaleProvider = NotifierProvider<AppLocaleNotifier, Locale?>(
@@ -30,6 +34,10 @@ class AppLocaleNotifier extends Notifier<Locale?> {
 
   void setLocale(Locale locale) {
     _touched = true;
+    // Speech in the old language stops at once (decision 0185).
+    if (state?.languageCode != locale.languageCode) {
+      unawaited(QuizTtsService.instance.stop());
+    }
     state = locale;
     SharedPreferences.getInstance()
         .then((p) => p.setString(_key, locale.languageCode))

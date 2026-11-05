@@ -2818,5 +2818,41 @@
         "type": "Object"
       }
     }
-  }
+  },
+  "simDensityLoad": "A typical organic load for ELIOS is {kg} kg. Because organic waste is much denser than plastic, lifting the same volume of organic waste takes more energy (see Module D).",
+  "@simDensityLoad": {
+    "placeholders": {
+      "kg": {
+        "type": "Object"
+      }
+    }
+  },
+  "simWorkOrganic": "Organic waste tends to have more mass per volume than plastic. For a typical organic load of {kg} kg, lifting it to the same height as light plastic takes much more work.",
+  "@simWorkOrganic": {
+    "placeholders": {
+      "kg": {
+        "type": "Object"
+      }
+    }
+  },
+  "simWorkBattery": "The ELIOS battery capacity used in this simulation is {joules} joules. % left = 100 - (W / {joules}) × 100.",
+  "@simWorkBattery": {
+    "placeholders": {
+      "joules": {
+        "type": "Object"
+      }
+    }
+  },
+  "aiNotReady": "The AI couldn't read the photo yet. Check the internet, then try again.",
+  "aiNotRecognised": "The item in the photo was not recognised yet. Move the camera closer, make sure it is bright, then scan again.",
+  "essaySavedPending": "Answer saved. Waiting for grading because the AI is not available yet.",
+  "essayScoreLine": "Score: {score}/10.",
+  "@essayScoreLine": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "quizSkippedAnswer": "(skipped)"
 }

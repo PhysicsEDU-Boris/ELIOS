@@ -45,9 +45,9 @@
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSCameraUsageDescription</key>
-		<string>ELIO needs camera access for local camera test mode and object detection preview.</string>
+		<string>ELIOS needs camera access for local camera test mode and object detection preview.</string>
 		<key>NSLocalNetworkUsageDescription</key>
-		<string>ELIO needs local network access to connect to the ESP32-CAM robot over Wi-Fi.</string>
+		<string>ELIOS needs local network access to connect to the robot over Wi-Fi.</string>
 		<key>NSBonjourServices</key>
 		<array>
 			<string>_http._tcp</string>

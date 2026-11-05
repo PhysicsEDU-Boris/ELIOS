@@ -512,6 +512,7 @@ class _ResultCard extends ConsumerWidget {
                     difficulty: state.difficulty,
                     questions: state.recordedQuestions,
                     trophies: earnedTrophies,
+                    lang: AiQuizService.replyLang,
                   );
                   try {
                     await QuizPdfService.shareOrSave(record);

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' show Rect;
+import 'dart:ui' show Locale, Rect;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import '../models/chat_message.dart';
 import '../models/essay_grade.dart';
 import '../models/quiz_explanation.dart';
+import '../models/record_translation.dart';
 import '../models/scan_record.dart';
 import '../models/scanned_waste.dart';
 import '../services/detection_crop.dart';
@@ -25,7 +26,16 @@ import '../services/websocket_service.dart';
 import 'app_preferences_provider.dart';
 import 'package:elio/l10n/l10n.dart';
 
-enum WasteQuizPhase { idle, identifying, confirmingHazard, confirmingMismatch, loadingQuestion, active, explaining, finished }
+enum WasteQuizPhase {
+  idle,
+  identifying,
+  confirmingHazard,
+  confirmingMismatch,
+  loadingQuestion,
+  active,
+  explaining,
+  finished,
+}
 
 /// Where the waste-detection label driving the popup quiz comes from.
 /// MaixCAM2 is the real hardware path; phone camera is a debug-only
@@ -34,12 +44,15 @@ enum WasteQuizSource { maixCam2, phoneCamera }
 
 /// Essay questions are off by default: sessions are multiple choice only (decision 0017).
 // The tester build always asks essays (A1: the essay grade needs measuring).
-const essayQuestionsEnabled = bool.fromEnvironment('ESSAY_QUESTIONS') || testerBuild;
+const essayQuestionsEnabled =
+    bool.fromEnvironment('ESSAY_QUESTIONS') || testerBuild;
 
 /// Question order within one scan session: alternate the two types, or
 /// multiple choice only when essays are off.
 QuizQuestionType questionTypeFor(int index, {bool essays = true}) =>
-    !essays || index.isEven ? QuizQuestionType.multipleChoice : QuizQuestionType.essay;
+    !essays || index.isEven
+    ? QuizQuestionType.multipleChoice
+    : QuizQuestionType.essay;
 
 @immutable
 class WasteQuizUiState {
@@ -169,7 +182,9 @@ class WasteQuizUiState {
       questionIndex: questionIndex ?? this.questionIndex,
       question: question ?? this.question,
       isFallback: isFallback ?? this.isFallback,
-      selectedOption: clearSelection ? null : (selectedOption ?? this.selectedOption),
+      selectedOption: clearSelection
+          ? null
+          : (selectedOption ?? this.selectedOption),
       essaySubmitted: essaySubmitted ?? this.essaySubmitted,
       essayAnswer: clearSelection ? null : (essayAnswer ?? this.essayAnswer),
       correctCount: correctCount ?? this.correctCount,
@@ -184,7 +199,9 @@ class WasteQuizUiState {
       recordedQuestions: recordedQuestions ?? this.recordedQuestions,
       cropBytes: clearCropBytes ? null : (cropBytes ?? this.cropBytes),
       historyPhotoPath: historyPhotoPath ?? this.historyPhotoPath,
-      currentExplanation: clearExplanation ? null : (currentExplanation ?? this.currentExplanation),
+      currentExplanation: clearExplanation
+          ? null
+          : (currentExplanation ?? this.currentExplanation),
       explanationLoading: explanationLoading ?? this.explanationLoading,
     );
   }
@@ -199,7 +216,8 @@ const _sameLabelCooldown = Duration(seconds: 25);
 
 class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   ScanDiagnostics? _diagnostics;
-  ScannedWaste? _detectorChoice; // AI's item in the detector's bin, for the mismatch card
+  ScannedWaste?
+  _detectorChoice; // AI's item in the detector's bin, for the mismatch card
   String? _lastLabel;
   DateTime? _lastShownAt;
   int _generation = 0;
@@ -248,6 +266,13 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   // The recorded question answers for the current session (decision 0030).
   final _recordedQuestions = <RecordQuestion>[];
 
+  /// Per recorded question: its language and its text in the other language
+  /// (bilingual AI reply or bank twin), so the record saves both (0185).
+  final _recordedTwins = <({String lang, QuestionText? alt})>[];
+
+  /// The scanned item's name in the other language, from the identify reply.
+  String? _itemAlt;
+
   // The cropped JPEG bytes of the current waste item.
   Uint8List? _cropBytes;
   Uint8List? _historyPhotoBytes;
@@ -257,16 +282,32 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   /// Difficulty is read from Config Settings → Quiz at the start of each
   /// scan session, so a change applies to the next scan.
-  WasteQuizUiState _freshSession({ScannedWaste? scan, required WasteQuizPhase phase}) {
-    final difficulty = QuizDifficulty.fromSetting(ref.read(appPreferencesProvider).quizDifficulty);
-    QuizTtsService.instance.volume = ref.read(appPreferencesProvider).masterVolume;
+  WasteQuizUiState _freshSession({
+    ScannedWaste? scan,
+    required WasteQuizPhase phase,
+  }) {
+    final difficulty = QuizDifficulty.fromSetting(
+      ref.read(appPreferencesProvider).quizDifficulty,
+    );
+    QuizTtsService.instance.volume = ref
+        .read(appPreferencesProvider)
+        .masterVolume;
     _diagnostics = null;
     _lastAutoSpokenText = null; // a new object/quiz: nothing spoken for it yet
-    _sessionSource = sourceOverride ?? ref.read(appPreferencesProvider).questionSource;
+    _sessionSource =
+        sourceOverride ?? ref.read(appPreferencesProvider).questionSource;
     _scanClock = scan == null ? null : (Stopwatch()..start());
     _recordedQuestions.clear();
-    return WasteQuizUiState(phase: phase, scan: scan, difficulty: difficulty, voiceOn: state.voiceOn,
-        questionSource: _sessionSource, recordedQuestions: const [], cropBytes: _cropBytes);
+    _recordedTwins.clear();
+    return WasteQuizUiState(
+      phase: phase,
+      scan: scan,
+      difficulty: difficulty,
+      voiceOn: state.voiceOn,
+      questionSource: _sessionSource,
+      recordedQuestions: const [],
+      cropBytes: _cropBytes,
+    );
   }
 
   /// Called from the control screen's MaixCAM2 detections listener.
@@ -283,7 +324,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final label = best.label.trim();
     final now = DateTime.now();
     final cooledDown =
-        _lastShownAt == null || now.difference(_lastShownAt!) > _sameLabelCooldown;
+        _lastShownAt == null ||
+        now.difference(_lastShownAt!) > _sameLabelCooldown;
     if (label == _lastLabel && !cooledDown) return;
 
     _lastLabel = label;
@@ -299,6 +341,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _lastShownAt = DateTime.now();
     _askedQuestions.clear();
     _recordedQuestions.clear();
+    _recordedTwins.clear();
     _cropBytes = imageBytes;
     _historyPhotoBytes = imageBytes;
     _bankQueues = null;
@@ -318,6 +361,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _lastShownAt = DateTime.now();
     _askedQuestions.clear();
     _recordedQuestions.clear();
+    _recordedTwins.clear();
     _cropBytes = null;
     _historyPhotoBytes = null;
     _bankQueues = null;
@@ -329,24 +373,40 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     state = _freshSession(phase: WasteQuizPhase.identifying);
     final diagnostics = kDebugMode ? ScanDiagnostics() : null;
     _diagnostics = diagnostics;
-    diagnostics?.event('lock', {'detectorLabel': detection.label, 'confidence': detection.score,
+    diagnostics?.event('lock', {
+      'detectorLabel': detection.label,
+      'confidence': detection.score,
       'frameReceivedAt': frame.timestamp.toUtc().toIso8601String(),
-      'frameAgeAtLockMs': DateTime.now().difference(frame.timestamp).inMilliseconds,
-      'captureTimestamp': null, 'detectionTimestamp': null,
-      'frameId': frame.frameId, 'detectionFrameId': frame.detectionFrameId,
+      'frameAgeAtLockMs': DateTime.now()
+          .difference(frame.timestamp)
+          .inMilliseconds,
+      'captureTimestamp': null,
+      'detectionTimestamp': null,
+      'frameId': frame.frameId,
+      'detectionFrameId': frame.detectionFrameId,
       'firmwareSha256': frame.firmwareSha256,
       'imageSource': frame.hasPairedCleanImage ? 'clean_image' : 'unavailable',
-      'frameWidth': frame.width, 'frameHeight': frame.height,
-      'boxCenterXYWH': [detection.x, detection.y, detection.w, detection.h]});
+      'frameWidth': frame.width,
+      'frameHeight': frame.height,
+      'boxCenterXYWH': [detection.x, detection.y, detection.w, detection.h],
+    });
     unawaited(_cropThenIdentify(frame, detection, generation, diagnostics));
   }
 
   /// LOCK (0181): the AI names and boxes the main item in the whole frame. Opens no quiz; the
   /// result is shown on the video and can start one with [scanLocked]. Prefers the paired clean image.
-  Future<({LockedItem? lock, String? failure})> lockItem(CapturedFrame frame) async {
+  Future<({LockedItem? lock, String? failure})> lockItem(
+    CapturedFrame frame,
+  ) async {
     final bytes = frame.hasPairedCleanImage ? frame.cleanBytes! : frame.bytes;
-    TesterLog.instance.log('scan', 'lock frame=${frame.frameId} image=${frame.hasPairedCleanImage ? 'clean' : 'preview'}');
-    final result = await AiQuizService.instance.identifyItem(bytes, wholeFrame: true);
+    TesterLog.instance.log(
+      'scan',
+      'lock frame=${frame.frameId} image=${frame.hasPairedCleanImage ? 'clean' : 'preview'}',
+    );
+    final result = await AiQuizService.instance.identifyItem(
+      bytes,
+      wholeFrame: true,
+    );
     if (result.item == null) return (lock: null, failure: result.failure);
     final box = result.box;
     final crop = box == null ? null : await compute(cropToBox, (bytes, box));
@@ -359,6 +419,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _lastShownAt = DateTime.now();
     _askedQuestions.clear();
     _recordedQuestions.clear();
+    _recordedTwins.clear();
     _cropBytes = lock.photo;
     _historyPhotoBytes = lock.photo;
     _bankQueues = null;
@@ -369,37 +430,77 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     state = _freshSession(phase: WasteQuizPhase.identifying);
     final diagnostics = kDebugMode ? ScanDiagnostics() : null;
     _diagnostics = diagnostics;
-    diagnostics?.event('scan_locked', {'item': lock.result.item, 'category': lock.result.category});
-    _quizFor(lock.result, lock.result.item!, generation, diagnostics: diagnostics);
+    diagnostics?.event('scan_locked', {
+      'item': lock.result.item,
+      'category': lock.result.category,
+    });
+    _quizFor(
+      lock.result,
+      lock.result.item!,
+      generation,
+      diagnostics: diagnostics,
+    );
   }
 
-  Future<void> _cropThenIdentify(CapturedFrame frame, TrackedDetection detection, int generation, ScanDiagnostics? diagnostics) async {
+  Future<void> _cropThenIdentify(
+    CapturedFrame frame,
+    TrackedDetection detection,
+    int generation,
+    ScanDiagnostics? diagnostics,
+  ) async {
     final timing = kDebugMode ? (Stopwatch()..start()) : null;
     final crop = await compute(prepareDetectionCrop, (frame, detection));
     final bytes = crop.bytes;
-    diagnostics?.event('crop_complete', {...crop.details, 'cropPreparationMs': timing?.elapsedMilliseconds,
-      'valid': bytes != null, 'stale': generation != _generation});
+    diagnostics?.event('crop_complete', {
+      ...crop.details,
+      'cropPreparationMs': timing?.elapsedMilliseconds,
+      'valid': bytes != null,
+      'stale': generation != _generation,
+    });
     if (generation != _generation) return;
     if (bytes == null) {
-      state = state.copyWith(phase: WasteQuizPhase.finished,
-          notice: frame.hasPairedCleanImage
-              ? l10n.wqCannotCrop
-              : l10n.wqNoCleanPhoto);
+      state = state.copyWith(
+        phase: WasteQuizPhase.finished,
+        notice: frame.hasPairedCleanImage
+            ? l10n.wqCannotCrop
+            : l10n.wqNoCleanPhoto,
+      );
       return;
     }
     _cropBytes = bytes;
     _historyPhotoBytes = crop.historyBytes ?? bytes;
-    await _identifyThenQuiz(crop.identifyBytes ?? bytes, generation, detectorLabel: detection.label,
-        detectorScore: detection.score, frameId: frame.frameId, diagnostics: diagnostics, refineCrop: true);
+    await _identifyThenQuiz(
+      crop.identifyBytes ?? bytes,
+      generation,
+      detectorLabel: detection.label,
+      detectorScore: detection.score,
+      frameId: frame.frameId,
+      diagnostics: diagnostics,
+      refineCrop: true,
+    );
   }
 
   /// [refineCrop]: the photo is a padded robot crop, so Gemini's box replaces the detector's crop (0180).
-  Future<void> _identifyThenQuiz(Uint8List imageBytes, int generation,
-      {String? detectorLabel, double? detectorScore, int? frameId, ScanDiagnostics? diagnostics,
-      bool refineCrop = false}) async {
-    final result = await AiQuizService.instance.identifyItem(imageBytes, diagnostics: diagnostics);
-    diagnostics?.event('identify_result', {'item': result.item, 'material': result.material,
-      'category': result.category, 'failure': result.failure, 'stale': generation != _generation});
+  Future<void> _identifyThenQuiz(
+    Uint8List imageBytes,
+    int generation, {
+    String? detectorLabel,
+    double? detectorScore,
+    int? frameId,
+    ScanDiagnostics? diagnostics,
+    bool refineCrop = false,
+  }) async {
+    final result = await AiQuizService.instance.identifyItem(
+      imageBytes,
+      diagnostics: diagnostics,
+    );
+    diagnostics?.event('identify_result', {
+      'item': result.item,
+      'material': result.material,
+      'category': result.category,
+      'failure': result.failure,
+      'stale': generation != _generation,
+    });
     if (generation != _generation) return;
     if (result.failure == 'busy') {
       state = state.copyWith(phase: WasteQuizPhase.idle);
@@ -414,14 +515,20 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       state = state.copyWith(
         phase: WasteQuizPhase.finished,
         notice: reason,
-        messages: [...state.messages, ChatMessage(isUser: false, text: reason)],
+        messages: [
+          ...state.messages,
+          ChatMessage(isUser: false, text: reason),
+        ],
       );
       return;
     }
     final box = result.box;
     if (refineCrop && box != null) {
       final refined = await compute(cropToBox, (imageBytes, box));
-      diagnostics?.event('ai_box', {'box': [box.left, box.top, box.right, box.bottom], 'valid': refined != null});
+      diagnostics?.event('ai_box', {
+        'box': [box.left, box.top, box.right, box.bottom],
+        'valid': refined != null,
+      });
       if (generation != _generation) return;
       if (refined != null) {
         _cropBytes = refined;
@@ -429,44 +536,99 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         state = state.copyWith(cropBytes: refined);
       }
     }
-    _quizFor(result, item, generation, detectorLabel: detectorLabel, detectorScore: detectorScore,
-        frameId: frameId, diagnostics: diagnostics);
+    _quizFor(
+      result,
+      item,
+      generation,
+      detectorLabel: detectorLabel,
+      detectorScore: detectorScore,
+      frameId: frameId,
+      diagnostics: diagnostics,
+    );
   }
 
   /// From an identified item to the hazard card, the mismatch card or the first question.
-  void _quizFor(PhotoIdentification result, String item, int generation,
-      {String? detectorLabel, double? detectorScore, int? frameId, ScanDiagnostics? diagnostics}) {
-    final detectorHazard = detectorLabel != null &&
+  void _quizFor(
+    PhotoIdentification result,
+    String item,
+    int generation, {
+    String? detectorLabel,
+    double? detectorScore,
+    int? frameId,
+    ScanDiagnostics? diagnostics,
+  }) {
+    final detectorHazard =
+        detectorLabel != null &&
         ScannedWaste.fromLabel(detectorLabel).category?.id == 'hazardous';
     // 0180 (owner, 3 Nov): an AI answer with an explicit non-B3 bin and no hazard words in its item
     // clears the detector's E_Waste (a cardboard box printed with a camera was locked as E_Waste).
-    final aiClearsHazard = detectorHazard &&
-        const {'organik', 'anorganik', 'residu'}.contains(result.category?.toLowerCase().trim()) &&
-        ScannedWaste.fromLabel(item, categoryHint: result.category).category?.id != 'hazardous';
+    final aiClearsHazard =
+        detectorHazard &&
+        const {
+          'organik',
+          'anorganik',
+          'residu',
+        }.contains(result.category?.toLowerCase().trim()) &&
+        ScannedWaste.fromLabel(
+              item,
+              categoryHint: result.category,
+            ).category?.id !=
+            'hazardous';
     if (aiClearsHazard) {
-      TesterLog.instance.log('scan', 'detector $detectorLabel cleared by AI "$item" (${result.category})');
+      TesterLog.instance.log(
+        'scan',
+        'detector $detectorLabel cleared by AI "$item" (${result.category})',
+      );
     }
-    final scan = ScannedWaste.fromLabel(item, material: result.material, categoryHint: result.category,
-        hazardousEvidence: detectorHazard && !aiClearsHazard, detectorLabel: detectorLabel);
-    diagnostics?.event('resolved', {'item': scan.displayName, 'category': scan.category?.id,
-      'detectorHazard': detectorHazard, 'aiClearedHazard': aiClearsHazard, 'hazard': scan.category?.id == 'hazardous'});
+    final scan = ScannedWaste.fromLabel(
+      item,
+      material: result.material,
+      categoryHint: result.category,
+      hazardousEvidence: detectorHazard && !aiClearsHazard,
+      detectorLabel: detectorLabel,
+    );
+    diagnostics?.event('resolved', {
+      'item': scan.displayName,
+      'category': scan.category?.id,
+      'detectorHazard': detectorHazard,
+      'aiClearedHazard': aiClearsHazard,
+      'hazard': scan.category?.id == 'hazardous',
+    });
     state = state.copyWith(scan: scan);
+    _itemAlt = scan.displayName.toLowerCase() == item.toLowerCase()
+        ? result.itemAlt
+        : null;
     _scanClock = Stopwatch()..start();
     if (scan.category?.id == 'hazardous') {
       state = state.copyWith(phase: WasteQuizPhase.confirmingHazard);
       return;
     }
     // Hazard wins above; any other detector/AI disagreement waits for the user.
-    if (!aiClearsHazard && detectorLabel != null && ScannedWaste.categoryMismatch(detectorLabel, result.category)) {
-      final detectorChoice = ScannedWaste.fromLabel(item, material: result.material,
-          categoryHint: ScannedWaste.detectorCategory(detectorLabel), detectorLabel: detectorLabel);
+    if (!aiClearsHazard &&
+        detectorLabel != null &&
+        ScannedWaste.categoryMismatch(detectorLabel, result.category)) {
+      final detectorChoice = ScannedWaste.fromLabel(
+        item,
+        material: result.material,
+        categoryHint: ScannedWaste.detectorCategory(detectorLabel),
+        detectorLabel: detectorLabel,
+      );
       _detectorChoice = detectorChoice;
-      diagnostics?.event('category_mismatch', {'hardExample': true, 'frameId': frameId,
-        'detectorLabel': detectorLabel, 'detectorScore': detectorScore,
-        'gemmaItem': result.item, 'gemmaCategory': result.category,
-        'resolvedBin': scan.category?.id, 'detectorBin': detectorChoice.category?.id,
-        'identifyJpeg': '${diagnostics.id}-identify.jpg'});
-      state = state.copyWith(phase: WasteQuizPhase.confirmingMismatch, mismatchDetector: detectorLabel);
+      diagnostics?.event('category_mismatch', {
+        'hardExample': true,
+        'frameId': frameId,
+        'detectorLabel': detectorLabel,
+        'detectorScore': detectorScore,
+        'gemmaItem': result.item,
+        'gemmaCategory': result.category,
+        'resolvedBin': scan.category?.id,
+        'detectorBin': detectorChoice.category?.id,
+        'identifyJpeg': '${diagnostics.id}-identify.jpg',
+      });
+      state = state.copyWith(
+        phase: WasteQuizPhase.confirmingMismatch,
+        mismatchDetector: detectorLabel,
+      );
       return;
     }
     _loadQuestion(0);
@@ -477,8 +639,14 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// the History photo.
   void correctItem(String label, {String? category}) {
     if (!state.canCorrectItem) return;
-    TesterLog.instance.log('scan', 'item corrected "${state.scan!.displayName}" -> "$label"');
-    _diagnostics?.event('item_corrected', {'from': state.scan!.displayName, 'to': label});
+    TesterLog.instance.log(
+      'scan',
+      'item corrected "${state.scan!.displayName}" -> "$label"',
+    );
+    _diagnostics?.event('item_corrected', {
+      'from': state.scan!.displayName,
+      'to': label,
+    });
     _generation++;
     _detectorChoice = null;
     AiQuizService.instance.cancel();
@@ -495,10 +663,15 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// The user picks the bin after a detector/AI mismatch; only then the quiz runs.
   void resolveMismatch({required bool useDetector}) {
     final detectorChoice = _detectorChoice;
-    if (state.phase != WasteQuizPhase.confirmingMismatch || detectorChoice == null) return;
+    if (state.phase != WasteQuizPhase.confirmingMismatch ||
+        detectorChoice == null) {
+      return;
+    }
     final scan = useDetector ? detectorChoice : state.scan!;
-    _diagnostics?.event('mismatch_choice', {'choice': useDetector ? 'detector' : 'gemma',
-      'resolvedBin': scan.category?.id});
+    _diagnostics?.event('mismatch_choice', {
+      'choice': useDetector ? 'detector' : 'gemma',
+      'resolvedBin': scan.category?.id,
+    });
     state = state.copyWith(scan: scan);
     _loadQuestion(0);
   }
@@ -510,8 +683,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _lastLabel = label;
     _lastShownAt = DateTime.now();
     _cropBytes = photo;
-    _historyPhotoBytes = photo; // the retained phone shot is also the History photo (D1 + A1)
+    _historyPhotoBytes =
+        photo; // the retained phone shot is also the History photo (D1 + A1)
     _recordedQuestions.clear();
+    _recordedTwins.clear();
     AiQuizService.instance.cancel();
     _startSession(ScannedWaste.fromLabel(label));
   }
@@ -552,7 +727,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     );
 
     final diagnostics = _diagnostics;
-    diagnostics?.event('question_request', {'requestId': '${diagnostics.id}/question-${index + 1}'});
+    diagnostics?.event('question_request', {
+      'requestId': '${diagnostics.id}/question-${index + 1}',
+    });
     final sw = kDebugMode ? (Stopwatch()..start()) : null;
     final loadClock = Stopwatch()..start();
     var generated = _ai
@@ -573,16 +750,24 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       if (generated != null) bankNotice = _bankNotice;
     }
     if (generated?.angle != null) _usedAngles.add(generated!.angle!);
-    diagnostics?.event('question_complete', {'question': index + 1, 'generationMs': sw?.elapsedMilliseconds,
-      'replyMs': AiQuizService.instance.lastReplyMs.value, 'model': AiQuizService.instance.lastModel,
-      'fallback': generated == null, 'stale': generation != _generation, 'bankId': generated?.bankId});
+    diagnostics?.event('question_complete', {
+      'question': index + 1,
+      'generationMs': sw?.elapsedMilliseconds,
+      'replyMs': AiQuizService.instance.lastReplyMs.value,
+      'model': AiQuizService.instance.lastModel,
+      'fallback': generated == null,
+      'stale': generation != _generation,
+      'bankId': generated?.bankId,
+    });
     if (sw != null) {
       // One line per question load, so a slow session (decision 0009) shows
       // exactly which question was slow and whether it fell back.
-      debugPrint('[WasteQuiz] ${scan.displayName}: question ${index + 1}/$total '
-          '(${type.name}) in ${sw.elapsedMilliseconds}ms, reply '
-          '${AiQuizService.instance.lastReplyMs.value ?? '-'}ms, '
-          'fallback=${generated == null}');
+      debugPrint(
+        '[WasteQuiz] ${scan.displayName}: question ${index + 1}/$total '
+        '(${type.name}) in ${sw.elapsedMilliseconds}ms, reply '
+        '${AiQuizService.instance.lastReplyMs.value ?? '-'}ms, '
+        'fallback=${generated == null}',
+      );
     }
     if (generation != _generation) return; // dismissed or superseded
 
@@ -592,28 +777,38 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       return;
     }
     _askedQuestions.add(question.question);
-    final intro = bankNotice ??
+    final intro =
+        bankNotice ??
         (generated == null
             ? _fallbackIntro()
             : type == QuizQuestionType.multipleChoice
-                ? l10n.wqPickFirst
-                : l10n.wqWriteFirst);
+            ? l10n.wqPickFirst
+            : l10n.wqWriteFirst);
     state = state.copyWith(
       phase: WasteQuizPhase.active,
       question: question,
       isFallback: generated == null,
       questionSource: _sessionSource,
-      messages: [...state.messages, ChatMessage(isUser: false, text: intro)],
+      messages: [
+        ...state.messages,
+        ChatMessage(isUser: false, text: intro),
+      ],
     );
     _announceReady();
-    diagnostics?.event('question_shown', {'question': index + 1, 'totalLockToQuestionMs': diagnostics.clock.elapsedMilliseconds});
+    diagnostics?.event('question_shown', {
+      'question': index + 1,
+      'totalLockToQuestionMs': diagnostics.clock.elapsedMilliseconds,
+    });
     _logQuestion(index, scan, generated, loadClock.elapsedMilliseconds);
     if (index == 0 && _ai) _startPrefetch();
   }
 
   /// The next bank question of [type] not yet asked this session: the object's
   /// own, then its pool's; null when the bank has nothing left (decision 0017).
-  Future<GeneratedQuestion?> _fromBank(ScannedWaste scan, QuizQuestionType type) async {
+  Future<GeneratedQuestion?> _fromBank(
+    ScannedWaste scan,
+    QuizQuestionType type,
+  ) async {
     final bank = await QuestionBank.load();
     if (_bankQueues == null) _logClassMismatch(bank, scan);
     final queue = (_bankQueues ??= {})[type] ??= bank.questionsFor(scan, type);
@@ -635,13 +830,14 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       'gemmaPool': gemmaPool,
       'chosenPool': bank.selection(scan).pool,
     };
-    debugPrint('[WasteQuiz] class_mismatch ${fields.entries.map((e) => '${e.key}=${e.value}').join(' ')}');
+    debugPrint(
+      '[WasteQuiz] class_mismatch ${fields.entries.map((e) => '${e.key}=${e.value}').join(' ')}',
+    );
     _diagnostics?.event('class_mismatch', fields);
   }
 
-  String _fallbackIntro() => _ai
-      ? l10n.wqFallbackAi(_aiUnavailableReason())
-      : l10n.wqFallbackGeneric;
+  String _fallbackIntro() =>
+      _ai ? l10n.wqFallbackAi(_aiUnavailableReason()) : l10n.wqFallbackGeneric;
 
   static String get _bankNotice => l10n.wqBankNotice;
 
@@ -663,8 +859,12 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       if (gen != _prefetchSessionGen) return; // closed or superseded
       final q = await _generateForBuffer(scan, i, gen);
       if (gen != _prefetchSessionGen) return;
-      if (q != null) _askedQuestions.add(q.question); // so index i+1 avoids it too
-      if (q?.angle != null) _usedAngles.add(q!.angle!); // and gets another angle
+      if (q != null) {
+        _askedQuestions.add(q.question); // so index i+1 avoids it too
+      }
+      if (q?.angle != null) {
+        _usedAngles.add(q!.angle!); // and gets another angle
+      }
       _prefetchCompleters[i]?.complete(q);
     }
   }
@@ -673,13 +873,18 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// higher-priority request (a chat message or essay grading, decision
   /// 0003) -- never surfacing that as a failure -- and stops once this
   /// session is closed or superseded.
-  Future<GeneratedQuestion?> _generateForBuffer(ScannedWaste scan, int index, int gen) async {
+  Future<GeneratedQuestion?> _generateForBuffer(
+    ScannedWaste scan,
+    int index,
+    int gen,
+  ) async {
     final type = questionTypeFor(index, essays: essayQuestions);
     final diagnostics = _diagnostics;
     var attempt = 0;
     while (gen == _prefetchSessionGen) {
       final timing = kDebugMode ? (Stopwatch()..start()) : null;
-      final requestId = '${diagnostics?.id}/question-${index + 1}/attempt-${++attempt}';
+      final requestId =
+          '${diagnostics?.id}/question-${index + 1}/attempt-${++attempt}';
       diagnostics?.event('prefetch_request', {'requestId': requestId});
       final result = await AiQuizService.instance.generateQuestionBackground(
         waste: scan,
@@ -688,10 +893,13 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         avoid: List.of(_askedQuestions),
         usedAngles: List.of(_usedAngles),
       );
-      diagnostics?.event('prefetch_complete', {'requestId': requestId,
-        'generationMs': timing?.elapsedMilliseconds, 'retry': result.retry,
+      diagnostics?.event('prefetch_complete', {
+        'requestId': requestId,
+        'generationMs': timing?.elapsedMilliseconds,
+        'retry': result.retry,
         'fallback': !result.retry && result.question == null,
-        'stale': gen != _prefetchSessionGen});
+        'stale': gen != _prefetchSessionGen,
+      });
       if (!result.retry) return result.question; // success, or a real failure
       await Future<void>.delayed(_prefetchRetryDelay);
     }
@@ -729,21 +937,30 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     );
 
     final sw = Stopwatch()..start();
-    var generated = _ai ? await _prefetchCompleters[index]?.future : await _fromBank(scan, type);
+    var generated = _ai
+        ? await _prefetchCompleters[index]?.future
+        : await _fromBank(scan, type);
     String? bankNotice;
     if (generated == null && _ai && generation == _generation) {
-      generated = await _fromBank(scan, type); // the prefetch got no AI answer: offline fallback
+      generated = await _fromBank(
+        scan,
+        type,
+      ); // the prefetch got no AI answer: offline fallback
       if (generated != null) bankNotice = _bankNotice;
     }
     final waitedMs = sw.elapsedMilliseconds;
     _lastNextWaitMs = waitedMs;
     if (kDebugMode) {
-      debugPrint('[WasteQuiz] ${scan.displayName}: question ${index + 1}/$total '
-          '(${type.name}) waited ${waitedMs}ms, reply '
-          '${AiQuizService.instance.lastReplyMs.value ?? '-'}ms, '
-          'fallback=${generated == null}');
+      debugPrint(
+        '[WasteQuiz] ${scan.displayName}: question ${index + 1}/$total '
+        '(${type.name}) waited ${waitedMs}ms, reply '
+        '${AiQuizService.instance.lastReplyMs.value ?? '-'}ms, '
+        'fallback=${generated == null}',
+      );
     }
-    if (generation != _generation) return; // dismissed or superseded while waiting
+    if (generation != _generation) {
+      return; // dismissed or superseded while waiting
+    }
 
     final question = generated ?? _fallbackQuestion(scan, type);
     if (question == null) {
@@ -751,16 +968,21 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       return;
     }
     _askedQuestions.add(question.question);
-    final intro = bankNotice ?? (generated == null
-        ? _fallbackIntro()
-        : type == QuizQuestionType.multipleChoice
+    final intro =
+        bankNotice ??
+        (generated == null
+            ? _fallbackIntro()
+            : type == QuizQuestionType.multipleChoice
             ? l10n.wqPickFirst
             : l10n.wqWriteFirst);
     state = state.copyWith(
       phase: WasteQuizPhase.active,
       question: question,
       isFallback: generated == null,
-      messages: [...state.messages, ChatMessage(isUser: false, text: intro)],
+      messages: [
+        ...state.messages,
+        ChatMessage(isUser: false, text: intro),
+      ],
     );
     _announceReady();
     _logQuestion(index, scan, generated, waitedMs);
@@ -768,7 +990,12 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   /// One line per question shown, in both modes, so robot runs can be compared
   /// (decision 0018). No question text.
-  void _logQuestion(int index, ScannedWaste scan, GeneratedQuestion? generated, int loadMs) {
+  void _logQuestion(
+    int index,
+    ScannedWaste scan,
+    GeneratedQuestion? generated,
+    int loadMs,
+  ) {
     final chosen = QuestionBank.loaded?.selection(scan);
     final fields = <String, Object?>{
       'question': index + 1,
@@ -782,7 +1009,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       'loadMs': loadMs,
       'fallback': generated == null ? 'yes' : 'no',
     };
-    debugPrint('[WasteQuiz] question_source ${fields.entries.map((e) => '${e.key}=${e.value}').join(' ')}');
+    debugPrint(
+      '[WasteQuiz] question_source ${fields.entries.map((e) => '${e.key}=${e.value}').join(' ')}',
+    );
     _diagnostics?.event('question_source', fields);
   }
 
@@ -790,7 +1019,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// session never repeats a question (decision 0011 leftover, 0017).
   // ponytail: three MC and two essay variants; an object with no bank entry
   // and no pool ends its session after those instead of repeating one.
-  GeneratedQuestion? _fallbackQuestion(ScannedWaste scan, QuizQuestionType type) {
+  GeneratedQuestion? _fallbackQuestion(
+    ScannedWaste scan,
+    QuizQuestionType type,
+  ) {
     for (final q in fallbackQuestions(scan, type)) {
       if (!_askedQuestions.contains(q.question)) return q;
     }
@@ -798,24 +1030,35 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   }
 
   @visibleForTesting
-  static List<GeneratedQuestion> fallbackQuestions(ScannedWaste scan, QuizQuestionType type) {
+  static List<GeneratedQuestion> fallbackQuestions(
+    ScannedWaste scan,
+    QuizQuestionType type,
+  ) {
     final name = scan.displayName.toLowerCase();
     if (type == QuizQuestionType.essay) {
       return [
         GeneratedQuestion(
           type: type,
-          question: 'Analisis bagaimana $name sebaiknya dikelola setelah dibuang, '
+          question:
+              'Analisis bagaimana $name sebaiknya dikelola setelah dibuang, '
               'dan jelaskan dampak lingkungannya jika salah dikelola.',
         ),
         GeneratedQuestion(
           type: type,
-          question: 'Jelaskan bagaimana prinsip 3R (reduce, reuse, recycle) dapat diterapkan pada $name, '
+          question:
+              'Jelaskan bagaimana prinsip 3R (reduce, reuse, recycle) dapat diterapkan pada $name, '
               'mulai dari yang paling diutamakan.',
-          explanation: 'Reduce lebih utama daripada reuse, dan reuse lebih utama daripada recycle.',
+          explanation:
+              'Reduce lebih utama daripada reuse, dan reuse lebih utama daripada recycle.',
         ),
       ];
     }
-    final bins = ['Sampah organik', 'Daur ulang (anorganik)', 'Limbah B3', 'Sampah residu'];
+    final bins = [
+      'Sampah organik',
+      'Daur ulang (anorganik)',
+      'Limbah B3',
+      'Sampah residu',
+    ];
     final correct = switch (scan.category?.id) {
       'organic' => 0,
       'inorganic' => 1,
@@ -832,19 +1075,30 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       ),
       GeneratedQuestion(
         type: type,
-        question: 'Pemilahan sampah di sumber yang baik memakai berapa kelompok?',
-        options: const ['Dua: organik dan non-organik', 'Empat: organik, plastik, kertas, dan logam',
-          'Tiga: organik, non-organik, dan B3', 'Satu: semua dicampur lalu dipilah di TPA'],
+        question:
+            'Pemilahan sampah di sumber yang baik memakai berapa kelompok?',
+        options: const [
+          'Dua: organik dan non-organik',
+          'Empat: organik, plastik, kertas, dan logam',
+          'Tiga: organik, non-organik, dan B3',
+          'Satu: semua dicampur lalu dipilah di TPA',
+        ],
         correctIndex: 2,
-        explanation: 'Modul (1.6) memakai tiga kelompok: organik, non-organik, dan B3.',
+        explanation:
+            'Modul (1.6) memakai tiga kelompok: organik, non-organik, dan B3.',
       ),
       GeneratedQuestion(
         type: type,
         question: 'Dalam prinsip 3R, tindakan mana yang paling diutamakan?',
-        options: const ['Recycle (mendaur ulang)', 'Reduce (mengurangi)', 'Menimbun di TPA',
-          'Reuse (memakai kembali)'],
+        options: const [
+          'Recycle (mendaur ulang)',
+          'Reduce (mengurangi)',
+          'Menimbun di TPA',
+          'Reuse (memakai kembali)',
+        ],
         correctIndex: 1,
-        explanation: 'Modul (4.1): reduce lebih utama daripada reuse, dan reuse lebih utama daripada recycle.',
+        explanation:
+            'Modul (4.1): reduce lebih utama daripada reuse, dan reuse lebih utama daripada recycle.',
       ),
     ];
   }
@@ -852,19 +1106,41 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   void selectOption(int index) {
     final q = state.question;
     if (state.phase != WasteQuizPhase.active || q == null) return;
-    if (q.type != QuizQuestionType.multipleChoice || state.selectedOption != null) return;
+    if (q.type != QuizQuestionType.multipleChoice ||
+        state.selectedOption != null) {
+      return;
+    }
     final correct = index == q.correctIndex;
-    _recordedQuestions.add(RecordQuestion(
-      question: q.question,
-      options: q.options,
-      bankExplanation: q.bankId == null || !q.bankReviewed ? '' : q.explanation,
-      wrongWhy: q.bankReviewed ? q.wrongWhy : const {},
-      explanation: QuizExplanationService.bankExplanation(q, selectedIndex: index),
-      yourAnswer: q.options[index],
-      rightAnswer: q.options[q.correctIndex],
-      isCorrect: correct,
-      trophies: correct ? 10 : 0,
-      isEssay: false,
+    _recordedQuestions.add(
+      RecordQuestion(
+        question: q.question,
+        options: q.options,
+        bankExplanation: q.bankId == null || !q.bankReviewed
+            ? ''
+            : q.explanation,
+        wrongWhy: q.bankReviewed ? q.wrongWhy : const {},
+        explanation: QuizExplanationService.bankExplanation(
+          q,
+          selectedIndex: index,
+        ),
+        yourAnswer: q.options[index],
+        rightAnswer: q.options[q.correctIndex],
+        isCorrect: correct,
+        trophies: correct ? 10 : 0,
+        isEssay: false,
+      ),
+    );
+    final alt = q.alt;
+    _recordedTwins.add((
+      lang: q.lang,
+      alt: alt == null
+          ? null
+          : QuestionText(
+              question: alt.question,
+              options: alt.options,
+              yourAnswer: alt.options[index],
+              rightAnswer: alt.options[q.correctIndex],
+            ),
     ));
     state = state.copyWith(
       selectedOption: index,
@@ -878,15 +1154,21 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final verdict = correct
         ? l10n.wqRight
         : l10n.wqWrong(q.options[q.correctIndex]);
-    _appendAiReply(q.explanation.isEmpty || (q.bankId != null && !q.bankReviewed)
-        ? verdict : '$verdict ${q.explanation}');
+    _appendAiReply(
+      q.explanation.isEmpty || (q.bankId != null && !q.bankReviewed)
+          ? verdict
+          : '$verdict ${q.explanation}',
+    );
     unawaited(loadExplanation());
   }
 
   Future<void> submitEssay(String answerText, {int? score}) async {
     final trimmed = answerText.trim();
     final q = state.question;
-    if (trimmed.isEmpty || state.sendingChat || q == null || q.type != QuizQuestionType.essay) {
+    if (trimmed.isEmpty ||
+        state.sendingChat ||
+        q == null ||
+        q.type != QuizQuestionType.essay) {
       return;
     }
     final generation = _generation;
@@ -894,7 +1176,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       essaySubmitted: true,
       essayAnswer: trimmed,
       sendingChat: true,
-      messages: [...state.messages, ChatMessage(isUser: true, text: trimmed, caption: l10n.wqEssayAnswer)],
+      messages: [
+        ...state.messages,
+        ChatMessage(isUser: true, text: trimmed, caption: l10n.wqEssayAnswer),
+      ],
     );
     final reply = score == null
         ? await AiQuizService.instance.reviewEssay(
@@ -910,14 +1195,27 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         : (score >= 0 && score <= 10 ? EssayGrade(score: score) : null);
     final essayScore = grade?.score;
     final isCorrect = (essayScore ?? 0) >= 6;
-    _recordedQuestions.add(RecordQuestion(
-      question: q.question,
-      yourAnswer: trimmed,
-      rightAnswer: q.explanation,
-      isCorrect: isCorrect,
-      trophies: essayScore ?? 0,
-      isEssay: true,
-      essayScore: essayScore,
+    _recordedQuestions.add(
+      RecordQuestion(
+        question: q.question,
+        yourAnswer: trimmed,
+        rightAnswer: q.explanation,
+        isCorrect: isCorrect,
+        trophies: essayScore ?? 0,
+        isEssay: true,
+        essayScore: essayScore,
+      ),
+    );
+    // The student's own words stay as typed in both languages.
+    _recordedTwins.add((
+      lang: q.lang,
+      alt: q.alt == null
+          ? null
+          : QuestionText(
+              question: q.alt!.question,
+              yourAnswer: trimmed,
+              rightAnswer: q.alt!.explanation,
+            ),
     ));
     state = state.copyWith(
       correctCount: state.correctCount + (isCorrect ? 1 : 0),
@@ -926,13 +1224,17 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       explanationLoading: true,
       clearExplanation: true,
     );
-    _appendAiReply(grade == null
-        ? l10n.wqSavedNotGraded(_aiUnavailableReason())
-        : [
-            if (grade.feedback.isNotEmpty) grade.feedback,
-            if (grade.improvement.isNotEmpty) l10n.wqForFullMarks(grade.improvement),
-            if (grade.feedback.isEmpty && grade.improvement.isEmpty) l10n.wqScore(grade.score),
-          ].join(' '));
+    _appendAiReply(
+      grade == null
+          ? l10n.wqSavedNotGraded(_aiUnavailableReason())
+          : [
+              if (grade.feedback.isNotEmpty) grade.feedback,
+              if (grade.improvement.isNotEmpty)
+                l10n.wqForFullMarks(grade.improvement),
+              if (grade.feedback.isEmpty && grade.improvement.isEmpty)
+                l10n.wqScore(grade.score),
+            ].join(' '),
+    );
     unawaited(loadExplanation(essayGrade: grade));
   }
 
@@ -941,14 +1243,23 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   Future<void> sendChatMessage(String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty || state.sendingChat) return;
-    final history = [for (final m in state.messages) (isUser: m.isUser, text: m.text)];
-    state = state.copyWith(messages: [...state.messages, ChatMessage(isUser: true, text: trimmed)]);
+    final history = [
+      for (final m in state.messages) (isUser: m.isUser, text: m.text),
+    ];
+    state = state.copyWith(
+      messages: [
+        ...state.messages,
+        ChatMessage(isUser: true, text: trimmed),
+      ],
+    );
 
     final q = state.question;
     if (state.phase == WasteQuizPhase.active && q != null && !state.answered) {
-      _appendAiReply(q.type == QuizQuestionType.multipleChoice
-          ? l10n.wqAnswerFirstMc
-          : l10n.wqAnswerFirstEssay);
+      _appendAiReply(
+        q.type == QuizQuestionType.multipleChoice
+            ? l10n.wqAnswerFirstMc
+            : l10n.wqAnswerFirstEssay,
+      );
       return;
     }
     if (q == null) {
@@ -976,7 +1287,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
           'Jawaban mahasiswa: ${state.essayAnswer ?? '(dilewati)'}';
     }
     const letters = ['A', 'B', 'C', 'D'];
-    final options = [for (var i = 0; i < q.options.length; i++) '${letters[i]}. ${q.options[i]}'].join('; ');
+    final options = [
+      for (var i = 0; i < q.options.length; i++)
+        '${letters[i]}. ${q.options[i]}',
+    ].join('; ');
     final selected = state.selectedOption;
     final chosen = selected == null ? '(dilewati)' : q.options[selected];
     return 'Konteks kuis tentang "$scan".\n'
@@ -987,31 +1301,85 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         '${q.explanation.isEmpty ? '' : 'Penjelasan kunci: ${q.explanation}'}';
   }
 
+  /// The quiz's language: that of its first question (0185).
+  String get _recordLang => _recordedTwins.isEmpty
+      ? AiQuizService.replyLang
+      : _recordedTwins.first.lang;
+
+  /// Both languages at creation (decision 0185): the other language's texts
+  /// as a cached translation, when every question and the item name have one.
+  Map<String, RecordTranslation> _recordTwins(String? itemName) {
+    final lang = _recordLang, other = AiQuizService.otherLang(lang);
+    if (_itemAlt == null ||
+        itemName == null ||
+        _recordedTwins.length != _recordedQuestions.length ||
+        _recordedTwins.any((t) => t.lang != lang || t.alt == null)) {
+      return const {};
+    }
+    return {
+      other: RecordTranslation(
+        itemName: _itemAlt!,
+        questions: [for (final t in _recordedTwins) t.alt!],
+      ),
+    };
+  }
+
   /// Short, specific reason shown when the AI couldn't answer.
-  String _aiUnavailableReason() => AiQuizService.instance.status.value == AiStatus.offline
+  String _aiUnavailableReason() =>
+      AiQuizService.instance.status.value == AiStatus.offline
       ? l10n.wqCheckInternet
       : l10n.wqTryAgain;
 
   /// Only allowed when Config Settings → Quiz → Skip Allowed is on.
   void skipQuestion() {
     final q = state.question;
-    if (state.phase != WasteQuizPhase.active || state.answered || q == null) return;
+    if (state.phase != WasteQuizPhase.active || state.answered || q == null) {
+      return;
+    }
     if (!ref.read(appPreferencesProvider).skipAllowed) return;
     final isEssay = q.type == QuizQuestionType.essay;
-    _recordedQuestions.add(RecordQuestion(
-      question: q.question,
-      yourAnswer: '(dilewati)',
-      rightAnswer: isEssay
-          ? (q.explanation.isNotEmpty ? q.explanation : '-')
-          : (q.options.isNotEmpty ? q.options[q.correctIndex] : '-'),
-      isCorrect: false,
-      trophies: 0,
-      isEssay: isEssay,
-      essayScore: isEssay ? 0 : null,
+    _recordedQuestions.add(
+      RecordQuestion(
+        question: q.question,
+        yourAnswer: lookupAppLocalizations(Locale(q.lang)).quizSkippedAnswer,
+        rightAnswer: isEssay
+            ? (q.explanation.isNotEmpty ? q.explanation : '-')
+            : (q.options.isNotEmpty ? q.options[q.correctIndex] : '-'),
+        isCorrect: false,
+        trophies: 0,
+        isEssay: isEssay,
+        essayScore: isEssay ? 0 : null,
+      ),
+    );
+    final skippedAlt = q.alt;
+    _recordedTwins.add((
+      lang: q.lang,
+      alt: skippedAlt == null
+          ? null
+          : QuestionText(
+              question: skippedAlt.question,
+              options: skippedAlt.options,
+              yourAnswer: lookupAppLocalizations(
+                Locale(skippedAlt.lang),
+              ).quizSkippedAnswer,
+              rightAnswer: isEssay
+                  ? (skippedAlt.explanation.isNotEmpty
+                        ? skippedAlt.explanation
+                        : '-')
+                  : (skippedAlt.options.isNotEmpty
+                        ? skippedAlt.options[q.correctIndex]
+                        : '-'),
+            ),
     ));
     state = state.copyWith(
       skippedCount: state.skippedCount + 1,
-      messages: [...state.messages, ChatMessage(isUser: false, text: l10n.wqSkipped(state.questionIndex + 1))],
+      messages: [
+        ...state.messages,
+        ChatMessage(
+          isUser: false,
+          text: l10n.wqSkipped(state.questionIndex + 1),
+        ),
+      ],
       recordedQuestions: List.unmodifiable(_recordedQuestions),
     );
     _advance();
@@ -1036,9 +1404,14 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     }
     final generation = _generation;
     final answeredIndex = _recordedQuestions.length - 1;
-    final saved = answeredIndex >= 0 ? _recordedQuestions[answeredIndex].explanation : null;
+    final saved = answeredIndex >= 0
+        ? _recordedQuestions[answeredIndex].explanation
+        : null;
     if (saved != null && (saved.isComplete || saved.generatedAt != null)) {
-      state = state.copyWith(currentExplanation: saved, explanationLoading: false);
+      state = state.copyWith(
+        currentExplanation: saved,
+        explanationLoading: false,
+      );
       return;
     }
     final explanation = await QuizExplanationService.generate(
@@ -1053,12 +1426,18 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     // Attach to the answered question even if the student has advanced.
     if (answeredIndex >= 0 && answeredIndex < _recordedQuestions.length) {
       final answered = _recordedQuestions[answeredIndex];
-      _recordedQuestions[answeredIndex] = answered.copyWith(explanation: explanation);
+      _recordedQuestions[answeredIndex] = answered.copyWith(
+        explanation: explanation,
+      );
     }
     final savedId = _savedExplanationRecordId;
     if (savedId != null && answeredIndex >= 0) {
       try {
-        await ScanRecordStore.instance.saveExplanation(savedId, answeredIndex, explanation);
+        await ScanRecordStore.instance.saveExplanation(
+          savedId,
+          answeredIndex,
+          explanation,
+        );
       } catch (e) {
         debugPrint('[WasteQuiz] Explanation could not be saved: $e');
       }
@@ -1080,7 +1459,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   }
 
   Future<void> _finish() async {
-    final sessionTrophies = _recordedQuestions.fold<int>(0, (sum, q) => sum + q.trophies);
+    final sessionTrophies = _recordedQuestions.fold<int>(
+      0,
+      (sum, q) => sum + q.trophies,
+    );
 
     String? photoPath;
     final photoBytes = _historyPhotoBytes ?? _cropBytes;
@@ -1090,7 +1472,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         final dir = await getApplicationDocumentsDirectory();
         final scansDir = Directory('${dir.path}/$scanPhotosDirName');
         if (!scansDir.existsSync()) scansDir.createSync(recursive: true);
-        final file = File('${scansDir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.jpg');
+        final file = File(
+          '${scansDir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
         file.writeAsBytesSync(photoBytes, flush: true);
         photoPath = file.path;
       } catch (e) {
@@ -1109,6 +1493,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         difficulty: state.difficulty,
         questions: List.unmodifiable(_recordedQuestions),
         trophies: sessionTrophies,
+        lang: _recordLang,
+        translations: _recordTwins(scan?.displayName),
       );
       try {
         _savedExplanationRecordId = record.id;
@@ -1123,7 +1509,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       'total': state.totalQuestions,
       'trophies': sessionTrophies,
     });
-    debugPrint('[WasteQuiz] session_result correct=${state.correctCount} total=${state.totalQuestions} trophies=$sessionTrophies');
+    debugPrint(
+      '[WasteQuiz] session_result correct=${state.correctCount} total=${state.totalQuestions} trophies=$sessionTrophies',
+    );
 
     state = state.copyWith(
       phase: WasteQuizPhase.finished,
@@ -1131,8 +1519,12 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       cropBytes: _cropBytes,
       historyPhotoPath: photoPath,
     );
-    final skipped = state.skippedCount > 0 ? l10n.wqSkippedCount(state.skippedCount) : '';
-    _appendAiReply(l10n.wqSessionDone(state.correctCount, state.totalQuestions, skipped));
+    final skipped = state.skippedCount > 0
+        ? l10n.wqSkippedCount(state.skippedCount)
+        : '';
+    _appendAiReply(
+      l10n.wqSessionDone(state.correctCount, state.totalQuestions, skipped),
+    );
   }
 
   void logRescanTapped() {
@@ -1142,7 +1534,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   void _appendAiReply(String text) {
     state = state.copyWith(
-      messages: [...state.messages, ChatMessage(isUser: false, text: text)],
+      messages: [
+        ...state.messages,
+        ChatMessage(isUser: false, text: text),
+      ],
       sendingChat: false,
     );
     if (state.voiceOn && text != _lastAutoSpokenText) {
@@ -1157,7 +1552,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// A question arrived while the quiz was minimised: the Quiz button shows its badge,
   /// and with Voice on TTS says so (decision 0175).
   void _announceReady() {
-    if (state.minimized && state.voiceOn) unawaited(QuizTtsService.instance.speak(l10n.wqQuestionReady));
+    if (state.minimized && state.voiceOn) {
+      unawaited(QuizTtsService.instance.speak(l10n.wqQuestionReady));
+    }
   }
 
   void listen(String text) => unawaited(QuizTtsService.instance.speak(text));
@@ -1170,7 +1567,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   void dismiss() {
     if (state.phase == WasteQuizPhase.confirmingMismatch) {
-      _diagnostics?.event('mismatch_choice', {'choice': 'rescan', 'resolvedBin': null});
+      _diagnostics?.event('mismatch_choice', {
+        'choice': 'rescan',
+        'resolvedBin': null,
+      });
     }
     _detectorChoice = null;
     _diagnostics?.event('dismiss', {'phase': state.phase.name});
@@ -1182,6 +1582,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _cropBytes = null;
     _historyPhotoBytes = null;
     _recordedQuestions.clear();
+    _recordedTwins.clear();
     state = WasteQuizUiState(voiceOn: state.voiceOn);
   }
 }

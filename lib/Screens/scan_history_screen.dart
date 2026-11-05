@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/scan_record.dart';
 import '../services/ai_quiz_service.dart';
 import '../services/quiz_pdf_service.dart';
+import '../services/history_translation_service.dart';
 import '../services/scan_record_store.dart';
 import '../l10n/l10n.dart';
 import '../theme/elio_tokens.dart';
@@ -167,7 +168,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: HistoryScanRow(
-                      r,
+                      r.localized(context.l10n.localeName),
                       onTap: () {
                         if (box.maxWidth >= 750) {
                           setState(() => _selected = r.id);
@@ -256,9 +257,15 @@ class ScanDetailScreen extends StatefulWidget {
 }
 
 class _ScanDetailScreenState extends State<ScanDetailScreen> {
-  ScanRecord get record =>
+  ScanRecord get _saved =>
       widget.store.records.where((r) => r.id == widget.record.id).firstOrNull ??
       widget.record;
+
+  /// The record as shown in the app language (cached translation or original).
+  ScanRecord get record => _saved.localized(_lang ?? _saved.lang);
+  String? _lang;
+  bool _translating = false, _original = false;
+  int _translateEpoch = 0;
   ScanRecordStore get store => widget.store;
   bool get embedded => widget.embedded;
   late bool _ready = store.isLoaded;
@@ -267,6 +274,40 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
   void initState() {
     super.initState();
     if (!_ready) unawaited(_load());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final lang = context.l10n.localeName == 'en' ? 'en' : 'id';
+    if (lang == _lang) return;
+    _lang = lang;
+    _original = false;
+    if (_saved.needsTranslation(lang)) {
+      _translating = true;
+      Future.microtask(_translate);
+    }
+  }
+
+  /// One ELIOS AI call translates the record into the app language and caches
+  /// it; offline the original language stays with a note (decision 0185).
+  Future<void> _translate() async {
+    final epoch = ++_translateEpoch, lang = _lang!;
+    setState(() => _translating = true);
+    var ok = false;
+    try {
+      ok = await HistoryTranslationService.ensure(
+        store,
+        _saved,
+        lang,
+      ).timeout(widget.loadTimeout);
+    } catch (_) {}
+    if (mounted && epoch == _translateEpoch) {
+      setState(() {
+        _translating = false;
+        _original = !ok;
+      });
+    }
   }
 
   Future<void> _load() async {
@@ -297,7 +338,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
         onPressed: () => _export(context),
       ),
     );
-    if (!_ready || _failed || store.loadError != null) {
+    if (!_ready || _failed || store.loadError != null || _translating) {
       return Scaffold(
         backgroundColor: p.background,
         appBar: bar,
@@ -316,6 +357,11 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
         key: const ValueKey('detail_list_view'),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
+          if (_original)
+            HistoryOriginalNote(
+              lang: _saved.lang,
+              onRetry: () => unawaited(_translate()),
+            ),
           HistoryPhoto(record, width: double.infinity, height: 200),
           const SizedBox(height: 16),
           Row(
@@ -398,7 +444,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
                       builder: (_) => Theme(
                         data: theme,
                         child: QuestionExplanationScreen(
-                          record: record,
+                          record: _saved,
                           questionIndex: i,
                           store: store,
                         ),
@@ -415,9 +461,8 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
 
   Future<void> _export(BuildContext context) async {
     try {
-      await QuizPdfService.shareOrSave(
-        store.records.where((r) => r.id == record.id).firstOrNull ?? record,
-      );
+      // The PDF uses the cached text of the current language (decision 0185).
+      await QuizPdfService.shareOrSave(record);
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(

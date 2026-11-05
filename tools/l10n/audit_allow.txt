@@ -45,3 +45,11 @@ lib/widgets/quiz_explanation_overlay.dart	ELIOS	brand name
 lib/widgets/quiz_explanation_overlay.dart	STOP	robot command name, same in both languages
 lib/widgets/tester_panel.dart	ELIOS AI	brand name
 lib/widgets/tester_panel.dart	AI: ${aiStateLabel(status, service.lastModel)}	tester-only status: abbreviation + model id
+lib/services/ai_quiz_service.dart	massa jenis serta mengapung atau tenggelam di air	prompt-internal physics topic for Gemini (not shown); reply language is set per request
+lib/services/ai_quiz_service.dart	kalor, titik lebur, dan suhu	prompt-internal physics topic for Gemini (not shown); reply language is set per request
+lib/services/ai_quiz_service.dart	energi yang diperlukan atau dihemat saat didaur ulang	prompt-internal physics topic for Gemini (not shown); reply language is set per request
+lib/services/ai_quiz_service.dart	lama penguraian dan hal yang mempercepatnya	prompt-internal physics topic for Gemini (not shown); reply language is set per request
+lib/services/ai_quiz_service.dart	listrik, baterai, serta risiko korsleting dan kebakaran	prompt-internal physics topic for Gemini (not shown); reply language is set per request
+lib/services/ai_quiz_service.dart	cahaya, sinar UV, dan penuaan material	prompt-internal physics topic for Gemini (not shown); reply language is set per request
+lib/services/ai_quiz_service.dart	pemilahan berdasarkan sifat fisik (magnet, air, berat)	prompt-internal physics topic for Gemini (not shown); reply language is set per request
+lib/services/ai_quiz_service.dart	alasan benda ini berbahaya atau aman ditangani	prompt-internal physics topic for Gemini (not shown); reply language is set per request
