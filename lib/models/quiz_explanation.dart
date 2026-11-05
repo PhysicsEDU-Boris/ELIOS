@@ -102,6 +102,11 @@ class QuizExplanation {
     this.conceptExplanation = '',
     this.comparisonRows = const [],
     this.learningTakeaway = '',
+    this.keyIdea = '',
+    this.steps = const [],
+    this.source = '',
+    this.generatedAt,
+    this.model,
     this.sourceTitle,
     this.sourceSection,
     this.sourcePage,
@@ -133,6 +138,17 @@ class QuizExplanation {
   /// Take-away sentence shown in italic at the bottom of the explanation card.
   final String learningTakeaway;
 
+  final String keyIdea;
+  final List<String> steps;
+  final String source;
+  final DateTime? generatedAt;
+  final String? model;
+
+  bool get isComplete =>
+      !isUnavailable &&
+      keyIdea.isNotEmpty &&
+      (source == 'ai' || source == 'aiWithBank' || source == 'bank');
+
   // Source attribution
   final String? sourceTitle;
   final String? sourceSection;
@@ -152,23 +168,31 @@ class QuizExplanation {
   bool get isUnavailable => groundingStatus == GroundingStatus.unavailable;
 
   Map<String, dynamic> toJson() => {
-        'summary': summary,
-        'correctAnswerReason': correctAnswerReason,
-        if (selectedAnswerFeedback.isNotEmpty) 'selectedAnswerFeedback': selectedAnswerFeedback,
-        if (conceptExplanation.isNotEmpty) 'conceptExplanation': conceptExplanation,
-        if (comparisonRows.isNotEmpty) 'comparisonRows': comparisonRows.map((r) => r.toJson()).toList(),
-        if (learningTakeaway.isNotEmpty) 'learningTakeaway': learningTakeaway,
-        if (sourceTitle != null) 'sourceTitle': sourceTitle,
-        if (sourceSection != null) 'sourceSection': sourceSection,
-        if (sourcePage != null) 'sourcePage': sourcePage,
-        if (quote != null) 'quote': quote,
-        if (bankId != null) 'bankId': bankId,
-        'groundingStatus': groundingStatus.name,
-        if (essayScore != null) 'essayScore': essayScore,
-        if (essayFeedback != null) 'essayFeedback': essayFeedback,
-        if (rubricRows != null) 'rubricRows': rubricRows!.map((r) => r.toJson()).toList(),
-        if (referenceAnswer != null) 'referenceAnswer': referenceAnswer,
-      };
+    'summary': summary,
+    'keyIdea': keyIdea,
+    'steps': steps,
+    'source': source,
+    if (generatedAt != null) 'generatedAt': generatedAt!.toIso8601String(),
+    if (model != null) 'model': model,
+    'correctAnswerReason': correctAnswerReason,
+    if (selectedAnswerFeedback.isNotEmpty)
+      'selectedAnswerFeedback': selectedAnswerFeedback,
+    if (conceptExplanation.isNotEmpty) 'conceptExplanation': conceptExplanation,
+    if (comparisonRows.isNotEmpty)
+      'comparisonRows': comparisonRows.map((r) => r.toJson()).toList(),
+    if (learningTakeaway.isNotEmpty) 'learningTakeaway': learningTakeaway,
+    if (sourceTitle != null) 'sourceTitle': sourceTitle,
+    if (sourceSection != null) 'sourceSection': sourceSection,
+    if (sourcePage != null) 'sourcePage': sourcePage,
+    if (quote != null) 'quote': quote,
+    if (bankId != null) 'bankId': bankId,
+    'groundingStatus': groundingStatus.name,
+    if (essayScore != null) 'essayScore': essayScore,
+    if (essayFeedback != null) 'essayFeedback': essayFeedback,
+    if (rubricRows != null)
+      'rubricRows': rubricRows!.map((r) => r.toJson()).toList(),
+    if (referenceAnswer != null) 'referenceAnswer': referenceAnswer,
+  };
 
   factory QuizExplanation.fromJson(Map<String, dynamic> json) {
     final groundingRaw = json['groundingStatus'] as String?;
@@ -178,10 +202,16 @@ class QuizExplanation {
     );
     return QuizExplanation(
       summary: json['summary'] as String? ?? '',
+      keyIdea: json['keyIdea'] as String? ?? '',
+      steps: (json['steps'] as List?)?.cast<String>() ?? const [],
+      source: json['source'] as String? ?? '',
+      generatedAt: DateTime.tryParse(json['generatedAt'] as String? ?? ''),
+      model: json['model'] as String?,
       correctAnswerReason: json['correctAnswerReason'] as String? ?? '',
       selectedAnswerFeedback: json['selectedAnswerFeedback'] as String? ?? '',
       conceptExplanation: json['conceptExplanation'] as String? ?? '',
-      comparisonRows: (json['comparisonRows'] as List<dynamic>?)
+      comparisonRows:
+          (json['comparisonRows'] as List<dynamic>?)
               ?.map((r) => ComparisonRow.fromJson(r as Map<String, dynamic>))
               .toList() ??
           const [],

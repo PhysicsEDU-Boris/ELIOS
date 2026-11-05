@@ -73,6 +73,9 @@ class RecordQuestion {
   final int trophies;
   final bool isEssay;
   final int? essayScore;
+  final List<String> options;
+  final String bankExplanation;
+  final Map<String, String> wrongWhy;
 
   bool get gradingPending => isEssay && essayScore == null;
 
@@ -88,42 +91,56 @@ class RecordQuestion {
     int? trophies,
     this.isEssay = false,
     this.essayScore,
+    this.options = const [],
+    this.bankExplanation = '',
+    this.wrongWhy = const {},
     this.explanation,
   }) : trophies = trophies ?? (isCorrect ? 10 : (essayScore ?? 0));
 
   RecordQuestion copyWith({QuizExplanation? explanation}) => RecordQuestion(
-        question: question,
-        yourAnswer: yourAnswer,
-        rightAnswer: rightAnswer,
-        isCorrect: isCorrect,
-        trophies: trophies,
-        isEssay: isEssay,
-        essayScore: essayScore,
-        explanation: explanation ?? this.explanation,
-      );
+    question: question,
+    yourAnswer: yourAnswer,
+    rightAnswer: rightAnswer,
+    isCorrect: isCorrect,
+    trophies: trophies,
+    isEssay: isEssay,
+    essayScore: essayScore,
+    options: options,
+    bankExplanation: bankExplanation,
+    wrongWhy: wrongWhy,
+    explanation: explanation ?? this.explanation,
+  );
 
   Map<String, dynamic> toJson() => {
-        'question': question,
-        'yourAnswer': yourAnswer,
-        'rightAnswer': rightAnswer,
-        'isCorrect': isCorrect,
-        'trophies': trophies,
-        'isEssay': isEssay,
-        if (essayScore != null) 'essayScore': essayScore,
-        if (explanation != null) 'explanation': explanation!.toJson(),
-      };
+    'question': question,
+    'options': options,
+    'bankExplanation': bankExplanation,
+    'wrongWhy': wrongWhy,
+    'yourAnswer': yourAnswer,
+    'rightAnswer': rightAnswer,
+    'isCorrect': isCorrect,
+    'trophies': trophies,
+    'isEssay': isEssay,
+    if (essayScore != null) 'essayScore': essayScore,
+    if (explanation != null) 'explanation': explanation!.toJson(),
+  };
 
   factory RecordQuestion.fromJson(Map<String, dynamic> json) {
     final explanationJson = json['explanation'] as Map<String, dynamic>?;
     return RecordQuestion(
       question: json['question'] as String? ?? '',
+      options: (json['options'] as List?)?.cast<String>() ?? const [],
+      bankExplanation: json['bankExplanation'] as String? ?? '',
+      wrongWhy: (json['wrongWhy'] as Map?)?.cast<String, String>() ?? const {},
       yourAnswer: json['yourAnswer'] as String? ?? '',
       rightAnswer: json['rightAnswer'] as String? ?? '',
       isCorrect: json['isCorrect'] as bool? ?? false,
       trophies: (json['trophies'] as num?)?.toInt(),
       isEssay: json['isEssay'] as bool? ?? false,
       essayScore: (json['essayScore'] as num?)?.toInt(),
-      explanation: explanationJson != null ? QuizExplanation.fromJson(explanationJson) : null,
+      explanation: explanationJson != null
+          ? QuizExplanation.fromJson(explanationJson)
+          : null,
     );
   }
 }
@@ -152,35 +169,60 @@ class ScanRecord {
     this.difficulty = QuizDifficulty.medium,
     required this.questions,
     int? trophies,
-    this.schemaVersion = 3, // v3: explanations may carry quote and bankId (0175)
+    this.schemaVersion =
+        4, // v4: saved AI explanation and question grounding (0184)
   }) : trophies = trophies ?? trophiesFor(questions);
 
   int get correctCount => questions.where((q) => q.isCorrect).length;
-  int get totalQuestions => questions.isNotEmpty ? questions.length : difficulty.questionCount;
-  QuizGrade get grade => gradeFor(trophies: trophies, totalQuestions: totalQuestions);
+  int get totalQuestions =>
+      questions.isNotEmpty ? questions.length : difficulty.questionCount;
+  QuizGrade get grade =>
+      gradeFor(trophies: trophies, totalQuestions: totalQuestions);
 
   String get difficultyLabel => switch (difficulty) {
-        QuizDifficulty.easy => 'Easy · 1Q',
-        QuizDifficulty.medium => 'Medium · 2Q',
-        QuizDifficulty.hard => 'Hard · 3Q',
-      };
+    QuizDifficulty.easy => 'Easy · 1Q',
+    QuizDifficulty.medium => 'Medium · 2Q',
+    QuizDifficulty.hard => 'Hard · 3Q',
+  };
 
   Map<String, dynamic> toJson() => {
-        'schemaVersion': schemaVersion,
-        'id': id,
-        'time': time.toIso8601String(),
-        'itemName': itemName,
-        'category': category.id,
-        if (cropPhotoPath != null) 'cropPhotoPath': cropPhotoPath,
-        'difficulty': difficulty.name,
-        'questions': questions.map((q) => q.toJson()).toList(),
-        'trophies': trophies,
-      };
+    'schemaVersion': schemaVersion,
+    'id': id,
+    'time': time.toIso8601String(),
+    'itemName': itemName,
+    'category': category.id,
+    if (cropPhotoPath != null) 'cropPhotoPath': cropPhotoPath,
+    'difficulty': difficulty.name,
+    'questions': questions.map((q) => q.toJson()).toList(),
+    'trophies': trophies,
+  };
 
   factory ScanRecord.fromJson(Map<String, dynamic> json) {
-    final questionsList = (json['questions'] as List<dynamic>? ?? [])
-        .map((q) => RecordQuestion.fromJson(q as Map<String, dynamic>))
-        .toList();
+    final legacy = ((json['schemaVersion'] as num?)?.toInt() ?? 1) < 4;
+    final questionsList = (json['questions'] as List<dynamic>? ?? []).map((q) {
+      final data = Map<String, dynamic>.from(q as Map);
+      if (legacy && data['explanation'] is Map && data['isEssay'] != true) {
+        final old = Map<String, dynamic>.from(data['explanation'] as Map);
+        // Legacy takeaways/comparison rows were local templates, never reviewed text.
+        if (old['bankId'] == null && old['groundingStatus'] != 'bankGrounded') {
+          data['explanation'] = {...old, 'summary': '', 'correctAnswerReason': '',
+            'selectedAnswerFeedback': '', 'conceptExplanation': '',
+            'learningTakeaway': '', 'comparisonRows': <dynamic>[],
+            'groundingStatus': 'unavailable', 'source': ''};
+        } else {
+          data['explanation'] = {
+            ...old,
+            'learningTakeaway': '',
+            'comparisonRows': <dynamic>[],
+            'source': 'bank',
+          };
+          if ((data['bankExplanation'] as String? ?? '').isEmpty) {
+            data['bankExplanation'] = old['correctAnswerReason'] ?? '';
+          }
+        }
+      }
+      return RecordQuestion.fromJson(data);
+    }).toList();
     final diffName = json['difficulty'] as String? ?? 'medium';
     final difficulty = QuizDifficulty.values.firstWhere(
       (d) => d.name == diffName,
@@ -188,7 +230,7 @@ class ScanRecord {
     );
 
     return ScanRecord(
-      schemaVersion: (json['schemaVersion'] as num?)?.toInt() ?? 1,
+      schemaVersion: 4,
       id: json['id'] as String? ?? '',
       time: DateTime.tryParse(json['time'] as String? ?? '') ?? DateTime.now(),
       itemName: json['itemName'] as String? ?? 'Unknown Item',

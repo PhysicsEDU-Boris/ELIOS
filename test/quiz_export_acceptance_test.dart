@@ -248,7 +248,7 @@ void main() {
       MaterialApp(home: ScanHistoryScreen(store: reopened)),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Pending'), findsOneWidget);
+    expect(find.text('Pending'), findsNothing);
     expect(find.text('Menunggu penilaian'), findsOneWidget);
     expect(find.text('Wrong'), findsNothing);
   });

@@ -96,6 +96,7 @@ class QuizTtsService {
   /// recording's debug overlay can still show that TTS ran.
   int get startedCount => _started;
   int _started = 0;
+  int _epoch = 0;
 
   /// Replaces the real engine in tests: called instead of `_tts.speak`, with
   /// the real `await stop()` (one slot) still enforced first.
@@ -112,10 +113,14 @@ class QuizTtsService {
     final trimmed = speakableText(text);
     if (trimmed.isEmpty) return;
     _started++;
+    final epoch = ++_epoch;
     try {
-      await stop();
+      await _stopEngine();
+      if (epoch != _epoch) return;
       if (mockSpeak != null) {
+        status.value = TtsStatus.speaking;
         await mockSpeak!(trimmed);
+        if (epoch == _epoch) status.value = TtsStatus.idle;
         return;
       }
       await _ensureConfigured();
@@ -125,6 +130,7 @@ class QuizTtsService {
         await _useLanguage(language);
         _currentLanguage = language;
       }
+      if (epoch != _epoch) return;
       await _tts.speak(trimmed);
     } catch (e) {
       debugPrint('[QuizTtsService] speak failed: $e');
@@ -137,6 +143,12 @@ class QuizTtsService {
   Future<void> Function()? mockStop;
 
   Future<void> stop() async {
+    _epoch++;
+    await _stopEngine();
+    status.value = TtsStatus.idle;
+  }
+
+  Future<void> _stopEngine() async {
     if (mockStop != null) {
       await mockStop!();
       return;

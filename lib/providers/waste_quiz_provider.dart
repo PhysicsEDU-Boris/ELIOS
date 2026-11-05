@@ -516,6 +516,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   }
 
   void _startSession(ScannedWaste scan) {
+    _savedExplanationRecordId = null;
     _askedQuestions.clear();
     _bankQueues = null;
     _usedAngles.clear();
@@ -854,6 +855,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final correct = index == q.correctIndex;
     _recordedQuestions.add(RecordQuestion(
       question: q.question,
+      options: q.options,
+      bankExplanation: q.bankId == null || !q.bankReviewed ? '' : q.explanation,
+      wrongWhy: q.bankReviewed ? q.wrongWhy : const {},
+      explanation: QuizExplanationService.bankExplanation(q, selectedIndex: index),
       yourAnswer: q.options[index],
       rightAnswer: q.options[q.correctIndex],
       isCorrect: correct,
@@ -872,7 +877,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final verdict = correct
         ? 'Benar!'
         : 'Kurang tepat. Jawaban yang benar: ${q.options[q.correctIndex]}.';
-    _appendAiReply(q.explanation.isEmpty ? verdict : '$verdict ${q.explanation}');
+    _appendAiReply(q.explanation.isEmpty || (q.bankId != null && !q.bankReviewed)
+        ? verdict : '$verdict ${q.explanation}');
     unawaited(loadExplanation());
   }
 
@@ -1019,6 +1025,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// Loads/generates the explanation for the most-recently-answered question.
   /// Sets [explanationLoading] while running; updates [currentExplanation] on completion.
   /// Saves the explanation into the last [RecordQuestion] in [_recordedQuestions].
+  String? _savedExplanationRecordId;
+
   Future<void> loadExplanation({EssayGrade? essayGrade}) async {
     final q = state.question;
     final scan = state.scan;
@@ -1027,18 +1035,35 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       return;
     }
     final generation = _generation;
+    final answeredIndex = _recordedQuestions.length - 1;
+    final saved = answeredIndex >= 0 ? _recordedQuestions[answeredIndex].explanation : null;
+    if (saved != null && (saved.isComplete || saved.generatedAt != null)) {
+      state = state.copyWith(currentExplanation: saved, explanationLoading: false);
+      return;
+    }
     final explanation = await QuizExplanationService.generate(
       question: q,
       scan: scan,
       selectedIndex: state.selectedOption,
       essayGrade: essayGrade,
+      difficulty: state.difficulty.name,
+      onlyWhenIdle: true,
     );
     if (generation != _generation) return; // session changed while generating
-    // Attach explanation to the last recorded question.
-    if (_recordedQuestions.isNotEmpty) {
-      final last = _recordedQuestions.last;
-      _recordedQuestions[_recordedQuestions.length - 1] = last.copyWith(explanation: explanation);
+    // Attach to the answered question even if the student has advanced.
+    if (answeredIndex >= 0 && answeredIndex < _recordedQuestions.length) {
+      final answered = _recordedQuestions[answeredIndex];
+      _recordedQuestions[answeredIndex] = answered.copyWith(explanation: explanation);
     }
+    final savedId = _savedExplanationRecordId;
+    if (savedId != null && answeredIndex >= 0) {
+      try {
+        await ScanRecordStore.instance.saveExplanation(savedId, answeredIndex, explanation);
+      } catch (e) {
+        debugPrint('[WasteQuiz] Explanation could not be saved: $e');
+      }
+    }
+    if (state.question != q) return;
     state = state.copyWith(
       currentExplanation: explanation,
       explanationLoading: false,
@@ -1086,6 +1111,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         trophies: sessionTrophies,
       );
       try {
+        _savedExplanationRecordId = record.id;
         await ScanRecordStore.instance.addRecord(record);
       } catch (e) {
         debugPrint('[WasteQuiz] Failed to add record to store: $e');

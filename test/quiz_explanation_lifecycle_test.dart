@@ -16,6 +16,7 @@ const _testQuestion = GeneratedQuestion(
   question: 'Ke tempat sampah mana botol kaca harus dibuang?',
   options: ['Organik', 'Daur Ulang', 'B3', 'Residu'],
   correctIndex: 1,
+  bankId: 'reviewed-glass',
   explanation: 'Kaca adalah material anorganik yang dapat didaur ulang.',
 );
 
@@ -27,6 +28,8 @@ const _testEssayQuestion = GeneratedQuestion(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => AiQuizService.instance.mockSendExecute = (_, {imageBytes, isUser = false}) async => null);
+  tearDown(() => AiQuizService.instance.mockSendExecute = null);
 
   group('Quiz Explanation Lifecycle', () {
     test('selectOption records answer and transitions phase to explaining', () async {
@@ -114,7 +117,8 @@ void main() {
       expect(state.currentExplanation, isNotNull);
       expect(state.explanationLoading, isFalse);
       expect(state.currentExplanation!.correctAnswerReason, isNotEmpty);
-      expect(state.currentExplanation!.comparisonRows, isNotEmpty);
+      expect(state.currentExplanation!.comparisonRows, isEmpty);
+      expect(state.currentExplanation!.learningTakeaway, isEmpty);
     });
 
     test('submitEssay records essay and transitions phase to explaining with score', () async {
@@ -151,4 +155,17 @@ void main() {
       expect(recorded.trophies, 9);
     });
   });
+  test('draft bank explanation is not announced as a saved answer explanation', () async {
+    final container = ProviderContainer(overrides: [wasteQuizProvider.overrideWith(() => _SeededQuiz(
+      WasteQuizUiState(phase: WasteQuizPhase.active, scan: ScannedWaste.fromLabel('botol'), voiceOn: false,
+        question: const GeneratedQuestion(type: QuizQuestionType.multipleChoice, question: 'Soal',
+          options: ['Benar', 'Salah'], correctIndex: 0, bankId: 'draft', bankReviewed: false,
+          explanation: 'DRAFT_TEXT_MUST_NOT_ANNOUNCE'))))]);
+    addTearDown(container.dispose);
+    container.read(wasteQuizProvider.notifier).selectOption(1);
+    await pumpEventQueue();
+    expect(container.read(wasteQuizProvider).messages.last.text, isNot(contains('DRAFT_TEXT_MUST_NOT_ANNOUNCE')));
+    expect(container.read(wasteQuizProvider).currentExplanation!.correctAnswerReason, isEmpty);
+  });
+
 }

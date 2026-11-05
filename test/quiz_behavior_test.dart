@@ -343,6 +343,7 @@ void main() {
       var calls = 0;
       final prompts = <String>[];
       AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) async {
+        if (prompt.contains('why_correct')) return '{"correct_option":"Daur ulang", "why_correct":"Alasan AI.", "why_wrong":"", "key_idea":"Ide AI.", "steps":[]}';
         calls++;
         prompts.add(prompt);
         return fakeResponse(calls, prompt);
@@ -361,6 +362,7 @@ void main() {
     test('"Soal berikutnya" takes an already-buffered question instantly, no new generation', () async {
       var calls = 0;
       AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) async {
+        if (prompt.contains('why_correct')) return '{"correct_option":"Daur ulang", "why_correct":"Alasan AI.", "why_wrong":"", "key_idea":"Ide AI.", "steps":[]}';
         calls++;
         return fakeResponse(calls, prompt);
       };
@@ -385,6 +387,7 @@ void main() {
       var calls = 0;
       final pending = Completer<String?>();
       AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) async {
+        if (prompt.contains('why_correct')) return '{"correct_option":"Daur ulang", "why_correct":"Alasan AI.", "why_wrong":"", "key_idea":"Ide AI.", "steps":[]}';
         calls++;
         if (calls == 1) return mcJson; // question 1 resolves right away
         return pending.future; // question 2's background generation hangs
@@ -416,6 +419,7 @@ void main() {
         var calls = 0;
         final completers = <Completer<String?>>[];
         AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) {
+          if (prompt.contains('why_correct')) return Future.value('{"correct_option":"Daur ulang", "why_correct":"Alasan AI.", "why_wrong":"", "key_idea":"Ide AI.", "steps":[]}');
           calls++;
           final c = Completer<String?>();
           completers.add(c);
@@ -472,6 +476,7 @@ void main() {
         var calls = 0;
         final completers = <Completer<String?>>[];
         AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) {
+          if (prompt.contains('why_correct')) return Future.value('{"correct_option":"Daur ulang", "why_correct":"Alasan AI.", "why_wrong":"", "key_idea":"Ide AI.", "steps":[]}');
           calls++;
           final c = Completer<String?>();
           completers.add(c);
@@ -500,6 +505,7 @@ void main() {
     test('a near-identical question is rejected and retried', () async {
       var calls = 0;
       AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) async {
+        if (prompt.contains('why_correct')) return '{"correct_option":"Daur ulang", "why_correct":"Alasan AI.", "why_wrong":"", "key_idea":"Ide AI.", "steps":[]}';
         calls++;
         return calls == 1
             ? '{"question": "Apa dampak plastik?", "explanation": "e"}' // near-duplicate of avoid[0]
@@ -521,6 +527,7 @@ void main() {
     test('an unparseable response is retried once in the background', () async {
       var calls = 0;
       AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) async {
+        if (prompt.contains('why_correct')) return '{"correct_option":"Daur ulang", "why_correct":"Alasan AI.", "why_wrong":"", "key_idea":"Ide AI.", "steps":[]}';
         calls++;
         return calls == 1 ? 'not json at all' : '{"question": "Soal valid?", "explanation": "e"}';
       };

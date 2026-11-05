@@ -81,7 +81,7 @@ class ElioBottomNav extends StatelessWidget {
               Expanded(
                 child: tab(
                   4,
-                  'History',
+                  'Riwayat',
                   Icons.history_rounded,
                   Icons.history_rounded,
                 ),

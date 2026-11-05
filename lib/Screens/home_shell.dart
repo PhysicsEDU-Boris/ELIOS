@@ -85,7 +85,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     0 => 'Home',
     1 => 'Learn',
     2 => 'Connect ELIO',
-    _ => 'History',
+    _ => 'Riwayat',
   };
 
   Widget _buildCurrentScreen() {
@@ -110,9 +110,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         },
       ),
       2 => const ConfigScreen(),
-      _historyIndex => ScanHistoryScreen(
+      _historyIndex => ElioTheme.wrap(ScanHistoryScreen(
         onClose: () => _onBottomNavigationTap(0),
-      ),
+        onStartScan: () => _onBottomNavigationTap(_controlIndex),
+        showHeader: false,
+      )),
       _ => const SizedBox.shrink(),
     };
   }
@@ -320,6 +322,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                         subtitle: switch (_currentIndex) {
                           0 => 'Ready to learn with ELIO?',
                           2 => 'Robot, camera and quiz setup',
+                          _historyIndex => 'Hasil scan, kuis, dan piala',
                           _ => null,
                         },
                         trailing: switch (_currentIndex) {

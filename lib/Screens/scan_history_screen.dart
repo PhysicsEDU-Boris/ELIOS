@@ -1,109 +1,288 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/scan_record.dart';
 import '../services/ai_quiz_service.dart';
 import '../services/quiz_pdf_service.dart';
 import '../services/scan_record_store.dart';
-import '../widgets/quiz_explanation_overlay.dart';
+import '../theme/elio_tokens.dart';
+import '../widgets/auth/auth_widgets.dart' show authPalette;
+import '../widgets/history_ui.dart';
+import 'home/home_parts.dart' show homeArt;
+import 'device_scan_screen.dart';
+import 'question_explanation_screen.dart';
 
-const _ink = Color(0xFF1C2833);
-const _subLabel = Color(0xFF6B6B6B);
-const _cardBorder = Color(0xFFE5E7E9);
-const _goldAccent = Color(0xFFF39C12);
-const _goldBg = Color(0xFFFEF9E7);
-const _goldBorder = Color(0xFFFAD7A0);
-const _greenAccent = Color(0xFF16A085);
-const _greenDark = Color(0xFF0D5C46);
-const _redAccent = Color(0xFFE74C3C);
-
-/// Scan History screen (Figma node 100:170).
-/// Displays recent scans, trophies earned, student level progress,
-/// category filters, and detailed quiz breakdowns for each scan.
 class ScanHistoryScreen extends StatefulWidget {
   const ScanHistoryScreen({
     super.key,
     this.store,
     this.onClose,
+    this.onStartScan,
+    this.showHeader = true,
+    this.loadTimeout = const Duration(seconds: 15),
   });
-
+  final bool showHeader;
   final ScanRecordStore? store;
-  final VoidCallback? onClose;
-
+  final VoidCallback? onClose, onStartScan;
+  final Duration loadTimeout;
   @override
   State<ScanHistoryScreen> createState() => _ScanHistoryScreenState();
 }
 
 class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
-  late final ScanRecordStore _store;
-  ScanCategory? _selectedFilter;
-  String? _selectedRecordId;
-  final Set<String> _expandedQuestions = {};
-
+  late final ScanRecordStore _store = widget.store ?? ScanRecordStore.instance;
+  ScanCategory? _filter;
+  String? _selected;
+  bool _failed = false;
+  int _loadEpoch = 0;
   @override
   void initState() {
     super.initState();
-    _store = widget.store ?? ScanRecordStore.instance;
-    _store.addListener(_onStoreChanged);
-    if (!_store.isLoaded) {
-      _store.load();
+    _store.addListener(_changed);
+    if (!_store.isLoaded) unawaited(_load());
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _load() async {
+    final epoch = ++_loadEpoch;
+    setState(() => _failed = false);
+    try {
+      await _store.load(force: true).timeout(widget.loadTimeout);
+      if (_store.loadError != null) {
+        throw StateError('History could not be loaded');
+      }
+    } catch (_) {
+      if (mounted && epoch == _loadEpoch) setState(() => _failed = true);
     }
   }
 
   @override
   void dispose() {
-    _store.removeListener(_onStoreChanged);
+    _store.removeListener(_changed);
     super.dispose();
   }
 
-  void _onStoreChanged() {
-    if (mounted) setState(() {});
-  }
-
-  List<ScanRecord> get _filteredRecords {
-    if (_selectedFilter == null) return _store.records;
-    return _store.records.where((r) => r.category == _selectedFilter).toList();
-  }
-
-  ScanRecord? get _activeRecord {
-    final list = _filteredRecords;
-    if (list.isEmpty) return null;
-    if (_selectedRecordId == null) return list.first;
-    return list.firstWhere((r) => r.id == _selectedRecordId, orElse: () => list.first);
+  void _scan() {
+    if (widget.onStartScan != null) {
+      widget.onStartScan!();
+      return;
+    }
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const DeviceScanScreen()));
   }
 
   @override
   Widget build(BuildContext context) {
+    final p = authPalette(context);
+    final records = _store.records
+        .where((r) => _filter == null || r.category == _filter)
+        .toList();
+    final selected =
+        records.where((r) => r.id == _selected).firstOrNull ??
+        records.firstOrNull;
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F6),
+      backgroundColor: p.background,
+      appBar: widget.showHeader
+          ? AppBar(
+              backgroundColor: p.background,
+              leading: widget.onClose == null
+                  ? Icon(Icons.person_outline, color: p.primaryText)
+                  : IconButton(
+                      onPressed: widget.onClose,
+                      icon: const Icon(Icons.arrow_back),
+                      tooltip: 'Kembali',
+                    ),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Riwayat'),
+                  Text(
+                    'Hasil scan, kuis, dan piala',
+                    style: ElioTokens.caption.copyWith(color: p.textSecondary),
+                  ),
+                ],
+              ),
+            )
+          : null,
       body: SafeArea(
         child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 750;
-            return Container(
-              margin: EdgeInsets.all(isWide ? 16 : 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 16,
-                    offset: Offset(0, 4),
+          builder: (context, box) {
+            if (_failed || _store.loadError != null) {
+              return HistoryError(
+                message: 'Riwayat belum dapat dimuat',
+                onRetry: _load,
+              );
+            }
+            if (!_store.isLoaded) {
+              return const HistorySkeleton(HistoryLoadingLayout.list);
+            }
+            if (_store.records.isEmpty) {
+              return Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      homeArt('history_empty', width: 240, height: 180),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Belum ada scan',
+                        style: ElioTokens.subhead.copyWith(
+                          fontFamily: ElioTokens.fontSans,
+                          color: p.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Scan benda dengan ELIOS. Hasil kuis dan pialamu akan muncul di sini.',
+                        textAlign: TextAlign.center,
+                        style: ElioTokens.bodySmall.copyWith(
+                          color: p.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: _scan,
+                        child: const Text('Mulai scan'),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  _buildHeader(isWide),
-                  const Divider(height: 1, color: _cardBorder),
-                  Expanded(
-                    child: isWide
-                        ? _buildWideContent()
-                        : _buildNarrowContent(),
+                ),
+              );
+            }
+            final list = ListView(
+              key: const ValueKey('history_list'),
+              padding: const EdgeInsets.all(16),
+              children: [
+                _summary(context),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final c in [
+                      null,
+                      ScanCategory.b3,
+                      ScanCategory.recyclable,
+                      ScanCategory.organic,
+                    ])
+                      ChoiceChip(
+                        label: Text(c == null ? 'Semua' : historyCategory(c)),
+                        selected: _filter == c,
+                        onSelected: (_) => setState(() {
+                          _filter = c;
+                          _selected = null;
+                        }),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Scan terbaru',
+                        style: ElioTokens.subhead.copyWith(
+                          fontFamily: ElioTokens.fontSans,
+                          color: p.textPrimary,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${records.length} scan',
+                      style: ElioTokens.caption.copyWith(color: p.primaryText),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                for (final r in records)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () {
+                        if (box.maxWidth >= 750) {
+                          setState(() => _selected = r.id);
+                        } else {
+                          final theme = Theme.of(context);
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => Theme(
+                                data: theme,
+                                child: ScanDetailScreen(
+                                  record: r,
+                                  store: _store,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: HistoryCard(
+                        padding: 12,
+                        child: Row(
+                          children: [
+                            HistoryPhoto(r),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    r.itemName,
+                                    style: ElioTokens.body.copyWith(
+                                      color: p.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  HistoryCategoryChip(r.category),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${historyTime(r.time)} · ${r.totalQuestions} soal',
+                                    style: ElioTokens.caption.copyWith(
+                                      color: p.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            HistoryPill(
+                              '+${r.trophies}',
+                              color: p.secondaryText,
+                              icon: Icons.emoji_events_outlined,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ],
-              ),
+                if (records.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text('Belum ada scan untuk kategori ini.'),
+                  ),
+              ],
+            );
+            if (box.maxWidth < 750) return list;
+            return Row(
+              children: [
+                SizedBox(width: box.maxWidth * .42, child: list),
+                VerticalDivider(width: 1, color: p.borderSubtle),
+                Expanded(
+                  child: selected == null
+                      ? const SizedBox.shrink()
+                      : ScanDetailScreen(
+                          key: ValueKey(selected.id),
+                          record: selected,
+                          store: _store,
+                          embedded: true,
+                        ),
+                ),
+              ],
             );
           },
         ),
@@ -111,969 +290,341 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
     );
   }
 
-  Widget _buildHeader(bool isWide) {
-    final totalTrophies = _store.totalTrophies;
-    final level = _store.userLevel;
-    final progress = _store.levelProgress;
-
-    final trophyCard = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: _goldBg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _goldBorder),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+  Widget _summary(BuildContext context) {
+    final p = authPalette(context), level = _store.userLevel;
+    return HistoryCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: const BoxDecoration(
-              color: _goldAccent,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.emoji_events_rounded, size: 18, color: Colors.white),
-          ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+          Row(
             children: [
-              Text(
-                '$totalTrophies trophies',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _ink),
+              Icon(
+                Icons.emoji_events_outlined,
+                size: 40,
+                color: p.secondaryText,
               ),
-              const SizedBox(height: 2),
-              SizedBox(
-                width: 80,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 4,
-                    backgroundColor: const Color(0xFFE5E8E8),
-                    valueColor: const AlwaysStoppedAnimation<Color>(_goldAccent),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                level.levelAndTitle,
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF7D6608)),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-
-    final lokalChip = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8F8F5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFA3E4D7)),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.check_circle_outline_rounded, size: 14, color: _greenAccent),
-          SizedBox(width: 4),
-          Text(
-            'Tersimpan lokal',
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _greenDark),
-          ),
-        ],
-      ),
-    );
-
-    final closeBtn = Material(
-      color: Colors.transparent,
-      child: InkWell(
-        key: const ValueKey('scan_history_close_button'),
-        onTap: widget.onClose ?? () => Navigator.of(context).maybePop(),
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _cardBorder),
-          ),
-          child: const Icon(Icons.close_rounded, size: 20, color: _ink),
-        ),
-      ),
-    );
-
-    if (!isWide) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Scan History',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _ink),
-                  ),
-                ),
-                lokalChip,
-                const SizedBox(width: 8),
-                closeBtn,
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Quiz results & trophies',
-                    style: TextStyle(fontSize: 12, color: _subLabel),
-                  ),
-                ),
-                trophyCard,
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
-        children: [
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Scan History',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: _ink,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Every item you scanned, with its quiz results and trophies',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 13, color: _subLabel),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          lokalChip,
-          const SizedBox(width: 12),
-          trophyCard,
-          const SizedBox(width: 12),
-          closeBtn,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWideContent() {
-    if (_store.records.isEmpty) {
-      return _buildEmptyState();
-    }
-    final active = _activeRecord;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Left column: filters and recent scans list
-        Expanded(
-          flex: 5,
-          child: _buildRecentScansList(active),
-        ),
-        const VerticalDivider(width: 1, color: _cardBorder),
-        // Right column: detailed question inspection
-        Expanded(
-          flex: 7,
-          child: active == null
-              ? _buildEmptyDetailPlaceholder()
-              : _buildDetailPanel(active),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmptyDetailPlaceholder() {
-    return const Center(
-      child: Text(
-        'Pilih scan di sebelah kiri untuk melihat detail kuis.',
-        style: TextStyle(fontSize: 14, color: _subLabel),
-      ),
-    );
-  }
-
-  Widget _buildNarrowContent() {
-    if (_store.records.isEmpty) {
-      return _buildEmptyState();
-    }
-    // Narrow layout: list first; if an item is selected on mobile, allow opening detail with a back button.
-    final active = _activeRecord;
-    if (_selectedRecordId != null && active != null) {
-      return Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            color: const Color(0xFFF9FAFA),
-            child: Row(
-              children: [
-                TextButton.icon(
-                  onPressed: () => setState(() => _selectedRecordId = null),
-                  icon: const Icon(Icons.arrow_back_rounded, size: 18, color: _greenDark),
-                  label: const Text('Back to list', style: TextStyle(color: _greenDark, fontWeight: FontWeight.w600)),
-                ),
-                Expanded(child: Text(active.itemName, textAlign: TextAlign.end,
-                    maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: _ink))),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: _cardBorder),
-          Expanded(child: _buildDetailPanel(active)),
-        ],
-      );
-    }
-    return _buildRecentScansList(active);
-  }
-
-  Widget _buildRecentScansList(ScanRecord? active) {
-    final records = _filteredRecords;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Filter bar and record count
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Recent scans',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: _ink,
-                  ),
-                ),
-              ),
-              Text(
-                '${records.length}',
-                style: const TextStyle(fontSize: 13, color: _subLabel),
-              ),
-              if (!kReleaseMode) ...[
-                const SizedBox(width: 4),
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                  icon: const Icon(Icons.playlist_add_rounded, size: 20, color: _greenDark),
-                  tooltip: 'Seed Sample Data (Debug)',
-                  onPressed: () async {
-                    await _store.seedFigmaSampleRecords();
-                    if (mounted) setState(() {});
-                  },
-                ),
-              ],
-            ],
-          ),
-        ),
-        // Filter pills row
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Row(
-            children: [
-              _buildFilterChip('All', isSelected: _selectedFilter == null, onTap: () {
-                setState(() => _selectedFilter = null);
-              }),
-              const SizedBox(width: 8),
-              _buildFilterChip('B3', isSelected: _selectedFilter == ScanCategory.b3, onTap: () {
-                setState(() => _selectedFilter = ScanCategory.b3);
-              }),
-              const SizedBox(width: 8),
-              _buildFilterChip('Recyclable', isSelected: _selectedFilter == ScanCategory.recyclable, onTap: () {
-                setState(() => _selectedFilter = ScanCategory.recyclable);
-              }),
-              const SizedBox(width: 8),
-              _buildFilterChip('Organic', isSelected: _selectedFilter == ScanCategory.organic, onTap: () {
-                setState(() => _selectedFilter = ScanCategory.organic);
-              }),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Expanded(
-          child: records.isEmpty
-              ? _buildEmptyState()
-              : ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  itemCount: records.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    final item = records[index];
-                    final isSelected = active?.id == item.id;
-                    return _buildRecordTile(item, isSelected: isSelected);
-                  },
-                ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFilterChip(String label, {required bool isSelected, required VoidCallback onTap}) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        key: ValueKey('filter_chip_$label'),
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected ? _greenDark : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: isSelected ? _greenDark : _cardBorder),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: isSelected ? Colors.white : _ink,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecordTile(ScanRecord item, {required bool isSelected}) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        key: ValueKey('record_tile_${item.id}'),
-        onTap: () {
-          setState(() => _selectedRecordId = item.id);
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFF9FBFA) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSelected ? _greenDark : _cardBorder,
-              width: isSelected ? 2 : 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              _buildPhotoThumbnail(item.cropPhotoPath, size: 56),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      item.itemName,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: _ink,
+                      '${_store.totalTrophies} piala',
+                      style: ElioTokens.subhead.copyWith(
+                        fontFamily: ElioTokens.fontSans,
+                        color: p.textPrimary,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    _buildCategoryBadge(item.category),
-                    const SizedBox(height: 4),
                     Text(
-                      '${item.difficulty.name.capitalize()} · ${item.totalQuestions} questions',
-                      style: const TextStyle(fontSize: 12, color: _subLabel),
+                      level.levelAndTitle,
+                      style: ElioTokens.caption.copyWith(
+                        color: p.textSecondary,
+                      ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.emoji_events_rounded, size: 18, color: Color(0xFFD4AC0D)),
-                  const SizedBox(width: 4),
-                  Text(
-                    '+${item.trophies}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFB7950B),
-                    ),
-                  ),
-                ],
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailPanel(ScanRecord record) {
-    return ListView(
-      key: const ValueKey('detail_list_view'),
-      padding: const EdgeInsets.all(16),
-      children: [
-        Center(child: _buildPhotoThumbnail(record.cropPhotoPath, size: 180)),
-        const SizedBox(height: 12),
-        // Detail summary card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: _cardBorder),
+          const SizedBox(height: 16),
+          LinearProgressIndicator(
+            value: _store.levelProgress,
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(999),
+            color: p.primary,
+            backgroundColor: p.surfaceRaised,
           ),
-          child: LayoutBuilder(
-            builder: (context, cardBox) {
-              final isCardWide = cardBox.maxWidth >= 440;
-              final headerInfo = Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 8,
-                          runSpacing: 4,
-                          children: [
-                            Text(
-                              record.itemName,
-                              style: TextStyle(
-                                fontSize: isCardWide ? 22 : 18,
-                                fontWeight: FontWeight.bold,
-                                color: _ink,
-                              ),
-                            ),
-                            _buildCategoryBadge(record.category),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Scanned ${record.time.hour.toString().padLeft(2, '0')}:${record.time.minute.toString().padLeft(2, '0')} · Foto dan ${record.totalQuestions} soal tersimpan lokal',
-                          style: const TextStyle(fontSize: 12, color: _subLabel),
-                        ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: [
-                            _buildDifficultyPill(
-                              'Easy · ${record.difficulty == QuizDifficulty.easy ? record.totalQuestions : 1}Q',
-                              isSelected: record.difficulty == QuizDifficulty.easy,
-                            ),
-                            _buildDifficultyPill(
-                              'Medium · ${record.difficulty == QuizDifficulty.medium ? record.totalQuestions : 2}Q',
-                              isSelected: record.difficulty == QuizDifficulty.medium,
-                            ),
-                            _buildDifficultyPill(
-                              'Hard · ${record.difficulty == QuizDifficulty.hard ? record.totalQuestions : 3}Q',
-                              isSelected: record.difficulty == QuizDifficulty.hard,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-
-              final trophiesCard = Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: _goldBg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: _goldBorder),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.emoji_events_rounded, size: 22, color: _goldAccent),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${record.trophies}',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF7D6608),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${record.correctCount} of ${record.totalQuestions} correct',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _ink),
-                    ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      '10 trophies per right answer',
-                      style: TextStyle(fontSize: 10, color: Color(0xFF7D6608)),
-                    ),
-                  ],
-                ),
-              );
-
-              if (isCardWide) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: headerInfo),
-                    const SizedBox(width: 12),
-                    trophiesCard,
-                  ],
-                );
-              } else {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    headerInfo,
-                    const SizedBox(height: 12),
-                    trophiesCard,
-                  ],
-                );
-              }
-            },
-          ),
-        ),
-        const SizedBox(height: 16),
-        // Questions header
-        Row(
-          children: [
-            const Expanded(
-              child: Text(
-                'Questions',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _ink),
-              ),
-            ),
-            OutlinedButton.icon(
-              key: const ValueKey('export_pdf_button'),
-              onPressed: () async {
-                try {
-                  await QuizPdfService.shareOrSave(record);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Laporan PDF berhasil diekspor')),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Gagal mengekspor PDF: $e')),
-                    );
-                  }
-                }
-              },
-              icon: const Icon(Icons.picture_as_pdf_rounded, size: 14),
-              label: const Text('Export PDF', style: TextStyle(fontSize: 11)),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: _greenDark,
-                side: const BorderSide(color: Color(0xFFA3E4D7)),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F8F5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${record.difficulty.name.capitalize()} · ${record.totalQuestions}Q',
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _greenDark),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        // Question list
-        ...record.questions.asMap().entries.map((entry) {
-          final idx = entry.key + 1;
-          final q = entry.value;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildQuestionCard(record, idx, q),
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _buildQuestionCard(ScanRecord record, int index, RecordQuestion q) {
-    final isCorrect = q.isCorrect;
-    final stripeColor = q.gradingPending ? const Color(0xFF7D6608) : isCorrect ? _greenAccent : _redAccent;
-    final expandKey = '${record.id}_$index';
-    final isExpanded = _expandedQuestions.contains(expandKey);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _cardBorder),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Container(width: 5, color: stripeColor),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: q.gradingPending ? stripeColor : isCorrect ? _greenDark : const Color(0xFFC0392B),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              'Q$index',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              q.question,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: _ink,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: q.gradingPending ? _goldBg : isCorrect ? const Color(0xFFE8F8F5) : const Color(0xFFFDEDEC),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      q.gradingPending ? Icons.hourglass_empty_rounded : isCorrect ? Icons.check_rounded : Icons.close_rounded,
-                                      size: 13,
-                                      color: stripeColor,
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      q.gradingPending ? 'Pending' : isCorrect ? 'Correct' : 'Wrong',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: stripeColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: _goldBg,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: _goldBorder),
-                                ),
-                                child: Text(
-                                  '🏆 +${q.trophies}',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF7D6608),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(
-                            width: 100,
-                            child: Text(
-                              'YOUR ANSWER',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _subLabel),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              q.yourAnswer,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: stripeColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(
-                            width: 100,
-                            child: Text(
-                              'RIGHT ANSWER',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _subLabel),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              q.rightAnswer,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: _greenAccent,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (q.isEssay) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(
-                              width: 100,
-                              child: Text(
-                                'SCORE',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _subLabel),
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                q.gradingPending ? 'Menunggu penilaian' : '${q.essayScore} / 10 · +${q.trophies} Piala',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF7D6608),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          TextButton.icon(
-                            key: ValueKey('toggle_explanation_${record.id}_$index'),
-                            onPressed: () {
-                              setState(() {
-                                if (isExpanded) {
-                                  _expandedQuestions.remove(expandKey);
-                                } else {
-                                  _expandedQuestions.add(expandKey);
-                                }
-                              });
-                            },
-                            style: TextButton.styleFrom(
-                              foregroundColor: _greenDark,
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            icon: Icon(
-                              isExpanded ? Icons.expand_less_rounded : Icons.menu_book_rounded,
-                              size: 14,
-                            ),
-                            label: Text(
-                              isExpanded ? 'Tutup Penjelasan' : 'Lihat Penjelasan',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (isExpanded) ...[
-                        const Divider(color: _cardBorder, height: 16),
-                        if (q.explanation != null && !q.explanation!.isUnavailable)
-                          ExplanationBody(explanation: q.explanation!)
-                        else
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 8),
-                            child: Text(
-                              'Penjelasan tidak tersimpan untuk soal ini.',
-                              style: TextStyle(fontSize: 12, color: _subLabel, fontStyle: FontStyle.italic),
-                            ),
-                          ),
-                      ],
-                    ],
-                  ),
-                ),
+              Text(
+                level.nextLevelThreshold == null
+                    ? 'Level tertinggi'
+                    : '${level.nextLevelThreshold! - _store.totalTrophies} piala ke Level ${level.levelNumber + 1}',
+                style: ElioTokens.caption.copyWith(color: p.textSecondary),
+              ),
+              HistoryPill(
+                'Tersimpan lokal',
+                color: p.primaryText,
+                icon: Icons.check,
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPhotoThumbnail(String? path, {required double size}) {
-    const placeholder = Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.photo_outlined, size: 24, color: Color(0xFF7F8C8D)),
-        SizedBox(height: 2),
-        Text('PHOTO', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold,
-            color: Color(0xFF7F8C8D))),
-      ],
-    );
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: size,
-        height: size,
-        color: const Color(0xFFEAECEE),
-        child: path == null
-            ? placeholder
-            : Image.file(File(path), fit: BoxFit.contain,
-                errorBuilder: (_, error, stack) => placeholder),
-      ),
-    );
-  }
-
-  Widget _buildCategoryBadge(ScanCategory category) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: category.bg,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        category.badgeLabel,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: category.fg,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDifficultyPill(String label, {required bool isSelected}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: isSelected ? _greenDark : const Color(0xFFF2F4F4),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: isSelected ? Colors.white : _subLabel,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: const BoxDecoration(
-                color: Color(0xFFEAECEE),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.history_rounded, size: 36, color: _subLabel),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Belum Ada Riwayat Scan',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _ink),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Setiap sampah yang kamu scan dan kuis yang kamu selesaikan akan muncul di sini.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: _subLabel),
-            ),
-            if (!kReleaseMode) ...[
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  await _store.seedFigmaSampleRecords();
-                  if (mounted) setState(() {});
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _greenDark,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                ),
-                icon: const Icon(Icons.playlist_add_rounded, size: 18),
-                label: const Text('Tambah Contoh Data (Debug)', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ],
-        ),
+        ],
       ),
     );
   }
 }
 
-extension StringExtension on String {
-  String capitalize() {
-    if (isEmpty) return this;
-    return '${this[0].toUpperCase()}${substring(1)}';
+class ScanDetailScreen extends StatefulWidget {
+  const ScanDetailScreen({
+    super.key,
+    required this.record,
+    required this.store,
+    this.embedded = false,
+    this.loadTimeout = const Duration(seconds: 15),
+  });
+  final ScanRecord record;
+  final ScanRecordStore store;
+  final bool embedded;
+  final Duration loadTimeout;
+  @override
+  State<ScanDetailScreen> createState() => _ScanDetailScreenState();
+}
+
+class _ScanDetailScreenState extends State<ScanDetailScreen> {
+  ScanRecord get record =>
+      widget.store.records.where((r) => r.id == widget.record.id).firstOrNull ??
+      widget.record;
+  ScanRecordStore get store => widget.store;
+  bool get embedded => widget.embedded;
+  late bool _ready = store.isLoaded;
+  bool _failed = false;
+  @override
+  void initState() {
+    super.initState();
+    if (!_ready) unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _failed = false;
+      _ready = false;
+    });
+    try {
+      await store.load(force: true).timeout(widget.loadTimeout);
+      if (store.loadError != null) {
+        throw StateError('History could not be loaded');
+      }
+      if (mounted) setState(() => _ready = true);
+    } catch (_) {
+      if (mounted) setState(() => _failed = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
+    if (!_ready || _failed || store.loadError != null) {
+      return Scaffold(
+        backgroundColor: p.background,
+        appBar: AppBar(
+          title: const Text('Detail scan'),
+          automaticallyImplyLeading: !embedded,
+        ),
+        body: _failed || store.loadError != null
+            ? HistoryError(
+                message: 'Detail scan belum dapat dimuat',
+                onRetry: _load,
+              )
+            : const HistorySkeleton(HistoryLoadingLayout.detail),
+      );
+    }
+    return Scaffold(
+      backgroundColor: p.background,
+      appBar: AppBar(
+        automaticallyImplyLeading: !embedded,
+        title: const Text('Detail scan'),
+        backgroundColor: p.background,
+        actions: [
+          IconButton(
+            tooltip: 'Ekspor PDF',
+            icon: const Icon(Icons.description_outlined),
+            onPressed: () => _export(context),
+          ),
+        ],
+      ),
+      body: ListView(
+        key: const ValueKey('detail_list_view'),
+        padding: const EdgeInsets.all(16),
+        children: [
+          HistoryPhoto(record, width: double.infinity, height: 200),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                record.itemName,
+                style: ElioTokens.headline.copyWith(
+                  fontFamily: ElioTokens.fontSans,
+                  color: p.textPrimary,
+                ),
+              ),
+              HistoryCategoryChip(record.category),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Scan ${historyTime(record.time)} · foto dan ${record.totalQuestions} soal tersimpan lokal',
+            style: ElioTokens.caption.copyWith(color: p.textSecondary),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final d in QuizDifficulty.values)
+                HistoryPill(
+                  '${historyDifficulty(d)} · ${d == record.difficulty ? record.totalQuestions : d.questionCount} soal',
+                  color: d == record.difficulty ? p.primaryText : null,
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          HistoryCard(
+            tint: p.secondaryText,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.emoji_events_outlined, color: p.secondaryText),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${record.trophies}',
+                      style: ElioTokens.headline.copyWith(
+                        fontFamily: ElioTokens.fontSans,
+                        color: p.secondaryText,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  '${record.correctCount} dari ${record.totalQuestions} benar',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '10 piala untuk setiap jawaban benar',
+                  style: ElioTokens.caption.copyWith(color: p.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Soal',
+                  style: ElioTokens.subhead.copyWith(
+                    fontFamily: ElioTokens.fontSans,
+                    color: p.textPrimary,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => _export(context),
+                child: const Text('Ekspor PDF'),
+              ),
+            ],
+          ),
+          for (var i = 0; i < record.questions.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _question(context, record.questions[i], i),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _export(BuildContext context) async {
+    try {
+      await QuizPdfService.shareOrSave(
+        store.records.where((r) => r.id == record.id).firstOrNull ?? record,
+      );
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PDF belum dapat diekspor. Coba lagi.')),
+        );
+      }
+    }
+  }
+
+  Widget _question(BuildContext context, RecordQuestion q, int i) {
+    final p = authPalette(context),
+        tint = q.isEssay
+            ? authPalette(context).textSecondary
+            : q.isCorrect
+            ? authPalette(context).primaryText
+            : authPalette(context).errorText;
+    return HistoryCard(
+      padding: 12,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              HistoryQuestionBadge(
+                i + 1,
+                correct: q.isCorrect,
+                essay: q.isEssay,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  q.question,
+                  style: ElioTokens.body.copyWith(color: p.textPrimary),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              HistoryPill(
+                q.isEssay
+                    ? (q.gradingPending
+                          ? 'Menunggu penilaian'
+                          : 'Skor ${q.essayScore}/10')
+                    : q.isCorrect
+                    ? 'Benar'
+                    : 'Salah',
+                color: tint,
+              ),
+              HistoryPill(
+                '+${q.trophies}',
+                color: p.secondaryText,
+                icon: Icons.emoji_events_outlined,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          HistoryAnswer('Jawabanmu', q.yourAnswer),
+          if (!q.isCorrect && !q.isEssay) ...[
+            const SizedBox(height: 8),
+            HistoryAnswer('Jawaban benar', q.rightAnswer, color: p.primaryText),
+          ],
+          TextButton.icon(
+            onPressed: () {
+              final theme = Theme.of(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => Theme(
+                    data: theme,
+                    child: QuestionExplanationScreen(
+                      record: record,
+                      questionIndex: i,
+                      store: store,
+                    ),
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.menu_book_outlined, size: 18),
+            label: const Text('Lihat penjelasan'),
+          ),
+        ],
+      ),
+    );
   }
 }
