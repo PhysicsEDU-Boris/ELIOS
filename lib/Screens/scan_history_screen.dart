@@ -100,10 +100,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                 children: [
                   Text(
                     'Riwayat',
-                    style: ElioTokens.subhead.copyWith(
-                      fontFamily: ElioTokens.fontSans,
-                      color: p.textPrimary,
-                    ),
+                    style: ElioTokens.subhead.copyWith(color: p.textPrimary),
                   ),
                   Text(
                     'Hasil scan, kuis, dan piala',
@@ -126,48 +123,16 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
               return const HistorySkeleton(HistoryLoadingLayout.list);
             }
             if (_store.records.isEmpty) {
-              return Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      homeArt('history_empty', width: 240, height: 180),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Belum ada scan',
-                        style: ElioTokens.subhead.copyWith(
-                          fontFamily: ElioTokens.fontSans,
-                          color: p.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Scan benda dengan ELIOS. Hasil kuis dan pialamu akan muncul di sini.',
-                        textAlign: TextAlign.center,
-                        style: ElioTokens.bodySmall.copyWith(
-                          color: p.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      FilledButton(
-                        style: FilledButton.styleFrom(
-                          shape: const StadiumBorder(),
-                          minimumSize: const Size(0, 48),
-                        ),
-                        onPressed: _scan,
-                        child: const Text('Mulai scan'),
-                      ),
-                    ],
-                  ),
-                ),
+              return HistoryEmpty(
+                art: homeArt('history_empty', width: 240, height: 180),
+                onScan: _scan,
               );
             }
             final list = ListView(
               key: const ValueKey('history_list'),
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               children: [
-                _summary(context),
+                _summary(),
                 const SizedBox(height: 16),
                 Wrap(
                   spacing: 8,
@@ -179,23 +144,10 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                       ScanCategory.recyclable,
                       ScanCategory.organic,
                     ])
-                      ChoiceChip(
-                        label: Text(c == null ? 'Semua' : historyCategory(c)),
+                      HistoryFilterChip(
+                        c == null ? 'Semua' : historyCategory(c),
                         selected: _filter == c,
-                        shape: const StadiumBorder(),
-                        side: BorderSide.none,
-                        showCheckmark: false,
-                        backgroundColor: p.surfaceRaised,
-                        selectedColor: p.primary,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 8,
-                        ),
-                        labelStyle: ElioTokens.bodySmall.copyWith(
-                          color: _filter == c ? p.onPrimary : p.textSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        onSelected: (_) => setState(() {
+                        onSelected: () => setState(() {
                           _filter = c;
                           _selected = null;
                         }),
@@ -203,29 +155,16 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Scan terbaru',
-                        style: ElioTokens.subhead.copyWith(
-                          fontFamily: ElioTokens.fontSans,
-                          color: p.textPrimary,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      '${records.length} scan',
-                      style: ElioTokens.caption.copyWith(color: p.primaryText),
-                    ),
-                  ],
+                HistorySectionHeader(
+                  'Scan terbaru',
+                  action: '${records.length} scan',
                 ),
                 const SizedBox(height: 16),
                 for (final r in records)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
+                    child: HistoryScanRow(
+                      r,
                       onTap: () {
                         if (box.maxWidth >= 750) {
                           setState(() => _selected = r.id);
@@ -244,49 +183,17 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                           );
                         }
                       },
-                      child: HistoryCard(
-                        padding: 12,
-                        child: Row(
-                          children: [
-                            HistoryPhoto(r),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    r.itemName,
-                                    style: ElioTokens.body.copyWith(
-                                      color: p.textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  HistoryCategoryChip(r.category),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${historyTime(r.time)} · ${r.totalQuestions} soal',
-                                    style: ElioTokens.caption.copyWith(
-                                      color: p.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            HistoryPill(
-                              '+${r.trophies}',
-                              color: p.secondaryText,
-                              icon: Icons.emoji_events_outlined,
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ),
                 if (records.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text('Belum ada scan untuk kategori ini.'),
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      'Belum ada scan untuk kategori ini.',
+                      style: ElioTokens.bodySmall.copyWith(
+                        color: p.textSecondary,
+                      ),
+                    ),
                   ),
               ],
             );
@@ -313,71 +220,15 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
     );
   }
 
-  Widget _summary(BuildContext context) {
-    final p = authPalette(context), level = _store.userLevel;
-    return HistoryCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.emoji_events_outlined,
-                size: 40,
-                color: p.secondaryText,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${_store.totalTrophies} piala',
-                      style: ElioTokens.subhead.copyWith(
-                        fontFamily: ElioTokens.fontSans,
-                        color: p.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      level.levelAndTitle,
-                      style: ElioTokens.caption.copyWith(
-                        color: p.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          LinearProgressIndicator(
-            value: _store.levelProgress,
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(999),
-            color: p.primary,
-            backgroundColor: p.surfaceRaised,
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text(
-                level.nextLevelThreshold == null
-                    ? 'Level tertinggi'
-                    : '${level.nextLevelThreshold! - _store.totalTrophies} piala ke Level ${level.levelNumber + 1}',
-                style: ElioTokens.caption.copyWith(color: p.textSecondary),
-              ),
-              HistoryPill(
-                'Tersimpan lokal',
-                color: p.primaryText,
-                icon: Icons.check,
-              ),
-            ],
-          ),
-        ],
-      ),
+  Widget _summary() {
+    final level = _store.userLevel, total = _store.totalTrophies;
+    return HistoryTrophySummary(
+      total: total,
+      level: level.levelAndTitle,
+      progress: _store.levelProgress,
+      next: level.nextLevelThreshold == null
+          ? 'Level tertinggi'
+          : '${level.nextLevelThreshold! - total} piala ke Level ${level.levelNumber + 1}',
     );
   }
 }
@@ -431,19 +282,19 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context);
+    final bar = HistoryTopBar(
+      title: 'Detail scan',
+      showBack: !embedded,
+      trailing: IconButton(
+        tooltip: 'Ekspor PDF',
+        icon: Icon(Icons.description_outlined, color: p.textPrimary),
+        onPressed: () => _export(context),
+      ),
+    );
     if (!_ready || _failed || store.loadError != null) {
       return Scaffold(
         backgroundColor: p.background,
-        appBar: AppBar(
-          title: Text(
-            'Detail scan',
-            style: ElioTokens.subhead.copyWith(
-              fontFamily: ElioTokens.fontSans,
-              color: p.textPrimary,
-            ),
-          ),
-          automaticallyImplyLeading: !embedded,
-        ),
+        appBar: bar,
         body: _failed || store.loadError != null
             ? HistoryError(
                 message: 'Detail scan belum dapat dimuat',
@@ -454,114 +305,94 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
     }
     return Scaffold(
       backgroundColor: p.background,
-      appBar: AppBar(
-        automaticallyImplyLeading: !embedded,
-        title: Text(
-          'Detail scan',
-          style: ElioTokens.subhead.copyWith(
-            fontFamily: ElioTokens.fontSans,
-            color: p.textPrimary,
-          ),
-        ),
-        backgroundColor: p.background,
-        actions: [
-          IconButton(
-            tooltip: 'Ekspor PDF',
-            icon: const Icon(Icons.description_outlined),
-            onPressed: () => _export(context),
-          ),
-        ],
-      ),
+      appBar: bar,
       body: ListView(
         key: const ValueKey('detail_list_view'),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
           HistoryPhoto(record, width: double.infinity, height: 200),
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text(
-                record.itemName,
-                style: ElioTokens.headline.copyWith(
-                  fontFamily: ElioTokens.fontSans,
-                  color: p.textPrimary,
-                ),
-              ),
-              HistoryCategoryChip(record.category),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Scan ${historyTime(record.time)} · foto dan ${record.totalQuestions} soal tersimpan lokal',
-            style: ElioTokens.caption.copyWith(color: p.textSecondary),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final d in QuizDifficulty.values)
-                HistoryPill(
-                  '${historyDifficulty(d)} · ${d == record.difficulty ? record.totalQuestions : d.questionCount} soal',
-                  color: d == record.difficulty ? p.primaryText : null,
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          HistoryCard(
-            tint: p.secondaryText,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.emoji_events_outlined, color: p.secondaryText),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${record.trophies}',
-                      style: ElioTokens.headline.copyWith(
-                        fontFamily: ElioTokens.fontSans,
-                        color: p.secondaryText,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  '${record.correctCount} dari ${record.totalQuestions} benar',
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '10 piala untuk setiap jawaban benar',
-                  style: ElioTokens.caption.copyWith(color: p.textSecondary),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
                 child: Text(
-                  'Soal',
-                  style: ElioTokens.subhead.copyWith(
-                    fontFamily: ElioTokens.fontSans,
-                    color: p.textPrimary,
-                  ),
+                  record.itemName,
+                  style: ElioTokens.headline.copyWith(color: p.textPrimary),
                 ),
               ),
-              TextButton(
-                onPressed: () => _export(context),
-                child: const Text('Ekspor PDF'),
+              const SizedBox(width: 12),
+              HistoryCategoryChip(record.category),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Icon(
+                  Icons.schedule_outlined,
+                  size: 16,
+                  color: p.textSecondary,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Scan ${historyTime(record.time)} · foto dan ${record.totalQuestions} soal tersimpan lokal',
+                  style: ElioTokens.caption.copyWith(color: p.textSecondary),
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          // One row as in Figma ("Mudah · 1Q", like the Q badges); scrolls on
+          // phones narrower than the three chips.
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final d in QuizDifficulty.values) ...[
+                  if (d.index > 0) const SizedBox(width: 8),
+                  HistoryFilterChip(
+                    '${historyDifficulty(d)} · ${d == record.difficulty ? record.totalQuestions : d.questionCount}Q',
+                    selected: d == record.difficulty,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          HistoryScoreCard(record),
+          const SizedBox(height: 16),
+          HistorySectionHeader(
+            'Soal',
+            action: 'Ekspor PDF',
+            onAction: () => _export(context),
+          ),
+          const SizedBox(height: 16),
           for (var i = 0; i < record.questions.length; i++)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _question(context, record.questions[i], i),
+              child: HistoryQuestionCard(
+                record.questions[i],
+                i,
+                onExplain: () {
+                  final theme = Theme.of(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => Theme(
+                        data: theme,
+                        child: QuestionExplanationScreen(
+                          record: record,
+                          questionIndex: i,
+                          store: store,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
         ],
       ),
@@ -580,86 +411,5 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
         );
       }
     }
-  }
-
-  Widget _question(BuildContext context, RecordQuestion q, int i) {
-    final p = authPalette(context),
-        tint = q.isEssay
-            ? authPalette(context).textSecondary
-            : q.isCorrect
-            ? authPalette(context).primaryText
-            : authPalette(context).errorText;
-    return HistoryCard(
-      padding: 12,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              HistoryQuestionBadge(
-                i + 1,
-                correct: q.isCorrect,
-                essay: q.isEssay,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  q.question,
-                  style: ElioTokens.body.copyWith(color: p.textPrimary),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              HistoryPill(
-                q.isEssay
-                    ? (q.gradingPending
-                          ? 'Menunggu penilaian'
-                          : 'Skor ${q.essayScore}/10')
-                    : q.isCorrect
-                    ? 'Benar'
-                    : 'Salah',
-                color: tint,
-              ),
-              HistoryPill(
-                '+${q.trophies}',
-                color: p.secondaryText,
-                icon: Icons.emoji_events_outlined,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          HistoryAnswer('Jawabanmu', q.yourAnswer),
-          if (!q.isCorrect && !q.isEssay) ...[
-            const SizedBox(height: 8),
-            HistoryAnswer('Jawaban benar', q.rightAnswer, color: p.primaryText),
-          ],
-          TextButton.icon(
-            onPressed: () {
-              final theme = Theme.of(context);
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => Theme(
-                    data: theme,
-                    child: QuestionExplanationScreen(
-                      record: record,
-                      questionIndex: i,
-                      store: store,
-                    ),
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.menu_book_outlined, size: 18),
-            label: const Text('Lihat penjelasan'),
-          ),
-        ],
-      ),
-    );
   }
 }

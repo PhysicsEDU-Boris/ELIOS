@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/quiz_explanation.dart';
 import '../models/scan_record.dart';
@@ -137,28 +138,25 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
     }
   }
 
-  Widget _listenButton(String id, String text) {
-    final p = authPalette(context),
-        active = _playing == id || (id == 'question' && _whole);
-    return IconButton(
-      tooltip: active ? 'Jeda' : 'Dengarkan',
-      padding: const EdgeInsets.all(6),
-      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-      onPressed: () => _listen(id, text),
-      icon: Container(
-        width: 36,
-        height: 36,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: p.primaryText.withValues(alpha: p.isDark ? .12 : .06),
-          border: Border.all(color: p.primaryText.withValues(alpha: .35)),
-        ),
-        child: Icon(
-          active ? Icons.pause : Icons.play_arrow,
-          size: 18,
-          color: p.primaryText,
-        ),
+  Widget _listenButton(String id, String text) => HistoryListenButton(
+    active: _playing == id || (id == 'question' && _whole),
+    onPressed: () => _listen(id, text),
+  );
+
+  Future<void> _openExport() async {
+    _stop();
+    final theme = Theme.of(context), p = authPalette(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: p.surface,
+      barrierColor: const Color(0x8C0F172A), // Figma scrim #0F172A at 55 %
+      shape: const RoundedSuperellipseBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (_) => Theme(
+        data: theme,
+        child: QuestionExportSheet(record: _record, questionIndex: _index),
       ),
     );
   }
@@ -166,56 +164,25 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context), q = _q;
-    final tint = q.isEssay
-        ? p.textSecondary
-        : q.isCorrect
-        ? p.primaryText
-        : p.errorText;
+    final sections = _sections;
+    String? body(String id) =>
+        sections.where((s) => s.$1 == id).firstOrNull?.$3;
+    final idea = body('idea'), steps = _explanation?.steps ?? const [];
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) _stop();
       },
       child: Scaffold(
         backgroundColor: p.background,
-        appBar: AppBar(
-          leading: IconButton(
-            tooltip: 'Kembali',
-            onPressed: () => Navigator.of(context).maybePop(),
-            icon: const Icon(Icons.arrow_back),
+        appBar: HistoryTopBar(
+          title: 'Penjelasan',
+          subtitle:
+              '${_record.itemName} · Soal ${_index + 1} dari ${_record.questions.length}',
+          trailing: ListenableBuilder(
+            listenable: widget.store,
+            builder: (_, child) =>
+                HistoryTrophyPill(widget.store.totalTrophies),
           ),
-          backgroundColor: p.background,
-          titleSpacing: 0,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Penjelasan',
-                style: ElioTokens.subhead.copyWith(
-                  fontFamily: ElioTokens.fontSans,
-                  color: p.textPrimary,
-                ),
-              ),
-              Text(
-                '${_record.itemName} · Soal ${_index + 1} dari ${_record.questions.length}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: ElioTokens.caption.copyWith(color: p.textSecondary),
-              ),
-            ],
-          ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: ListenableBuilder(
-                listenable: widget.store,
-                builder: (_, child) => HistoryPill(
-                  '${widget.store.totalTrophies}',
-                  color: p.secondaryText,
-                  icon: Icons.emoji_events_outlined,
-                ),
-              ),
-            ),
-          ],
         ),
         body: _loading
             ? const HistorySkeleton(HistoryLoadingLayout.explanation)
@@ -223,257 +190,122 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                 controller: _scroll,
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Wrap(
-                          spacing: 6,
-                          runSpacing: 8,
-                          children: [
-                            HistoryQuestionBadge(
-                              _index + 1,
-                              correct: q.isCorrect,
-                              essay: q.isEssay,
-                            ),
-                            HistoryPill(historyDifficulty(_record.difficulty)),
-                            HistoryPill(
-                              q.isEssay
-                                  ? (q.gradingPending
-                                        ? 'Menunggu penilaian'
-                                        : 'Skor ${q.essayScore}/10')
-                                  : q.isCorrect
-                                  ? 'Benar'
-                                  : 'Salah',
-                              color: tint,
-                            ),
-                            HistoryPill(
-                              '+${q.trophies}',
-                              color: p.secondaryText,
-                              icon: Icons.emoji_events_outlined,
-                            ),
-                          ],
+                  ConstrainedBox(
+                    // Figma meta row is 100 high with the chips centred.
+                    constraints: const BoxConstraints(minHeight: 100),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              HistoryQuestionBadge(
+                                _index + 1,
+                                correct: q.isCorrect,
+                                essay: q.isEssay,
+                              ),
+                              HistoryChip(
+                                historyDifficulty(_record.difficulty),
+                              ),
+                              HistoryResultChip(q),
+                              HistoryTrophyChip(q.trophies),
+                            ],
+                          ),
                         ),
-                      ),
-                      _listenButton('question', q.question),
-                    ],
+                        const SizedBox(width: 8),
+                        _listenButton('question', q.question),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                   Text(
                     q.question,
-                    style: ElioTokens.headline.copyWith(
-                      fontFamily: ElioTokens.fontSans,
-                      color: p.textPrimary,
-                    ),
+                    style: ElioTokens.headline.copyWith(color: p.textPrimary),
                   ),
                   const SizedBox(height: 16),
                   HistoryAnswer(
                     'Jawabanmu',
                     q.yourAnswer,
-                    color: q.isEssay
-                        ? null
+                    tone: q.isEssay
+                        ? HistoryTone.neutral
                         : q.isCorrect
-                        ? p.primaryText
-                        : p.errorText,
+                        ? HistoryTone.success
+                        : HistoryTone.error,
                   ),
                   const SizedBox(height: 8),
                   HistoryAnswer(
                     q.isEssay ? 'Jawaban acuan' : 'Jawaban benar',
                     q.rightAnswer,
-                    color: q.isEssay ? null : p.primaryText,
+                    tone: q.isEssay ? HistoryTone.neutral : HistoryTone.success,
+                    check: !q.isEssay,
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    'Penjelasan',
-                    style: ElioTokens.subhead.copyWith(
-                      fontFamily: ElioTokens.fontSans,
-                      color: p.textPrimary,
+                  const HistorySectionHeader('Penjelasan'),
+                  const SizedBox(height: 16),
+                  for (final (i, s)
+                      in sections
+                          .where((s) => s.$1 != 'idea' && s.$1 != 'steps')
+                          .indexed) ...[
+                    if (i > 0) const SizedBox(height: 4),
+                    HistoryExplanationSection(
+                      title: s.$2,
+                      body: s.$3,
+                      active: _playing == s.$1,
+                      onListen: () => _listen(s.$1, s.$3),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  for (final section in _sections) _section(section),
+                  ],
+                  if (idea != null) ...[
+                    const SizedBox(height: 16),
+                    HistoryKeyIdea(
+                      active: _playing == 'idea',
+                      text: idea,
+                      art: homeArt(
+                        switch (_record.category) {
+                          ScanCategory.b3 => 'history_buddy_b3',
+                          ScanCategory.organic => 'bin_organik',
+                          _ => 'bin_anorganik',
+                        },
+                        width: 64,
+                        height: 76,
+                      ),
+                    ),
+                  ],
+                  if (body('steps') != null) ...[
+                    const SizedBox(height: 16),
+                    HistorySteps(
+                      title: 'Cara melakukannya',
+                      steps: steps,
+                      active: _playing == 'steps',
+                    ),
+                  ],
                   if (_explanation == null ||
                       (!_explanation!.isComplete && !q.isEssay) ||
                       _explanation!.isUnavailable)
                     HistoryError(onRetry: () => _load(retry: true)),
                 ],
               ),
-        bottomNavigationBar: DecoratedBox(
-          decoration: BoxDecoration(
-            color: p.surface,
-            border: Border(top: BorderSide(color: p.borderSubtle)),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        shape: const StadiumBorder(),
-                        minimumSize: const Size(0, 48),
-                      ),
-                      onPressed: () async {
-                        _stop();
-                        await showModalBottomSheet<void>(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: p.surface,
-                          showDragHandle: true,
-                          builder: (_) => Theme(
-                            data: Theme.of(context),
-                            child: QuestionExportSheet(
-                              record: _record,
-                              questionIndex: _index,
-                            ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.description_outlined, size: 20),
-                      label: const Text('Ekspor PDF'),
-                    ),
-                  ),
-                  if (_index + 1 < _record.questions.length) ...[
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          shape: const StadiumBorder(),
-                          minimumSize: const Size(0, 48),
-                        ),
-                        onPressed: () {
-                          _stop();
-                          setState(() => _index++);
-                          if (_scroll.hasClients) _scroll.jumpTo(0);
-                          unawaited(_load());
-                        },
-                        child: const Text('Soal berikutnya'),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _section((String, String, String) section) {
-    final p = authPalette(context), active = _playing == section.$1;
-    final idea = section.$1 == 'idea';
-    if (idea) {
-      return Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: HistoryCard(
-          padding: 12,
-          tint: active ? p.primaryText : p.tertiaryText,
-          child: Row(
-            children: [
-              homeArt(
-                switch (_record.category) {
-                  ScanCategory.b3 => 'history_buddy_b3',
-                  ScanCategory.organic => 'bin_organik',
-                  _ => 'bin_anorganik',
-                },
-                width: 64,
-                height: 76,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            section.$2.toUpperCase(),
-                            style: ElioTokens.overline.copyWith(
-                              fontFamily: ElioTokens.fontSans,
-                              color: p.tertiaryText,
-                            ),
-                          ),
-                        ),
-                        _listenButton(section.$1, section.$3),
-                      ],
-                    ),
-                    if (active)
-                      Text(
-                        'Sedang dibacakan',
-                        style: ElioTokens.caption.copyWith(
-                          color: p.primaryText,
-                        ),
-                      ),
-                    Text(
-                      section.$3,
-                      style: ElioTokens.bodySmall.copyWith(
-                        color: p.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: HistoryCard(
-        padding: 12,
-        plain: !active,
-        tint: active ? p.primaryText : null,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        bottomNavigationBar: HistoryActionsBar(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    section.$2,
-                    style: ElioTokens.subhead.copyWith(
-                      fontFamily: ElioTokens.fontSans,
-                      color: p.textPrimary,
-                    ),
-                  ),
-                ),
-                _listenButton(section.$1, section.$3),
-              ],
+            OutlinedButton.icon(
+              style: historyOutlineStyle(p),
+              onPressed: _openExport,
+              icon: const Icon(Icons.description_outlined),
+              label: const Text('Ekspor PDF'),
             ),
-            if (active)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  'Sedang dibacakan',
-                  style: ElioTokens.caption.copyWith(color: p.primaryText),
-                ),
-              ),
-            if (section.$1 == 'steps') ...[
-              for (var i = 0; i < _explanation!.steps.length; i++)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      HistoryPill('${i + 1}'),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _explanation!.steps[i],
-                          style: ElioTokens.body.copyWith(color: p.textPrimary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ] else
-              Text(
-                section.$3,
-                style: ElioTokens.body.copyWith(color: p.textPrimary),
+            if (_index + 1 < _record.questions.length)
+              FilledButton.icon(
+                style: historyPrimaryStyle(p),
+                iconAlignment: IconAlignment.end,
+                onPressed: () {
+                  _stop();
+                  setState(() => _index++);
+                  if (_scroll.hasClients) _scroll.jumpTo(0);
+                  unawaited(_load());
+                },
+                icon: const Icon(Icons.chevron_right),
+                label: const Text('Soal berikutnya'),
               ),
           ],
         ),
@@ -540,137 +372,167 @@ class _QuestionExportSheetState extends State<QuestionExportSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final p = authPalette(context);
-    return SafeArea(
-      top: false,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Ekspor soal ini',
-              style: ElioTokens.subhead.copyWith(
-                fontFamily: ElioTokens.fontSans,
-                color: p.textPrimary,
+    final p = authPalette(context), paper = ElioTokens.light;
+    final inset = MediaQuery.viewPaddingOf(context).bottom;
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(16, 12, 16, math.max(28, inset + 12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Container(
+              width: 32,
+              height: 4,
+              decoration: ShapeDecoration(
+                color: p.borderMedium,
+                shape: const StadiumBorder(),
               ),
             ),
-            Text(
-              'Hanya soal ${widget.questionIndex + 1} dari ${widget.record.itemName} masuk ke PDF.',
-              style: ElioTokens.caption.copyWith(color: p.textSecondary),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Ekspor soal ini',
+            style: ElioTokens.subhead.copyWith(color: p.textPrimary),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Hanya soal ${widget.questionIndex + 1} dari ${widget.record.itemName} masuk ke PDF.',
+            style: ElioTokens.caption.copyWith(color: p.textSecondary),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: ShapeDecoration(
+              color: p.surfaceRaised,
+              shape: RoundedSuperellipseBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            const SizedBox(height: 16),
-            HistoryCard(
-              child: Row(
-                children: [
-                  Container(
-                    width: 52,
-                    height: 74,
-                    padding: const EdgeInsets.all(6),
+            child: Row(
+              children: [
+                // The page is always white (the PDF prints light).
+                Container(
+                  width: 52,
+                  height: 72,
+                  padding: const EdgeInsets.fromLTRB(7, 9, 5, 0),
+                  decoration: BoxDecoration(
                     color: Colors.white,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (var i = 0; i < 7; i++)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            child: Container(
-                              width: i.isEven ? 34 : 22,
-                              height: 3,
-                              color: i == 0
-                                  ? p.errorText
-                                  : i == 6
-                                  ? p.primaryText
-                                  : p.borderMedium,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: paper.borderSubtle),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final (w, c) in [
+                        (18.0, paper.error),
+                        (36.0, paper.textPrimary),
+                        (30.0, paper.textPrimary),
+                        (40.0, paper.borderMedium),
+                        (34.0, paper.borderMedium),
+                        (40.0, paper.borderMedium),
+                        (22.0, paper.primaryText),
+                      ])
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Container(
+                            width: w,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: c,
+                              borderRadius: BorderRadius.circular(2),
                             ),
                           ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          QuizPdfService.questionFilename(
-                            widget.record,
-                            widget.questionIndex,
-                          ),
-                          style: ElioTokens.bodySmall.copyWith(
-                            color: p.textPrimary,
-                          ),
                         ),
-                        Text(
-                          'A4 · PDF',
-                          style: ElioTokens.caption.copyWith(
-                            color: p.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'SERTAKAN',
-              style: ElioTokens.overline.copyWith(
-                fontFamily: ElioTokens.fontSans,
-                color: p.textSecondary,
-              ),
-            ),
-            for (var i = 0; i < 4; i++)
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                value: _include[i],
-                onChanged: _busy
-                    ? null
-                    : (value) => setState(() => _include[i] = value!),
-                title: Text(
-                  [
-                    'Soal dan kedua jawaban',
-                    'Penjelasan dan langkah',
-                    'Foto scan',
-                    'Ruang catatan',
-                  ][i],
-                ),
-              ),
-            if (_error != null)
-              Text(_error!, style: TextStyle(color: p.errorText)),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      shape: const StadiumBorder(),
-                      minimumSize: const Size(0, 48),
-                    ),
-                    onPressed: _busy ? null : () => _export(true),
-                    icon: const Icon(Icons.share_outlined),
-                    label: const Text('Bagikan'),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      shape: const StadiumBorder(),
-                      minimumSize: const Size(0, 48),
-                    ),
-                    onPressed: _busy ? null : () => _export(false),
-                    icon: const Icon(Icons.description_outlined),
-                    label: Text(_busy ? 'Menyimpan…' : 'Simpan PDF'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        QuizPdfService.questionFilename(
+                          widget.record,
+                          widget.questionIndex,
+                        ),
+                        style: ElioTokens.body.copyWith(color: p.textPrimary),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'A4 · PDF',
+                        style: ElioTokens.caption.copyWith(
+                          color: p.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'SERTAKAN',
+            style: ElioTokens.overline.copyWith(color: p.textTertiary),
+          ),
+          const SizedBox(height: 16),
+          for (var i = 0; i < 4; i++)
+            CheckboxListTile(
+              contentPadding: const EdgeInsets.only(left: 4),
+              minTileHeight: 48,
+              minVerticalPadding: 0,
+              dense: true,
+              horizontalTitleGap: 12,
+              checkboxScaleFactor: 24 / 18,
+              checkboxShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(3),
+              ),
+              visualDensity: const VisualDensity(vertical: -4),
+              controlAffinity: ListTileControlAffinity.leading,
+              value: _include[i],
+              onChanged: _busy
+                  ? null
+                  : (value) => setState(() => _include[i] = value!),
+              title: Text(
+                [
+                  'Soal dan kedua jawaban',
+                  'Penjelasan dan langkah',
+                  'Foto scan',
+                  'Ruang catatan',
+                ][i],
+                style: ElioTokens.body.copyWith(color: p.textPrimary),
+              ),
+            ),
+          if (_error != null)
+            Text(
+              _error!,
+              style: ElioTokens.bodySmall.copyWith(color: p.errorText),
+            ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: historyOutlineStyle(p),
+                  onPressed: _busy ? null : () => _export(true),
+                  icon: const Icon(Icons.share_outlined),
+                  label: const Text('Bagikan'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton.icon(
+                  style: historyPrimaryStyle(p),
+                  onPressed: _busy ? null : () => _export(false),
+                  icon: const Icon(Icons.description_outlined),
+                  label: Text(_busy ? 'Menyimpan…' : 'Simpan PDF'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

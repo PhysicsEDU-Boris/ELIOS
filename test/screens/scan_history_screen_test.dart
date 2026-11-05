@@ -70,28 +70,29 @@ void main() {
         expect(find.text('Riwayat'), findsOneWidget);
         expect(find.text('${record.trophies} piala'), findsOneWidget);
         expect(find.text('Tersimpan lokal'), findsOneWidget);
-        await t.tap(find.widgetWithText(ChoiceChip, 'Organik'));
+        await t.tap(find.widgetWithText(HistoryFilterChip, 'Organik'));
         await t.pumpAndSettle();
         expect(find.text('Wadah earphone'), findsNothing);
-        await t.tap(find.widgetWithText(ChoiceChip, 'Semua'));
+        await t.tap(find.widgetWithText(HistoryFilterChip, 'Semua'));
         await t.pumpAndSettle();
         await t.tap(find.text('Wadah earphone'));
         await t.pumpAndSettle();
         expect(find.byType(ScanDetailScreen), findsOneWidget);
         expect(find.text('Detail scan'), findsOneWidget);
-        final card = t.widget<Container>(
+        // Score card: Figma chip/warning-bg (light 4 %, dark 12 %).
+        final card = t.widget<Material>(
           find
               .descendant(
-                of: find.byType(HistoryCard).first,
-                matching: find.byType(Container),
+                of: find.byType(HistoryScoreCard),
+                matching: find.byType(Material),
               )
               .first,
         );
         expect(
-          (card.decoration as BoxDecoration).color,
+          card.color,
           mode == Brightness.dark
               ? ElioTokens.dark.secondaryText.withValues(alpha: .12)
-              : ElioTokens.light.secondaryText.withValues(alpha: .06),
+              : ElioTokens.light.secondaryText.withValues(alpha: .04),
         );
         expect(t.takeException(), isNull);
       },
@@ -355,7 +356,7 @@ void main() {
     await t.tap(find.byTooltip('Dengarkan').at(1));
     await t.pump();
     expect(spoken.single, h3Explanation.correctAnswerReason);
-    expect(find.text('Sedang dibacakan'), findsOneWidget);
+    expect(find.text('SEDANG DIBACAKAN'), findsOneWidget);
     final beforeSwitch = stops;
     await t.tap(find.byTooltip('Dengarkan').at(1));
     await t.pump();
@@ -363,14 +364,14 @@ void main() {
     expect(spoken.last, h3Explanation.selectedAnswerFeedback);
     await t.tap(find.byTooltip('Jeda'));
     await t.pump();
-    expect(find.text('Sedang dibacakan'), findsNothing);
+    expect(find.text('SEDANG DIBACAKAN'), findsNothing);
     await t.tap(find.byTooltip('Dengarkan').at(1));
     await t.pump();
     final beforeBackground = stops;
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     await t.pump();
     expect(stops, greaterThan(beforeBackground));
-    expect(find.text('Sedang dibacakan'), findsNothing);
+    expect(find.text('SEDANG DIBACAKAN'), findsNothing);
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await t.tap(find.byTooltip('Dengarkan').first);
     await t.pump();
@@ -443,7 +444,7 @@ void main() {
       'legacy',
     ]) {
       testWidgets(
-        '${mode.name} $shape photo is retained and contained in list and detail',
+        '${mode.name} $shape photo is retained and cover-fit in list and detail',
         (t) async {
           final dir = Directory.systemTemp.createTempSync('h3-photo-');
           addTearDown(() => dir.deleteSync(recursive: true));
@@ -480,7 +481,7 @@ void main() {
           });
           await t.pumpAndSettle();
           if (valid) {
-            expect(t.widget<Image>(find.byType(Image)).fit, BoxFit.contain);
+            expect(t.widget<Image>(find.byType(Image)).fit, BoxFit.cover);
             expect(t.getSize(find.byType(Image)), const Size(64, 64));
           }
           await t.runAsync(() async {
@@ -500,7 +501,7 @@ void main() {
               of: find.byType(ScanDetailScreen),
               matching: find.byType(Image),
             );
-            expect(t.widget<Image>(photo).fit, BoxFit.contain);
+            expect(t.widget<Image>(photo).fit, BoxFit.cover);
             expect(t.getSize(photo).height, 200);
           } else if (shape == 'legacy') {
             expect(find.byType(SvgPicture), findsWidgets);
@@ -522,9 +523,24 @@ void main() {
         ScanHistoryScreen(store: HistoryTestStore([h3Record()])),
         mode,
       );
-      final chip = t.widget<ChoiceChip>(find.byType(ChoiceChip).first);
-      expect(chip.shape, isA<StadiumBorder>());
-      expect(chip.labelStyle?.fontFamily, ElioTokens.fontSans);
+      final chip = find.byType(HistoryFilterChip).first;
+      expect(
+        t
+            .widget<Material>(
+              find.descendant(of: chip, matching: find.byType(Material)).first,
+            )
+            .shape,
+        isA<StadiumBorder>(),
+      );
+      expect(
+        t
+            .widget<Text>(
+              find.descendant(of: chip, matching: find.byType(Text)),
+            )
+            .style
+            ?.fontFamily,
+        ElioTokens.fontSans,
+      );
     });
     testWidgets('${mode.name} detail title keeps H3 sans styling', (t) async {
       final record = h3Record();
