@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- Essay quiz: opening or closing the landscape keyboard keeps the answer field focused and preserves the draft and cursor, so the keyboard no longer immediately closes (decision 0186).
+
 - History H3 now matches the Figma design in light and dark: Figma chip tints, 40 dp filter chips, trophy summary badge, scan rows with trophies on the right, Display score card, one answers panel per question card, Figma top bars, explanation sections with a "SEDANG DIBACAKAN" row, Key idea and Steps without their own listen button, a 48 dp actions bar and the Figma export sheet. Saved crops are cover-fit. A 390 dp harness renders all 18 Figma states with side-by-side images (decision 0184).
 
 - Fonts: the whole app now uses the bundled Google Sans Flex (UI and headings) and Google Sans Code (code), both SIL OFL 1.1, instead of Inter and JetBrains Mono. Headings, overlines and chips are no longer monospaced. No runtime font download (decision 0091).

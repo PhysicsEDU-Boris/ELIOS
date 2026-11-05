@@ -1408,7 +1408,9 @@ class _EssayInputView extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 8),
+              // Keep the editor mounted when keyboard resizing changes the layout.
               Expanded(
+                key: const ValueKey('quiz_essay_editor'),
                 child: grading
                     ? Container(
                         key: const ValueKey('quiz_essay_grading'),
@@ -1439,8 +1441,7 @@ class _EssayInputView extends ConsumerWidget {
                           ],
                         ),
                       )
-                    : typingShort
-                    ? Row(
+                    : Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Expanded(
@@ -1466,34 +1467,18 @@ class _EssayInputView extends ConsumerWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          _GreenButton(
-                            key: const ValueKey('quiz_essay_submit'),
-                            label: 'Submit',
-                            icon: Icons.send_rounded,
-                            onTap: canSend
-                                ? () => n.submitEssay(controller.text)
-                                : null,
-                          ),
+                          if (typingShort) ...[
+                            const SizedBox(width: 8),
+                            _GreenButton(
+                              key: const ValueKey('quiz_essay_submit'),
+                              label: 'Submit',
+                              icon: Icons.send_rounded,
+                              onTap: canSend
+                                  ? () => n.submitEssay(controller.text)
+                                  : null,
+                            ),
+                          ],
                         ],
-                      )
-                    : TextField(
-                        key: const ValueKey('quiz_essay_field'),
-                        controller: controller,
-                        enabled: !state.essaySubmitted,
-                        expands: true,
-                        maxLines: null,
-                        textAlignVertical: TextAlignVertical.top,
-                        style: TextStyle(color: p.textPrimary, fontSize: 15),
-                        decoration: InputDecoration(
-                          hintText: 'Type your answer here…',
-                          filled: true,
-                          fillColor: p.surfaceRaised,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
                       ),
               ),
               if (!typingShort) ...[

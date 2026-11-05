@@ -203,6 +203,36 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('essay keeps focus and draft as the landscape keyboard opens and closes',
+      (tester) async {
+    await _pump(tester, const Size(800, 360), _states['essay']!);
+    final field = find.byKey(const ValueKey('quiz_essay_field'));
+    await tester.tap(field);
+    await tester.enterText(field, 'Plastik perlu dibilas');
+    final editor = tester.state<EditableTextState>(find.byType(EditableText));
+    editor.widget.controller.selection = const TextSelection.collapsed(offset: 7);
+    await tester.pump();
+    expect(editor.widget.focusNode.hasFocus, isTrue);
+
+    for (final inset in [80.0, 180.0, 200.0, 80.0, 0.0, 180.0]) {
+      tester.view.viewInsets = FakeViewPadding(bottom: inset);
+      await tester.pumpAndSettle();
+      expect(tester.state<EditableTextState>(find.byType(EditableText)), same(editor));
+      expect(editor.widget.focusNode.hasFocus, isTrue);
+      expect(tester.testTextInput.isVisible, isTrue);
+      expect(editor.widget.controller.text, 'Plastik perlu dibilas');
+      expect(editor.widget.controller.selection.baseOffset, 7);
+      final submit = find.byKey(const ValueKey('quiz_essay_submit'));
+      expect(tester.getRect(field).height, greaterThan(0));
+      expect(tester.getRect(submit).bottom, lessThanOrEqualTo(360 - inset));
+      expect(tester.takeException(), isNull);
+    }
+    tester.testTextInput.enterText('Plastik bersih bisa didaur ulang');
+    await tester.pump();
+    expect(editor.widget.controller.text, 'Plastik bersih bisa didaur ulang');
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('long AI chat scrolls inside the chat panel instead of growing the popup',
       (tester) async {
     await _pump(tester, const Size(760, 360), _states['mc-answered-long-chat']!);
