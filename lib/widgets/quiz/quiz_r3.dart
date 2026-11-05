@@ -1364,7 +1364,7 @@ class _EssayInputView extends ConsumerWidget {
                   ?_notThisChip(context, state, n),
                 ],
               ),
-              // Keyboard open on a short screen: the field and the actions only (the question is above it once closed).
+              // Short screens show the question beside the editor.
               if (!typingShort) ...[
                 const SizedBox(height: 6),
                 Row(
@@ -1444,7 +1444,27 @@ class _EssayInputView extends ConsumerWidget {
                     : Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
+                          if (typingShort)
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 12),
+                                child: SingleChildScrollView(
+                                  key: const ValueKey(
+                                    'quiz_essay_compact_question',
+                                  ),
+                                  child: Text(
+                                    q.question,
+                                    style: TextStyle(
+                                      color: p.textPrimary,
+                                      fontSize: 14,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           Expanded(
+                            key: const ValueKey('quiz_essay_text'),
                             child: TextField(
                               key: const ValueKey('quiz_essay_field'),
                               controller: controller,

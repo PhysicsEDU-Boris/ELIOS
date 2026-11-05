@@ -214,7 +214,7 @@ void main() {
     await tester.pump();
     expect(editor.widget.focusNode.hasFocus, isTrue);
 
-    for (final inset in [80.0, 180.0, 200.0, 80.0, 0.0, 180.0]) {
+    for (final inset in [80.0, 180.0, 240.0, 200.0, 80.0, 0.0, 180.0]) {
       tester.view.viewInsets = FakeViewPadding(bottom: inset);
       await tester.pumpAndSettle();
       expect(tester.state<EditableTextState>(find.byType(EditableText)), same(editor));
@@ -222,6 +222,16 @@ void main() {
       expect(tester.testTextInput.isVisible, isTrue);
       expect(editor.widget.controller.text, 'Plastik perlu dibilas');
       expect(editor.widget.controller.selection.baseOffset, 7);
+      expect(find.text(_longQuestion), findsOneWidget);
+      if (inset >= 180) {
+        final question = find.byKey(const ValueKey('quiz_essay_compact_question'));
+        expect(question, findsOneWidget);
+        expect(tester.getRect(question).height, greaterThan(0));
+        expect(tester.getRect(question).right, lessThanOrEqualTo(tester.getRect(field).left));
+        await tester.drag(question, const Offset(0, -200));
+        await tester.pumpAndSettle();
+        expect(editor.widget.focusNode.hasFocus, isTrue);
+      }
       final submit = find.byKey(const ValueKey('quiz_essay_submit'));
       expect(tester.getRect(field).height, greaterThan(0));
       expect(tester.getRect(submit).bottom, lessThanOrEqualTo(360 - inset));

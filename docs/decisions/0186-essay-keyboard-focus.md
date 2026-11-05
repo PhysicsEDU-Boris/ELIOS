@@ -19,3 +19,7 @@ The widget regression focuses the field, enters a draft, moves the cursor and va
 Robot acceptance: open an essay on a landscape phone, tap the answer, type, hide and reopen the keyboard several times, then submit. The keyboard should stay open while typing and the draft/cursor should survive resizing. The follow-up installed this fix on the connected Motorola in the existing localized build; see `docs/local-build-notes.md`. Robot firmware, app data and models are unchanged.
 
 Checks: `flutter test`: 1255 passed, 20 skipped, one unrelated `test/theme/elio_tokens_test.dart` radius-parser null-check failure. That failure also reproduces in isolation; both the token source and test are identical to the base branch. `flutter analyze`: two existing style infos in `test/m2c_identification_test.dart` and `test/question_bank_integrity_test.dart`. Secret scan and `git diff --check` pass.
+
+## Follow-up: question visible while typing
+
+The owner screenshot after installation confirms the compact layout hides the question. Keep a scrollable question pane beside the answer in short layouts. Key the field wrapper to preserve the editor when that pane appears/disappears. The regression now checks question presence, placement, scrolling without focus loss, and a 240 dp keyboard inset; it fails on the first installed build because the question is absent. This uses the existing popup, submission, type size and normal layout.
