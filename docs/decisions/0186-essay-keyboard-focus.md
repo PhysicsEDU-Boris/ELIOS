@@ -23,3 +23,5 @@ Checks: `flutter test`: 1255 passed, 20 skipped, one unrelated `test/theme/elio_
 ## Follow-up: question visible while typing
 
 The owner screenshot after installation confirms the compact layout hides the question. Keep a scrollable question pane beside the answer in short layouts. Key the field wrapper to preserve the editor when that pane appears/disappears. The regression now checks question presence, placement, scrolling without focus loss, and a 240 dp keyboard inset; it fails on the first installed build because the question is absent. This uses the existing popup, submission, type size and normal layout.
+
+Follow-up verification: all 64 popup tests and localized regression pass; full suite remains 1255 passed / 20 skipped / same unrelated token-radius failure, analyzer same two infos, secret/diff scans clean. Localized `dfb7f67` installed in place on the Motorola at 21:40:39 Jakarta; cold launch OK, both History files unchanged. Physical IME acceptance pending.

@@ -26,3 +26,11 @@
 - Private History/photo/settings backup and reproducible localized source patch: task temp directory `elios-essay-install-5y3bzk0q` under the macOS temporary directory (`phone-data-before.tar`, `localized-build-source.patch`). Existing model assets retained; no downloads/copies.
 - App cold launch returned Status ok (3615 ms). After launch, both History files exactly match the backup: main 125309 bytes, R3 test 11455 bytes. No owner records inserted. Physical essay/IME interaction not exercised; owner to type in landscape, hide/reopen keyboard, then submit.
 - No Mac app build/registration, firmware, model-store, Keychain, signing or private configuration changes. Only one phone was connected and installed.
+
+## 5 Nov 2026 — Essay question kept visible (PR #95 follow-up)
+
+- Owner screenshot showed the open keyboard but no question. The compact layout now shows the question in a scrollable pane beside the stable editor. No smaller text or forced keyboard reopening.
+- Built localized source `dfb7f67` (`d67aba3` + both #95 editor changes), APP_COMMIT `dfb7f67`, same arm64 debug command and LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION flags/output/package/signing. Gradle 81.7 s; existing Kotlin migration warning. Full localized source patch saved beside the private backup as `localized-question-build-source.patch`.
+- Refreshed private backup: `phone-data-before-question-update.tar` in the previous task temp directory. Only the connected Motorola Edge 60 Fusion updated via `adb install -r` (Success), 21:40:39 Jakarta. Cold launch Status ok, 3836 ms. Main History 136447 bytes and R3 test History 11455 bytes are unchanged from this refreshed backup.
+- Regression break-check fails before question pane (question absent) and passes after; all 64 popup tests pass, including 240 dp keyboard inset, question scrolling, focus/cursor/draft and Submit bounds. Localized regression passes. Full suite again: 1255 passed / 20 skipped / same unrelated token-radius failure; analyzer: same two existing test style infos. Secret/diff scans clean.
+- Physical essay/IME interaction still needs owner verification. No Mac build/registration, model/firmware/private configuration/signing changes.
