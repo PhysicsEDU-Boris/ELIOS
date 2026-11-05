@@ -4,6 +4,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show OverflowBoxFit;
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../models/control_session.dart';
@@ -756,7 +757,8 @@ class PhoneControlLayout extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              ControlCaps(label),
+              // Use the side gap for translated captions without stretching the column vertically.
+              OverflowBox(maxWidth: 64, fit: OverflowBoxFit.deferToChild, child: ControlCaps(label)),
             ],
           ),
         );

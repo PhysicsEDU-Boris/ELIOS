@@ -3,9 +3,11 @@
 import 'dart:typed_data';
 
 import 'package:elio/models/control_session.dart';
+import 'package:elio/l10n/l10n.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/widgets/waste_quiz_popup.dart' show EliosAiBadge;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image/image.dart' as img;
@@ -34,6 +36,22 @@ void main() {
   void expectStopReachable(WidgetTester t, Size s) {
     expect(find.byKey(const ValueKey('phone_stop')), findsOneWidget);
     expectOnScreen(t, find.byKey(const ValueKey('phone_stop')), s, 'STOP');
+  }
+
+  for (final size in phoneSizes) {
+    for (final dark in [false, true]) {
+      testWidgets('Indonesian arm captions fit $size dark=$dark', (t) async {
+        debugSetL10n(const Locale('id'));
+        addTearDown(() => debugSetL10n(const Locale('en')));
+        await pumpPhone(t, size, dark: dark);
+        expect(t.takeException(), isNull);
+        for (final label in [l10n.ctlHeight, l10n.ctlReach]) {
+          final paragraph = t.renderObject<RenderParagraph>(find.text(label));
+          expect(paragraph.didExceedMaxLines, isFalse, reason: label);
+        }
+        expectStopReachable(t, size);
+      });
+    }
   }
 
   for (final size in phoneSizes) {

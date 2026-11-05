@@ -11,6 +11,10 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- Phone Control: Indonesian arm captions now fit beside the sliders without truncation or vertical overflow (decision 0185).
+
+- Languages (L2): one tap in the sidebar switches the whole app live, with no restart: History, Home, Learn, Control, Config, simulations, notifications, PDFs, dates and numbers. ELIOS AI answers in English and Bahasa Indonesia at once, so new scans switch language instantly; older History records are translated once when opened in the other language and kept, or shown in their original language with a note when offline. Read-aloud uses the voice of the chosen language. The quiz bank has an English version for review. "ELIO" is now "ELIOS" everywhere you can see it (decision 0185).
+
 - History H3 now matches the Figma design in light and dark: Figma chip tints, 40 dp filter chips, trophy summary badge, scan rows with trophies on the right, Display score card, one answers panel per question card, Figma top bars, explanation sections with a "SEDANG DIBACAKAN" row, Key idea and Steps without their own listen button, a 48 dp actions bar and the Figma export sheet. Saved crops are cover-fit. A 390 dp harness renders all 18 Figma states with side-by-side images (decision 0184).
 
 - Fonts: the whole app now uses the bundled Google Sans Flex (UI and headings) and Google Sans Code (code), both SIL OFL 1.1, instead of Inter and JetBrains Mono. Headings, overlines and chips are no longer monospaced. No runtime font download (decision 0091).
