@@ -98,7 +98,13 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Riwayat'),
+                  Text(
+                    'Riwayat',
+                    style: ElioTokens.subhead.copyWith(
+                      fontFamily: ElioTokens.fontSans,
+                      color: p.textPrimary,
+                    ),
+                  ),
                   Text(
                     'Hasil scan, kuis, dan piala',
                     style: ElioTokens.caption.copyWith(color: p.textSecondary),
@@ -145,6 +151,10 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                       ),
                       const SizedBox(height: 16),
                       FilledButton(
+                        style: FilledButton.styleFrom(
+                          shape: const StadiumBorder(),
+                          minimumSize: const Size(0, 48),
+                        ),
                         onPressed: _scan,
                         child: const Text('Mulai scan'),
                       ),
@@ -172,6 +182,19 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                       ChoiceChip(
                         label: Text(c == null ? 'Semua' : historyCategory(c)),
                         selected: _filter == c,
+                        shape: const StadiumBorder(),
+                        side: BorderSide.none,
+                        showCheckmark: false,
+                        backgroundColor: p.surfaceRaised,
+                        selectedColor: p.primary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        labelStyle: ElioTokens.bodySmall.copyWith(
+                          color: _filter == c ? p.onPrimary : p.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
                         onSelected: (_) => setState(() {
                           _filter = c;
                           _selected = null;
@@ -412,7 +435,13 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
       return Scaffold(
         backgroundColor: p.background,
         appBar: AppBar(
-          title: const Text('Detail scan'),
+          title: Text(
+            'Detail scan',
+            style: ElioTokens.subhead.copyWith(
+              fontFamily: ElioTokens.fontSans,
+              color: p.textPrimary,
+            ),
+          ),
           automaticallyImplyLeading: !embedded,
         ),
         body: _failed || store.loadError != null
@@ -427,7 +456,13 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
       backgroundColor: p.background,
       appBar: AppBar(
         automaticallyImplyLeading: !embedded,
-        title: const Text('Detail scan'),
+        title: Text(
+          'Detail scan',
+          style: ElioTokens.subhead.copyWith(
+            fontFamily: ElioTokens.fontSans,
+            color: p.textPrimary,
+          ),
+        ),
         backgroundColor: p.background,
         actions: [
           IconButton(

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -118,9 +119,13 @@ class QuizPdfService {
         ],
         if (crop != null) ...[pw.SizedBox(height: 16), pw.Image(crop, height: 160, fit: pw.BoxFit.contain)],
         if (options.notes) ...[
-          pw.SizedBox(height: 18), _sectionTitle('Ruang catatan'),
-          for (var i = 0; i < 5; i++) pw.Container(height: 24,
-            decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: _borderGray)))),
+          pw.SizedBox(height: 18),
+          // Keep the notes heading and writing lines together on one page.
+          pw.Inseparable(child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+            _sectionTitle('Ruang catatan'),
+            for (var i = 0; i < 5; i++) pw.Container(height: 24,
+              decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: _borderGray)))),
+          ])),
         ],
       ]));
     return doc.save();
@@ -129,6 +134,13 @@ class QuizPdfService {
   static Future<String> saveQuestion(ScanRecord record, int index,
       {QuestionPdfOptions options = const QuestionPdfOptions(), Directory? targetDir}) async {
     final bytes = await generateQuestionPdfBytes(record, index, options: options);
+    if (targetDir == null && !kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      final location = await const MethodChannel('elio/pdf').invokeMethod<String>('saveToDownloads', {
+        'filename': questionFilename(record, index), 'bytes': bytes,
+      });
+      if (location == null || location.isEmpty) throw StateError('No saved PDF location');
+      return location;
+    }
     final dir = targetDir ?? await getApplicationDocumentsDirectory();
     final reports = Directory('${dir.path}/reports');
     await reports.create(recursive: true);

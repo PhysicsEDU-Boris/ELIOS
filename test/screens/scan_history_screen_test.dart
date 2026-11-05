@@ -513,4 +513,39 @@ void main() {
       );
     }
   }
+  for (final mode in Brightness.values) {
+    testWidgets('${mode.name} History filters keep H3 rounded sans styling', (
+      t,
+    ) async {
+      await pump(
+        t,
+        ScanHistoryScreen(store: HistoryTestStore([h3Record()])),
+        mode,
+      );
+      final chip = t.widget<ChoiceChip>(find.byType(ChoiceChip).first);
+      expect(chip.shape, isA<StadiumBorder>());
+      expect(chip.labelStyle?.fontFamily, ElioTokens.fontSans);
+    });
+    testWidgets('${mode.name} detail title keeps H3 sans styling', (t) async {
+      final record = h3Record();
+      await pump(
+        t,
+        ScanDetailScreen(record: record, store: HistoryTestStore([record])),
+        mode,
+      );
+      expect(
+        t.widget<Text>(find.text('Detail scan')).style?.fontFamily,
+        ElioTokens.fontSans,
+      );
+    });
+    testWidgets('${mode.name} empty scan CTA keeps H3 rounded styling', (
+      t,
+    ) async {
+      await pump(t, ScanHistoryScreen(store: HistoryTestStore()), mode);
+      final button = t.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Mulai scan'),
+      );
+      expect(button.style?.shape?.resolve({}), isA<StadiumBorder>());
+    });
+  }
 }

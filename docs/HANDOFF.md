@@ -1,11 +1,12 @@
 # Handoff — 5 Nov 2026
 ## H3 History — `feat/history-h3` (decision 0184)
-- PR targets `feature/live-scan`; owner merges. No merge or Mac/phone installation by this task.
+- PR #94 targets `feature/live-scan`; owner merges. No merge or Mac build by this task.
 - H3 phone list → detail → question explanation; wide two-pane detail, saved crops, real trophies, Indonesian copy, light/dark tokens, skeletons/timeouts, section TTS and per-question PDF.
 - ELIOS Gemini slot supplies validated explanations (one retry), with reviewed-bank-only fallback. Schema 4 retains saved answers/source metadata and removes legacy local templates. Reopen/TTS/PDF use the saved result; Coba lagi retries only an incomplete explanation.
 - Whole-record export and in-quiz overlay remain; quiz-time explanation yields to busy prefetch. No source/module/guide/simulation references on the new route/question PDF; no demo seed UI or owner records created.
 - Validation, break-checks, screenshots and phone steps: `docs/test-results/0184-history-h3.md`. Final check results recorded there before PR creation.
-- No app bundles, LaunchServices registrations, model files, signing/Keychain or private configuration changed. Existing owner work was backed up before the branch switch and excluded from commits.
+- USB phone acceptance: Motorola Edge 60 Fusion / Android 16 updated in place with source `c0238a9` (TESTER_BUILD, LIVE_SCAN, DARK_MODE_OPTION). 40 records / 120 answers / 442 trophies retained; History backed up privately before install. Live Gemini, offline retry/cache, TTS lifecycle and both PDF exports exercised. Final styling/PDF refinement build follows; see `docs/local-build-notes.md`.
+- No Mac app bundles/registrations, model stores, signing/Keychain or private configuration changed. Existing owner work remains uncommitted and unchanged.
 ## Existing robot context
 - #89/#90 are merged into `feature/live-scan`. Next robot session: issue #92 (PICK UP→RELEASE tag search, sim-style tag overlay/axes and bin tags 2–4; owner questions remain).
 - 0183 calibration: camera `dcea9b1d`, 640×360/33 fps, fx 374, cx 303.9, cy 183.0, 81.1×51.4°; keep the 6.17 mm arm tag until the owner replaces it. Backups and the current phone/camera notes follow.

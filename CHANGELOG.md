@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- H3 phone acceptance: History filters and empty action keep their rounded design, detail titles use the theme sans font, and question-PDF note lines stay with their heading across page breaks. Android Simpan PDF writes to the browsable Download/ELIOS folder. Verified over USB on Motorola Edge 60 Fusion (Android 16), including live Gemini, offline retry/cache, TTS and Android PDF save/share.
+
 - History H3: Indonesian scan list and detail with saved photos, real trophy totals, category filters, light/dark palettes and reduced-motion skeletons. Each saved question opens its own explanation route with ELIOS AI or reviewed bank text, section listening, next question and configurable per-question A4 export. Explanations are validated and saved once; offline failures offer Coba lagi without local educational templates. Old records migrate to schema 4 while retaining answers and source metadata; source/module links are hidden on the new screens and question PDF (decision 0184).
 
 - Phone Control: PICK UP and HOME now turn on the camera's arm-tag search for 5 seconds, also in builds without the R1 robot flow (before, only an R1 grip did). Debug builds show the tag and its distance over the video, for example "Tags: id 0 · 102 mm" (decision 0183).

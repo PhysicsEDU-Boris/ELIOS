@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:elio/services/ai_quiz_service.dart';
+import 'package:elio/models/scan_record.dart';
 import 'package:elio/services/quiz_pdf_service.dart';
 import 'h3_fixture.dart';
 
-String streams(List<int> bytes) =>
+List<String> contentStreams(List<int> bytes) =>
     RegExp(
       r'stream\n(.*?)\nendstream',
       dotAll: true,
@@ -16,7 +19,26 @@ String streams(List<int> bytes) =>
       } catch (_) {
         return '';
       }
-    }).join();
+    }).toList();
+String streams(List<int> bytes) => contentStreams(bytes).join();
+String lastPageContent(List<int> bytes) {
+  final pdf = latin1.decode(bytes);
+  final pages = RegExp(
+    r'/Type\s*/Page(?=[/\s>])(?:(?!endobj).)*?/Contents\s*(\d+)\s+0\s+R',
+    dotAll: true,
+  ).allMatches(pdf);
+  final id = pages.last[1]!;
+  final object = RegExp(
+    '(?:^|\\n)$id 0 obj\\s*(.*?)\\s*endobj',
+    dotAll: true,
+  ).firstMatch(pdf)![1]!;
+  final stream = RegExp(
+    r'stream\n(.*?)\nendstream',
+    dotAll: true,
+  ).firstMatch(object)![1]!;
+  return latin1.decode(zlib.decode(latin1.encode(stream)));
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   for (var mask = 0; mask < 16; mask++) {
@@ -88,4 +110,92 @@ void main() {
       },
     );
   }
+  test(
+    'notes heading stays with the writing lines across page breaks',
+    () async {
+      for (var length = 40; length <= 180; length += 5) {
+        final record = ScanRecord(
+          id: 'notes-layout',
+          time: DateTime(2026),
+          itemName: 'Benda',
+          category: ScanCategory.recyclable,
+          questions: [
+            RecordQuestion(
+              question: 'Jelaskan jawabanmu.',
+              yourAnswer: List.filled(
+                length,
+                'Penjelasan panjang tetap tersimpan lengkap.',
+              ).join(' '),
+              rightAnswer: 'Jawaban acuan.',
+              isCorrect: false,
+            ),
+          ],
+        );
+        final bytes = await QuizPdfService.generateQuestionPdfBytes(
+          record,
+          0,
+          options: const QuestionPdfOptions(explanation: false, notes: true),
+        );
+        final lastPage = lastPageContent(bytes);
+        final text = RegExp(
+          r'\(([^()]*)\)',
+        ).allMatches(lastPage).map((m) => m[1]).join(' ');
+        expect(
+          text,
+          contains('Ruang catatan'),
+          reason: 'Notes need their heading, including at length $length',
+        );
+      }
+    },
+  );
+  test(
+    'Android Save PDF writes through Downloads without an AI request',
+    () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      const channel = MethodChannel('elio/pdf');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      addTearDown(() {
+        debugDefaultTargetPlatformOverride = null;
+        messenger.setMockMethodCallHandler(channel, null);
+      });
+      var saves = 0;
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        expect(call.method, 'saveToDownloads');
+        final args = call.arguments as Map;
+        expect(args['filename'], 'ELIOS_Wadah-earphone_Q1.pdf');
+        expect(
+          latin1.decode((args['bytes'] as List<int>).take(5).toList()),
+          '%PDF-',
+        );
+        saves++;
+        return 'Download/ELIOS/ELIOS_Wadah-earphone_Q1.pdf';
+      });
+      expect(
+        await QuizPdfService.saveQuestion(h3Record(), 0),
+        'Download/ELIOS/ELIOS_Wadah-earphone_Q1.pdf',
+      );
+      expect(saves, 1);
+    },
+  );
+  test(
+    'Android Save PDF reports native storage failure instead of success',
+    () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      const channel = MethodChannel('elio/pdf');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      addTearDown(() {
+        debugDefaultTargetPlatformOverride = null;
+        messenger.setMockMethodCallHandler(channel, null);
+      });
+      messenger.setMockMethodCallHandler(channel, (_) async {
+        throw PlatformException(code: 'pdf_save_failed');
+      });
+      await expectLater(
+        QuizPdfService.saveQuestion(h3Record(), 0),
+        throwsA(isA<PlatformException>()),
+      );
+    },
+  );
 }
