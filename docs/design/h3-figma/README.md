@@ -70,8 +70,9 @@ Figma copy is English; the app shows the Indonesian strings from decision 0184.
   Right: trophy pill pad 4/10/4/8, gap 4, r full, `chip/warning-bg` + `chip/warning-border`,
   trophy 16 + "+n" Button `warning/text`. Rows gap 12.
 - **Scan detail**: photo 358x200 r16 tinted by category (as the scan row); title Headline + category chip
-  (row gap 12); result stats; difficulty tabs; "Soal" section header with action "Ekspor PDF"; question cards gap 12.
-  No separate scan-time line and no big score card.
+  (row gap 12); result stats; difficulty tabs; "Soal" section header WITHOUT an action; question cards gap 12.
+  No separate scan-time line and no big score card. The only PDF export on this screen is the file icon
+  button in the top bar (whole record, existing QuizPdfService).
 - **Result stats** (replaces the score card; like the reference's rating | students | duration row):
   358 wide, pad 12/8, r16, `surface` + `border/subtle`. Three equal columns split by 1x40 `border/subtle` lines.
   Column: value row gap 6 (icon 18 + value Subhead `text/primary`) and label Caption `text/secondary`, centred.
