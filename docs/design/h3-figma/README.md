@@ -1,15 +1,16 @@
 # H3 History: Figma reference (source of truth for the UI)
 
-Figma file `J2jSbARJSyJCStNFeWkWDj`, page "H3 History screen" (`433:2358`), exported 5 Nov 2026 at 1x
+Figma file `J2jSbARJSyJCStNFeWkWDj`, page "H3 History screen" (`433:2358`), exported 5 Nov 2026 at 1x (list and detail redesigned 14:00: trophy hero, category tiles,
+result stats, difficulty tabs)
 (390 px wide = 390 dp). Phone screenshots taken at the same dp width must match these images.
 Figma copy is English; the app shows the Indonesian strings from decision 0184.
 
 | File | Figma node (light / dark) |
 | --- | --- |
-| 01 History list | 435:2395 / 436:2987 |
-| 02 Scan detail | 435:2581 / 436:3170 |
-| 03 Loading list | 435:2781 / 436:3370 |
-| 04 Loading detail | 435:2936 / 436:3525 |
+| 01 History list | 435:2395 / 454:4480 |
+| 02 Scan detail | 435:2581 / 454:4505 |
+| 03 Loading list | 435:2781 / 454:4525 |
+| 04 Loading detail | 435:2936 / 454:4576 |
 | 05 Empty | 435:3060 / 436:3649 |
 | 06 Explanation | 439:3603 / 439:4238 |
 | 07 Explanation, reading aloud | 439:3764 / 439:4323 |
@@ -39,26 +40,48 @@ Figma copy is English; the app shows the Indonesian strings from decision 0184.
   The explanation screen has no bottom nav; it has the actions bar instead.
 
 ## Components (dp; r = corner radius; colours are ELIOS token names)
-- **Trophy summary** 358 wide, pad 16, gap 16, r16, `surface` + 1 px `border/subtle`.
-  Header row gap 12: badge 44 circle (`chip/warning-bg`, `chip/warning-border`, trophy 24 `warning/text`),
-  text column gap 2 (count Subhead `text/primary`, level Caption `text/secondary`).
-  Progress track 8 high, r full, `raised`, fill `primary/fill`.
-  Footer row space-between: "x trophies to Level n" Caption `text/secondary` + chip "Tersimpan lokal".
+- **Trophy hero** (replaces the old trophy summary card) 358x164, pad 18/20/20/20, gap 4, r20, `primary/fill`,
+  clips its content. A circle 190 `primary/fill-hover` sits behind the top-right corner (x 210, y -40).
+  Top row gap 8: "TROFI KAMU" Overline `primary/on-fill` at 72 % layer opacity + "Tersimpan lokal" pill
+  (pad 2/8/2/6, r full, `primary/fill-hover`, check 12 + Caption `primary/on-fill`).
+  Count row: total Display + "trofi" Body, both `primary/on-fill`, gap 6, baseline aligned.
+  Level line Body Small `primary/on-fill`; 8 spacer; progress 190x8 r full, track `primary/fill-hover`,
+  fill `primary/on-fill`; "x trofi lagi ke Level n" Caption `primary/on-fill` at 72 %.
+  Level art bottom-right (x 226, y 34, 120x124): Eco tree Lv3 art; use Eco sprout Lv1 art at low levels
+  (Figma components "Home art/Eco tree Lv3" 332:4411 and "Home art/Eco sprout Lv1" 332:4427).
+  Same colours in dark mode (the green block stays green).
+- **Category tiles** (replace the filter chips): 2x2 grid, gap 12, tiles fill the width (2 per row), 96 high,
+  pad 12/12/12/14, gap 2, r16, clipped. Label Body `text/primary`, count "n scan" Caption `text/secondary`.
+  Bin buddy art 52x62 at the bottom-right, partly cut by the tile edge (x = width-59, y 44):
+  B3 = "Bin buddy B3" 332:4480, Daur ulang = "Bin buddy Anorganik" 332:4466, Organik = "Bin buddy Organik" 332:4452;
+  "Semua" shows the three bins overlapping (36-40 wide). Default = `surface` + 1 px `border/subtle`.
+  Selected = `chip/success-bg` + 2 px `primary/fill`, count in `primary/text`, a 20 dp `primary/fill` circle
+  with a check 14 `primary/on-fill` at the top-right, and the art tilted 8 degrees. Tapping a tile filters the list.
+- **Day groups** in the list: "HARI INI", "KEMARIN", then a date ("3 NOV"). Overline `text/tertiary`,
+  12 above the first row of the group, groups 20 apart.
 - **Chip** (status) height 24, pad 2/8, gap 4, r full, tint bg + 1 px tint border, icon 14, text Caption.
   success = `chip/success-*` + `primary/text`; error = `chip/error-*` + `error/text`;
   warning = `chip/warning-*` + `warning/text`; info = `chip/info-*` + `info/text`; neutral = `raised` + `text/secondary`.
-- **Filter chips**: the existing Learn filter chip (height 40, r full). Selected = `primary/fill` + `primary/on-fill`;
-  default = `raised` + `text/primary`. Row gap 8.
 - **Section header**: the existing Learn section header (title Subhead, action Button `primary/text`).
 - **Scan row** 358 wide, pad 12, gap 12, r16, `surface` + `border/subtle`, centred vertically.
-  Photo 64x64 r12 `raised` (the saved crop, cover-fit; bin icon 40 only when no photo).
+  Photo 64x64 r12 tinted by category: `chip/success-bg` (daur ulang), `chip/error-bg` (B3), `chip/warning-bg`
+  (organik); the saved crop cover-fits it; bin icon 40 only when there is no photo.
   Info column gap 4: title Body `text/primary` (wraps), category chip, meta Caption `text/secondary` (wraps).
-  Right: trophy 18 + "+n" Button, both `warning/text`, gap 4. List gap 12.
-- **Scan detail**: photo 358x200 r16 `raised`; title Headline + category chip (row gap 12);
-  scan time row gap 6 (clock 16 + Caption `text/secondary`); difficulty filter chips; score card;
-  "Soal" section header with action "Ekspor PDF"; question cards gap 12.
-- **Score card** 358 wide, pad 16, gap 4, r16, `chip/warning-bg` + `chip/warning-border`, centred.
-  Trophy 28 + score Display `warning/text` (gap 8); "n dari m benar" Button `text/primary`; hint Caption `text/secondary`.
+  Right: trophy pill pad 4/10/4/8, gap 4, r full, `chip/warning-bg` + `chip/warning-border`,
+  trophy 16 + "+n" Button `warning/text`. Rows gap 12.
+- **Scan detail**: photo 358x200 r16 tinted by category (as the scan row); title Headline + category chip
+  (row gap 12); result stats; difficulty tabs; "Soal" section header with action "Ekspor PDF"; question cards gap 12.
+  No separate scan-time line and no big score card.
+- **Result stats** (replaces the score card; like the reference's rating | students | duration row):
+  358 wide, pad 12/8, r16, `surface` + `border/subtle`. Three equal columns split by 1x40 `border/subtle` lines.
+  Column: value row gap 6 (icon 18 + value Subhead `text/primary`) and label Caption `text/secondary`, centred.
+  Trofi: trophy `warning/text`, "+20". Benar: check `primary/text`, "2/3". Dipindai: clock `info/text`, "23:29".
+  Values follow the selected difficulty set.
+- **Difficulty tabs** (replace the difficulty chips; same look as the L1 "My progress" switch):
+  track 48 high, pad 4, gap 4, r full, `raised`; three equal segments 40 high r full.
+  Selected = `primary/fill`, label Button `primary/on-fill`, count badge 20 high r full `primary/fill-hover`
+  with Caption `primary/on-fill`. Others: label Button `text/secondary`, badge `surface` + Caption `text/secondary`.
+  Labels Mudah / Sedang / Sulit with the question count of each set.
 - **Question card** pad 16, gap 12, r16, `surface` + `border/subtle`.
   Header row gap 12: Q badge pad 3/10 r8 (`primary/fill` + `primary/on-fill` when right, `error/fill` + `error/on-fill` when wrong),
   question Body `text/primary`. Chips row gap 8 (Benar/Salah chip, +trophy chip).
@@ -89,6 +112,7 @@ Figma copy is English; the app shows the Indonesian strings from decision 0184.
   Handle 32x4 `border/medium`; title Subhead + Caption; file preview row pad 12 r12 `raised` (white A4 thumb 52x72);
   "SERTAKAN" Overline `text/tertiary`; option rows 48 high (checkbox 24 r4 + Body); buttons row like the actions bar
   ("Bagikan" outline with share icon, "Simpan PDF" primary with file icon).
-- **Skeleton block**: `border/medium` at 60 % with a white shimmer band (peak 16 % alpha), radii as the real element.
-  Skeleton layouts mirror the real cards (see 03, 04, 09).
+- **Skeleton block**: `border/medium` (full opacity) with a white shimmer band (peak 16 % alpha), radii as the real element.
+  Skeleton layouts mirror the real cards (see 03, 04, 09): hero block r20 164 high, 2x2 tile blocks 96 high,
+  stats block 80 high r16, tabs block 48 high r full.
 - **Empty**: illustration 240x180, title Subhead, body Body Small `text/secondary` 280 wide centred, primary pill button.
