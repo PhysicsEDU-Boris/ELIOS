@@ -434,9 +434,9 @@ Future<void> loadFonts() async {
 
   await load('Roboto', ['Roboto-Regular.ttf', 'Roboto-Medium.ttf', 'Roboto-Bold.ttf', 'Roboto-Black.ttf']);
   await load('MaterialIcons', ['MaterialIcons-Regular.otf']);
-  final inter = FontLoader('Inter')
-    ..addFont(Future.value(ByteData.sublistView(File('assets/fonts/Inter-Variable.ttf').readAsBytesSync())));
-  if (File('assets/fonts/Inter-Variable.ttf').existsSync()) await inter.load();
+  await (FontLoader('Google Sans Flex')
+        ..addFont(Future.value(ByteData.sublistView(File('assets/fonts/GoogleSansFlex-Variable.ttf').readAsBytesSync()))))
+      .load();
 }
 
 /// No Gemma in widget tests.

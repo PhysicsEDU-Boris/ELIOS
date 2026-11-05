@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -23,6 +24,12 @@ final _borderGray = PdfColor.fromHex('BCCAC1');
 final _correctGreen = PdfColor.fromHex('00694C');
 final _incorrectRed = PdfColor.fromHex('E74C3C');
 final _goldYellow = PdfColor.fromHex('D89E00');
+
+class QuestionPdfOptions {
+  const QuestionPdfOptions({this.answers = true, this.explanation = true,
+    this.photo = false, this.notes = false});
+  final bool answers, explanation, photo, notes;
+}
 
 /// Generates and saves PDF reports for [ScanRecord] sessions.
 ///
@@ -63,6 +70,89 @@ class QuizPdfService {
       debugPrint('[QuizPdfService] share failed: $e');
       rethrow;
     }
+  }
+
+  static String questionFilename(ScanRecord record, int index) {
+    final item = record.itemName.replaceAll(RegExp(r'[^a-zA-Z0-9_-]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
+    return 'ELIOS_${item.isEmpty ? 'scan' : item}_Q${index + 1}.pdf';
+  }
+
+  /// Saved text only: export must never generate or refresh an explanation.
+  static Future<Uint8List> generateQuestionPdfBytes(ScanRecord record, int index,
+      {QuestionPdfOptions options = const QuestionPdfOptions()}) async {
+    final q = record.questions[index];
+    final exp = q.explanation;
+    final crop = options.photo ? await _loadCrop(record.cropPhotoPath) : null;
+    final doc = pw.Document();
+    doc.addPage(pw.MultiPage(pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.all(32), build: (_) => [
+        pw.Text('ELIOS | ${record.itemName} | Soal ${index + 1}',
+          style: pw.TextStyle(fontSize: 12, color: _green, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 16),
+        if (options.answers) ...[
+          pw.Text(q.question, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 12),
+          ..._answerRow('Jawabanmu', q.yourAnswer, _ink),
+          ..._answerRow(q.isEssay ? 'Jawaban acuan' : 'Jawaban benar', q.rightAnswer, _correctGreen),
+          if (q.isEssay) ..._answerRow('Skor esai', q.gradingPending ? 'Menunggu penilaian' : '${q.essayScore}/10', _ink),
+        ],
+        if (options.explanation) ...[
+          if (exp != null) ...[
+            for (final section in <(String, String)>[
+              ('Kenapa ini jawaban yang benar', exp.correctAnswerReason),
+              if (!q.isCorrect && !q.isEssay) ('Kenapa jawabanmu kurang tepat', exp.selectedAnswerFeedback),
+              if (q.isEssay) ('Umpan balik', exp.essayFeedback ?? ''),
+              ('Ide utama', exp.keyIdea),
+            ]) if (section.$2.isNotEmpty) ...[
+              pw.SizedBox(height: 14), _sectionTitle(section.$1),
+              pw.SizedBox(height: 6), pw.Text(section.$2, overflow: pw.TextOverflow.span),
+            ],
+            if (exp.steps.isNotEmpty) ...[
+              pw.SizedBox(height: 14), _sectionTitle('Cara melakukannya'),
+              for (var i = 0; i < exp.steps.length; i++)
+                pw.Padding(padding: const pw.EdgeInsets.only(top: 6), child: pw.Text('${i + 1}. ${exp.steps[i]}')),
+            ],
+          ],
+          if (exp == null || (!exp.isComplete && !q.isEssay)) ...[
+            pw.SizedBox(height: 14), pw.Text('Penjelasan lengkap belum tersedia'),
+          ],
+        ],
+        if (crop != null) ...[pw.SizedBox(height: 16), pw.Image(crop, height: 160, fit: pw.BoxFit.contain)],
+        if (options.notes) ...[
+          pw.SizedBox(height: 18),
+          // Keep the notes heading and writing lines together on one page.
+          pw.Inseparable(child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+            _sectionTitle('Ruang catatan'),
+            for (var i = 0; i < 5; i++) pw.Container(height: 24,
+              decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: _borderGray)))),
+          ])),
+        ],
+      ]));
+    return doc.save();
+  }
+
+  static Future<String> saveQuestion(ScanRecord record, int index,
+      {QuestionPdfOptions options = const QuestionPdfOptions(), Directory? targetDir}) async {
+    final bytes = await generateQuestionPdfBytes(record, index, options: options);
+    if (targetDir == null && !kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      final location = await const MethodChannel('elio/pdf').invokeMethod<String>('saveToDownloads', {
+        'filename': questionFilename(record, index), 'bytes': bytes,
+      });
+      if (location == null || location.isEmpty) throw StateError('No saved PDF location');
+      return location;
+    }
+    final dir = targetDir ?? await getApplicationDocumentsDirectory();
+    final reports = Directory('${dir.path}/reports');
+    await reports.create(recursive: true);
+    final file = File('${reports.path}/${questionFilename(record, index)}');
+    await file.writeAsBytes(bytes, flush: true);
+    return file.path;
+  }
+
+  static Future<void> shareQuestion(ScanRecord record, int index,
+      {QuestionPdfOptions options = const QuestionPdfOptions()}) async {
+    await Printing.sharePdf(bytes: await generateQuestionPdfBytes(record, index, options: options),
+      filename: questionFilename(record, index));
   }
 
   // ---------------------------------------------------------------------------

@@ -5,15 +5,8 @@ import '../models/quiz_explanation.dart';
 import '../models/scanned_waste.dart';
 import '../services/ai_quiz_service.dart';
 
-/// Generates structured [QuizExplanation] objects for answered questions.
-///
-/// Design (decision 0031):
-/// - Bank-grounded questions use in-process logic to build a deterministic
-///   explanation table; no AI call needed.
-/// - AI-generated questions attempt a short `discuss()` call; if the
-///   service is unavailable the unavailable sentinel is returned.
-/// - The call is non-blocking: the caller sets `explanationLoading = true`
-///   and awaits this future while showing a spinner.
+/// ELIOS AI explanations with reviewed bank fallback (0184).
+/// Legacy overlay fields are populated from the same saved text.
 class QuizExplanationService {
   const QuizExplanationService._();
 
@@ -28,6 +21,8 @@ class QuizExplanationService {
     required ScannedWaste scan,
     int? selectedIndex,
     EssayGrade? essayGrade,
+    String difficulty = 'medium',
+    bool onlyWhenIdle = false,
   }) async {
     try {
       if (question.type == QuizQuestionType.essay) {
@@ -36,11 +31,41 @@ class QuizExplanationService {
           essayGrade: essayGrade,
         );
       }
-      return _buildMcqExplanation(
-        question: question,
-        scan: scan,
-        selectedIndex: selectedIndex ?? -1,
-      );
+      if (onlyWhenIdle && AiQuizService.instance.isBusy) {
+        return bankExplanation(question, selectedIndex: selectedIndex ?? -1);
+      }
+      final picked =
+          selectedIndex != null &&
+              selectedIndex >= 0 &&
+              selectedIndex < question.options.length
+          ? question.options[selectedIndex]
+          : '';
+      final correct =
+          question.correctIndex >= 0 &&
+              question.correctIndex < question.options.length
+          ? question.options[question.correctIndex]
+          : '';
+      final result = await AiQuizService.instance.explainAnswer(
+            itemName: scan.displayName,
+            category: scan.category?.id ?? '',
+            question: question.question,
+            options: question.options,
+            correctOption: correct,
+            studentAnswer: picked,
+            difficulty: difficulty,
+            bankExplanation: question.bankId == null || !question.bankReviewed
+                ? ''
+                : question.explanation,
+            wrongWhy: question.bankReviewed ? question.wrongWhy : const {},
+            quote: question.quote,
+            bankId: question.bankId,
+          ) ??
+          bankExplanation(question, selectedIndex: selectedIndex ?? -1);
+      return QuizExplanation.fromJson({...result.toJson(),
+        'generatedAt': DateTime.now().toIso8601String(),
+        if (question.sourceSection != null) 'sourceSection': question.sourceSection,
+        if (question.sourcePage != null) 'sourcePage': question.sourcePage,
+      });
     } catch (e) {
       debugPrint('[QuizExplanationService] generate failed: $e');
       return QuizExplanation.unavailable;
@@ -51,55 +76,45 @@ class QuizExplanationService {
   // MCQ explanation
   // ---------------------------------------------------------------------------
 
-  static QuizExplanation _buildMcqExplanation({
-    required GeneratedQuestion question,
-    required ScannedWaste scan,
-    required int selectedIndex,
+  /// Reviewed text is the only offline fallback; no locally invented explanation.
+  static QuizExplanation bankExplanation(
+    GeneratedQuestion question, {
+    int selectedIndex = -1,
   }) {
-    final isCorrect = selectedIndex == question.correctIndex;
-    final correctAnswer = question.options.isNotEmpty ? question.options[question.correctIndex] : '';
-    final selectedAnswer = selectedIndex >= 0 && selectedIndex < question.options.length
+    if (question.bankId == null) {
+      return QuizExplanation.unavailable;
+    }
+    final picked = selectedIndex >= 0 && selectedIndex < question.options.length
         ? question.options[selectedIndex]
         : '';
-
-    final explanation = question.explanation;
-    final itemName = scan.displayName;
-    final categoryId = scan.category?.id ?? '';
-
-    final summary = explanation.isNotEmpty
-        ? explanation
-        : isCorrect
-            ? 'Kamu memilih jawaban yang benar: "$correctAnswer".'
-            : 'Jawaban yang benar adalah "$correctAnswer", bukan "$selectedAnswer".';
-
-    final correctReason = explanation.isNotEmpty
-        ? explanation
-        : 'Berdasarkan klasifikasi sampah, $itemName termasuk dalam kategori '
-            '${_categoryLabel(categoryId)}.';
-
-    final bank = question.bankId != null;
     return QuizExplanation(
-      summary: summary,
-      correctAnswerReason: correctReason,
-      // Only a reviewed reason; empty hides "Why your answer is not right" (decision 0175).
-      selectedAnswerFeedback: isCorrect ? '' : (question.wrongWhy[selectedAnswer] ?? ''),
-      // The bin reference belongs to the right-answer path only; a wrong answer gets the options table.
-      comparisonRows: isCorrect ? _buildComparisonRows(categoryId, itemName) : const [],
-      learningTakeaway: 'Ingat: $itemName masuk ke ${_categoryLabel(categoryId)}.',
-      sourceTitle: bank ? 'Bank Soal ELIO' : null,
-      sourceSection: bank ? question.sourceSection : null,
-      sourcePage: bank ? question.sourcePage : null,
-      quote: bank ? question.quote : null,
+      summary: question.bankReviewed ? question.explanation : '',
+      correctAnswerReason: question.bankReviewed ? question.explanation : '',
+      selectedAnswerFeedback: !question.bankReviewed || selectedIndex == question.correctIndex
+          ? ''
+          : (question.wrongWhy[picked] ?? ''),
+      source: 'bank',
       bankId: question.bankId,
-      groundingStatus: bank ? GroundingStatus.bankGrounded : GroundingStatus.gemmaUngrounded,
+      quote: question.quote,
+      sourceTitle: 'Bank Soal ELIO',
+      sourceSection: question.sourceSection,
+      sourcePage: question.sourcePage,
+      groundingStatus: !question.bankReviewed || question.explanation.trim().isEmpty ? GroundingStatus.unavailable : GroundingStatus.bankGrounded,
     );
   }
 
   /// Table 1 for a wrong answer: every option, the pick and the right one marked.
-  static List<({String option, bool picked, bool correct})> optionRows(GeneratedQuestion question, int? selectedIndex) => [
-        for (var i = 0; i < question.options.length; i++)
-          (option: question.options[i], picked: i == selectedIndex, correct: i == question.correctIndex),
-      ];
+  static List<({String option, bool picked, bool correct})> optionRows(
+    GeneratedQuestion question,
+    int? selectedIndex,
+  ) => [
+    for (var i = 0; i < question.options.length; i++)
+      (
+        option: question.options[i],
+        picked: i == selectedIndex,
+        correct: i == question.correctIndex,
+      ),
+  ];
 
   // ---------------------------------------------------------------------------
   // Essay explanation
@@ -111,7 +126,8 @@ class QuizExplanationService {
   }) {
     if (essayGrade == null) {
       return QuizExplanation(
-        summary: 'Jawaban tersimpan. Menunggu penilaian karena AI belum tersedia.',
+        summary:
+            'Jawaban tersimpan. Menunggu penilaian karena AI belum tersedia.',
         correctAnswerReason: '',
         essayFeedback: 'Menunggu penilaian',
         sourceSection: question.sourceSection,
@@ -127,6 +143,9 @@ class QuizExplanationService {
         : 'Skor: ${essayGrade.score}/10.';
     return QuizExplanation(
       summary: feedback,
+      source: question.bankId != null && question.bankReviewed ? 'aiWithBank' : 'ai',
+      generatedAt: DateTime.now(),
+      model: AiQuizService.instance.lastModel,
       correctAnswerReason: '',
       learningTakeaway: essayGrade.improvement.isEmpty
           ? ''
@@ -142,44 +161,4 @@ class QuizExplanationService {
       referenceAnswer: expectedPoints.isNotEmpty ? expectedPoints : null,
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // Helpers
-  // ---------------------------------------------------------------------------
-
-  static List<ComparisonRow> _buildComparisonRows(String categoryId, String itemName) {
-    return [
-      ComparisonRow(
-        bin: 'Sampah Organik',
-        material: 'Sisa makanan, daun',
-        accepted: 'Bahan yang terurai secara alami',
-        isCorrect: categoryId == 'organic',
-      ),
-      ComparisonRow(
-        bin: 'Daur Ulang (Anorganik)',
-        material: 'Plastik, kertas, logam',
-        accepted: 'Bahan yang dapat diproses ulang secara industri',
-        isCorrect: categoryId == 'recyclable' || categoryId == 'inorganic',
-      ),
-      ComparisonRow(
-        bin: 'Limbah B3',
-        material: 'Baterai, HP, bahan kimia',
-        accepted: 'Bahan berbahaya yang perlu penanganan khusus',
-        isCorrect: categoryId == 'b3' || categoryId == 'hazardous',
-      ),
-      ComparisonRow(
-        bin: 'Sampah Residu',
-        material: 'Styrofoam, pembalut, dll.',
-        accepted: 'Sampah yang tidak dapat didaur ulang atau didaur biologis',
-        isCorrect: categoryId == 'residu' || categoryId == 'residual',
-      ),
-    ];
-  }
-
-  static String _categoryLabel(String categoryId) => switch (categoryId) {
-        'organic' || 'organik' => 'Sampah Organik',
-        'recyclable' || 'inorganic' => 'Daur Ulang (Anorganik)',
-        'b3' || 'hazardous' => 'Limbah B3',
-        _ => 'Sampah Residu',
-      };
 }

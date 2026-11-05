@@ -1751,7 +1751,7 @@ class _ReviewView extends ConsumerWidget {
       if (ex != null) ...[
         if (essay) ex.essayFeedback ?? ex.summary else ex.summary,
         if (ex.selectedAnswerFeedback.isNotEmpty) ex.selectedAnswerFeedback,
-      ] else
+      ] else if (q.bankId == null || q.bankReviewed)
         q.explanation,
     ].join(' ');
     final narrow = MediaQuery.sizeOf(context).width < 520;

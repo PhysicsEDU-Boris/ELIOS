@@ -49,11 +49,11 @@ void main() {
     testWidgets('${b.name}: order, taps, Control never selected', (t) async {
       final c = await _pump(t, brightness: b, current: 2);
       final x = {
-        for (final l in ['Home', 'Learn', 'Control', 'Config', 'History'])
+        for (final l in ['Home', 'Learn', 'Control', 'Config', 'Riwayat'])
           l: t.getCenter(find.text(l)).dx,
       };
       final order = x.keys.toList()..sort((a, b) => x[a]!.compareTo(x[b]!));
-      expect(order, ['Home', 'Learn', 'Control', 'Config', 'History']);
+      expect(order, ['Home', 'Learn', 'Control', 'Config', 'Riwayat']);
 
       await t.tap(find.text('Home'));
       await t.tap(find.text('Learn'));
@@ -64,7 +64,7 @@ void main() {
       await t.tapAt(t.getCenter(find.byIcon(Icons.smart_toy)));
       expect(c.control, 2);
       expect(c.tabs.length, 3);
-      await t.tap(find.text('History'));
+      await t.tap(find.text('Riwayat'));
       expect(c.tabs, [0, 1, 2, 4]);
 
       // Config is selected; Control never is.
@@ -79,19 +79,19 @@ void main() {
         isNot(Tristate.isTrue),
       );
       expect(find.bySemanticsLabel('Main'), findsOneWidget);
-      expect(find.bySemanticsLabel('History'), findsOneWidget);
+      expect(find.bySemanticsLabel('Riwayat'), findsOneWidget);
     });
   }
 
   testWidgets('History 4 is the active tab with the stroke', (t) async {
     await _pump(t, current: 4);
-    final sem = t.getSemantics(find.bySemanticsLabel('History'));
+    final sem = t.getSemantics(find.bySemanticsLabel('Riwayat'));
     expect(sem.flagsCollection.isSelected, Tristate.isTrue);
   });
 
   testWidgets('320 wide, text 1.3: 48 dp targets, one-line labels', (t) async {
     await _pump(t, size: const Size(320, 700), textScale: 1.3);
-    for (final l in ['Home', 'Learn', 'Control', 'Config', 'History']) {
+    for (final l in ['Home', 'Learn', 'Control', 'Config', 'Riwayat']) {
       final cell = find.ancestor(
         of: find.text(l),
         matching: find.byType(InkWell),

@@ -34,6 +34,8 @@ void main() {
       1,
     ]);
     expect(explanation.summary, 'Penjelasan tepat.');
+    expect(explanation.source, 'ai');
+    expect(explanation.generatedAt, isNotNull);
     expect(
       explanation.learningTakeaway,
       'Untuk nilai penuh: Tambahkan contoh konkret.',

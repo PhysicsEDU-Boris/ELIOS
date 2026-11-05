@@ -1,3 +1,4 @@
+import '../models/quiz_explanation.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -37,6 +38,7 @@ class ScanRecordStore extends ChangeNotifier {
   final File? _customFile;
   List<ScanRecord> _records = [];
   bool _loaded = false;
+  Object? loadError;
   Future<List<ScanRecord>>? _loadFuture;
   Future<void>? _pendingOperation;
 
@@ -104,6 +106,7 @@ class ScanRecordStore extends ChangeNotifier {
   }
 
   Future<List<ScanRecord>> _doLoad() async {
+    loadError = null;
     try {
       final file = await _getFile();
       if (!file.existsSync()) {
@@ -123,7 +126,7 @@ class ScanRecordStore extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('[ScanRecordStore] Load failed: $e');
-      _records = [];
+      loadError = e;
     } finally {
       _loaded = true;
     }
@@ -136,7 +139,7 @@ class ScanRecordStore extends ChangeNotifier {
     return _synchronized(() => _doSave());
   }
 
-  Future<void> _doSave() async {
+  Future<void> _doSave({bool propagateError = false}) async {
     try {
       final file = await _getFile();
       if (!file.parent.existsSync()) {
@@ -146,6 +149,7 @@ class ScanRecordStore extends ChangeNotifier {
       file.writeAsStringSync(jsonString, flush: true);
     } catch (e) {
       debugPrint('[ScanRecordStore] Save failed: $e');
+      if (propagateError) rethrow;
     }
   }
 
@@ -159,6 +163,29 @@ class ScanRecordStore extends ChangeNotifier {
       _records.insert(0, record);
       notifyListeners();
       await _doSave();
+    });
+  }
+
+  Future<void> saveExplanation(String recordId, int questionIndex, QuizExplanation explanation) {
+    return _synchronized(() async {
+      if (!_loaded) await _doLoad();
+      if (loadError != null) throw StateError('History could not be loaded');
+      final i = _records.indexWhere((r) => r.id == recordId);
+      if (i < 0) return; // The owner may have deleted the record while AI was running.
+      final record = _records[i];
+      if (questionIndex < 0 || questionIndex >= record.questions.length) return;
+      final questions = [...record.questions];
+      questions[questionIndex] = questions[questionIndex].copyWith(explanation: explanation);
+      _records[i] = ScanRecord(id: record.id, time: record.time, itemName: record.itemName,
+        category: record.category, cropPhotoPath: record.cropPhotoPath,
+        difficulty: record.difficulty, questions: questions, trophies: record.trophies);
+      try {
+        await _doSave(propagateError: true);
+      } catch (_) {
+        _records[i] = record;
+        rethrow;
+      }
+      notifyListeners();
     });
   }
 
@@ -176,6 +203,7 @@ class ScanRecordStore extends ChangeNotifier {
 
   /// Populates store with the sample records from Figma node 100:170 (for debug mode).
   Future<void> seedFigmaSampleRecords() async {
+    if (!kDebugMode || const bool.fromEnvironment('TESTER_BUILD')) return;
     final now = DateTime.now();
     final samples = [
       ScanRecord(

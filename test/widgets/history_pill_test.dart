@@ -47,6 +47,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ScanHistoryScreen), findsOneWidget);
-    expect(find.text('Scan History'), findsOneWidget);
+    expect(find.text('Riwayat'), findsOneWidget);
   });
 }

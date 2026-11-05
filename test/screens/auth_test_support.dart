@@ -153,7 +153,7 @@ Future<void> openLoginState(
 
 const states = ['signin', 'signup', 'forgot', 'error', 'loading'];
 
-/// Loads the bundled Inter and JetBrains Mono (and the SDK's Material Icons) so
+/// Loads the bundled Google Sans Flex and Google Sans Code (and the SDK's Material Icons) so
 /// layout and renders use the real glyph widths instead of the Ahem test font.
 Future<void> loadElioFonts() async {
   Future<void> load(String family, String path) async {
@@ -163,8 +163,8 @@ Future<void> loadElioFonts() async {
     await loader.load();
   }
 
-  await load('Inter', 'assets/fonts/Inter-Variable.ttf');
-  await load('JetBrains Mono', 'assets/fonts/JetBrainsMono-Variable.ttf');
+  await load('Google Sans Flex', 'assets/fonts/GoogleSansFlex-Variable.ttf');
+  await load('Google Sans Code', 'assets/fonts/GoogleSansCode-Variable.ttf');
   final root = Platform.environment['FLUTTER_ROOT'];
   if (root != null) {
     await load(

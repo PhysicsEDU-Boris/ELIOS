@@ -182,6 +182,7 @@ class QuestionBank {
       final quotes = [for (final p in rubric) if (p['quote'] != null) p['quote'] as String];
       return GeneratedQuestion(type: type, question: item['question'] as String, explanation: points.join(' '),
           bankId: item['id'] as String,
+      bankReviewed: item['status'] == 'accepted',
           quote: quotes.isEmpty ? null : quotes.join(' … '),
           sourceSection: joined('sourceChunk') ?? item['sourceChunk'] as String?,
           sourcePage: joined('pdfPage') ?? item['pdfPage']?.toString());
@@ -195,6 +196,7 @@ class QuestionBank {
       correctIndex: options.indexOf(correct),
       explanation: item['explanation'] as String,
       bankId: item['id'] as String,
+      bankReviewed: item['status'] == 'accepted',
       quote: item['quote'] as String?,
       sourceSection: item['sourceChunk'] as String?,
       sourcePage: item['pdfPage']?.toString(),

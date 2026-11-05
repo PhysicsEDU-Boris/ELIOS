@@ -150,7 +150,7 @@ void main() {
     });
 
     test('ScanRecord schemaVersion forward and backward compatibility', () {
-      // Default new record has schemaVersion 3
+      // New and legacy records use schemaVersion 4
       final newRecord = ScanRecord(
         id: 'new-1',
         time: DateTime.now(),
@@ -166,10 +166,10 @@ void main() {
           ),
         ],
       );
-      expect(newRecord.schemaVersion, 3);
-      expect(newRecord.toJson()['schemaVersion'], 3);
+      expect(newRecord.schemaVersion, 4);
+      expect(newRecord.toJson()['schemaVersion'], 4);
 
-      // Legacy record JSON without schemaVersion defaults to 1
+      // Legacy record JSON migrates to schemaVersion 4
       final legacyRecordJson = {
         'id': 'old-1',
         'time': '2026-10-25T10:00:00.000',
@@ -189,7 +189,7 @@ void main() {
       };
 
       final legacyRecord = ScanRecord.fromJson(legacyRecordJson);
-      expect(legacyRecord.schemaVersion, 1);
+      expect(legacyRecord.schemaVersion, 4);
       expect(legacyRecord.questions.first.explanation, isNull);
     });
   });
