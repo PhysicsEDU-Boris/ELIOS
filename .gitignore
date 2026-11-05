@@ -104,3 +104,6 @@ tools/cloud_ai_bench/**/*.heic
 worker/.wrangler/
 ai-backend/.vercel/
 .vercel
+
+# Firestore translation review exports (decision 0185)
+tools/l10n/out/

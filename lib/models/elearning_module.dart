@@ -1,9 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'content_i18n.dart';
+
 class ElearningModule {
+  /// Translated fields by language (decision 0185); empty when none.
+  final Map<String, dynamic> i18n;
   final String id;
-  final String title;
-  final String description;
+  final String _title;
+  String get title => contentText(i18n, 'title', _title);
+  final String _description;
+  String get description => contentText(i18n, 'description', _description);
   final String category;
   final String level;
   final int durationMinutes;
@@ -15,8 +21,8 @@ class ElearningModule {
 
   const ElearningModule({
     required this.id,
-    required this.title,
-    required this.description,
+    required String title,
+    required String description,
     required this.category,
     required this.level,
     required this.durationMinutes,
@@ -25,7 +31,8 @@ class ElearningModule {
     required this.guideUrl,
     required this.order,
     required this.isPublished,
-  });
+    this.i18n = const {},
+  }) : _title = title, _description = description;
 
   factory ElearningModule.fromMap(Map<String, dynamic> map, String documentId) {
     final rawId = map['id'];
@@ -37,6 +44,7 @@ class ElearningModule {
     final guideUrl = _readString(map, 'guideUrl') ?? '';
 
     return ElearningModule(
+      i18n: contentI18n(map),
       id: parsedId,
       title: map['title'] is String ? map['title'] as String : '',
       description: map['description'] is String
@@ -68,9 +76,10 @@ class ElearningModule {
 
   Map<String, dynamic> toMap() {
     return {
+      if (i18n.isNotEmpty) 'i18n': i18n,
       'id': id,
-      'title': title,
-      'description': description,
+      'title': _title,
+      'description': _description,
       'category': category,
       'level': level,
       'durationMinutes': durationMinutes,

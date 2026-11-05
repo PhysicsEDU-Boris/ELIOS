@@ -1,27 +1,35 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'content_i18n.dart';
+
 class QuizQuestion {
+  /// Translated fields by language (decision 0185); empty when none.
+  final Map<String, dynamic> i18n;
   final String id;
   final String moduleId;
-  final String question;
+  final String _question;
+  String get question => contentText(i18n, 'question', _question);
   final String imageUrl;
-  final List<String> options;
+  final List<String> _options;
+  List<String> get options => contentList(i18n, 'options', _options);
   final int correctIndex;
-  final String explanation;
+  final String _explanation;
+  String get explanation => contentText(i18n, 'explanation', _explanation);
   final String difficulty;
   final int order;
 
   const QuizQuestion({
     required this.id,
     required this.moduleId,
-    required this.question,
+    required String question,
     required this.imageUrl,
-    required this.options,
+    required List<String> options,
     required this.correctIndex,
-    required this.explanation,
+    required String explanation,
     required this.difficulty,
     required this.order,
-  });
+    this.i18n = const {},
+  }) : _question = question, _explanation = explanation, _options = options;
 
   factory QuizQuestion.fromMap(Map<String, dynamic> map, String documentId) {
     final rawId = map['id'];
@@ -36,6 +44,7 @@ class QuizQuestion {
     final imageUrl = _readString(map, 'imageUrl') ?? '';
 
     return QuizQuestion(
+      i18n: contentI18n(map),
       id: parsedId,
       moduleId: map['moduleId'] is String ? map['moduleId'] as String : '',
       question: map['question'] is String ? map['question'] as String : '',
@@ -63,13 +72,14 @@ class QuizQuestion {
 
   Map<String, dynamic> toMap() {
     return {
+      if (i18n.isNotEmpty) 'i18n': i18n,
       'id': id,
       'moduleId': moduleId,
-      'question': question,
+      'question': _question,
       'imageUrl': imageUrl,
-      'options': options,
+      'options': _options,
       'correctIndex': correctIndex,
-      'explanation': explanation,
+      'explanation': _explanation,
       'difficulty': difficulty,
       'order': order,
     };

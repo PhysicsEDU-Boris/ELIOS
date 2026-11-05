@@ -107,7 +107,7 @@ void main() {
 
       // Check item name & correct counts
       expect(find.text('Botol plastik'), findsWidgets);
-      expect(find.text('1 dari 1 benar'), findsOneWidget);
+      expect(find.text('1 of 1 correct'), findsOneWidget);
 
       // Check trophies (+10 Piala)
       expect(find.text('+10 trophies'), findsOneWidget);
@@ -136,7 +136,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Check correct count & trophies (+8 Piala)
-      expect(find.text('1 dari 1 benar'), findsOneWidget);
+      expect(find.text('1 of 1 correct'), findsOneWidget);
       expect(find.text('+8 trophies'), findsOneWidget);
 
       // Check grade Hebat

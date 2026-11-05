@@ -6,6 +6,8 @@ import 'dart:math';
 
 import 'package:elio/l10n/l10n.dart';
 import 'package:elio/models/quiz_explanation.dart';
+import 'package:elio/models/quiz_question.dart';
+import 'package:elio/models/quiz_set.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/app_locale_provider.dart';
@@ -412,6 +414,25 @@ void main() {
         'botol_plastik',
       );
     });
+  });
+
+  test('Learn content picks i18n in the app language, else the original field', () {
+    final set = QuizSet.fromMap({
+      'title': 'Kuis Sampah', 'description': 'Asli',
+      'i18n': {'en': {'title': 'Waste Quiz'}},
+    }, 's1');
+    final q = QuizQuestion.fromMap({
+      'question': 'Apa?', 'options': ['a', 'b'], 'correctIndex': 1,
+      'i18n': {'en': {'question': 'What?', 'options': ['A']}},
+    }, 'q1');
+    debugSetL10n(const Locale('en'));
+    expect(set.title, 'Waste Quiz');
+    expect(set.description, 'Asli', reason: 'missing field falls back');
+    expect(q.question, 'What?');
+    expect(q.options, ['a', 'b'], reason: 'a list of another length is not used');
+    expect(set.toMap()['title'], 'Kuis Sampah', reason: 'toMap keeps the original');
+    debugSetL10n(const Locale('id'));
+    expect(set.title, 'Kuis Sampah');
   });
 
   test('switching the language stops speech', () async {
