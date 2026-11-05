@@ -340,7 +340,7 @@ class _ResultRow extends StatelessWidget {
     return Semantics(
       button: true,
       label:
-          '${item.title}, ${item.subtitle}${item.bin == null ? '' : ', ${item.bin!.label}'}',
+          '${l10n.a11ySearchItem(item.title, item.subtitle)}${item.bin == null ? '' : ', ${item.bin!.label}'}',
       container: true,
       excludeSemantics: true,
       child: InkWell(

@@ -166,7 +166,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get configSameWifiHint =>
-      'Put ELIO and this phone on the same Wi-Fi or hotspot, then tap Connect now.';
+      'Put ELIOS and this phone on the same Wi-Fi or hotspot, then tap Connect now.';
 
   @override
   String get configSaveDefault => 'Save as default config';
@@ -178,7 +178,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get configDragToRotate => 'Drag to rotate';
 
   @override
-  String get configLookingForElio => 'Looking for ELIO…';
+  String get configLookingForElio => 'Looking for ELIOS…';
 
   @override
   String get guidePdfUnavailable => 'Guide PDF is not available yet.';
@@ -438,16 +438,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navHistory => 'History';
 
   @override
-  String get shellConnectElio => 'Connect ELIO';
+  String get shellConnectElio => 'Connect ELIOS';
 
   @override
-  String get shellConnected => 'ELIO connected';
+  String get shellConnected => 'ELIOS connected';
 
   @override
   String get shellConnectedMsg => 'Robot connection is ready.';
 
   @override
-  String get shellDisconnected => 'ELIO disconnected';
+  String get shellDisconnected => 'ELIOS disconnected';
 
   @override
   String get shellDisconnectedMsg =>
@@ -463,7 +463,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get homeReady => 'Ready to learn with ELIO?';
+  String get homeReady => 'Ready to learn with ELIOS?';
 
   @override
   String get configTopSubtitle => 'Robot, camera and quiz setup';
@@ -498,10 +498,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get medalRobotics => 'Robotics Beginner';
 
   @override
-  String get medalRoboticsDesc => 'Start the Introduction to ELIO module';
+  String get medalRoboticsDesc => 'Start the Introduction to ELIOS module';
 
   @override
-  String get medalRoboticsHint => 'Start Intro to ELIO';
+  String get medalRoboticsHint => 'Start Intro to ELIOS';
 
   @override
   String get medalAdvocate => 'Sustainability Advocate';
@@ -798,7 +798,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifClose => 'Close notifications';
 
   @override
-  String get notifSubtitle => 'Learning updates and reminders from ELIO.';
+  String get notifSubtitle => 'Learning updates and reminders from ELIOS.';
 
   @override
   String get notifMarkAllRead => 'Mark all read';
@@ -895,11 +895,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cfgFoundAt(Object ip) {
-    return 'Found ELIO at $ip';
+    return 'Found ELIOS at $ip';
   }
 
   @override
-  String get cfgNotFound => 'ELIO not found on this Wi-Fi';
+  String get cfgNotFound => 'ELIOS not found on this Wi-Fi';
 
   @override
   String get cfgRetry => 'Retry';
@@ -950,7 +950,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cfgConnection => 'Connection';
 
   @override
-  String get cfgWsAddress => 'ELIO WebSocket address';
+  String get cfgWsAddress => 'ELIOS WebSocket address';
 
   @override
   String get cfgPort => 'Port';
@@ -959,7 +959,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cfgSearching => 'Searching…';
 
   @override
-  String get cfgFindElio => 'Find ELIO';
+  String get cfgFindElio => 'Find ELIOS';
 
   @override
   String get cfgRobotNotUsed => 'Robot not used';
@@ -1003,7 +1003,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cfgPhone => 'Phone';
 
   @override
-  String get cfgRobotModel => 'ELIO robot 3D model, drag to rotate';
+  String get cfgRobotModel => 'ELIOS robot 3D model, drag to rotate';
 
   @override
   String get cfgQuestionBankDesc => 'Checked questions, instant';
@@ -1021,7 +1021,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setAutoReconnect => 'Auto-reconnect';
 
   @override
-  String get setAutoReconnectSub => 'Reconnect when ELIO is available again';
+  String get setAutoReconnectSub => 'Reconnect when ELIOS is available again';
 
   @override
   String get setVideo => 'Video';
@@ -1317,7 +1317,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ctlThisDrive => 'THIS DRIVE';
 
   @override
-  String get ctlElioSays => 'ELIO SAYS';
+  String get ctlElioSays => 'ELIOS SAYS';
 
   @override
   String ctlMissionOf(Object done, Object target) {
@@ -2206,7 +2206,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lqIntro =>
-      'Test your understanding of waste management and how ELIO classifies materials. Each quiz has one attempt.';
+      'Test your understanding of waste management and how ELIOS classifies materials. Each quiz has one attempt.';
 
   @override
   String get lqSetsFailed => 'Quiz sets could not be loaded.';
@@ -2360,11 +2360,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lnStartModule1 => 'Start module 1';
 
   @override
-  String get lnTestElio => 'Test how ELIO sorts waste.';
+  String get lnTestElio => 'Test how ELIOS sorts waste.';
 
   @override
   String lnQuizzesTest(Object count) {
-    return '$count quizzes. Test how ELIO sorts waste.';
+    return '$count quizzes. Test how ELIOS sorts waste.';
   }
 
   @override
@@ -2466,7 +2466,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lnLoadFailedBody =>
-      'Check the connection to ELIO or the internet, then try again. Lessons you already opened still work offline.';
+      'Check the connection to ELIOS or the internet, then try again. Lessons you already opened still work offline.';
 
   @override
   String get lnOpenOffline => 'Open offline lessons';
@@ -3309,4 +3309,930 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pdfColComment => 'Comment';
+
+  @override
+  String a11yTrophies(Object count) {
+    return '$count trophies';
+  }
+
+  @override
+  String homeScanSubtitle(Object date, Object count) {
+    return '$date · +$count trophies';
+  }
+
+  @override
+  String a11yLabelValue(Object label, Object value) {
+    return '$label: $value';
+  }
+
+  @override
+  String a11yBinStat(Object bin, Object count, Object percent) {
+    return '$bin $count scans, $percent';
+  }
+
+  @override
+  String get a11yTopBin => ', top bin';
+
+  @override
+  String get homeScansUnit => ' scans';
+
+  @override
+  String homeMedalsOf(Object unlocked, Object total) {
+    return '$unlocked of $total';
+  }
+
+  @override
+  String a11yMedal(Object name, Object state, Object description) {
+    return '$name, $state. $description';
+  }
+
+  @override
+  String get a11yUnlocked => 'unlocked';
+
+  @override
+  String get a11yLocked => 'locked';
+
+  @override
+  String a11ySearchItem(Object title, Object subtitle) {
+    return '$title, $subtitle';
+  }
+
+  @override
+  String learnQuestionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count questions',
+      one: '1 question',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String learnMinutes(Object count) {
+    return '$count min';
+  }
+
+  @override
+  String learnLessonCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lessons',
+      one: '1 lesson',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String a11yPercent(Object title, Object percent) {
+    return '$title, $percent percent';
+  }
+
+  @override
+  String get tipWaiting =>
+      'Hang on, I\'m looking for the robot! If it takes long, check the ELIOS Wi-Fi.';
+
+  @override
+  String get tipDisconnected =>
+      'Uh-oh, I can\'t hear the robot. Walk closer to it or check that it\'s switched on.';
+
+  @override
+  String get tipStopped =>
+      'The robot is STOPPED. Check the way is clear, then tap Continue.';
+
+  @override
+  String get tipQuiz => 'Quiz time! Answer it, then we sort the item together.';
+
+  @override
+  String get tipDrive =>
+      'Drive around slowly and point my camera at an item to sort.';
+
+  @override
+  String tipPickZone(Object item) {
+    return 'Nice driving! The $item is in the pick zone. Press PICK UP to grab it.';
+  }
+
+  @override
+  String tipLocked(Object item) {
+    return 'Got it! I locked on the $item. Hold still while I look.';
+  }
+
+  @override
+  String tipSeeItem(Object item) {
+    return 'I see a $item. Drive closer, slowly.';
+  }
+
+  @override
+  String ctlPlusTrophies(Object count) {
+    return '+$count trophies';
+  }
+
+  @override
+  String get guideReady => 'You\'re ready, Robot Pilot!';
+
+  @override
+  String get guideGo => 'Let\'s go!';
+
+  @override
+  String get qzElapsed => 'elapsed';
+
+  @override
+  String qzWordCount(Object words, Object limit) {
+    return '$words / $limit words';
+  }
+
+  @override
+  String wqCorrectOf(Object correct, Object total) {
+    return '$correct of $total correct';
+  }
+
+  @override
+  String get cfgCouldNotReach => 'Couldn\'t reach ELIOS';
+
+  @override
+  String get cfgIpAddress => 'IP address';
+
+  @override
+  String camMacFailed(Object error) {
+    return 'The Mac camera couldn\'t be opened ($error).';
+  }
+
+  @override
+  String get catExamplesOrganic =>
+      'Food scraps; Leftover cooked food; Coffee grounds and tea bags; Grass clippings and leaves; Eggshells';
+
+  @override
+  String get catExamplesInorganic =>
+      'Plastic bottles and containers; Glass jars and bottles; Aluminium cans and foil; Paper and cardboard; Metal scraps';
+
+  @override
+  String get catExamplesHazardous =>
+      'Batteries; Electronic waste; Fluorescent light bulbs; Paint and solvents; Pesticides and herbicides';
+
+  @override
+  String get authNoUser => 'No account found for that username.';
+
+  @override
+  String get notifVideoDone => 'Video completed';
+
+  @override
+  String get notifVideoDoneMsg => 'You completed a video lesson.';
+
+  @override
+  String get notifGuideDone => 'Guide completed';
+
+  @override
+  String get notifGuideDoneMsg => 'You completed a guide.';
+
+  @override
+  String get notifQuizDone => 'Quiz completed';
+
+  @override
+  String get notifQuizDoneMsg => 'Your quiz result has been saved.';
+
+  @override
+  String get notifReview => 'Quiz review available';
+
+  @override
+  String get notifReviewMsg => 'You can now review your quiz answers.';
+
+  @override
+  String get notifSync => 'Progress sync issue';
+
+  @override
+  String get notifSyncMsg =>
+      'Your progress could not be synced. Check your connection.';
+
+  @override
+  String get physDensityTag => 'Module A · Environment';
+
+  @override
+  String get physDensityTitle => 'Waste Density';
+
+  @override
+  String get physDensityDesc => 'ELIOS sorts inorganic waste by density.';
+
+  @override
+  String get physHeatTag => 'Module B · Environment';
+
+  @override
+  String get physHeatTitle => 'Compost Heat & Thermodynamics';
+
+  @override
+  String get physHeatDesc =>
+      'Microbes decomposing waste release heat over time.';
+
+  @override
+  String get physTorqueTag => 'Module C · Mechanics';
+
+  @override
+  String get physTorqueTitle => 'Robot Shoulder Torque';
+
+  @override
+  String get physTorqueDesc =>
+      'The ELIOS shoulder joint holds torque as the arm reaches out.';
+
+  @override
+  String get physWorkEnergyTag => 'Module D · Mechanics';
+
+  @override
+  String get physWorkEnergyTitle => 'Work & Potential Energy';
+
+  @override
+  String get physWorkEnergyDesc =>
+      'Lifting a load takes a measurable amount of work.';
+
+  @override
+  String get physKinematicsTag => 'Module E · Kinematics';
+
+  @override
+  String get physKinematicsTitle => 'ELIOS Speed';
+
+  @override
+  String get physKinematicsDesc =>
+      'Uniform straight-line motion towards the waste pile.';
+
+  @override
+  String get physPwmTag => 'Module F · Electronics';
+
+  @override
+  String get physPwmTitle => 'PWM & Motor Voltage';
+
+  @override
+  String get physPwmDesc =>
+      'The duty cycle sets the average voltage of the wheel motors.';
+
+  @override
+  String get physPowerTag => 'Module G · Power';
+
+  @override
+  String get physPowerTitle => 'ELIOS Power & Battery';
+
+  @override
+  String get physPowerDesc => 'Managing how much power the robot parts use.';
+
+  @override
+  String get physDeepDiveTag => 'Deep-Dive · Waste Physics';
+
+  @override
+  String get physDeepDiveTitle => 'Waste Deep-Dive Cards';
+
+  @override
+  String get physDeepDiveDesc => 'A closer look: organic, inorganic and B3.';
+
+  @override
+  String get physQuizTag => 'Evaluation';
+
+  @override
+  String get physQuizTitle => 'Check Your Understanding (Quiz)';
+
+  @override
+  String get physQuizDesc =>
+      'Test what you know about the physics behind the ELIOS robot.';
+
+  @override
+  String get physLevelBeginner => 'Beginner';
+
+  @override
+  String get physLevelIntermediate => 'Intermediate';
+
+  @override
+  String get physLevelAdvanced => 'Advanced';
+
+  @override
+  String get physLevelAllLevels => 'All levels';
+
+  @override
+  String get simDeepDive1 => 'Waste Deep-Dive';
+
+  @override
+  String get simDeepDive2 => 'The Physics of Sorting Waste';
+
+  @override
+  String get simDeepDive3 =>
+      'Explore why each waste category is handled differently.';
+
+  @override
+  String get simDeepDive4 => 'Pile Porosity';
+
+  @override
+  String get simDeepDive5 =>
+      'Low porosity (<25%). Air can hardly get in, which triggers anaerobic decomposition (methane).';
+
+  @override
+  String get simDeepDive6 =>
+      'Good porosity. Oxygen flows freely and aerobic composting works best.';
+
+  @override
+  String get simDeepDive7 =>
+      'Porosity is the percentage of empty space (filled with air) between the solid particles in a compost pile. High porosity = air can flow freely through the whole pile = the aerobic process (which needs oxygen) runs well. Low porosity = the pile is too dense = oxygen runs out quickly inside = anaerobic microbes take over.';
+
+  @override
+  String get simDeepDive8 =>
+      'Organic waste has no electrical (conductivity), optical (NIR reflectance) or hazardous chemical (volatility/reactivity) property that could be used as an automatic sorting signal. The only relevant physical variable is its own pore structure and moisture, because the goal is not to separate materials but to manage the biological breakdown itself.';
+
+  @override
+  String get simDeepDive9 =>
+      'ELIOS uses this principle in its spring-loaded gripper/pusher to test how hard or elastic an item is.';
+
+  @override
+  String get simDeepDive10 => 'Compression (x)';
+
+  @override
+  String get simDeepDive11 =>
+      '⚠ Accuracy note: the peak wavelengths used in this simulation (e.g. PET ≈1660 nm, HDPE ≈1730 nm, PP ≈1410 nm) must be checked again against a valid industrial NIR sorting reference before release. Real NIR sensors measure absorbance peaks/valleys over ranges that can vary.';
+
+  @override
+  String get simDeepDive12 =>
+      'When metal moves through a changing magnetic field, eddy currents are induced inside it. They create an opposing magnetic field that pushes non-magnetic metals such as aluminium away from the magnet.';
+
+  @override
+  String get simDeepDive13 =>
+      'Inorganic materials (plastic, glass, metal) go through no biological process that needs managing (unlike organic waste), and most are not chemically reactive or hazardous (unlike B3). The most effective sorting signals are their stable physical properties: hardness (Hooke), optical identity (NIR) and magnetic/conductive behaviour (eddy currents).';
+
+  @override
+  String get simDeepDive14 =>
+      'The hotter a liquid or substance is, the more it tends to evaporate into a gas: this is vapour pressure. The Clausius-Clapeyron equation describes this non-linear (exponential) relationship.';
+
+  @override
+  String get simDeepDive15 =>
+      '⚠ Accuracy note: this simulation uses a qualitative, simplified approach, not a literal P–T curve with scientifically precise exponential constants. It only shows the trend (hotter = evaporates more easily = more dangerous).';
+
+  @override
+  String get simDeepDive16 => 'Substance temperature';
+
+  @override
+  String get simDeepDive17 => 'Incinerator temperature';
+
+  @override
+  String get simDeepDive18 => 'Status: hazardous chemical bonds broken (safe)';
+
+  @override
+  String get simDeepDive19 =>
+      'Radiation intensity (I) drops exponentially as the shield thickness (x) increases.';
+
+  @override
+  String get simDeepDive20 =>
+      '⚠ Accuracy note: real attenuation coefficients depend strongly on the energy of the radiation particles (MeV) and on the specific shield material. The numbers below are illustrative and only show the relative order (gamma hardest, alpha easiest).';
+
+  @override
+  String get simDeepDive21 => 'Alpha (α)';
+
+  @override
+  String get simDeepDive22 => 'Shield thickness (x)';
+
+  @override
+  String get simDeepDive23 =>
+      'The key difference is not the physical material (B3 can be metal, liquid or any solid) but its hidden danger: chemical volatility, radioactivity or thermal reactivity that can harm people or the environment if it is handled like ordinary waste. So \"sorting\" here is not about separating materials but about safe containment and handling: shielding, controlled temperature and early identification before direct contact.';
+
+  @override
+  String get simDensity1 => 'Density & Classification';
+
+  @override
+  String get simDensity2 => 'MODULE A · LESSON';
+
+  @override
+  String get simDensity3 =>
+      'Items with different densities are sorted into the matching category.';
+
+  @override
+  String get simDensity4 => 'DENSITY FORMULA';
+
+  @override
+  String get simDensity5 => 'm = mass · V = volume';
+
+  @override
+  String get simDensity6 => 'Move the sliders to see the item change';
+
+  @override
+  String get simDensity7 => 'Mass (m)';
+
+  @override
+  String get simDensity8 => 'CLASSIFICATION RESULT';
+
+  @override
+  String get simDensity9 => 'Unknown material';
+
+  @override
+  String get simDensity10 =>
+      'Density outside the database range (not a known plastic, glass or metal).';
+
+  @override
+  String get simDensity11 => 'Choose a bin:';
+
+  @override
+  String get simDensity12 => 'Plastic';
+
+  @override
+  String get simDensity13 => 'Glass';
+
+  @override
+  String get simDensity14 => 'Metal';
+
+  @override
+  String get simDensity15 => 'Module A — Density & Waste Classification';
+
+  @override
+  String get simDensity16 =>
+      'Density is a measure of how \"tightly packed\" matter is inside an object. Two objects can have the same size (volume) but very different weights, because their particles are packed differently. Iron feels heavy in your hand not because there is \"more\" iron, but because its atoms are packed more tightly per unit of space than, say, plastic.\n\nThis matters for ELIOS because density is one of the cheapest and fastest signals for guessing a material, far cheaper than, for example, analysing the infrared spectrum of every item.';
+
+  @override
+  String get simDensity17 =>
+      'ρ = m / V (density = mass / volume). Pure water has ρ = 1.0 g/cm³ as the reference point.';
+
+  @override
+  String get simDensity18 =>
+      'A common mistake swaps m and V into V/m, which changes the result drastically. Density is mass per volume.';
+
+  @override
+  String get simDensity19 => 'Plastic (0.9 - 1.4 g/cm³)';
+
+  @override
+  String get simDensity20 => 'Glass (2.4 - 2.6 g/cm³)';
+
+  @override
+  String get simDensity21 => 'Metal (≥ 2.7 g/cm³)';
+
+  @override
+  String get simDensity22 => 'Unknown';
+
+  @override
+  String get simHeat1 => 'Heat & Thermodynamics';
+
+  @override
+  String get simHeat2 => 'MODULE B · LESSON';
+
+  @override
+  String get simHeat3 => 'Heat & Composting Thermodynamics';
+
+  @override
+  String get simHeat4 => 'HEAT FORMULA (Q)';
+
+  @override
+  String get simHeat5 => 'm = mass · c = 4000 J/kg°C · ΔT = temperature change';
+
+  @override
+  String get simHeat6 => 'Particles represent microbial activity';
+
+  @override
+  String get simHeat7 => 'Temperature change (ΔT)';
+
+  @override
+  String get simHeat8 => 'Porosity (cross-module)';
+
+  @override
+  String get simHeat9 => 'PHASE RESULT';
+
+  @override
+  String get simHeat10 =>
+      'Thermophilic phase: heat-loving bacteria work best and pathogens start to die.';
+
+  @override
+  String get simHeat11 => 'Module B — Heat & Composting Thermodynamics';
+
+  @override
+  String get simHeat12 =>
+      'When microorganisms in a compost pile break down organic waste, they release energy as heat: a biological exothermic process. The pile warms up not because of fire or electricity, but because of the metabolism of millions of bacteria and fungi breaking organic molecules apart.\n\nThis module models how much heat a mass of compost has to absorb or release for a given temperature change, and links it to the real biological phases of composting.';
+
+  @override
+  String get simHeat13 => 'Mesophilic (< 55°C)';
+
+  @override
+  String get simHeat14 => 'Thermophilic (55 - 60°C)';
+
+  @override
+  String get simHeat15 => 'Too hot (> 60°C)';
+
+  @override
+  String get simKinematics1 => 'Kinematics';
+
+  @override
+  String get simKinematics2 => 'MODULE E · LESSON';
+
+  @override
+  String get simKinematics3 => 'Kinematics (uniform & accelerated motion)';
+
+  @override
+  String get simKinematics4 =>
+      'How long does ELIOS take to reach the target? Link distance, speed and time.';
+
+  @override
+  String get simKinematics5 => 'TIME FORMULA (uniform motion)';
+
+  @override
+  String get simKinematics6 => 't = time · s = distance · v = constant speed';
+
+  @override
+  String get simKinematics7 => 'Target distance (s)';
+
+  @override
+  String get simKinematics8 => 'Speed (v)';
+
+  @override
+  String get simKinematics9 => 'PREDICTION';
+
+  @override
+  String get simKinematics10 => 'Estimated time of arrival (ETA)';
+
+  @override
+  String get simKinematics11 =>
+      'Uniformly accelerated motion involves acceleration (a). In the real world ELIOS does not jump straight to full speed: the motor needs time (less than 1 second) to speed up from standstill to constant speed.\n\nFormula: s = v₀·t + ½·a·t²\n\nBecause ELIOS accelerates very quickly, the acceleration distance is tiny and is usually ignored for indoor navigation. But if an obstacle appears suddenly, the ELIOS emergency brake uses deceleration (negative acceleration) calculated with the same formula.';
+
+  @override
+  String get simKinematics12 => 'Module E — Kinematics';
+
+  @override
+  String get simKinematics13 =>
+      'When ELIOS is sent to a waste collection point, its navigation system (Local Planner) has to know how far away it is and how long it will take to get there at a given speed. This is pure basic kinematics: the part of physics that studies motion without caring what causes it (force/mass).\n\nThis module models ELIOS moving in uniform straight-line motion.';
+
+  @override
+  String get simKinematics14 =>
+      'Bonus, accelerated motion: in the real world the ELIOS motor needs time to accelerate (s = v₀·t + ½·a·t²). But because ELIOS accelerates very quickly, uniform motion is accurate enough to compute the ETA.';
+
+  @override
+  String get simKinematics15 =>
+      'A common mistake when computing t is multiplying s and v (s·v) instead of dividing (s/v). The unit of s·v is m²/s, which makes no sense. Always check the final unit (m / (m/s) = s).';
+
+  @override
+  String get simDensityPainter1 => 'Reference';
+
+  @override
+  String get simDensityPainter2 => 'Object';
+
+  @override
+  String get simTorquePainter1 => 'TORQUE';
+
+  @override
+  String get simPowerBudget1 => 'Power & Battery Budget';
+
+  @override
+  String get simPowerBudget2 => 'MODULE G · LESSON';
+
+  @override
+  String get simPowerBudget3 => 'POWER & ENERGY FORMULA';
+
+  @override
+  String get simPowerBudget4 => 'Scenario presets:';
+
+  @override
+  String get simPowerBudget5 => 'Usage time (t)';
+
+  @override
+  String get simPowerBudget6 => 'BATTERY LIFE PREDICTION';
+
+  @override
+  String get simPowerBudget7 => 'Module G — Power & Battery Budget';
+
+  @override
+  String get simPowerBudget8 =>
+      'Every ELIOS part that is switched on (camera, drive motors, arm motor) draws power from the same battery. This module shows how to work out how long the battery lasts depending on which parts are active, a decision the ELIOS control system really makes in real time to save power.\n\nThe real power-saving behaviour of ELIOS follows this logic directly: the drive motors are switched off while sorting (the robot stands still), and the camera is switched off while moving when it is not analysing an object. Every watt that does not need to be on means extra seconds of operation before the battery needs recharging.';
+
+  @override
+  String get simPowerBudget9 =>
+      'P = V · I (power = voltage × current). Here the power (P) of each part is already given.';
+
+  @override
+  String get simPowerBudget10 => 'E = P · t (energy = total power × time).';
+
+  @override
+  String get simPowerBudget11 =>
+      'Total capacity = 50,000 joules. t_estimate = 50,000 / P_total.';
+
+  @override
+  String get simPowerBudget12 =>
+      'Camera 10 W, drive motors 36 W, arm motor 18 W.';
+
+  @override
+  String get simPwm1 => 'PWM & Motor';
+
+  @override
+  String get simPwm2 => 'MODULE F · LESSON';
+
+  @override
+  String get simPwm3 => 'PWM & Effective Voltage';
+
+  @override
+  String get simPwm4 => 'EFFECTIVE AVERAGE VOLTAGE';
+
+  @override
+  String get simPwm5 => 'Square wave (PWM signal)';
+
+  @override
+  String get simPwm6 => 'MOTOR VOLTAGE';
+
+  @override
+  String get simPwm7 => 'Module F — PWM & Effective Motor Voltage';
+
+  @override
+  String get simPwm8 =>
+      'V_avg = D · V_max (effective average voltage = duty cycle × maximum voltage).';
+
+  @override
+  String get simPwm9 =>
+      'D (duty cycle) is the percentage of time the signal is \"on\" in one period.';
+
+  @override
+  String get simPwm10 =>
+      'Linear model limits (important): the RPM estimate in this simulation is a linear approximation. On a real motor, the link between duty cycle and actual RPM is not fully linear once the motor carries a torque load.';
+
+  @override
+  String get simPwm11 =>
+      'The claim \"lower average voltage = proportionally lower average current\" is ONLY TRUE FOR A PURELY RESISTIVE LOAD. In a motor (inductive + mechanical load) the current does not follow the voltage in a simple linear way.';
+
+  @override
+  String get simTorque1 => 'Robot Shoulder Torque';
+
+  @override
+  String get simTorque2 => 'MODULE C · MECHANICS';
+
+  @override
+  String get simTorque3 => 'TORQUE FORMULA';
+
+  @override
+  String get simTorque4 => 'r = arm length · F = load · θ = angle';
+
+  @override
+  String get simTorque5 => 'Drag the arm handle to change r & θ';
+
+  @override
+  String get simTorque6 => 'Arm length (r)';
+
+  @override
+  String get simTorque7 => 'Load (F)';
+
+  @override
+  String get simTorque8 => 'Angle (θ)';
+
+  @override
+  String get simTorque9 => 'INSTANT TORQUE';
+
+  @override
+  String get simTorque10 => 'CHALLENGE';
+
+  @override
+  String get simTorque11 => 'Lesson: torque (moment of force)';
+
+  @override
+  String get simSimCanvasFrame1 => '⚠ TIP-OVER RISK';
+
+  @override
+  String get simSimulationPageScaffold1 => 'Lesson';
+
+  @override
+  String get simWorkEnergy1 => 'Work & Energy';
+
+  @override
+  String get simWorkEnergy2 => 'MODULE D · LESSON';
+
+  @override
+  String get simWorkEnergy3 => 'Work & Potential Energy';
+
+  @override
+  String get simWorkEnergy4 =>
+      'Every lift turns battery energy into gravitational potential energy.';
+
+  @override
+  String get simWorkEnergy5 => 'WORK FORMULA (W)';
+
+  @override
+  String get simWorkEnergy6 => 'm = mass · g = 10 m/s² · h = height';
+
+  @override
+  String get simWorkEnergy7 => 'Change the height and load to see the effect';
+
+  @override
+  String get simWorkEnergy8 => 'Load mass (m)';
+
+  @override
+  String get simWorkEnergy9 => 'Height (h)';
+
+  @override
+  String get simWorkEnergy10 => 'RESULT';
+
+  @override
+  String get simWorkEnergy11 =>
+      'Module D — Work & Gravitational Potential Energy';
+
+  @override
+  String get simWorkEnergy12 =>
+      'Every time ELIOS lifts waste from the tray into a higher container, it does work against gravity. This work is stored as gravitational potential energy in the lifted item: energy that is \"ready to be released\" if the item is dropped again.\n\nThis is not just an abstract idea: every joule of work the ELIOS arm motor does comes from the battery, so this module directly explains why lifting heavy loads more often and higher = the ELIOS battery runs out faster.';
+
+  @override
+  String get simDeepDive24 =>
+      '• Fick\'s law (diffusion): the rate at which oxygen moves into the pile is proportional to the area of the pore paths and inversely proportional to the distance travelled; a dense pile = longer, narrower diffusion paths = oxygen gets in much more slowly.\n';
+
+  @override
+  String get simDeepDive25 =>
+      '• Heat conduction, Q/t = kAΔT/L: the heat microbes produce in the core of the pile travels outwards by conduction; a dense pile also slows this down, which raises the risk of overheating (see Module B).\n';
+
+  @override
+  String get simDeepDive26 =>
+      '• Jurin\'s law (capillarity): explains how moisture rises or stays between small particles, which affects how \"wet\" the pores remain over time.';
+
+  @override
+  String get simDeepDive27 =>
+      'Each type of plastic absorbs and reflects near-infrared light at its own characteristic wavelengths, forming a kind of \"optical fingerprint\".';
+
+  @override
+  String get simDeepDive28 =>
+      'Incinerating hazardous materials needs much higher temperatures than burning ordinary waste, to break the chemical bonds of toxic molecules (for example persistent organic compounds). The 1000°C threshold here illustrates the thermal decomposition point.';
+
+  @override
+  String get simDeepDive29 => 'Status: bonds still intact (hazardous)';
+
+  @override
+  String get simDensity23 =>
+      'Ranges: plastic (0.9–1.4), glass (2.4–2.6), metal (≥ 2.7).';
+
+  @override
+  String get simDensity24 =>
+      'Plastics with ρ < 1.0 (HDPE, PP) float in water. Plastics with ρ > 1.0 (PET, PVC) sink. This is a real flotation sorting technique used in industry!';
+
+  @override
+  String get simHeat16 =>
+      'Heat from microbial activity changes the temperature of the compost pile. Watch its phase.';
+
+  @override
+  String get simHeat17 =>
+      'Warning: anaerobic, methane risk. Low porosity (<25%) and high temperature (>55°C).';
+
+  @override
+  String get simHeat18 => 'Overheated: too hot! Microbial activity slows down.';
+
+  @override
+  String get simHeat19 =>
+      'Q = m · c · ΔT (heat = mass × specific heat × temperature change).';
+
+  @override
+  String get simHeat20 =>
+      'Mesophilic phase (< 55°C): medium-temperature bacteria start breaking down simple sugars and proteins.';
+
+  @override
+  String get simHeat21 =>
+      'Thermophilic phase (55–60°C): heat-loving bacteria dominate; this phase kills pathogens and weed seeds.';
+
+  @override
+  String get simHeat22 =>
+      'Overheated (> 60°C): microbial activity slows or stops; turn the pile to release heat.';
+
+  @override
+  String get simHeat23 =>
+      'Link with porosity: when porosity is < 25% AND the temperature is > 55°C, the pile can turn anaerobic (no oxygen left). Anaerobic microbes take over and produce methane (CH₄), a dangerous gas.';
+
+  @override
+  String get simKinematics16 => 'Uniform straight-line motion';
+
+  @override
+  String get simKinematics17 =>
+      'Uniform motion: constant speed (v), no acceleration (a = 0).';
+
+  @override
+  String get simKinematics18 =>
+      'v = s / t, so t = s / v (time = distance divided by speed).';
+
+  @override
+  String get simPowerBudget13 =>
+      'How long does the battery last? It depends on which parts are switched on.';
+
+  @override
+  String get simPowerBudget14 =>
+      'If P_total = 0, the runtime is mathematically infinite (∞).';
+
+  @override
+  String get simPwm12 =>
+      'Control the ELIOS motor speed without wasting energy as heat in a resistor.';
+
+  @override
+  String get simPwm13 =>
+      'The DC motors in ELIOS (for example the wheel or arm motors) are not always given full voltage all the time. To control motor speed without wasting energy as heat, ELIOS uses PWM (pulse width modulation): it switches the full voltage on and off very quickly (hundreds to thousands of times per second) and sets what share of each cycle the voltage is on.\n\nThe old way to control motor speed was a resistive voltage divider (resistor/potentiometer) that lowers the voltage directly. The problem is that the extra energy is wasted as heat in the resistor: energy is lost and parts get hot.\n\nPWM never really \"lowers\" the voltage: it only switches the full voltage on and off very fast. Because the motor has mechanical inertia and coil inductance that smooth this on/off \"twitching\" into steady motion, the result feels like a lower voltage, but without wasting energy as resistive heat; only much smaller switching losses.';
+
+  @override
+  String get simPwm14 =>
+      'A 60% duty cycle means fully on 60% of the time and off for the other 40%. The average is 7.2 V of the 12 V maximum.';
+
+  @override
+  String get simTorque12 =>
+      'When ELIOS reaches out its arm, the shoulder joint holds more torque.';
+
+  @override
+  String get simTorque13 => 'Torque above 8 N·m: the robot could tip over!';
+
+  @override
+  String get simTorque14 =>
+      'θ = 90°: maximum torque, the arm is perpendicular to the force.';
+
+  @override
+  String get simTorque15 =>
+      'θ = 0° or 180°: zero torque, the force is parallel to the arm.';
+
+  @override
+  String get simTorque16 =>
+      'Large r: more torque, but the robot is harder to keep stable.';
+
+  @override
+  String get simWorkEnergy13 =>
+      'W = E_p = m · g · h (work = potential energy = mass × gravity × height).';
+
+  @override
+  String get simWorkEnergy14 =>
+      'g (gravity) is rounded to 10 m/s² to keep the maths simple.';
+
+  @override
+  String simPwmMotorGets(Object volts) {
+    return 'The motor gets the equivalent of $volts V';
+  }
+
+  @override
+  String simDensityMaterial(Object name) {
+    return 'Material: $name';
+  }
+
+  @override
+  String simPowerLegend(Object watts) {
+    return 'P_total = $watts W · t = time (seconds)';
+  }
+
+  @override
+  String simPowerEstimate(Object watts, Object runtime) {
+    return 't_estimate = 50000 J / $watts W = $runtime';
+  }
+
+  @override
+  String simPowerLasts(Object runtime) {
+    return 'Lasts $runtime';
+  }
+
+  @override
+  String simWorkBatteryLeft(Object percent) {
+    return 'Battery left: $percent%';
+  }
+
+  @override
+  String simTorqueMotorStatus(Object status) {
+    return 'Motor: $status · safe limit 8 N·m';
+  }
+
+  @override
+  String get simTorqueSafe => 'SAFE';
+
+  @override
+  String get simTorqueWarning => 'CAUTION';
+
+  @override
+  String get simTorqueCritical => 'CRITICAL';
+
+  @override
+  String simTorqueChallenge(Object r) {
+    return 'Find the heaviest load ELIOS can lift when r = $r m and θ = 90° with a torque limit of 8 N·m.\nAnswer: F = τ/(r·sinθ) = 8 / $r = 16 N';
+  }
+
+  @override
+  String get simTorqueBody =>
+      'Torque (τ) measures how effectively a force turns an object around a pivot. Torque depends on the moment arm and on the angle between the arm and the direction of the force.';
+
+  @override
+  String simKinArrival(Object distance, Object speed, Object time) {
+    return 'Arrival time = $distance / $speed = $time seconds';
+  }
+
+  @override
+  String simHeatFinal(Object delta, Object result) {
+    return 'Final temperature = 25°C + $delta°C = $result°C';
+  }
+
+  @override
+  String physQDensity(Object m, Object v) {
+    return 'A sample of inorganic waste has a mass of $m g and a volume of $v cm³. What is its density?';
+  }
+
+  @override
+  String physQHeat(Object m, Object dt, Object c) {
+    return 'A compost pile with a mass of $m kg warms up by $dt °C. If the specific heat (c) of compost is $c J/kg°C, how much heat (Q) did the microbes produce?';
+  }
+
+  @override
+  String physQTorque(Object r, Object f, Object theta) {
+    return 'The robot arm reaches out $r m and lifts a load with a force of $f N at an angle of $theta° to the arm. How large is the torque at the shoulder joint?';
+  }
+
+  @override
+  String physQWork(Object m, Object h) {
+    return 'ELIOS lifts a $m kg load to a height of $h m. How much work does it do against gravity (g = 10 m/s²)?';
+  }
+
+  @override
+  String physQSpeed(Object s, Object t) {
+    return 'ELIOS drives $s metres in a straight line in $t seconds towards the target. What is its average speed?';
+  }
+
+  @override
+  String physQPwm(Object d, Object vmax) {
+    return 'A PWM signal sets the motor voltage with a duty cycle (D) of $d%. If the maximum battery voltage is $vmax V, what is the average motor voltage?';
+  }
+
+  @override
+  String physQPower(Object i, Object v) {
+    return 'A subsystem draws $i A from a $v V battery. How much power does it use?';
+  }
 }

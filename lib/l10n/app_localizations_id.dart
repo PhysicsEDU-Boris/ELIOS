@@ -166,7 +166,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get configSameWifiHint =>
-      'Sambungkan ELIO dan HP ini ke Wi-Fi atau hotspot yang sama, lalu ketuk Connect now.';
+      'Sambungkan ELIOS dan HP ini ke Wi-Fi atau hotspot yang sama, lalu ketuk Connect now.';
 
   @override
   String get configSaveDefault => 'Simpan sebagai konfigurasi bawaan';
@@ -178,7 +178,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get configDragToRotate => 'Geser untuk memutar';
 
   @override
-  String get configLookingForElio => 'Mencari ELIO…';
+  String get configLookingForElio => 'Mencari ELIOS…';
 
   @override
   String get guidePdfUnavailable => 'PDF panduan belum tersedia.';
@@ -439,16 +439,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get navHistory => 'Riwayat';
 
   @override
-  String get shellConnectElio => 'Hubungkan ELIO';
+  String get shellConnectElio => 'Hubungkan ELIOS';
 
   @override
-  String get shellConnected => 'ELIO terhubung';
+  String get shellConnected => 'ELIOS terhubung';
 
   @override
   String get shellConnectedMsg => 'Koneksi robot siap.';
 
   @override
-  String get shellDisconnected => 'ELIO terputus';
+  String get shellDisconnected => 'ELIOS terputus';
 
   @override
   String get shellDisconnectedMsg =>
@@ -464,7 +464,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get homeReady => 'Siap belajar bersama ELIO?';
+  String get homeReady => 'Siap belajar bersama ELIOS?';
 
   @override
   String get configTopSubtitle => 'Atur robot, kamera dan kuis';
@@ -499,10 +499,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get medalRobotics => 'Pemula Robotika';
 
   @override
-  String get medalRoboticsDesc => 'Mulai modul Pengenalan ELIO';
+  String get medalRoboticsDesc => 'Mulai modul Pengenalan ELIOS';
 
   @override
-  String get medalRoboticsHint => 'Mulai Pengenalan ELIO';
+  String get medalRoboticsHint => 'Mulai Pengenalan ELIOS';
 
   @override
   String get medalAdvocate => 'Pejuang Keberlanjutan';
@@ -774,7 +774,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get notifClose => 'Tutup notifikasi';
 
   @override
-  String get notifSubtitle => 'Kabar belajar dan pengingat dari ELIO.';
+  String get notifSubtitle => 'Kabar belajar dan pengingat dari ELIOS.';
 
   @override
   String get notifMarkAllRead => 'Tandai semua dibaca';
@@ -871,11 +871,11 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String cfgFoundAt(Object ip) {
-    return 'ELIO ditemukan di $ip';
+    return 'ELIOS ditemukan di $ip';
   }
 
   @override
-  String get cfgNotFound => 'ELIO tidak ditemukan di Wi-Fi ini';
+  String get cfgNotFound => 'ELIOS tidak ditemukan di Wi-Fi ini';
 
   @override
   String get cfgRetry => 'Coba lagi';
@@ -926,7 +926,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get cfgConnection => 'Koneksi';
 
   @override
-  String get cfgWsAddress => 'Alamat WebSocket ELIO';
+  String get cfgWsAddress => 'Alamat WebSocket ELIOS';
 
   @override
   String get cfgPort => 'Port';
@@ -935,7 +935,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get cfgSearching => 'Mencari…';
 
   @override
-  String get cfgFindElio => 'Cari ELIO';
+  String get cfgFindElio => 'Cari ELIOS';
 
   @override
   String get cfgRobotNotUsed => 'Robot tidak dipakai';
@@ -979,7 +979,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get cfgPhone => 'HP';
 
   @override
-  String get cfgRobotModel => 'Model 3D robot ELIO, geser untuk memutar';
+  String get cfgRobotModel => 'Model 3D robot ELIOS, geser untuk memutar';
 
   @override
   String get cfgQuestionBankDesc => 'Soal yang sudah dicek, langsung';
@@ -997,7 +997,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get setAutoReconnect => 'Sambung ulang otomatis';
 
   @override
-  String get setAutoReconnectSub => 'Sambung lagi saat ELIO tersedia';
+  String get setAutoReconnectSub => 'Sambung lagi saat ELIOS tersedia';
 
   @override
   String get setVideo => 'Video';
@@ -1295,7 +1295,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get ctlThisDrive => 'PERJALANAN INI';
 
   @override
-  String get ctlElioSays => 'KATA ELIO';
+  String get ctlElioSays => 'KATA ELIOS';
 
   @override
   String ctlMissionOf(Object done, Object target) {
@@ -2185,7 +2185,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get lqIntro =>
-      'Uji pemahamanmu tentang pengelolaan sampah dan cara ELIO mengelompokkan material. Tiap kuis punya satu kesempatan.';
+      'Uji pemahamanmu tentang pengelolaan sampah dan cara ELIOS mengelompokkan material. Tiap kuis punya satu kesempatan.';
 
   @override
   String get lqSetsFailed => 'Kumpulan kuis tidak bisa dimuat.';
@@ -2339,11 +2339,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get lnStartModule1 => 'Mulai modul 1';
 
   @override
-  String get lnTestElio => 'Uji cara ELIO memilah sampah.';
+  String get lnTestElio => 'Uji cara ELIOS memilah sampah.';
 
   @override
   String lnQuizzesTest(Object count) {
-    return '$count kuis. Uji cara ELIO memilah sampah.';
+    return '$count kuis. Uji cara ELIOS memilah sampah.';
   }
 
   @override
@@ -2433,7 +2433,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get lnLoadFailedBody =>
-      'Periksa koneksi ke ELIO atau internet, lalu coba lagi. Materi yang sudah pernah dibuka tetap bisa dipakai offline.';
+      'Periksa koneksi ke ELIOS atau internet, lalu coba lagi. Materi yang sudah pernah dibuka tetap bisa dipakai offline.';
 
   @override
   String get lnOpenOffline => 'Buka materi offline';
@@ -3239,4 +3239,923 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get pdfColComment => 'Komentar';
+
+  @override
+  String a11yTrophies(Object count) {
+    return '$count piala';
+  }
+
+  @override
+  String homeScanSubtitle(Object date, Object count) {
+    return '$date · +$count piala';
+  }
+
+  @override
+  String a11yLabelValue(Object label, Object value) {
+    return '$label: $value';
+  }
+
+  @override
+  String a11yBinStat(Object bin, Object count, Object percent) {
+    return '$bin $count scan, $percent';
+  }
+
+  @override
+  String get a11yTopBin => ', tempat sampah teratas';
+
+  @override
+  String get homeScansUnit => ' scan';
+
+  @override
+  String homeMedalsOf(Object unlocked, Object total) {
+    return '$unlocked dari $total';
+  }
+
+  @override
+  String a11yMedal(Object name, Object state, Object description) {
+    return '$name, $state. $description';
+  }
+
+  @override
+  String get a11yUnlocked => 'terbuka';
+
+  @override
+  String get a11yLocked => 'terkunci';
+
+  @override
+  String a11ySearchItem(Object title, Object subtitle) {
+    return '$title, $subtitle';
+  }
+
+  @override
+  String learnQuestionCount(int count) {
+    return '$count soal';
+  }
+
+  @override
+  String learnMinutes(Object count) {
+    return '$count menit';
+  }
+
+  @override
+  String learnLessonCount(int count) {
+    return '$count pelajaran';
+  }
+
+  @override
+  String a11yPercent(Object title, Object percent) {
+    return '$title, $percent persen';
+  }
+
+  @override
+  String get tipWaiting =>
+      'Tunggu ya, aku sedang mencari robotnya! Kalau lama, periksa Wi-Fi ELIOS.';
+
+  @override
+  String get tipDisconnected =>
+      'Aduh, aku tidak bisa mendengar robotnya. Dekati robot atau periksa apakah sudah menyala.';
+
+  @override
+  String get tipStopped =>
+      'Robot BERHENTI. Pastikan jalannya aman, lalu ketuk Lanjutkan.';
+
+  @override
+  String get tipQuiz =>
+      'Waktunya kuis! Jawab dulu, lalu kita pilah bendanya bersama.';
+
+  @override
+  String get tipDrive =>
+      'Jalan pelan-pelan dan arahkan kameraku ke benda yang mau dipilah.';
+
+  @override
+  String tipPickZone(Object item) {
+    return 'Hebat! $item ada di zona ambil. Tekan PICK UP untuk mengambilnya.';
+  }
+
+  @override
+  String tipLocked(Object item) {
+    return 'Dapat! Aku mengunci $item. Tahan sebentar, aku sedang melihat.';
+  }
+
+  @override
+  String tipSeeItem(Object item) {
+    return 'Aku melihat $item. Mendekat pelan-pelan, ya.';
+  }
+
+  @override
+  String ctlPlusTrophies(Object count) {
+    return '+$count piala';
+  }
+
+  @override
+  String get guideReady => 'Kamu siap, Pilot Robot!';
+
+  @override
+  String get guideGo => 'Ayo mulai!';
+
+  @override
+  String get qzElapsed => 'berlalu';
+
+  @override
+  String qzWordCount(Object words, Object limit) {
+    return '$words / $limit kata';
+  }
+
+  @override
+  String wqCorrectOf(Object correct, Object total) {
+    return '$correct dari $total benar';
+  }
+
+  @override
+  String get cfgCouldNotReach => 'Tidak dapat menghubungi ELIOS';
+
+  @override
+  String get cfgIpAddress => 'Alamat IP';
+
+  @override
+  String camMacFailed(Object error) {
+    return 'Kamera Mac tidak bisa dibuka ($error).';
+  }
+
+  @override
+  String get catExamplesOrganic =>
+      'Sisa makanan; Sisa masakan; Ampas kopi dan kantong teh; Potongan rumput dan daun; Cangkang telur';
+
+  @override
+  String get catExamplesInorganic =>
+      'Botol dan wadah plastik; Toples dan botol kaca; Kaleng dan foil aluminium; Kertas dan kardus; Potongan logam';
+
+  @override
+  String get catExamplesHazardous =>
+      'Baterai; Sampah elektronik; Lampu neon; Cat dan pelarut; Pestisida dan herbisida';
+
+  @override
+  String get authNoUser => 'Tidak ada akun dengan nama pengguna itu.';
+
+  @override
+  String get notifVideoDone => 'Video selesai';
+
+  @override
+  String get notifVideoDoneMsg => 'Kamu menyelesaikan satu video pelajaran.';
+
+  @override
+  String get notifGuideDone => 'Panduan selesai';
+
+  @override
+  String get notifGuideDoneMsg => 'Kamu menyelesaikan satu panduan.';
+
+  @override
+  String get notifQuizDone => 'Kuis selesai';
+
+  @override
+  String get notifQuizDoneMsg => 'Hasil kuismu sudah disimpan.';
+
+  @override
+  String get notifReview => 'Ulasan kuis tersedia';
+
+  @override
+  String get notifReviewMsg => 'Sekarang kamu bisa mengulas jawaban kuismu.';
+
+  @override
+  String get notifSync => 'Masalah sinkronisasi progres';
+
+  @override
+  String get notifSyncMsg =>
+      'Progresmu belum dapat disinkronkan. Periksa koneksimu.';
+
+  @override
+  String get physDensityTag => 'Modul A · Lingkungan';
+
+  @override
+  String get physDensityTitle => 'Massa Jenis Sampah';
+
+  @override
+  String get physDensityDesc =>
+      'ELIOS mengklasifikasi sampah anorganik berdasarkan densitas.';
+
+  @override
+  String get physHeatTag => 'Modul B · Lingkungan';
+
+  @override
+  String get physHeatTitle => 'Panas & Termodinamika Kompos';
+
+  @override
+  String get physHeatDesc =>
+      'Dekomposisi mikroba menghasilkan panas seiring waktu.';
+
+  @override
+  String get physTorqueTag => 'Modul C · Mekanika';
+
+  @override
+  String get physTorqueTitle => 'Torsi Bahu Robot';
+
+  @override
+  String get physTorqueDesc =>
+      'Sendi bahu ELIOS menahan torsi saat lengan menjulur.';
+
+  @override
+  String get physWorkEnergyTag => 'Modul D · Mekanika';
+
+  @override
+  String get physWorkEnergyTitle => 'Usaha & Energi Potensial';
+
+  @override
+  String get physWorkEnergyDesc =>
+      'Mengangkat beban membutuhkan usaha yang terukur.';
+
+  @override
+  String get physKinematicsTag => 'Modul E · Kinematika';
+
+  @override
+  String get physKinematicsTitle => 'Kecepatan Gerak ELIOS';
+
+  @override
+  String get physKinematicsDesc =>
+      'Gerak lurus beraturan menuju tumpukan sampah.';
+
+  @override
+  String get physPwmTag => 'Modul F · Elektronika';
+
+  @override
+  String get physPwmTitle => 'PWM & Tegangan Motor';
+
+  @override
+  String get physPwmDesc =>
+      'Duty cycle mengatur tegangan rata-rata motor roda.';
+
+  @override
+  String get physPowerTag => 'Modul G · Daya';
+
+  @override
+  String get physPowerTitle => 'Daya & Baterai ELIOS';
+
+  @override
+  String get physPowerDesc => 'Manajemen konsumsi daya komponen robot.';
+
+  @override
+  String get physDeepDiveTag => 'Deep-Dive · Waste Physics';
+
+  @override
+  String get physDeepDiveTitle => 'Kartu Deep-Dive Sampah';
+
+  @override
+  String get physDeepDiveDesc =>
+      'Eksplorasi mendalam: Organik, Inorganik, dan B3.';
+
+  @override
+  String get physQuizTag => 'Evaluasi';
+
+  @override
+  String get physQuizTitle => 'Uji Pemahaman (Kuis)';
+
+  @override
+  String get physQuizDesc =>
+      'Uji pengetahuan Anda tentang fisika di balik robot ELIOS.';
+
+  @override
+  String get physLevelBeginner => 'Pemula';
+
+  @override
+  String get physLevelIntermediate => 'Menengah';
+
+  @override
+  String get physLevelAdvanced => 'Lanjutan';
+
+  @override
+  String get physLevelAllLevels => 'Semua Level';
+
+  @override
+  String get simDeepDive1 => 'Deep-Dive Sampah';
+
+  @override
+  String get simDeepDive2 => 'Fisika Pemilahan Sampah';
+
+  @override
+  String get simDeepDive3 =>
+      'Eksplorasi alasan di balik perbedaan penanganan tiap kategori sampah.';
+
+  @override
+  String get simDeepDive4 => 'Porositas Tumpukan';
+
+  @override
+  String get simDeepDive5 =>
+      'Porositas rendah (<25%). Udara sulit masuk, memicu dekomposisi anaerobik (metana).';
+
+  @override
+  String get simDeepDive6 =>
+      'Porositas baik. Oksigen mengalir bebas, proses aerobik optimal.';
+
+  @override
+  String get simDeepDive7 =>
+      'Porositas adalah persentase ruang kosong (berisi udara) di antara partikel padat dalam tumpukan kompos. Porositas tinggi = udara bisa mengalir bebas ke seluruh tumpukan = proses aerobik (butuh oksigen) berjalan sehat. Porositas rendah = tumpukan terlalu padat = oksigen cepat habis di bagian dalam = mikroba anaerobik mengambil alih.';
+
+  @override
+  String get simDeepDive8 =>
+      'Sampah organik tidak punya sifat listrik (konduktivitas), optik (reflektansi NIR), atau kimia berbahaya (volatilitas/reaktivitas) yang bisa dijadikan sinyal pemilahan otomatis — satu-satunya variabel fisik yang relevan justru adalah struktur pori dan kelembapannya sendiri, karena tujuan pemrosesannya bukan memisahkan jenis material, tapi mengelola proses biologis penguraian itu sendiri.';
+
+  @override
+  String get simDeepDive9 =>
+      'Prinsip ini dipakai ELIOS pada mekanisme penjepit/pendorong berpegas untuk menguji kekerasan/elastisitas benda.';
+
+  @override
+  String get simDeepDive10 => 'Pemampatan (x)';
+
+  @override
+  String get simDeepDive11 =>
+      '⚠ Catatan Akurasi: Angka panjang gelombang puncak (mis. PET ≈1660nm, HDPE ≈1730nm, PP ≈1410nm) yang dipakai dalam simulasi ini harus diverifikasi ulang terhadap referensi sorting NIR industri yang valid sebelum dirilis ke pengguna. Sensor NIR sungguhan mengukur puncak/lembah absorbansi pada rentang tertentu yang bisa bervariasi.';
+
+  @override
+  String get simDeepDive12 =>
+      'Ketika logam bergerak melalui medan magnet yang berubah, arus pusar (eddy current) terinduksi di dalam logam tersebut, menciptakan medan magnet lawan yang menolak logam non-magnetik seperti aluminium menjauh dari sumber magnet.';
+
+  @override
+  String get simDeepDive13 =>
+      'Material inorganik (plastik, kaca, logam) tidak mengalami proses biologis apa pun yang perlu dikelola (beda dengan organik), dan sebagian besar tidak reaktif secara kimiawi/berbahaya (beda dengan B3) — sinyal pemilahan yang paling efektif justru sifat fisiknya yang stabil: kekerasan (Hooke), identitas optik (NIR), dan sifat magnetik/konduktif (arus eddy).';
+
+  @override
+  String get simDeepDive14 =>
+      'Semakin tinggi suhu suatu cairan/zat, semakin besar kecenderungannya menguap menjadi gas — inilah tekanan uap. Persamaan Clausius-Clapeyron menjelaskan hubungan non-linear (eksponensial) ini.';
+
+  @override
+  String get simDeepDive15 =>
+      '⚠ Catatan Akurasi: Simulasi ini memakai pendekatan kualitatif/simplifikasi, bukan kurva P–T literal dengan konstanta eksponensial yang presisi secara ilmiah. Tujuannya semata menunjukkan tren (semakin panas = semakin mudah menguap = semakin berbahaya).';
+
+  @override
+  String get simDeepDive16 => 'Suhu Zat';
+
+  @override
+  String get simDeepDive17 => 'Suhu Insinerator';
+
+  @override
+  String get simDeepDive18 => 'Status: Ikatan Kimia Berbahaya Terurai (Aman)';
+
+  @override
+  String get simDeepDive19 =>
+      'Intensitas radiasi (I) berkurang secara eksponensial seiring bertambahnya ketebalan perisai (x).';
+
+  @override
+  String get simDeepDive20 =>
+      '⚠ Catatan Akurasi: Koefisien atenuasi sungguhan sangat bergantung pada energi partikel radiasi (MeV) dan jenis material perisai spesifik. Angka di bawah adalah nilai ilustratif untuk menunjukkan urutan relatif (gamma paling sulit, alfa paling mudah).';
+
+  @override
+  String get simDeepDive21 => 'Alfa (α)';
+
+  @override
+  String get simDeepDive22 => 'Ketebalan Perisai (x)';
+
+  @override
+  String get simDeepDive23 =>
+      'Perbedaan mendasarnya bukan pada jenis material fisiknya (B3 bisa berupa logam, cairan, atau padatan apa saja), tapi pada tingkat bahaya laten-nya — volatilitas kimia, radioaktivitas, atau reaktivitas termal yang bisa mencederai manusia atau lingkungan kalau ditangani seperti sampah biasa. Karena itu metode \"pemilahan\"-nya bukan soal memisahkan jenis material, melainkan soal penahanan dan penanganan aman (containment) — perisai, suhu kontrol, dan identifikasi dini sebelum bersentuhan langsung.';
+
+  @override
+  String get simDensity1 => 'Densitas & Klasifikasi';
+
+  @override
+  String get simDensity2 => 'MODUL A · MATERI';
+
+  @override
+  String get simDensity3 =>
+      'Benda dengan massa jenis berbeda diklasifikasikan ke kategori yang sesuai.';
+
+  @override
+  String get simDensity4 => 'RUMUS DENSITAS';
+
+  @override
+  String get simDensity5 => 'm = massa · V = volume';
+
+  @override
+  String get simDensity6 => 'Ubah slider untuk melihat benda berubah';
+
+  @override
+  String get simDensity7 => 'Massa (m)';
+
+  @override
+  String get simDensity8 => 'HASIL KLASIFIKASI';
+
+  @override
+  String get simDensity9 => 'Material tidak dikenal';
+
+  @override
+  String get simDensity10 =>
+      'Densitas di luar rentang database (bukan plastik, kaca, atau logam yang dikenal).';
+
+  @override
+  String get simDensity11 => 'Pilih Tong Sampah:';
+
+  @override
+  String get simDensity12 => 'Plastik';
+
+  @override
+  String get simDensity13 => 'Kaca';
+
+  @override
+  String get simDensity14 => 'Logam';
+
+  @override
+  String get simDensity15 => 'Modul A — Densitas & Klasifikasi Sampah';
+
+  @override
+  String get simDensity16 =>
+      'Densitas (massa jenis) adalah ukuran seberapa \"padat\" materi tersusun di dalam suatu benda. Dua benda bisa punya ukuran (volume) yang sama tapi berat yang jauh berbeda — itu karena partikel penyusunnya dikemas dengan kerapatan berbeda. Besi terasa berat digenggam bukan karena besi \"lebih banyak,\" tapi karena atom-atomnya lebih rapat per satuan ruang dibanding, katakanlah, plastik.\n\nKonsep ini penting untuk ELIOS karena densitas adalah salah satu sinyal paling murah dan paling cepat untuk menebak jenis material — jauh lebih murah dibanding, misalnya, menganalisis spektrum inframerah tiap benda.';
+
+  @override
+  String get simDensity17 =>
+      'ρ = m / V (Densitas = massa / volume). Air murni punya ρ = 1.0 g/cm³ sebagai titik referensi.';
+
+  @override
+  String get simDensity18 =>
+      'Miskonsepsi sering menukar posisi m dan V menjadi V/m, mengubah hasil drastis. Densitas adalah massa per volume.';
+
+  @override
+  String get simDensity19 => 'Plastik (0.9 - 1.4 g/cm³)';
+
+  @override
+  String get simDensity20 => 'Kaca (2.4 - 2.6 g/cm³)';
+
+  @override
+  String get simDensity21 => 'Logam (≥ 2.7 g/cm³)';
+
+  @override
+  String get simDensity22 => 'Tidak diketahui';
+
+  @override
+  String get simHeat1 => 'Kalor & Termodinamika';
+
+  @override
+  String get simHeat2 => 'MODUL B · MATERI';
+
+  @override
+  String get simHeat3 => 'Kalor & Termodinamika Pengomposan';
+
+  @override
+  String get simHeat4 => 'RUMUS KALOR (Q)';
+
+  @override
+  String get simHeat5 => 'm = massa · c = 4000 J/kg°C · ΔT = perubahan suhu';
+
+  @override
+  String get simHeat6 => 'Partikel mewakili aktivitas mikroba';
+
+  @override
+  String get simHeat7 => 'Perubahan Suhu (ΔT)';
+
+  @override
+  String get simHeat8 => 'Porositas (Lintas Modul)';
+
+  @override
+  String get simHeat9 => 'HASIL FASE';
+
+  @override
+  String get simHeat10 =>
+      'Fase Termofilik: Bakteri tahan panas bekerja optimal, patogen mulai mati.';
+
+  @override
+  String get simHeat11 => 'Modul B — Kalor & Termodinamika Pengomposan';
+
+  @override
+  String get simHeat12 =>
+      'Saat mikroorganisme di tumpukan kompos memecah sampah organik, mereka melepaskan energi dalam bentuk kalor (heat) — ini disebut proses eksotermik biologis. Suhu tumpukan kompos naik bukan karena api atau listrik, tapi karena aktivitas metabolisme jutaan bakteri dan jamur yang bekerja memecah rantai molekul organik.\n\nModul ini memodelkan berapa banyak kalor yang perlu diserap atau dilepas suatu massa kompos untuk mengalami perubahan suhu tertentu, dan menghubungkannya ke fase biologis nyata dari proses pengomposan.';
+
+  @override
+  String get simHeat13 => 'Mesofilik (< 55°C)';
+
+  @override
+  String get simHeat14 => 'Termofilik (55 - 60°C)';
+
+  @override
+  String get simHeat15 => 'Terlalu Panas (> 60°C)';
+
+  @override
+  String get simKinematics1 => 'Kinematika';
+
+  @override
+  String get simKinematics2 => 'MODUL E · MATERI';
+
+  @override
+  String get simKinematics3 => 'Kinematika (GLB & GLBB)';
+
+  @override
+  String get simKinematics4 =>
+      'Berapa lama ELIOS mencapai target? Hubungkan jarak, kecepatan, dan waktu.';
+
+  @override
+  String get simKinematics5 => 'RUMUS WAKTU (GLB)';
+
+  @override
+  String get simKinematics6 =>
+      't = waktu · s = jarak tempuh · v = kecepatan konstan';
+
+  @override
+  String get simKinematics7 => 'Jarak Target (s)';
+
+  @override
+  String get simKinematics8 => 'Kecepatan (v)';
+
+  @override
+  String get simKinematics9 => 'HASIL PREDIKSI';
+
+  @override
+  String get simKinematics10 => 'Estimasi Waktu Sampai (ETA)';
+
+  @override
+  String get simKinematics11 =>
+      'GLBB (Gerak Lurus Berubah Beraturan) melibatkan akselerasi (a). Di dunia nyata, ELIOS tidak langsung melesat ke kecepatan penuh — motor butuh waktu (meski kurang dari 1 detik) untuk berakselerasi dari diam hingga kecepatan konstan.\n\nRumus GLBB: s = v₀·t + ½·a·t²\n\nKarena akselerasi ELIOS sangat cepat, jarak berakselerasi sangat kecil dan sering diabaikan dalam navigasi ruangan biasa. Namun, jika ada halangan dadakan, modul rem darurat ELIOS akan menggunakan deselerasi (akselerasi negatif) yang dihitung dengan rumus GLBB yang sama.';
+
+  @override
+  String get simKinematics12 => 'Modul E — Kinematika';
+
+  @override
+  String get simKinematics13 =>
+      'Saat ELIOS disuruh menuju titik kumpul sampah, sistem navigasinya (Local Planner) harus tahu seberapa jauh jaraknya dan berapa lama waktu yang dibutuhkan untuk tiba di sana dengan kecepatan tertentu. Ini adalah implementasi murni dari Kinematika Dasar — ilmu fisika yang mempelajari gerak benda tanpa peduli apa penyebab geraknya (gaya/massa).\n\nModul ini memodelkan pergerakan ELIOS sebagai Gerak Lurus Beraturan (GLB).';
+
+  @override
+  String get simKinematics14 =>
+      'Bonus GLBB: Di dunia nyata motor ELIOS butuh waktu berakselerasi (s = v₀·t + ½·a·t²). Namun karena akselerasi ELIOS sangat singkat, GLB cukup akurat untuk menghitung ETA.';
+
+  @override
+  String get simKinematics15 =>
+      'Miskonsepsi sering terjadi saat menghitung t: mengalikan s dan v (s·v) alih-alih membaginya (s/v). Satuan s·v adalah m²/s, yang tidak punya makna logis. Cek selalu satuan akhir (m / (m/s) = s).';
+
+  @override
+  String get simDensityPainter1 => 'Referensi';
+
+  @override
+  String get simDensityPainter2 => 'Objek';
+
+  @override
+  String get simTorquePainter1 => 'TORSI';
+
+  @override
+  String get simPowerBudget1 => 'Daya & Anggaran Baterai';
+
+  @override
+  String get simPowerBudget2 => 'MODUL G · MATERI';
+
+  @override
+  String get simPowerBudget3 => 'RUMUS DAYA & ENERGI';
+
+  @override
+  String get simPowerBudget4 => 'Preset Skenario:';
+
+  @override
+  String get simPowerBudget5 => 'Waktu Penggunaan (t)';
+
+  @override
+  String get simPowerBudget6 => 'PREDIKSI KETAHANAN BATERAI';
+
+  @override
+  String get simPowerBudget7 => 'Modul G — Daya & Anggaran Baterai';
+
+  @override
+  String get simPowerBudget8 =>
+      'Setiap komponen ELIOS yang menyala — kamera, motor penggerak, motor lengan — menarik daya listrik dari baterai yang sama. Modul ini mengajarkan cara menghitung berapa lama baterai akan bertahan tergantung kombinasi komponen mana saja yang sedang aktif, sebuah keputusan yang benar-benar diambil oleh sistem kendali ELIOS secara real-time untuk menghemat daya.\n\nPerilaku hemat daya nyata ELIOS meniru logika ini secara langsung: motor penggerak dimatikan saat sedang menyortir (karena robot diam di tempat), dan kamera dimatikan saat sedang berpindah tempat jika tidak sedang menganalisis objek — setiap watt yang tidak perlu menyala berarti detik operasi tambahan sebelum baterai perlu diisi ulang.';
+
+  @override
+  String get simPowerBudget9 =>
+      'P = V · I (Daya = Tegangan × Arus). Disini daya (P) sudah ditentukan per komponen.';
+
+  @override
+  String get simPowerBudget10 => 'E = P · t (Energi = Daya total × waktu).';
+
+  @override
+  String get simPowerBudget11 =>
+      'Total Kapasitas = 50.000 Joule. t_estimasi = 50.000 / P_total.';
+
+  @override
+  String get simPowerBudget12 =>
+      'Kamera 10W, Motor Penggerak 36W, Motor Lengan 18W.';
+
+  @override
+  String get simPwm1 => 'PWM & Motor';
+
+  @override
+  String get simPwm2 => 'MODUL F · MATERI';
+
+  @override
+  String get simPwm3 => 'PWM & Tegangan Efektif';
+
+  @override
+  String get simPwm4 => 'TEGANGAN RATA-RATA EFEKTIF';
+
+  @override
+  String get simPwm5 => 'Gelombang Kotak (Sinyal PWM)';
+
+  @override
+  String get simPwm6 => 'TEGANGAN MOTOR';
+
+  @override
+  String get simPwm7 => 'Modul F — PWM & Tegangan Efektif Motor';
+
+  @override
+  String get simPwm8 =>
+      'V_avg = D · V_max (Tegangan efektif rata-rata = Duty Cycle × Tegangan Maksimum).';
+
+  @override
+  String get simPwm9 =>
+      'D (Duty Cycle) adalah persentase waktu sinyal dalam kondisi \"menyala\" dalam satu periode.';
+
+  @override
+  String get simPwm10 =>
+      'Batasan Model Linear (Penting): Perkiraan RPM pada simulasi ini adalah pendekatan linear. Pada motor nyata, hubungan duty cycle dan RPM aktual tidak sepenuhnya linear begitu motor dibebani torsi.';
+
+  @override
+  String get simPwm11 =>
+      'Klaim \"penurunan tegangan rata-rata = penurunan arus rata-rata secara proporsional\" HANYA BENAR KALAU BEBAN MURNI RESISTIF. Pada motor (beban induktif + mekanis), penurunan arus tidak mengikuti penurunan tegangan secara linear sederhana.';
+
+  @override
+  String get simTorque1 => 'Torsi Bahu Robot';
+
+  @override
+  String get simTorque2 => 'MODUL C · MEKANIKA';
+
+  @override
+  String get simTorque3 => 'RUMUS TORSI';
+
+  @override
+  String get simTorque4 => 'r = panjang lengan · F = beban · θ = sudut';
+
+  @override
+  String get simTorque5 => 'Seret gagang lengan untuk mengubah r & θ';
+
+  @override
+  String get simTorque6 => 'Panjang lengan (r)';
+
+  @override
+  String get simTorque7 => 'Beban (F)';
+
+  @override
+  String get simTorque8 => 'Sudut (θ)';
+
+  @override
+  String get simTorque9 => 'TORSI INSTAN';
+
+  @override
+  String get simTorque10 => 'TANTANGAN';
+
+  @override
+  String get simTorque11 => 'Penjelasan Materi: Torsi (Momen Gaya)';
+
+  @override
+  String get simSimCanvasFrame1 => '⚠ RISIKO TERGULING';
+
+  @override
+  String get simSimulationPageScaffold1 => 'Materi';
+
+  @override
+  String get simWorkEnergy1 => 'Usaha & Energi';
+
+  @override
+  String get simWorkEnergy2 => 'MODUL D · MATERI';
+
+  @override
+  String get simWorkEnergy3 => 'Usaha & Energi Potensial';
+
+  @override
+  String get simWorkEnergy4 =>
+      'Setiap gerakan mengangkat beban mengubah energi baterai menjadi energi potensial gravitasi.';
+
+  @override
+  String get simWorkEnergy5 => 'RUMUS USAHA (W)';
+
+  @override
+  String get simWorkEnergy6 => 'm = massa · g = 10 m/s² · h = ketinggian';
+
+  @override
+  String get simWorkEnergy7 => 'Ubah tinggi dan beban untuk melihat dampaknya';
+
+  @override
+  String get simWorkEnergy8 => 'Massa Beban (m)';
+
+  @override
+  String get simWorkEnergy9 => 'Ketinggian (h)';
+
+  @override
+  String get simWorkEnergy10 => 'HASIL PERHITUNGAN';
+
+  @override
+  String get simWorkEnergy11 => 'Modul D — Usaha & Energi Potensial Gravitasi';
+
+  @override
+  String get simWorkEnergy12 =>
+      'Setiap kali ELIOS mengangkat sampah dari nampan ke tempat penampungan yang lebih tinggi, ia melakukan usaha (work) melawan gravitasi. Usaha ini tersimpan sebagai energi potensial gravitasi pada benda yang diangkat — energi yang \"siap dilepas\" kalau benda itu dijatuhkan kembali.\n\nIni bukan sekadar konsep abstrak: setiap Joule usaha yang dilakukan motor lengan ELIOS untuk mengangkat sesuatu berasal dari baterai, sehingga modul ini secara langsung menjelaskan kenapa mengangkat beban berat lebih sering ke ketinggian lebih tinggi = baterai ELIOS lebih cepat habis.';
+
+  @override
+  String get simDeepDive24 =>
+      '• Hukum Fick (difusi) — laju perpindahan oksigen ke dalam tumpukan sebanding dengan luas jalur pori dan berbanding terbalik dengan jarak tempuh; tumpukan padat = jalur difusi lebih panjang dan sempit = laju oksigen masuk melambat drastis.\n';
+
+  @override
+  String get simDeepDive25 =>
+      '• Konduksi kalor, Q/t = kAΔT/L — panas yang dihasilkan mikroba di inti tumpukan merambat keluar lewat konduksi; tumpukan padat menghambat pelepasan ini juga, memperparah risiko overheating (lihat Modul B).\n';
+
+  @override
+  String get simDeepDive26 =>
+      '• Hukum Jurin (kapilaritas) — menjelaskan bagaimana kelembapan naik atau tertahan di antara partikel kecil, memengaruhi seberapa \"basah\" pori-pori tetap dari waktu ke waktu.';
+
+  @override
+  String get simDeepDive27 =>
+      'Setiap jenis plastik menyerap dan memantulkan cahaya inframerah-dekat pada panjang gelombang karakteristik yang berbeda, membentuk semacam \"sidik jari optik.\"';
+
+  @override
+  String get simDeepDive28 =>
+      'Insinerasi bahan berbahaya membutuhkan suhu jauh lebih tinggi dibanding pembakaran sampah biasa untuk memutus ikatan kimia molekul beracun (misalnya senyawa organik persisten). Ambang 1000°C di sini adalah ilustrasi titik dekomposisi termal.';
+
+  @override
+  String get simDeepDive29 => 'Status: Ikatan Masih Utuh (Berbahaya)';
+
+  @override
+  String get simDensity23 =>
+      'Rentang: Plastik (0.9–1.4), Kaca (2.4–2.6), Logam (≥ 2.7).';
+
+  @override
+  String get simDensity24 =>
+      'Plastik dengan ρ < 1.0 (HDPE, PP) mengapung di air. Plastik dengan ρ > 1.0 (PET, PVC) tenggelam. Ini teknik pemilahan flotasi sungguhan di industri!';
+
+  @override
+  String get simHeat16 =>
+      'Kalor dari aktivitas mikroba mengubah suhu tumpukan kompos. Pantau fasenya.';
+
+  @override
+  String get simHeat17 =>
+      'Peringatan: anaerob — risiko metana. Porositas rendah (<25%) dan suhu tinggi (>55°C).';
+
+  @override
+  String get simHeat18 =>
+      'Overheated: Terlalu panas! Aktivitas mikroba terhambat.';
+
+  @override
+  String get simHeat19 =>
+      'Q = m · c · ΔT (Kalor = massa × kalor jenis × perubahan suhu).';
+
+  @override
+  String get simHeat20 =>
+      'Fase Mesofilik (< 55°C): Bakteri suhu-sedang mulai memecah gula & protein sederhana.';
+
+  @override
+  String get simHeat21 =>
+      'Fase Termofilik (55–60°C): Bakteri tahan-panas mendominasi, fase membunuh patogen & biji gulma.';
+
+  @override
+  String get simHeat22 =>
+      'Overheated (> 60°C): Aktivitas mikroba mulai terhambat/mati; perlu diaduk untuk melepas panas.';
+
+  @override
+  String get simHeat23 =>
+      'Hubungan dengan Porositas: Ketika porositas < 25% DAN suhu > 55°C, tumpukan berisiko masuk kondisi anaerobik (oksigen habis). Mikroba anaerob mengambil alih dan menghasilkan gas metana (CH₄) yang berbahaya.';
+
+  @override
+  String get simKinematics16 =>
+      'Visualisasi pergerakan GLB (Gerak Lurus Beraturan)';
+
+  @override
+  String get simKinematics17 =>
+      'GLB: Kecepatan tetap (v), tidak ada akselerasi (a = 0).';
+
+  @override
+  String get simKinematics18 =>
+      'v = s / t, sehingga t = s / v (waktu = jarak dibagi kecepatan).';
+
+  @override
+  String get simPowerBudget13 =>
+      'Berapa lama baterai bertahan? Bergantung pada komponen yang dihidupkan.';
+
+  @override
+  String get simPowerBudget14 =>
+      'Jika P_total = 0, waktu bertahan secara matematis tak hingga (∞).';
+
+  @override
+  String get simPwm12 =>
+      'Atur kecepatan motor ELIOS tanpa membuang energi panas lewat resistor.';
+
+  @override
+  String get simPwm13 =>
+      'Motor DC pada ELIOS (misalnya motor roda atau motor lengan) tidak selalu diberi tegangan penuh terus-menerus. Untuk mengatur kecepatan motor tanpa membuang energi sebagai panas, ELIOS memakai teknik PWM (Pulse Width Modulation) — menyalakan dan mematikan tegangan penuh secara sangat cepat (ratusan hingga ribuan kali per detik), dan mengatur berapa lama proporsi waktu tegangan itu menyala dalam satu siklus.\n\nCara lama mengatur kecepatan motor adalah memakai pembagi tegangan resistif (resistor/potensiometer) untuk menurunkan tegangan secara langsung. Masalahnya, kelebihan energi pada metode ini dibuang sebagai panas di resistor — energi terbuang percuma dan komponen jadi panas.\n\nPWM tidak pernah benar-benar \"menurunkan\" tegangan — ia hanya menyalakan-mematikan tegangan penuh dengan sangat cepat. Karena motor punya inersia mekanis dan induktansi kumparan yang meredam \"kedutan\" on/off ini menjadi gerakan halus, hasil akhirnya terasa seperti tegangan lebih rendah, tapi tanpa membuang energi sebagai panas resistif — hanya rugi-rugi sambungan (switching loss) yang jauh lebih kecil.';
+
+  @override
+  String get simPwm14 =>
+      'Duty cycle 60% berarti menyala penuh 60% waktu dan mati 40% sisanya. Rata-ratanya 7.2V dari 12V maksimal.';
+
+  @override
+  String get simTorque12 =>
+      'Saat ELIOS menjulurkan lengan, sendi bahu menahan torsi yang lebih besar.';
+
+  @override
+  String get simTorque13 => 'Torsi melebihi 8 N·m — Robot bisa terguling!';
+
+  @override
+  String get simTorque14 =>
+      'θ = 90°: torsi maksimum — lengan tegak lurus dengan gaya.';
+
+  @override
+  String get simTorque15 =>
+      'θ = 0° atau 180°: torsi nol — gaya sejajar lengan.';
+
+  @override
+  String get simTorque16 =>
+      'r besar: torsi lebih besar, tapi robot lebih sulit stabil.';
+
+  @override
+  String get simWorkEnergy13 =>
+      'W = E_p = m · g · h (Usaha = Energi Potensial = massa × gravitasi × ketinggian).';
+
+  @override
+  String get simWorkEnergy14 =>
+      'g (gravitasi) dibulatkan menjadi 10 m/s² untuk kemudahan hitung.';
+
+  @override
+  String simPwmMotorGets(Object volts) {
+    return 'Motor menerima setara $volts V';
+  }
+
+  @override
+  String simDensityMaterial(Object name) {
+    return 'Material: $name';
+  }
+
+  @override
+  String simPowerLegend(Object watts) {
+    return 'P_total = $watts W · t = waktu (detik)';
+  }
+
+  @override
+  String simPowerEstimate(Object watts, Object runtime) {
+    return 't_estimasi = 50000 J / $watts W = $runtime';
+  }
+
+  @override
+  String simPowerLasts(Object runtime) {
+    return 'Bertahan selama $runtime';
+  }
+
+  @override
+  String simWorkBatteryLeft(Object percent) {
+    return 'Baterai Tersisa: $percent%';
+  }
+
+  @override
+  String simTorqueMotorStatus(Object status) {
+    return 'Motor: $status · batas aman 8 N·m';
+  }
+
+  @override
+  String get simTorqueSafe => 'AMAN';
+
+  @override
+  String get simTorqueWarning => 'PERHATIAN';
+
+  @override
+  String get simTorqueCritical => 'KRITIS';
+
+  @override
+  String simTorqueChallenge(Object r) {
+    return 'Cari berat maksimum yang dapat diangkat ELIOS saat r = $r m dan θ = 90° dengan batas torsi 8 N·m.\nJawaban: F = τ/(r·sinθ) = 8 / $r = 16 N';
+  }
+
+  @override
+  String get simTorqueBody =>
+      'Torsi (τ) adalah ukuran efektivitas gaya dalam memutar benda terhadap suatu titik poros. Torsi bergantung pada lengan momen dan sudut antara lengan dengan arah gaya.';
+
+  @override
+  String simKinArrival(Object distance, Object speed, Object time) {
+    return 'Waktu Tiba = $distance / $speed = $time detik';
+  }
+
+  @override
+  String simHeatFinal(Object delta, Object result) {
+    return 'Suhu Akhir = 25°C + $delta°C = $result°C';
+  }
+
+  @override
+  String physQDensity(Object m, Object v) {
+    return 'Sebuah sampel sampah inorganik memiliki massa $m g dan volume $v cm³. Berapa massa jenis (densitas) sampah tersebut?';
+  }
+
+  @override
+  String physQHeat(Object m, Object dt, Object c) {
+    return 'Tumpukan kompos bermassa $m kg mengalami kenaikan suhu sebesar $dt °C. Jika kalor jenis (c) kompos adalah $c J/kg°C, berapa total kalor (Q) yang dihasilkan mikroba?';
+  }
+
+  @override
+  String physQTorque(Object r, Object f, Object theta) {
+    return 'Lengan robot memanjang sejauh $r m dan mengangkat beban dengan gaya $f N pada sudut $theta° terhadap lengan. Berapa besar torsi pada sendi bahu?';
+  }
+
+  @override
+  String physQWork(Object m, Object h) {
+    return 'ELIOS mengangkat beban $m kg setinggi $h m. Berapa usaha yang dilakukan melawan gravitasi (g = 10 m/s²)?';
+  }
+
+  @override
+  String physQSpeed(Object s, Object t) {
+    return 'ELIOS bergerak lurus sejauh $s meter dalam waktu $t detik menuju target. Berapa kecepatan rata-ratanya?';
+  }
+
+  @override
+  String physQPwm(Object d, Object vmax) {
+    return 'Sinyal PWM mengatur tegangan motor dengan Duty Cycle (D) sebesar $d%. Jika tegangan maksimal baterai adalah $vmax V, berapa tegangan rata-rata motor?';
+  }
+
+  @override
+  String physQPower(Object i, Object v) {
+    return 'Sebuah subsistem menarik arus sebesar $i A dari baterai $v V. Berapa daya yang dikonsumsi?';
+  }
 }

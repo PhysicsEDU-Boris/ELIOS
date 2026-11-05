@@ -24,6 +24,25 @@ POS = re.compile(
 LETTERS = re.compile(r'[A-Za-z].*[A-Za-z]')
 
 
+def strip_interpolations(lit):
+    """Remove ${...} (nested braces too) and $name; what is left is copy."""
+    out, i = [], 0
+    while i < len(lit):
+        if lit.startswith('${', i):
+            depth, i = 1, i + 2
+            while i < len(lit) and depth:
+                depth += {'{': 1, '}': -1}.get(lit[i], 0)
+                i += 1
+        elif lit[i] == '$' and i + 1 < len(lit) and (lit[i + 1].isalpha() or lit[i + 1] == '_'):
+            i += 1
+            while i < len(lit) and (lit[i].isalnum() or lit[i] == '_'):
+                i += 1
+        else:
+            out.append(lit[i])
+            i += 1
+    return ''.join(out)
+
+
 def allowed():
     rules = []
     for line in (Path(__file__).parent / 'audit_allow.txt').read_text().splitlines():
@@ -42,7 +61,7 @@ def findings():
         src = f.read_text()
         for m in POS.finditer(src):
             lit = m.group('q')[1:-1]
-            text = re.sub(r'\$\{[^}]*\}|\$\w+', '', lit)  # interpolations are not copy
+            text = strip_interpolations(lit)
             if not LETTERS.search(text):
                 continue
             if any(p == rel and (l == '*' or l == lit) for p, l in rules):

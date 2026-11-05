@@ -1,3 +1,4 @@
+import 'package:elio/l10n/l10n.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
@@ -140,7 +141,7 @@ class TorquePainter extends CustomPainter {
 
     _drawText(
       canvas,
-      '${state.load.toStringAsFixed(1)}N',
+      '${fmtNum(state.load, 1)}N',
       boxRect.center,
       color: Colors.white,
       bold: true,
@@ -163,7 +164,7 @@ class TorquePainter extends CustomPainter {
     );
     _drawText(
       canvas,
-      '${state.angleDeg.toStringAsFixed(0)}°',
+      '${fmtNum(state.angleDeg, 0)}°',
       Offset(torqueShoulder.dx + 40, torqueShoulder.dy - 12),
       color: const Color(0xFF00694C),
       bold: true,
@@ -175,14 +176,16 @@ class TorquePainter extends CustomPainter {
       (torqueShoulder.dx + end.dx) / 2,
       (torqueShoulder.dy + end.dy) / 2,
     );
-    final angle =
-        math.atan2(end.dy - torqueShoulder.dy, end.dx - torqueShoulder.dx);
+    final angle = math.atan2(
+      end.dy - torqueShoulder.dy,
+      end.dx - torqueShoulder.dx,
+    );
     canvas.save();
     canvas.translate(mid.dx, mid.dy);
     canvas.rotate(angle);
     _drawText(
       canvas,
-      'r = ${state.armLength.toStringAsFixed(2)}m',
+      'r = ${fmtNum(state.armLength, 2)}m',
       const Offset(0, -16),
       color: const Color(0xFF191C1C),
       bold: true,
@@ -204,8 +207,12 @@ class TorquePainter extends CustomPainter {
     );
 
     final fillHeight = math.min(160.0, (tau / 12) * 160);
-    final fillRect =
-        Rect.fromLTWH(gx - 22, gy + 80 - fillHeight, 44, fillHeight);
+    final fillRect = Rect.fromLTWH(
+      gx - 22,
+      gy + 80 - fillHeight,
+      44,
+      fillHeight,
+    );
     canvas.drawRect(
       fillRect,
       Paint()
@@ -225,12 +232,32 @@ class TorquePainter extends CustomPainter {
         ..strokeWidth = 2,
     );
 
-    _drawText(canvas, 'TORSI', Offset(gx, gy - 100),
-        color: const Color(0xFF191C1C), bold: true, center: true, fontSize: 10);
-    _drawText(canvas, tau.toStringAsFixed(2), Offset(gx, gy + 88),
-        color: const Color(0xFF191C1C), bold: true, center: true, fontSize: 12);
-    _drawText(canvas, 'N·m', Offset(gx, gy + 102),
-        color: const Color(0xFF3D4943), center: true, fontSize: 9);
+    _drawText(
+      canvas,
+      l10n.simTorquePainter1,
+      Offset(gx, gy - 100),
+      color: const Color(0xFF191C1C),
+      bold: true,
+      center: true,
+      fontSize: 10,
+    );
+    _drawText(
+      canvas,
+      tau.toStringAsFixed(2),
+      Offset(gx, gy + 88),
+      color: const Color(0xFF191C1C),
+      bold: true,
+      center: true,
+      fontSize: 12,
+    );
+    _drawText(
+      canvas,
+      'N·m',
+      Offset(gx, gy + 102),
+      color: const Color(0xFF3D4943),
+      center: true,
+      fontSize: 9,
+    );
   }
 
   void _drawText(

@@ -95,11 +95,11 @@
   "controlPhoneScan": "Scan with phone camera",
   "configConnectionFailed": "Connection failed",
   "configPhoneOnlyHint": "The robot is not used. Point the phone at one item and tap Start scan.",
-  "configSameWifiHint": "Put ELIO and this phone on the same Wi-Fi or hotspot, then tap Connect now.",
+  "configSameWifiHint": "Put ELIOS and this phone on the same Wi-Fi or hotspot, then tap Connect now.",
   "configSaveDefault": "Save as default config",
   "configUseAddressNextTime": "Use this address next time",
   "configDragToRotate": "Drag to rotate",
-  "configLookingForElio": "Looking for ELIO…",
+  "configLookingForElio": "Looking for ELIOS…",
   "guidePdfUnavailable": "Guide PDF is not available yet.",
   "videoUnavailable": "Video is not available yet.",
   "simulationComingSoon": "{title} is coming soon.",
@@ -247,10 +247,10 @@
   "navControlHint": "Control, opens robot control",
   "navConfig": "Config",
   "navHistory": "History",
-  "shellConnectElio": "Connect ELIO",
-  "shellConnected": "ELIO connected",
+  "shellConnectElio": "Connect ELIOS",
+  "shellConnected": "ELIOS connected",
   "shellConnectedMsg": "Robot connection is ready.",
-  "shellDisconnected": "ELIO disconnected",
+  "shellDisconnected": "ELIOS disconnected",
   "shellDisconnectedMsg": "Robot connection was lost. Check the device or network.",
   "leaveQuizBody": "You have an active quiz. If you leave now, your current quiz progress will be lost.",
   "homeHello": "Hello, {name}",
@@ -261,7 +261,7 @@
       }
     }
   },
-  "homeReady": "Ready to learn with ELIO?",
+  "homeReady": "Ready to learn with ELIOS?",
   "configTopSubtitle": "Robot, camera and quiz setup",
   "comingSoon": "{title} — coming soon",
   "@comingSoon": {
@@ -279,8 +279,8 @@
   "medalExplorerDesc": "Complete at least 3 learning items",
   "medalExplorerHint": "3 learning items",
   "medalRobotics": "Robotics Beginner",
-  "medalRoboticsDesc": "Start the Introduction to ELIO module",
-  "medalRoboticsHint": "Start Intro to ELIO",
+  "medalRoboticsDesc": "Start the Introduction to ELIOS module",
+  "medalRoboticsHint": "Start Intro to ELIOS",
   "medalAdvocate": "Sustainability Advocate",
   "medalAdvocateDesc": "Complete all environmental empathy reflections",
   "medalAdvocateHint": "All reflections",
@@ -543,7 +543,7 @@
   "notifDismiss": "Dismiss notifications",
   "notifTitle": "Notifications",
   "notifClose": "Close notifications",
-  "notifSubtitle": "Learning updates and reminders from ELIO.",
+  "notifSubtitle": "Learning updates and reminders from ELIOS.",
   "notifMarkAllRead": "Mark all read",
   "notifClearAll": "Clear all",
   "notifDone": "Done",
@@ -613,7 +613,7 @@
   "gradeTryAgain": "Try Again",
   "cfgIpHint": "Enter an IP like 192.168.4.1",
   "cfgPortRange": "Port 1 to 65535",
-  "cfgFoundAt": "Found ELIO at {ip}",
+  "cfgFoundAt": "Found ELIOS at {ip}",
   "@cfgFoundAt": {
     "placeholders": {
       "ip": {
@@ -621,7 +621,7 @@
       }
     }
   },
-  "cfgNotFound": "ELIO not found on this Wi-Fi",
+  "cfgNotFound": "ELIOS not found on this Wi-Fi",
   "cfgRetry": "Retry",
   "cfgCameraSource": "Camera source",
   "cfgCameraSourceSub": "Which camera takes the scan photo",
@@ -638,10 +638,10 @@
   "cfgConnected": "Connected",
   "cfgTryAgain": "Try again",
   "cfgConnection": "Connection",
-  "cfgWsAddress": "ELIO WebSocket address",
+  "cfgWsAddress": "ELIOS WebSocket address",
   "cfgPort": "Port",
   "cfgSearching": "Searching…",
-  "cfgFindElio": "Find ELIO",
+  "cfgFindElio": "Find ELIOS",
   "cfgRobotNotUsed": "Robot not used",
   "cfgConnectingTo": "Connecting to {endpoint}",
   "@cfgConnectingTo": {
@@ -662,13 +662,13 @@
   "cfgNotReported": "not reported",
   "cfgCamera": "Camera",
   "cfgPhone": "Phone",
-  "cfgRobotModel": "ELIO robot 3D model, drag to rotate",
+  "cfgRobotModel": "ELIOS robot 3D model, drag to rotate",
   "cfgQuestionBankDesc": "Checked questions, instant",
   "cfgAiDesc": "New questions each scan, needs internet",
   "cfgAiUnreachable": "ELIOS AI is not reachable",
   "setConnection": "Connection",
   "setAutoReconnect": "Auto-reconnect",
-  "setAutoReconnectSub": "Reconnect when ELIO is available again",
+  "setAutoReconnectSub": "Reconnect when ELIOS is available again",
   "setVideo": "Video",
   "setResolution": "Resolution",
   "setResolutionSub": "Higher looks sharper but uses more Wi-Fi",
@@ -818,7 +818,7 @@
     }
   },
   "ctlThisDrive": "THIS DRIVE",
-  "ctlElioSays": "ELIO SAYS",
+  "ctlElioSays": "ELIOS SAYS",
   "ctlMissionOf": "Mission {done} of {target}",
   "@ctlMissionOf": {
     "placeholders": {
@@ -1355,7 +1355,7 @@
   "lqCheckFirestore": "Check the Firestore connection and try again.",
   "lqBackToQuizzes": "Back to Quizzes",
   "lqNotAvailable": "Quiz questions are not available yet.",
-  "lqIntro": "Test your understanding of waste management and how ELIO classifies materials. Each quiz has one attempt.",
+  "lqIntro": "Test your understanding of waste management and how ELIOS classifies materials. Each quiz has one attempt.",
   "lqSetsFailed": "Quiz sets could not be loaded.",
   "lqNoPublished": "No published quizzes are available.",
   "lqCompleted": "Completed",
@@ -1491,8 +1491,8 @@
     }
   },
   "lnStartModule1": "Start module 1",
-  "lnTestElio": "Test how ELIO sorts waste.",
-  "lnQuizzesTest": "{count} quizzes. Test how ELIO sorts waste.",
+  "lnTestElio": "Test how ELIOS sorts waste.",
+  "lnQuizzesTest": "{count} quizzes. Test how ELIOS sorts waste.",
   "@lnQuizzesTest": {
     "placeholders": {
       "count": {
@@ -1569,7 +1569,7 @@
   "lnDone": "Done",
   "lnNew": "New",
   "lnLoadFailed": "Learning modules could not be loaded.",
-  "lnLoadFailedBody": "Check the connection to ELIO or the internet, then try again. Lessons you already opened still work offline.",
+  "lnLoadFailedBody": "Check the connection to ELIOS or the internet, then try again. Lessons you already opened still work offline.",
   "lnOpenOffline": "Open offline lessons",
   "lnNoModules": "No learning modules available yet.",
   "lnNoModulesBody": "New lessons appear here as soon as they are published.",
@@ -2246,5 +2246,577 @@
   "pdfColCriterion": "Criterion",
   "pdfColMax": "Max",
   "pdfColAwarded": "Awarded",
-  "pdfColComment": "Comment"
+  "pdfColComment": "Comment",
+  "a11yTrophies": "{count} trophies",
+  "@a11yTrophies": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeScanSubtitle": "{date} · +{count} trophies",
+  "@homeScanSubtitle": {
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "a11yLabelValue": "{label}: {value}",
+  "@a11yLabelValue": {
+    "placeholders": {
+      "label": {
+        "type": "Object"
+      },
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "a11yBinStat": "{bin} {count} scans, {percent}",
+  "@a11yBinStat": {
+    "placeholders": {
+      "bin": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      },
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "a11yTopBin": ", top bin",
+  "homeScansUnit": " scans",
+  "homeMedalsOf": "{unlocked} of {total}",
+  "@homeMedalsOf": {
+    "placeholders": {
+      "unlocked": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "a11yMedal": "{name}, {state}. {description}",
+  "@a11yMedal": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      },
+      "state": {
+        "type": "Object"
+      },
+      "description": {
+        "type": "Object"
+      }
+    }
+  },
+  "a11yUnlocked": "unlocked",
+  "a11yLocked": "locked",
+  "a11ySearchItem": "{title}, {subtitle}",
+  "@a11ySearchItem": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      },
+      "subtitle": {
+        "type": "Object"
+      }
+    }
+  },
+  "learnQuestionCount": "{count, plural, =1{1 question} other{{count} questions}}",
+  "@learnQuestionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "learnMinutes": "{count} min",
+  "@learnMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "learnLessonCount": "{count, plural, =1{1 lesson} other{{count} lessons}}",
+  "@learnLessonCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "a11yPercent": "{title}, {percent} percent",
+  "@a11yPercent": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      },
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "tipWaiting": "Hang on, I'm looking for the robot! If it takes long, check the ELIOS Wi-Fi.",
+  "tipDisconnected": "Uh-oh, I can't hear the robot. Walk closer to it or check that it's switched on.",
+  "tipStopped": "The robot is STOPPED. Check the way is clear, then tap Continue.",
+  "tipQuiz": "Quiz time! Answer it, then we sort the item together.",
+  "tipDrive": "Drive around slowly and point my camera at an item to sort.",
+  "tipPickZone": "Nice driving! The {item} is in the pick zone. Press PICK UP to grab it.",
+  "@tipPickZone": {
+    "placeholders": {
+      "item": {
+        "type": "Object"
+      }
+    }
+  },
+  "tipLocked": "Got it! I locked on the {item}. Hold still while I look.",
+  "@tipLocked": {
+    "placeholders": {
+      "item": {
+        "type": "Object"
+      }
+    }
+  },
+  "tipSeeItem": "I see a {item}. Drive closer, slowly.",
+  "@tipSeeItem": {
+    "placeholders": {
+      "item": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlPlusTrophies": "+{count} trophies",
+  "@ctlPlusTrophies": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "guideReady": "You're ready, Robot Pilot!",
+  "guideGo": "Let's go!",
+  "qzElapsed": "elapsed",
+  "qzWordCount": "{words} / {limit} words",
+  "@qzWordCount": {
+    "placeholders": {
+      "words": {
+        "type": "Object"
+      },
+      "limit": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqCorrectOf": "{correct} of {total} correct",
+  "@wqCorrectOf": {
+    "placeholders": {
+      "correct": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "cfgCouldNotReach": "Couldn't reach ELIOS",
+  "cfgIpAddress": "IP address",
+  "camMacFailed": "The Mac camera couldn't be opened ({error}).",
+  "@camMacFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "catExamplesOrganic": "Food scraps; Leftover cooked food; Coffee grounds and tea bags; Grass clippings and leaves; Eggshells",
+  "catExamplesInorganic": "Plastic bottles and containers; Glass jars and bottles; Aluminium cans and foil; Paper and cardboard; Metal scraps",
+  "catExamplesHazardous": "Batteries; Electronic waste; Fluorescent light bulbs; Paint and solvents; Pesticides and herbicides",
+  "authNoUser": "No account found for that username.",
+  "notifVideoDone": "Video completed",
+  "notifVideoDoneMsg": "You completed a video lesson.",
+  "notifGuideDone": "Guide completed",
+  "notifGuideDoneMsg": "You completed a guide.",
+  "notifQuizDone": "Quiz completed",
+  "notifQuizDoneMsg": "Your quiz result has been saved.",
+  "notifReview": "Quiz review available",
+  "notifReviewMsg": "You can now review your quiz answers.",
+  "notifSync": "Progress sync issue",
+  "notifSyncMsg": "Your progress could not be synced. Check your connection.",
+  "physDensityTag": "Module A · Environment",
+  "physDensityTitle": "Waste Density",
+  "physDensityDesc": "ELIOS sorts inorganic waste by density.",
+  "physHeatTag": "Module B · Environment",
+  "physHeatTitle": "Compost Heat & Thermodynamics",
+  "physHeatDesc": "Microbes decomposing waste release heat over time.",
+  "physTorqueTag": "Module C · Mechanics",
+  "physTorqueTitle": "Robot Shoulder Torque",
+  "physTorqueDesc": "The ELIOS shoulder joint holds torque as the arm reaches out.",
+  "physWorkEnergyTag": "Module D · Mechanics",
+  "physWorkEnergyTitle": "Work & Potential Energy",
+  "physWorkEnergyDesc": "Lifting a load takes a measurable amount of work.",
+  "physKinematicsTag": "Module E · Kinematics",
+  "physKinematicsTitle": "ELIOS Speed",
+  "physKinematicsDesc": "Uniform straight-line motion towards the waste pile.",
+  "physPwmTag": "Module F · Electronics",
+  "physPwmTitle": "PWM & Motor Voltage",
+  "physPwmDesc": "The duty cycle sets the average voltage of the wheel motors.",
+  "physPowerTag": "Module G · Power",
+  "physPowerTitle": "ELIOS Power & Battery",
+  "physPowerDesc": "Managing how much power the robot parts use.",
+  "physDeepDiveTag": "Deep-Dive · Waste Physics",
+  "physDeepDiveTitle": "Waste Deep-Dive Cards",
+  "physDeepDiveDesc": "A closer look: organic, inorganic and B3.",
+  "physQuizTag": "Evaluation",
+  "physQuizTitle": "Check Your Understanding (Quiz)",
+  "physQuizDesc": "Test what you know about the physics behind the ELIOS robot.",
+  "physLevelBeginner": "Beginner",
+  "physLevelIntermediate": "Intermediate",
+  "physLevelAdvanced": "Advanced",
+  "physLevelAllLevels": "All levels",
+  "simDeepDive1": "Waste Deep-Dive",
+  "simDeepDive2": "The Physics of Sorting Waste",
+  "simDeepDive3": "Explore why each waste category is handled differently.",
+  "simDeepDive4": "Pile Porosity",
+  "simDeepDive5": "Low porosity (<25%). Air can hardly get in, which triggers anaerobic decomposition (methane).",
+  "simDeepDive6": "Good porosity. Oxygen flows freely and aerobic composting works best.",
+  "simDeepDive7": "Porosity is the percentage of empty space (filled with air) between the solid particles in a compost pile. High porosity = air can flow freely through the whole pile = the aerobic process (which needs oxygen) runs well. Low porosity = the pile is too dense = oxygen runs out quickly inside = anaerobic microbes take over.",
+  "simDeepDive8": "Organic waste has no electrical (conductivity), optical (NIR reflectance) or hazardous chemical (volatility/reactivity) property that could be used as an automatic sorting signal. The only relevant physical variable is its own pore structure and moisture, because the goal is not to separate materials but to manage the biological breakdown itself.",
+  "simDeepDive9": "ELIOS uses this principle in its spring-loaded gripper/pusher to test how hard or elastic an item is.",
+  "simDeepDive10": "Compression (x)",
+  "simDeepDive11": "⚠ Accuracy note: the peak wavelengths used in this simulation (e.g. PET ≈1660 nm, HDPE ≈1730 nm, PP ≈1410 nm) must be checked again against a valid industrial NIR sorting reference before release. Real NIR sensors measure absorbance peaks/valleys over ranges that can vary.",
+  "simDeepDive12": "When metal moves through a changing magnetic field, eddy currents are induced inside it. They create an opposing magnetic field that pushes non-magnetic metals such as aluminium away from the magnet.",
+  "simDeepDive13": "Inorganic materials (plastic, glass, metal) go through no biological process that needs managing (unlike organic waste), and most are not chemically reactive or hazardous (unlike B3). The most effective sorting signals are their stable physical properties: hardness (Hooke), optical identity (NIR) and magnetic/conductive behaviour (eddy currents).",
+  "simDeepDive14": "The hotter a liquid or substance is, the more it tends to evaporate into a gas: this is vapour pressure. The Clausius-Clapeyron equation describes this non-linear (exponential) relationship.",
+  "simDeepDive15": "⚠ Accuracy note: this simulation uses a qualitative, simplified approach, not a literal P–T curve with scientifically precise exponential constants. It only shows the trend (hotter = evaporates more easily = more dangerous).",
+  "simDeepDive16": "Substance temperature",
+  "simDeepDive17": "Incinerator temperature",
+  "simDeepDive18": "Status: hazardous chemical bonds broken (safe)",
+  "simDeepDive19": "Radiation intensity (I) drops exponentially as the shield thickness (x) increases.",
+  "simDeepDive20": "⚠ Accuracy note: real attenuation coefficients depend strongly on the energy of the radiation particles (MeV) and on the specific shield material. The numbers below are illustrative and only show the relative order (gamma hardest, alpha easiest).",
+  "simDeepDive21": "Alpha (α)",
+  "simDeepDive22": "Shield thickness (x)",
+  "simDeepDive23": "The key difference is not the physical material (B3 can be metal, liquid or any solid) but its hidden danger: chemical volatility, radioactivity or thermal reactivity that can harm people or the environment if it is handled like ordinary waste. So \"sorting\" here is not about separating materials but about safe containment and handling: shielding, controlled temperature and early identification before direct contact.",
+  "simDensity1": "Density & Classification",
+  "simDensity2": "MODULE A · LESSON",
+  "simDensity3": "Items with different densities are sorted into the matching category.",
+  "simDensity4": "DENSITY FORMULA",
+  "simDensity5": "m = mass · V = volume",
+  "simDensity6": "Move the sliders to see the item change",
+  "simDensity7": "Mass (m)",
+  "simDensity8": "CLASSIFICATION RESULT",
+  "simDensity9": "Unknown material",
+  "simDensity10": "Density outside the database range (not a known plastic, glass or metal).",
+  "simDensity11": "Choose a bin:",
+  "simDensity12": "Plastic",
+  "simDensity13": "Glass",
+  "simDensity14": "Metal",
+  "simDensity15": "Module A — Density & Waste Classification",
+  "simDensity16": "Density is a measure of how \"tightly packed\" matter is inside an object. Two objects can have the same size (volume) but very different weights, because their particles are packed differently. Iron feels heavy in your hand not because there is \"more\" iron, but because its atoms are packed more tightly per unit of space than, say, plastic.\n\nThis matters for ELIOS because density is one of the cheapest and fastest signals for guessing a material, far cheaper than, for example, analysing the infrared spectrum of every item.",
+  "simDensity17": "ρ = m / V (density = mass / volume). Pure water has ρ = 1.0 g/cm³ as the reference point.",
+  "simDensity18": "A common mistake swaps m and V into V/m, which changes the result drastically. Density is mass per volume.",
+  "simDensity19": "Plastic (0.9 - 1.4 g/cm³)",
+  "simDensity20": "Glass (2.4 - 2.6 g/cm³)",
+  "simDensity21": "Metal (≥ 2.7 g/cm³)",
+  "simDensity22": "Unknown",
+  "simHeat1": "Heat & Thermodynamics",
+  "simHeat2": "MODULE B · LESSON",
+  "simHeat3": "Heat & Composting Thermodynamics",
+  "simHeat4": "HEAT FORMULA (Q)",
+  "simHeat5": "m = mass · c = 4000 J/kg°C · ΔT = temperature change",
+  "simHeat6": "Particles represent microbial activity",
+  "simHeat7": "Temperature change (ΔT)",
+  "simHeat8": "Porosity (cross-module)",
+  "simHeat9": "PHASE RESULT",
+  "simHeat10": "Thermophilic phase: heat-loving bacteria work best and pathogens start to die.",
+  "simHeat11": "Module B — Heat & Composting Thermodynamics",
+  "simHeat12": "When microorganisms in a compost pile break down organic waste, they release energy as heat: a biological exothermic process. The pile warms up not because of fire or electricity, but because of the metabolism of millions of bacteria and fungi breaking organic molecules apart.\n\nThis module models how much heat a mass of compost has to absorb or release for a given temperature change, and links it to the real biological phases of composting.",
+  "simHeat13": "Mesophilic (< 55°C)",
+  "simHeat14": "Thermophilic (55 - 60°C)",
+  "simHeat15": "Too hot (> 60°C)",
+  "simKinematics1": "Kinematics",
+  "simKinematics2": "MODULE E · LESSON",
+  "simKinematics3": "Kinematics (uniform & accelerated motion)",
+  "simKinematics4": "How long does ELIOS take to reach the target? Link distance, speed and time.",
+  "simKinematics5": "TIME FORMULA (uniform motion)",
+  "simKinematics6": "t = time · s = distance · v = constant speed",
+  "simKinematics7": "Target distance (s)",
+  "simKinematics8": "Speed (v)",
+  "simKinematics9": "PREDICTION",
+  "simKinematics10": "Estimated time of arrival (ETA)",
+  "simKinematics11": "Uniformly accelerated motion involves acceleration (a). In the real world ELIOS does not jump straight to full speed: the motor needs time (less than 1 second) to speed up from standstill to constant speed.\n\nFormula: s = v₀·t + ½·a·t²\n\nBecause ELIOS accelerates very quickly, the acceleration distance is tiny and is usually ignored for indoor navigation. But if an obstacle appears suddenly, the ELIOS emergency brake uses deceleration (negative acceleration) calculated with the same formula.",
+  "simKinematics12": "Module E — Kinematics",
+  "simKinematics13": "When ELIOS is sent to a waste collection point, its navigation system (Local Planner) has to know how far away it is and how long it will take to get there at a given speed. This is pure basic kinematics: the part of physics that studies motion without caring what causes it (force/mass).\n\nThis module models ELIOS moving in uniform straight-line motion.",
+  "simKinematics14": "Bonus, accelerated motion: in the real world the ELIOS motor needs time to accelerate (s = v₀·t + ½·a·t²). But because ELIOS accelerates very quickly, uniform motion is accurate enough to compute the ETA.",
+  "simKinematics15": "A common mistake when computing t is multiplying s and v (s·v) instead of dividing (s/v). The unit of s·v is m²/s, which makes no sense. Always check the final unit (m / (m/s) = s).",
+  "simDensityPainter1": "Reference",
+  "simDensityPainter2": "Object",
+  "simTorquePainter1": "TORQUE",
+  "simPowerBudget1": "Power & Battery Budget",
+  "simPowerBudget2": "MODULE G · LESSON",
+  "simPowerBudget3": "POWER & ENERGY FORMULA",
+  "simPowerBudget4": "Scenario presets:",
+  "simPowerBudget5": "Usage time (t)",
+  "simPowerBudget6": "BATTERY LIFE PREDICTION",
+  "simPowerBudget7": "Module G — Power & Battery Budget",
+  "simPowerBudget8": "Every ELIOS part that is switched on (camera, drive motors, arm motor) draws power from the same battery. This module shows how to work out how long the battery lasts depending on which parts are active, a decision the ELIOS control system really makes in real time to save power.\n\nThe real power-saving behaviour of ELIOS follows this logic directly: the drive motors are switched off while sorting (the robot stands still), and the camera is switched off while moving when it is not analysing an object. Every watt that does not need to be on means extra seconds of operation before the battery needs recharging.",
+  "simPowerBudget9": "P = V · I (power = voltage × current). Here the power (P) of each part is already given.",
+  "simPowerBudget10": "E = P · t (energy = total power × time).",
+  "simPowerBudget11": "Total capacity = 50,000 joules. t_estimate = 50,000 / P_total.",
+  "simPowerBudget12": "Camera 10 W, drive motors 36 W, arm motor 18 W.",
+  "simPwm1": "PWM & Motor",
+  "simPwm2": "MODULE F · LESSON",
+  "simPwm3": "PWM & Effective Voltage",
+  "simPwm4": "EFFECTIVE AVERAGE VOLTAGE",
+  "simPwm5": "Square wave (PWM signal)",
+  "simPwm6": "MOTOR VOLTAGE",
+  "simPwm7": "Module F — PWM & Effective Motor Voltage",
+  "simPwm8": "V_avg = D · V_max (effective average voltage = duty cycle × maximum voltage).",
+  "simPwm9": "D (duty cycle) is the percentage of time the signal is \"on\" in one period.",
+  "simPwm10": "Linear model limits (important): the RPM estimate in this simulation is a linear approximation. On a real motor, the link between duty cycle and actual RPM is not fully linear once the motor carries a torque load.",
+  "simPwm11": "The claim \"lower average voltage = proportionally lower average current\" is ONLY TRUE FOR A PURELY RESISTIVE LOAD. In a motor (inductive + mechanical load) the current does not follow the voltage in a simple linear way.",
+  "simTorque1": "Robot Shoulder Torque",
+  "simTorque2": "MODULE C · MECHANICS",
+  "simTorque3": "TORQUE FORMULA",
+  "simTorque4": "r = arm length · F = load · θ = angle",
+  "simTorque5": "Drag the arm handle to change r & θ",
+  "simTorque6": "Arm length (r)",
+  "simTorque7": "Load (F)",
+  "simTorque8": "Angle (θ)",
+  "simTorque9": "INSTANT TORQUE",
+  "simTorque10": "CHALLENGE",
+  "simTorque11": "Lesson: torque (moment of force)",
+  "simSimCanvasFrame1": "⚠ TIP-OVER RISK",
+  "simSimulationPageScaffold1": "Lesson",
+  "simWorkEnergy1": "Work & Energy",
+  "simWorkEnergy2": "MODULE D · LESSON",
+  "simWorkEnergy3": "Work & Potential Energy",
+  "simWorkEnergy4": "Every lift turns battery energy into gravitational potential energy.",
+  "simWorkEnergy5": "WORK FORMULA (W)",
+  "simWorkEnergy6": "m = mass · g = 10 m/s² · h = height",
+  "simWorkEnergy7": "Change the height and load to see the effect",
+  "simWorkEnergy8": "Load mass (m)",
+  "simWorkEnergy9": "Height (h)",
+  "simWorkEnergy10": "RESULT",
+  "simWorkEnergy11": "Module D — Work & Gravitational Potential Energy",
+  "simWorkEnergy12": "Every time ELIOS lifts waste from the tray into a higher container, it does work against gravity. This work is stored as gravitational potential energy in the lifted item: energy that is \"ready to be released\" if the item is dropped again.\n\nThis is not just an abstract idea: every joule of work the ELIOS arm motor does comes from the battery, so this module directly explains why lifting heavy loads more often and higher = the ELIOS battery runs out faster.",
+  "simDeepDive24": "• Fick's law (diffusion): the rate at which oxygen moves into the pile is proportional to the area of the pore paths and inversely proportional to the distance travelled; a dense pile = longer, narrower diffusion paths = oxygen gets in much more slowly.\n",
+  "simDeepDive25": "• Heat conduction, Q/t = kAΔT/L: the heat microbes produce in the core of the pile travels outwards by conduction; a dense pile also slows this down, which raises the risk of overheating (see Module B).\n",
+  "simDeepDive26": "• Jurin's law (capillarity): explains how moisture rises or stays between small particles, which affects how \"wet\" the pores remain over time.",
+  "simDeepDive27": "Each type of plastic absorbs and reflects near-infrared light at its own characteristic wavelengths, forming a kind of \"optical fingerprint\".",
+  "simDeepDive28": "Incinerating hazardous materials needs much higher temperatures than burning ordinary waste, to break the chemical bonds of toxic molecules (for example persistent organic compounds). The 1000°C threshold here illustrates the thermal decomposition point.",
+  "simDeepDive29": "Status: bonds still intact (hazardous)",
+  "simDensity23": "Ranges: plastic (0.9–1.4), glass (2.4–2.6), metal (≥ 2.7).",
+  "simDensity24": "Plastics with ρ < 1.0 (HDPE, PP) float in water. Plastics with ρ > 1.0 (PET, PVC) sink. This is a real flotation sorting technique used in industry!",
+  "simHeat16": "Heat from microbial activity changes the temperature of the compost pile. Watch its phase.",
+  "simHeat17": "Warning: anaerobic, methane risk. Low porosity (<25%) and high temperature (>55°C).",
+  "simHeat18": "Overheated: too hot! Microbial activity slows down.",
+  "simHeat19": "Q = m · c · ΔT (heat = mass × specific heat × temperature change).",
+  "simHeat20": "Mesophilic phase (< 55°C): medium-temperature bacteria start breaking down simple sugars and proteins.",
+  "simHeat21": "Thermophilic phase (55–60°C): heat-loving bacteria dominate; this phase kills pathogens and weed seeds.",
+  "simHeat22": "Overheated (> 60°C): microbial activity slows or stops; turn the pile to release heat.",
+  "simHeat23": "Link with porosity: when porosity is < 25% AND the temperature is > 55°C, the pile can turn anaerobic (no oxygen left). Anaerobic microbes take over and produce methane (CH₄), a dangerous gas.",
+  "simKinematics16": "Uniform straight-line motion",
+  "simKinematics17": "Uniform motion: constant speed (v), no acceleration (a = 0).",
+  "simKinematics18": "v = s / t, so t = s / v (time = distance divided by speed).",
+  "simPowerBudget13": "How long does the battery last? It depends on which parts are switched on.",
+  "simPowerBudget14": "If P_total = 0, the runtime is mathematically infinite (∞).",
+  "simPwm12": "Control the ELIOS motor speed without wasting energy as heat in a resistor.",
+  "simPwm13": "The DC motors in ELIOS (for example the wheel or arm motors) are not always given full voltage all the time. To control motor speed without wasting energy as heat, ELIOS uses PWM (pulse width modulation): it switches the full voltage on and off very quickly (hundreds to thousands of times per second) and sets what share of each cycle the voltage is on.\n\nThe old way to control motor speed was a resistive voltage divider (resistor/potentiometer) that lowers the voltage directly. The problem is that the extra energy is wasted as heat in the resistor: energy is lost and parts get hot.\n\nPWM never really \"lowers\" the voltage: it only switches the full voltage on and off very fast. Because the motor has mechanical inertia and coil inductance that smooth this on/off \"twitching\" into steady motion, the result feels like a lower voltage, but without wasting energy as resistive heat; only much smaller switching losses.",
+  "simPwm14": "A 60% duty cycle means fully on 60% of the time and off for the other 40%. The average is 7.2 V of the 12 V maximum.",
+  "simTorque12": "When ELIOS reaches out its arm, the shoulder joint holds more torque.",
+  "simTorque13": "Torque above 8 N·m: the robot could tip over!",
+  "simTorque14": "θ = 90°: maximum torque, the arm is perpendicular to the force.",
+  "simTorque15": "θ = 0° or 180°: zero torque, the force is parallel to the arm.",
+  "simTorque16": "Large r: more torque, but the robot is harder to keep stable.",
+  "simWorkEnergy13": "W = E_p = m · g · h (work = potential energy = mass × gravity × height).",
+  "simWorkEnergy14": "g (gravity) is rounded to 10 m/s² to keep the maths simple.",
+  "simPwmMotorGets": "The motor gets the equivalent of {volts} V",
+  "@simPwmMotorGets": {
+    "placeholders": {
+      "volts": {
+        "type": "Object"
+      }
+    }
+  },
+  "simDensityMaterial": "Material: {name}",
+  "@simDensityMaterial": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "simPowerLegend": "P_total = {watts} W · t = time (seconds)",
+  "@simPowerLegend": {
+    "placeholders": {
+      "watts": {
+        "type": "Object"
+      }
+    }
+  },
+  "simPowerEstimate": "t_estimate = 50000 J / {watts} W = {runtime}",
+  "@simPowerEstimate": {
+    "placeholders": {
+      "watts": {
+        "type": "Object"
+      },
+      "runtime": {
+        "type": "Object"
+      }
+    }
+  },
+  "simPowerLasts": "Lasts {runtime}",
+  "@simPowerLasts": {
+    "placeholders": {
+      "runtime": {
+        "type": "Object"
+      }
+    }
+  },
+  "simWorkBatteryLeft": "Battery left: {percent}%",
+  "@simWorkBatteryLeft": {
+    "placeholders": {
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "simTorqueMotorStatus": "Motor: {status} · safe limit 8 N·m",
+  "@simTorqueMotorStatus": {
+    "placeholders": {
+      "status": {
+        "type": "Object"
+      }
+    }
+  },
+  "simTorqueSafe": "SAFE",
+  "simTorqueWarning": "CAUTION",
+  "simTorqueCritical": "CRITICAL",
+  "simTorqueChallenge": "Find the heaviest load ELIOS can lift when r = {r} m and θ = 90° with a torque limit of 8 N·m.\nAnswer: F = τ/(r·sinθ) = 8 / {r} = 16 N",
+  "@simTorqueChallenge": {
+    "placeholders": {
+      "r": {
+        "type": "Object"
+      }
+    }
+  },
+  "simTorqueBody": "Torque (τ) measures how effectively a force turns an object around a pivot. Torque depends on the moment arm and on the angle between the arm and the direction of the force.",
+  "simKinArrival": "Arrival time = {distance} / {speed} = {time} seconds",
+  "@simKinArrival": {
+    "placeholders": {
+      "distance": {
+        "type": "Object"
+      },
+      "speed": {
+        "type": "Object"
+      },
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "simHeatFinal": "Final temperature = 25°C + {delta}°C = {result}°C",
+  "@simHeatFinal": {
+    "placeholders": {
+      "delta": {
+        "type": "Object"
+      },
+      "result": {
+        "type": "Object"
+      }
+    }
+  },
+  "physQDensity": "A sample of inorganic waste has a mass of {m} g and a volume of {v} cm³. What is its density?",
+  "@physQDensity": {
+    "placeholders": {
+      "m": {
+        "type": "Object"
+      },
+      "v": {
+        "type": "Object"
+      }
+    }
+  },
+  "physQHeat": "A compost pile with a mass of {m} kg warms up by {dt} °C. If the specific heat (c) of compost is {c} J/kg°C, how much heat (Q) did the microbes produce?",
+  "@physQHeat": {
+    "placeholders": {
+      "m": {
+        "type": "Object"
+      },
+      "dt": {
+        "type": "Object"
+      },
+      "c": {
+        "type": "Object"
+      }
+    }
+  },
+  "physQTorque": "The robot arm reaches out {r} m and lifts a load with a force of {f} N at an angle of {theta}° to the arm. How large is the torque at the shoulder joint?",
+  "@physQTorque": {
+    "placeholders": {
+      "r": {
+        "type": "Object"
+      },
+      "f": {
+        "type": "Object"
+      },
+      "theta": {
+        "type": "Object"
+      }
+    }
+  },
+  "physQWork": "ELIOS lifts a {m} kg load to a height of {h} m. How much work does it do against gravity (g = 10 m/s²)?",
+  "@physQWork": {
+    "placeholders": {
+      "m": {
+        "type": "Object"
+      },
+      "h": {
+        "type": "Object"
+      }
+    }
+  },
+  "physQSpeed": "ELIOS drives {s} metres in a straight line in {t} seconds towards the target. What is its average speed?",
+  "@physQSpeed": {
+    "placeholders": {
+      "s": {
+        "type": "Object"
+      },
+      "t": {
+        "type": "Object"
+      }
+    }
+  },
+  "physQPwm": "A PWM signal sets the motor voltage with a duty cycle (D) of {d}%. If the maximum battery voltage is {vmax} V, what is the average motor voltage?",
+  "@physQPwm": {
+    "placeholders": {
+      "d": {
+        "type": "Object"
+      },
+      "vmax": {
+        "type": "Object"
+      }
+    }
+  },
+  "physQPower": "A subsystem draws {i} A from a {v} V battery. How much power does it use?",
+  "@physQPower": {
+    "placeholders": {
+      "i": {
+        "type": "Object"
+      },
+      "v": {
+        "type": "Object"
+      }
+    }
+  }
 }

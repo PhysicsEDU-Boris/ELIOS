@@ -1,3 +1,4 @@
+import 'package:elio/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 class DensityPainter extends CustomPainter {
@@ -21,19 +22,40 @@ class DensityPainter extends CustomPainter {
     canvas.scale(scale);
 
     // Draw reference bottle
-    _drawBottle(canvas, const Offset(60, 250), refVolumeCm3, refDensity, 'Referensi', true);
-    
+    _drawBottle(
+      canvas,
+      const Offset(60, 250),
+      refVolumeCm3,
+      refDensity,
+      l10n.simDensityPainter1,
+      true,
+    );
+
     // Draw active bottle
-    _drawBottle(canvas, const Offset(200, 250), activeVolumeCm3, activeDensity, 'Objek', false);
+    _drawBottle(
+      canvas,
+      const Offset(200, 250),
+      activeVolumeCm3,
+      activeDensity,
+      l10n.simDensityPainter2,
+      false,
+    );
 
     canvas.restore();
   }
 
-  void _drawBottle(Canvas canvas, Offset bottomCenter, double volume, double density, String label, bool isReference) {
+  void _drawBottle(
+    Canvas canvas,
+    Offset bottomCenter,
+    double volume,
+    double density,
+    String label,
+    bool isReference,
+  ) {
     // Volume scales height. max 1000cm3 -> 150px height
-    final height = (volume / 1000) * 150 + 20; 
+    final height = (volume / 1000) * 150 + 20;
     final width = 50.0;
-    
+
     final rect = Rect.fromCenter(
       center: Offset(bottomCenter.dx, bottomCenter.dy - height / 2),
       width: width,
@@ -44,7 +66,12 @@ class DensityPainter extends CustomPainter {
     // For density, we'll map color from light blue (low density) to dark gray/brown (high density)
     final clampedDensity = density.clamp(0.0, 5.0);
     final colorVal = (255 - (clampedDensity / 5.0) * 150).toInt();
-    final fillColor = Color.fromARGB(200, colorVal, colorVal, colorVal + (isReference ? 50 : 0));
+    final fillColor = Color.fromARGB(
+      200,
+      colorVal,
+      colorVal,
+      colorVal + (isReference ? 50 : 0),
+    );
 
     final paintFill = Paint()..color = fillColor;
     final paintStroke = Paint()
@@ -70,12 +97,40 @@ class DensityPainter extends CustomPainter {
     canvas.drawRRect(neckRect, paintStroke);
 
     // Label
-    _drawText(canvas, label, Offset(bottomCenter.dx, bottomCenter.dy + 15), bold: true, center: true);
-    _drawText(canvas, 'ρ = ${density.toStringAsFixed(2)}', Offset(bottomCenter.dx, bottomCenter.dy - height / 2), center: true, color: Colors.white, bold: true);
-    _drawText(canvas, 'V = ${volume.toStringAsFixed(0)}', Offset(bottomCenter.dx, bottomCenter.dy - height / 2 + 15), center: true, color: Colors.white, fontSize: 9);
+    _drawText(
+      canvas,
+      label,
+      Offset(bottomCenter.dx, bottomCenter.dy + 15),
+      bold: true,
+      center: true,
+    );
+    _drawText(
+      canvas,
+      'ρ = ${fmtNum(density, 2)}',
+      Offset(bottomCenter.dx, bottomCenter.dy - height / 2),
+      center: true,
+      color: Colors.white,
+      bold: true,
+    );
+    _drawText(
+      canvas,
+      'V = ${fmtNum(volume, 0)}',
+      Offset(bottomCenter.dx, bottomCenter.dy - height / 2 + 15),
+      center: true,
+      color: Colors.white,
+      fontSize: 9,
+    );
   }
 
-  void _drawText(Canvas canvas, String text, Offset offset, {Color color = Colors.black, bool bold = false, double fontSize = 11, bool center = false}) {
+  void _drawText(
+    Canvas canvas,
+    String text,
+    Offset offset, {
+    Color color = Colors.black,
+    bool bold = false,
+    double fontSize = 11,
+    bool center = false,
+  }) {
     final tp = TextPainter(
       text: TextSpan(
         text: text,
@@ -94,8 +149,8 @@ class DensityPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant DensityPainter oldDelegate) {
     return oldDelegate.activeVolumeCm3 != activeVolumeCm3 ||
-           oldDelegate.activeDensity != activeDensity ||
-           oldDelegate.refVolumeCm3 != refVolumeCm3 ||
-           oldDelegate.refDensity != refDensity;
+        oldDelegate.activeDensity != activeDensity ||
+        oldDelegate.refVolumeCm3 != refVolumeCm3 ||
+        oldDelegate.refDensity != refDensity;
   }
 }

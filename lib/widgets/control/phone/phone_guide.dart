@@ -400,7 +400,7 @@ class _FinalCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            "You're ready, Robot Pilot!",
+            l10n.guideReady,
             style: TextStyle(
               color: p.textPrimary,
               fontSize: 20,
@@ -416,7 +416,7 @@ class _FinalCard extends StatelessWidget {
           const SizedBox(height: 12),
           _GreenButton(
             key: const ValueKey('guide_done'),
-            label: "Let's go!",
+            label: l10n.guideGo,
             onTap: onDone,
           ),
         ],

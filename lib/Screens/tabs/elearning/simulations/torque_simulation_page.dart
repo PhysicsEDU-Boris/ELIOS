@@ -1,3 +1,4 @@
+import 'package:elio/l10n/l10n.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../widgets/learn/learn_ui.dart';
@@ -20,7 +21,8 @@ class TorqueSimulationPage extends ConsumerStatefulWidget {
   const TorqueSimulationPage({super.key});
 
   @override
-  ConsumerState<TorqueSimulationPage> createState() => _TorqueSimulationPageState();
+  ConsumerState<TorqueSimulationPage> createState() =>
+      _TorqueSimulationPageState();
 }
 
 class _TorqueSimulationPageState extends ConsumerState<TorqueSimulationPage> {
@@ -53,133 +55,137 @@ class _TorqueSimulationPageState extends ConsumerState<TorqueSimulationPage> {
 
     return SimulationPageScaffold(
       module: PhysicsModuleId.torque,
-      appBarTitle: 'Torsi Bahu Robot',
-      header: const SimModuleHeader(
-        tag: 'MODUL C · MEKANIKA',
-        title: 'Torsi Bahu Robot',
-        subtitle: 'Saat ELIO menjulurkan lengan, sendi bahu menahan torsi yang lebih besar.',
+      appBarTitle: l10n.simTorque1,
+      header: SimModuleHeader(
+        tag: l10n.simTorque2,
+        title: l10n.simTorque1,
+        subtitle: l10n.simTorque12,
       ),
       formulaBox: FormulaBox(
-                    title: 'RUMUS TORSI',
-                    formulaText: TextSpan(
-                      children: [
-                        const TextSpan(text: 'τ = r · F · sin(θ) = '),
-                        TextSpan(
-                          text: tau.toStringAsFixed(2),
-                          style: TextStyle(color: context.elio.secondaryText),
-                        ),
-                        const TextSpan(text: ' N·m'),
-                      ],
-                    ),
-        subtitle: 'r = panjang lengan · F = beban · θ = sudut',
+        title: l10n.simTorque3,
+        formulaText: TextSpan(
+          children: [
+            const TextSpan(text: 'τ = r · F · sin(θ) = '),
+            TextSpan(
+              text: fmtNum(tau, 2),
+              style: TextStyle(color: context.elio.secondaryText),
+            ),
+            const TextSpan(text: ' N·m'),
+          ],
+        ),
+        subtitle: l10n.simTorque4,
       ),
       simulationContent: [
         const SizedBox(height: 16),
-                  SimCanvasFrame(
-                    noteText: 'Seret gagang lengan untuk mengubah r & θ',
-                    showRiskBadge: status == MotorStatus.critical,
-                    canvas: _TorqueCanvas(
-                      state: state,
-                      shake: status == MotorStatus.critical,
-                      onDragUpdate: (point) => _onDragUpdate(point, state),
-                      onDragEnd: _endDrag,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Column(
-                    children: [
-                      LabeledSlider(
-                        label: 'Panjang lengan (r)',
-                        valueLabel: '${state.armLength.toStringAsFixed(2)} m',
-                        value: state.armLength,
-                        min: TorqueState.minArmLength,
-                        max: TorqueState.maxArmLength,
-                        onChanged: (v) => ref.read(torqueProvider.notifier).setArmLength(v),
-                      ),
-                      const SizedBox(height: 14),
-                      LabeledSlider(
-                        label: 'Beban (F)',
-                        valueLabel: '${state.load.toStringAsFixed(1)} N',
-                        value: state.load,
-                        min: TorqueState.minLoad,
-                        max: TorqueState.maxLoad,
-                        onChanged: (v) => ref.read(torqueProvider.notifier).setLoad(v),
-                      ),
-                      const SizedBox(height: 14),
-                      LabeledSlider(
-                        label: 'Sudut (θ)',
-                        valueLabel: '${state.angleDeg.toStringAsFixed(0)}°',
-                        value: state.angleDeg,
-                        min: TorqueState.minAngleDeg,
-                        max: TorqueState.maxAngleDeg,
-                        onChanged: (v) => ref.read(torqueProvider.notifier).setAngle(v),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  CalcBox(
-                    headerTitle: 'TORSI INSTAN',
-                    formulaExpression: 'τ = ${state.armLength.toStringAsFixed(2)} × ${state.load.toStringAsFixed(1)} × sin(${state.angleDeg.toStringAsFixed(0)}°) = ${tau.toStringAsFixed(2)} N·m',
-                    statusIcon: status == MotorStatus.safe
-                        ? Icons.check_circle_rounded
-                        : status == MotorStatus.warning
-                            ? Icons.error_rounded
-                            : Icons.dangerous_rounded,
-                    statusColor: status == MotorStatus.safe
-                        ? context.elio.primaryText
-                        : status == MotorStatus.warning
-                            ? context.elio.secondaryText
-                            : context.elio.errorText,
-                    statusText: 'Motor: ${status == MotorStatus.safe ? 'AMAN' : status == MotorStatus.warning ? 'PERHATIAN' : 'KRITIS'} · batas aman 8 N·m',
-                  ),
-                  ThresholdBanner(
-                    visible: status == MotorStatus.critical,
-                    text: 'Torsi melebihi 8 N·m — Robot bisa terguling!',
-                  ),
-                  const SizedBox(height: 16),
-                  // Challenge card was not abstracted but should be rendered directly here
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: context.elio.surfaceRaised,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: context.elio.borderSubtle),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'TANTANGAN',
-                          style: TextStyle(
-                            color: context.elio.primaryText,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Cari berat maksimum yang dapat diangkat ELIO saat r = 0.5 m dan '
-                          'θ = 90° dengan batas torsi 8 N·m.\nJawaban: F = τ/(r·sinθ) = '
-                          '8 / 0.5 = 16 N',
-                          style: TextStyle(color: context.elio.textSecondary, fontSize: 12.5, height: 1.55),
-                        ),
-                      ],
-                    ),
-                  ),
+        SimCanvasFrame(
+          noteText: l10n.simTorque5,
+          showRiskBadge: status == MotorStatus.critical,
+          canvas: _TorqueCanvas(
+            state: state,
+            shake: status == MotorStatus.critical,
+            onDragUpdate: (point) => _onDragUpdate(point, state),
+            onDragEnd: _endDrag,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Column(
+          children: [
+            LabeledSlider(
+              label: l10n.simTorque6,
+              valueLabel: '${fmtNum(state.armLength, 2)} m',
+              value: state.armLength,
+              min: TorqueState.minArmLength,
+              max: TorqueState.maxArmLength,
+              onChanged: (v) =>
+                  ref.read(torqueProvider.notifier).setArmLength(v),
+            ),
+            const SizedBox(height: 14),
+            LabeledSlider(
+              label: l10n.simTorque7,
+              valueLabel: '${fmtNum(state.load, 1)} N',
+              value: state.load,
+              min: TorqueState.minLoad,
+              max: TorqueState.maxLoad,
+              onChanged: (v) => ref.read(torqueProvider.notifier).setLoad(v),
+            ),
+            const SizedBox(height: 14),
+            LabeledSlider(
+              label: l10n.simTorque8,
+              valueLabel: '${fmtNum(state.angleDeg, 0)}°',
+              value: state.angleDeg,
+              min: TorqueState.minAngleDeg,
+              max: TorqueState.maxAngleDeg,
+              onChanged: (v) => ref.read(torqueProvider.notifier).setAngle(v),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        CalcBox(
+          headerTitle: l10n.simTorque9,
+          formulaExpression:
+              'τ = ${fmtNum(state.armLength, 2)} × ${fmtNum(state.load, 1)} × sin(${fmtNum(state.angleDeg, 0)}°) = ${fmtNum(tau, 2)} N·m',
+          statusIcon: status == MotorStatus.safe
+              ? Icons.check_circle_rounded
+              : status == MotorStatus.warning
+              ? Icons.error_rounded
+              : Icons.dangerous_rounded,
+          statusColor: status == MotorStatus.safe
+              ? context.elio.primaryText
+              : status == MotorStatus.warning
+              ? context.elio.secondaryText
+              : context.elio.errorText,
+          statusText: l10n.simTorqueMotorStatus(
+            status == MotorStatus.safe
+                ? l10n.simTorqueSafe
+                : status == MotorStatus.warning
+                ? l10n.simTorqueWarning
+                : l10n.simTorqueCritical,
+          ),
+        ),
+        ThresholdBanner(
+          visible: status == MotorStatus.critical,
+          text: l10n.simTorque13,
+        ),
+        const SizedBox(height: 16),
+        // Challenge card was not abstracted but should be rendered directly here
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: context.elio.surfaceRaised,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: context.elio.borderSubtle),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.simTorque10,
+                style: TextStyle(
+                  color: context.elio.primaryText,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.6,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.simTorqueChallenge(fmtNum(0.5, 1)),
+                style: TextStyle(
+                  color: context.elio.textSecondary,
+                  fontSize: 12.5,
+                  height: 1.55,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
-      deepExplainCard: const DeepExplainCard(
-                    title: 'Penjelasan Materi: Torsi (Momen Gaya)',
-                    bodyText: 'Torsi (τ) adalah ukuran efektivitas gaya dalam memutar benda '
-                        'terhadap suatu titik poros. Torsi bergantung pada lengan '
-                        'momen dan sudut antara lengan dengan arah gaya.',
-                    bulletPoints: [
-                      'θ = 90°: torsi maksimum — lengan tegak lurus dengan gaya.',
-                      'θ = 0° atau 180°: torsi nol — gaya sejajar lengan.',
-                      'r besar: torsi lebih besar, tapi robot lebih sulit stabil.'
-                    ],
-                  ),
+      deepExplainCard: DeepExplainCard(
+        title: l10n.simTorque11,
+        bodyText: l10n.simTorqueBody,
+        bulletPoints: [l10n.simTorque14, l10n.simTorque15, l10n.simTorque16],
+      ),
     );
   }
 }

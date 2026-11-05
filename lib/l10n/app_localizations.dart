@@ -395,7 +395,7 @@ abstract class AppLocalizations {
   /// No description provided for @configSameWifiHint.
   ///
   /// In en, this message translates to:
-  /// **'Put ELIO and this phone on the same Wi-Fi or hotspot, then tap Connect now.'**
+  /// **'Put ELIOS and this phone on the same Wi-Fi or hotspot, then tap Connect now.'**
   String get configSameWifiHint;
 
   /// No description provided for @configSaveDefault.
@@ -419,7 +419,7 @@ abstract class AppLocalizations {
   /// No description provided for @configLookingForElio.
   ///
   /// In en, this message translates to:
-  /// **'Looking for ELIO…'**
+  /// **'Looking for ELIOS…'**
   String get configLookingForElio;
 
   /// No description provided for @guidePdfUnavailable.
@@ -905,13 +905,13 @@ abstract class AppLocalizations {
   /// No description provided for @shellConnectElio.
   ///
   /// In en, this message translates to:
-  /// **'Connect ELIO'**
+  /// **'Connect ELIOS'**
   String get shellConnectElio;
 
   /// No description provided for @shellConnected.
   ///
   /// In en, this message translates to:
-  /// **'ELIO connected'**
+  /// **'ELIOS connected'**
   String get shellConnected;
 
   /// No description provided for @shellConnectedMsg.
@@ -923,7 +923,7 @@ abstract class AppLocalizations {
   /// No description provided for @shellDisconnected.
   ///
   /// In en, this message translates to:
-  /// **'ELIO disconnected'**
+  /// **'ELIOS disconnected'**
   String get shellDisconnected;
 
   /// No description provided for @shellDisconnectedMsg.
@@ -947,7 +947,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeReady.
   ///
   /// In en, this message translates to:
-  /// **'Ready to learn with ELIO?'**
+  /// **'Ready to learn with ELIOS?'**
   String get homeReady;
 
   /// No description provided for @configTopSubtitle.
@@ -1013,13 +1013,13 @@ abstract class AppLocalizations {
   /// No description provided for @medalRoboticsDesc.
   ///
   /// In en, this message translates to:
-  /// **'Start the Introduction to ELIO module'**
+  /// **'Start the Introduction to ELIOS module'**
   String get medalRoboticsDesc;
 
   /// No description provided for @medalRoboticsHint.
   ///
   /// In en, this message translates to:
-  /// **'Start Intro to ELIO'**
+  /// **'Start Intro to ELIOS'**
   String get medalRoboticsHint;
 
   /// No description provided for @medalAdvocate.
@@ -1463,7 +1463,7 @@ abstract class AppLocalizations {
   /// No description provided for @notifSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Learning updates and reminders from ELIO.'**
+  /// **'Learning updates and reminders from ELIOS.'**
   String get notifSubtitle;
 
   /// No description provided for @notifMarkAllRead.
@@ -1631,13 +1631,13 @@ abstract class AppLocalizations {
   /// No description provided for @cfgFoundAt.
   ///
   /// In en, this message translates to:
-  /// **'Found ELIO at {ip}'**
+  /// **'Found ELIOS at {ip}'**
   String cfgFoundAt(Object ip);
 
   /// No description provided for @cfgNotFound.
   ///
   /// In en, this message translates to:
-  /// **'ELIO not found on this Wi-Fi'**
+  /// **'ELIOS not found on this Wi-Fi'**
   String get cfgNotFound;
 
   /// No description provided for @cfgRetry.
@@ -1739,7 +1739,7 @@ abstract class AppLocalizations {
   /// No description provided for @cfgWsAddress.
   ///
   /// In en, this message translates to:
-  /// **'ELIO WebSocket address'**
+  /// **'ELIOS WebSocket address'**
   String get cfgWsAddress;
 
   /// No description provided for @cfgPort.
@@ -1757,7 +1757,7 @@ abstract class AppLocalizations {
   /// No description provided for @cfgFindElio.
   ///
   /// In en, this message translates to:
-  /// **'Find ELIO'**
+  /// **'Find ELIOS'**
   String get cfgFindElio;
 
   /// No description provided for @cfgRobotNotUsed.
@@ -1841,7 +1841,7 @@ abstract class AppLocalizations {
   /// No description provided for @cfgRobotModel.
   ///
   /// In en, this message translates to:
-  /// **'ELIO robot 3D model, drag to rotate'**
+  /// **'ELIOS robot 3D model, drag to rotate'**
   String get cfgRobotModel;
 
   /// No description provided for @cfgQuestionBankDesc.
@@ -1877,7 +1877,7 @@ abstract class AppLocalizations {
   /// No description provided for @setAutoReconnectSub.
   ///
   /// In en, this message translates to:
-  /// **'Reconnect when ELIO is available again'**
+  /// **'Reconnect when ELIOS is available again'**
   String get setAutoReconnectSub;
 
   /// No description provided for @setVideo.
@@ -2429,7 +2429,7 @@ abstract class AppLocalizations {
   /// No description provided for @ctlElioSays.
   ///
   /// In en, this message translates to:
-  /// **'ELIO SAYS'**
+  /// **'ELIOS SAYS'**
   String get ctlElioSays;
 
   /// No description provided for @ctlMissionOf.
@@ -4018,7 +4018,7 @@ abstract class AppLocalizations {
   /// No description provided for @lqIntro.
   ///
   /// In en, this message translates to:
-  /// **'Test your understanding of waste management and how ELIO classifies materials. Each quiz has one attempt.'**
+  /// **'Test your understanding of waste management and how ELIOS classifies materials. Each quiz has one attempt.'**
   String get lqIntro;
 
   /// No description provided for @lqSetsFailed.
@@ -4282,13 +4282,13 @@ abstract class AppLocalizations {
   /// No description provided for @lnTestElio.
   ///
   /// In en, this message translates to:
-  /// **'Test how ELIO sorts waste.'**
+  /// **'Test how ELIOS sorts waste.'**
   String get lnTestElio;
 
   /// No description provided for @lnQuizzesTest.
   ///
   /// In en, this message translates to:
-  /// **'{count} quizzes. Test how ELIO sorts waste.'**
+  /// **'{count} quizzes. Test how ELIOS sorts waste.'**
   String lnQuizzesTest(Object count);
 
   /// No description provided for @lnTakeQuiz.
@@ -4438,7 +4438,7 @@ abstract class AppLocalizations {
   /// No description provided for @lnLoadFailedBody.
   ///
   /// In en, this message translates to:
-  /// **'Check the connection to ELIO or the internet, then try again. Lessons you already opened still work offline.'**
+  /// **'Check the connection to ELIOS or the internet, then try again. Lessons you already opened still work offline.'**
   String get lnLoadFailedBody;
 
   /// No description provided for @lnOpenOffline.
@@ -5796,6 +5796,1536 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Comment'**
   String get pdfColComment;
+
+  /// No description provided for @a11yTrophies.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} trophies'**
+  String a11yTrophies(Object count);
+
+  /// No description provided for @homeScanSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} · +{count} trophies'**
+  String homeScanSubtitle(Object date, Object count);
+
+  /// No description provided for @a11yLabelValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}: {value}'**
+  String a11yLabelValue(Object label, Object value);
+
+  /// No description provided for @a11yBinStat.
+  ///
+  /// In en, this message translates to:
+  /// **'{bin} {count} scans, {percent}'**
+  String a11yBinStat(Object bin, Object count, Object percent);
+
+  /// No description provided for @a11yTopBin.
+  ///
+  /// In en, this message translates to:
+  /// **', top bin'**
+  String get a11yTopBin;
+
+  /// No description provided for @homeScansUnit.
+  ///
+  /// In en, this message translates to:
+  /// **' scans'**
+  String get homeScansUnit;
+
+  /// No description provided for @homeMedalsOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{unlocked} of {total}'**
+  String homeMedalsOf(Object unlocked, Object total);
+
+  /// No description provided for @a11yMedal.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {state}. {description}'**
+  String a11yMedal(Object name, Object state, Object description);
+
+  /// No description provided for @a11yUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'unlocked'**
+  String get a11yUnlocked;
+
+  /// No description provided for @a11yLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'locked'**
+  String get a11yLocked;
+
+  /// No description provided for @a11ySearchItem.
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, {subtitle}'**
+  String a11ySearchItem(Object title, Object subtitle);
+
+  /// No description provided for @learnQuestionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 question} other{{count} questions}}'**
+  String learnQuestionCount(int count);
+
+  /// No description provided for @learnMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min'**
+  String learnMinutes(Object count);
+
+  /// No description provided for @learnLessonCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lesson} other{{count} lessons}}'**
+  String learnLessonCount(int count);
+
+  /// No description provided for @a11yPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, {percent} percent'**
+  String a11yPercent(Object title, Object percent);
+
+  /// No description provided for @tipWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Hang on, I\'m looking for the robot! If it takes long, check the ELIOS Wi-Fi.'**
+  String get tipWaiting;
+
+  /// No description provided for @tipDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Uh-oh, I can\'t hear the robot. Walk closer to it or check that it\'s switched on.'**
+  String get tipDisconnected;
+
+  /// No description provided for @tipStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'The robot is STOPPED. Check the way is clear, then tap Continue.'**
+  String get tipStopped;
+
+  /// No description provided for @tipQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz time! Answer it, then we sort the item together.'**
+  String get tipQuiz;
+
+  /// No description provided for @tipDrive.
+  ///
+  /// In en, this message translates to:
+  /// **'Drive around slowly and point my camera at an item to sort.'**
+  String get tipDrive;
+
+  /// No description provided for @tipPickZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice driving! The {item} is in the pick zone. Press PICK UP to grab it.'**
+  String tipPickZone(Object item);
+
+  /// No description provided for @tipLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it! I locked on the {item}. Hold still while I look.'**
+  String tipLocked(Object item);
+
+  /// No description provided for @tipSeeItem.
+  ///
+  /// In en, this message translates to:
+  /// **'I see a {item}. Drive closer, slowly.'**
+  String tipSeeItem(Object item);
+
+  /// No description provided for @ctlPlusTrophies.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} trophies'**
+  String ctlPlusTrophies(Object count);
+
+  /// No description provided for @guideReady.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re ready, Robot Pilot!'**
+  String get guideReady;
+
+  /// No description provided for @guideGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s go!'**
+  String get guideGo;
+
+  /// No description provided for @qzElapsed.
+  ///
+  /// In en, this message translates to:
+  /// **'elapsed'**
+  String get qzElapsed;
+
+  /// No description provided for @qzWordCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{words} / {limit} words'**
+  String qzWordCount(Object words, Object limit);
+
+  /// No description provided for @wqCorrectOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{correct} of {total} correct'**
+  String wqCorrectOf(Object correct, Object total);
+
+  /// No description provided for @cfgCouldNotReach.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach ELIOS'**
+  String get cfgCouldNotReach;
+
+  /// No description provided for @cfgIpAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'IP address'**
+  String get cfgIpAddress;
+
+  /// No description provided for @camMacFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The Mac camera couldn\'t be opened ({error}).'**
+  String camMacFailed(Object error);
+
+  /// No description provided for @catExamplesOrganic.
+  ///
+  /// In en, this message translates to:
+  /// **'Food scraps; Leftover cooked food; Coffee grounds and tea bags; Grass clippings and leaves; Eggshells'**
+  String get catExamplesOrganic;
+
+  /// No description provided for @catExamplesInorganic.
+  ///
+  /// In en, this message translates to:
+  /// **'Plastic bottles and containers; Glass jars and bottles; Aluminium cans and foil; Paper and cardboard; Metal scraps'**
+  String get catExamplesInorganic;
+
+  /// No description provided for @catExamplesHazardous.
+  ///
+  /// In en, this message translates to:
+  /// **'Batteries; Electronic waste; Fluorescent light bulbs; Paint and solvents; Pesticides and herbicides'**
+  String get catExamplesHazardous;
+
+  /// No description provided for @authNoUser.
+  ///
+  /// In en, this message translates to:
+  /// **'No account found for that username.'**
+  String get authNoUser;
+
+  /// No description provided for @notifVideoDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Video completed'**
+  String get notifVideoDone;
+
+  /// No description provided for @notifVideoDoneMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'You completed a video lesson.'**
+  String get notifVideoDoneMsg;
+
+  /// No description provided for @notifGuideDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Guide completed'**
+  String get notifGuideDone;
+
+  /// No description provided for @notifGuideDoneMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'You completed a guide.'**
+  String get notifGuideDoneMsg;
+
+  /// No description provided for @notifQuizDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz completed'**
+  String get notifQuizDone;
+
+  /// No description provided for @notifQuizDoneMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Your quiz result has been saved.'**
+  String get notifQuizDoneMsg;
+
+  /// No description provided for @notifReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz review available'**
+  String get notifReview;
+
+  /// No description provided for @notifReviewMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'You can now review your quiz answers.'**
+  String get notifReviewMsg;
+
+  /// No description provided for @notifSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress sync issue'**
+  String get notifSync;
+
+  /// No description provided for @notifSyncMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Your progress could not be synced. Check your connection.'**
+  String get notifSyncMsg;
+
+  /// No description provided for @physDensityTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Module A · Environment'**
+  String get physDensityTag;
+
+  /// No description provided for @physDensityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Waste Density'**
+  String get physDensityTitle;
+
+  /// No description provided for @physDensityDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS sorts inorganic waste by density.'**
+  String get physDensityDesc;
+
+  /// No description provided for @physHeatTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Module B · Environment'**
+  String get physHeatTag;
+
+  /// No description provided for @physHeatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Compost Heat & Thermodynamics'**
+  String get physHeatTitle;
+
+  /// No description provided for @physHeatDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Microbes decomposing waste release heat over time.'**
+  String get physHeatDesc;
+
+  /// No description provided for @physTorqueTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Module C · Mechanics'**
+  String get physTorqueTag;
+
+  /// No description provided for @physTorqueTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot Shoulder Torque'**
+  String get physTorqueTitle;
+
+  /// No description provided for @physTorqueDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The ELIOS shoulder joint holds torque as the arm reaches out.'**
+  String get physTorqueDesc;
+
+  /// No description provided for @physWorkEnergyTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Module D · Mechanics'**
+  String get physWorkEnergyTag;
+
+  /// No description provided for @physWorkEnergyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Work & Potential Energy'**
+  String get physWorkEnergyTitle;
+
+  /// No description provided for @physWorkEnergyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifting a load takes a measurable amount of work.'**
+  String get physWorkEnergyDesc;
+
+  /// No description provided for @physKinematicsTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Module E · Kinematics'**
+  String get physKinematicsTag;
+
+  /// No description provided for @physKinematicsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS Speed'**
+  String get physKinematicsTitle;
+
+  /// No description provided for @physKinematicsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Uniform straight-line motion towards the waste pile.'**
+  String get physKinematicsDesc;
+
+  /// No description provided for @physPwmTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Module F · Electronics'**
+  String get physPwmTag;
+
+  /// No description provided for @physPwmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'PWM & Motor Voltage'**
+  String get physPwmTitle;
+
+  /// No description provided for @physPwmDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The duty cycle sets the average voltage of the wheel motors.'**
+  String get physPwmDesc;
+
+  /// No description provided for @physPowerTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Module G · Power'**
+  String get physPowerTag;
+
+  /// No description provided for @physPowerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS Power & Battery'**
+  String get physPowerTitle;
+
+  /// No description provided for @physPowerDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Managing how much power the robot parts use.'**
+  String get physPowerDesc;
+
+  /// No description provided for @physDeepDiveTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep-Dive · Waste Physics'**
+  String get physDeepDiveTag;
+
+  /// No description provided for @physDeepDiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Waste Deep-Dive Cards'**
+  String get physDeepDiveTitle;
+
+  /// No description provided for @physDeepDiveDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A closer look: organic, inorganic and B3.'**
+  String get physDeepDiveDesc;
+
+  /// No description provided for @physQuizTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Evaluation'**
+  String get physQuizTag;
+
+  /// No description provided for @physQuizTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Your Understanding (Quiz)'**
+  String get physQuizTitle;
+
+  /// No description provided for @physQuizDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Test what you know about the physics behind the ELIOS robot.'**
+  String get physQuizDesc;
+
+  /// No description provided for @physLevelBeginner.
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner'**
+  String get physLevelBeginner;
+
+  /// No description provided for @physLevelIntermediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Intermediate'**
+  String get physLevelIntermediate;
+
+  /// No description provided for @physLevelAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get physLevelAdvanced;
+
+  /// No description provided for @physLevelAllLevels.
+  ///
+  /// In en, this message translates to:
+  /// **'All levels'**
+  String get physLevelAllLevels;
+
+  /// No description provided for @simDeepDive1.
+  ///
+  /// In en, this message translates to:
+  /// **'Waste Deep-Dive'**
+  String get simDeepDive1;
+
+  /// No description provided for @simDeepDive2.
+  ///
+  /// In en, this message translates to:
+  /// **'The Physics of Sorting Waste'**
+  String get simDeepDive2;
+
+  /// No description provided for @simDeepDive3.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore why each waste category is handled differently.'**
+  String get simDeepDive3;
+
+  /// No description provided for @simDeepDive4.
+  ///
+  /// In en, this message translates to:
+  /// **'Pile Porosity'**
+  String get simDeepDive4;
+
+  /// No description provided for @simDeepDive5.
+  ///
+  /// In en, this message translates to:
+  /// **'Low porosity (<25%). Air can hardly get in, which triggers anaerobic decomposition (methane).'**
+  String get simDeepDive5;
+
+  /// No description provided for @simDeepDive6.
+  ///
+  /// In en, this message translates to:
+  /// **'Good porosity. Oxygen flows freely and aerobic composting works best.'**
+  String get simDeepDive6;
+
+  /// No description provided for @simDeepDive7.
+  ///
+  /// In en, this message translates to:
+  /// **'Porosity is the percentage of empty space (filled with air) between the solid particles in a compost pile. High porosity = air can flow freely through the whole pile = the aerobic process (which needs oxygen) runs well. Low porosity = the pile is too dense = oxygen runs out quickly inside = anaerobic microbes take over.'**
+  String get simDeepDive7;
+
+  /// No description provided for @simDeepDive8.
+  ///
+  /// In en, this message translates to:
+  /// **'Organic waste has no electrical (conductivity), optical (NIR reflectance) or hazardous chemical (volatility/reactivity) property that could be used as an automatic sorting signal. The only relevant physical variable is its own pore structure and moisture, because the goal is not to separate materials but to manage the biological breakdown itself.'**
+  String get simDeepDive8;
+
+  /// No description provided for @simDeepDive9.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS uses this principle in its spring-loaded gripper/pusher to test how hard or elastic an item is.'**
+  String get simDeepDive9;
+
+  /// No description provided for @simDeepDive10.
+  ///
+  /// In en, this message translates to:
+  /// **'Compression (x)'**
+  String get simDeepDive10;
+
+  /// No description provided for @simDeepDive11.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠ Accuracy note: the peak wavelengths used in this simulation (e.g. PET ≈1660 nm, HDPE ≈1730 nm, PP ≈1410 nm) must be checked again against a valid industrial NIR sorting reference before release. Real NIR sensors measure absorbance peaks/valleys over ranges that can vary.'**
+  String get simDeepDive11;
+
+  /// No description provided for @simDeepDive12.
+  ///
+  /// In en, this message translates to:
+  /// **'When metal moves through a changing magnetic field, eddy currents are induced inside it. They create an opposing magnetic field that pushes non-magnetic metals such as aluminium away from the magnet.'**
+  String get simDeepDive12;
+
+  /// No description provided for @simDeepDive13.
+  ///
+  /// In en, this message translates to:
+  /// **'Inorganic materials (plastic, glass, metal) go through no biological process that needs managing (unlike organic waste), and most are not chemically reactive or hazardous (unlike B3). The most effective sorting signals are their stable physical properties: hardness (Hooke), optical identity (NIR) and magnetic/conductive behaviour (eddy currents).'**
+  String get simDeepDive13;
+
+  /// No description provided for @simDeepDive14.
+  ///
+  /// In en, this message translates to:
+  /// **'The hotter a liquid or substance is, the more it tends to evaporate into a gas: this is vapour pressure. The Clausius-Clapeyron equation describes this non-linear (exponential) relationship.'**
+  String get simDeepDive14;
+
+  /// No description provided for @simDeepDive15.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠ Accuracy note: this simulation uses a qualitative, simplified approach, not a literal P–T curve with scientifically precise exponential constants. It only shows the trend (hotter = evaporates more easily = more dangerous).'**
+  String get simDeepDive15;
+
+  /// No description provided for @simDeepDive16.
+  ///
+  /// In en, this message translates to:
+  /// **'Substance temperature'**
+  String get simDeepDive16;
+
+  /// No description provided for @simDeepDive17.
+  ///
+  /// In en, this message translates to:
+  /// **'Incinerator temperature'**
+  String get simDeepDive17;
+
+  /// No description provided for @simDeepDive18.
+  ///
+  /// In en, this message translates to:
+  /// **'Status: hazardous chemical bonds broken (safe)'**
+  String get simDeepDive18;
+
+  /// No description provided for @simDeepDive19.
+  ///
+  /// In en, this message translates to:
+  /// **'Radiation intensity (I) drops exponentially as the shield thickness (x) increases.'**
+  String get simDeepDive19;
+
+  /// No description provided for @simDeepDive20.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠ Accuracy note: real attenuation coefficients depend strongly on the energy of the radiation particles (MeV) and on the specific shield material. The numbers below are illustrative and only show the relative order (gamma hardest, alpha easiest).'**
+  String get simDeepDive20;
+
+  /// No description provided for @simDeepDive21.
+  ///
+  /// In en, this message translates to:
+  /// **'Alpha (α)'**
+  String get simDeepDive21;
+
+  /// No description provided for @simDeepDive22.
+  ///
+  /// In en, this message translates to:
+  /// **'Shield thickness (x)'**
+  String get simDeepDive22;
+
+  /// No description provided for @simDeepDive23.
+  ///
+  /// In en, this message translates to:
+  /// **'The key difference is not the physical material (B3 can be metal, liquid or any solid) but its hidden danger: chemical volatility, radioactivity or thermal reactivity that can harm people or the environment if it is handled like ordinary waste. So \"sorting\" here is not about separating materials but about safe containment and handling: shielding, controlled temperature and early identification before direct contact.'**
+  String get simDeepDive23;
+
+  /// No description provided for @simDensity1.
+  ///
+  /// In en, this message translates to:
+  /// **'Density & Classification'**
+  String get simDensity1;
+
+  /// No description provided for @simDensity2.
+  ///
+  /// In en, this message translates to:
+  /// **'MODULE A · LESSON'**
+  String get simDensity2;
+
+  /// No description provided for @simDensity3.
+  ///
+  /// In en, this message translates to:
+  /// **'Items with different densities are sorted into the matching category.'**
+  String get simDensity3;
+
+  /// No description provided for @simDensity4.
+  ///
+  /// In en, this message translates to:
+  /// **'DENSITY FORMULA'**
+  String get simDensity4;
+
+  /// No description provided for @simDensity5.
+  ///
+  /// In en, this message translates to:
+  /// **'m = mass · V = volume'**
+  String get simDensity5;
+
+  /// No description provided for @simDensity6.
+  ///
+  /// In en, this message translates to:
+  /// **'Move the sliders to see the item change'**
+  String get simDensity6;
+
+  /// No description provided for @simDensity7.
+  ///
+  /// In en, this message translates to:
+  /// **'Mass (m)'**
+  String get simDensity7;
+
+  /// No description provided for @simDensity8.
+  ///
+  /// In en, this message translates to:
+  /// **'CLASSIFICATION RESULT'**
+  String get simDensity8;
+
+  /// No description provided for @simDensity9.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown material'**
+  String get simDensity9;
+
+  /// No description provided for @simDensity10.
+  ///
+  /// In en, this message translates to:
+  /// **'Density outside the database range (not a known plastic, glass or metal).'**
+  String get simDensity10;
+
+  /// No description provided for @simDensity11.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a bin:'**
+  String get simDensity11;
+
+  /// No description provided for @simDensity12.
+  ///
+  /// In en, this message translates to:
+  /// **'Plastic'**
+  String get simDensity12;
+
+  /// No description provided for @simDensity13.
+  ///
+  /// In en, this message translates to:
+  /// **'Glass'**
+  String get simDensity13;
+
+  /// No description provided for @simDensity14.
+  ///
+  /// In en, this message translates to:
+  /// **'Metal'**
+  String get simDensity14;
+
+  /// No description provided for @simDensity15.
+  ///
+  /// In en, this message translates to:
+  /// **'Module A — Density & Waste Classification'**
+  String get simDensity15;
+
+  /// No description provided for @simDensity16.
+  ///
+  /// In en, this message translates to:
+  /// **'Density is a measure of how \"tightly packed\" matter is inside an object. Two objects can have the same size (volume) but very different weights, because their particles are packed differently. Iron feels heavy in your hand not because there is \"more\" iron, but because its atoms are packed more tightly per unit of space than, say, plastic.\n\nThis matters for ELIOS because density is one of the cheapest and fastest signals for guessing a material, far cheaper than, for example, analysing the infrared spectrum of every item.'**
+  String get simDensity16;
+
+  /// No description provided for @simDensity17.
+  ///
+  /// In en, this message translates to:
+  /// **'ρ = m / V (density = mass / volume). Pure water has ρ = 1.0 g/cm³ as the reference point.'**
+  String get simDensity17;
+
+  /// No description provided for @simDensity18.
+  ///
+  /// In en, this message translates to:
+  /// **'A common mistake swaps m and V into V/m, which changes the result drastically. Density is mass per volume.'**
+  String get simDensity18;
+
+  /// No description provided for @simDensity19.
+  ///
+  /// In en, this message translates to:
+  /// **'Plastic (0.9 - 1.4 g/cm³)'**
+  String get simDensity19;
+
+  /// No description provided for @simDensity20.
+  ///
+  /// In en, this message translates to:
+  /// **'Glass (2.4 - 2.6 g/cm³)'**
+  String get simDensity20;
+
+  /// No description provided for @simDensity21.
+  ///
+  /// In en, this message translates to:
+  /// **'Metal (≥ 2.7 g/cm³)'**
+  String get simDensity21;
+
+  /// No description provided for @simDensity22.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get simDensity22;
+
+  /// No description provided for @simHeat1.
+  ///
+  /// In en, this message translates to:
+  /// **'Heat & Thermodynamics'**
+  String get simHeat1;
+
+  /// No description provided for @simHeat2.
+  ///
+  /// In en, this message translates to:
+  /// **'MODULE B · LESSON'**
+  String get simHeat2;
+
+  /// No description provided for @simHeat3.
+  ///
+  /// In en, this message translates to:
+  /// **'Heat & Composting Thermodynamics'**
+  String get simHeat3;
+
+  /// No description provided for @simHeat4.
+  ///
+  /// In en, this message translates to:
+  /// **'HEAT FORMULA (Q)'**
+  String get simHeat4;
+
+  /// No description provided for @simHeat5.
+  ///
+  /// In en, this message translates to:
+  /// **'m = mass · c = 4000 J/kg°C · ΔT = temperature change'**
+  String get simHeat5;
+
+  /// No description provided for @simHeat6.
+  ///
+  /// In en, this message translates to:
+  /// **'Particles represent microbial activity'**
+  String get simHeat6;
+
+  /// No description provided for @simHeat7.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature change (ΔT)'**
+  String get simHeat7;
+
+  /// No description provided for @simHeat8.
+  ///
+  /// In en, this message translates to:
+  /// **'Porosity (cross-module)'**
+  String get simHeat8;
+
+  /// No description provided for @simHeat9.
+  ///
+  /// In en, this message translates to:
+  /// **'PHASE RESULT'**
+  String get simHeat9;
+
+  /// No description provided for @simHeat10.
+  ///
+  /// In en, this message translates to:
+  /// **'Thermophilic phase: heat-loving bacteria work best and pathogens start to die.'**
+  String get simHeat10;
+
+  /// No description provided for @simHeat11.
+  ///
+  /// In en, this message translates to:
+  /// **'Module B — Heat & Composting Thermodynamics'**
+  String get simHeat11;
+
+  /// No description provided for @simHeat12.
+  ///
+  /// In en, this message translates to:
+  /// **'When microorganisms in a compost pile break down organic waste, they release energy as heat: a biological exothermic process. The pile warms up not because of fire or electricity, but because of the metabolism of millions of bacteria and fungi breaking organic molecules apart.\n\nThis module models how much heat a mass of compost has to absorb or release for a given temperature change, and links it to the real biological phases of composting.'**
+  String get simHeat12;
+
+  /// No description provided for @simHeat13.
+  ///
+  /// In en, this message translates to:
+  /// **'Mesophilic (< 55°C)'**
+  String get simHeat13;
+
+  /// No description provided for @simHeat14.
+  ///
+  /// In en, this message translates to:
+  /// **'Thermophilic (55 - 60°C)'**
+  String get simHeat14;
+
+  /// No description provided for @simHeat15.
+  ///
+  /// In en, this message translates to:
+  /// **'Too hot (> 60°C)'**
+  String get simHeat15;
+
+  /// No description provided for @simKinematics1.
+  ///
+  /// In en, this message translates to:
+  /// **'Kinematics'**
+  String get simKinematics1;
+
+  /// No description provided for @simKinematics2.
+  ///
+  /// In en, this message translates to:
+  /// **'MODULE E · LESSON'**
+  String get simKinematics2;
+
+  /// No description provided for @simKinematics3.
+  ///
+  /// In en, this message translates to:
+  /// **'Kinematics (uniform & accelerated motion)'**
+  String get simKinematics3;
+
+  /// No description provided for @simKinematics4.
+  ///
+  /// In en, this message translates to:
+  /// **'How long does ELIOS take to reach the target? Link distance, speed and time.'**
+  String get simKinematics4;
+
+  /// No description provided for @simKinematics5.
+  ///
+  /// In en, this message translates to:
+  /// **'TIME FORMULA (uniform motion)'**
+  String get simKinematics5;
+
+  /// No description provided for @simKinematics6.
+  ///
+  /// In en, this message translates to:
+  /// **'t = time · s = distance · v = constant speed'**
+  String get simKinematics6;
+
+  /// No description provided for @simKinematics7.
+  ///
+  /// In en, this message translates to:
+  /// **'Target distance (s)'**
+  String get simKinematics7;
+
+  /// No description provided for @simKinematics8.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed (v)'**
+  String get simKinematics8;
+
+  /// No description provided for @simKinematics9.
+  ///
+  /// In en, this message translates to:
+  /// **'PREDICTION'**
+  String get simKinematics9;
+
+  /// No description provided for @simKinematics10.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated time of arrival (ETA)'**
+  String get simKinematics10;
+
+  /// No description provided for @simKinematics11.
+  ///
+  /// In en, this message translates to:
+  /// **'Uniformly accelerated motion involves acceleration (a). In the real world ELIOS does not jump straight to full speed: the motor needs time (less than 1 second) to speed up from standstill to constant speed.\n\nFormula: s = v₀·t + ½·a·t²\n\nBecause ELIOS accelerates very quickly, the acceleration distance is tiny and is usually ignored for indoor navigation. But if an obstacle appears suddenly, the ELIOS emergency brake uses deceleration (negative acceleration) calculated with the same formula.'**
+  String get simKinematics11;
+
+  /// No description provided for @simKinematics12.
+  ///
+  /// In en, this message translates to:
+  /// **'Module E — Kinematics'**
+  String get simKinematics12;
+
+  /// No description provided for @simKinematics13.
+  ///
+  /// In en, this message translates to:
+  /// **'When ELIOS is sent to a waste collection point, its navigation system (Local Planner) has to know how far away it is and how long it will take to get there at a given speed. This is pure basic kinematics: the part of physics that studies motion without caring what causes it (force/mass).\n\nThis module models ELIOS moving in uniform straight-line motion.'**
+  String get simKinematics13;
+
+  /// No description provided for @simKinematics14.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus, accelerated motion: in the real world the ELIOS motor needs time to accelerate (s = v₀·t + ½·a·t²). But because ELIOS accelerates very quickly, uniform motion is accurate enough to compute the ETA.'**
+  String get simKinematics14;
+
+  /// No description provided for @simKinematics15.
+  ///
+  /// In en, this message translates to:
+  /// **'A common mistake when computing t is multiplying s and v (s·v) instead of dividing (s/v). The unit of s·v is m²/s, which makes no sense. Always check the final unit (m / (m/s) = s).'**
+  String get simKinematics15;
+
+  /// No description provided for @simDensityPainter1.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference'**
+  String get simDensityPainter1;
+
+  /// No description provided for @simDensityPainter2.
+  ///
+  /// In en, this message translates to:
+  /// **'Object'**
+  String get simDensityPainter2;
+
+  /// No description provided for @simTorquePainter1.
+  ///
+  /// In en, this message translates to:
+  /// **'TORQUE'**
+  String get simTorquePainter1;
+
+  /// No description provided for @simPowerBudget1.
+  ///
+  /// In en, this message translates to:
+  /// **'Power & Battery Budget'**
+  String get simPowerBudget1;
+
+  /// No description provided for @simPowerBudget2.
+  ///
+  /// In en, this message translates to:
+  /// **'MODULE G · LESSON'**
+  String get simPowerBudget2;
+
+  /// No description provided for @simPowerBudget3.
+  ///
+  /// In en, this message translates to:
+  /// **'POWER & ENERGY FORMULA'**
+  String get simPowerBudget3;
+
+  /// No description provided for @simPowerBudget4.
+  ///
+  /// In en, this message translates to:
+  /// **'Scenario presets:'**
+  String get simPowerBudget4;
+
+  /// No description provided for @simPowerBudget5.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage time (t)'**
+  String get simPowerBudget5;
+
+  /// No description provided for @simPowerBudget6.
+  ///
+  /// In en, this message translates to:
+  /// **'BATTERY LIFE PREDICTION'**
+  String get simPowerBudget6;
+
+  /// No description provided for @simPowerBudget7.
+  ///
+  /// In en, this message translates to:
+  /// **'Module G — Power & Battery Budget'**
+  String get simPowerBudget7;
+
+  /// No description provided for @simPowerBudget8.
+  ///
+  /// In en, this message translates to:
+  /// **'Every ELIOS part that is switched on (camera, drive motors, arm motor) draws power from the same battery. This module shows how to work out how long the battery lasts depending on which parts are active, a decision the ELIOS control system really makes in real time to save power.\n\nThe real power-saving behaviour of ELIOS follows this logic directly: the drive motors are switched off while sorting (the robot stands still), and the camera is switched off while moving when it is not analysing an object. Every watt that does not need to be on means extra seconds of operation before the battery needs recharging.'**
+  String get simPowerBudget8;
+
+  /// No description provided for @simPowerBudget9.
+  ///
+  /// In en, this message translates to:
+  /// **'P = V · I (power = voltage × current). Here the power (P) of each part is already given.'**
+  String get simPowerBudget9;
+
+  /// No description provided for @simPowerBudget10.
+  ///
+  /// In en, this message translates to:
+  /// **'E = P · t (energy = total power × time).'**
+  String get simPowerBudget10;
+
+  /// No description provided for @simPowerBudget11.
+  ///
+  /// In en, this message translates to:
+  /// **'Total capacity = 50,000 joules. t_estimate = 50,000 / P_total.'**
+  String get simPowerBudget11;
+
+  /// No description provided for @simPowerBudget12.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera 10 W, drive motors 36 W, arm motor 18 W.'**
+  String get simPowerBudget12;
+
+  /// No description provided for @simPwm1.
+  ///
+  /// In en, this message translates to:
+  /// **'PWM & Motor'**
+  String get simPwm1;
+
+  /// No description provided for @simPwm2.
+  ///
+  /// In en, this message translates to:
+  /// **'MODULE F · LESSON'**
+  String get simPwm2;
+
+  /// No description provided for @simPwm3.
+  ///
+  /// In en, this message translates to:
+  /// **'PWM & Effective Voltage'**
+  String get simPwm3;
+
+  /// No description provided for @simPwm4.
+  ///
+  /// In en, this message translates to:
+  /// **'EFFECTIVE AVERAGE VOLTAGE'**
+  String get simPwm4;
+
+  /// No description provided for @simPwm5.
+  ///
+  /// In en, this message translates to:
+  /// **'Square wave (PWM signal)'**
+  String get simPwm5;
+
+  /// No description provided for @simPwm6.
+  ///
+  /// In en, this message translates to:
+  /// **'MOTOR VOLTAGE'**
+  String get simPwm6;
+
+  /// No description provided for @simPwm7.
+  ///
+  /// In en, this message translates to:
+  /// **'Module F — PWM & Effective Motor Voltage'**
+  String get simPwm7;
+
+  /// No description provided for @simPwm8.
+  ///
+  /// In en, this message translates to:
+  /// **'V_avg = D · V_max (effective average voltage = duty cycle × maximum voltage).'**
+  String get simPwm8;
+
+  /// No description provided for @simPwm9.
+  ///
+  /// In en, this message translates to:
+  /// **'D (duty cycle) is the percentage of time the signal is \"on\" in one period.'**
+  String get simPwm9;
+
+  /// No description provided for @simPwm10.
+  ///
+  /// In en, this message translates to:
+  /// **'Linear model limits (important): the RPM estimate in this simulation is a linear approximation. On a real motor, the link between duty cycle and actual RPM is not fully linear once the motor carries a torque load.'**
+  String get simPwm10;
+
+  /// No description provided for @simPwm11.
+  ///
+  /// In en, this message translates to:
+  /// **'The claim \"lower average voltage = proportionally lower average current\" is ONLY TRUE FOR A PURELY RESISTIVE LOAD. In a motor (inductive + mechanical load) the current does not follow the voltage in a simple linear way.'**
+  String get simPwm11;
+
+  /// No description provided for @simTorque1.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot Shoulder Torque'**
+  String get simTorque1;
+
+  /// No description provided for @simTorque2.
+  ///
+  /// In en, this message translates to:
+  /// **'MODULE C · MECHANICS'**
+  String get simTorque2;
+
+  /// No description provided for @simTorque3.
+  ///
+  /// In en, this message translates to:
+  /// **'TORQUE FORMULA'**
+  String get simTorque3;
+
+  /// No description provided for @simTorque4.
+  ///
+  /// In en, this message translates to:
+  /// **'r = arm length · F = load · θ = angle'**
+  String get simTorque4;
+
+  /// No description provided for @simTorque5.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag the arm handle to change r & θ'**
+  String get simTorque5;
+
+  /// No description provided for @simTorque6.
+  ///
+  /// In en, this message translates to:
+  /// **'Arm length (r)'**
+  String get simTorque6;
+
+  /// No description provided for @simTorque7.
+  ///
+  /// In en, this message translates to:
+  /// **'Load (F)'**
+  String get simTorque7;
+
+  /// No description provided for @simTorque8.
+  ///
+  /// In en, this message translates to:
+  /// **'Angle (θ)'**
+  String get simTorque8;
+
+  /// No description provided for @simTorque9.
+  ///
+  /// In en, this message translates to:
+  /// **'INSTANT TORQUE'**
+  String get simTorque9;
+
+  /// No description provided for @simTorque10.
+  ///
+  /// In en, this message translates to:
+  /// **'CHALLENGE'**
+  String get simTorque10;
+
+  /// No description provided for @simTorque11.
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson: torque (moment of force)'**
+  String get simTorque11;
+
+  /// No description provided for @simSimCanvasFrame1.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠ TIP-OVER RISK'**
+  String get simSimCanvasFrame1;
+
+  /// No description provided for @simSimulationPageScaffold1.
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson'**
+  String get simSimulationPageScaffold1;
+
+  /// No description provided for @simWorkEnergy1.
+  ///
+  /// In en, this message translates to:
+  /// **'Work & Energy'**
+  String get simWorkEnergy1;
+
+  /// No description provided for @simWorkEnergy2.
+  ///
+  /// In en, this message translates to:
+  /// **'MODULE D · LESSON'**
+  String get simWorkEnergy2;
+
+  /// No description provided for @simWorkEnergy3.
+  ///
+  /// In en, this message translates to:
+  /// **'Work & Potential Energy'**
+  String get simWorkEnergy3;
+
+  /// No description provided for @simWorkEnergy4.
+  ///
+  /// In en, this message translates to:
+  /// **'Every lift turns battery energy into gravitational potential energy.'**
+  String get simWorkEnergy4;
+
+  /// No description provided for @simWorkEnergy5.
+  ///
+  /// In en, this message translates to:
+  /// **'WORK FORMULA (W)'**
+  String get simWorkEnergy5;
+
+  /// No description provided for @simWorkEnergy6.
+  ///
+  /// In en, this message translates to:
+  /// **'m = mass · g = 10 m/s² · h = height'**
+  String get simWorkEnergy6;
+
+  /// No description provided for @simWorkEnergy7.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the height and load to see the effect'**
+  String get simWorkEnergy7;
+
+  /// No description provided for @simWorkEnergy8.
+  ///
+  /// In en, this message translates to:
+  /// **'Load mass (m)'**
+  String get simWorkEnergy8;
+
+  /// No description provided for @simWorkEnergy9.
+  ///
+  /// In en, this message translates to:
+  /// **'Height (h)'**
+  String get simWorkEnergy9;
+
+  /// No description provided for @simWorkEnergy10.
+  ///
+  /// In en, this message translates to:
+  /// **'RESULT'**
+  String get simWorkEnergy10;
+
+  /// No description provided for @simWorkEnergy11.
+  ///
+  /// In en, this message translates to:
+  /// **'Module D — Work & Gravitational Potential Energy'**
+  String get simWorkEnergy11;
+
+  /// No description provided for @simWorkEnergy12.
+  ///
+  /// In en, this message translates to:
+  /// **'Every time ELIOS lifts waste from the tray into a higher container, it does work against gravity. This work is stored as gravitational potential energy in the lifted item: energy that is \"ready to be released\" if the item is dropped again.\n\nThis is not just an abstract idea: every joule of work the ELIOS arm motor does comes from the battery, so this module directly explains why lifting heavy loads more often and higher = the ELIOS battery runs out faster.'**
+  String get simWorkEnergy12;
+
+  /// No description provided for @simDeepDive24.
+  ///
+  /// In en, this message translates to:
+  /// **'• Fick\'s law (diffusion): the rate at which oxygen moves into the pile is proportional to the area of the pore paths and inversely proportional to the distance travelled; a dense pile = longer, narrower diffusion paths = oxygen gets in much more slowly.\n'**
+  String get simDeepDive24;
+
+  /// No description provided for @simDeepDive25.
+  ///
+  /// In en, this message translates to:
+  /// **'• Heat conduction, Q/t = kAΔT/L: the heat microbes produce in the core of the pile travels outwards by conduction; a dense pile also slows this down, which raises the risk of overheating (see Module B).\n'**
+  String get simDeepDive25;
+
+  /// No description provided for @simDeepDive26.
+  ///
+  /// In en, this message translates to:
+  /// **'• Jurin\'s law (capillarity): explains how moisture rises or stays between small particles, which affects how \"wet\" the pores remain over time.'**
+  String get simDeepDive26;
+
+  /// No description provided for @simDeepDive27.
+  ///
+  /// In en, this message translates to:
+  /// **'Each type of plastic absorbs and reflects near-infrared light at its own characteristic wavelengths, forming a kind of \"optical fingerprint\".'**
+  String get simDeepDive27;
+
+  /// No description provided for @simDeepDive28.
+  ///
+  /// In en, this message translates to:
+  /// **'Incinerating hazardous materials needs much higher temperatures than burning ordinary waste, to break the chemical bonds of toxic molecules (for example persistent organic compounds). The 1000°C threshold here illustrates the thermal decomposition point.'**
+  String get simDeepDive28;
+
+  /// No description provided for @simDeepDive29.
+  ///
+  /// In en, this message translates to:
+  /// **'Status: bonds still intact (hazardous)'**
+  String get simDeepDive29;
+
+  /// No description provided for @simDensity23.
+  ///
+  /// In en, this message translates to:
+  /// **'Ranges: plastic (0.9–1.4), glass (2.4–2.6), metal (≥ 2.7).'**
+  String get simDensity23;
+
+  /// No description provided for @simDensity24.
+  ///
+  /// In en, this message translates to:
+  /// **'Plastics with ρ < 1.0 (HDPE, PP) float in water. Plastics with ρ > 1.0 (PET, PVC) sink. This is a real flotation sorting technique used in industry!'**
+  String get simDensity24;
+
+  /// No description provided for @simHeat16.
+  ///
+  /// In en, this message translates to:
+  /// **'Heat from microbial activity changes the temperature of the compost pile. Watch its phase.'**
+  String get simHeat16;
+
+  /// No description provided for @simHeat17.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning: anaerobic, methane risk. Low porosity (<25%) and high temperature (>55°C).'**
+  String get simHeat17;
+
+  /// No description provided for @simHeat18.
+  ///
+  /// In en, this message translates to:
+  /// **'Overheated: too hot! Microbial activity slows down.'**
+  String get simHeat18;
+
+  /// No description provided for @simHeat19.
+  ///
+  /// In en, this message translates to:
+  /// **'Q = m · c · ΔT (heat = mass × specific heat × temperature change).'**
+  String get simHeat19;
+
+  /// No description provided for @simHeat20.
+  ///
+  /// In en, this message translates to:
+  /// **'Mesophilic phase (< 55°C): medium-temperature bacteria start breaking down simple sugars and proteins.'**
+  String get simHeat20;
+
+  /// No description provided for @simHeat21.
+  ///
+  /// In en, this message translates to:
+  /// **'Thermophilic phase (55–60°C): heat-loving bacteria dominate; this phase kills pathogens and weed seeds.'**
+  String get simHeat21;
+
+  /// No description provided for @simHeat22.
+  ///
+  /// In en, this message translates to:
+  /// **'Overheated (> 60°C): microbial activity slows or stops; turn the pile to release heat.'**
+  String get simHeat22;
+
+  /// No description provided for @simHeat23.
+  ///
+  /// In en, this message translates to:
+  /// **'Link with porosity: when porosity is < 25% AND the temperature is > 55°C, the pile can turn anaerobic (no oxygen left). Anaerobic microbes take over and produce methane (CH₄), a dangerous gas.'**
+  String get simHeat23;
+
+  /// No description provided for @simKinematics16.
+  ///
+  /// In en, this message translates to:
+  /// **'Uniform straight-line motion'**
+  String get simKinematics16;
+
+  /// No description provided for @simKinematics17.
+  ///
+  /// In en, this message translates to:
+  /// **'Uniform motion: constant speed (v), no acceleration (a = 0).'**
+  String get simKinematics17;
+
+  /// No description provided for @simKinematics18.
+  ///
+  /// In en, this message translates to:
+  /// **'v = s / t, so t = s / v (time = distance divided by speed).'**
+  String get simKinematics18;
+
+  /// No description provided for @simPowerBudget13.
+  ///
+  /// In en, this message translates to:
+  /// **'How long does the battery last? It depends on which parts are switched on.'**
+  String get simPowerBudget13;
+
+  /// No description provided for @simPowerBudget14.
+  ///
+  /// In en, this message translates to:
+  /// **'If P_total = 0, the runtime is mathematically infinite (∞).'**
+  String get simPowerBudget14;
+
+  /// No description provided for @simPwm12.
+  ///
+  /// In en, this message translates to:
+  /// **'Control the ELIOS motor speed without wasting energy as heat in a resistor.'**
+  String get simPwm12;
+
+  /// No description provided for @simPwm13.
+  ///
+  /// In en, this message translates to:
+  /// **'The DC motors in ELIOS (for example the wheel or arm motors) are not always given full voltage all the time. To control motor speed without wasting energy as heat, ELIOS uses PWM (pulse width modulation): it switches the full voltage on and off very quickly (hundreds to thousands of times per second) and sets what share of each cycle the voltage is on.\n\nThe old way to control motor speed was a resistive voltage divider (resistor/potentiometer) that lowers the voltage directly. The problem is that the extra energy is wasted as heat in the resistor: energy is lost and parts get hot.\n\nPWM never really \"lowers\" the voltage: it only switches the full voltage on and off very fast. Because the motor has mechanical inertia and coil inductance that smooth this on/off \"twitching\" into steady motion, the result feels like a lower voltage, but without wasting energy as resistive heat; only much smaller switching losses.'**
+  String get simPwm13;
+
+  /// No description provided for @simPwm14.
+  ///
+  /// In en, this message translates to:
+  /// **'A 60% duty cycle means fully on 60% of the time and off for the other 40%. The average is 7.2 V of the 12 V maximum.'**
+  String get simPwm14;
+
+  /// No description provided for @simTorque12.
+  ///
+  /// In en, this message translates to:
+  /// **'When ELIOS reaches out its arm, the shoulder joint holds more torque.'**
+  String get simTorque12;
+
+  /// No description provided for @simTorque13.
+  ///
+  /// In en, this message translates to:
+  /// **'Torque above 8 N·m: the robot could tip over!'**
+  String get simTorque13;
+
+  /// No description provided for @simTorque14.
+  ///
+  /// In en, this message translates to:
+  /// **'θ = 90°: maximum torque, the arm is perpendicular to the force.'**
+  String get simTorque14;
+
+  /// No description provided for @simTorque15.
+  ///
+  /// In en, this message translates to:
+  /// **'θ = 0° or 180°: zero torque, the force is parallel to the arm.'**
+  String get simTorque15;
+
+  /// No description provided for @simTorque16.
+  ///
+  /// In en, this message translates to:
+  /// **'Large r: more torque, but the robot is harder to keep stable.'**
+  String get simTorque16;
+
+  /// No description provided for @simWorkEnergy13.
+  ///
+  /// In en, this message translates to:
+  /// **'W = E_p = m · g · h (work = potential energy = mass × gravity × height).'**
+  String get simWorkEnergy13;
+
+  /// No description provided for @simWorkEnergy14.
+  ///
+  /// In en, this message translates to:
+  /// **'g (gravity) is rounded to 10 m/s² to keep the maths simple.'**
+  String get simWorkEnergy14;
+
+  /// No description provided for @simPwmMotorGets.
+  ///
+  /// In en, this message translates to:
+  /// **'The motor gets the equivalent of {volts} V'**
+  String simPwmMotorGets(Object volts);
+
+  /// No description provided for @simDensityMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material: {name}'**
+  String simDensityMaterial(Object name);
+
+  /// No description provided for @simPowerLegend.
+  ///
+  /// In en, this message translates to:
+  /// **'P_total = {watts} W · t = time (seconds)'**
+  String simPowerLegend(Object watts);
+
+  /// No description provided for @simPowerEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'t_estimate = 50000 J / {watts} W = {runtime}'**
+  String simPowerEstimate(Object watts, Object runtime);
+
+  /// No description provided for @simPowerLasts.
+  ///
+  /// In en, this message translates to:
+  /// **'Lasts {runtime}'**
+  String simPowerLasts(Object runtime);
+
+  /// No description provided for @simWorkBatteryLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery left: {percent}%'**
+  String simWorkBatteryLeft(Object percent);
+
+  /// No description provided for @simTorqueMotorStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Motor: {status} · safe limit 8 N·m'**
+  String simTorqueMotorStatus(Object status);
+
+  /// No description provided for @simTorqueSafe.
+  ///
+  /// In en, this message translates to:
+  /// **'SAFE'**
+  String get simTorqueSafe;
+
+  /// No description provided for @simTorqueWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'CAUTION'**
+  String get simTorqueWarning;
+
+  /// No description provided for @simTorqueCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'CRITICAL'**
+  String get simTorqueCritical;
+
+  /// No description provided for @simTorqueChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Find the heaviest load ELIOS can lift when r = {r} m and θ = 90° with a torque limit of 8 N·m.\nAnswer: F = τ/(r·sinθ) = 8 / {r} = 16 N'**
+  String simTorqueChallenge(Object r);
+
+  /// No description provided for @simTorqueBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Torque (τ) measures how effectively a force turns an object around a pivot. Torque depends on the moment arm and on the angle between the arm and the direction of the force.'**
+  String get simTorqueBody;
+
+  /// No description provided for @simKinArrival.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrival time = {distance} / {speed} = {time} seconds'**
+  String simKinArrival(Object distance, Object speed, Object time);
+
+  /// No description provided for @simHeatFinal.
+  ///
+  /// In en, this message translates to:
+  /// **'Final temperature = 25°C + {delta}°C = {result}°C'**
+  String simHeatFinal(Object delta, Object result);
+
+  /// No description provided for @physQDensity.
+  ///
+  /// In en, this message translates to:
+  /// **'A sample of inorganic waste has a mass of {m} g and a volume of {v} cm³. What is its density?'**
+  String physQDensity(Object m, Object v);
+
+  /// No description provided for @physQHeat.
+  ///
+  /// In en, this message translates to:
+  /// **'A compost pile with a mass of {m} kg warms up by {dt} °C. If the specific heat (c) of compost is {c} J/kg°C, how much heat (Q) did the microbes produce?'**
+  String physQHeat(Object m, Object dt, Object c);
+
+  /// No description provided for @physQTorque.
+  ///
+  /// In en, this message translates to:
+  /// **'The robot arm reaches out {r} m and lifts a load with a force of {f} N at an angle of {theta}° to the arm. How large is the torque at the shoulder joint?'**
+  String physQTorque(Object r, Object f, Object theta);
+
+  /// No description provided for @physQWork.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS lifts a {m} kg load to a height of {h} m. How much work does it do against gravity (g = 10 m/s²)?'**
+  String physQWork(Object m, Object h);
+
+  /// No description provided for @physQSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS drives {s} metres in a straight line in {t} seconds towards the target. What is its average speed?'**
+  String physQSpeed(Object s, Object t);
+
+  /// No description provided for @physQPwm.
+  ///
+  /// In en, this message translates to:
+  /// **'A PWM signal sets the motor voltage with a duty cycle (D) of {d}%. If the maximum battery voltage is {vmax} V, what is the average motor voltage?'**
+  String physQPwm(Object d, Object vmax);
+
+  /// No description provided for @physQPower.
+  ///
+  /// In en, this message translates to:
+  /// **'A subsystem draws {i} A from a {v} V battery. How much power does it use?'**
+  String physQPower(Object i, Object v);
 }
 
 class _AppLocalizationsDelegate

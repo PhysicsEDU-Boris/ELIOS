@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 
 import 'app_localizations.dart';
 
@@ -24,6 +25,13 @@ String dateLocaleOf(AppLocalizations t) {
   _dates;
   return t.localeName;
 }
+
+/// [v] with [digits] decimals in the app language ("1,5" in Indonesian, "1.5" in English).
+String fmtNum(num v, [int digits = 0]) =>
+    (NumberFormat.decimalPattern(dateLocale)
+          ..minimumFractionDigits = digits
+          ..maximumFractionDigits = digits)
+        .format(v);
 
 /// Tests: the language [l10n] returns outside widgets (normally set by ElioApp).
 @visibleForTesting

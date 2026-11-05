@@ -857,9 +857,15 @@ class _LoadingView extends ConsumerWidget {
             onStop: onStop,
             chips: [
               _InfoChip(
-                l10n.qzQuestionOfLevel(state.questionIndex + 1, state.totalQuestions, _level(state.difficulty)),
+                l10n.qzQuestionOfLevel(
+                  state.questionIndex + 1,
+                  state.totalQuestions,
+                  _level(state.difficulty),
+                ),
               ),
-              _InfoChip(l10n.qzScanned(state.scan?.displayName ?? l10n.qzReading)),
+              _InfoChip(
+                l10n.qzScanned(state.scan?.displayName ?? l10n.qzReading),
+              ),
               ?_notThisChip(context, state, n),
             ],
           ),
@@ -906,9 +912,7 @@ class _LoadingView extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        identifying
-                            ? l10n.qzReadingScan
-                            : l10n.qzPreparingNext,
+                        identifying ? l10n.qzReadingScan : l10n.qzPreparingNext,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -918,9 +922,7 @@ class _LoadingView extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        ai || identifying
-                            ? l10n.qzAiOnline
-                            : l10n.qzFromBank,
+                        ai || identifying ? l10n.qzAiOnline : l10n.qzFromBank,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: p.textSecondary, fontSize: 12),
@@ -942,7 +944,7 @@ class _LoadingView extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      'elapsed',
+                      l10n.qzElapsed,
                       style: TextStyle(color: p.textSecondary, fontSize: 11),
                     ),
                   ],
@@ -1122,7 +1124,10 @@ class _QuestionView extends ConsumerWidget {
             onStop: onStop,
             chips: [
               _InfoChip(
-                l10n.qzQuestionOf(state.questionIndex + 1, state.totalQuestions),
+                l10n.qzQuestionOf(
+                  state.questionIndex + 1,
+                  state.totalQuestions,
+                ),
               ),
               _InfoChip(l10n.qzScanned(state.scan?.displayName ?? '-')),
               ?_notThisChip(context, state, n),
@@ -1239,7 +1244,9 @@ class _QuestionFooter extends ConsumerWidget {
             TextButton(
               key: const ValueKey('quiz_skip'),
               onPressed: n.skipQuestion,
-              child: Text(state.isLastQuestion ? l10n.qzSkipFinish : l10n.qzSkip),
+              child: Text(
+                state.isLastQuestion ? l10n.qzSkipFinish : l10n.qzSkip,
+              ),
             ),
           ...trailing.where((w) => w is! SizedBox),
           read,
@@ -1358,7 +1365,10 @@ class _EssayInputView extends ConsumerWidget {
                 onStop: onStop,
                 chips: [
                   _InfoChip(
-                    l10n.qzQuestionOf(state.questionIndex + 1, state.totalQuestions),
+                    l10n.qzQuestionOf(
+                      state.questionIndex + 1,
+                      state.totalQuestions,
+                    ),
                   ),
                   _InfoChip(l10n.qzScanned(state.scan?.displayName ?? '-')),
                   ?_notThisChip(context, state, n),
@@ -1382,7 +1392,10 @@ class _EssayInputView extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            l10n.qzEssayCaps(_level(state.difficulty).toUpperCase(), wordLimit),
+                            l10n.qzEssayCaps(
+                              _level(state.difficulty).toUpperCase(),
+                              wordLimit,
+                            ),
                             style: TextStyle(
                               color: p.primaryText,
                               fontSize: 11,
@@ -1503,7 +1516,7 @@ class _EssayInputView extends ConsumerWidget {
                   readText: q.question,
                   trailing: [
                     Text(
-                      '$words / $wordLimit words',
+                      l10n.qzWordCount(words, wordLimit),
                       style: TextStyle(
                         color: words > wordLimit
                             ? p.errorText
@@ -1636,8 +1649,7 @@ class _HazardView extends ConsumerWidget {
       onStop: onStop,
       state: state,
       title: l10n.qzHazardTitle(state.scan?.displayName ?? ''),
-      body:
-          l10n.qzHazardBody,
+      body: l10n.qzHazardBody,
       actions: [
         _Pill(
           key: const ValueKey('quiz_scan_again'),
@@ -1671,8 +1683,12 @@ class _MismatchView extends ConsumerWidget {
       onStop: onStop,
       state: state,
       title: l10n.qzWhichBin,
-      body:
-          l10n.qzMismatchBody(detector, detectorCategory, state.scan?.displayName ?? '-', gemmaCategory),
+      body: l10n.qzMismatchBody(
+        detector,
+        detectorCategory,
+        state.scan?.displayName ?? '-',
+        gemmaCategory,
+      ),
       actions: [
         _Pill(
           icon: Icons.refresh_rounded,
@@ -1709,7 +1725,11 @@ class _FinishedView extends StatelessWidget {
           _Header(
             logo: true,
             onStop: onStop,
-            chips: [_InfoChip(state.notice != null ? l10n.qzScanChip : l10n.qzComplete)],
+            chips: [
+              _InfoChip(
+                state.notice != null ? l10n.qzScanChip : l10n.qzComplete,
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Expanded(
@@ -1792,7 +1812,9 @@ class _ReviewView extends ConsumerWidget {
                 alignment: Alignment.centerRight,
                 child: _GreenButton(
                   key: const ValueKey('quiz_next'),
-                  label: state.isLastQuestion ? l10n.qzFinish : l10n.qzNextQuestion,
+                  label: state.isLastQuestion
+                      ? l10n.qzFinish
+                      : l10n.qzNextQuestion,
                   onTap: state.sendingChat ? null : n.nextQuestion,
                 ),
               ),
@@ -1809,7 +1831,11 @@ class _ReviewView extends ConsumerWidget {
             onStop: onStop,
             chips: [
               _InfoChip(
-                l10n.qzQuestionOfLevel(state.questionIndex + 1, state.totalQuestions, essay ? l10n.qzEssayReview : l10n.qzReview),
+                l10n.qzQuestionOfLevel(
+                  state.questionIndex + 1,
+                  state.totalQuestions,
+                  essay ? l10n.qzEssayReview : l10n.qzReview,
+                ),
               ),
             ],
           ),
@@ -2213,7 +2239,11 @@ class _DocumentState extends State<_Document> {
           ),
           Flexible(
             child: Text(
-              l10n.qzQuestionOfCaps(s.questionIndex + 1, s.totalQuestions, essay ? l10n.qzEssayUpper : _level(s.difficulty).toUpperCase()),
+              l10n.qzQuestionOfCaps(
+                s.questionIndex + 1,
+                s.totalQuestions,
+                essay ? l10n.qzEssayUpper : _level(s.difficulty).toUpperCase(),
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.right,
@@ -2294,9 +2324,7 @@ class _DocumentState extends State<_Document> {
         if (essay) ...[
           if (ex.essayScore == null) ...[
             const SizedBox(height: 10),
-            para(
-              l10n.qzSavedNoTrophies,
-            ),
+            para(l10n.qzSavedNoTrophies),
           ] else if ((ex.essayFeedback ?? '').isNotEmpty) ...[
             heading(l10n.qzFeedback, p.primaryText),
             para(ex.essayFeedback!),
@@ -2484,11 +2512,7 @@ class _SourceChip extends StatelessWidget {
     final (icon, text, sub) = essay
         ? (Icons.auto_awesome, l10n.qzAiGraded, null)
         : bank
-        ? (
-            Icons.verified_outlined,
-            l10n.qzReviewedBank,
-            explanation.bankId,
-          )
+        ? (Icons.verified_outlined, l10n.qzReviewedBank, explanation.bankId)
         : (Icons.auto_awesome, l10n.qzAiGenerated, null);
     return Row(
       key: const ValueKey('doc_source'),
@@ -2645,9 +2669,7 @@ class _Coach extends StatelessWidget {
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
-                      hintText: essay
-                          ? l10n.qzAskScore
-                          : l10n.qzAsk,
+                      hintText: essay ? l10n.qzAskScore : l10n.qzAsk,
                       hintStyle: TextStyle(color: p.textTertiary, fontSize: 12),
                     ),
                     onSubmitted: onSend,

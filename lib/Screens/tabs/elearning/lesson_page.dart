@@ -57,7 +57,8 @@ class _LessonPageState extends ConsumerState<LessonPage> {
     final state = lesson.state(progress);
     final buttonLabel = switch (state) {
       LessonState.start => lesson.isVideo ? l10n.lnPlayVideo : l10n.lnOpenGuide,
-      LessonState.inProgress => lesson.isVideo ? l10n.lnContinueVideo(pct) : l10n.lnContinueGuide(pct),
+      LessonState.inProgress =>
+        lesson.isVideo ? l10n.lnContinueVideo(pct) : l10n.lnContinueGuide(pct),
       LessonState.done => lesson.isVideo ? l10n.lnWatchAgain : l10n.lnReadAgain,
     };
 
@@ -65,9 +66,16 @@ class _LessonPageState extends ConsumerState<LessonPage> {
       title: l10n.lnLesson,
       bottom: FilledButton.icon(
         onPressed: () => _open(lesson),
-        icon: Icon(lesson.isVideo ? Icons.play_circle_outline_rounded : Icons.description_outlined),
+        icon: Icon(
+          lesson.isVideo
+              ? Icons.play_circle_outline_rounded
+              : Icons.description_outlined,
+        ),
         label: Text(buttonLabel),
-        style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52), shape: const StadiumBorder()),
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(52),
+          shape: const StadiumBorder(),
+        ),
       ),
       body: StreamBuilder<List<ElearningModule>>(
         stream: _modules,
@@ -82,8 +90,12 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                 final siblings = loaded
                     ? mergeLessons(guidesSnap.data!, videosSnap.data!)
                     : const <LearnLesson>[];
-                final module = modulesSnap.data?.where((m) => m.id == lesson.moduleId).firstOrNull;
-                final position = siblings.indexWhere((l) => l.id == lesson.id && l.isVideo == lesson.isVideo);
+                final module = modulesSnap.data
+                    ?.where((m) => m.id == lesson.moduleId)
+                    .firstOrNull;
+                final position = siblings.indexWhere(
+                  (l) => l.id == lesson.id && l.isVideo == lesson.isVideo,
+                );
                 final quizzes = quizSnap.data ?? const <QuizSet>[];
                 final guides = siblings.where((l) => !l.isVideo).toList();
                 final videos = siblings.where((l) => l.isVideo).toList();
@@ -101,15 +113,24 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                             child: GestureDetector(
                               onTap: () => _open(lesson),
                               child: LearnCover(
-                                badge: lesson.isVideo ? lesson.lengthLabel : null,
+                                badge: lesson.isVideo
+                                    ? lesson.lengthLabel
+                                    : null,
                                 child: Stack(
                                   fit: StackFit.expand,
                                   children: [
-                                    LearnThumbnail(url: lesson.imageUrl, fallbackAsset: lesson.fallbackArt),
+                                    LearnThumbnail(
+                                      url: lesson.imageUrl,
+                                      fallbackAsset: lesson.fallbackArt,
+                                    ),
                                     Center(
                                       child: lesson.isVideo
                                           ? const PlayBadge(size: 56)
-                                          : Icon(Icons.description_outlined, size: 40, color: p.textPrimary),
+                                          : Icon(
+                                              Icons.description_outlined,
+                                              size: 40,
+                                              color: p.textPrimary,
+                                            ),
                                     ),
                                   ],
                                 ),
@@ -120,10 +141,15 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                           Text(
                             [
                               lesson.isVideo ? l10n.lnVideo : l10n.lnGuide,
-                              if (module != null && module.order > 0) l10n.lnModuleN(module.order),
-                              if (lesson.isVideo && lesson.video!.level.isNotEmpty) lesson.video!.level,
+                              if (module != null && module.order > 0)
+                                l10n.lnModuleN(module.order),
+                              if (lesson.isVideo &&
+                                  lesson.video!.level.isNotEmpty)
+                                lesson.video!.level,
                             ].join(' · '),
-                            style: context.text.labelMedium?.copyWith(color: p.textSecondary),
+                            style: context.text.labelMedium?.copyWith(
+                              color: p.textSecondary,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(lesson.title, style: context.text.titleLarge),
@@ -133,20 +159,31 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                             children: [
                               _Stat(
                                 icon: Icons.schedule_rounded,
-                                value: lesson.lengthLabel.isEmpty ? '–' : lesson.lengthLabel,
-                                label: lesson.isVideo ? l10n.lnDuration : l10n.lnReading,
+                                value: lesson.lengthLabel.isEmpty
+                                    ? '–'
+                                    : lesson.lengthLabel,
+                                label: lesson.isVideo
+                                    ? l10n.lnDuration
+                                    : l10n.lnReading,
                                 color: p.tertiaryText,
                               ),
                               _Stat(
                                 icon: Icons.menu_book_outlined,
-                                value: position < 0 ? '–' : l10n.lnPositionOf(position + 1, siblings.length),
+                                value: position < 0
+                                    ? '–'
+                                    : l10n.lnPositionOf(
+                                        position + 1,
+                                        siblings.length,
+                                      ),
                                 label: l10n.lnLesson,
                                 color: p.primaryText,
                               ),
                               _Stat(
                                 icon: Icons.check_rounded,
                                 value: '$pct%',
-                                label: lesson.isVideo ? l10n.lnWatched : l10n.lnRead,
+                                label: lesson.isVideo
+                                    ? l10n.lnWatched
+                                    : l10n.lnRead,
                                 color: p.primaryText,
                                 end: true,
                               ),
@@ -162,21 +199,30 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                           children: [
                             const SizedBox(
                               width: 48,
-                              child: LearnIllustration(LearnArt.mascot, height: 44),
+                              child: LearnIllustration(
+                                LearnArt.mascot,
+                                height: 44,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(module.title, style: context.text.titleSmall),
+                                  Text(
+                                    module.title,
+                                    style: context.text.titleSmall,
+                                  ),
                                   Text(
                                     [
-                                      if (module.order > 0) l10n.lnModuleN(module.order),
+                                      if (module.order > 0)
+                                        l10n.lnModuleN(module.order),
                                       if (module.level.isNotEmpty) module.level,
                                       '${(moduleProgress(module.id, siblings, progress) * 100).round()}%',
                                     ].join(' · '),
-                                    style: context.text.labelMedium?.copyWith(color: p.textSecondary),
+                                    style: context.text.labelMedium?.copyWith(
+                                      color: p.textSecondary,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -186,7 +232,12 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                       ),
                     if (lesson.description.isNotEmpty) ...[
                       LearnSectionHeader(title: l10n.lnAbout),
-                      Text(lesson.description, style: context.text.bodySmall?.copyWith(color: p.textSecondary)),
+                      Text(
+                        lesson.description,
+                        style: context.text.bodySmall?.copyWith(
+                          color: p.textSecondary,
+                        ),
+                      ),
                     ],
                     const SizedBox(height: 16),
                     LearnSegmented(
@@ -218,9 +269,13 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                                   GuideLessonRow(
                                     icon: Icons.help_outline_rounded,
                                     title: q.title,
-                                    subtitle: '${q.questionCount} questions',
+                                    subtitle: context.l10n.learnQuestionCount(
+                                      q.questionCount,
+                                    ),
                                     onTap: () => Navigator.of(context).push(
-                                      learnRoute<void>(QuizPage(moduleId: q.moduleId)),
+                                      learnRoute<void>(
+                                        QuizPage(moduleId: q.moduleId),
+                                      ),
                                     ),
                                   ),
                               ],
@@ -243,7 +298,9 @@ class _LessonPageState extends ConsumerState<LessonPage> {
                                 if (l.id == lesson.id) l10n.lnThisLesson,
                               ].join(' · '),
                               highlighted: l.id == lesson.id,
-                              onTap: l.id == lesson.id ? null : () => setState(() => _lesson = l),
+                              onTap: l.id == lesson.id
+                                  ? null
+                                  : () => setState(() => _lesson = l),
                             ),
                         ],
                       ),
@@ -277,10 +334,17 @@ class _Stat extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Expanded(
     child: Column(
-      crossAxisAlignment: end ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: end
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       children: [
         LearnMeta(icon: icon, label: value, color: color),
-        Text(label, style: context.text.labelMedium?.copyWith(color: context.elio.textSecondary)),
+        Text(
+          label,
+          style: context.text.labelMedium?.copyWith(
+            color: context.elio.textSecondary,
+          ),
+        ),
       ],
     ),
   );

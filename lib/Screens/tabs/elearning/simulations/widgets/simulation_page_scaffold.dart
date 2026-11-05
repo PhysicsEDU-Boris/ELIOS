@@ -40,8 +40,10 @@ class _SimulationPageScaffoldState extends State<SimulationPageScaffold> {
   @override
   Widget build(BuildContext context) {
     final tabs = <(String, IconData, Widget)>[
-      if (widget.deepExplainCard case final w?) (l10n.lnTabTheory, Icons.menu_book_outlined, w),
-      if (widget.formulaBox case final w?) (l10n.lnTabFormula, Icons.functions_rounded, w),
+      if (widget.deepExplainCard case final w?)
+        (l10n.lnTabTheory, Icons.menu_book_outlined, w),
+      if (widget.formulaBox case final w?)
+        (l10n.lnTabFormula, Icons.functions_rounded, w),
       (
         l10n.lnSimulations,
         Icons.science_outlined,
@@ -51,7 +53,10 @@ class _SimulationPageScaffoldState extends State<SimulationPageScaffold> {
         ),
       ),
     ];
-    final current = tabs.firstWhere((t) => t.$1 == _tab, orElse: () => tabs.last);
+    final current = tabs.firstWhere(
+      (t) => t.$1 == _tab,
+      orElse: () => tabs.last,
+    );
 
     return LearnPageScaffold(
       title: l10n.lnSimulations,
@@ -64,7 +69,10 @@ class _SimulationPageScaffoldState extends State<SimulationPageScaffold> {
                 if (widget.module case final id?) ...[
                   LearnCover(
                     aspectRatio: 16 / 10,
-                    child: LearnIllustration(LearnArt.simulation(id), fit: BoxFit.cover),
+                    child: LearnIllustration(
+                      LearnArt.simulation(id),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -85,7 +93,10 @@ class _SimulationPageScaffoldState extends State<SimulationPageScaffold> {
           ),
           const SizedBox(height: 16),
           // Materi is already a collapsible card; the others get one.
-          if (current.$1 == 'Materi') current.$3 else LearnCard(child: current.$3),
+          if (current.$1 == l10n.simSimulationPageScaffold1)
+            current.$3
+          else
+            LearnCard(child: current.$3),
         ],
       ),
     );
@@ -102,22 +113,42 @@ class _SimStats extends ConsumerWidget {
     final p = context.elio;
     final info = physicsModules.firstWhere((m) => m.id == module);
     final done =
-        ref.watch(physicsProgressProvider).valueOrNull?.viewedModuleIds.contains(module.name) ??
+        ref
+            .watch(physicsProgressProvider)
+            .valueOrNull
+            ?.viewedModuleIds
+            .contains(module.name) ??
         false;
-    Widget stat(IconData icon, String value, String label, Color color) => Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          LearnMeta(icon: icon, label: value, color: color),
-          Text(label, style: context.text.labelMedium?.copyWith(color: p.textSecondary)),
-        ],
-      ),
-    );
+    Widget stat(IconData icon, String value, String label, Color color) =>
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              LearnMeta(icon: icon, label: value, color: color),
+              Text(
+                label,
+                style: context.text.labelMedium?.copyWith(
+                  color: p.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        );
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        stat(Icons.functions_rounded, info.formula, l10n.lnTabFormula, p.primaryText),
-        stat(Icons.schedule_rounded, l10n.lnMinutes(info.durationMinutes), l10n.lnDuration, p.tertiaryText),
+        stat(
+          Icons.functions_rounded,
+          info.formula,
+          l10n.lnTabFormula,
+          p.primaryText,
+        ),
+        stat(
+          Icons.schedule_rounded,
+          l10n.lnMinutes(info.durationMinutes),
+          l10n.lnDuration,
+          p.tertiaryText,
+        ),
         stat(
           done ? Icons.check_rounded : Icons.radio_button_unchecked,
           done ? l10n.lnDone : l10n.lnNew,

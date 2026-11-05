@@ -1,0 +1,47 @@
+# Hard-coded strings allowed by tools/l10n/audit_strings.py (decision 0185).
+# path<TAB>literal as in source (or * for a debug-only file)<TAB>reason
+lib/Screens/config/config_parts.dart	ELIOS AI	brand name
+lib/Screens/config_screen.dart	MaixCAM2	product name of the camera
+lib/Screens/config_screen.dart	ELIOS	brand name
+lib/Screens/config_screen.dart	ELIOS AI	brand name
+lib/Screens/control_screen.dart	FPS ${streamFps.toStringAsFixed(1)} • F $frameCount • $resLabel	debug stream stats (units only)
+lib/Screens/login_screen.dart	ELIOS	brand name
+lib/Screens/tabs/elearning/simulations/density_simulation_page.dart	ρ = m / V = 	formula
+lib/Screens/tabs/elearning/simulations/density_simulation_page.dart	 g/cm³	unit
+lib/Screens/tabs/elearning/simulations/density_simulation_page.dart	Volume (V)	same word in English and Indonesian
+lib/Screens/tabs/elearning/simulations/heat_simulation_page.dart	Q = m·c·ΔT = 	formula
+lib/Screens/tabs/elearning/simulations/kinematics_simulation_page.dart	t = s / v = 	formula
+lib/Screens/tabs/elearning/simulations/power_budget_simulation_page.dart	E = P_total · t = 	formula
+lib/Screens/tabs/elearning/simulations/pwm_simulation_page.dart	V_avg = D · V_max = 	formula
+lib/Screens/tabs/elearning/simulations/pwm_simulation_page.dart	D = Duty Cycle · V_max = 12.0V	formula (technical term used in both languages)
+lib/Screens/tabs/elearning/simulations/pwm_simulation_page.dart	${fmtNum(state.approxRpm, 0)} RPM	unit
+lib/Screens/tabs/elearning/simulations/pwm_simulation_page.dart	Duty Cycle (D)	technical term used in both languages
+lib/Screens/tabs/elearning/simulations/torque_simulation_page.dart	τ = r · F · sin(θ) = 	formula
+lib/Screens/tabs/elearning/simulations/torque_simulation_page.dart	 N·m	unit
+lib/Screens/tabs/elearning/simulations/work_energy_simulation_page.dart	W = m·g·h = 	formula
+lib/main.dart	Startup failed: $error	boot error before Localizations exists (developer-facing)
+lib/main.dart	ELIOS	brand name
+lib/models/waste_category.dart	Organic Waste	matching key for progress ids, not shown
+lib/models/waste_category.dart	Inorganic Waste	matching key for progress ids, not shown
+lib/models/waste_category.dart	Hazardous Waste	matching key for progress ids, not shown
+lib/services/quiz_pdf_service.dart	ELIOS - ${record.itemName}	brand name + item name
+lib/services/robot/simulated_robot.dart	Plastic	simulated detector class label (machine)
+lib/services/robot/simulated_robot.dart	Human_Hand	simulated detector class label (machine)
+lib/widgets/auth/auth_widgets.dart	ELIOS	brand name
+lib/widgets/control/control_panels.dart	${cm.round()} cm	unit
+lib/widgets/control/control_panels.dart	${target.label} · ${cm.round()} cm	unit; label is a detector class
+lib/widgets/control_layout.dart	HOME	robot command name, same in both languages
+lib/widgets/control_layout.dart	STOP	robot command name, same in both languages
+lib/widgets/control_layout.dart	Space / Esc	keyboard key names
+lib/widgets/debug_phone_camera_sheet.dart	*	debug-only sheet (kDebugMode)
+lib/widgets/elio_sidebar.dart	ELIOS	brand name
+lib/widgets/live_scan_debug_overlay.dart	*	debug-only overlay
+lib/widgets/question_source_switch.dart	ELIOS AI	brand name
+lib/widgets/quiz/quiz_r3.dart	STOP	robot command name, same in both languages
+lib/widgets/quiz/quiz_r3.dart	ELIOS	brand name
+lib/widgets/quiz/quiz_r3.dart	AI	abbreviation, same in both languages
+lib/widgets/quiz/quiz_r3.dart	ELIOS AI	brand name
+lib/widgets/quiz_explanation_overlay.dart	ELIOS	brand name
+lib/widgets/quiz_explanation_overlay.dart	STOP	robot command name, same in both languages
+lib/widgets/tester_panel.dart	ELIOS AI	brand name
+lib/widgets/tester_panel.dart	AI: ${aiStateLabel(status, service.lastModel)}	tester-only status: abbreviation + model id

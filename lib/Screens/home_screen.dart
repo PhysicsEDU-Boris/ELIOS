@@ -34,8 +34,7 @@ import 'home/home_parts.dart';
 import 'home/home_search.dart';
 import 'login_screen.dart';
 import 'package:elio/l10n/l10n.dart';
-import 'tabs/elearning/simulations/simulations_page.dart'
-    show openSimulation;
+import 'tabs/elearning/simulations/simulations_page.dart' show openSimulation;
 
 const _controlTab = 3;
 const _historyTab = 4;
@@ -94,7 +93,7 @@ class HomeHeaderActions extends ConsumerWidget {
         ListenableBuilder(
           listenable: s,
           builder: (context, _) => Semantics(
-            label: '${s.totalTrophies} trophies',
+            label: l10n.a11yTrophies(s.totalTrophies),
             container: true,
             excludeSemantics: true,
             child: DecoratedBox(
@@ -302,8 +301,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SearchItem(
             scope: SearchScope.scans,
             title: r.itemName,
-            subtitle:
-                '${shortDate(r.time.toLocal())} · +${r.trophies} trophies',
+            subtitle: l10n.homeScanSubtitle(
+              shortDate(r.time.toLocal()),
+              r.trophies,
+            ),
             bin: HomeBin.of(r.category),
             onTap: () => _goTab(_historyTab),
           ),
@@ -481,10 +482,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           onOpenHistory: () => _goTab(_historyTab),
         ),
         const SizedBox(height: 12),
-        Text(
-          l10n.homeTapSquare,
-          style: homeSmall(p),
-        ),
+        Text(l10n.homeTapSquare, style: homeSmall(p)),
       ],
       gap,
       _BinBuddies(stats: stats),
@@ -511,7 +509,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final inGrid = stats.scansInGrid;
     final inMonth = stats.scansInMonth(month.year, month.month);
     final subtitle = _monthMode
-        ? l10n.scansInMonth(l10n.scanCount(inMonth), monthNames[month.month - 1])
+        ? l10n.scansInMonth(
+            l10n.scanCount(inMonth),
+            monthNames[month.month - 1],
+          )
         : inGrid == 0
         ? l10n.noScans17Weeks
         : l10n.scansIn17Weeks(l10n.scanCount(inGrid));
@@ -528,7 +529,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Semantics(
                       header: true,
-                      child: Text(context.l10n.homeScanActivity, style: homeTitle(p)),
+                      child: Text(
+                        context.l10n.homeScanActivity,
+                        style: homeTitle(p),
+                      ),
                     ),
                     Text(subtitle, style: homeSmall(p)),
                   ],
@@ -575,7 +579,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       homeArt('streak_flame', width: 16, height: 19),
                       const SizedBox(width: 6),
                       Text(
-                        l10n.homeStreakLine(l10n.dayCount(stats.currentStreak), stats.longestStreak),
+                        l10n.homeStreakLine(
+                          l10n.dayCount(stats.currentStreak),
+                          stats.longestStreak,
+                        ),
                         style: homeSmall(p),
                       ),
                     ],
@@ -728,8 +735,14 @@ class _Hero extends StatelessWidget {
     return Semantics(
       container: true,
       label:
-          l10n.levelSemantics(level.levelNumber, level.title, stats.totalTrophies) +
-          (toNext == null ? l10n.levelSemanticsTop : l10n.levelSemanticsNext(toNext, level.levelNumber + 1)),
+          l10n.levelSemantics(
+            level.levelNumber,
+            level.title,
+            stats.totalTrophies,
+          ) +
+          (toNext == null
+              ? l10n.levelSemanticsTop
+              : l10n.levelSemanticsNext(toNext, level.levelNumber + 1)),
       excludeSemantics: true,
       child: HomeCard(
         color: p.primary,
@@ -794,11 +807,17 @@ class _Hero extends StatelessWidget {
                       alignment: WrapAlignment.spaceBetween,
                       spacing: 8,
                       children: [
-                        Text(context.l10n.homeTrophies(stats.totalTrophies), style: label),
+                        Text(
+                          context.l10n.homeTrophies(stats.totalTrophies),
+                          style: label,
+                        ),
                         Text(
                           toNext == null
                               ? l10n.homeTopLevel
-                              : l10n.homeToNextLevel(toNext, level.levelNumber + 1),
+                              : l10n.homeToNextLevel(
+                                  toNext,
+                                  level.levelNumber + 1,
+                                ),
                           style: label,
                         ),
                       ],
@@ -841,7 +860,11 @@ class _StatsRow extends StatelessWidget {
         acc == null ? '—' : '$acc%',
         l10n.homeQuizAccuracy,
       ),
-      (homeArt('streak_flame', width: 26, height: 30), '$streak', l10n.homeDayStreak),
+      (
+        homeArt('streak_flame', width: 26, height: 30),
+        '$streak',
+        l10n.homeDayStreak,
+      ),
     ];
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -850,8 +873,10 @@ class _StatsRow extends StatelessWidget {
           if (i > 0) const SizedBox(width: 10),
           Expanded(
             child: Semantics(
-              label:
-                  '${tiles[i].$3}: ${tiles[i].$2 == '—' ? l10n.noData : tiles[i].$2}',
+              label: l10n.a11yLabelValue(
+                tiles[i].$3,
+                tiles[i].$2 == '—' ? l10n.noData : tiles[i].$2,
+              ),
               container: true,
               excludeSemantics: true,
               child: HomeCard(
@@ -918,12 +943,12 @@ class _Quests extends StatelessWidget {
                   children: [
                     Semantics(
                       header: true,
-                      child: Text(context.l10n.homeDailyQuests, style: homeTitle(p)),
+                      child: Text(
+                        context.l10n.homeDailyQuests,
+                        style: homeTitle(p),
+                      ),
                     ),
-                    Text(
-                      l10n.questsDoneLine(done),
-                      style: homeSmall(p),
-                    ),
+                    Text(l10n.questsDoneLine(done), style: homeSmall(p)),
                   ],
                 ),
               ),
@@ -958,8 +983,13 @@ class _Quests extends StatelessWidget {
           for (final q in quests) ...[
             const SizedBox(height: 10),
             Semantics(
-              label:
-                  l10n.questSemantics(q.title, q.done ? l10n.questDone : l10n.percentValue((q.progress * 100).round()), q.reward),
+              label: l10n.questSemantics(
+                q.title,
+                q.done
+                    ? l10n.questDone
+                    : l10n.percentValue((q.progress * 100).round()),
+                q.reward,
+              ),
               container: true,
               excludeSemantics: true,
               child: DecoratedBox(
@@ -1046,9 +1076,7 @@ class _BinBuddies extends StatelessWidget {
             child: Text(context.l10n.homeBinBuddies, style: homeTitle(p)),
           ),
           Text(
-            total == 0
-                ? l10n.binsHungry
-                : l10n.binsFed(l10n.scanCount(total)),
+            total == 0 ? l10n.binsHungry : l10n.binsFed(l10n.scanCount(total)),
             style: homeSmall(p),
           ),
           const SizedBox(height: 16),
@@ -1060,7 +1088,7 @@ class _BinBuddies extends StatelessWidget {
                 Expanded(
                   child: Semantics(
                     label:
-                        '${b.label} ${stats.binCounts[b]} scans, ${pct(stats.binCounts[b]!)}${b == top ? ', top bin' : ''}',
+                        '${l10n.a11yBinStat(b.label, stats.binCounts[b]!, pct(stats.binCounts[b]!))}${b == top ? l10n.a11yTopBin : ''}',
                     container: true,
                     excludeSemantics: true,
                     child: Column(
@@ -1140,7 +1168,10 @@ class _BinBuddies extends StatelessWidget {
           Text(
             stats.residuCount == 0
                 ? l10n.residuNote
-                : l10n.residuIncluded(stats.residuCount, l10n.scanWord(stats.residuCount)),
+                : l10n.residuIncluded(
+                    stats.residuCount,
+                    l10n.scanWord(stats.residuCount),
+                  ),
             style: homeSmall(p),
           ),
         ],
@@ -1169,15 +1200,19 @@ class _ThisWeek extends StatelessWidget {
             TextSpan(
               children: [
                 TextSpan(text: '${stats.weekTotal}', style: homeNumber(p, 30)),
-                TextSpan(text: ' scans', style: homeSmall(p)),
+                TextSpan(text: l10n.homeScansUnit, style: homeSmall(p)),
               ],
             ),
           ),
           const Spacer(),
           const SizedBox(height: 8),
           Semantics(
-            label:
-                l10n.weekSemantics(stats.weekTotal, [for (var i = 0; i < 7; i++) '${weekdayNames[i]} ${perDay[i]}'].join(', ')),
+            label: l10n.weekSemantics(
+              stats.weekTotal,
+              [
+                for (var i = 0; i < 7; i++) '${weekdayNames[i]} ${perDay[i]}',
+              ].join(', '),
+            ),
             container: true,
             excludeSemantics: true,
             child: Column(
@@ -1224,7 +1259,12 @@ class _QuizAccuracy extends StatelessWidget {
       label: acc == null
           ? l10n.quizAccNoData
           : l10n.quizAccSemantics(acc, points.length) +
-                (delta == null ? '' : l10n.quizAccDelta(delta >= 0 ? l10n.deltaUp : l10n.deltaDown, delta.abs())),
+                (delta == null
+                    ? ''
+                    : l10n.quizAccDelta(
+                        delta >= 0 ? l10n.deltaUp : l10n.deltaDown,
+                        delta.abs(),
+                      )),
       container: true,
       excludeSemantics: true,
       child: HomeCard(
@@ -1306,7 +1346,7 @@ class _Medals extends StatelessWidget {
                 ),
               ),
               Text(
-                '$unlocked of ${medals.length}',
+                l10n.homeMedalsOf(unlocked, medals.length),
                 style: homeSmall(
                   p,
                   color: p.primaryText,
@@ -1373,8 +1413,11 @@ class _Medals extends StatelessWidget {
     ];
     return Semantics(
       container: true,
-      label:
-          '${m.name}, ${m.unlocked ? 'unlocked' : 'locked'}. ${m.description}',
+      label: l10n.a11yMedal(
+        m.name,
+        m.unlocked ? l10n.a11yUnlocked : l10n.a11yLocked,
+        m.description,
+      ),
       excludeSemantics: true,
       child: DecoratedBox(
         decoration: ShapeDecoration(
@@ -1424,7 +1467,10 @@ class _DidYouKnow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(context.l10n.homeDidYouKnow, style: homeOverline(p.secondaryText)),
+                  Text(
+                    context.l10n.homeDidYouKnow,
+                    style: homeOverline(p.secondaryText),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     fact,

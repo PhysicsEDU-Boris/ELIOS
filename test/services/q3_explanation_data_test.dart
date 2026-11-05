@@ -115,7 +115,8 @@ void main() {
 
   test('History and the PDF cite the section, page and bank id', () {
     const e = QuizExplanation(summary: 's', correctAnswerReason: 'r', sourceTitle: 'Bank Soal ELIO', sourceSection: '1.3', sourcePage: '6', bankId: 'organik-mc-01');
-    expect(QuizPdfService.sourceLine(e), 'Sumber: Bank Soal ELIO · bagian 1.3 · hal. 6 · organik-mc-01');
+    // Legacy stored title 'Bank Soal ELIO' is shown as the localized ELIOS bank name.
+    expect(QuizPdfService.sourceLine(e), 'Source: ELIOS Question Bank · section 1.3 · p. 6 · organik-mc-01');
     expect(QuizPdfService.sourceLine(const QuizExplanation(summary: 's', correctAnswerReason: 'r')), isNull);
   });
   test('debug draft bank text never becomes an offline explanation', () async {

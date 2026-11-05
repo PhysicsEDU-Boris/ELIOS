@@ -1,3 +1,4 @@
+import 'package:elio/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../../../widgets/learn/learn_ui.dart';
 
@@ -5,14 +6,14 @@ class SimCanvasFrame extends StatelessWidget {
   final Widget canvas;
   final String noteText;
   final bool showRiskBadge;
-  final String riskBadgeText;
+  final String? riskBadgeText;
 
   const SimCanvasFrame({
     super.key,
     required this.canvas,
     required this.noteText,
     this.showRiskBadge = false,
-    this.riskBadgeText = '⚠ RISIKO TERGULING',
+    this.riskBadgeText,
   });
 
   @override
@@ -20,7 +21,10 @@ class SimCanvasFrame extends StatelessWidget {
     return Container(
       decoration: ShapeDecoration(
         color: context.elio.surfaceRaised,
-        shape: learnShape(learnRadiusM, BorderSide(color: context.elio.borderSubtle)),
+        shape: learnShape(
+          learnRadiusM,
+          BorderSide(color: context.elio.borderSubtle),
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
@@ -34,9 +38,9 @@ class SimCanvasFrame extends StatelessWidget {
           ),
           if (showRiskBadge)
             Positioned(
-              top: 10, 
-              right: 10, 
-              child: _RiskBadge(text: riskBadgeText),
+              top: 10,
+              right: 10,
+              child: _RiskBadge(text: riskBadgeText ?? l10n.simSimCanvasFrame1),
             ),
         ],
       ),
@@ -60,7 +64,9 @@ class _SimNote extends StatelessWidget {
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: context.text.labelMedium?.copyWith(color: context.elio.textSecondary),
+        style: context.text.labelMedium?.copyWith(
+          color: context.elio.textSecondary,
+        ),
       ),
     );
   }

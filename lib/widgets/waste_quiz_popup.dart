@@ -335,7 +335,7 @@ class _ResultCard extends ConsumerWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
-                '${state.correctCount} dari $totalQuestions benar',
+                l10n.wqCorrectOf(state.correctCount, totalQuestions),
                 style: GoogleFonts.inter(
                   color: elioInk,
                   fontSize: 14,
@@ -517,15 +517,15 @@ class _ResultCard extends ConsumerWidget {
                     await QuizPdfService.shareOrSave(record);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(context.l10n.pdfExported),
-                        ),
+                        SnackBar(content: Text(context.l10n.pdfExported)),
                       );
                     }
                   } catch (e) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(context.l10n.pdfExportFailed(e))),
+                        SnackBar(
+                          content: Text(context.l10n.pdfExportFailed(e)),
+                        ),
                       );
                     }
                   }

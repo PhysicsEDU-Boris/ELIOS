@@ -6,7 +6,6 @@ import '../../../models/guide_lesson.dart';
 import '../../../models/physics_module.dart';
 import '../../../models/quiz_set.dart';
 import '../../../models/video_lesson.dart';
-import '../../../models/waste_category.dart';
 import '../../../providers/learning_progress_provider.dart';
 import '../../../providers/physics_progress_provider.dart';
 import '../../../services/elearning_content_service.dart';
@@ -80,7 +79,11 @@ class _ModulePageState extends ConsumerState<ModulePage> {
 }
 
 class _ModuleBody extends ConsumerWidget {
-  const _ModuleBody({required this.module, required this.lessons, required this.quizSet});
+  const _ModuleBody({
+    required this.module,
+    required this.lessons,
+    required this.quizSet,
+  });
 
   final ElearningModule module;
 
@@ -95,17 +98,21 @@ class _ModuleBody extends ConsumerWidget {
     final physics = ref.watch(physicsProgressProvider).valueOrNull;
     final list = lessons ?? const <LearnLesson>[];
     final value = moduleProgress(module.id, list, progress);
-    final examples = wasteCategories
-        .where((c) => c.id == module.id)
-        .expand((c) => c.examples)
-        .map((e) => e.split(' (').first)
-        .toList();
-    final sim = physicsModules.firstWhere((m) => m.id == relatedSimulation(module.id));
+    final examples = switch (module.id) {
+      'organic' => context.l10n.catExamplesOrganic,
+      'inorganic' => context.l10n.catExamplesInorganic,
+      'hazardous' => context.l10n.catExamplesHazardous,
+      _ => '',
+    }.split('; ').where((e) => e.isNotEmpty).toList();
+    final sim = physicsModules.firstWhere(
+      (m) => m.id == relatedSimulation(module.id),
+    );
     final review = progress?.quizReviews[module.id];
     final best = progress?.quizScores[module.id];
     final attempted = (progress?.categories[module.id]?.quizAttempts ?? 0) > 0;
 
-    void push(Widget page) => Navigator.of(context).push(learnRoute<void>(page));
+    void push(Widget page) =>
+        Navigator.of(context).push(learnRoute<void>(page));
 
     return LearnListView(
       children: [
@@ -127,10 +134,15 @@ class _ModuleBody extends ConsumerWidget {
                 children: [
                   if (module.level.isNotEmpty) LevelChip(label: module.level),
                   if (module.durationMinutes > 0)
-                    LearnMeta(icon: Icons.schedule_rounded, label: '${module.durationMinutes} min'),
+                    LearnMeta(
+                      icon: Icons.schedule_rounded,
+                      label: context.l10n.learnMinutes(module.durationMinutes),
+                    ),
                   LearnMeta(
                     icon: Icons.menu_book_outlined,
-                    label: '${lessons?.length ?? module.lessonCount} lessons',
+                    label: context.l10n.learnLessonCount(
+                      lessons?.length ?? module.lessonCount,
+                    ),
                   ),
                 ],
               ),
@@ -138,15 +150,27 @@ class _ModuleBody extends ConsumerWidget {
               Text(module.title, style: context.text.titleLarge),
               if (module.description.isNotEmpty) ...[
                 const SizedBox(height: 4),
-                Text(module.description, style: context.text.bodySmall?.copyWith(color: p.textSecondary)),
+                Text(
+                  module.description,
+                  style: context.text.bodySmall?.copyWith(
+                    color: p.textSecondary,
+                  ),
+                ),
               ],
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(child: Text(context.l10n.moduleProgress, style: context.text.labelMedium)),
+                  Expanded(
+                    child: Text(
+                      context.l10n.moduleProgress,
+                      style: context.text.labelMedium,
+                    ),
+                  ),
                   Text(
                     '${(value * 100).round()}%',
-                    style: context.text.labelLarge?.copyWith(color: p.primaryText),
+                    style: context.text.labelLarge?.copyWith(
+                      color: p.primaryText,
+                    ),
                   ),
                 ],
               ),
@@ -160,9 +184,20 @@ class _ModuleBody extends ConsumerWidget {
                   children: [
                     for (final e in examples)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: ShapeDecoration(color: p.surfaceRaised, shape: learnShape(8)),
-                        child: Text(e, style: context.text.labelMedium?.copyWith(color: p.textSecondary)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: ShapeDecoration(
+                          color: p.surfaceRaised,
+                          shape: learnShape(8),
+                        ),
+                        child: Text(
+                          e,
+                          style: context.text.labelMedium?.copyWith(
+                            color: p.textSecondary,
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -212,7 +247,9 @@ class _ModuleBody extends ConsumerWidget {
         LearnSectionHeader(
           title: l10n.lqTitle,
           actionLabel: review == null ? null : l10n.navHistory,
-          onAction: review == null ? null : () => push(QuizReviewPage(review: review)),
+          onAction: review == null
+              ? null
+              : () => push(QuizReviewPage(review: review)),
         ),
         if (quizSet case final q?)
           QuizCard(

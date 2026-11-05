@@ -1,3 +1,4 @@
+import 'package:elio/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../../../theme/elio_learning_colors.dart';
 
@@ -19,7 +20,7 @@ class WorkEnergyPainter extends CustomPainter {
     final paintRuler = Paint()
       ..color = elioMuted
       ..strokeWidth = 2;
-    
+
     // Ruler axis
     final axisX = 30.0;
     canvas.drawLine(Offset(axisX, 20), Offset(axisX, 280), paintRuler);
@@ -29,8 +30,11 @@ class WorkEnergyPainter extends CustomPainter {
       final val = 1.5 - (i * 0.3); // 1.5, 1.2, 0.9, 0.6, 0.3, 0.0
       final y = 30 + (i * 50.0);
       canvas.drawLine(Offset(axisX - 5, y), Offset(axisX + 5, y), paintRuler);
-      
-      final textSpan = TextSpan(text: '${val.toStringAsFixed(1)}m', style: const TextStyle(color: elioMuted, fontSize: 10));
+
+      final textSpan = TextSpan(
+        text: '${fmtNum(val, 1)}m',
+        style: const TextStyle(color: elioMuted, fontSize: 10),
+      );
       final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr);
       tp.layout();
       tp.paint(canvas, Offset(axisX - 30, y - 5));
@@ -51,25 +55,39 @@ class WorkEnergyPainter extends CustomPainter {
     // Draw payload (scales visually with massKg: 0.5 to 5.0)
     // base size = 30, max size = 80
     final payloadSize = 30 + (massKg / 5.0) * 50;
-    final payloadRect = Rect.fromCenter(center: Offset(railX, lifterY - payloadSize / 2), width: payloadSize, height: payloadSize);
+    final payloadRect = Rect.fromCenter(
+      center: Offset(railX, lifterY - payloadSize / 2),
+      width: payloadSize,
+      height: payloadSize,
+    );
     final paintPayload = Paint()
       ..color = elioPrimary
       ..style = PaintingStyle.fill;
     canvas.drawRect(payloadRect, paintPayload);
-    
+
     // Draw "stack of newspaper" lines on payload
-    final paintLine = Paint()..color = Colors.white54..strokeWidth = 1.5;
+    final paintLine = Paint()
+      ..color = Colors.white54
+      ..strokeWidth = 1.5;
     for (int i = 1; i < 4; i++) {
       final ly = payloadRect.top + i * (payloadSize / 4);
-      canvas.drawLine(Offset(payloadRect.left + 2, ly), Offset(payloadRect.right - 2, ly), paintLine);
+      canvas.drawLine(
+        Offset(payloadRect.left + 2, ly),
+        Offset(payloadRect.right - 2, ly),
+        paintLine,
+      );
     }
-    
+
     // Draw lifter platform
     final paintPlatform = Paint()
       ..color = elioInk
       ..strokeWidth = 6
       ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(railX - payloadSize/2 - 10, lifterY), Offset(railX + payloadSize/2 + 10, lifterY), paintPlatform);
+    canvas.drawLine(
+      Offset(railX - payloadSize / 2 - 10, lifterY),
+      Offset(railX + payloadSize / 2 + 10, lifterY),
+      paintPlatform,
+    );
 
     canvas.restore();
   }
