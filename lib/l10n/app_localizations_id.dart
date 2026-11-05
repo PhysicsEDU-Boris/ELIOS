@@ -2882,4 +2882,361 @@ class AppLocalizationsId extends AppLocalizations {
   String r1NoReply(Object cmd, Object reason) {
     return 'Robot tidak menjawab ($cmd: $reason). Robot berhenti.';
   }
+
+  @override
+  String get h3Title => 'Riwayat';
+
+  @override
+  String get h3Subtitle => 'Hasil scan, kuis, dan piala';
+
+  @override
+  String get h3Back => 'Kembali';
+
+  @override
+  String get h3All => 'Semua';
+
+  @override
+  String get h3CatB3 => 'B3';
+
+  @override
+  String get h3CatB3Long => 'B3 · Berbahaya';
+
+  @override
+  String get h3CatRecyclable => 'Daur ulang';
+
+  @override
+  String get h3CatOrganic => 'Organik';
+
+  @override
+  String get h3CatResidu => 'Residu';
+
+  @override
+  String get h3Easy => 'Mudah';
+
+  @override
+  String get h3Medium => 'Sedang';
+
+  @override
+  String get h3Hard => 'Sulit';
+
+  @override
+  String get h3Today => 'Hari ini';
+
+  @override
+  String get h3Yesterday => 'Kemarin';
+
+  @override
+  String get h3LoadFailed => 'Riwayat belum dapat dimuat';
+
+  @override
+  String get h3RecentScans => 'Scan terbaru';
+
+  @override
+  String h3ScanCount(int count) {
+    return '$count scan';
+  }
+
+  @override
+  String get h3NoScansInCategory => 'Belum ada scan untuk kategori ini.';
+
+  @override
+  String h3Trophies(int count) {
+    return '$count piala';
+  }
+
+  @override
+  String h3ToNextLevel(Object count, Object level) {
+    return '$count piala ke Level $level';
+  }
+
+  @override
+  String get h3TopLevel => 'Level tertinggi';
+
+  @override
+  String get h3SavedLocally => 'Tersimpan lokal';
+
+  @override
+  String h3RowMeta(Object time, int count) {
+    return '$time · $count soal';
+  }
+
+  @override
+  String get h3DetailTitle => 'Detail scan';
+
+  @override
+  String get h3ExportPdf => 'Ekspor PDF';
+
+  @override
+  String get h3DetailLoadFailed => 'Detail scan belum dapat dimuat';
+
+  @override
+  String h3ScannedMeta(Object time, int count) {
+    return 'Scan $time · foto dan $count soal tersimpan lokal';
+  }
+
+  @override
+  String h3DiffChip(Object level, Object count) {
+    return '$level · ${count}Q';
+  }
+
+  @override
+  String h3CorrectOf(Object correct, Object total) {
+    return '$correct dari $total benar';
+  }
+
+  @override
+  String get h3TrophyRule => '10 piala untuk setiap jawaban benar';
+
+  @override
+  String get h3Questions => 'Soal';
+
+  @override
+  String get h3PdfFailed => 'PDF belum dapat diekspor. Coba lagi.';
+
+  @override
+  String get h3Correct => 'Benar';
+
+  @override
+  String get h3Incorrect => 'Salah';
+
+  @override
+  String get h3AwaitingGrading => 'Menunggu penilaian';
+
+  @override
+  String h3EssayScore(Object score) {
+    return 'Skor $score/10';
+  }
+
+  @override
+  String get h3YourAnswer => 'Jawabanmu';
+
+  @override
+  String get h3CorrectAnswer => 'Jawaban benar';
+
+  @override
+  String get h3ReferenceAnswer => 'Jawaban acuan';
+
+  @override
+  String get h3SeeExplanation => 'Lihat penjelasan';
+
+  @override
+  String get h3Listen => 'Dengarkan';
+
+  @override
+  String get h3Pause => 'Jeda';
+
+  @override
+  String get h3ReadingNow => 'SEDANG DIBACAKAN';
+
+  @override
+  String get h3KeyIdea => 'IDE UTAMA';
+
+  @override
+  String get h3TryAgain => 'Coba lagi';
+
+  @override
+  String get h3Loading => 'Sedang memuat';
+
+  @override
+  String get h3EmptyTitle => 'Belum ada scan';
+
+  @override
+  String get h3EmptyBody =>
+      'Scan benda dengan ELIOS. Hasil kuis dan pialamu akan muncul di sini.';
+
+  @override
+  String get h3StartScan => 'Mulai scan';
+
+  @override
+  String get h3ExplanationTitle => 'Penjelasan';
+
+  @override
+  String h3ExplanationMeta(Object item, Object index, Object total) {
+    return '$item · Soal $index dari $total';
+  }
+
+  @override
+  String get h3WhyCorrect => 'Kenapa ini jawaban yang benar';
+
+  @override
+  String get h3WhyWrong => 'Kenapa jawabanmu kurang tepat';
+
+  @override
+  String get h3Feedback => 'Umpan balik';
+
+  @override
+  String get h3HowTo => 'Cara melakukannya';
+
+  @override
+  String get h3NextQuestion => 'Soal berikutnya';
+
+  @override
+  String get h3ExplanationUnavailable => 'Penjelasan lengkap belum tersedia';
+
+  @override
+  String h3PdfSaved(Object path) {
+    return 'PDF tersimpan: $path';
+  }
+
+  @override
+  String get h3ExportQuestion => 'Ekspor soal ini';
+
+  @override
+  String h3ExportOnly(Object index, Object item) {
+    return 'Hanya soal $index dari $item masuk ke PDF.';
+  }
+
+  @override
+  String get h3A4Pdf => 'A4 · PDF';
+
+  @override
+  String get h3Include => 'SERTAKAN';
+
+  @override
+  String get h3IncAnswers => 'Soal dan kedua jawaban';
+
+  @override
+  String get h3IncExplanation => 'Penjelasan dan langkah';
+
+  @override
+  String get h3IncPhoto => 'Foto scan';
+
+  @override
+  String get h3IncNotes => 'Ruang catatan';
+
+  @override
+  String get h3Share => 'Bagikan';
+
+  @override
+  String get h3SavePdf => 'Simpan PDF';
+
+  @override
+  String get h3Saving => 'Menyimpan…';
+
+  @override
+  String h3ShownInOriginal(Object language) {
+    return 'Ditampilkan dalam $language, sambungkan internet untuk menerjemahkan';
+  }
+
+  @override
+  String get h3KeyIdeaTitle => 'Ide utama';
+
+  @override
+  String pdfQuestionHeader(Object item, Object index) {
+    return 'ELIOS | $item | Soal $index';
+  }
+
+  @override
+  String get pdfEssayScore => 'Skor esai';
+
+  @override
+  String get pdfReportTitle => 'ELIOS - Laporan Kuis Sampah';
+
+  @override
+  String pdfPageShort(Object page, Object total) {
+    return 'Hal. $page / $total';
+  }
+
+  @override
+  String pdfFooter(Object page, Object total, Object id) {
+    return 'ELIOS Edukasi Pemilahan Sampah | Halaman $page dari $total | ID sesi: $id';
+  }
+
+  @override
+  String get pdfSessionInfo => 'Informasi Sesi';
+
+  @override
+  String get pdfPhoto => 'FOTO';
+
+  @override
+  String get pdfItem => 'Benda';
+
+  @override
+  String get pdfCategory => 'Kategori';
+
+  @override
+  String get pdfDateTime => 'Tanggal / Waktu';
+
+  @override
+  String get pdfDifficulty => 'Tingkat Kesulitan';
+
+  @override
+  String get pdfQuestionCount => 'Jumlah Soal';
+
+  @override
+  String get pdfCorrect => 'Benar';
+
+  @override
+  String pdfCorrectOf(Object correct, Object total) {
+    return '$correct dari $total';
+  }
+
+  @override
+  String get pdfTrophies => 'Piala Diperoleh';
+
+  @override
+  String pdfTrophyCount(Object count) {
+    return '$count Piala';
+  }
+
+  @override
+  String get pdfGrade => 'Nilai';
+
+  @override
+  String pdfQuestionLine(Object index, Object question) {
+    return 'Soal $index: $question';
+  }
+
+  @override
+  String pdfEssayLine(Object score, Object trophies) {
+    return '$score / 10 (+$trophies Piala)';
+  }
+
+  @override
+  String get pdfNoExplanation => 'Penjelasan tidak tersimpan untuk soal ini.';
+
+  @override
+  String pdfSource(Object title) {
+    return 'Sumber: $title';
+  }
+
+  @override
+  String get pdfBankTitle => 'Bank Soal ELIOS';
+
+  @override
+  String pdfSection(Object section) {
+    return 'bagian $section';
+  }
+
+  @override
+  String pdfPage(Object page) {
+    return 'hal. $page';
+  }
+
+  @override
+  String get pdfTableCategories => 'Tabel 1. Perbandingan Kategori Sampah';
+
+  @override
+  String get pdfTableScoring => 'Tabel 1. Rincian penilaian';
+
+  @override
+  String get pdfColCategory => 'Kategori';
+
+  @override
+  String get pdfColMaterial => 'Material';
+
+  @override
+  String get pdfColAccepted => 'Diterima';
+
+  @override
+  String get pdfColCriterion => 'Kriteria';
+
+  @override
+  String get pdfColMax => 'Maks';
+
+  @override
+  String get pdfColAwarded => 'Diperoleh';
+
+  @override
+  String get pdfColComment => 'Komentar';
 }

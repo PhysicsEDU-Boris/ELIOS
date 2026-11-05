@@ -5,6 +5,9 @@ import '../models/quiz_explanation.dart';
 import '../models/scanned_waste.dart';
 import '../services/ai_quiz_service.dart';
 
+/// Stored source title of bank explanations; shown as the localized bank name.
+const bankSourceTitle = 'Bank Soal ELIOS';
+
 /// ELIOS AI explanations with reviewed bank fallback (0184).
 /// Legacy overlay fields are populated from the same saved text.
 class QuizExplanationService {
@@ -96,7 +99,7 @@ class QuizExplanationService {
       source: 'bank',
       bankId: question.bankId,
       quote: question.quote,
-      sourceTitle: 'Bank Soal ELIO',
+      sourceTitle: bankSourceTitle,
       sourceSection: question.sourceSection,
       sourcePage: question.sourcePage,
       groundingStatus: !question.bankReviewed || question.explanation.trim().isEmpty ? GroundingStatus.unavailable : GroundingStatus.bankGrounded,

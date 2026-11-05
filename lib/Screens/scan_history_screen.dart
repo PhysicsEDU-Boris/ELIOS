@@ -4,6 +4,7 @@ import '../models/scan_record.dart';
 import '../services/ai_quiz_service.dart';
 import '../services/quiz_pdf_service.dart';
 import '../services/scan_record_store.dart';
+import '../l10n/l10n.dart';
 import '../theme/elio_tokens.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
 import '../widgets/history_ui.dart';
@@ -93,17 +94,17 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                   : IconButton(
                       onPressed: widget.onClose,
                       icon: const Icon(Icons.arrow_back),
-                      tooltip: 'Kembali',
+                      tooltip: context.l10n.h3Back,
                     ),
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Riwayat',
+                    context.l10n.h3Title,
                     style: ElioTokens.subhead.copyWith(color: p.textPrimary),
                   ),
                   Text(
-                    'Hasil scan, kuis, dan piala',
+                    context.l10n.h3Subtitle,
                     style: ElioTokens.caption.copyWith(color: p.textSecondary),
                   ),
                 ],
@@ -115,7 +116,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
           builder: (context, box) {
             if (_failed || _store.loadError != null) {
               return HistoryError(
-                message: 'Riwayat belum dapat dimuat',
+                message: context.l10n.h3LoadFailed,
                 onRetry: _load,
               );
             }
@@ -145,7 +146,9 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                       ScanCategory.organic,
                     ])
                       HistoryFilterChip(
-                        c == null ? 'Semua' : historyCategory(c),
+                        c == null
+                            ? context.l10n.h3All
+                            : historyCategory(context.l10n, c),
                         selected: _filter == c,
                         onSelected: () => setState(() {
                           _filter = c;
@@ -156,8 +159,8 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                 ),
                 const SizedBox(height: 16),
                 HistorySectionHeader(
-                  'Scan terbaru',
-                  action: '${records.length} scan',
+                  context.l10n.h3RecentScans,
+                  action: context.l10n.h3ScanCount(records.length),
                 ),
                 const SizedBox(height: 16),
                 for (final r in records)
@@ -189,7 +192,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                   Padding(
                     padding: const EdgeInsets.all(24),
                     child: Text(
-                      'Belum ada scan untuk kategori ini.',
+                      context.l10n.h3NoScansInCategory,
                       style: ElioTokens.bodySmall.copyWith(
                         color: p.textSecondary,
                       ),
@@ -227,8 +230,11 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
       level: level.levelAndTitle,
       progress: _store.levelProgress,
       next: level.nextLevelThreshold == null
-          ? 'Level tertinggi'
-          : '${level.nextLevelThreshold! - total} piala ke Level ${level.levelNumber + 1}',
+          ? context.l10n.h3TopLevel
+          : context.l10n.h3ToNextLevel(
+              level.nextLevelThreshold! - total,
+              level.levelNumber + 1,
+            ),
     );
   }
 }
@@ -283,10 +289,10 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
   Widget build(BuildContext context) {
     final p = authPalette(context);
     final bar = HistoryTopBar(
-      title: 'Detail scan',
+      title: context.l10n.h3DetailTitle,
       showBack: !embedded,
       trailing: IconButton(
-        tooltip: 'Ekspor PDF',
+        tooltip: context.l10n.h3ExportPdf,
         icon: Icon(Icons.description_outlined, color: p.textPrimary),
         onPressed: () => _export(context),
       ),
@@ -297,7 +303,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
         appBar: bar,
         body: _failed || store.loadError != null
             ? HistoryError(
-                message: 'Detail scan belum dapat dimuat',
+                message: context.l10n.h3DetailLoadFailed,
                 onRetry: _load,
               )
             : const HistorySkeleton(HistoryLoadingLayout.detail),
@@ -339,7 +345,10 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Scan ${historyTime(record.time)} · foto dan ${record.totalQuestions} soal tersimpan lokal',
+                  context.l10n.h3ScannedMeta(
+                    historyTime(context.l10n, record.time),
+                    record.totalQuestions,
+                  ),
                   style: ElioTokens.caption.copyWith(color: p.textSecondary),
                 ),
               ),
@@ -355,7 +364,12 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
                 for (final d in QuizDifficulty.values) ...[
                   if (d.index > 0) const SizedBox(width: 8),
                   HistoryFilterChip(
-                    '${historyDifficulty(d)} · ${d == record.difficulty ? record.totalQuestions : d.questionCount}Q',
+                    context.l10n.h3DiffChip(
+                      historyDifficulty(context.l10n, d),
+                      d == record.difficulty
+                          ? record.totalQuestions
+                          : d.questionCount,
+                    ),
                     selected: d == record.difficulty,
                   ),
                 ],
@@ -366,8 +380,8 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
           HistoryScoreCard(record),
           const SizedBox(height: 16),
           HistorySectionHeader(
-            'Soal',
-            action: 'Ekspor PDF',
+            context.l10n.h3Questions,
+            action: context.l10n.h3ExportPdf,
             onAction: () => _export(context),
           ),
           const SizedBox(height: 16),
@@ -406,9 +420,9 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
       );
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('PDF belum dapat diekspor. Coba lagi.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.h3PdfFailed)));
       }
     }
   }

@@ -17,10 +17,17 @@ AppLocalizations get l10n => _current;
 final _dates = initializeDateFormatting();
 
 /// Locale for DateFormat in code without a BuildContext.
-String get dateLocale {
+String get dateLocale => dateLocaleOf(_current);
+
+/// Locale for DateFormat of [t] (loads the date names first).
+String dateLocaleOf(AppLocalizations t) {
   _dates;
-  return _current.localeName;
+  return t.localeName;
 }
+
+/// Tests: the language [l10n] returns outside widgets (normally set by ElioApp).
+@visibleForTesting
+void debugSetL10n(Locale locale) => _current = lookupAppLocalizations(locale);
 
 /// Called from ElioApp's builder. A language change marks every element dirty,
 /// so widgets that only read [l10n] (no Localizations dependency) rebuild too.

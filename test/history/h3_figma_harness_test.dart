@@ -19,6 +19,7 @@ import 'package:elio/widgets/elio_top_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:elio/l10n/l10n.dart';
 import 'package:image/image.dart' as img;
 import '../screens/auth_test_support.dart' show loadElioFonts;
 import 'h3_fixture.dart';
@@ -172,6 +173,9 @@ Widget shell(Widget child) => Builder(
 );
 
 void main() {
+  // H3 copy is asserted in Indonesian (decision 0185).
+  setUpAll(() => debugSetL10n(const Locale('id')));
+  tearDownAll(() => debugSetL10n(const Locale('en')));
   setUpAll(loadElioFonts);
   tearDown(() {
     AiQuizService.instance.mockSendExecute = null;
@@ -205,6 +209,9 @@ void main() {
         RepaintBoundary(
           key: const Key('capture'),
           child: MaterialApp(
+        locale: const Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
             debugShowCheckedModeBanner: false,
             theme: mode == Brightness.dark
                 ? ElioDarkTheme.data

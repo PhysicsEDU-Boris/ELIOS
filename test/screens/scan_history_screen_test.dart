@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:elio/l10n/l10n.dart';
 import 'package:elio/Screens/scan_history_screen.dart';
 import 'package:elio/Screens/question_explanation_screen.dart';
 import 'package:elio/services/ai_quiz_service.dart';
@@ -28,6 +29,9 @@ class WaitingStore extends HistoryTestStore {
 }
 
 void main() {
+  // H3 copy is asserted in Indonesian (decision 0185).
+  setUpAll(() => debugSetL10n(const Locale('id')));
+  tearDownAll(() => debugSetL10n(const Locale('en')));
   setUpAll(loadElioFonts);
   tearDown(() {
     AiQuizService.instance.mockSendExecute = null;
@@ -47,6 +51,9 @@ void main() {
     addTearDown(t.view.resetDevicePixelRatio);
     await t.pumpWidget(
       MaterialApp(
+        locale: const Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         debugShowCheckedModeBanner: false,
         theme: mode == Brightness.dark
             ? ElioDarkTheme.data
@@ -157,6 +164,9 @@ void main() {
           RepaintBoundary(
             key: const Key('capture'),
             child: MaterialApp(
+        locale: const Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
               debugShowCheckedModeBanner: false,
               theme: mode == Brightness.dark
                   ? ElioDarkTheme.data
@@ -262,7 +272,7 @@ void main() {
         expect(selected, findsOneWidget);
         expect(t.widget<Semantics>(selected).properties.label, 'Riwayat');
         final history = t.widget<Text>(find.text('Riwayat')),
-            home = t.widget<Text>(find.text('Home'));
+            home = t.widget<Text>(find.text('Beranda'));
         expect(
           history.style!.color,
           mode == Brightness.dark

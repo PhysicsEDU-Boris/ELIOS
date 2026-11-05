@@ -7,6 +7,7 @@ import '../services/history_explanation_service.dart';
 import '../services/quiz_pdf_service.dart';
 import '../services/quiz_tts_service.dart';
 import '../services/scan_record_store.dart';
+import '../l10n/l10n.dart';
 import '../theme/elio_tokens.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
 import '../widgets/history_ui.dart';
@@ -99,18 +100,17 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
   }
 
   List<(String, String, String)> get _sections {
-    final e = _explanation;
+    final e = _explanation, t = context.l10n;
     if (e == null) return [];
     return [
       if (e.correctAnswerReason.isNotEmpty)
-        ('correct', 'Kenapa ini jawaban yang benar', e.correctAnswerReason),
+        ('correct', t.h3WhyCorrect, e.correctAnswerReason),
       if (!_q.isCorrect && !_q.isEssay && e.selectedAnswerFeedback.isNotEmpty)
-        ('wrong', 'Kenapa jawabanmu kurang tepat', e.selectedAnswerFeedback),
+        ('wrong', t.h3WhyWrong, e.selectedAnswerFeedback),
       if (_q.isEssay && (e.essayFeedback ?? '').isNotEmpty)
-        ('feedback', 'Umpan balik', e.essayFeedback!),
-      if (e.keyIdea.isNotEmpty) ('idea', 'Ide utama', e.keyIdea),
-      if (e.steps.isNotEmpty)
-        ('steps', 'Cara melakukannya', e.steps.join('\n')),
+        ('feedback', t.h3Feedback, e.essayFeedback!),
+      if (e.keyIdea.isNotEmpty) ('idea', t.h3KeyIdeaTitle, e.keyIdea),
+      if (e.steps.isNotEmpty) ('steps', t.h3HowTo, e.steps.join('\n')),
     ];
   }
 
@@ -175,9 +175,12 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
       child: Scaffold(
         backgroundColor: p.background,
         appBar: HistoryTopBar(
-          title: 'Penjelasan',
-          subtitle:
-              '${_record.itemName} · Soal ${_index + 1} dari ${_record.questions.length}',
+          title: context.l10n.h3ExplanationTitle,
+          subtitle: context.l10n.h3ExplanationMeta(
+            _record.itemName,
+            _index + 1,
+            _record.questions.length,
+          ),
           trailing: ListenableBuilder(
             listenable: widget.store,
             builder: (_, child) =>
@@ -207,7 +210,10 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                                 essay: q.isEssay,
                               ),
                               HistoryChip(
-                                historyDifficulty(_record.difficulty),
+                                historyDifficulty(
+                                  context.l10n,
+                                  _record.difficulty,
+                                ),
                               ),
                               HistoryResultChip(q),
                               HistoryTrophyChip(q.trophies),
@@ -226,7 +232,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                   ),
                   const SizedBox(height: 16),
                   HistoryAnswer(
-                    'Jawabanmu',
+                    context.l10n.h3YourAnswer,
                     q.yourAnswer,
                     tone: q.isEssay
                         ? HistoryTone.neutral
@@ -236,13 +242,15 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                   ),
                   const SizedBox(height: 8),
                   HistoryAnswer(
-                    q.isEssay ? 'Jawaban acuan' : 'Jawaban benar',
+                    q.isEssay
+                        ? context.l10n.h3ReferenceAnswer
+                        : context.l10n.h3CorrectAnswer,
                     q.rightAnswer,
                     tone: q.isEssay ? HistoryTone.neutral : HistoryTone.success,
                     check: !q.isEssay,
                   ),
                   const SizedBox(height: 16),
-                  const HistorySectionHeader('Penjelasan'),
+                  HistorySectionHeader(context.l10n.h3ExplanationTitle),
                   const SizedBox(height: 16),
                   for (final (i, s)
                       in sections
@@ -275,7 +283,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                   if (body('steps') != null) ...[
                     const SizedBox(height: 16),
                     HistorySteps(
-                      title: 'Cara melakukannya',
+                      title: context.l10n.h3HowTo,
                       steps: steps,
                       active: _playing == 'steps',
                     ),
@@ -292,7 +300,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
               style: historyOutlineStyle(p),
               onPressed: _openExport,
               icon: const Icon(Icons.description_outlined),
-              label: const Text('Ekspor PDF'),
+              label: Text(context.l10n.h3ExportPdf),
             ),
             if (_index + 1 < _record.questions.length)
               FilledButton.icon(
@@ -305,7 +313,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                   unawaited(_load());
                 },
                 icon: const Icon(Icons.chevron_right),
-                label: const Text('Soal berikutnya'),
+                label: Text(context.l10n.h3NextQuestion),
               ),
           ],
         ),
@@ -355,15 +363,15 @@ class _QuestionExportSheetState extends State<QuestionExportSheet> {
           options: _options,
         );
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('PDF tersimpan: $path')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.h3PdfSaved(path))),
+          );
         }
       }
       if (mounted) Navigator.of(context).pop();
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'PDF belum dapat diekspor. Coba lagi.');
+        setState(() => _error = context.l10n.h3PdfFailed);
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -392,12 +400,15 @@ class _QuestionExportSheetState extends State<QuestionExportSheet> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Ekspor soal ini',
+            context.l10n.h3ExportQuestion,
             style: ElioTokens.subhead.copyWith(color: p.textPrimary),
           ),
           const SizedBox(height: 2),
           Text(
-            'Hanya soal ${widget.questionIndex + 1} dari ${widget.record.itemName} masuk ke PDF.',
+            context.l10n.h3ExportOnly(
+              widget.questionIndex + 1,
+              widget.record.itemName,
+            ),
             style: ElioTokens.caption.copyWith(color: p.textSecondary),
           ),
           const SizedBox(height: 16),
@@ -461,7 +472,7 @@ class _QuestionExportSheetState extends State<QuestionExportSheet> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'A4 · PDF',
+                        context.l10n.h3A4Pdf,
                         style: ElioTokens.caption.copyWith(
                           color: p.textSecondary,
                         ),
@@ -474,7 +485,7 @@ class _QuestionExportSheetState extends State<QuestionExportSheet> {
           ),
           const SizedBox(height: 16),
           Text(
-            'SERTAKAN',
+            context.l10n.h3Include,
             style: ElioTokens.overline.copyWith(color: p.textTertiary),
           ),
           const SizedBox(height: 16),
@@ -497,10 +508,10 @@ class _QuestionExportSheetState extends State<QuestionExportSheet> {
                   : (value) => setState(() => _include[i] = value!),
               title: Text(
                 [
-                  'Soal dan kedua jawaban',
-                  'Penjelasan dan langkah',
-                  'Foto scan',
-                  'Ruang catatan',
+                  context.l10n.h3IncAnswers,
+                  context.l10n.h3IncExplanation,
+                  context.l10n.h3IncPhoto,
+                  context.l10n.h3IncNotes,
                 ][i],
                 style: ElioTokens.body.copyWith(color: p.textPrimary),
               ),
@@ -518,7 +529,7 @@ class _QuestionExportSheetState extends State<QuestionExportSheet> {
                   style: historyOutlineStyle(p),
                   onPressed: _busy ? null : () => _export(true),
                   icon: const Icon(Icons.share_outlined),
-                  label: const Text('Bagikan'),
+                  label: Text(context.l10n.h3Share),
                 ),
               ),
               const SizedBox(width: 12),
@@ -527,7 +538,9 @@ class _QuestionExportSheetState extends State<QuestionExportSheet> {
                   style: historyPrimaryStyle(p),
                   onPressed: _busy ? null : () => _export(false),
                   icon: const Icon(Icons.description_outlined),
-                  label: Text(_busy ? 'Menyimpan…' : 'Simpan PDF'),
+                  label: Text(
+                    _busy ? context.l10n.h3Saving : context.l10n.h3SavePdf,
+                  ),
                 ),
               ),
             ],

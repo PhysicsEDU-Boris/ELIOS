@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import '../services/ai_quiz_service.dart';
 import 'quiz_explanation.dart';
 import 'trophy_rules.dart';
@@ -7,44 +8,39 @@ import 'trophy_rules.dart';
 enum ScanCategory {
   b3(
     id: 'b3',
-    filterLabel: 'B3',
-    badgeLabel: 'B3 · Hazardous',
     bg: Color(0xFFFDEDEC),
     fg: Color(0xFFE74C3C),
   ),
   recyclable(
     id: 'recyclable',
-    filterLabel: 'Recyclable',
-    badgeLabel: 'Recyclable',
     bg: Color(0xFFE8F8F5),
     fg: Color(0xFF16A085),
   ),
   organic(
     id: 'organic',
-    filterLabel: 'Organic',
-    badgeLabel: 'Organic',
     bg: Color(0xFFFEF9E7),
     fg: Color(0xFFF39C12),
   ),
   residu(
     id: 'residu',
-    filterLabel: 'Residu',
-    badgeLabel: 'Residu',
     bg: Color(0xFFF2F4F4),
     fg: Color(0xFF7F8C8D),
   );
 
   const ScanCategory({
     required this.id,
-    required this.filterLabel,
-    required this.badgeLabel,
     required this.bg,
     required this.fg,
   });
 
   final String id;
-  final String filterLabel;
-  final String badgeLabel;
+  /// Chip/PDF label in the app language ("B3 · Hazardous").
+  String get badgeLabel => switch (this) {
+    b3 => l10n.h3CatB3Long,
+    recyclable => l10n.h3CatRecyclable,
+    organic => l10n.h3CatOrganic,
+    residu => l10n.h3CatResidu,
+  };
   final Color bg;
   final Color fg;
 
@@ -179,11 +175,14 @@ class ScanRecord {
   QuizGrade get grade =>
       gradeFor(trophies: trophies, totalQuestions: totalQuestions);
 
-  String get difficultyLabel => switch (difficulty) {
-    QuizDifficulty.easy => 'Easy · 1Q',
-    QuizDifficulty.medium => 'Medium · 2Q',
-    QuizDifficulty.hard => 'Hard · 3Q',
-  };
+  String get difficultyLabel => l10n.h3DiffChip(
+    switch (difficulty) {
+      QuizDifficulty.easy => l10n.h3Easy,
+      QuizDifficulty.medium => l10n.h3Medium,
+      QuizDifficulty.hard => l10n.h3Hard,
+    },
+    totalQuestions,
+  );
 
   Map<String, dynamic> toJson() => {
     'schemaVersion': schemaVersion,

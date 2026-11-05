@@ -320,6 +320,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                         subtitle: switch (_currentIndex) {
                           0 => l10n.homeReady,
                           2 => l10n.configTopSubtitle,
+                          _historyIndex => l10n.h3Subtitle,
                           _ => null,
                         },
                         trailing: switch (_currentIndex) {

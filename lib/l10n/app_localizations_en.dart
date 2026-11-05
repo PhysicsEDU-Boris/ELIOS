@@ -2927,4 +2927,386 @@ class AppLocalizationsEn extends AppLocalizations {
   String r1NoReply(Object cmd, Object reason) {
     return 'The robot did not reply ($cmd: $reason). The robot stopped.';
   }
+
+  @override
+  String get h3Title => 'History';
+
+  @override
+  String get h3Subtitle => 'Scan results, quizzes & trophies';
+
+  @override
+  String get h3Back => 'Back';
+
+  @override
+  String get h3All => 'All';
+
+  @override
+  String get h3CatB3 => 'B3';
+
+  @override
+  String get h3CatB3Long => 'B3 · Hazardous';
+
+  @override
+  String get h3CatRecyclable => 'Recyclable';
+
+  @override
+  String get h3CatOrganic => 'Organic';
+
+  @override
+  String get h3CatResidu => 'Residual';
+
+  @override
+  String get h3Easy => 'Easy';
+
+  @override
+  String get h3Medium => 'Medium';
+
+  @override
+  String get h3Hard => 'Hard';
+
+  @override
+  String get h3Today => 'Today';
+
+  @override
+  String get h3Yesterday => 'Yesterday';
+
+  @override
+  String get h3LoadFailed => 'History couldn\'t be loaded';
+
+  @override
+  String get h3RecentScans => 'Recent scans';
+
+  @override
+  String h3ScanCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count scans',
+      one: '1 scan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get h3NoScansInCategory => 'No scans in this category yet.';
+
+  @override
+  String h3Trophies(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count trophies',
+      one: '1 trophy',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String h3ToNextLevel(Object count, Object level) {
+    return '$count trophies to Level $level';
+  }
+
+  @override
+  String get h3TopLevel => 'Top level';
+
+  @override
+  String get h3SavedLocally => 'Saved locally';
+
+  @override
+  String h3RowMeta(Object time, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count questions',
+      one: '1 question',
+    );
+    return '$time · $_temp0';
+  }
+
+  @override
+  String get h3DetailTitle => 'Scan detail';
+
+  @override
+  String get h3ExportPdf => 'Export PDF';
+
+  @override
+  String get h3DetailLoadFailed => 'Scan detail couldn\'t be loaded';
+
+  @override
+  String h3ScannedMeta(Object time, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count questions',
+      one: '1 question',
+    );
+    return 'Scanned $time · photo and $_temp0 saved locally';
+  }
+
+  @override
+  String h3DiffChip(Object level, Object count) {
+    return '$level · ${count}Q';
+  }
+
+  @override
+  String h3CorrectOf(Object correct, Object total) {
+    return '$correct of $total correct';
+  }
+
+  @override
+  String get h3TrophyRule => '10 trophies for every correct answer';
+
+  @override
+  String get h3Questions => 'Questions';
+
+  @override
+  String get h3PdfFailed => 'The PDF couldn\'t be exported. Try again.';
+
+  @override
+  String get h3Correct => 'Correct';
+
+  @override
+  String get h3Incorrect => 'Incorrect';
+
+  @override
+  String get h3AwaitingGrading => 'Awaiting grading';
+
+  @override
+  String h3EssayScore(Object score) {
+    return 'Score $score/10';
+  }
+
+  @override
+  String get h3YourAnswer => 'Your answer';
+
+  @override
+  String get h3CorrectAnswer => 'Correct answer';
+
+  @override
+  String get h3ReferenceAnswer => 'Reference answer';
+
+  @override
+  String get h3SeeExplanation => 'See explanation';
+
+  @override
+  String get h3Listen => 'Listen';
+
+  @override
+  String get h3Pause => 'Pause';
+
+  @override
+  String get h3ReadingNow => 'READING NOW';
+
+  @override
+  String get h3KeyIdea => 'KEY IDEA';
+
+  @override
+  String get h3TryAgain => 'Try again';
+
+  @override
+  String get h3Loading => 'Loading';
+
+  @override
+  String get h3EmptyTitle => 'No scans yet';
+
+  @override
+  String get h3EmptyBody =>
+      'Scan an item with ELIOS and its quiz results and trophies will show up here.';
+
+  @override
+  String get h3StartScan => 'Start scanning';
+
+  @override
+  String get h3ExplanationTitle => 'Explanation';
+
+  @override
+  String h3ExplanationMeta(Object item, Object index, Object total) {
+    return '$item · Q$index of $total';
+  }
+
+  @override
+  String get h3WhyCorrect => 'Why this is the right answer';
+
+  @override
+  String get h3WhyWrong => 'Why your answer isn’t right';
+
+  @override
+  String get h3Feedback => 'Feedback';
+
+  @override
+  String get h3HowTo => 'How to do it';
+
+  @override
+  String get h3NextQuestion => 'Next question';
+
+  @override
+  String get h3ExplanationUnavailable =>
+      'The full explanation isn\'t available yet';
+
+  @override
+  String h3PdfSaved(Object path) {
+    return 'PDF saved: $path';
+  }
+
+  @override
+  String get h3ExportQuestion => 'Export this question';
+
+  @override
+  String h3ExportOnly(Object index, Object item) {
+    return 'Only Q$index of $item goes into the PDF.';
+  }
+
+  @override
+  String get h3A4Pdf => 'A4 · PDF';
+
+  @override
+  String get h3Include => 'INCLUDE';
+
+  @override
+  String get h3IncAnswers => 'Question and both answers';
+
+  @override
+  String get h3IncExplanation => 'Full explanation and steps';
+
+  @override
+  String get h3IncPhoto => 'Scan photo';
+
+  @override
+  String get h3IncNotes => 'Space for my notes';
+
+  @override
+  String get h3Share => 'Share';
+
+  @override
+  String get h3SavePdf => 'Save PDF';
+
+  @override
+  String get h3Saving => 'Saving…';
+
+  @override
+  String h3ShownInOriginal(Object language) {
+    return 'Shown in $language, connect to translate';
+  }
+
+  @override
+  String get h3KeyIdeaTitle => 'Key idea';
+
+  @override
+  String pdfQuestionHeader(Object item, Object index) {
+    return 'ELIOS | $item | Q$index';
+  }
+
+  @override
+  String get pdfEssayScore => 'Essay score';
+
+  @override
+  String get pdfReportTitle => 'ELIOS - Waste Quiz Report';
+
+  @override
+  String pdfPageShort(Object page, Object total) {
+    return 'Page $page / $total';
+  }
+
+  @override
+  String pdfFooter(Object page, Object total, Object id) {
+    return 'ELIOS Waste Sorting Education | Page $page of $total | Session ID: $id';
+  }
+
+  @override
+  String get pdfSessionInfo => 'Session information';
+
+  @override
+  String get pdfPhoto => 'PHOTO';
+
+  @override
+  String get pdfItem => 'Item';
+
+  @override
+  String get pdfCategory => 'Category';
+
+  @override
+  String get pdfDateTime => 'Date / time';
+
+  @override
+  String get pdfDifficulty => 'Difficulty';
+
+  @override
+  String get pdfQuestionCount => 'Questions';
+
+  @override
+  String get pdfCorrect => 'Correct';
+
+  @override
+  String pdfCorrectOf(Object correct, Object total) {
+    return '$correct of $total';
+  }
+
+  @override
+  String get pdfTrophies => 'Trophies earned';
+
+  @override
+  String pdfTrophyCount(Object count) {
+    return '$count trophies';
+  }
+
+  @override
+  String get pdfGrade => 'Grade';
+
+  @override
+  String pdfQuestionLine(Object index, Object question) {
+    return 'Q$index: $question';
+  }
+
+  @override
+  String pdfEssayLine(Object score, Object trophies) {
+    return '$score / 10 (+$trophies trophies)';
+  }
+
+  @override
+  String get pdfNoExplanation => 'No explanation was saved for this question.';
+
+  @override
+  String pdfSource(Object title) {
+    return 'Source: $title';
+  }
+
+  @override
+  String get pdfBankTitle => 'ELIOS Question Bank';
+
+  @override
+  String pdfSection(Object section) {
+    return 'section $section';
+  }
+
+  @override
+  String pdfPage(Object page) {
+    return 'p. $page';
+  }
+
+  @override
+  String get pdfTableCategories => 'Table 1. Waste category comparison';
+
+  @override
+  String get pdfTableScoring => 'Table 1. Scoring breakdown';
+
+  @override
+  String get pdfColCategory => 'Category';
+
+  @override
+  String get pdfColMaterial => 'Material';
+
+  @override
+  String get pdfColAccepted => 'Accepted';
+
+  @override
+  String get pdfColCriterion => 'Criterion';
+
+  @override
+  String get pdfColMax => 'Max';
+
+  @override
+  String get pdfColAwarded => 'Awarded';
+
+  @override
+  String get pdfColComment => 'Comment';
 }

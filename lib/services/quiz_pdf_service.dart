@@ -8,9 +8,13 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import 'package:intl/intl.dart';
+
+import '../l10n/l10n.dart';
 import '../models/quiz_explanation.dart';
 import '../models/scan_record.dart';
 import '../models/trophy_rules.dart';
+import 'quiz_explanation_service.dart' show bankSourceTitle;
 
 // ---------------------------------------------------------------------------
 // Colors (approximated from Figma palette for PDF)
@@ -86,35 +90,35 @@ class QuizPdfService {
     final doc = pw.Document();
     doc.addPage(pw.MultiPage(pageFormat: PdfPageFormat.a4,
       margin: const pw.EdgeInsets.all(32), build: (_) => [
-        pw.Text('ELIOS | ${record.itemName} | Soal ${index + 1}',
+        pw.Text(l10n.pdfQuestionHeader(record.itemName, index + 1),
           style: pw.TextStyle(fontSize: 12, color: _green, fontWeight: pw.FontWeight.bold)),
         pw.SizedBox(height: 16),
         if (options.answers) ...[
           pw.Text(q.question, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 12),
-          ..._answerRow('Jawabanmu', q.yourAnswer, _ink),
-          ..._answerRow(q.isEssay ? 'Jawaban acuan' : 'Jawaban benar', q.rightAnswer, _correctGreen),
-          if (q.isEssay) ..._answerRow('Skor esai', q.gradingPending ? 'Menunggu penilaian' : '${q.essayScore}/10', _ink),
+          ..._answerRow(l10n.h3YourAnswer, q.yourAnswer, _ink),
+          ..._answerRow(q.isEssay ? l10n.h3ReferenceAnswer : l10n.h3CorrectAnswer, q.rightAnswer, _correctGreen),
+          if (q.isEssay) ..._answerRow(l10n.pdfEssayScore, q.gradingPending ? l10n.h3AwaitingGrading : '${q.essayScore}/10', _ink),
         ],
         if (options.explanation) ...[
           if (exp != null) ...[
             for (final section in <(String, String)>[
-              ('Kenapa ini jawaban yang benar', exp.correctAnswerReason),
-              if (!q.isCorrect && !q.isEssay) ('Kenapa jawabanmu kurang tepat', exp.selectedAnswerFeedback),
-              if (q.isEssay) ('Umpan balik', exp.essayFeedback ?? ''),
-              ('Ide utama', exp.keyIdea),
+              (l10n.h3WhyCorrect, exp.correctAnswerReason),
+              if (!q.isCorrect && !q.isEssay) (l10n.h3WhyWrong, exp.selectedAnswerFeedback),
+              if (q.isEssay) (l10n.h3Feedback, exp.essayFeedback ?? ''),
+              (l10n.h3KeyIdeaTitle, exp.keyIdea),
             ]) if (section.$2.isNotEmpty) ...[
               pw.SizedBox(height: 14), _sectionTitle(section.$1),
               pw.SizedBox(height: 6), pw.Text(section.$2, overflow: pw.TextOverflow.span),
             ],
             if (exp.steps.isNotEmpty) ...[
-              pw.SizedBox(height: 14), _sectionTitle('Cara melakukannya'),
+              pw.SizedBox(height: 14), _sectionTitle(l10n.h3HowTo),
               for (var i = 0; i < exp.steps.length; i++)
                 pw.Padding(padding: const pw.EdgeInsets.only(top: 6), child: pw.Text('${i + 1}. ${exp.steps[i]}')),
             ],
           ],
           if (exp == null || (!exp.isComplete && !q.isEssay)) ...[
-            pw.SizedBox(height: 14), pw.Text('Penjelasan lengkap belum tersedia'),
+            pw.SizedBox(height: 14), pw.Text(l10n.h3ExplanationUnavailable),
           ],
         ],
         if (crop != null) ...[pw.SizedBox(height: 16), pw.Image(crop, height: 160, fit: pw.BoxFit.contain)],
@@ -122,7 +126,7 @@ class QuizPdfService {
           pw.SizedBox(height: 18),
           // Keep the notes heading and writing lines together on one page.
           pw.Inseparable(child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-            _sectionTitle('Ruang catatan'),
+            _sectionTitle(l10n.h3IncNotes),
             for (var i = 0; i < 5; i++) pw.Container(height: 24,
               decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: _borderGray)))),
           ])),
@@ -191,7 +195,7 @@ class QuizPdfService {
             children: [
               pw.Expanded(
                 child: pw.Text(
-                  'ELIO - Laporan Kuis Sampah',
+                  l10n.pdfReportTitle,
                   style: pw.TextStyle(
                     fontSize: 20,
                     fontWeight: pw.FontWeight.bold,
@@ -200,7 +204,7 @@ class QuizPdfService {
                 ),
               ),
               pw.Text(
-                record.time.toLocal().toString().substring(0, 16),
+                _dateTime(record.time),
                 style: pw.TextStyle(fontSize: 10, color: _caption),
               ),
             ],
@@ -216,11 +220,11 @@ class QuizPdfService {
         pw.Row(
           children: [
             pw.Text(
-              'ELIO - ${record.itemName}',
+              'ELIOS - ${record.itemName}',
               style: pw.TextStyle(fontSize: 11, color: _subtext, fontWeight: pw.FontWeight.bold),
             ),
             pw.Spacer(),
-            pw.Text('Hal. $page / $total', style: pw.TextStyle(fontSize: 10, color: _caption)),
+            pw.Text(l10n.pdfPageShort(page, total), style: pw.TextStyle(fontSize: 10, color: _caption)),
           ],
         ),
         pw.Divider(color: _borderGray),
@@ -237,7 +241,7 @@ class QuizPdfService {
           children: [
             pw.Expanded(
               child: pw.Text(
-                'ELIO Waste Sorting Education | Halaman $page dari $total | Session ID: ${record.id}',
+                l10n.pdfFooter(page, total, record.id),
                 style: pw.TextStyle(fontSize: 8, color: _caption),
               ),
             ),
@@ -266,7 +270,7 @@ class QuizPdfService {
     final grade = gradeFor(trophies: record.trophies, totalQuestions: record.totalQuestions);
     return [
       // Session metadata table
-      _sectionTitle('Informasi Sesi'),
+      _sectionTitle(l10n.pdfSessionInfo),
       pw.SizedBox(height: 4),
       pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -277,7 +281,7 @@ class QuizPdfService {
             color: PdfColor.fromHex('EAECEE'),
             alignment: pw.Alignment.center,
             child: crop == null
-                ? pw.Text('PHOTO', style: pw.TextStyle(fontSize: 10, color: _caption))
+                ? pw.Text(l10n.pdfPhoto, style: pw.TextStyle(fontSize: 10, color: _caption))
                 : pw.Image(crop, width: 120, height: 120, fit: pw.BoxFit.contain),
           ),
           pw.SizedBox(width: 12),
@@ -293,6 +297,10 @@ class QuizPdfService {
     ];
   }
 
+  /// "3 Nov 2026 23:29" in the app language.
+  static String _dateTime(DateTime t) =>
+      DateFormat.yMMMd(dateLocale).add_Hm().format(t.toLocal());
+
   static pw.Widget _sectionTitle(String title) => pw.Text(
         title,
         style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: _green),
@@ -300,14 +308,14 @@ class QuizPdfService {
 
   static pw.Widget _metadataTable(ScanRecord record, QuizGrade grade) {
     final rows = [
-      ['Item', record.itemName],
-      ['Kategori', record.category.badgeLabel],
-      ['Tanggal / Waktu', record.time.toLocal().toString().substring(0, 16)],
-      ['Tingkat Kesulitan', record.difficultyLabel],
-      ['Jumlah Soal', '${record.totalQuestions}'],
-      ['Benar', '${record.correctCount} dari ${record.totalQuestions}'],
-      ['Piala Diperoleh', '${record.trophies} Piala'],
-      ['Nilai', record.questions.any((q) => q.gradingPending) ? 'Menunggu penilaian' : grade.label],
+      [l10n.pdfItem, record.itemName],
+      [l10n.pdfCategory, record.category.badgeLabel],
+      [l10n.pdfDateTime, _dateTime(record.time)],
+      [l10n.pdfDifficulty, record.difficultyLabel],
+      [l10n.pdfQuestionCount, '${record.totalQuestions}'],
+      [l10n.pdfCorrect, l10n.pdfCorrectOf(record.correctCount, record.totalQuestions)],
+      [l10n.pdfTrophies, l10n.pdfTrophyCount(record.trophies)],
+      [l10n.pdfGrade, record.questions.any((q) => q.gradingPending) ? l10n.h3AwaitingGrading : grade.label],
     ];
 
     return pw.Table(
@@ -344,23 +352,23 @@ class QuizPdfService {
             borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
           ),
           child: pw.Text(
-            'Soal $index: ${q.question}',
+            l10n.pdfQuestionLine(index, q.question),
             style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _ink),
           ),
         ),
         pw.SizedBox(height: 4),
         // Answers
-        ..._answerRow('Jawaban Kamu', q.yourAnswer, q.isCorrect ? _correctGreen : _incorrectRed),
-        ..._answerRow('Jawaban Benar', q.rightAnswer, _correctGreen),
+        ..._answerRow(l10n.h3YourAnswer, q.yourAnswer, q.isCorrect ? _correctGreen : _incorrectRed),
+        ..._answerRow(l10n.h3CorrectAnswer, q.rightAnswer, _correctGreen),
         if (q.isEssay)
-          ..._answerRow('Skor Essay', q.gradingPending ? 'Menunggu penilaian' : '${q.essayScore} / 10 (+${q.trophies} Piala)', _goldYellow),
+          ..._answerRow(l10n.pdfEssayScore, q.gradingPending ? l10n.h3AwaitingGrading : l10n.pdfEssayLine(q.essayScore ?? 0, q.trophies), _goldYellow),
         pw.SizedBox(height: 6),
         // Explanation section
         if (exp != null && !exp.isUnavailable) ...[
           ..._explanationSection(exp),
         ] else ...[
           pw.Text(
-            'Penjelasan tidak tersimpan untuk soal ini.',
+            l10n.pdfNoExplanation,
             style: pw.TextStyle(fontSize: 10, color: _caption, fontStyle: pw.FontStyle.italic),
           ),
         ],
@@ -377,20 +385,24 @@ class QuizPdfService {
     pw.SizedBox(height: 4),
   ];
 
-  /// "Sumber: Bank Soal ELIO · bagian 1.3 · hal. 6 · organik-mc-01" (decision 0175).
+  /// "Sumber: Bank Soal ELIOS · bagian 1.3 · hal. 6 · organik-mc-01" (decision 0175).
   static String? sourceLine(QuizExplanation exp) {
     if (exp.sourceTitle == null && exp.bankId == null) return null;
     return [
-      'Sumber: ${exp.sourceTitle ?? 'Bank Soal ELIO'}',
-      if (exp.sourceSection != null) 'bagian ${exp.sourceSection}',
-      if (exp.sourcePage != null) 'hal. ${exp.sourcePage}',
+      l10n.pdfSource(switch (exp.sourceTitle) {
+        // Older records stored the pre-rename bank title.
+        null || bankSourceTitle || 'Bank Soal ELIO' => l10n.pdfBankTitle,
+        final title => title,
+      }),
+      if (exp.sourceSection != null) l10n.pdfSection(exp.sourceSection!),
+      if (exp.sourcePage != null) l10n.pdfPage(exp.sourcePage!),
       ?exp.bankId,
     ].join(' · ');
   }
 
   static List<pw.Widget> _explanationSection(QuizExplanation exp) {
     return [
-        pw.Text('Penjelasan',
+        pw.Text(l10n.h3ExplanationTitle,
             overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: _green)),
         pw.SizedBox(height: 4),
         if (exp.summary.isNotEmpty)
@@ -410,14 +422,14 @@ class QuizPdfService {
         ],
         if (exp.comparisonRows.isNotEmpty) ...[
           pw.SizedBox(height: 6),
-          pw.Text('Table 1. Perbandingan Kategori Sampah',
+          pw.Text(l10n.pdfTableCategories,
               overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _subtext)),
           pw.SizedBox(height: 4),
           _comparisonTable(exp.comparisonRows),
         ],
         if (exp.rubricRows != null && exp.rubricRows!.isNotEmpty) ...[
           pw.SizedBox(height: 6),
-          pw.Text('Table 1. Scoring breakdown',
+          pw.Text(l10n.pdfTableScoring,
               overflow: pw.TextOverflow.span, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: _subtext)),
           pw.SizedBox(height: 4),
           _rubricTable(exp.rubricRows!),
@@ -453,7 +465,7 @@ class QuizPdfService {
       children: [
         pw.TableRow(
           decoration: pw.BoxDecoration(color: _greenLight),
-          children: ['Kategori', 'Material', 'Diterima'].map((h) {
+          children: [l10n.pdfColCategory, l10n.pdfColMaterial, l10n.pdfColAccepted].map((h) {
             return pw.Padding(
               padding: const pw.EdgeInsets.all(4),
               child: pw.Text(h,
@@ -493,7 +505,7 @@ class QuizPdfService {
       children: [
         pw.TableRow(
           decoration: pw.BoxDecoration(color: _greenLight),
-          children: ['Kriteria', 'Maks', 'Diperoleh', 'Komentar'].map((h) {
+          children: [l10n.pdfColCriterion, l10n.pdfColMax, l10n.pdfColAwarded, l10n.pdfColComment].map((h) {
             return pw.Padding(
               padding: const pw.EdgeInsets.all(4),
               child: pw.Text(h,

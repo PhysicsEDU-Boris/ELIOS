@@ -1943,5 +1943,308 @@
         "type": "Object"
       }
     }
-  }
+  },
+  "h3Title": "History",
+  "h3Subtitle": "Scan results, quizzes & trophies",
+  "h3Back": "Back",
+  "h3All": "All",
+  "h3CatB3": "B3",
+  "h3CatB3Long": "B3 · Hazardous",
+  "h3CatRecyclable": "Recyclable",
+  "h3CatOrganic": "Organic",
+  "h3CatResidu": "Residual",
+  "h3Easy": "Easy",
+  "h3Medium": "Medium",
+  "h3Hard": "Hard",
+  "h3Today": "Today",
+  "h3Yesterday": "Yesterday",
+  "h3LoadFailed": "History couldn't be loaded",
+  "h3RecentScans": "Recent scans",
+  "h3ScanCount": "{count, plural, =1{1 scan} other{{count} scans}}",
+  "@h3ScanCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "h3NoScansInCategory": "No scans in this category yet.",
+  "h3Trophies": "{count, plural, =1{1 trophy} other{{count} trophies}}",
+  "@h3Trophies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "h3ToNextLevel": "{count} trophies to Level {level}",
+  "@h3ToNextLevel": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "level": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3TopLevel": "Top level",
+  "h3SavedLocally": "Saved locally",
+  "h3RowMeta": "{time} · {count, plural, =1{1 question} other{{count} questions}}",
+  "@h3RowMeta": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "h3DetailTitle": "Scan detail",
+  "h3ExportPdf": "Export PDF",
+  "h3DetailLoadFailed": "Scan detail couldn't be loaded",
+  "h3ScannedMeta": "Scanned {time} · photo and {count, plural, =1{1 question} other{{count} questions}} saved locally",
+  "@h3ScannedMeta": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "h3DiffChip": "{level} · {count}Q",
+  "@h3DiffChip": {
+    "placeholders": {
+      "level": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3CorrectOf": "{correct} of {total} correct",
+  "@h3CorrectOf": {
+    "placeholders": {
+      "correct": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3TrophyRule": "10 trophies for every correct answer",
+  "h3Questions": "Questions",
+  "h3PdfFailed": "The PDF couldn't be exported. Try again.",
+  "h3Correct": "Correct",
+  "h3Incorrect": "Incorrect",
+  "h3AwaitingGrading": "Awaiting grading",
+  "h3EssayScore": "Score {score}/10",
+  "@h3EssayScore": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3YourAnswer": "Your answer",
+  "h3CorrectAnswer": "Correct answer",
+  "h3ReferenceAnswer": "Reference answer",
+  "h3SeeExplanation": "See explanation",
+  "h3Listen": "Listen",
+  "h3Pause": "Pause",
+  "h3ReadingNow": "READING NOW",
+  "h3KeyIdea": "KEY IDEA",
+  "h3TryAgain": "Try again",
+  "h3Loading": "Loading",
+  "h3EmptyTitle": "No scans yet",
+  "h3EmptyBody": "Scan an item with ELIOS and its quiz results and trophies will show up here.",
+  "h3StartScan": "Start scanning",
+  "h3ExplanationTitle": "Explanation",
+  "h3ExplanationMeta": "{item} · Q{index} of {total}",
+  "@h3ExplanationMeta": {
+    "placeholders": {
+      "item": {
+        "type": "Object"
+      },
+      "index": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3WhyCorrect": "Why this is the right answer",
+  "h3WhyWrong": "Why your answer isn’t right",
+  "h3Feedback": "Feedback",
+  "h3HowTo": "How to do it",
+  "h3NextQuestion": "Next question",
+  "h3ExplanationUnavailable": "The full explanation isn't available yet",
+  "h3PdfSaved": "PDF saved: {path}",
+  "@h3PdfSaved": {
+    "placeholders": {
+      "path": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3ExportQuestion": "Export this question",
+  "h3ExportOnly": "Only Q{index} of {item} goes into the PDF.",
+  "@h3ExportOnly": {
+    "placeholders": {
+      "index": {
+        "type": "Object"
+      },
+      "item": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3A4Pdf": "A4 · PDF",
+  "h3Include": "INCLUDE",
+  "h3IncAnswers": "Question and both answers",
+  "h3IncExplanation": "Full explanation and steps",
+  "h3IncPhoto": "Scan photo",
+  "h3IncNotes": "Space for my notes",
+  "h3Share": "Share",
+  "h3SavePdf": "Save PDF",
+  "h3Saving": "Saving…",
+  "h3ShownInOriginal": "Shown in {language}, connect to translate",
+  "@h3ShownInOriginal": {
+    "placeholders": {
+      "language": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3KeyIdeaTitle": "Key idea",
+  "pdfQuestionHeader": "ELIOS | {item} | Q{index}",
+  "@pdfQuestionHeader": {
+    "placeholders": {
+      "item": {
+        "type": "Object"
+      },
+      "index": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfEssayScore": "Essay score",
+  "pdfReportTitle": "ELIOS - Waste Quiz Report",
+  "pdfPageShort": "Page {page} / {total}",
+  "@pdfPageShort": {
+    "placeholders": {
+      "page": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfFooter": "ELIOS Waste Sorting Education | Page {page} of {total} | Session ID: {id}",
+  "@pdfFooter": {
+    "placeholders": {
+      "page": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      },
+      "id": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfSessionInfo": "Session information",
+  "pdfPhoto": "PHOTO",
+  "pdfItem": "Item",
+  "pdfCategory": "Category",
+  "pdfDateTime": "Date / time",
+  "pdfDifficulty": "Difficulty",
+  "pdfQuestionCount": "Questions",
+  "pdfCorrect": "Correct",
+  "pdfCorrectOf": "{correct} of {total}",
+  "@pdfCorrectOf": {
+    "placeholders": {
+      "correct": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfTrophies": "Trophies earned",
+  "pdfTrophyCount": "{count} trophies",
+  "@pdfTrophyCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfGrade": "Grade",
+  "pdfQuestionLine": "Q{index}: {question}",
+  "@pdfQuestionLine": {
+    "placeholders": {
+      "index": {
+        "type": "Object"
+      },
+      "question": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfEssayLine": "{score} / 10 (+{trophies} trophies)",
+  "@pdfEssayLine": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      },
+      "trophies": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfNoExplanation": "No explanation was saved for this question.",
+  "pdfSource": "Source: {title}",
+  "@pdfSource": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfBankTitle": "ELIOS Question Bank",
+  "pdfSection": "section {section}",
+  "@pdfSection": {
+    "placeholders": {
+      "section": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfPage": "p. {page}",
+  "@pdfPage": {
+    "placeholders": {
+      "page": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfTableCategories": "Table 1. Waste category comparison",
+  "pdfTableScoring": "Table 1. Scoring breakdown",
+  "pdfColCategory": "Category",
+  "pdfColMaterial": "Material",
+  "pdfColAccepted": "Accepted",
+  "pdfColCriterion": "Criterion",
+  "pdfColMax": "Max",
+  "pdfColAwarded": "Awarded",
+  "pdfColComment": "Comment"
 }

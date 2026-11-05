@@ -5172,6 +5172,630 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The robot did not reply ({cmd}: {reason}). The robot stopped.'**
   String r1NoReply(Object cmd, Object reason);
+
+  /// No description provided for @h3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get h3Title;
+
+  /// No description provided for @h3Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan results, quizzes & trophies'**
+  String get h3Subtitle;
+
+  /// No description provided for @h3Back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get h3Back;
+
+  /// No description provided for @h3All.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get h3All;
+
+  /// No description provided for @h3CatB3.
+  ///
+  /// In en, this message translates to:
+  /// **'B3'**
+  String get h3CatB3;
+
+  /// No description provided for @h3CatB3Long.
+  ///
+  /// In en, this message translates to:
+  /// **'B3 · Hazardous'**
+  String get h3CatB3Long;
+
+  /// No description provided for @h3CatRecyclable.
+  ///
+  /// In en, this message translates to:
+  /// **'Recyclable'**
+  String get h3CatRecyclable;
+
+  /// No description provided for @h3CatOrganic.
+  ///
+  /// In en, this message translates to:
+  /// **'Organic'**
+  String get h3CatOrganic;
+
+  /// No description provided for @h3CatResidu.
+  ///
+  /// In en, this message translates to:
+  /// **'Residual'**
+  String get h3CatResidu;
+
+  /// No description provided for @h3Easy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get h3Easy;
+
+  /// No description provided for @h3Medium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get h3Medium;
+
+  /// No description provided for @h3Hard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get h3Hard;
+
+  /// No description provided for @h3Today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get h3Today;
+
+  /// No description provided for @h3Yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get h3Yesterday;
+
+  /// No description provided for @h3LoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'History couldn\'t be loaded'**
+  String get h3LoadFailed;
+
+  /// No description provided for @h3RecentScans.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent scans'**
+  String get h3RecentScans;
+
+  /// No description provided for @h3ScanCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 scan} other{{count} scans}}'**
+  String h3ScanCount(int count);
+
+  /// No description provided for @h3NoScansInCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'No scans in this category yet.'**
+  String get h3NoScansInCategory;
+
+  /// No description provided for @h3Trophies.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 trophy} other{{count} trophies}}'**
+  String h3Trophies(int count);
+
+  /// No description provided for @h3ToNextLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} trophies to Level {level}'**
+  String h3ToNextLevel(Object count, Object level);
+
+  /// No description provided for @h3TopLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Top level'**
+  String get h3TopLevel;
+
+  /// No description provided for @h3SavedLocally.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved locally'**
+  String get h3SavedLocally;
+
+  /// No description provided for @h3RowMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · {count, plural, =1{1 question} other{{count} questions}}'**
+  String h3RowMeta(Object time, int count);
+
+  /// No description provided for @h3DetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan detail'**
+  String get h3DetailTitle;
+
+  /// No description provided for @h3ExportPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Export PDF'**
+  String get h3ExportPdf;
+
+  /// No description provided for @h3DetailLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan detail couldn\'t be loaded'**
+  String get h3DetailLoadFailed;
+
+  /// No description provided for @h3ScannedMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanned {time} · photo and {count, plural, =1{1 question} other{{count} questions}} saved locally'**
+  String h3ScannedMeta(Object time, int count);
+
+  /// No description provided for @h3DiffChip.
+  ///
+  /// In en, this message translates to:
+  /// **'{level} · {count}Q'**
+  String h3DiffChip(Object level, Object count);
+
+  /// No description provided for @h3CorrectOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{correct} of {total} correct'**
+  String h3CorrectOf(Object correct, Object total);
+
+  /// No description provided for @h3TrophyRule.
+  ///
+  /// In en, this message translates to:
+  /// **'10 trophies for every correct answer'**
+  String get h3TrophyRule;
+
+  /// No description provided for @h3Questions.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions'**
+  String get h3Questions;
+
+  /// No description provided for @h3PdfFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The PDF couldn\'t be exported. Try again.'**
+  String get h3PdfFailed;
+
+  /// No description provided for @h3Correct.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct'**
+  String get h3Correct;
+
+  /// No description provided for @h3Incorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect'**
+  String get h3Incorrect;
+
+  /// No description provided for @h3AwaitingGrading.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting grading'**
+  String get h3AwaitingGrading;
+
+  /// No description provided for @h3EssayScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score {score}/10'**
+  String h3EssayScore(Object score);
+
+  /// No description provided for @h3YourAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answer'**
+  String get h3YourAnswer;
+
+  /// No description provided for @h3CorrectAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct answer'**
+  String get h3CorrectAnswer;
+
+  /// No description provided for @h3ReferenceAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference answer'**
+  String get h3ReferenceAnswer;
+
+  /// No description provided for @h3SeeExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'See explanation'**
+  String get h3SeeExplanation;
+
+  /// No description provided for @h3Listen.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get h3Listen;
+
+  /// No description provided for @h3Pause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get h3Pause;
+
+  /// No description provided for @h3ReadingNow.
+  ///
+  /// In en, this message translates to:
+  /// **'READING NOW'**
+  String get h3ReadingNow;
+
+  /// No description provided for @h3KeyIdea.
+  ///
+  /// In en, this message translates to:
+  /// **'KEY IDEA'**
+  String get h3KeyIdea;
+
+  /// No description provided for @h3TryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get h3TryAgain;
+
+  /// No description provided for @h3Loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading'**
+  String get h3Loading;
+
+  /// No description provided for @h3EmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No scans yet'**
+  String get h3EmptyTitle;
+
+  /// No description provided for @h3EmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan an item with ELIOS and its quiz results and trophies will show up here.'**
+  String get h3EmptyBody;
+
+  /// No description provided for @h3StartScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Start scanning'**
+  String get h3StartScan;
+
+  /// No description provided for @h3ExplanationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation'**
+  String get h3ExplanationTitle;
+
+  /// No description provided for @h3ExplanationMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} · Q{index} of {total}'**
+  String h3ExplanationMeta(Object item, Object index, Object total);
+
+  /// No description provided for @h3WhyCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Why this is the right answer'**
+  String get h3WhyCorrect;
+
+  /// No description provided for @h3WhyWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Why your answer isn’t right'**
+  String get h3WhyWrong;
+
+  /// No description provided for @h3Feedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback'**
+  String get h3Feedback;
+
+  /// No description provided for @h3HowTo.
+  ///
+  /// In en, this message translates to:
+  /// **'How to do it'**
+  String get h3HowTo;
+
+  /// No description provided for @h3NextQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Next question'**
+  String get h3NextQuestion;
+
+  /// No description provided for @h3ExplanationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The full explanation isn\'t available yet'**
+  String get h3ExplanationUnavailable;
+
+  /// No description provided for @h3PdfSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF saved: {path}'**
+  String h3PdfSaved(Object path);
+
+  /// No description provided for @h3ExportQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Export this question'**
+  String get h3ExportQuestion;
+
+  /// No description provided for @h3ExportOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only Q{index} of {item} goes into the PDF.'**
+  String h3ExportOnly(Object index, Object item);
+
+  /// No description provided for @h3A4Pdf.
+  ///
+  /// In en, this message translates to:
+  /// **'A4 · PDF'**
+  String get h3A4Pdf;
+
+  /// No description provided for @h3Include.
+  ///
+  /// In en, this message translates to:
+  /// **'INCLUDE'**
+  String get h3Include;
+
+  /// No description provided for @h3IncAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'Question and both answers'**
+  String get h3IncAnswers;
+
+  /// No description provided for @h3IncExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Full explanation and steps'**
+  String get h3IncExplanation;
+
+  /// No description provided for @h3IncPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan photo'**
+  String get h3IncPhoto;
+
+  /// No description provided for @h3IncNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Space for my notes'**
+  String get h3IncNotes;
+
+  /// No description provided for @h3Share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get h3Share;
+
+  /// No description provided for @h3SavePdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Save PDF'**
+  String get h3SavePdf;
+
+  /// No description provided for @h3Saving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get h3Saving;
+
+  /// No description provided for @h3ShownInOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown in {language}, connect to translate'**
+  String h3ShownInOriginal(Object language);
+
+  /// No description provided for @h3KeyIdeaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Key idea'**
+  String get h3KeyIdeaTitle;
+
+  /// No description provided for @pdfQuestionHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS | {item} | Q{index}'**
+  String pdfQuestionHeader(Object item, Object index);
+
+  /// No description provided for @pdfEssayScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Essay score'**
+  String get pdfEssayScore;
+
+  /// No description provided for @pdfReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS - Waste Quiz Report'**
+  String get pdfReportTitle;
+
+  /// No description provided for @pdfPageShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} / {total}'**
+  String pdfPageShort(Object page, Object total);
+
+  /// No description provided for @pdfFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS Waste Sorting Education | Page {page} of {total} | Session ID: {id}'**
+  String pdfFooter(Object page, Object total, Object id);
+
+  /// No description provided for @pdfSessionInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Session information'**
+  String get pdfSessionInfo;
+
+  /// No description provided for @pdfPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'PHOTO'**
+  String get pdfPhoto;
+
+  /// No description provided for @pdfItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Item'**
+  String get pdfItem;
+
+  /// No description provided for @pdfCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get pdfCategory;
+
+  /// No description provided for @pdfDateTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Date / time'**
+  String get pdfDateTime;
+
+  /// No description provided for @pdfDifficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty'**
+  String get pdfDifficulty;
+
+  /// No description provided for @pdfQuestionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions'**
+  String get pdfQuestionCount;
+
+  /// No description provided for @pdfCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct'**
+  String get pdfCorrect;
+
+  /// No description provided for @pdfCorrectOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{correct} of {total}'**
+  String pdfCorrectOf(Object correct, Object total);
+
+  /// No description provided for @pdfTrophies.
+  ///
+  /// In en, this message translates to:
+  /// **'Trophies earned'**
+  String get pdfTrophies;
+
+  /// No description provided for @pdfTrophyCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} trophies'**
+  String pdfTrophyCount(Object count);
+
+  /// No description provided for @pdfGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade'**
+  String get pdfGrade;
+
+  /// No description provided for @pdfQuestionLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Q{index}: {question}'**
+  String pdfQuestionLine(Object index, Object question);
+
+  /// No description provided for @pdfEssayLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{score} / 10 (+{trophies} trophies)'**
+  String pdfEssayLine(Object score, Object trophies);
+
+  /// No description provided for @pdfNoExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'No explanation was saved for this question.'**
+  String get pdfNoExplanation;
+
+  /// No description provided for @pdfSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source: {title}'**
+  String pdfSource(Object title);
+
+  /// No description provided for @pdfBankTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS Question Bank'**
+  String get pdfBankTitle;
+
+  /// No description provided for @pdfSection.
+  ///
+  /// In en, this message translates to:
+  /// **'section {section}'**
+  String pdfSection(Object section);
+
+  /// No description provided for @pdfPage.
+  ///
+  /// In en, this message translates to:
+  /// **'p. {page}'**
+  String pdfPage(Object page);
+
+  /// No description provided for @pdfTableCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Table 1. Waste category comparison'**
+  String get pdfTableCategories;
+
+  /// No description provided for @pdfTableScoring.
+  ///
+  /// In en, this message translates to:
+  /// **'Table 1. Scoring breakdown'**
+  String get pdfTableScoring;
+
+  /// No description provided for @pdfColCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get pdfColCategory;
+
+  /// No description provided for @pdfColMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material'**
+  String get pdfColMaterial;
+
+  /// No description provided for @pdfColAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted'**
+  String get pdfColAccepted;
+
+  /// No description provided for @pdfColCriterion.
+  ///
+  /// In en, this message translates to:
+  /// **'Criterion'**
+  String get pdfColCriterion;
+
+  /// No description provided for @pdfColMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Max'**
+  String get pdfColMax;
+
+  /// No description provided for @pdfColAwarded.
+  ///
+  /// In en, this message translates to:
+  /// **'Awarded'**
+  String get pdfColAwarded;
+
+  /// No description provided for @pdfColComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment'**
+  String get pdfColComment;
 }
 
 class _AppLocalizationsDelegate
