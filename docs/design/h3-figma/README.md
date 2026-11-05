@@ -17,6 +17,7 @@ Figma copy is English; the app shows the Indonesian strings from decision 0184.
 | 07 Explanation, reading aloud | 439:3764 / 459:5355 |
 | 08 Export this question sheet | 459:5039 / 459:5422 |
 | 09 Explanation loading | 439:4165 / 459:5529 |
+| 10 Explanation, correct answer | 460:5171 / 460:5436 |
 
 ## Type (font: Google Sans Flex; code: Google Sans Code)
 
@@ -126,6 +127,11 @@ Figma copy is English; the app shows the Indonesian strings from decision 0184.
      a 2 px `primary/fill` line below that stretches to the next step) + text Body (pad top 3, bottom 16).
      Finish row: Medal gold art 28x33 + "Misi selesai: ..." Body Small `text/secondary`.
      The mission rows are the AI "steps"; hide the card when there are none.
+- **Correct vs wrong answer** (frames 06 and 10): the screen is the same widget, driven by the saved result.
+  Correct = Result hero "Right" (green, happy bottle buddy, "+n trofi"), progress dot on the current question,
+  ONE answer tile "JAWABANMU · BENAR", no "Kenapa jawabanmu kurang tepat" card, then key idea and mission as usual.
+  Wrong = Result hero "Wrong" (red, sad bottle buddy, "+0 trofi"), two answer tiles (yours with X, the right one
+  with a check), and the "kurang tepat" card with the category bin buddy.
 - **Listen button** 48 dp tap target, visual 36 circle. Play = `chip/success-bg` + `chip/success-border`, play icon 16 `primary/text`.
   Pause = `primary/fill`, pause icon 16 `primary/on-fill`.
 - **Explanation actions** pad 12/16/28/16, gap 12, `surface`, top border 1 `border/subtle`.
