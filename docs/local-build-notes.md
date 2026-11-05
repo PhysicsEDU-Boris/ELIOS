@@ -17,3 +17,12 @@
 
 - Final refinement APK built from `500ae5a` with the same flags, output, package and signing identity. `assembleDebug` completed in 87.2 s. No dependency, model, Mac bundle or signing changes.
 - H3-fix APK (5 Nov): built from `642e5c4` with the same flags/output/package/signing, `adb install -r` over the existing app; `scan_records.json` unchanged (113,543 bytes). An interim build without TESTER_BUILD/DARK_MODE_OPTION was replaced by the flagged build. No Mac bundle, model or signing change.
+
+## 5 Nov 2026 — PR #93 resume build
+
+- Source `96c832a`, branch `feat/ui-localization`; reused `build/app/outputs/flutter-apk/app-debug.apk` (~2.3 GiB).
+- Built successfully: `flutter build apk --debug --target-platform android-arm64 --dart-define=LIVE_SCAN=true --dart-define=TESTER_BUILD=true --dart-define=DARK_MODE_OPTION=true --dart-define=APP_COMMIT=96c832a`; Gradle 89.7 s. Existing Kotlin-plugin migration warning only.
+- Target: the only connected phone, Motorola Edge 60 Fusion / Android 16 (USB). Same package `com.boris.elio`, debug signing and version 1.0.0+1; in-place `adb install -r`, no uninstall/data clear.
+- Private pre-install backup of both History files, photos and settings: `/tmp/elios-pr93-resume-20261105/owner-backup/history-settings.tar` (40 main records, 2 R3 test records).
+- No Mac app build/registration, model downloads/copies, Keychain, signing configuration or private configuration changes. Existing Mac app/model stores and original build assets retained.
+- Install returned `Success`; package update time 20:41:58 on the phone. Both History JSON files are byte-for-byte identical to the backup after install (40 main / 2 R3 records). App launched successfully in Indonesian/light mode; Home shows 40 scans and 442 trophies, with zero crash/overflow markers in the fresh process log.
