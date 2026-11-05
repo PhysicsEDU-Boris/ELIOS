@@ -235,6 +235,15 @@ void main() {
       },
     );
 
+    test('a slightly reworded answer still maps to its option (index, not wording)', () async {
+      AiQuizService.instance.mockSendExecute = (p, {imageBytes, isUser = false}) async =>
+          _reply(rightEn: 'The density is higher.', yourEn: 'its density is lower');
+      expect(await HistoryTranslationService.ensure(store, store.records.first, 'en'), isTrue);
+      final q = store.records.first.localized('en').questions.first;
+      expect(q.rightAnswer, 'Its density is higher');
+      expect(q.yourAnswer, 'Its density is lower');
+    });
+
     test(
       'a reply that changes the correct answer is rejected and nothing is saved',
       () async {

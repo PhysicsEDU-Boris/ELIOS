@@ -100,13 +100,19 @@ class HistoryTranslationService {
   /// option, missing or extra texts.
   @visibleForTesting
   static RecordTranslation? parse(String raw, ScanRecord r, String lang) {
+    // Each rejection is logged (tester log on the phone) so a bad reply can be diagnosed.
+    Null fail(String why) {
+      debugPrint('[HistoryTranslation] rejected ($lang): $why');
+      return null;
+    }
+
     try {
       final sent = payloadFor(r, lang);
       // Bilingual reply (decision 0185): only the side for [lang] is used.
       final json = AiQuizService.bilingual(raw, lang)?.main;
-      if (json == null) return null;
+      if (json == null) return fail('no "$lang" side');
       final qs = json['questions'];
-      if (qs is! List || qs.length != r.questions.length) return null;
+      if (qs is! List || qs.length != r.questions.length) return fail('question count');
       String? text(Object? v, {bool empty = false}) =>
           v is String && v.length <= 4000 && (empty || v.trim().isNotEmpty)
           ? v.trim()
@@ -116,12 +122,12 @@ class HistoryTranslationService {
       final item = withQuestions
           ? text(json['item'])
           : (old?.itemName ?? r.itemName);
-      if (item == null) return null;
+      if (item == null) return fail('item');
       final out = <QuestionText>[];
       for (var i = 0; i < r.questions.length; i++) {
         final src = r.questions[i];
         final got = qs[i];
-        if (got is! Map) return null;
+        if (got is! Map) return fail('question $i shape');
         QuestionText base;
         if (withQuestions) {
           final question = text(got['question']);
@@ -136,23 +142,32 @@ class HistoryTranslationService {
               right == null ||
               opts is! List ||
               opts.length != src.options.length) {
-            return null;
+            return fail('question $i texts or option count');
           }
-          final options = [for (final o in opts) text(o)];
-          if (options.contains(null)) return null;
-          // Same option must stay correct and chosen: indexes are compared, not wording.
+          final options = [for (final o in opts) text(o)].cast<String?>();
+          if (options.contains(null)) return fail('question $i empty option');
+          final list = options.cast<String>();
+          // The same option must stay correct and chosen. The model may word an
+          // answer slightly differently from its option, so each answer must be
+          // closest to the option at the original index; the option text is shown.
           final rightAt = src.options.indexOf(src.rightAnswer);
           final yoursAt = src.options.indexOf(src.yourAnswer);
-          if (rightAt >= 0 && options[rightAt] != right) return null;
-          if (yoursAt >= 0 && options[yoursAt] != yours) return null;
-          if ((src.yourAnswer == src.rightAnswer) != (yours == right)) {
-            return null;
+          if (rightAt >= 0 && closestOption(list, right) != rightAt) {
+            return fail('question $i correct answer moved');
+          }
+          if (yoursAt >= 0 && closestOption(list, yours) != yoursAt) {
+            return fail('question $i chosen answer moved');
+          }
+          final rightText = rightAt >= 0 ? list[rightAt] : right;
+          final yoursText = yoursAt >= 0 ? list[yoursAt] : yours;
+          if (src.yourAnswer == src.rightAnswer && yoursText != rightText) {
+            return fail('question $i answers differ');
           }
           base = QuestionText(
             question: question,
-            options: options.cast<String>(),
-            yourAnswer: yours,
-            rightAnswer: right,
+            options: list,
+            yourAnswer: yoursText,
+            rightAnswer: rightText,
           );
         } else if (old != null && i < old.questions.length) {
           base = old.questions[i];
@@ -170,14 +185,15 @@ class HistoryTranslationService {
         if (sentQ.containsKey('explanation')) {
           final e = got['explanation'];
           final s = src.explanation!;
-          if (e is! Map) return null;
+          if (e is! Map) return fail('explanation $i shape');
           final why = text(
             e['why_correct'],
             empty: s.correctAnswerReason.isEmpty,
           );
-          final wrong = text(e['why_wrong'], empty: true);
+          // Feedback the source does not have is dropped, never invented.
+          final wrong = s.selectedAnswerFeedback.isEmpty ? '' : text(e['why_wrong'], empty: true);
           final idea = text(e['key_idea'], empty: s.keyIdea.isEmpty);
-          final feedback = text(e['essay_feedback'], empty: true);
+          final feedback = (s.essayFeedback ?? '').isEmpty ? '' : text(e['essay_feedback'], empty: true);
           final steps = e['steps'];
           if (why == null ||
               wrong == null ||
@@ -187,10 +203,10 @@ class HistoryTranslationService {
               feedback.isEmpty != (s.essayFeedback ?? '').isEmpty ||
               steps is! List ||
               steps.length != s.steps.length) {
-            return null;
+            return fail('explanation $i texts or step count');
           }
           final stepTexts = [for (final x in steps) text(x)];
-          if (stepTexts.contains(null)) return null;
+          if (stepTexts.contains(null)) return fail('explanation $i empty step');
           explanation = QuizExplanation.fromJson({
             ...s.toJson(),
             'summary': why,
@@ -214,8 +230,37 @@ class HistoryTranslationService {
         );
       }
       return RecordTranslation(itemName: item, questions: out);
-    } catch (_) {
-      return null;
+    } catch (e) {
+      return fail('$e');
     }
+  }
+
+  /// Index of the option most like [answer]: exact (ignoring case and
+  /// punctuation) first, else the clearly best word overlap; -1 if unclear.
+  @visibleForTesting
+  static int closestOption(List<String> options, String answer) {
+    Set<String> words(String t) =>
+        t.toLowerCase().split(RegExp(r'[^a-z0-9]+')).where((w) => w.isNotEmpty).toSet();
+    final a = words(answer);
+    final scores = [
+      for (final o in options)
+        () {
+          final w = words(o);
+          if (w.isEmpty || a.isEmpty) return 0.0;
+          if (w.length == a.length && w.containsAll(a)) return 2.0;
+          return w.intersection(a).length / w.union(a).length;
+        }(),
+    ];
+    var best = -1;
+    var top = 0.5; // below half the words in common: not the same option
+    for (var i = 0; i < scores.length; i++) {
+      if (scores[i] > top) {
+        top = scores[i];
+        best = i;
+      } else if (scores[i] == top && best >= 0) {
+        best = -1; // a tie is not a match
+      }
+    }
+    return best;
   }
 }
