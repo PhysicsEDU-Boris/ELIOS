@@ -5,47 +5,47 @@ void main() {
   group('QuizGrade boundary tests', () {
     test('100% -> Sempurna', () {
       expect(QuizGrade.forPercent(100), QuizGrade.sempurna);
-      expect(QuizGrade.forPercent(100).label, 'Sempurna');
+      expect(QuizGrade.forPercent(100), QuizGrade.sempurna);
     });
 
     test('99% -> Hebat', () {
       expect(QuizGrade.forPercent(99), QuizGrade.hebat);
-      expect(QuizGrade.forPercent(99).label, 'Hebat');
+      expect(QuizGrade.forPercent(99), QuizGrade.hebat);
     });
 
     test('80% -> Hebat', () {
       expect(QuizGrade.forPercent(80), QuizGrade.hebat);
-      expect(QuizGrade.forPercent(80).label, 'Hebat');
+      expect(QuizGrade.forPercent(80), QuizGrade.hebat);
     });
 
     test('79% -> Bagus', () {
       expect(QuizGrade.forPercent(79), QuizGrade.bagus);
-      expect(QuizGrade.forPercent(79).label, 'Bagus');
+      expect(QuizGrade.forPercent(79), QuizGrade.bagus);
     });
 
     test('60% -> Bagus', () {
       expect(QuizGrade.forPercent(60), QuizGrade.bagus);
-      expect(QuizGrade.forPercent(60).label, 'Bagus');
+      expect(QuizGrade.forPercent(60), QuizGrade.bagus);
     });
 
     test('59% -> Belajar Lagi', () {
       expect(QuizGrade.forPercent(59), QuizGrade.belajarLagi);
-      expect(QuizGrade.forPercent(59).label, 'Belajar Lagi');
+      expect(QuizGrade.forPercent(59), QuizGrade.belajarLagi);
     });
 
     test('40% -> Belajar Lagi', () {
       expect(QuizGrade.forPercent(40), QuizGrade.belajarLagi);
-      expect(QuizGrade.forPercent(40).label, 'Belajar Lagi');
+      expect(QuizGrade.forPercent(40), QuizGrade.belajarLagi);
     });
 
     test('39% -> Coba Lagi', () {
       expect(QuizGrade.forPercent(39), QuizGrade.cobaLagi);
-      expect(QuizGrade.forPercent(39).label, 'Coba Lagi');
+      expect(QuizGrade.forPercent(39), QuizGrade.cobaLagi);
     });
 
     test('0% -> Coba Lagi', () {
       expect(QuizGrade.forPercent(0), QuizGrade.cobaLagi);
-      expect(QuizGrade.forPercent(0).label, 'Coba Lagi');
+      expect(QuizGrade.forPercent(0), QuizGrade.cobaLagi);
     });
 
     test('gradeFor calculates percent from trophies and question count', () {

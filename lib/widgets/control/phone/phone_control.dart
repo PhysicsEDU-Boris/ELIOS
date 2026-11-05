@@ -4,6 +4,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show OverflowBoxFit;
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../models/control_session.dart';
@@ -13,6 +14,7 @@ import '../../elio_top_bar.dart' show ElioAvatar;
 import '../../waste_quiz_popup.dart' show QuizButton;
 import '../r2_controls.dart';
 import '../../learn/learn_ui.dart' show LearnTheme;
+import 'package:elio/l10n/l10n.dart';
 
 /// Phones in landscape: the shortest side is under 600 dp. Tablets and the Mac keep R2.
 bool isPhoneLandscape(BuildContext context) {
@@ -375,7 +377,7 @@ class PhoneControlLayout extends StatelessWidget {
       children: [
         PhonePill(
           key: const ValueKey('phone_back'),
-          semantic: 'Exit',
+          semantic: l10n.ctlExit,
           onTap: onBack,
           padding: const EdgeInsets.all(10),
           child: Icon(
@@ -386,7 +388,7 @@ class PhoneControlLayout extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Text(
-          'Robot Control',
+          l10n.ctlRobotControl,
           maxLines: 1,
           style: TextStyle(
             color: context.elio.textPrimary,
@@ -414,7 +416,7 @@ class PhoneControlLayout extends StatelessWidget {
         ],
         PhonePill(
           key: const ValueKey('phone_history'),
-          semantic: 'History',
+          semantic: l10n.navHistory,
           onTap: onHistory,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: Row(
@@ -450,7 +452,7 @@ class PhoneControlLayout extends StatelessWidget {
         children: [
           _CardHeader(
             icon: Icons.speed_rounded,
-            title: 'DRIVE',
+            title: l10n.ctlDrive,
             status: driveLabel,
           ),
           const SizedBox(height: 8),
@@ -474,7 +476,7 @@ class PhoneControlLayout extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Expanded(child: ControlCaps('SPEED (PWM)')),
+                    Expanded(child: ControlCaps(l10n.ctlSpeedPwm)),
                     Text(
                       '${speed.round()}%',
                       style: TextStyle(
@@ -490,7 +492,7 @@ class PhoneControlLayout extends StatelessWidget {
                   child: ControlFader(
                     value: speed,
                     max: 100,
-                    semanticLabel: 'Speed',
+                    semanticLabel: l10n.ctlSpeed,
                     onChanged: onSpeed,
                   ),
                 ),
@@ -508,12 +510,12 @@ class PhoneControlLayout extends StatelessWidget {
     final p = context.elio;
     final live = link == ControlLink.connected && frame != null;
     final liveText = live
-        ? (stopped ? 'LIVE · scan paused' : 'LIVE · ${fps.round()} fps')
-        : 'No video';
+        ? (stopped ? l10n.ctlLiveScanPaused : l10n.ctlLiveFps(fps.round()))
+        : l10n.ctlNoVideo;
     final (connText, connColor) = switch (link) {
-      ControlLink.connected => ('Connected', p.primary),
-      ControlLink.waiting => ('Connecting...', p.secondaryText),
-      ControlLink.disconnected => ('Offline', p.borderStrong),
+      ControlLink.connected => (l10n.cfgConnected, p.primary),
+      ControlLink.waiting => (l10n.ctlConnecting, p.secondaryText),
+      ControlLink.disconnected => (l10n.ctlOffline, p.borderStrong),
     };
     return Column(
       children: [
@@ -530,14 +532,14 @@ class PhoneControlLayout extends StatelessWidget {
                     const SizedBox(width: 6),
                     _IconToggle(
                       icon: Icons.center_focus_strong_outlined,
-                      label: 'Scan quiz',
+                      label: l10n.ctlScanQuiz,
                       value: scanQuizOn,
                       onChanged: onScanQuiz,
                     ),
                     const SizedBox(width: 6),
                     _IconToggle(
                       icon: Icons.volume_up_outlined,
-                      label: 'Voice',
+                      label: l10n.ctlVoice,
                       value: voiceOn,
                       onChanged: onVoice,
                     ),
@@ -569,7 +571,7 @@ class PhoneControlLayout extends StatelessWidget {
     } else if (link == ControlLink.waiting) {
       body = Center(
         child: Text(
-          'Connecting...',
+          l10n.ctlConnecting,
           style: TextStyle(color: p.textSecondary, fontSize: 14),
         ),
       );
@@ -598,7 +600,7 @@ class PhoneControlLayout extends StatelessWidget {
     } else {
       body = Center(
         child: Text(
-          'Connected. Waiting for camera frames...',
+          l10n.ctlWaitingFrames,
           style: TextStyle(color: p.textSecondary, fontSize: 13),
         ),
       );
@@ -677,7 +679,7 @@ class PhoneControlLayout extends StatelessWidget {
                     const SizedBox(width: 12),
                     TransportKey(
                       icon: Icons.back_hand_outlined,
-                      label: 'PICK UP',
+                      label: l10n.ctlPickUp,
                       primary: true,
                       size: 48,
                       onTap: onPickUp,
@@ -685,7 +687,7 @@ class PhoneControlLayout extends StatelessWidget {
                     const SizedBox(width: 12),
                     TransportKey(
                       icon: Icons.front_hand_outlined,
-                      label: 'RELEASE',
+                      label: l10n.ctlRelease,
                       size: 48,
                       onTap: onReleaseGripper,
                     ),
@@ -698,7 +700,7 @@ class PhoneControlLayout extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              const Expanded(child: ControlCaps('GRIPPER')),
+                              Expanded(child: ControlCaps(l10n.ctlGripperCaps)),
                               Text(
                                 '${gripper.round()}%',
                                 style: TextStyle(
@@ -714,7 +716,7 @@ class PhoneControlLayout extends StatelessWidget {
                             child: ControlFader(
                               value: gripper,
                               max: 100,
-                              semanticLabel: 'Gripper',
+                              semanticLabel: l10n.ctlGripper,
                               onChanged: onGripper,
                             ),
                           ),
@@ -755,7 +757,8 @@ class PhoneControlLayout extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              ControlCaps(label),
+              // Use the side gap for translated captions without stretching the column vertically.
+              OverflowBox(maxWidth: 64, fit: OverflowBoxFit.deferToChild, child: ControlCaps(label)),
             ],
           ),
         );
@@ -765,7 +768,7 @@ class PhoneControlLayout extends StatelessWidget {
         children: [
           _CardHeader(
             icon: Icons.precision_manufacturing_outlined,
-            title: 'ARM',
+            title: l10n.ctlArm,
             status: armLabel,
           ),
           const SizedBox(height: 8),
@@ -774,10 +777,10 @@ class PhoneControlLayout extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _fade(
-                  fader('HEIGHT', (height / 180).clamp(0.0, 1.0), onHeight),
+                  fader(l10n.ctlHeight, (height / 180).clamp(0.0, 1.0), onHeight),
                 ),
                 const SizedBox(width: 8),
-                _fade(fader('REACH', (reach / 180).clamp(0.0, 1.0), onReach)),
+                _fade(fader(l10n.ctlReach, (reach / 180).clamp(0.0, 1.0), onReach)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
@@ -788,7 +791,7 @@ class PhoneControlLayout extends StatelessWidget {
                       TransportKey(
                         key: const ValueKey('phone_lock'),
                         icon: locked ? Icons.center_focus_weak : Icons.center_focus_strong,
-                        label: locked ? 'UNLOCK' : 'LOCK',
+                        label: locked ? l10n.ctlUnlock : l10n.ctlLock,
                         size: shortScreen ? 26 : 32,
                         showLabel: !shortScreen,
                         onTap: onLock,
@@ -797,7 +800,7 @@ class PhoneControlLayout extends StatelessWidget {
                       TransportKey(
                         key: const ValueKey('phone_scan'),
                         icon: Icons.quiz_outlined,
-                        label: 'SCAN',
+                        label: l10n.ctlScan,
                         primary: true,
                         size: shortScreen ? 26 : 32,
                         showLabel: !shortScreen,
@@ -806,8 +809,8 @@ class PhoneControlLayout extends StatelessWidget {
                       const SizedBox(height: 6),
                       Tooltip(
                         message: on || link == ControlLink.waiting
-                            ? 'Putuskan robot'
-                            : 'Hubungkan robot',
+                            ? l10n.ctlDisconnectRobot
+                            : l10n.ctlConnectRobot,
                         child: PhoneGlowButton(
                           key: const ValueKey('robot_power'),
                           kind: on ? GlowKind.powerOn : GlowKind.powerOff,
@@ -818,10 +821,10 @@ class PhoneControlLayout extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         on
-                            ? 'Online'
+                            ? l10n.cfgOnline
                             : (link == ControlLink.waiting
-                                  ? 'Connecting...'
-                                  : 'Offline'),
+                                  ? l10n.ctlConnecting
+                                  : l10n.ctlOffline),
                         maxLines: 1,
                         style: TextStyle(
                           color: on ? p.primaryText : p.textSecondary,
@@ -961,7 +964,7 @@ class _GuideButton extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            'Guide',
+            l10n.ctlGuide,
             style: TextStyle(
               color: p.textPrimary,
               fontWeight: FontWeight.w700,
@@ -1053,7 +1056,7 @@ class _StoppedPill extends StatelessWidget {
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                'Robot stopped · scanning paused',
+                l10n.ctlStoppedPaused,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -1267,7 +1270,7 @@ class _OfflinePanel extends StatelessWidget {
             controlArt('elio_disconnected', height: 84),
             const SizedBox(height: 6),
             Text(
-              'Robot offline',
+              l10n.ctlRobotOffline,
               style: TextStyle(
                 color: p.textPrimary,
                 fontSize: 18,
@@ -1276,13 +1279,13 @@ class _OfflinePanel extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Turn on the robot and join the ELIOS Wi-Fi.',
+              l10n.ctlTurnOnRobot,
               style: TextStyle(color: p.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 8),
             PhonePill(
               key: const ValueKey('phone_connect'),
-              semantic: 'Connect',
+              semantic: l10n.ctlConnect,
               green: true,
               onTap: onConnect,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
@@ -1296,7 +1299,7 @@ class _OfflinePanel extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Connect',
+                    l10n.ctlConnect,
                     style: TextStyle(
                       color: p.primaryText,
                       fontWeight: FontWeight.w700,
@@ -1381,9 +1384,9 @@ class PhoneGlowButton extends StatelessWidget {
     };
     final power = kind == GlowKind.powerOn || kind == GlowKind.powerOff;
     final label = switch (kind) {
-      GlowKind.stop => 'Berhenti darurat',
+      GlowKind.stop => l10n.ctlEmergencyStop,
       GlowKind.go => 'GO',
-      _ => 'Power',
+      _ => l10n.ctlPower,
     };
     return Semantics(
       button: true,

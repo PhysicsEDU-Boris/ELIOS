@@ -13,13 +13,14 @@ import 'deep_dive_simulation_page.dart';
 import '../quiz/physics_quiz_page.dart';
 import '../../../../widgets/learn/learn_ui.dart';
 import '../../../../providers/physics_progress_provider.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// Marks [module] viewed and opens its page.
 void openSimulation(BuildContext context, WidgetRef ref, PhysicsModule module) {
   if (!module.isAvailable) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('${module.title} segera hadir.')));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.simulationComingSoon(module.title))));
     return;
   }
 

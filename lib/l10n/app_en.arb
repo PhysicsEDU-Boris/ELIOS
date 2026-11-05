@@ -1,0 +1,2858 @@
+{
+  "@@locale": "en",
+  "languageName": "English",
+  "@languageName": {
+    "description": "The name of this language, written in this language itself (e.g. \"Français\" for French)."
+  },
+  "sidebarLanguage": "Language",
+  "@sidebarLanguage": {
+    "description": "Sidebar label for the app language picker."
+  },
+  "sidebarGuestUser": "Guest User",
+  "sidebarLocalSession": "Local session",
+  "sidebarClose": "Close sidebar",
+  "sidebarNavigate": "NAVIGATE",
+  "sidebarHome": "Home",
+  "sidebarLearn": "Learn",
+  "sidebarLearnSubtitle": "Waste types & quizzes",
+  "sidebarConfigure": "Configure",
+  "sidebarConfigureSubtitle": "Setup ESP32 WebSocket",
+  "sidebarControl": "Control",
+  "sidebarControlSubtitle": "Drive robot & Camera",
+  "sidebarGuestBadge": "GUEST",
+  "sidebarDarkMode": "Dark mode",
+  "signOut": "Sign Out",
+  "signIn": "Sign in",
+  "commonCancel": "Cancel",
+  "commonClose": "Close",
+  "commonContinue": "Continue",
+  "leaveQuizTitle": "Leave quiz?",
+  "leaveQuiz": "Leave Quiz",
+  "photoFailed": "Could not take the photo: {error}",
+  "@photoFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeScanActivity": "Scan activity",
+  "homeFirstScanToday": "Your first scan lights up today",
+  "homeScanItem": "Scan an item",
+  "homeTrophies": "{count} trophies",
+  "@homeTrophies": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeDailyQuests": "Daily quests",
+  "homeBinBuddies": "Bin buddies",
+  "homeThisWeek": "This week",
+  "homeQuizAccuracy": "Quiz accuracy",
+  "homeMedals": "Medals",
+  "homeDidYouKnow": "DID YOU KNOW?",
+  "historyBackToList": "Back to list",
+  "historyPhoto": "PHOTO",
+  "historyAddSampleData": "Add Sample Data (Debug)",
+  "pdfExported": "PDF report exported",
+  "pdfExportFailed": "Could not export PDF: {error}",
+  "@pdfExportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "exportPdf": "Export PDF",
+  "moduleProgress": "Module progress",
+  "controlGripOpen": "Open",
+  "@controlGripOpen": {
+    "description": "Gripper fully open."
+  },
+  "controlGripClosed": "Closed",
+  "@controlGripClosed": {
+    "description": "Gripper fully closed."
+  },
+  "controlBase": "Base",
+  "@controlBase": {
+    "description": "Robot arm base joint."
+  },
+  "controlHome": "HOME",
+  "@controlHome": {
+    "description": "Button that moves the robot arm to its home position."
+  },
+  "controlR1Status": "R1: {status}",
+  "@controlR1Status": {
+    "placeholders": {
+      "status": {
+        "type": "Object"
+      }
+    }
+  },
+  "controlCheckingRobot": "checking robot...",
+  "controlPhoneScan": "Scan with phone camera",
+  "configConnectionFailed": "Connection failed",
+  "configPhoneOnlyHint": "The robot is not used. Point the phone at one item and tap Start scan.",
+  "configSameWifiHint": "Put ELIOS and this phone on the same Wi-Fi or hotspot, then tap Connect now.",
+  "configSaveDefault": "Save as default config",
+  "configUseAddressNextTime": "Use this address next time",
+  "configDragToRotate": "Drag to rotate",
+  "configLookingForElio": "Looking for ELIOS…",
+  "guidePdfUnavailable": "Guide PDF is not available yet.",
+  "videoUnavailable": "Video is not available yet.",
+  "simulationComingSoon": "{title} is coming soon.",
+  "@simulationComingSoon": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "quizStartTitle": "Start Quiz?",
+  "quizNotNow": "Not Now",
+  "quizStart": "Start",
+  "quizFinishFirst": "Finish quiz first",
+  "quizContinue": "Continue Quiz",
+  "quizKnowledgeChallenge": "Knowledge challenge",
+  "quizFinishToExit": "Finish quiz to exit",
+  "simWork": "Work (W)",
+  "@simWork": {
+    "description": "Physics: work, symbol W."
+  },
+  "simBattery": "Battery",
+  "simLiveTimer": "Live Timer:",
+  "simRun": "RUN",
+  "simBonusUam": "Bonus: What about uniformly accelerated motion?",
+  "simSortMode": "Sort Mode",
+  "simExploreMode": "Explore Mode",
+  "simIdle": "Idle",
+  "simCamera": "Camera (10W)",
+  "simDriveMotor": "Drive Motor (36W)",
+  "simArmMotor": "Arm Motor (18W)",
+  "simBatteryLeft": "Battery Left",
+  "simMotorSpeed": "Motor Speed (RPM)",
+  "simLinearEstimate": "Estimate (linear approximation)",
+  "deepOrganicCard": "Organic Card — Porosity & Oxygen Flow",
+  "deepInorganicCard": "Inorganic Card — Hooke, NIR, & Eddy Current",
+  "deepB3Card": "B3 Card — Vapor Pressure, Incinerator, Radiation",
+  "@deepB3Card": {
+    "description": "B3 = Indonesian hazardous-waste category; keep \"B3\"."
+  },
+  "deepCoreConcept": "Core Concept",
+  "deepKeyPhysics": "Key Physics",
+  "deepWhyDifferent": "Why is the treatment different?",
+  "deepHardnessTest": "1. Hardness Test (Hooke Spring)",
+  "deepReactionForce": "Reaction Force (F = k·x): {force} N (k=50 N/m)",
+  "@deepReactionForce": {
+    "placeholders": {
+      "force": {
+        "type": "Object"
+      }
+    }
+  },
+  "deepNir": "2. Near-Infrared (NIR) Reflectance",
+  "deepSpectrumPeak": "Spectrum Peak: ≈{nm} nm",
+  "@deepSpectrumPeak": {
+    "placeholders": {
+      "nm": {
+        "type": "Object"
+      }
+    }
+  },
+  "deepEddy": "3. Eddy Current (Non-Ferromagnetic Metal)",
+  "deepVaporPressure": "1. Vapor Pressure",
+  "deepRelativeVapor": "Relative Vapor Pressure: {value} (Arbiter)",
+  "@deepRelativeVapor": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "deepIncinerator": "2. Incinerator (Breaking Chemical Bonds)",
+  "deepRadiationShield": "3. Radiation Shielding",
+  "activityLess": "Less",
+  "@activityLess": {
+    "description": "Heatmap legend: fewer scans."
+  },
+  "activityMore": "More",
+  "@activityMore": {
+    "description": "Heatmap legend: more scans."
+  },
+  "activityOpenInHistory": "Open in History",
+  "activityNoScans": "No scans on this day.",
+  "settingsTitle": "Settings",
+  "settingsSubtitle": "Connection, video, sound and quiz",
+  "aiNeedsInternet": "Gemini · needs internet",
+  "aiOffHint": "Identifies scans and writes new quiz questions, about 2 to 4 s each.",
+  "aiActiveHint": "Identifying scans and writing quiz questions.",
+  "aiActive": "Active · {model}",
+  "@aiActive": {
+    "placeholders": {
+      "model": {
+        "type": "Object"
+      }
+    }
+  },
+  "aiCloud": "cloud",
+  "aiUnavailable": "No internet, or every AI model is busy. The quiz uses the question bank and tries the AI again on the next scan.",
+  "robotWifiQr": "Robot Wi-Fi QR",
+  "robotQrHint": "Robot not reading it? Lower the screen brightness or tilt the phone a little.",
+  "searchSeeAll": "See all {count} results",
+  "@searchSeeAll": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "waitingForStream": "Waiting for MaixCAM2 stream...",
+  "questionBank": "Question bank",
+  "backToQuestion": "Back to Question",
+  "scanAgain": "Scan again",
+  "testerMode": "Tester mode",
+  "testerQuestionSource": "Question source",
+  "testerBank": "Bank",
+  "testerShareLog": "Share log",
+  "testerLogCopied": "Log copied",
+  "testerCopyLog": "Copy log",
+  "testerLog": "Tester log",
+  "testerViewLog": "View log",
+  "testerClearLog": "Clear log",
+  "lookingForMaixcam": "Looking for MaixCAM2...",
+  "lostConnection": "Lost connection to ELIOS",
+  "reconnectNow": "Reconnect now",
+  "wifiSettings": "Wi-Fi settings",
+  "missionProgress": "{done} of {target} done",
+  "@missionProgress": {
+    "placeholders": {
+      "done": {
+        "type": "Object"
+      },
+      "target": {
+        "type": "Object"
+      }
+    }
+  },
+  "resetScanDebug": "Reset scan (debug)",
+  "navMain": "Main",
+  "@navMain": {
+    "description": "Screen-reader name of the bottom navigation bar."
+  },
+  "navHome": "Home",
+  "navLearn": "Learn",
+  "navControl": "Control",
+  "navControlHint": "Control, opens robot control",
+  "navConfig": "Config",
+  "navHistory": "History",
+  "shellConnectElio": "Connect ELIOS",
+  "shellConnected": "ELIOS connected",
+  "shellConnectedMsg": "Robot connection is ready.",
+  "shellDisconnected": "ELIOS disconnected",
+  "shellDisconnectedMsg": "Robot connection was lost. Check the device or network.",
+  "leaveQuizBody": "You have an active quiz. If you leave now, your current quiz progress will be lost.",
+  "homeHello": "Hello, {name}",
+  "@homeHello": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeReady": "Ready to learn with ELIOS?",
+  "configTopSubtitle": "Robot, camera and quiz setup",
+  "comingSoon": "{title} — coming soon",
+  "@comingSoon": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeGuest": "Guest",
+  "homeOpenNotifications": "Open notifications",
+  "homeVideo": "Video",
+  "homeGuide": "Guide",
+  "medalExplorer": "Environmental Explorer",
+  "medalExplorerDesc": "Complete at least 3 learning items",
+  "medalExplorerHint": "3 learning items",
+  "medalRobotics": "Robotics Beginner",
+  "medalRoboticsDesc": "Start the Introduction to ELIOS module",
+  "medalRoboticsHint": "Start Intro to ELIOS",
+  "medalAdvocate": "Sustainability Advocate",
+  "medalAdvocateDesc": "Complete all environmental empathy reflections",
+  "medalAdvocateHint": "All reflections",
+  "homeTapSquare": "Tap any square in the Year view to open that day here.",
+  "scanCount": "{count, plural, =1{1 scan} other{{count} scans}}",
+  "@scanCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "scansInMonth": "{scans} in {month}",
+  "@scansInMonth": {
+    "placeholders": {
+      "scans": {
+        "type": "Object"
+      },
+      "month": {
+        "type": "Object"
+      }
+    }
+  },
+  "noScans17Weeks": "No scans in the last 17 weeks",
+  "scansIn17Weeks": "{scans} in the last 17 weeks",
+  "@scansIn17Weeks": {
+    "placeholders": {
+      "scans": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeYear": "Year",
+  "homeMonth": "Month",
+  "dayCount": "{count, plural, =1{1 day} other{{count} days}}",
+  "@dayCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "homeStreakLine": "Streak {days} · longest {longest}",
+  "@homeStreakLine": {
+    "placeholders": {
+      "days": {
+        "type": "Object"
+      },
+      "longest": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeGuestProgress": "Guest progress is stored on this device. Sign in to sync it across devices.",
+  "levelSemantics": "Level {level}, {title}. {trophies} trophies",
+  "@levelSemantics": {
+    "placeholders": {
+      "level": {
+        "type": "Object"
+      },
+      "title": {
+        "type": "Object"
+      },
+      "trophies": {
+        "type": "Object"
+      }
+    }
+  },
+  "levelSemanticsTop": ", top level",
+  "levelSemanticsNext": ", {count} to level {next}",
+  "@levelSemanticsNext": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "next": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeLevel": "Level {level}",
+  "@homeLevel": {
+    "placeholders": {
+      "level": {
+        "type": "Object"
+      }
+    }
+  },
+  "homePlantFirst": "Plant your first trophy: scan an item.",
+  "homeTreeGrows": "Your tree grows with every trophy.",
+  "homeTopLevel": "Top level",
+  "homeToNextLevel": "{count} to Lv{next}",
+  "@homeToNextLevel": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "next": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeScans": "Scans",
+  "homeDayStreak": "Day streak",
+  "questsDoneLine": "{done} of 3 done · resets at midnight",
+  "@questsDoneLine": {
+    "placeholders": {
+      "done": {
+        "type": "Object"
+      }
+    }
+  },
+  "questsDoneSemantics": "{done} of 3 quests done",
+  "@questsDoneSemantics": {
+    "placeholders": {
+      "done": {
+        "type": "Object"
+      }
+    }
+  },
+  "questSemantics": "{title}, {state}. Reward {reward} trophies",
+  "@questSemantics": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      },
+      "state": {
+        "type": "Object"
+      },
+      "reward": {
+        "type": "Object"
+      }
+    }
+  },
+  "questDone": "done",
+  "percentValue": "{value} percent",
+  "@percentValue": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "binsHungry": "Your bins are hungry: scan an item",
+  "binsFed": "{scans} fed to your 3 bins",
+  "@binsFed": {
+    "placeholders": {
+      "scans": {
+        "type": "Object"
+      }
+    }
+  },
+  "binTop": "Top",
+  "residuNote": "Residu scans count toward Anorganik.",
+  "residuIncluded": "Anorganik includes {count} residu {scans} (the robot sorts residu there).",
+  "@residuIncluded": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "scans": {
+        "type": "Object"
+      }
+    }
+  },
+  "scanWord": "{count, plural, =1{scan} other{scans}}",
+  "@scanWord": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "weekSemantics": "{count} scans this week. {days}",
+  "@weekSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "days": {
+        "type": "Object"
+      }
+    }
+  },
+  "quizAccNoData": "Quiz accuracy: no data",
+  "quizAccSemantics": "Quiz accuracy {acc} percent over the last {count} scans with questions",
+  "@quizAccSemantics": {
+    "placeholders": {
+      "acc": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "quizAccDelta": ", {dir} {count} points",
+  "@quizAccDelta": {
+    "placeholders": {
+      "dir": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "deltaUp": "up",
+  "deltaDown": "down",
+  "noData": "no data",
+  "medalUnlocked": "Unlocked",
+  "homeLoading": "Loading your progress",
+  "homeGrowing": "Growing your tree…",
+  "fact1": "Plastics under 1,0 g/cm³ float in water. Recycling plants use that to separate them.",
+  "fact2": "Batteries are B3 waste: their metals can leak into soil and water, so they need a special drop-off.",
+  "fact3": "Fruit peels and food scraps can turn into compost in a few weeks.",
+  "fact4": "Rinsing a bottle before recycling keeps the rest of the bin clean.",
+  "fact5": "Aluminium cans can be recycled again and again without losing quality.",
+  "heatmapDayLabels": "Mon,Wed,Fri",
+  "@heatmapDayLabels": {
+    "description": "Short Monday, Wednesday, Friday, comma-separated, max 3 letters each."
+  },
+  "calendarWeekdays": "Su,Mo,Tu,We,Th,Fr,Sa",
+  "@calendarWeekdays": {
+    "description": "Two-letter weekday initials Sunday..Saturday, comma-separated."
+  },
+  "activityScansHint": "Use Month to browse days",
+  "previousMonth": "Previous month",
+  "nextMonth": "Next month",
+  "searchAll": "All",
+  "searchLessons": "Lessons",
+  "searchLessonsHeader": "LESSONS",
+  "searchSims": "Simulations",
+  "searchSimsHeader": "SIMULATIONS",
+  "searchQuiz": "Quiz",
+  "searchQuizHeader": "QUIZ",
+  "searchScans": "Scans",
+  "searchScansHeader": "YOUR SCANS",
+  "searchHint": "Search lessons, simulations, scans",
+  "resultCount": "{count, plural, =1{1 result} other{{count} results}}",
+  "@resultCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "clearSearch": "Clear search",
+  "searchIn": "Search in",
+  "noResultsFor": "No results for “{query}”.",
+  "@noResultsFor": {
+    "placeholders": {
+      "query": {
+        "type": "Object"
+      }
+    }
+  },
+  "notifNone": "No notifications right now.",
+  "notifEmptyHint": "Learning reminders, quiz review updates, and progress alerts will appear here.",
+  "notifDismiss": "Dismiss notifications",
+  "notifTitle": "Notifications",
+  "notifClose": "Close notifications",
+  "notifSubtitle": "Learning updates and reminders from ELIOS.",
+  "notifMarkAllRead": "Mark all read",
+  "notifClearAll": "Clear all",
+  "notifDone": "Done",
+  "notifOpenLearning": "Open Learning",
+  "notifOpenConfig": "Open Config",
+  "timeJustNow": "Just now",
+  "timeMinutesAgo": "{n}m ago",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "timeHoursAgo": "{n}h ago",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "timeDaysAgo": "{n}d ago",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "timeWeeksAgo": "{n}w ago",
+  "@timeWeeksAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "timeMonthsAgo": "{n}mo ago",
+  "@timeMonthsAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "timeYearsAgo": "{n}y ago",
+  "@timeYearsAgo": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "questScan3": "Scan 3 items today",
+  "questFinishQuiz": "Finish a scan quiz",
+  "questSortB3": "Sort one B3 item safely",
+  "levelEcoStarter": "Eco Starter",
+  "levelWasteSpotter": "Waste Spotter",
+  "levelBinExpert": "Bin Expert",
+  "levelEcoSorter": "Eco Sorter",
+  "levelPlanetGuardian": "Planet Guardian",
+  "gradePerfect": "Perfect",
+  "gradeGreat": "Great",
+  "gradeGood": "Good",
+  "gradeKeepLearning": "Keep Learning",
+  "gradeTryAgain": "Try Again",
+  "cfgIpHint": "Enter an IP like 192.168.4.1",
+  "cfgPortRange": "Port 1 to 65535",
+  "cfgFoundAt": "Found ELIOS at {ip}",
+  "@cfgFoundAt": {
+    "placeholders": {
+      "ip": {
+        "type": "Object"
+      }
+    }
+  },
+  "cfgNotFound": "ELIOS not found on this Wi-Fi",
+  "cfgRetry": "Retry",
+  "cfgCameraSource": "Camera source",
+  "cfgCameraSourceSub": "Which camera takes the scan photo",
+  "cfgMaixDesc": "Robot camera over the ELIOS Wi-Fi",
+  "cfgPhoneCamera": "Phone camera",
+  "cfgPhoneCameraDesc": "Scan with this phone, no robot needed",
+  "cfgQuizQuestions": "Quiz questions",
+  "cfgQuizQuestionsSub": "Where the scan quiz gets its questions",
+  "cfgStartScan": "Start scan",
+  "cfgConnectNow": "Connect now",
+  "cfgDisconnect": "Disconnect",
+  "cfgConnecting": "Connecting…",
+  "cfgCancelConnecting": "Cancel connecting",
+  "cfgConnected": "Connected",
+  "cfgTryAgain": "Try again",
+  "cfgConnection": "Connection",
+  "cfgWsAddress": "ELIOS WebSocket address",
+  "cfgPort": "Port",
+  "cfgSearching": "Searching…",
+  "cfgFindElio": "Find ELIOS",
+  "cfgRobotNotUsed": "Robot not used",
+  "cfgConnectingTo": "Connecting to {endpoint}",
+  "@cfgConnectingTo": {
+    "placeholders": {
+      "endpoint": {
+        "type": "Object"
+      }
+    }
+  },
+  "cfgLastTryFailed": "Last try failed",
+  "cfgNotConnectedYet": "Not connected yet",
+  "cfgNotUsed": "Not used",
+  "cfgOnline": "Online",
+  "cfgConnectingShort": "Connecting",
+  "cfgOffline": "Offline",
+  "cfgStatus": "Status",
+  "cfgBattery": "Battery",
+  "cfgNotReported": "not reported",
+  "cfgCamera": "Camera",
+  "cfgPhone": "Phone",
+  "cfgRobotModel": "ELIOS robot 3D model, drag to rotate",
+  "cfgQuestionBankDesc": "Checked questions, instant",
+  "cfgAiDesc": "New questions each scan, needs internet",
+  "cfgAiUnreachable": "ELIOS AI is not reachable",
+  "setConnection": "Connection",
+  "setAutoReconnect": "Auto-reconnect",
+  "setAutoReconnectSub": "Reconnect when ELIOS is available again",
+  "setVideo": "Video",
+  "setResolution": "Resolution",
+  "setResolutionSub": "Higher looks sharper but uses more Wi-Fi",
+  "setShowFps": "Show FPS overlay",
+  "setShowFpsSub": "Show stream speed while viewing",
+  "setSound": "Sound",
+  "setSoundEffects": "Sound effects",
+  "setSoundEffectsSub": "UI and robot feedback sounds",
+  "setMasterVolume": "Master volume",
+  "setMasterVolumeValue": "Master volume {percent}%",
+  "@setMasterVolumeValue": {
+    "placeholders": {
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "setQuiz": "Quiz",
+  "setDifficulty": "Difficulty",
+  "setEasy": "Easy",
+  "setMedium": "Medium",
+  "setHard": "Hard",
+  "setTimer": "Timer",
+  "setTimerSub": "Time for each question",
+  "setAllowSkip": "Allow skipping",
+  "setAllowSkipSub": "Learners can skip a question",
+  "qrIntro": "Turn on this phone's hotspot (2.4 GHz) and type its name and password. On the robot screen tap Wi-Fi setup, then hold this QR in front of the camera.",
+  "qrSsid": "Hotspot name (SSID)",
+  "qrPassword": "Hotspot password",
+  "qrShowPassword": "Show password",
+  "qrHidePassword": "Hide password",
+  "qrShow": "Show QR",
+  "qrSemantics": "Wi-Fi QR code for {ssid}",
+  "@qrSemantics": {
+    "placeholders": {
+      "ssid": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlWaiting": "Waiting",
+  "ctlOffline": "Offline",
+  "ctlStopped": "Stopped",
+  "ctlForward": "Forward",
+  "ctlBack": "Back",
+  "ctlLeft": "Left",
+  "ctlRight": "Right",
+  "ctlReady": "Ready",
+  "ctlHoming": "Homing",
+  "ctlExit": "Exit",
+  "ctlDebugScan": "Debug Scan",
+  "ctlPushToDrive": "Push to drive · let go to stop",
+  "ctlUnlocksOnConnect": "Unlocks when the robot connects",
+  "ctlSpeedPwm": "SPEED (PWM)",
+  "ctlSpeed": "Speed",
+  "ctlPickUp": "PICK UP",
+  "ctlRelease": "RELEASE",
+  "ctlGripperCaps": "GRIPPER",
+  "ctlGripper": "Gripper",
+  "ctlHeight": "HEIGHT",
+  "ctlUpDown": "Up / Down",
+  "ctlReach": "REACH",
+  "ctlFwdBack": "Fwd / Back",
+  "ctlArmHint": "Slide up to lift, slide forward to reach. The arm only moves when the robot is not STOPPED.",
+  "ctlArmLocked": "Arm controls unlock when the robot is connected. STOP always works.",
+  "ctlAiBusy": "ELIOS AI is busy. Try LOCK again in a moment.",
+  "ctlNoItem": "No item found. Point the camera at one item and try again.",
+  "ctlBaseLeft": "Base left",
+  "ctlBaseRight": "Base right",
+  "ctlRobotControl": "Robot Control",
+  "ctlDrive": "DRIVE",
+  "ctlLiveScanPaused": "LIVE · scan paused",
+  "ctlLiveFps": "LIVE · {fps} fps",
+  "@ctlLiveFps": {
+    "placeholders": {
+      "fps": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlNoVideo": "No video",
+  "ctlNoVideoCaps": "NO VIDEO",
+  "ctlConnecting": "Connecting...",
+  "ctlScanQuiz": "Scan quiz",
+  "ctlVoice": "Voice",
+  "ctlWaitingFrames": "Connected. Waiting for camera frames...",
+  "ctlArm": "ARM",
+  "ctlUnlock": "UNLOCK",
+  "ctlLock": "LOCK",
+  "ctlScan": "SCAN",
+  "ctlDisconnectRobot": "Disconnect robot",
+  "ctlConnectRobot": "Connect robot",
+  "ctlGuide": "Guide",
+  "ctlStoppedPaused": "Robot stopped · scanning paused",
+  "ctlRobotOffline": "Robot offline",
+  "ctlTurnOnRobot": "Turn on the robot and join the ELIOS Wi-Fi.",
+  "ctlConnect": "Connect",
+  "ctlEmergencyStop": "Emergency stop",
+  "ctlPower": "Power",
+  "ctlMaixConnected": "MaixCAM2 connected",
+  "ctlDisconnected": "Disconnected",
+  "ctlPickZone": "PICK ZONE",
+  "ctlKeepTabletOnWifi": "Turn the robot on and keep this tablet on the ELIOS Wi-Fi.",
+  "ctlRetryingIn": "Retrying in {s} s · attempt {attempt} of {max}",
+  "@ctlRetryingIn": {
+    "placeholders": {
+      "s": {
+        "type": "Object"
+      },
+      "attempt": {
+        "type": "Object"
+      },
+      "max": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlAutoReconnectOff": "Auto-reconnect is off",
+  "ctlStoppedRetrying": "Stopped retrying after {max} tries",
+  "@ctlStoppedRetrying": {
+    "placeholders": {
+      "max": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlTryingAgain": "Trying again · attempt {attempt} of {max}",
+  "@ctlTryingAgain": {
+    "placeholders": {
+      "attempt": {
+        "type": "Object"
+      },
+      "max": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlLinkDropped": "The robot link dropped, so the robot stopped for safety.",
+  "ctlOpenQuiz": "Open quiz",
+  "ctlMission": "MISSION",
+  "ctlSortItems": "Sort {count} items this drive",
+  "@ctlSortItems": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlThisDrive": "THIS DRIVE",
+  "ctlElioSays": "ELIOS SAYS",
+  "ctlMissionOf": "Mission {done} of {target}",
+  "@ctlMissionOf": {
+    "placeholders": {
+      "done": {
+        "type": "Object"
+      },
+      "target": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlSubtitle": "Drive close, pick it up, sort it right!",
+  "ctlLinkLost": "link lost",
+  "ctlStopButton": "STOP button",
+  "ctlRobotError": "robot error",
+  "ctlRobotStoppedWhy": "Robot STOPPED · {why}",
+  "@ctlRobotStoppedWhy": {
+    "placeholders": {
+      "why": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlHoldForHome": "Hold 1 second for HOME",
+  "ctlRobotStoppedLong": "ROBOT STOPPED ({why}). Scanning stopped; an open quiz can still be answered.",
+  "@ctlRobotStoppedLong": {
+    "placeholders": {
+      "why": {
+        "type": "Object"
+      }
+    }
+  },
+  "guideDriveTitle": "Drive the robot",
+  "guideDriveBody": "Push the green knob the way you want to go. Let go and the robot stops.",
+  "guideStopTitle": "Big red STOP",
+  "guideStopBody": "Tap it any time something looks unsafe. Space or Esc work too.",
+  "guideGrabTitle": "Grab the item",
+  "guideGrabBody": "When the item is close, press PICK UP. RELEASE drops it. HOME parks the arm.",
+  "guideQuizTitle": "Answer the quiz",
+  "guideQuizBody": "After each scan ELIOS AI asks a question. Tap here to open it and win trophies!",
+  "guideStepOf": "STEP {step} OF {total}",
+  "@guideStepOf": {
+    "placeholders": {
+      "step": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "guideSkip": "Skip",
+  "guideNext": "Next",
+  "guideIntro": "Drive to an item, grab it, sort it, then answer ELIOS AI to earn trophies. Tap Guide any time to replay this.",
+  "r2JoystickHint": "Joystick: slide to steer, let go to stop",
+  "r2SpeedValue": "Speed {value}",
+  "@r2SpeedValue": {
+    "placeholders": {
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "r2RobotPrefix": "Robot ",
+  "dsAiOffline": "ELIOS AI offline · question bank",
+  "dsAiReady": "ELIOS AI ready",
+  "dsBack": "Back",
+  "dsLive": "LIVE",
+  "dsNoCamera": "No camera",
+  "dsBankMode": "Bank mode",
+  "dsPutItem": "Put one item inside the white box, then tap Scan.",
+  "dsScanMakeQuiz": "Scan and make quiz",
+  "dsScanMakeQuizShort": "Scan & make quiz",
+  "dsTiming": "About 2–4 s · needs internet",
+  "dsSwitchCamera": "Switch camera",
+  "dsTestModeHint": "Test mode: quiz without the camera",
+  "dsTestMode": "Test mode",
+  "histSavedLocal": "Saved locally",
+  "histTitle": "Scan History",
+  "histSubtitleShort": "Quiz results & trophies",
+  "histSubtitle": "Every item you scanned, with its quiz results and trophies",
+  "histPickLeft": "Pick a scan on the left to see the quiz details.",
+  "histRecent": "Recent scans",
+  "histSeedDebug": "Seed Sample Data (Debug)",
+  "histRecyclable": "Recyclable",
+  "histOrganic": "Organic",
+  "histScannedAt": "Scanned {time} · Photo and {count} questions saved locally",
+  "@histScannedAt": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "histDiffPill": "{level} · {count}Q",
+  "@histDiffPill": {
+    "placeholders": {
+      "level": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "hist10Trophies": "10 trophies per right answer",
+  "histQuestions": "Questions",
+  "histPending": "Pending",
+  "histCorrect": "Correct",
+  "histWrong": "Wrong",
+  "histYourAnswer": "YOUR ANSWER",
+  "histRightAnswer": "RIGHT ANSWER",
+  "histScore": "SCORE",
+  "awaitingGrading": "Awaiting grading",
+  "histEssayScore": "{score} / 10 · +{trophies} trophies",
+  "@histEssayScore": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      },
+      "trophies": {
+        "type": "Object"
+      }
+    }
+  },
+  "histHideExplanation": "Hide Explanation",
+  "histShowExplanation": "Show Explanation",
+  "histNoExplanation": "No explanation was saved for this question.",
+  "histEmptyTitle": "No Scan History Yet",
+  "histEmptyBody": "Every item you scan and every quiz you finish will show up here.",
+  "authUserNotFound": "No account found with this email or username.",
+  "authWrongPassword": "Incorrect password.",
+  "authEmailInUse": "This email is already registered.",
+  "authWeakPassword": "Password must be at least 6 characters.",
+  "authInvalidEmail": "Enter a valid email address.",
+  "authTooMany": "Too many attempts. Try again later.",
+  "authNoInternet": "No internet connection.",
+  "authGoogleConfig": "Google sign-in is not configured correctly. Check Android/iOS Firebase setup.",
+  "authOtherMethod": "This email is already registered with another sign-in method.",
+  "authGoogleLinked": "This Google account is already linked to another user.",
+  "authGoogleInvalid": "Google credential is invalid. Check Firebase configuration.",
+  "authGoogleDisabled": "Google sign-in is not enabled in Firebase Authentication.",
+  "authGeneric": "Something went wrong. Please try again.",
+  "authWelcomeBack": "Welcome back!",
+  "authSignInFailed": "Sign in failed.",
+  "authAccountCreated": "Account created!",
+  "authCreateFailed": "Account creation failed.",
+  "authNoIdToken": "Google Sign-In returned no idToken. Check Firebase platform config.",
+  "authGoogleFailedCode": "Google sign-in failed: {code}",
+  "@authGoogleFailedCode": {
+    "placeholders": {
+      "code": {
+        "type": "Object"
+      }
+    }
+  },
+  "authGoogleFailed": "Google sign-in failed. Check debug logs.",
+  "authGuestEntered": "Entered guest mode.",
+  "authGuestFailed": "Guest mode failed.",
+  "authEmailFirst": "Enter a valid email first.",
+  "authResetSent": "Reset link sent to your email.",
+  "authResetFailed": "Failed to send reset email.",
+  "authEmailRequired": "Email is required",
+  "authEmailOrUserRequired": "Email or username is required",
+  "authValidEmail": "Enter a valid email",
+  "authPasswordRequired": "Password is required",
+  "authMin6": "Min 6 characters",
+  "authNameRequired": "Name is required",
+  "authMin2": "Min 2 characters",
+  "authForgot": "Forgot password?",
+  "authCreateAccount": "Create Account",
+  "authWelcomeTitle": "Welcome Back",
+  "authJoin": "Join ELIOS to start sorting",
+  "authSignInSub": "Sign in to control ELIOS",
+  "authEmail": "Email",
+  "authEmailOrUser": "Email / Username",
+  "authEmailOrUserHint": "you@example.com or username",
+  "authSendReset": "Send reset link",
+  "authSignIn": "Sign In",
+  "authFullName": "Full Name",
+  "authFullNameHint": "John Doe",
+  "authPassword": "Password",
+  "authPasswordHint": "Enter your password",
+  "authGoogle": "Continue with Google",
+  "authGuest": "Continue as Guest",
+  "authGuestNote": "Guest mode saves data locally only. Sign in to sync progress.",
+  "authHaveAccount": "Already have an account? ",
+  "authNoAccount": "Don't have an account? ",
+  "authSignUp": "Sign Up",
+  "authPleaseWait": "Please wait",
+  "authOr": "Or",
+  "quizSrcBank": "MODULE QUESTION · QUESTION BANK",
+  "quizSrcAi": "ELIOS AI QUESTION",
+  "quizSrcFallback": "BACKUP QUESTION (ELIOS AI NOT CONNECTED)",
+  "quizSrcGeneric": "GENERAL QUESTION (ITEM NOT IN THE QUESTION BANK YET)",
+  "quizPreparing": "Quiz, preparing the question",
+  "quizReady": "Quiz, question ready",
+  "quizWord": "Quiz",
+  "scanFailed": "Scan did not work",
+  "wasteGeneric": "Waste",
+  "trophiesEarned": "+{count} trophies",
+  "@trophiesEarned": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "trophiesTotal": "{count} total trophies",
+  "@trophiesTotal": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "robotDropping": "The robot is dropping it in the bin...",
+  "qzReadScan": "Read the scan",
+  "qzAiLooking": "ELIOS AI is looking",
+  "qzPickedTopic": "Picked a topic",
+  "qzAfterScan": "After the scan",
+  "qzAiTopic": "ELIOS AI topic",
+  "qzBankPool": "Bank pool · {pool}",
+  "@qzBankPool": {
+    "placeholders": {
+      "pool": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzWriting": "Writing the question",
+  "qzEssay": "essay",
+  "qzMultipleChoice": "multiple choice",
+  "qzQuestionOfLevel": "Question {n} of {total} · {level}",
+  "@qzQuestionOfLevel": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      },
+      "level": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzQuestionOf": "Question {n} of {total}",
+  "@qzQuestionOf": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzScanned": "Scanned: {name}",
+  "@qzScanned": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzReading": "reading…",
+  "qzAiReadingCaps": "ELIOS AI · READING THE SCAN",
+  "qzAiWritingCaps": "ELIOS AI · WRITING YOUR QUESTION",
+  "qzReadingScan": "Reading the scan…",
+  "qzPreparingNext": "Preparing the next question…",
+  "qzAiOnline": "ELIOS AI is writing it online. This usually takes 2–4 seconds.",
+  "qzFromBank": "From the reviewed question bank. This takes a moment.",
+  "qzKeepDriving": "Keep driving. ",
+  "qzMinimiseHint": "Minimise this and the Quiz button lights up when the question is ready.",
+  "qzMcCaps": "MULTIPLE CHOICE · {level}",
+  "@qzMcCaps": {
+    "placeholders": {
+      "level": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzSkipFinish": "Skip and finish",
+  "qzSkip": "Skip",
+  "qzUpTo10": "Up to +10 trophies for a full answer",
+  "qz10Right": "+10 trophies for a right answer",
+  "qzEssayCaps": "ESSAY · {level} · MAX {words} WORDS",
+  "@qzEssayCaps": {
+    "placeholders": {
+      "level": {
+        "type": "Object"
+      },
+      "words": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzGrading": "ELIOS AI is grading your answer…",
+  "qzTypeAnswer": "Type your answer here…",
+  "qzSubmit": "Submit",
+  "qzClear": "Clear",
+  "qzHazardTitle": "Possibly hazardous (B3): {name}",
+  "@qzHazardTitle": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzHazardBody": "Don't take it apart or put it in a normal bin. Ask staff to handle it. Continue the quiz about this item?",
+  "qzContinueQuiz": "Continue quiz",
+  "qzWhichBin": "Which bin is right?",
+  "qzMismatchBody": "The detector says {detector} ({detectorCategory}). ELIOS AI says {name} ({aiCategory}). Pick the right one.",
+  "@qzMismatchBody": {
+    "placeholders": {
+      "detector": {
+        "type": "Object"
+      },
+      "detectorCategory": {
+        "type": "Object"
+      },
+      "name": {
+        "type": "Object"
+      },
+      "aiCategory": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzUseAi": "Use ELIOS AI ({category})",
+  "@qzUseAi": {
+    "placeholders": {
+      "category": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzUseDetector": "Use detector ({category})",
+  "@qzUseDetector": {
+    "placeholders": {
+      "category": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzScanChip": "Scan",
+  "qzComplete": "Quiz complete",
+  "qzBack": "Back",
+  "qzListenExplanation": "Listen to explanation",
+  "qzFinish": "Finish quiz",
+  "qzNextQuestion": "Next question",
+  "qzEssayReview": "Essay review",
+  "qzReview": "Review",
+  "qzWaitingGrading": "Waiting for grading",
+  "qzNotGradedYet": "ELIOS AI has not graded this answer yet. It is saved and graded later.",
+  "qzScoreOf10": "Score {score} / 10",
+  "@qzScoreOf10": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzCorrect": "Correct!",
+  "qzYouChose": "You chose “{picked}”.",
+  "@qzYouChose": {
+    "placeholders": {
+      "picked": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzNotQuite": "Not quite",
+  "qzRightAnswerIs": "The right answer is “{answer}”.",
+  "@qzRightAnswerIs": {
+    "placeholders": {
+      "answer": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzAnswerReview": "Answer review",
+  "qzDetailed": "Detailed explanation",
+  "qzQuestionOfCaps": "QUESTION {n} OF {total} · {kind}",
+  "@qzQuestionOfCaps": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      },
+      "kind": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzEssayUpper": "ESSAY",
+  "qzQuestionCaps": "QUESTION",
+  "qzCorrectAnswerCaps": "CORRECT ANSWER",
+  "qzLoadingExplanation": "Loading the explanation…",
+  "qzSavedNoTrophies": "Your answer is saved. ELIOS AI grades it when it is ready; no trophies until then.",
+  "qzFeedback": "Feedback",
+  "qzWhyWrong": "Why your answer is not right",
+  "qzWhyRight": "Why the correct answer is right",
+  "qzElioModule": "ELIOS module",
+  "qzScoringTable": "Table 1. Scoring breakdown",
+  "qzCriteria": "CRITERIA",
+  "qzFeedbackCaps": "FEEDBACK",
+  "qzWhereGoes": "Table 1. Where {name} goes",
+  "@qzWhereGoes": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "qzThisItem": "this item",
+  "qzBin": "BIN",
+  "qzExamples": "EXAMPLES",
+  "qzAccepts": "ACCEPTS",
+  "qzOptionsTable": "Table 1. The answer options",
+  "qzOption": "OPTION",
+  "qzStatus": "STATUS",
+  "qzCorrectAnswer": "Correct answer",
+  "qzYourAnswer": "Your answer",
+  "qzAiGraded": "AI graded · check with your teacher",
+  "qzReviewedBank": "Reviewed question bank",
+  "qzAiGenerated": "AI generated · not reviewed",
+  "qzSugFullMark": "Show a full-mark answer",
+  "qzSugKeyTerms": "Explain key terms",
+  "qzSugHint": "Give me a hint",
+  "qzSugSimpler": "Say it simpler",
+  "qzCoach": "ELIOS AI coach",
+  "qzSent": "Sent",
+  "qzPlaying": "Playing",
+  "qzAskScore": "Ask ELIOS AI about your score…",
+  "qzAsk": "Ask ELIOS AI…",
+  "qzSend": "Send",
+  "qzListen": "Listen",
+  "qzCopy": "Copy",
+  "qzWhichItem": "Which item is this?",
+  "qzNotThis": "Not this?",
+  "qzMinimise": "Minimise",
+  "qzMinimiseQuiz": "Minimise quiz",
+  "qzCloseQuiz": "Close quiz",
+  "qzReadToMe": "Read it to me",
+  "qzExplanation": "Explanation",
+  "ovEssayMax": "Essay · max 150 words",
+  "ovPendingSub": "Answer saved. No score yet.",
+  "ovEssayScore": "Score: {score}/10 · +{score} trophies",
+  "@ovEssayScore": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "ovGood": "Good answer!",
+  "ovNeedsWork": "A few points need work.",
+  "ovRight": "Correct! +10 trophies",
+  "ovWrong": "Not quite right",
+  "ovRightAnswer": "Right answer: {answer}",
+  "@ovRightAnswer": {
+    "placeholders": {
+      "answer": {
+        "type": "Object"
+      }
+    }
+  },
+  "ovExplanationN": "Explanation for question {n}",
+  "@ovExplanationN": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "ovNoExplanation": "No explanation for this question yet.",
+  "ovCompareTable": "Waste category comparison",
+  "ovReference": "Reference answer: {answer}",
+  "@ovReference": {
+    "placeholders": {
+      "answer": {
+        "type": "Object"
+      }
+    }
+  },
+  "ovCategory": "Category",
+  "ovMaterial": "Material",
+  "ovAccepted": "Accepted",
+  "ovCriteria": "Criteria",
+  "ovMax": "Max",
+  "ovAwarded": "Awarded",
+  "ovComment": "Comment",
+  "ovFinish": "Finish quiz ✓",
+  "ovNext": "Next question →",
+  "ovAssistant": "AI Correction Assistant",
+  "ovAskAi": "Ask AI...",
+  "ovVoice": "Voice",
+  "lqTitle": "Quiz",
+  "lqCompletedBest": " Completed with best score {score}%.",
+  "@lqCompletedBest": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqBest": " Best score {score}%.",
+  "@lqBest": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqUsedAttempt": "You have already used your one quiz attempt.{scoreText}",
+  "@lqUsedAttempt": {
+    "placeholders": {
+      "scoreText": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqOnceBody": "This quiz can only be attempted once. Once you start, you must finish it before leaving.",
+  "lqFinishBody": "This quiz has only one attempt. Please finish all questions before leaving.",
+  "lqLoading": "Loading quiz questions",
+  "lqLoadFailed": "Quiz questions could not be loaded.",
+  "lqCheckFirestore": "Check the Firestore connection and try again.",
+  "lqBackToQuizzes": "Back to Quizzes",
+  "lqNotAvailable": "Quiz questions are not available yet.",
+  "lqIntro": "Test your understanding of waste management and how ELIOS classifies materials. Each quiz has one attempt.",
+  "lqSetsFailed": "Quiz sets could not be loaded.",
+  "lqNoPublished": "No published quizzes are available.",
+  "lqCompleted": "Completed",
+  "lqAttemptUsed": "Attempt used",
+  "lqBestScore": "best score {score}%",
+  "@lqBestScore": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqReviewNew": "review for new attempts only",
+  "lqQuestions": "{count} questions",
+  "@lqQuestions": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqOneAttempt": "one attempt",
+  "lqReview": "Review",
+  "lqDone": "Done",
+  "lqUsed": "Used",
+  "lqCounter": "Question {n} / {total}",
+  "@lqCounter": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqCorrectExpl": "Correct: {explanation}",
+  "@lqCorrectExpl": {
+    "placeholders": {
+      "explanation": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqNotQuiteExpl": "Not quite: {explanation}",
+  "@lqNotQuiteExpl": {
+    "placeholders": {
+      "explanation": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqNotQuite": "Not quite.",
+  "lqViewResults": "View results",
+  "lqImageUnavailable": "Image unavailable",
+  "lqScored": "You scored {score} out of {total}.",
+  "@lqScored": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "lqBackLower": "Back to quizzes",
+  "lqReviewAnswers": "Review answers",
+  "rvTitle": "Quiz review",
+  "rvScore": "Score",
+  "rvPercent": "Percent",
+  "rvPassed": "Passed",
+  "rvQuestionN": "Question {n}",
+  "@rvQuestionN": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "rvNotAnswered": "Not answered",
+  "rvUnknown": "Unknown answer",
+  "pqResultsTitle": "Physics Quiz Results",
+  "pqTitle": "Physics quiz",
+  "pqCounter": "Question {n} / {total}",
+  "@pqCounter": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "pqAdvanced": "Advanced physics",
+  "pqWrong": "Not quite.",
+  "pqSeeResults": "See results",
+  "pqNext": "Next question",
+  "pqDone": "Physics Quiz Complete",
+  "pqScore": "Your score: {score} / {total}",
+  "@pqScore": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "pqBackMenu": "Back to Menu",
+  "tpNotUsed": "Not used yet",
+  "tpReady": "Ready ({model})",
+  "@tpReady": {
+    "placeholders": {
+      "model": {
+        "type": "Object"
+      }
+    }
+  },
+  "tpOffline": "Not connected, bank mode",
+  "lnWelcome": "Welcome to Learn",
+  "lnWelcomeBody": "Start with {bin}: {count} short lessons, then try the quiz.",
+  "@lnWelcomeBody": {
+    "placeholders": {
+      "bin": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnStartModule1": "Start module 1",
+  "lnTestElio": "Test how ELIOS sorts waste.",
+  "lnQuizzesTest": "{count} quizzes. Test how ELIOS sorts waste.",
+  "@lnQuizzesTest": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnTakeQuiz": "Take quiz",
+  "lnYourProgress": "Your learning progress",
+  "lnNoModulesStarted": "No modules started yet",
+  "lnModulesInProgress": "{started} of {total} modules in progress",
+  "@lnModulesInProgress": {
+    "placeholders": {
+      "started": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnOverall": "{percent}% overall completion",
+  "@lnOverall": {
+    "placeholders": {
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnCourseModules": "Course modules",
+  "lnSeeAll": "See all",
+  "lnContinueLearning": "Continue learning",
+  "lnAllLessons": "All lessons",
+  "lnNothingInProgress": "Nothing in progress yet. Lessons you open will wait for you here.",
+  "lnWatchLearn": "Watch and learn",
+  "lnVideoCount": "{count, plural, =1{1 video} other{{count} videos}}",
+  "@lnVideoCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "lnVideos": "Videos",
+  "lnNoVideos": "No videos published yet.",
+  "lnPhysicsSims": "Physics simulations",
+  "lnModuleCount": "{count, plural, =1{1 module} other{{count} modules}}",
+  "@lnModuleCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "lnSimTag": "Simulation · {tag}",
+  "@lnSimTag": {
+    "placeholders": {
+      "tag": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnGuides": "Guides",
+  "lnNoGuides": "No guides published yet.",
+  "lnModuleN": "Module {n}",
+  "@lnModuleN": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnGuide": "Guide",
+  "lnDone": "Done",
+  "lnNew": "New",
+  "lnLoadFailed": "Learning modules could not be loaded.",
+  "lnLoadFailedBody": "Check the connection to ELIOS or the internet, then try again. Lessons you already opened still work offline.",
+  "lnOpenOffline": "Open offline lessons",
+  "lnNoModules": "No learning modules available yet.",
+  "lnNoModulesBody": "New lessons appear here as soon as they are published.",
+  "lnNothingHere": "Nothing here yet.",
+  "lnVideo": "Video",
+  "lnSimulations": "Simulations",
+  "lnOfflineLessons": "Offline lessons",
+  "lnLoadingOffline": "Loading offline lessons",
+  "lnOfflineNote": "Guides you opened before work offline. Videos need the internet.",
+  "lnNoSaved": "No lessons saved on this device yet.",
+  "lnPlayVideo": "Play video",
+  "lnOpenGuide": "Open guide",
+  "lnContinueVideo": "Continue video · {pct}%",
+  "@lnContinueVideo": {
+    "placeholders": {
+      "pct": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnContinueGuide": "Continue guide · {pct}%",
+  "@lnContinueGuide": {
+    "placeholders": {
+      "pct": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnWatchAgain": "Watch again",
+  "lnReadAgain": "Read again",
+  "lnLesson": "Lesson",
+  "lnDuration": "Duration",
+  "lnReading": "Reading",
+  "lnPositionOf": "{n} of {total}",
+  "@lnPositionOf": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnWatched": "Watched",
+  "lnRead": "Read",
+  "lnAbout": "About this lesson",
+  "lnGuidesTab": "{count} Guides",
+  "@lnGuidesTab": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnVideosTab": "{count} Videos",
+  "@lnVideosTab": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnQuizTab": "{count} Quiz",
+  "@lnQuizTab": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnNoQuizModule": "No quiz for this module yet.",
+  "lnNothingModule": "Nothing here for this module yet.",
+  "lnThisLesson": "this lesson",
+  "lnMyProgress": "My progress",
+  "lnNoProgress": "No progress yet.",
+  "lnNoProgressBody": "Open a lesson, a simulation or a quiz and your progress shows up here.",
+  "lnInProgress": "In progress",
+  "lnCompleted": "Completed",
+  "lnSimProgress": "Simulation progress",
+  "lnSimsDone": "{done} of {total} modules done",
+  "@lnSimsDone": {
+    "placeholders": {
+      "done": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnPercentDone": "{percent}% done",
+  "@lnPercentDone": {
+    "placeholders": {
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnAllComplete": "Every module is complete.",
+  "lnNoneComplete": "No module completed yet.",
+  "lnMinutes": "{count} min",
+  "@lnMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnLessonCount": "{count, plural, =1{1 lesson} other{{count} lessons}}",
+  "@lnLessonCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "lnQuizHistory": "Quiz history",
+  "lnQuizHistoryHint": "Quizzes you finish are listed here with your best score.",
+  "lnBinQuiz": "{bin} quiz",
+  "@lnBinQuiz": {
+    "placeholders": {
+      "bin": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnBest": "Best {score}%",
+  "@lnBest": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnGuideCount": "{count, plural, =1{1 guide} other{{count} guides}}",
+  "@lnGuideCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "lnNoVideosModule": "No videos in this module yet.",
+  "lnNoGuidesModule": "No guides in this module yet.",
+  "lnSimForModule": "Simulation for this module",
+  "lnOpen": "Open",
+  "lnNoQuizPublished": "No quiz published for this module yet.",
+  "lnLoadingGuide": "Loading guide",
+  "lnCheckOpenAgain": "Check the connection and open the guide again.",
+  "lnPrevPage": "Previous page",
+  "lnPageOf": "Page {n} of {total}",
+  "@lnPageOf": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnPage": "Page {n}",
+  "@lnPage": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnNextPage": "Next page",
+  "lnVideoTag": "Video · {tag}",
+  "@lnVideoTag": {
+    "placeholders": {
+      "tag": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnGuidePart": "Guide · Part {n}",
+  "@lnGuidePart": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnStart": "Start",
+  "lnContinue": "Continue",
+  "lnModuleLabel": "Module {label}",
+  "@lnModuleLabel": {
+    "placeholders": {
+      "label": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnVideoLabel": "Video {title}",
+  "@lnVideoLabel": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnSimLabel": "Simulation {title}",
+  "@lnSimLabel": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnLoadingModules": "Loading learning modules",
+  "lnLoadingLesson": "Loading lesson",
+  "lnAnswerLabel": "Answer {letter}: {label}",
+  "@lnAnswerLabel": {
+    "placeholders": {
+      "letter": {
+        "type": "Object"
+      },
+      "label": {
+        "type": "Object"
+      }
+    }
+  },
+  "lnCorrectSuffix": ", correct",
+  "lnWrongSuffix": ", wrong",
+  "lnTabTheory": "Theory",
+  "lnTabFormula": "Formula",
+  "lnStatus": "Status",
+  "lnBackToHub": "Back to learning hub",
+  "openProfileMenu": "Open profile menu",
+  "closeMenu": "Close menu",
+  "navigationMenu": "Navigation menu",
+  "dismissNotification": "Dismiss notification",
+  "wqCannotCrop": "The item could not be cut out of the photo. Try scanning again.",
+  "wqNoCleanPhoto": "The original photo without annotations is not available yet. Update the camera firmware, then scan again.",
+  "wqNotRecognised": "The item in the photo was not recognised yet.",
+  "wqPickFirst": "Pick one answer first. After that you can ask anything about this question.",
+  "wqWriteFirst": "Write your answer and send it. After it is graded you can ask more.",
+  "wqFallbackAi": "This is a backup question because the AI couldn't write one. {reason}",
+  "@wqFallbackAi": {
+    "placeholders": {
+      "reason": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqFallbackGeneric": "This is a general question because this item is not in the question bank yet.",
+  "wqBankNotice": "The AI is not connected, so this question is from the question bank. Check the internet.",
+  "wqRight": "Correct!",
+  "wqWrong": "Not quite. The right answer: {answer}.",
+  "@wqWrong": {
+    "placeholders": {
+      "answer": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqEssayAnswer": "Essay answer",
+  "wqSavedNotGraded": "Answer saved, but the AI couldn't grade it yet. {reason}",
+  "@wqSavedNotGraded": {
+    "placeholders": {
+      "reason": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqForFullMarks": "For full marks: {tip}",
+  "@wqForFullMarks": {
+    "placeholders": {
+      "tip": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqScore": "Score: {score}/10.",
+  "@wqScore": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqAnswerFirstMc": "Answer the question first. Once you pick an answer, I'll explain it and answer your questions about it.",
+  "wqAnswerFirstEssay": "Send your essay answer first. Then I'll grade it and we can talk about it.",
+  "wqScanFirst": "Scan an item first to start the quiz, then we can talk.",
+  "wqAiCannotAnswer": "The AI can't answer yet. {reason}",
+  "@wqAiCannotAnswer": {
+    "placeholders": {
+      "reason": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqCheckInternet": "Check the internet connection, then try again.",
+  "wqTryAgain": "Try again.",
+  "wqSkipped": "Question {n} skipped.",
+  "@wqSkipped": {
+    "placeholders": {
+      "n": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqSkippedCount": " {count} questions skipped.",
+  "@wqSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqSessionDone": "Session done! Correct answers: {correct} of {total}.{skipped} Scan another item for new questions.",
+  "@wqSessionDone": {
+    "placeholders": {
+      "correct": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      },
+      "skipped": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqQuestionReady": "Question ready",
+  "r1LinkLost": "The robot connection dropped. The robot stopped.",
+  "r1NotConnected": "robot not connected",
+  "r1Stopped": "Robot stopped ({reason}). Press \"Continue\" when it is safe.",
+  "@r1Stopped": {
+    "placeholders": {
+      "reason": {
+        "type": "Object"
+      }
+    }
+  },
+  "r1Stop": "Stop",
+  "r1Picking": "The robot is picking up the item",
+  "r1NotIdentified": "The item could not be identified. Drive on.",
+  "r1NoConfirm": "No confirmation. The robot did not pick up the item.",
+  "r1Timeout": "Time is up. The robot did not pick up the item.",
+  "r1TooLong": "The robot took too long. The robot stopped.",
+  "r1Resuming": "The robot is carrying on",
+  "r1PickFailed": "The item was not picked up. The robot stopped.",
+  "r1Done": "Done! The robot can drive again.",
+  "r1ConfirmFirst": "Confirm first",
+  "r1WhichBin": "Which bin does it go in?",
+  "r1RobotChose": "The robot chose: {bin}",
+  "@r1RobotChose": {
+    "placeholders": {
+      "bin": {
+        "type": "Object"
+      }
+    }
+  },
+  "r1PositionOk": "Is the position right?",
+  "r1Forward": "Forward a little",
+  "r1Back": "Back up",
+  "r1PressPick": "Press Pick up",
+  "r1Hand": "A hand! The robot is pausing.",
+  "r1NoReply": "The robot did not reply ({cmd}: {reason}). The robot stopped.",
+  "@r1NoReply": {
+    "placeholders": {
+      "cmd": {
+        "type": "Object"
+      },
+      "reason": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3Title": "History",
+  "h3Subtitle": "Scan results, quizzes & trophies",
+  "h3Back": "Back",
+  "h3All": "All",
+  "h3CatB3": "B3",
+  "h3CatB3Long": "B3 · Hazardous",
+  "h3CatRecyclable": "Recyclable",
+  "h3CatOrganic": "Organic",
+  "h3CatResidu": "Residual",
+  "h3Easy": "Easy",
+  "h3Medium": "Medium",
+  "h3Hard": "Hard",
+  "h3Today": "Today",
+  "h3Yesterday": "Yesterday",
+  "h3LoadFailed": "History couldn't be loaded",
+  "h3RecentScans": "Recent scans",
+  "h3ScanCount": "{count, plural, =1{1 scan} other{{count} scans}}",
+  "@h3ScanCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "h3NoScansInCategory": "No scans in this category yet.",
+  "h3Trophies": "{count, plural, =1{1 trophy} other{{count} trophies}}",
+  "@h3Trophies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "h3ToNextLevel": "{count} trophies to Level {level}",
+  "@h3ToNextLevel": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      },
+      "level": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3TopLevel": "Top level",
+  "h3SavedLocally": "Saved locally",
+  "h3RowMeta": "{time} · {count, plural, =1{1 question} other{{count} questions}}",
+  "@h3RowMeta": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "h3DetailTitle": "Scan detail",
+  "h3ExportPdf": "Export PDF",
+  "h3DetailLoadFailed": "Scan detail couldn't be loaded",
+  "h3ScannedMeta": "Scanned {time} · photo and {count, plural, =1{1 question} other{{count} questions}} saved locally",
+  "@h3ScannedMeta": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "h3DiffChip": "{level} · {count}Q",
+  "@h3DiffChip": {
+    "placeholders": {
+      "level": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3CorrectOf": "{correct} of {total} correct",
+  "@h3CorrectOf": {
+    "placeholders": {
+      "correct": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3TrophyRule": "10 trophies for every correct answer",
+  "h3Questions": "Questions",
+  "h3PdfFailed": "The PDF couldn't be exported. Try again.",
+  "h3Correct": "Correct",
+  "h3Incorrect": "Incorrect",
+  "h3AwaitingGrading": "Awaiting grading",
+  "h3EssayScore": "Score {score}/10",
+  "@h3EssayScore": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3YourAnswer": "Your answer",
+  "h3CorrectAnswer": "Correct answer",
+  "h3ReferenceAnswer": "Reference answer",
+  "h3SeeExplanation": "See explanation",
+  "h3Listen": "Listen",
+  "h3Pause": "Pause",
+  "h3ReadingNow": "READING NOW",
+  "h3KeyIdea": "KEY IDEA",
+  "h3TryAgain": "Try again",
+  "h3Loading": "Loading",
+  "h3EmptyTitle": "No scans yet",
+  "h3EmptyBody": "Scan an item with ELIOS and its quiz results and trophies will show up here.",
+  "h3StartScan": "Start scanning",
+  "h3ExplanationTitle": "Explanation",
+  "h3ExplanationMeta": "{item} · Q{index} of {total}",
+  "@h3ExplanationMeta": {
+    "placeholders": {
+      "item": {
+        "type": "Object"
+      },
+      "index": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3WhyCorrect": "Why this is the right answer",
+  "h3WhyWrong": "Why your answer isn't right",
+  "h3Feedback": "Feedback",
+  "h3HowTo": "How to do it",
+  "h3NextQuestion": "Next question",
+  "h3ExplanationUnavailable": "The full explanation isn't available yet",
+  "h3PdfSaved": "PDF saved: {path}",
+  "@h3PdfSaved": {
+    "placeholders": {
+      "path": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3ExportQuestion": "Export this question",
+  "h3ExportOnly": "Only Q{index} of {item} goes into the PDF.",
+  "@h3ExportOnly": {
+    "placeholders": {
+      "index": {
+        "type": "Object"
+      },
+      "item": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3A4Pdf": "A4 · PDF",
+  "h3Include": "INCLUDE",
+  "h3IncAnswers": "Question and both answers",
+  "h3IncExplanation": "Full explanation and steps",
+  "h3IncPhoto": "Scan photo",
+  "h3IncNotes": "Space for my notes",
+  "h3Share": "Share",
+  "h3SavePdf": "Save PDF",
+  "h3Saving": "Saving…",
+  "h3ShownInOriginal": "Shown in {language}, connect to translate",
+  "@h3ShownInOriginal": {
+    "placeholders": {
+      "language": {
+        "type": "Object"
+      }
+    }
+  },
+  "h3KeyIdeaTitle": "Key idea",
+  "pdfQuestionHeader": "ELIOS | {item} | Q{index}",
+  "@pdfQuestionHeader": {
+    "placeholders": {
+      "item": {
+        "type": "Object"
+      },
+      "index": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfEssayScore": "Essay score",
+  "pdfReportTitle": "ELIOS - Waste Quiz Report",
+  "pdfPageShort": "Page {page} / {total}",
+  "@pdfPageShort": {
+    "placeholders": {
+      "page": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfFooter": "ELIOS Waste Sorting Education | Page {page} of {total} | Session ID: {id}",
+  "@pdfFooter": {
+    "placeholders": {
+      "page": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      },
+      "id": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfSessionInfo": "Session information",
+  "pdfPhoto": "PHOTO",
+  "pdfItem": "Item",
+  "pdfCategory": "Category",
+  "pdfDateTime": "Date / time",
+  "pdfDifficulty": "Difficulty",
+  "pdfQuestionCount": "Questions",
+  "pdfCorrect": "Correct",
+  "pdfCorrectOf": "{correct} of {total}",
+  "@pdfCorrectOf": {
+    "placeholders": {
+      "correct": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfTrophies": "Trophies earned",
+  "pdfTrophyCount": "{count} trophies",
+  "@pdfTrophyCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfGrade": "Grade",
+  "pdfQuestionLine": "Q{index}: {question}",
+  "@pdfQuestionLine": {
+    "placeholders": {
+      "index": {
+        "type": "Object"
+      },
+      "question": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfEssayLine": "{score} / 10 (+{trophies} trophies)",
+  "@pdfEssayLine": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      },
+      "trophies": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfNoExplanation": "No explanation was saved for this question.",
+  "pdfSource": "Source: {title}",
+  "@pdfSource": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfBankTitle": "ELIOS Question Bank",
+  "pdfSection": "section {section}",
+  "@pdfSection": {
+    "placeholders": {
+      "section": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfPage": "p. {page}",
+  "@pdfPage": {
+    "placeholders": {
+      "page": {
+        "type": "Object"
+      }
+    }
+  },
+  "pdfTableCategories": "Table 1. Waste category comparison",
+  "pdfTableScoring": "Table 1. Scoring breakdown",
+  "pdfColCategory": "Category",
+  "pdfColMaterial": "Material",
+  "pdfColAccepted": "Accepted",
+  "pdfColCriterion": "Criterion",
+  "pdfColMax": "Max",
+  "pdfColAwarded": "Awarded",
+  "pdfColComment": "Comment",
+  "a11yTrophies": "{count} trophies",
+  "@a11yTrophies": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "homeScanSubtitle": "{date} · +{count} trophies",
+  "@homeScanSubtitle": {
+    "placeholders": {
+      "date": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "a11yLabelValue": "{label}: {value}",
+  "@a11yLabelValue": {
+    "placeholders": {
+      "label": {
+        "type": "Object"
+      },
+      "value": {
+        "type": "Object"
+      }
+    }
+  },
+  "a11yBinStat": "{bin} {count} scans, {percent}",
+  "@a11yBinStat": {
+    "placeholders": {
+      "bin": {
+        "type": "Object"
+      },
+      "count": {
+        "type": "Object"
+      },
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "a11yTopBin": ", top bin",
+  "homeScansUnit": " scans",
+  "homeMedalsOf": "{unlocked} of {total}",
+  "@homeMedalsOf": {
+    "placeholders": {
+      "unlocked": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "a11yMedal": "{name}, {state}. {description}",
+  "@a11yMedal": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      },
+      "state": {
+        "type": "Object"
+      },
+      "description": {
+        "type": "Object"
+      }
+    }
+  },
+  "a11yUnlocked": "unlocked",
+  "a11yLocked": "locked",
+  "a11ySearchItem": "{title}, {subtitle}",
+  "@a11ySearchItem": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      },
+      "subtitle": {
+        "type": "Object"
+      }
+    }
+  },
+  "learnQuestionCount": "{count, plural, =1{1 question} other{{count} questions}}",
+  "@learnQuestionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "learnMinutes": "{count} min",
+  "@learnMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "learnLessonCount": "{count, plural, =1{1 lesson} other{{count} lessons}}",
+  "@learnLessonCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "a11yPercent": "{title}, {percent} percent",
+  "@a11yPercent": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      },
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "tipWaiting": "Hang on, I'm looking for the robot! If it takes long, check the ELIOS Wi-Fi.",
+  "tipDisconnected": "Uh-oh, I can't hear the robot. Walk closer to it or check that it's switched on.",
+  "tipStopped": "The robot is STOPPED. Check the way is clear, then tap Continue.",
+  "tipQuiz": "Quiz time! Answer it, then we sort the item together.",
+  "tipDrive": "Drive around slowly and point my camera at an item to sort.",
+  "tipPickZone": "Nice driving! The {item} is in the pick zone. Press PICK UP to grab it.",
+  "@tipPickZone": {
+    "placeholders": {
+      "item": {
+        "type": "Object"
+      }
+    }
+  },
+  "tipLocked": "Got it! I locked on the {item}. Hold still while I look.",
+  "@tipLocked": {
+    "placeholders": {
+      "item": {
+        "type": "Object"
+      }
+    }
+  },
+  "tipSeeItem": "I see a {item}. Drive closer, slowly.",
+  "@tipSeeItem": {
+    "placeholders": {
+      "item": {
+        "type": "Object"
+      }
+    }
+  },
+  "ctlPlusTrophies": "+{count} trophies",
+  "@ctlPlusTrophies": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "guideReady": "You're ready, Robot Pilot!",
+  "guideGo": "Let's go!",
+  "qzElapsed": "elapsed",
+  "qzWordCount": "{words} / {limit} words",
+  "@qzWordCount": {
+    "placeholders": {
+      "words": {
+        "type": "Object"
+      },
+      "limit": {
+        "type": "Object"
+      }
+    }
+  },
+  "wqCorrectOf": "{correct} of {total} correct",
+  "@wqCorrectOf": {
+    "placeholders": {
+      "correct": {
+        "type": "Object"
+      },
+      "total": {
+        "type": "Object"
+      }
+    }
+  },
+  "cfgCouldNotReach": "Couldn't reach ELIOS",
+  "cfgIpAddress": "IP address",
+  "camMacFailed": "The Mac camera couldn't be opened ({error}).",
+  "@camMacFailed": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "catExamplesOrganic": "Food scraps; Leftover cooked food; Coffee grounds and tea bags; Grass clippings and leaves; Eggshells",
+  "catExamplesInorganic": "Plastic bottles and containers; Glass jars and bottles; Aluminium cans and foil; Paper and cardboard; Metal scraps",
+  "catExamplesHazardous": "Batteries; Electronic waste; Fluorescent light bulbs; Paint and solvents; Pesticides and herbicides",
+  "authNoUser": "No account found for that username.",
+  "notifVideoDone": "Video completed",
+  "notifVideoDoneMsg": "You completed a video lesson.",
+  "notifGuideDone": "Guide completed",
+  "notifGuideDoneMsg": "You completed a guide.",
+  "notifQuizDone": "Quiz completed",
+  "notifQuizDoneMsg": "Your quiz result has been saved.",
+  "notifReview": "Quiz review available",
+  "notifReviewMsg": "You can now review your quiz answers.",
+  "notifSync": "Progress sync issue",
+  "notifSyncMsg": "Your progress could not be synced. Check your connection.",
+  "physDensityTag": "Module A · Environment",
+  "physDensityTitle": "Waste Density",
+  "physDensityDesc": "ELIOS sorts inorganic waste by density.",
+  "physHeatTag": "Module B · Environment",
+  "physHeatTitle": "Compost Heat & Thermodynamics",
+  "physHeatDesc": "Microbes decomposing waste release heat over time.",
+  "physTorqueTag": "Module C · Mechanics",
+  "physTorqueTitle": "Robot Shoulder Torque",
+  "physTorqueDesc": "The ELIOS shoulder joint holds torque as the arm reaches out.",
+  "physWorkEnergyTag": "Module D · Mechanics",
+  "physWorkEnergyTitle": "Work & Potential Energy",
+  "physWorkEnergyDesc": "Lifting a load takes a measurable amount of work.",
+  "physKinematicsTag": "Module E · Kinematics",
+  "physKinematicsTitle": "ELIOS Speed",
+  "physKinematicsDesc": "Uniform straight-line motion towards the waste pile.",
+  "physPwmTag": "Module F · Electronics",
+  "physPwmTitle": "PWM & Motor Voltage",
+  "physPwmDesc": "The duty cycle sets the average voltage of the wheel motors.",
+  "physPowerTag": "Module G · Power",
+  "physPowerTitle": "ELIOS Power & Battery",
+  "physPowerDesc": "Managing how much power the robot parts use.",
+  "physDeepDiveTag": "Deep-Dive · Waste Physics",
+  "physDeepDiveTitle": "Waste Deep-Dive Cards",
+  "physDeepDiveDesc": "A closer look: organic, inorganic and B3.",
+  "physQuizTag": "Evaluation",
+  "physQuizTitle": "Check Your Understanding (Quiz)",
+  "physQuizDesc": "Test what you know about the physics behind the ELIOS robot.",
+  "physLevelBeginner": "Beginner",
+  "physLevelIntermediate": "Intermediate",
+  "physLevelAdvanced": "Advanced",
+  "physLevelAllLevels": "All levels",
+  "simDeepDive1": "Waste Deep-Dive",
+  "simDeepDive2": "The Physics of Sorting Waste",
+  "simDeepDive3": "Explore why each waste category is handled differently.",
+  "simDeepDive4": "Pile Porosity",
+  "simDeepDive5": "Low porosity (<25%). Air can hardly get in, which triggers anaerobic decomposition (methane).",
+  "simDeepDive6": "Good porosity. Oxygen flows freely and aerobic composting works best.",
+  "simDeepDive7": "Porosity is the percentage of empty space (filled with air) between the solid particles in a compost pile. High porosity = air can flow freely through the whole pile = the aerobic process (which needs oxygen) runs well. Low porosity = the pile is too dense = oxygen runs out quickly inside = anaerobic microbes take over.",
+  "simDeepDive8": "Organic waste has no electrical (conductivity), optical (NIR reflectance) or hazardous chemical (volatility/reactivity) property that could be used as an automatic sorting signal. The only relevant physical variable is its own pore structure and moisture, because the goal is not to separate materials but to manage the biological breakdown itself.",
+  "simDeepDive9": "ELIOS uses this principle in its spring-loaded gripper/pusher to test how hard or elastic an item is.",
+  "simDeepDive10": "Compression (x)",
+  "simDeepDive11": "⚠ Accuracy note: the peak wavelengths used in this simulation (e.g. PET ≈1660 nm, HDPE ≈1730 nm, PP ≈1410 nm) must be checked again against a valid industrial NIR sorting reference before release. Real NIR sensors measure absorbance peaks/valleys over ranges that can vary.",
+  "simDeepDive12": "When metal moves through a changing magnetic field, eddy currents are induced inside it. They create an opposing magnetic field that pushes non-magnetic metals such as aluminium away from the magnet.",
+  "simDeepDive13": "Inorganic materials (plastic, glass, metal) go through no biological process that needs managing (unlike organic waste), and most are not chemically reactive or hazardous (unlike B3). The most effective sorting signals are their stable physical properties: hardness (Hooke), optical identity (NIR) and magnetic/conductive behaviour (eddy currents).",
+  "simDeepDive14": "The hotter a liquid or substance is, the more it tends to evaporate into a gas: this is vapour pressure. The Clausius-Clapeyron equation describes this non-linear (exponential) relationship.",
+  "simDeepDive15": "⚠ Accuracy note: this simulation uses a qualitative, simplified approach, not a literal P–T curve with scientifically precise exponential constants. It only shows the trend (hotter = evaporates more easily = more dangerous).",
+  "simDeepDive16": "Substance temperature",
+  "simDeepDive17": "Incinerator temperature",
+  "simDeepDive18": "Status: hazardous chemical bonds broken (safe)",
+  "simDeepDive19": "Radiation intensity (I) drops exponentially as the shield thickness (x) increases.",
+  "simDeepDive20": "⚠ Accuracy note: real attenuation coefficients depend strongly on the energy of the radiation particles (MeV) and on the specific shield material. The numbers below are illustrative and only show the relative order (gamma hardest, alpha easiest).",
+  "simDeepDive21": "Alpha (α)",
+  "simDeepDive22": "Shield thickness (x)",
+  "simDeepDive23": "The key difference is not the physical material (B3 can be metal, liquid or any solid) but its hidden danger: chemical volatility, radioactivity or thermal reactivity that can harm people or the environment if it is handled like ordinary waste. So \"sorting\" here is not about separating materials but about safe containment and handling: shielding, controlled temperature and early identification before direct contact.",
+  "simDensity1": "Density & Classification",
+  "simDensity2": "MODULE A · LESSON",
+  "simDensity3": "Items with different densities are sorted into the matching category.",
+  "simDensity4": "DENSITY FORMULA",
+  "simDensity5": "m = mass · V = volume",
+  "simDensity6": "Move the sliders to see the item change",
+  "simDensity7": "Mass (m)",
+  "simDensity8": "CLASSIFICATION RESULT",
+  "simDensity9": "Unknown material",
+  "simDensity10": "Density outside the database range (not a known plastic, glass or metal).",
+  "simDensity11": "Choose a bin:",
+  "simDensity12": "Plastic",
+  "simDensity13": "Glass",
+  "simDensity14": "Metal",
+  "simDensity15": "Module A — Density & Waste Classification",
+  "simDensity16": "Density is a measure of how \"tightly packed\" matter is inside an object. Two objects can have the same size (volume) but very different weights, because their particles are packed differently. Iron feels heavy in your hand not because there is \"more\" iron, but because its atoms are packed more tightly per unit of space than, say, plastic.\n\nThis matters for ELIOS because density is one of the cheapest and fastest signals for guessing a material, far cheaper than, for example, analysing the infrared spectrum of every item.",
+  "simDensity17": "ρ = m / V (density = mass / volume). Pure water has ρ = 1.0 g/cm³ as the reference point.",
+  "simDensity18": "A common mistake swaps m and V into V/m, which changes the result drastically. Density is mass per volume.",
+  "simDensity19": "Plastic (0.9 - 1.4 g/cm³)",
+  "simDensity20": "Glass (2.4 - 2.6 g/cm³)",
+  "simDensity21": "Metal (≥ 2.7 g/cm³)",
+  "simDensity22": "Unknown",
+  "simHeat1": "Heat & Thermodynamics",
+  "simHeat2": "MODULE B · LESSON",
+  "simHeat3": "Heat & Composting Thermodynamics",
+  "simHeat4": "HEAT FORMULA (Q)",
+  "simHeat5": "m = mass · c = 4000 J/kg°C · ΔT = temperature change",
+  "simHeat6": "Particles represent microbial activity",
+  "simHeat7": "Temperature change (ΔT)",
+  "simHeat8": "Porosity (cross-module)",
+  "simHeat9": "PHASE RESULT",
+  "simHeat10": "Thermophilic phase: heat-loving bacteria work best and pathogens start to die.",
+  "simHeat11": "Module B — Heat & Composting Thermodynamics",
+  "simHeat12": "When microorganisms in a compost pile break down organic waste, they release energy as heat: a biological exothermic process. The pile warms up not because of fire or electricity, but because of the metabolism of millions of bacteria and fungi breaking organic molecules apart.\n\nThis module models how much heat a mass of compost has to absorb or release for a given temperature change, and links it to the real biological phases of composting.",
+  "simHeat13": "Mesophilic (< 55°C)",
+  "simHeat14": "Thermophilic (55 - 60°C)",
+  "simHeat15": "Too hot (> 60°C)",
+  "simKinematics1": "Kinematics",
+  "simKinematics2": "MODULE E · LESSON",
+  "simKinematics3": "Kinematics (uniform & accelerated motion)",
+  "simKinematics4": "How long does ELIOS take to reach the target? Link distance, speed and time.",
+  "simKinematics5": "TIME FORMULA (uniform motion)",
+  "simKinematics6": "t = time · s = distance · v = constant speed",
+  "simKinematics7": "Target distance (s)",
+  "simKinematics8": "Speed (v)",
+  "simKinematics9": "PREDICTION",
+  "simKinematics10": "Estimated time of arrival (ETA)",
+  "simKinematics11": "Uniformly accelerated motion involves acceleration (a). In the real world ELIOS does not jump straight to full speed: the motor needs time (less than 1 second) to speed up from standstill to constant speed.\n\nFormula: s = v₀·t + ½·a·t²\n\nBecause ELIOS accelerates very quickly, the acceleration distance is tiny and is usually ignored for indoor navigation. But if an obstacle appears suddenly, the ELIOS emergency brake uses deceleration (negative acceleration) calculated with the same formula.",
+  "simKinematics12": "Module E — Kinematics",
+  "simKinematics13": "When ELIOS is sent to a waste collection point, its navigation system (Local Planner) has to know how far away it is and how long it will take to get there at a given speed. This is pure basic kinematics: the part of physics that studies motion without caring what causes it (force/mass).\n\nThis module models ELIOS moving in uniform straight-line motion.",
+  "simKinematics14": "Bonus, accelerated motion: in the real world the ELIOS motor needs time to accelerate (s = v₀·t + ½·a·t²). But because ELIOS accelerates very quickly, uniform motion is accurate enough to compute the ETA.",
+  "simKinematics15": "A common mistake when computing t is multiplying s and v (s·v) instead of dividing (s/v). The unit of s·v is m²/s, which makes no sense. Always check the final unit (m / (m/s) = s).",
+  "simDensityPainter1": "Reference",
+  "simDensityPainter2": "Object",
+  "simTorquePainter1": "TORQUE",
+  "simPowerBudget1": "Power & Battery Budget",
+  "simPowerBudget2": "MODULE G · LESSON",
+  "simPowerBudget3": "POWER & ENERGY FORMULA",
+  "simPowerBudget4": "Scenario presets:",
+  "simPowerBudget5": "Usage time (t)",
+  "simPowerBudget6": "BATTERY LIFE PREDICTION",
+  "simPowerBudget7": "Module G — Power & Battery Budget",
+  "simPowerBudget8": "Every ELIOS part that is switched on (camera, drive motors, arm motor) draws power from the same battery. This module shows how to work out how long the battery lasts depending on which parts are active, a decision the ELIOS control system really makes in real time to save power.\n\nThe real power-saving behaviour of ELIOS follows this logic directly: the drive motors are switched off while sorting (the robot stands still), and the camera is switched off while moving when it is not analysing an object. Every watt that does not need to be on means extra seconds of operation before the battery needs recharging.",
+  "simPowerBudget9": "P = V · I (power = voltage × current). Here the power (P) of each part is already given.",
+  "simPowerBudget10": "E = P · t (energy = total power × time).",
+  "simPowerBudget11": "Total capacity = 50,000 joules. t_estimate = 50,000 / P_total.",
+  "simPowerBudget12": "Camera 10 W, drive motors 36 W, arm motor 18 W.",
+  "simPwm1": "PWM & Motor",
+  "simPwm2": "MODULE F · LESSON",
+  "simPwm3": "PWM & Effective Voltage",
+  "simPwm4": "EFFECTIVE AVERAGE VOLTAGE",
+  "simPwm5": "Square wave (PWM signal)",
+  "simPwm6": "MOTOR VOLTAGE",
+  "simPwm7": "Module F — PWM & Effective Motor Voltage",
+  "simPwm8": "V_avg = D · V_max (effective average voltage = duty cycle × maximum voltage).",
+  "simPwm9": "D (duty cycle) is the percentage of time the signal is \"on\" in one period.",
+  "simPwm10": "Linear model limits (important): the RPM estimate in this simulation is a linear approximation. On a real motor, the link between duty cycle and actual RPM is not fully linear once the motor carries a torque load.",
+  "simPwm11": "The claim \"lower average voltage = proportionally lower average current\" is ONLY TRUE FOR A PURELY RESISTIVE LOAD. In a motor (inductive + mechanical load) the current does not follow the voltage in a simple linear way.",
+  "simTorque1": "Robot Shoulder Torque",
+  "simTorque2": "MODULE C · MECHANICS",
+  "simTorque3": "TORQUE FORMULA",
+  "simTorque4": "r = arm length · F = load · θ = angle",
+  "simTorque5": "Drag the arm handle to change r & θ",
+  "simTorque6": "Arm length (r)",
+  "simTorque7": "Load (F)",
+  "simTorque8": "Angle (θ)",
+  "simTorque9": "INSTANT TORQUE",
+  "simTorque10": "CHALLENGE",
+  "simTorque11": "Lesson: torque (moment of force)",
+  "simSimCanvasFrame1": "⚠ TIP-OVER RISK",
+  "simSimulationPageScaffold1": "Lesson",
+  "simWorkEnergy1": "Work & Energy",
+  "simWorkEnergy2": "MODULE D · LESSON",
+  "simWorkEnergy3": "Work & Potential Energy",
+  "simWorkEnergy4": "Every lift turns battery energy into gravitational potential energy.",
+  "simWorkEnergy5": "WORK FORMULA (W)",
+  "simWorkEnergy6": "m = mass · g = 10 m/s² · h = height",
+  "simWorkEnergy7": "Change the height and load to see the effect",
+  "simWorkEnergy8": "Load mass (m)",
+  "simWorkEnergy9": "Height (h)",
+  "simWorkEnergy10": "RESULT",
+  "simWorkEnergy11": "Module D — Work & Gravitational Potential Energy",
+  "simWorkEnergy12": "Every time ELIOS lifts waste from the tray into a higher container, it does work against gravity. This work is stored as gravitational potential energy in the lifted item: energy that is \"ready to be released\" if the item is dropped again.\n\nThis is not just an abstract idea: every joule of work the ELIOS arm motor does comes from the battery, so this module directly explains why lifting heavy loads more often and higher = the ELIOS battery runs out faster.",
+  "simDeepDive24": "• Fick's law (diffusion): the rate at which oxygen moves into the pile is proportional to the area of the pore paths and inversely proportional to the distance travelled; a dense pile = longer, narrower diffusion paths = oxygen gets in much more slowly.\n",
+  "simDeepDive25": "• Heat conduction, Q/t = kAΔT/L: the heat microbes produce in the core of the pile travels outwards by conduction; a dense pile also slows this down, which raises the risk of overheating (see Module B).\n",
+  "simDeepDive26": "• Jurin's law (capillarity): explains how moisture rises or stays between small particles, which affects how \"wet\" the pores remain over time.",
+  "simDeepDive27": "Each type of plastic absorbs and reflects near-infrared light at its own characteristic wavelengths, forming a kind of \"optical fingerprint\".",
+  "simDeepDive28": "Incinerating hazardous materials needs much higher temperatures than burning ordinary waste, to break the chemical bonds of toxic molecules (for example persistent organic compounds). The 1000°C threshold here illustrates the thermal decomposition point.",
+  "simDeepDive29": "Status: bonds still intact (hazardous)",
+  "simDensity23": "Ranges: plastic (0.9–1.4), glass (2.4–2.6), metal (≥ 2.7).",
+  "simDensity24": "Plastics with ρ < 1.0 (HDPE, PP) float in water. Plastics with ρ > 1.0 (PET, PVC) sink. This is a real flotation sorting technique used in industry!",
+  "simHeat16": "Heat from microbial activity changes the temperature of the compost pile. Watch its phase.",
+  "simHeat17": "Warning: anaerobic, methane risk. Low porosity (<25%) and high temperature (>55°C).",
+  "simHeat18": "Overheated: too hot! Microbial activity slows down.",
+  "simHeat19": "Q = m · c · ΔT (heat = mass × specific heat × temperature change).",
+  "simHeat20": "Mesophilic phase (< 55°C): medium-temperature bacteria start breaking down simple sugars and proteins.",
+  "simHeat21": "Thermophilic phase (55–60°C): heat-loving bacteria dominate; this phase kills pathogens and weed seeds.",
+  "simHeat22": "Overheated (> 60°C): microbial activity slows or stops; turn the pile to release heat.",
+  "simHeat23": "Link with porosity: when porosity is < 25% AND the temperature is > 55°C, the pile can turn anaerobic (no oxygen left). Anaerobic microbes take over and produce methane (CH₄), a dangerous gas.",
+  "simKinematics16": "Uniform straight-line motion",
+  "simKinematics17": "Uniform motion: constant speed (v), no acceleration (a = 0).",
+  "simKinematics18": "v = s / t, so t = s / v (time = distance divided by speed).",
+  "simPowerBudget13": "How long does the battery last? It depends on which parts are switched on.",
+  "simPowerBudget14": "If P_total = 0, the runtime is mathematically infinite (∞).",
+  "simPwm12": "Control the ELIOS motor speed without wasting energy as heat in a resistor.",
+  "simPwm13": "The DC motors in ELIOS (for example the wheel or arm motors) are not always given full voltage all the time. To control motor speed without wasting energy as heat, ELIOS uses PWM (pulse width modulation): it switches the full voltage on and off very quickly (hundreds to thousands of times per second) and sets what share of each cycle the voltage is on.\n\nThe old way to control motor speed was a resistive voltage divider (resistor/potentiometer) that lowers the voltage directly. The problem is that the extra energy is wasted as heat in the resistor: energy is lost and parts get hot.\n\nPWM never really \"lowers\" the voltage: it only switches the full voltage on and off very fast. Because the motor has mechanical inertia and coil inductance that smooth this on/off \"twitching\" into steady motion, the result feels like a lower voltage, but without wasting energy as resistive heat; only much smaller switching losses.",
+  "simPwm14": "A 60% duty cycle means fully on 60% of the time and off for the other 40%. The average is 7.2 V of the 12 V maximum.",
+  "simTorque12": "When ELIOS reaches out its arm, the shoulder joint holds more torque.",
+  "simTorque13": "Torque above 8 N·m: the robot could tip over!",
+  "simTorque14": "θ = 90°: maximum torque, the arm is perpendicular to the force.",
+  "simTorque15": "θ = 0° or 180°: zero torque, the force is parallel to the arm.",
+  "simTorque16": "Large r: more torque, but the robot is harder to keep stable.",
+  "simWorkEnergy13": "W = E_p = m · g · h (work = potential energy = mass × gravity × height).",
+  "simWorkEnergy14": "g (gravity) is rounded to 10 m/s² to keep the maths simple.",
+  "simPwmMotorGets": "The motor gets the equivalent of {volts} V",
+  "@simPwmMotorGets": {
+    "placeholders": {
+      "volts": {
+        "type": "Object"
+      }
+    }
+  },
+  "simDensityMaterial": "Material: {name}",
+  "@simDensityMaterial": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "simPowerLegend": "P_total = {watts} W · t = time (seconds)",
+  "@simPowerLegend": {
+    "placeholders": {
+      "watts": {
+        "type": "Object"
+      }
+    }
+  },
+  "simPowerEstimate": "t_estimate = 50000 J / {watts} W = {runtime}",
+  "@simPowerEstimate": {
+    "placeholders": {
+      "watts": {
+        "type": "Object"
+      },
+      "runtime": {
+        "type": "Object"
+      }
+    }
+  },
+  "simPowerLasts": "Lasts {runtime}",
+  "@simPowerLasts": {
+    "placeholders": {
+      "runtime": {
+        "type": "Object"
+      }
+    }
+  },
+  "simWorkBatteryLeft": "Battery left: {percent}%",
+  "@simWorkBatteryLeft": {
+    "placeholders": {
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "simTorqueMotorStatus": "Motor: {status} · safe limit 8 N·m",
+  "@simTorqueMotorStatus": {
+    "placeholders": {
+      "status": {
+        "type": "Object"
+      }
+    }
+  },
+  "simTorqueSafe": "SAFE",
+  "simTorqueWarning": "CAUTION",
+  "simTorqueCritical": "CRITICAL",
+  "simTorqueChallenge": "Find the heaviest load ELIOS can lift when r = {r} m and θ = 90° with a torque limit of 8 N·m.\nAnswer: F = τ/(r·sinθ) = 8 / {r} = 16 N",
+  "@simTorqueChallenge": {
+    "placeholders": {
+      "r": {
+        "type": "Object"
+      }
+    }
+  },
+  "simTorqueBody": "Torque (τ) measures how effectively a force turns an object around a pivot. Torque depends on the moment arm and on the angle between the arm and the direction of the force.",
+  "simKinArrival": "Arrival time = {distance} / {speed} = {time} seconds",
+  "@simKinArrival": {
+    "placeholders": {
+      "distance": {
+        "type": "Object"
+      },
+      "speed": {
+        "type": "Object"
+      },
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "simHeatFinal": "Final temperature = 25°C + {delta}°C = {result}°C",
+  "@simHeatFinal": {
+    "placeholders": {
+      "delta": {
+        "type": "Object"
+      },
+      "result": {
+        "type": "Object"
+      }
+    }
+  },
+  "physQDensity": "A sample of inorganic waste has a mass of {m} g and a volume of {v} cm³. What is its density?",
+  "@physQDensity": {
+    "placeholders": {
+      "m": {
+        "type": "Object"
+      },
+      "v": {
+        "type": "Object"
+      }
+    }
+  },
+  "physQHeat": "A compost pile with a mass of {m} kg warms up by {dt} °C. If the specific heat (c) of compost is {c} J/kg°C, how much heat (Q) did the microbes produce?",
+  "@physQHeat": {
+    "placeholders": {
+      "m": {
+        "type": "Object"
+      },
+      "dt": {
+        "type": "Object"
+      },
+      "c": {
+        "type": "Object"
+      }
+    }
+  },
+  "physQTorque": "The robot arm reaches out {r} m and lifts a load with a force of {f} N at an angle of {theta}° to the arm. How large is the torque at the shoulder joint?",
+  "@physQTorque": {
+    "placeholders": {
+      "r": {
+        "type": "Object"
+      },
+      "f": {
+        "type": "Object"
+      },
+      "theta": {
+        "type": "Object"
+      }
+    }
+  },
+  "physQWork": "ELIOS lifts a {m} kg load to a height of {h} m. How much work does it do against gravity (g = 10 m/s²)?",
+  "@physQWork": {
+    "placeholders": {
+      "m": {
+        "type": "Object"
+      },
+      "h": {
+        "type": "Object"
+      }
+    }
+  },
+  "physQSpeed": "ELIOS drives {s} metres in a straight line in {t} seconds towards the target. What is its average speed?",
+  "@physQSpeed": {
+    "placeholders": {
+      "s": {
+        "type": "Object"
+      },
+      "t": {
+        "type": "Object"
+      }
+    }
+  },
+  "physQPwm": "A PWM signal sets the motor voltage with a duty cycle (D) of {d}%. If the maximum battery voltage is {vmax} V, what is the average motor voltage?",
+  "@physQPwm": {
+    "placeholders": {
+      "d": {
+        "type": "Object"
+      },
+      "vmax": {
+        "type": "Object"
+      }
+    }
+  },
+  "physQPower": "A subsystem draws {i} A from a {v} V battery. How much power does it use?",
+  "@physQPower": {
+    "placeholders": {
+      "i": {
+        "type": "Object"
+      },
+      "v": {
+        "type": "Object"
+      }
+    }
+  },
+  "simDensityLoad": "A typical organic load for ELIOS is {kg} kg. Because organic waste is much denser than plastic, lifting the same volume of organic waste takes more energy (see Module D).",
+  "@simDensityLoad": {
+    "placeholders": {
+      "kg": {
+        "type": "Object"
+      }
+    }
+  },
+  "simWorkOrganic": "Organic waste tends to have more mass per volume than plastic. For a typical organic load of {kg} kg, lifting it to the same height as light plastic takes much more work.",
+  "@simWorkOrganic": {
+    "placeholders": {
+      "kg": {
+        "type": "Object"
+      }
+    }
+  },
+  "simWorkBattery": "The ELIOS battery capacity used in this simulation is {joules} joules. % left = 100 - (W / {joules}) × 100.",
+  "@simWorkBattery": {
+    "placeholders": {
+      "joules": {
+        "type": "Object"
+      }
+    }
+  },
+  "aiNotReady": "The AI couldn't read the photo yet. Check the internet, then try again.",
+  "aiNotRecognised": "The item in the photo was not recognised yet. Move the camera closer, make sure it is bright, then scan again.",
+  "essaySavedPending": "Answer saved. Waiting for grading because the AI is not available yet.",
+  "essayScoreLine": "Score: {score}/10.",
+  "@essayScoreLine": {
+    "placeholders": {
+      "score": {
+        "type": "Object"
+      }
+    }
+  },
+  "quizSkippedAnswer": "(skipped)"
+}

@@ -12,6 +12,7 @@ import '../../../services/elearning_content_service.dart';
 import '../../../widgets/learn/learn_ui.dart';
 import 'learn_content.dart';
 import 'quiz_review_page.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// Quiz list, question and result (L1 v2). [moduleId] narrows the list to
 /// one module's quiz (module page "Quiz").
@@ -24,7 +25,7 @@ class QuizPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LearnPageScaffold(
-      title: 'Quiz',
+      title: l10n.lqTitle,
       centerTitle: false,
       body: QuizContent(
         selectedModuleId: moduleId,
@@ -90,12 +91,12 @@ class _QuizContentState extends ConsumerState<QuizContent> {
       final scoreText = score == null
           ? ''
           : completed
-          ? ' Completed with best score $score%.'
-          : ' Best score $score%.';
+          ? l10n.lqCompletedBest(score)
+          : l10n.lqBest(score);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'You have already used your one quiz attempt.$scoreText',
+            l10n.lqUsedAttempt(scoreText),
           ),
         ),
       );
@@ -105,19 +106,16 @@ class _QuizContentState extends ConsumerState<QuizContent> {
     final shouldStart = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Start Quiz?'),
-        content: const Text(
-          'This quiz can only be attempted once. Once you start, you must '
-          'finish it before leaving.',
-        ),
+        title: Text(context.l10n.quizStartTitle),
+        content: Text(l10n.lqOnceBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Not Now'),
+            child: Text(context.l10n.quizNotNow),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Start'),
+            child: Text(context.l10n.quizStart),
           ),
         ],
       ),
@@ -264,15 +262,12 @@ class _QuizContentState extends ConsumerState<QuizContent> {
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Finish quiz first'),
-        content: const Text(
-          'This quiz has only one attempt. Please finish all questions before '
-          'leaving.',
-        ),
+        title: Text(context.l10n.quizFinishFirst),
+        content: Text(l10n.lqFinishBody),
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Continue Quiz'),
+            child: Text(context.l10n.quizContinue),
           ),
         ],
       ),
@@ -307,9 +302,9 @@ class _QuizContentState extends ConsumerState<QuizContent> {
     if (quizSet == null) return _buildQuizSetList();
 
     if (_isLoadingQuestions) {
-      return const Center(
+      return Center(
         key: ValueKey('loading-quiz'),
-        child: LearnSpinner(label: 'Loading quiz questions'),
+        child: LearnSpinner(label: l10n.lqLoading),
       );
     }
 
@@ -319,9 +314,9 @@ class _QuizContentState extends ConsumerState<QuizContent> {
         children: [
           _CenteredMessage(
             icon: Icons.cloud_off_outlined,
-            title: 'Quiz questions could not be loaded.',
-            message: 'Check the Firestore connection and try again.',
-            actionLabel: 'Back to Quizzes',
+            title: l10n.lqLoadFailed,
+            message: l10n.lqCheckFirestore,
+            actionLabel: l10n.lqBackToQuizzes,
             onAction: _backToQuizSets,
           ),
         ],
@@ -334,8 +329,8 @@ class _QuizContentState extends ConsumerState<QuizContent> {
         children: [
           _CenteredMessage(
             icon: Icons.quiz_outlined,
-            title: 'Quiz questions are not available yet.',
-            actionLabel: 'Back to Quizzes',
+            title: l10n.lqNotAvailable,
+            actionLabel: l10n.lqBackToQuizzes,
             onAction: _backToQuizSets,
           ),
         ],
@@ -378,18 +373,17 @@ class _QuizContentState extends ConsumerState<QuizContent> {
       builder: (context, snapshot) {
         return LearnListView(
           children: [
-            Text('Knowledge challenge', style: context.text.headlineLarge),
+            Text(context.l10n.quizKnowledgeChallenge, style: context.text.headlineLarge),
             const SizedBox(height: 8),
             Text(
-              'Test your understanding of waste management and how ELIO '
-              'classifies materials. Each quiz has one attempt.',
+              l10n.lqIntro,
               style: context.text.bodySmall?.copyWith(color: p.textSecondary),
             ),
             const SizedBox(height: 16),
             if (snapshot.hasError)
-              const _CenteredMessage(
+              _CenteredMessage(
                 icon: Icons.cloud_off_outlined,
-                title: 'Quiz sets could not be loaded.',
+                title: l10n.lqSetsFailed,
               )
             else if (!snapshot.hasData)
               const Column(
@@ -400,9 +394,9 @@ class _QuizContentState extends ConsumerState<QuizContent> {
                 ],
               )
             else if (snapshot.data!.isEmpty)
-              const _CenteredMessage(
+              _CenteredMessage(
                 icon: Icons.quiz_outlined,
-                title: 'No published quizzes are available.',
+                title: l10n.lqNoPublished,
               )
             else
               for (final quizSet in snapshot.data!) ...[
@@ -466,22 +460,22 @@ class _QuizSetCard extends StatelessWidget {
     final hasReview = review != null;
     final statusText = attempted
         ? [
-            completed ? 'Completed' : 'Attempt used',
-            if (scorePercent != null) 'best score $scorePercent%',
-            if (!hasReview) 'review for new attempts only',
+            completed ? l10n.lqCompleted : l10n.lqAttemptUsed,
+            if (scorePercent != null) l10n.lqBestScore(scorePercent!),
+            if (!hasReview) l10n.lqReviewNew,
           ].join(' · ')
         : [
-            '${quizSet.questionCount} questions',
+            l10n.lqQuestions(quizSet.questionCount),
             if (quizSet.level.isNotEmpty) quizSet.level,
-            'one attempt',
+            l10n.lqOneAttempt,
           ].join(' · ');
     final buttonLabel = !attempted
-        ? 'Start'
+        ? l10n.quizStart
         : hasReview
-        ? 'Review'
+        ? l10n.lqReview
         : completed
-        ? 'Done'
-        : 'Used';
+        ? l10n.lqDone
+        : l10n.lqUsed;
     return QuizCard(
       title: quizSet.title,
       subtitle: statusText,
@@ -530,7 +524,7 @@ class _QuizQuestionView extends StatelessWidget {
           child: LearnListView(
             children: [
               QuizProgressHeader(
-                counter: 'Question ${questionIndex + 1} / $totalQuestions',
+                counter: l10n.lqCounter(questionIndex + 1, totalQuestions),
                 level: question.difficulty.isEmpty
                     ? quizSet.level
                     : question.difficulty,
@@ -569,8 +563,8 @@ class _QuizQuestionView extends StatelessWidget {
                   liveRegion: true,
                   child: Text(
                     selectedIsCorrect
-                        ? 'Correct${question.explanation.isEmpty ? '!' : ': ${question.explanation}'}'
-                        : 'Not quite${question.explanation.isEmpty ? '.' : ': ${question.explanation}'}',
+                        ? (question.explanation.isEmpty ? l10n.qzCorrect : l10n.lqCorrectExpl(question.explanation))
+                        : (question.explanation.isEmpty ? l10n.lqNotQuite : l10n.lqNotQuiteExpl(question.explanation)),
                     style: context.text.titleSmall?.copyWith(
                       color: selectedIsCorrect ? p.primaryText : p.errorText,
                     ),
@@ -582,7 +576,7 @@ class _QuizQuestionView extends StatelessWidget {
                 child: TextButton.icon(
                   onPressed: onBack,
                   icon: const Icon(Icons.lock_outline_rounded),
-                  label: const Text('Finish quiz to exit'),
+                  label: Text(context.l10n.quizFinishToExit),
                 ),
               ),
             ],
@@ -601,8 +595,8 @@ class _QuizQuestionView extends StatelessWidget {
                 ),
                 child: Text(
                   questionIndex == totalQuestions - 1
-                      ? 'View results'
-                      : 'Next question',
+                      ? l10n.lqViewResults
+                      : l10n.qzNextQuestion,
                 ),
               ),
             ),
@@ -636,7 +630,7 @@ class _QuizQuestionImage extends StatelessWidget {
             placeholder: (_, _) => const SizedBox.expand(),
             errorWidget: (_, _, _) => Center(
               child: Text(
-                'Image unavailable',
+                l10n.lqImageUnavailable,
                 style: context.text.labelMedium?.copyWith(
                   color: p.textSecondary,
                 ),
@@ -674,10 +668,10 @@ class _QuizResult extends StatelessWidget {
         LearnStateView(
           asset: LearnArt.mascot,
           title: quizSet.title,
-          message: 'You scored $score out of $total.',
-          primaryLabel: 'Back to quizzes',
+          message: l10n.lqScored(score, total),
+          primaryLabel: l10n.lqBackLower,
           onPrimary: onBack,
-          secondaryLabel: review == null ? null : 'Review answers',
+          secondaryLabel: review == null ? null : l10n.lqReviewAnswers,
           onSecondary: review == null ? null : () => onReview(review!),
         ),
       ],

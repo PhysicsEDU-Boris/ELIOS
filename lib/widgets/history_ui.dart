@@ -2,6 +2,8 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
+import '../l10n/l10n.dart';
 import '../models/scan_record.dart';
 import '../services/ai_quiz_service.dart';
 import '../theme/elio_tokens.dart';
@@ -11,26 +13,29 @@ import 'auth/auth_widgets.dart' show authPalette;
 // docs/design/h3-figma/README.md (Figma 433:2358); colours come only from the
 // active ElioPalette.
 
-String historyCategory(ScanCategory c) => switch (c) {
-  ScanCategory.b3 => 'B3',
-  ScanCategory.recyclable => 'Daur ulang',
-  ScanCategory.organic => 'Organik',
-  ScanCategory.residu => 'Residu',
+String historyCategory(AppLocalizations t, ScanCategory c) => switch (c) {
+  ScanCategory.b3 => t.h3CatB3,
+  ScanCategory.recyclable => t.h3CatRecyclable,
+  ScanCategory.organic => t.h3CatOrganic,
+  ScanCategory.residu => t.h3CatResidu,
 };
-String historyDifficulty(QuizDifficulty d) => switch (d) {
-  QuizDifficulty.easy => 'Mudah',
-  QuizDifficulty.medium => 'Sedang',
-  QuizDifficulty.hard => 'Sulit',
+String historyDifficulty(AppLocalizations t, QuizDifficulty d) => switch (d) {
+  QuizDifficulty.easy => t.h3Easy,
+  QuizDifficulty.medium => t.h3Medium,
+  QuizDifficulty.hard => t.h3Hard,
 };
-String historyTime(DateTime time) {
-  final now = DateTime.now();
+
+/// "23:29" today, "Yesterday", else "3 Nov" (with the year when not this year).
+String historyTime(AppLocalizations t, DateTime time, {DateTime? now}) {
+  now ??= DateTime.now();
   final day = DateTime(time.year, time.month, time.day);
   final today = DateTime(now.year, now.month, now.day);
-  if (day == today.subtract(const Duration(days: 1))) return 'Kemarin';
-  if (day == today) {
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-  }
-  return '${time.day}/${time.month}/${time.year}';
+  if (day == today.subtract(const Duration(days: 1))) return t.h3Yesterday;
+  if (day == today) return DateFormat.Hm(dateLocaleOf(t)).format(time);
+  return (time.year == now.year
+          ? DateFormat.MMMd(dateLocaleOf(t))
+          : DateFormat.yMMMd(dateLocaleOf(t)))
+      .format(time);
 }
 
 /// Figma Button style (SemiBold 14, line height 1.4).
@@ -287,7 +292,9 @@ class HistoryCategoryChip extends StatelessWidget {
   final ScanCategory category;
   @override
   Widget build(BuildContext context) => HistoryChip(
-    category == ScanCategory.b3 ? 'B3 · Berbahaya' : historyCategory(category),
+    category == ScanCategory.b3
+        ? context.l10n.h3CatB3Long
+        : historyCategory(context.l10n, category),
     tone: historyCategoryTone(category),
   );
 }
@@ -299,12 +306,18 @@ class HistoryResultChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => q.isEssay
       ? HistoryChip(
-          q.gradingPending ? 'Menunggu penilaian' : 'Skor ${q.essayScore}/10',
+          q.gradingPending
+              ? context.l10n.h3AwaitingGrading
+              : context.l10n.h3EssayScore(q.essayScore ?? 0),
           tone: HistoryTone.info,
         )
       : q.isCorrect
-      ? const HistoryChip('Benar', tone: HistoryTone.success, icon: Icons.check)
-      : const HistoryChip('Salah', tone: HistoryTone.error);
+      ? HistoryChip(
+          context.l10n.h3Correct,
+          tone: HistoryTone.success,
+          icon: Icons.check,
+        )
+      : HistoryChip(context.l10n.h3Incorrect, tone: HistoryTone.error);
 }
 
 class HistoryTrophyChip extends StatelessWidget {
@@ -407,7 +420,7 @@ class HistoryTrophySummary extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '$total piala',
+                      context.l10n.h3Trophies(total),
                       style: ElioTokens.subhead.copyWith(color: p.textPrimary),
                     ),
                     const SizedBox(height: 2),
@@ -442,8 +455,8 @@ class HistoryTrophySummary extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const HistoryChip(
-                'Tersimpan lokal',
+              HistoryChip(
+                context.l10n.h3SavedLocally,
                 tone: HistoryTone.success,
                 icon: Icons.check,
               ),
@@ -482,7 +495,10 @@ class HistoryScanRow extends StatelessWidget {
                 HistoryCategoryChip(record.category),
                 const SizedBox(height: 4),
                 Text(
-                  '${historyTime(record.time)} · ${record.totalQuestions} soal',
+                  context.l10n.h3RowMeta(
+                    historyTime(context.l10n, record.time),
+                    record.totalQuestions,
+                  ),
                   style: ElioTokens.caption.copyWith(color: p.textSecondary),
                 ),
               ],
@@ -529,12 +545,15 @@ class HistoryScoreCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '${record.correctCount} dari ${record.totalQuestions} benar',
+            context.l10n.h3CorrectOf(
+              record.correctCount,
+              record.totalQuestions,
+            ),
             style: historyButtonText.copyWith(color: p.textPrimary),
           ),
           const SizedBox(height: 4),
           Text(
-            '10 piala untuk setiap jawaban benar',
+            context.l10n.h3TrophyRule,
             textAlign: TextAlign.center,
             style: ElioTokens.caption.copyWith(color: p.textSecondary),
           ),
@@ -613,10 +632,14 @@ class HistoryQuestionCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                answer('Jawabanmu', q.yourAnswer, yours),
+                answer(context.l10n.h3YourAnswer, q.yourAnswer, yours),
                 if (!q.isCorrect && !q.isEssay) ...[
                   const SizedBox(height: 12),
-                  answer('Jawaban benar', q.rightAnswer, p.primaryText),
+                  answer(
+                    context.l10n.h3CorrectAnswer,
+                    q.rightAnswer,
+                    p.primaryText,
+                  ),
                 ],
               ],
             ),
@@ -639,7 +662,7 @@ class HistoryQuestionCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Lihat penjelasan',
+                      context.l10n.h3SeeExplanation,
                       style: historyButtonText.copyWith(color: p.primaryText),
                     ),
                   ],
@@ -684,7 +707,7 @@ class HistoryTopBar extends StatelessWidget implements PreferredSizeWidget {
               children: [
                 if (showBack) ...[
                   IconButton(
-                    tooltip: 'Kembali',
+                    tooltip: context.l10n.h3Back,
                     onPressed: () => Navigator.of(context).maybePop(),
                     icon: Icon(Icons.arrow_back, color: p.textPrimary),
                   ),
@@ -764,7 +787,7 @@ class HistoryListenButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = authPalette(context), t = historyTint(p, HistoryTone.success);
     return IconButton(
-      tooltip: active ? 'Jeda' : 'Dengarkan',
+      tooltip: active ? context.l10n.h3Pause : context.l10n.h3Listen,
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints.tightFor(width: 48, height: 48),
       onPressed: onPressed,
@@ -845,7 +868,10 @@ class HistoryReadingLabel extends StatelessWidget {
       children: [
         Icon(Icons.volume_up_outlined, size: 14, color: c),
         const SizedBox(width: 6),
-        Text('SEDANG DIBACAKAN', style: ElioTokens.overline.copyWith(color: c)),
+        Text(
+          context.l10n.h3ReadingNow,
+          style: ElioTokens.overline.copyWith(color: c),
+        ),
       ],
     );
   }
@@ -932,7 +958,7 @@ class HistoryKeyIdea extends StatelessWidget {
                   const HistoryReadingLabel()
                 else
                   Text(
-                    'IDE UTAMA',
+                    context.l10n.h3KeyIdea,
                     style: ElioTokens.overline.copyWith(color: t.fg),
                   ),
                 const SizedBox(height: 4),
@@ -1061,14 +1087,52 @@ class HistoryActionsBar extends StatelessWidget {
   }
 }
 
-class HistoryError extends StatelessWidget {
-  const HistoryError({
+/// "Shown in Bahasa Indonesia, connect to translate" with a retry, when a
+/// record's translation could not be made (offline). Never invents text.
+class HistoryOriginalNote extends StatelessWidget {
+  const HistoryOriginalNote({
     super.key,
+    required this.lang,
     required this.onRetry,
-    this.message = 'Penjelasan lengkap belum tersedia',
   });
+  final String lang;
   final VoidCallback onRetry;
-  final String message;
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context), t = historyTint(p, HistoryTone.info);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
+      decoration: ShapeDecoration(color: t.bg, shape: _shape(12, t.border)),
+      child: Row(
+        children: [
+          Icon(Icons.translate_rounded, size: 16, color: t.fg),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.h3ShownInOriginal(
+                lookupAppLocalizations(Locale(lang)).languageName,
+              ),
+              style: ElioTokens.caption.copyWith(color: p.textPrimary),
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            style: TextButton.styleFrom(foregroundColor: p.primaryText),
+            child: Text(context.l10n.h3TryAgain),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class HistoryError extends StatelessWidget {
+  const HistoryError({super.key, required this.onRetry, this.message});
+  final VoidCallback onRetry;
+
+  /// Defaults to "explanation not available yet".
+  final String? message;
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context);
@@ -1079,7 +1143,7 @@ class HistoryError extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              message,
+              message ?? context.l10n.h3ExplanationUnavailable,
               textAlign: TextAlign.center,
               style: ElioTokens.body.copyWith(color: p.textPrimary),
             ),
@@ -1087,7 +1151,7 @@ class HistoryError extends StatelessWidget {
             OutlinedButton(
               style: historyOutlineStyle(p),
               onPressed: onRetry,
-              child: const Text('Coba lagi'),
+              child: Text(context.l10n.h3TryAgain),
             ),
           ],
         ),
@@ -1181,7 +1245,7 @@ class HistorySkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: 'Sedang memuat',
+    label: context.l10n.h3Loading,
     child: ExcludeSemantics(
       child: ListView(
         physics: const NeverScrollableScrollPhysics(),
@@ -1364,14 +1428,14 @@ class HistoryEmpty extends StatelessWidget {
             art,
             const SizedBox(height: 16),
             Text(
-              'Belum ada scan',
+              context.l10n.h3EmptyTitle,
               style: ElioTokens.subhead.copyWith(color: p.textPrimary),
             ),
             const SizedBox(height: 8),
             SizedBox(
               width: 280,
               child: Text(
-                'Scan benda dengan ELIOS. Hasil kuis dan pialamu akan muncul di sini.',
+                context.l10n.h3EmptyBody,
                 textAlign: TextAlign.center,
                 style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
               ),
@@ -1384,7 +1448,7 @@ class HistoryEmpty extends StatelessWidget {
                 ),
               ),
               onPressed: onScan,
-              child: const Text('Mulai scan'),
+              child: Text(context.l10n.h3StartScan),
             ),
           ],
         ),

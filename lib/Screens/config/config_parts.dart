@@ -9,6 +9,7 @@ import '../../services/ai_quiz_service.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/learn/learn_ui.dart';
 import '../home/home_parts.dart' show homeArt, homeRadiusL;
+import 'package:elio/l10n/l10n.dart';
 
 TextStyle configTitle(ElioPalette p) =>
     ElioTokens.bodyLarge.copyWith(fontSize: 19, fontWeight: FontWeight.w600, height: 1.3, color: p.textPrimary);
@@ -347,14 +348,14 @@ class EliosAiCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Semantics(header: true, child: Text('ELIOS AI', style: configTitle(p))),
-                              Text('Gemini · needs internet', style: configCaption(p)),
+                              Text(context.l10n.aiNeedsInternet, style: configCaption(p)),
                             ],
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Semantics(liveRegion: true, container: true, child: _body(p, state, service)),
+                    Semantics(liveRegion: true, container: true, child: _body(context, p, state, service)),
                   ],
                 ),
               ),
@@ -369,13 +370,13 @@ class EliosAiCard extends StatelessWidget {
     );
   }
 
-  Widget _body(ElioPalette p, AiCardState state, AiQuizService service) => switch (state) {
-        AiCardState.off => Text('Identifies scans and writes new quiz questions, about 2 to 4 s each.',
+  Widget _body(BuildContext context, ElioPalette p, AiCardState state, AiQuizService service) => switch (state) {
+        AiCardState.off => Text(context.l10n.aiOffHint,
             style: configBody(p)),
         AiCardState.active => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Identifying scans and writing quiz questions.', style: configBody(p)),
+              Text(context.l10n.aiActiveHint, style: configBody(p)),
               const SizedBox(height: 12),
               DecoratedBox(
                 decoration: ShapeDecoration(shape: StadiumBorder(side: BorderSide(color: p.primaryText))),
@@ -386,7 +387,7 @@ class EliosAiCard extends StatelessWidget {
                     children: [
                       Icon(Icons.check_rounded, size: 16, color: p.primaryText),
                       const SizedBox(width: 4),
-                      Text('Active · ${service.lastModel ?? 'cloud'}', style: configCaption(p, color: p.primaryText)),
+                      Text(context.l10n.aiActive(service.lastModel ?? context.l10n.aiCloud), style: configCaption(p, color: p.primaryText)),
                     ],
                   ),
                 ),
@@ -396,11 +397,10 @@ class EliosAiCard extends StatelessWidget {
         AiCardState.error => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _alertLine(p, Icons.cloud_off_rounded, 'ELIOS AI is not reachable', p.errorText),
+              _alertLine(p, Icons.cloud_off_rounded, l10n.cfgAiUnreachable, p.errorText),
               Padding(
                 padding: const EdgeInsets.only(left: 28, top: 2),
-                child: Text('No internet, or every AI model is busy. The quiz uses the question bank and tries '
-                    'the AI again on the next scan.', style: configCaption(p, color: p.textPrimary)),
+                child: Text(context.l10n.aiUnavailable, style: configCaption(p, color: p.textPrimary)),
               ),
             ],
           ),

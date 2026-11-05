@@ -103,11 +103,11 @@ void main() {
       await tester.pumpWidget(createSubject(state));
       await tester.pumpAndSettle();
 
-      expect(find.text('Jawaban Benar! +10 Piala'), findsOneWidget);
-      expect(find.text('Soal 1 dari 3'), findsOneWidget);
-      expect(find.text('Soal Berikutnya →'), findsOneWidget);
+      expect(find.text('Correct! +10 trophies'), findsOneWidget);
+      expect(find.text('Question 1 of 3'), findsOneWidget);
+      expect(find.text('Next question →'), findsOneWidget);
       expect(find.text('AI Correction Assistant'), findsOneWidget);
-      expect(find.text('Tabel Perbandingan Kategori Sampah'), findsOneWidget);
+      expect(find.text('Waste category comparison'), findsOneWidget);
       expect(find.text(testExplanation.summary), findsOneWidget);
       expect(find.text(testExplanation.learningTakeaway), findsOneWidget);
     });
@@ -130,8 +130,8 @@ void main() {
       await tester.pumpWidget(createSubject(state));
       await tester.pumpAndSettle();
 
-      expect(find.text('Jawaban Kurang Tepat'), findsOneWidget);
-      expect(find.text('Jawaban benar: Daur Ulang'), findsOneWidget);
+      expect(find.text('Not quite right'), findsOneWidget);
+      expect(find.text('Right answer: Daur Ulang'), findsOneWidget);
     });
 
     testWidgets('shows Selesai Quiz on the last question', (tester) async {
@@ -152,7 +152,7 @@ void main() {
       await tester.pumpWidget(createSubject(state));
       await tester.pumpAndSettle();
 
-      expect(find.text('Selesai Quiz ✓'), findsOneWidget);
+      expect(find.text('Finish quiz ✓'), findsOneWidget);
     });
 
     testWidgets('tapping next button calls nextQuestion on notifier', (tester) async {
@@ -173,7 +173,7 @@ void main() {
       await tester.pumpWidget(createSubject(fakeNotifier.seed, notifierBuilder: () => fakeNotifier));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Soal Berikutnya →'));
+      await tester.tap(find.text('Next question →'));
       await tester.pump();
 
       expect(fakeNotifier.nextQuestionCalled, isTrue);
@@ -230,10 +230,10 @@ void main() {
       await tester.pumpWidget(createEssaySubject(state));
       await tester.pumpAndSettle();
 
-      expect(find.text('Score: 8/10 · +8 Piala'), findsOneWidget);
+      expect(find.text('Score: 8/10 · +8 trophies'), findsOneWidget);
       expect(find.text('Table 1. Scoring breakdown'), findsOneWidget);
       expect(find.text('Analisis bahaya logam berat'), findsOneWidget);
-      expect(find.text('Essay · maks 150 kata'), findsOneWidget);
+      expect(find.text('Essay · max 150 words'), findsOneWidget);
     });
   });
 }

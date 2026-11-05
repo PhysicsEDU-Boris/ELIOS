@@ -10,7 +10,12 @@ class EssayGrade {
     this.feedback = '',
     this.improvement = '',
     this.rubricRows = const [],
+    this.alt,
   });
+
+  /// The same grade's feedback in the other app language (bilingual reply,
+  /// decision 0185); only kept when its total matches [score].
+  final EssayGrade? alt;
 
   final int score;
   final String feedback;
@@ -70,11 +75,14 @@ class EssayGrade {
         improvement.trim().isEmpty) {
       return EssayGrade(score: total);
     }
+    final altRaw = decoded['alt'];
+    final alt = altRaw is Map ? parse(jsonEncode(altRaw)) : null;
     return EssayGrade(
       score: total,
       feedback: feedback.trim(),
       improvement: improvement.trim(),
       rubricRows: scores,
+      alt: alt != null && alt.score == total ? alt : null,
     );
   }
 }

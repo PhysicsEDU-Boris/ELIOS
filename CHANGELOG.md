@@ -11,6 +11,10 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- Phone Control: Indonesian arm captions now fit beside the sliders without truncation or vertical overflow (decision 0185).
+
+- Languages (L2): one tap in the sidebar switches the whole app live, with no restart: History, Home, Learn, Control, Config, simulations, notifications, PDFs, dates and numbers. ELIOS AI answers in English and Bahasa Indonesia at once, so new scans switch language instantly; older History records are translated once when opened in the other language and kept, or shown in their original language with a note when offline. Read-aloud uses the voice of the chosen language. The quiz bank has an English version for review. "ELIO" is now "ELIOS" everywhere you can see it (decision 0185).
+
 - History H3 now matches the Figma design in light and dark: Figma chip tints, 40 dp filter chips, trophy summary badge, scan rows with trophies on the right, Display score card, one answers panel per question card, Figma top bars, explanation sections with a "SEDANG DIBACAKAN" row, Key idea and Steps without their own listen button, a 48 dp actions bar and the Figma export sheet. Saved crops are cover-fit. A 390 dp harness renders all 18 Figma states with side-by-side images (decision 0184).
 
 - Fonts: the whole app now uses the bundled Google Sans Flex (UI and headings) and Google Sans Code (code), both SIL OFL 1.1, instead of Inter and JetBrains Mono. Headings, overlines and chips are no longer monospaced. No runtime font download (decision 0091).
@@ -19,6 +23,7 @@ kept outside the repo.
 
 - History H3: Indonesian scan list and detail with saved photos, real trophy totals, category filters, light/dark palettes and reduced-motion skeletons. Each saved question opens its own explanation route with ELIOS AI or reviewed bank text, section listening, next question and configurable per-question A4 export. Explanations are validated and saved once; offline failures offer Coba lagi without local educational templates. Old records migrate to schema 4 while retaining answers and source metadata; source/module links are hidden on the new screens and question PDF (decision 0184).
 
+- Language picker in the sidebar, under Dark mode: English or Bahasa Indonesia, remembered between starts (device language until you pick one). Labels that were mixed English and Indonesian now follow the chosen language. New languages come from `tools/l10n/translate_arb.py <lang>`, which fills the language file from English with the Gemini free tier (decision 0185).
 - Phone Control: PICK UP and HOME now turn on the camera's arm-tag search for 5 seconds, also in builds without the R1 robot flow (before, only an R1 grip did). Debug builds show the tag and its distance over the video, for example "Tags: id 0 · 102 mm" (decision 0183).
 - Camera firmware: when something covers the locked item, the green box now stays on the item instead of shrinking onto a patch of the floor. A box that gets much smaller is only taken once it keeps one size for about 1 s, the same rule as for a box that grows (decision 0182).
 - Camera firmware (MaixCAM2): the video is now the camera's full wide view (16:9, 640x360, about 83° across like the robot simulator) instead of a 4:3 crop (about 67°), so hands and items at the sides stay in view. Arm tag distances use the camera's measured focal length and the real size of the small tag (6.17 mm), instead of a guess that read about 23 % short. Same speed as before (33 fps). The small arm3 tag keeps its 10 mm size but is printed with a thinner white border, so its black square grows from 6.2 to 8 mm and the wider view can find it (decision 0183).

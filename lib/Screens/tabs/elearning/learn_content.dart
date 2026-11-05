@@ -2,6 +2,7 @@ import '../../../models/guide_lesson.dart';
 import '../../../models/learning_progress.dart';
 import '../../../models/physics_module.dart';
 import '../../../models/video_lesson.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// Bundled L1 v2 illustrations (Figma 293:2359). Placeholders and fallbacks
 /// only: real thumbnails come from Firestore URLs (decision 0171).
@@ -98,9 +99,9 @@ class LearnLesson {
   String get meta {
     if (video case final v?) {
       final tag = v.level.trim().isNotEmpty ? v.level : v.sectionTitle;
-      return tag.trim().isEmpty ? 'Video' : 'Video · $tag';
+      return tag.trim().isEmpty ? l10n.lnVideo : l10n.lnVideoTag(tag);
     }
-    return 'Guide · Part ${guide!.order}';
+    return l10n.lnGuidePart(guide!.order);
   }
 
   /// "7:22" for videos, "12 min" or "8 pages" for guides, else empty.
@@ -142,9 +143,9 @@ class LearnLesson {
   }
 
   String actionLabel(LearningProgress? p) => switch (state(p)) {
-    LessonState.start => 'Start',
-    LessonState.inProgress => 'Continue',
-    LessonState.done => isVideo ? 'Watch again' : 'Read again',
+    LessonState.start => l10n.lnStart,
+    LessonState.inProgress => l10n.lnContinue,
+    LessonState.done => isVideo ? l10n.lnWatchAgain : l10n.lnReadAgain,
   };
 }
 

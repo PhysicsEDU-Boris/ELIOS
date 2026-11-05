@@ -2,6 +2,7 @@
 // it can be tested with a fixed clock. Days are local calendar days.
 import 'scan_record.dart';
 import 'trophy_rules.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// The robot's three physical bins. Residu is sorted into Anorganik.
 enum HomeBin {
@@ -53,10 +54,10 @@ List<DailyQuest> dailyQuests(List<ScanRecord> dayRecords) {
         !r.questions.any((q) => q.gradingPending),
   );
   return [
-    DailyQuest('Scan 3 items today', 10, (dayRecords.length / 3).clamp(0, 1)),
-    DailyQuest('Finish a scan quiz', 10, quizDone ? 1 : 0),
+    DailyQuest(l10n.questScan3, 10, (dayRecords.length / 3).clamp(0, 1)),
+    DailyQuest(l10n.questFinishQuiz, 10, quizDone ? 1 : 0),
     DailyQuest(
-      'Sort one B3 item safely',
+      l10n.questSortB3,
       20,
       dayRecords.any((r) => r.category == ScanCategory.b3) ? 1 : 0,
     ),

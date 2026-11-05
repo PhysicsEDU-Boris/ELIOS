@@ -1,3 +1,4 @@
+import 'package:elio/l10n/l10n.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
@@ -16,42 +17,27 @@ class QuizTtsService {
   }
   static final instance = QuizTtsService._();
 
-  // The AI replies in whichever language the student used — this heuristic
-  // only needs to tell apart the two languages this quiz actually uses.
-  static const _indonesianMarkers = {
-    'yang', 'dan', 'atau', 'adalah', 'ini', 'itu', 'tidak', 'dengan', 'untuk',
-    'dari', 'pada', 'akan', 'dapat', 'karena', 'sehingga', 'juga', 'dalam',
-    'oleh', 'sebagai', 'harus', 'bisa', 'tersebut', 'seperti', 'saya', 'kamu',
-    'kita', 'mereka', 'jika', 'maka', 'agar', 'sangat', 'lebih', 'hanya',
-    'sudah', 'belum', 'masih', 'bahwa', 'secara', 'menjadi', 'sampah',
-    'daur', 'ulang', 'lingkungan', 'jawaban', 'benar',
-  };
-
-  static const _englishMarkers = {
-    'the', 'and', 'is', 'are', 'this', 'that', 'with', 'for', 'of', 'to',
-    'your', 'you', 'answer', 'correct', 'because', 'which', 'what',
-  };
-
   final FlutterTts _tts = FlutterTts();
   final ValueNotifier<TtsStatus> status = ValueNotifier(TtsStatus.idle);
   bool _configured = false;
   String? _currentLanguage;
   List<Map<String, String>>? _voices;
 
-  /// The app's content is Indonesian, so Indonesian is the default; English
-  /// is used only for text that is clearly English.
-  @visibleForTesting
-  static String detectLanguage(String text) {
-    final words = RegExp(r"[a-zA-Z']+").allMatches(text.toLowerCase()).map((m) => m[0]!).toList();
-    final id = words.where(_indonesianMarkers.contains).length;
-    final en = words.where(_englishMarkers.contains).length;
-    return en >= 2 && en > id ? 'en-US' : 'id-ID';
-  }
+  /// The voice for text in [lang] ('en'/'id'); null = the app language
+  /// (decision 0185: the voice follows the selected language).
+  static String voiceFor([String? lang]) =>
+      (lang ?? l10n.localeName) == 'en' ? 'en-US' : 'id-ID';
 
   /// Emoji and markup are read out literally by some engines; drop them.
   @visibleForTesting
   static String speakableText(String text) => text
-      .replaceAll(RegExp(r'[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]', unicode: true), '')
+      .replaceAll(
+        RegExp(
+          r'[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]',
+          unicode: true,
+        ),
+        '',
+      )
       .replaceAll(RegExp(r'[*_#`{}\[\]"]'), '')
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
@@ -67,11 +53,17 @@ class QuizTtsService {
       ];
       final prefix = language.split('-').first.toLowerCase();
       final voice = _voices!.firstWhere(
-        (v) => (v['locale'] ?? '').toLowerCase().replaceAll('_', '-').startsWith(prefix),
+        (v) => (v['locale'] ?? '')
+            .toLowerCase()
+            .replaceAll('_', '-')
+            .startsWith(prefix),
         orElse: () => const {},
       );
       if (voice['name'] != null && voice['locale'] != null) {
-        await _tts.setVoice({'name': voice['name']!, 'locale': voice['locale']!});
+        await _tts.setVoice({
+          'name': voice['name']!,
+          'locale': voice['locale']!,
+        });
       }
     } catch (e) {
       debugPrint('[QuizTtsService] voice selection failed: $e');
@@ -109,7 +101,10 @@ class QuizTtsService {
   /// Speaks [text]. Always stops whatever was playing first (one slot: the
   /// new utterance replaces the old one). Never throws — a missing/broken
   /// TTS engine on a device just means voice playback silently does nothing.
-  Future<void> speak(String text) async {
+  ///
+  /// [lang] is the language of [text] when it differs from the app language
+  /// (a record shown in its original language offline).
+  Future<void> speak(String text, {String? lang}) async {
     final trimmed = speakableText(text);
     if (trimmed.isEmpty) return;
     _started++;
@@ -125,7 +120,7 @@ class QuizTtsService {
       }
       await _ensureConfigured();
       await _tts.setVolume(volume);
-      final language = detectLanguage(trimmed);
+      final language = voiceFor(lang);
       if (language != _currentLanguage) {
         await _useLanguage(language);
         _currentLanguage = language;

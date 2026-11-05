@@ -7,6 +7,7 @@ import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/learn/learn_ui.dart';
 import 'config_parts.dart';
+import 'package:elio/l10n/l10n.dart';
 
 Future<void> showRobotWifiQrSheet(BuildContext context) => showModalBottomSheet<void>(
       context: context,
@@ -69,13 +70,13 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                     Expanded(
                       child: Semantics(
                         header: true,
-                        child: Text('Robot Wi-Fi QR',
+                        child: Text(context.l10n.robotWifiQr,
                             style: ElioTokens.bodyLarge.copyWith(
                                 fontSize: 22, fontWeight: FontWeight.w700, color: p.textPrimary)),
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Close',
+                      tooltip: l10n.commonClose,
                       onPressed: () => Navigator.of(context).pop(),
                       icon: Icon(Icons.close_rounded, color: p.textPrimary),
                     ),
@@ -83,8 +84,7 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Turn on this phone\'s hotspot (2.4 GHz) and type its name and password. '
-                  'On the robot screen tap Wi-Fi setup, then hold this QR in front of the camera.',
+                  l10n.qrIntro,
                   style: configCaption(p),
                 ),
                 const SizedBox(height: 16),
@@ -93,8 +93,8 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                   validator: validateWifiName,
                   textInputAction: TextInputAction.next,
                   autocorrect: false,
-                  decoration: const InputDecoration(
-                    labelText: 'Hotspot name (SSID)',
+                  decoration: InputDecoration(
+                    labelText: l10n.qrSsid,
                     prefixIcon: Icon(Icons.wifi_tethering_rounded),
                     border: OutlineInputBorder(),
                   ),
@@ -109,11 +109,11 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                   enableSuggestions: false,
                   onFieldSubmitted: (_) => _show(),
                   decoration: InputDecoration(
-                    labelText: 'Hotspot password',
+                    labelText: l10n.qrPassword,
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      tooltip: _hidePass ? 'Show password' : 'Hide password',
+                      tooltip: _hidePass ? l10n.qrShowPassword : l10n.qrHidePassword,
                       onPressed: () => setState(() => _hidePass = !_hidePass),
                       icon: Icon(_hidePass ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                     ),
@@ -121,12 +121,12 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                   onChanged: (_) => setState(() => _qr = null),
                 ),
                 const SizedBox(height: 16),
-                ConfigButton(label: 'Show QR', icon: Icons.qr_code_2_rounded, onPressed: _show),
+                ConfigButton(label: l10n.qrShow, icon: Icons.qr_code_2_rounded, onPressed: _show),
                 if (_qr != null) ...[
                   const SizedBox(height: 16),
                   Center(
                     child: Semantics(
-                      label: 'Wi-Fi QR code for ${_ssid.text}',
+                      label: l10n.qrSemantics(_ssid.text),
                       image: true,
                       child: Container(
                         // White with a quiet zone so the camera reads it in dark mode too.
@@ -137,7 +137,7 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text('Robot not reading it? Lower the screen brightness or tilt the phone a little.',
+                  Text(context.l10n.robotQrHint,
                       textAlign: TextAlign.center, style: configCaption(p)),
                 ],
               ],

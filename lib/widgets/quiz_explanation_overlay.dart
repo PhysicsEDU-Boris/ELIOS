@@ -7,6 +7,7 @@ import '../models/quiz_explanation.dart';
 import '../services/quiz_pdf_service.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../theme/elio_learning_colors.dart';
+import 'package:elio/l10n/l10n.dart';
 
 // ---------------------------------------------------------------------------
 // Design tokens (Figma node 96:130 / 96:246)
@@ -32,10 +33,12 @@ class QuizExplanationOverlay extends ConsumerStatefulWidget {
   final VoidCallback? onStop;
 
   @override
-  ConsumerState<QuizExplanationOverlay> createState() => _QuizExplanationOverlayState();
+  ConsumerState<QuizExplanationOverlay> createState() =>
+      _QuizExplanationOverlayState();
 }
 
-class _QuizExplanationOverlayState extends ConsumerState<QuizExplanationOverlay> {
+class _QuizExplanationOverlayState
+    extends ConsumerState<QuizExplanationOverlay> {
   final _chatController = TextEditingController();
   final _chatScroll = ScrollController();
   int? _speakingIndex;
@@ -96,7 +99,8 @@ class QuizEssayExplanationOverlay extends ConsumerStatefulWidget {
       _QuizEssayExplanationOverlayState();
 }
 
-class _QuizEssayExplanationOverlayState extends ConsumerState<QuizEssayExplanationOverlay> {
+class _QuizEssayExplanationOverlayState
+    extends ConsumerState<QuizEssayExplanationOverlay> {
   final _chatController = TextEditingController();
   final _chatScroll = ScrollController();
   int? _speakingIndex;
@@ -228,17 +232,15 @@ class _McqLeftPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Quiz Meta row
-          _QuizMetaRow(
-            state: state,
-            notifier: notifier,
-            extraChips: const [],
-          ),
+          _QuizMetaRow(state: state, notifier: notifier, extraChips: const []),
           const SizedBox(height: 16),
           // Result Banner
           _ResultBanner(
             isCorrect: isCorrect,
             isEssay: false,
-            correctAnswer: q.options.isNotEmpty ? q.options[q.correctIndex] : '',
+            correctAnswer: q.options.isNotEmpty
+                ? q.options[q.correctIndex]
+                : '',
             itemName: state.scan?.displayName ?? '',
             trophies: isCorrect ? 10 : 0,
           ),
@@ -286,7 +288,7 @@ class _EssayLeftPanel extends StatelessWidget {
             notifier: notifier,
             extraChips: [
               _InfoChip(
-                label: 'Essay · maks 150 kata',
+                label: l10n.ovEssayMax,
                 bg: _elioGreenLight,
                 fg: _elioSubtext,
               ),
@@ -344,7 +346,10 @@ class _QuizMetaRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _InfoChip(
-                  label: 'Soal ${state.questionIndex + 1} dari ${state.totalQuestions}',
+                  label: l10n.qzQuestionOf(
+                    state.questionIndex + 1,
+                    state.totalQuestions,
+                  ),
                   bg: _elioGreenLight,
                   fg: _elioInk,
                 ),
@@ -354,7 +359,12 @@ class _QuizMetaRow extends StatelessWidget {
                   bg: _elioTeal,
                   fg: Colors.white,
                 ),
-                ...extraChips.map((c) => Padding(padding: const EdgeInsets.only(left: 8), child: c)),
+                ...extraChips.map(
+                  (c) => Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: c,
+                  ),
+                ),
               ],
             ),
           ),
@@ -390,31 +400,43 @@ class _ResultBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pending = isEssay && essayScore == null;
-    final bg = pending ? _elioGreenLight : isCorrect
+    final bg = pending
+        ? _elioGreenLight
+        : isCorrect
         ? const Color(0xFF00694C).withValues(alpha: 0.1)
         : _elioIncorrect.withValues(alpha: 0.08);
-    final border = pending ? _elioBorder : isCorrect
+    final border = pending
+        ? _elioBorder
+        : isCorrect
         ? const Color(0xFF00694C).withValues(alpha: 0.35)
         : _elioIncorrect.withValues(alpha: 0.35);
-    final iconBg = pending ? _elioSubtext : isCorrect ? const Color(0xFF00694C) : _elioIncorrect;
-    final icon = pending ? Icons.hourglass_empty_rounded : isCorrect ? Icons.emoji_events_rounded : Icons.close_rounded;
+    final iconBg = pending
+        ? _elioSubtext
+        : isCorrect
+        ? const Color(0xFF00694C)
+        : _elioIncorrect;
+    final icon = pending
+        ? Icons.hourglass_empty_rounded
+        : isCorrect
+        ? Icons.emoji_events_rounded
+        : Icons.close_rounded;
 
     final String title;
     final String subtitle;
 
     if (pending) {
-      title = 'Menunggu penilaian';
-      subtitle = 'Jawaban tersimpan. Nilai belum tersedia.';
+      title = l10n.awaitingGrading;
+      subtitle = l10n.ovPendingSub;
     } else if (isEssay) {
       final score = essayScore ?? trophies;
-      title = 'Score: $score/10 · +$score Piala';
-      subtitle = isCorrect ? 'Jawaban sudah baik!' : 'Perlu diperbaiki pada beberapa poin.';
+      title = l10n.ovEssayScore(score);
+      subtitle = isCorrect ? l10n.ovGood : l10n.ovNeedsWork;
     } else if (isCorrect) {
-      title = 'Jawaban Benar! +10 Piala';
+      title = l10n.ovRight;
       subtitle = itemName;
     } else {
-      title = 'Jawaban Kurang Tepat';
-      subtitle = 'Jawaban benar: $correctAnswer';
+      title = l10n.ovWrong;
+      subtitle = l10n.ovRightAnswer(correctAnswer);
     }
 
     return Container(
@@ -486,9 +508,7 @@ class _ExplanationPage extends StatelessWidget {
         color: Colors.white,
         border: Border.all(color: _elioBorder),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Color(0x0A000000), blurRadius: 8),
-        ],
+        boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 8)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -502,7 +522,7 @@ class _ExplanationPage extends StatelessWidget {
             child: Row(
               children: [
                 Text(
-                  'ELIO',
+                  'ELIOS',
                   style: GoogleFonts.sora(
                     color: _elioGreen,
                     fontSize: 13,
@@ -512,7 +532,7 @@ class _ExplanationPage extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  'Penjelasan Soal ${questionIndex + 1}',
+                  l10n.ovExplanationN(questionIndex + 1),
                   style: GoogleFonts.manrope(
                     color: _elioSubtext,
                     fontSize: 11,
@@ -525,23 +545,28 @@ class _ExplanationPage extends StatelessWidget {
           // Scrollable body
           Expanded(
             child: state.explanationLoading && explanation == null
-                ? const Center(child: CircularProgressIndicator(color: _elioGreen))
+                ? const Center(
+                    child: CircularProgressIndicator(color: _elioGreen),
+                  )
                 : explanation == null || explanation!.isUnavailable
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Text(
-                            'Penjelasan belum tersedia untuk soal ini.',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                                color: _elioCaption, fontSize: 13, fontStyle: FontStyle.italic),
-                          ),
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text(
+                        l10n.ovNoExplanation,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          color: _elioCaption,
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic,
                         ),
-                      )
-                    : SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: ExplanationBody(explanation: explanation!),
                       ),
+                    ),
+                  )
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: ExplanationBody(explanation: explanation!),
+                  ),
           ),
         ],
       ),
@@ -580,28 +605,41 @@ class ExplanationBody extends StatelessWidget {
         if (explanation.correctAnswerReason.isNotEmpty) ...[
           Text(
             explanation.correctAnswerReason,
-            style: GoogleFonts.inter(color: _elioSubtext, fontSize: 13, height: 1.5),
+            style: GoogleFonts.inter(
+              color: _elioSubtext,
+              fontSize: 13,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 8),
         ],
         if (explanation.selectedAnswerFeedback.isNotEmpty) ...[
           Text(
             explanation.selectedAnswerFeedback,
-            style: GoogleFonts.inter(color: _elioIncorrect, fontSize: 13, height: 1.5),
+            style: GoogleFonts.inter(
+              color: _elioIncorrect,
+              fontSize: 13,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 8),
         ],
         if (explanation.conceptExplanation.isNotEmpty) ...[
           Text(
             explanation.conceptExplanation,
-            style: GoogleFonts.inter(color: _elioInk, fontSize: 13, height: 1.5),
+            style: GoogleFonts.inter(
+              color: _elioInk,
+              fontSize: 13,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 10),
         ],
         // Essay: rubric rows
-        if (explanation.rubricRows != null && explanation.rubricRows!.isNotEmpty) ...[
+        if (explanation.rubricRows != null &&
+            explanation.rubricRows!.isNotEmpty) ...[
           Text(
-            'Table 1. Scoring breakdown',
+            l10n.qzScoringTable,
             style: GoogleFonts.manrope(
               color: _elioSubtext,
               fontSize: 12,
@@ -615,7 +653,7 @@ class ExplanationBody extends StatelessWidget {
         // MCQ: comparison rows
         if (explanation.comparisonRows.isNotEmpty) ...[
           Text(
-            'Tabel Perbandingan Kategori Sampah',
+            l10n.ovCompareTable,
             style: GoogleFonts.manrope(
               color: _elioSubtext,
               fontSize: 12,
@@ -640,14 +678,24 @@ class ExplanationBody extends StatelessWidget {
         ],
         if (explanation.referenceAnswer != null) ...[
           Text(
-            'Referensi jawaban: ${explanation.referenceAnswer}',
-            style: GoogleFonts.inter(color: _elioSubtext, fontSize: 12, height: 1.4),
+            l10n.ovReference(explanation.referenceAnswer ?? ''),
+            style: GoogleFonts.inter(
+              color: _elioSubtext,
+              fontSize: 12,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: 8),
         ],
         if (explanation.quote != null) ...[
-          Text('"${explanation.quote}"',
-              style: GoogleFonts.inter(color: _elioCaption, fontSize: 12, fontStyle: FontStyle.italic)),
+          Text(
+            '"${explanation.quote}"',
+            style: GoogleFonts.inter(
+              color: _elioCaption,
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
           const SizedBox(height: 4),
         ],
         if (QuizPdfService.sourceLine(explanation) != null)
@@ -680,13 +728,18 @@ class _ComparisonTable extends StatelessWidget {
       children: [
         TableRow(
           decoration: const BoxDecoration(color: _elioGreenLight),
-          children: ['Kategori', 'Material', 'Diterima'].map((h) {
+          children: [l10n.ovCategory, l10n.ovMaterial, l10n.ovAccepted].map((
+            h,
+          ) {
             return Padding(
               padding: const EdgeInsets.all(6),
               child: Text(
                 h,
                 style: GoogleFonts.manrope(
-                    fontSize: 11, fontWeight: FontWeight.w700, color: _elioInk),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: _elioInk,
+                ),
               ),
             );
           }).toList(),
@@ -734,26 +787,42 @@ class _RubricTable extends StatelessWidget {
       children: [
         TableRow(
           decoration: const BoxDecoration(color: _elioGreenLight),
-          children: ['Kriteria', 'Maks', 'Diperoleh', 'Komentar'].map((h) {
-            return Padding(
-              padding: const EdgeInsets.all(6),
-              child: Text(
-                h,
-                style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700, color: _elioInk),
-              ),
-            );
-          }).toList(),
+          children:
+              [l10n.ovCriteria, l10n.ovMax, l10n.ovAwarded, l10n.ovComment].map(
+                (h) {
+                  return Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Text(
+                      h,
+                      style: GoogleFonts.manrope(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: _elioInk,
+                      ),
+                    ),
+                  );
+                },
+              ).toList(),
         ),
         ...rows.map((row) {
           final isGood = row.awardedScore >= row.maxScore * 0.6;
-          return TableRow(children: [
-            Padding(
+          return TableRow(
+            children: [
+              Padding(
                 padding: const EdgeInsets.all(6),
-                child: Text(row.criterion, style: GoogleFonts.inter(fontSize: 12, color: _elioInk))),
-            Padding(
+                child: Text(
+                  row.criterion,
+                  style: GoogleFonts.inter(fontSize: 12, color: _elioInk),
+                ),
+              ),
+              Padding(
                 padding: const EdgeInsets.all(6),
-                child: Text('${row.maxScore}', style: GoogleFonts.inter(fontSize: 12, color: _elioInk))),
-            Padding(
+                child: Text(
+                  '${row.maxScore}',
+                  style: GoogleFonts.inter(fontSize: 12, color: _elioInk),
+                ),
+              ),
+              Padding(
                 padding: const EdgeInsets.all(6),
                 child: Text(
                   '${row.awardedScore}',
@@ -762,11 +831,17 @@ class _RubricTable extends StatelessWidget {
                     color: isGood ? _elioGreen : _elioIncorrect,
                     fontWeight: FontWeight.w600,
                   ),
-                )),
-            Padding(
+                ),
+              ),
+              Padding(
                 padding: const EdgeInsets.all(6),
-                child: Text(row.comment, style: GoogleFonts.inter(fontSize: 11, color: _elioCaption))),
-          ]);
+                child: Text(
+                  row.comment,
+                  style: GoogleFonts.inter(fontSize: 11, color: _elioCaption),
+                ),
+              ),
+            ],
+          );
         }),
       ],
     );
@@ -797,22 +872,29 @@ class _ActionsRow extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             foregroundColor: _elioSubtext,
             side: const BorderSide(color: _elioBorder),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           ),
           icon: const Icon(Icons.arrow_back_rounded, size: 16),
-          label: const Text('Kembali ke Soal'),
+          label: Text(context.l10n.backToQuestion),
         ),
         // Primary: next or finish
         FilledButton.icon(
           onPressed: notifier.nextQuestion,
           style: FilledButton.styleFrom(
             backgroundColor: _elioGreen,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           ),
-          icon: Icon(isLast ? Icons.check_rounded : Icons.arrow_forward_rounded, size: 16),
-          label: Text(isLast ? 'Selesai Quiz ✓' : 'Soal Berikutnya →'),
+          icon: Icon(
+            isLast ? Icons.check_rounded : Icons.arrow_forward_rounded,
+            size: 16,
+          ),
+          label: Text(isLast ? l10n.ovFinish : l10n.ovNext),
         ),
       ],
     );
@@ -861,29 +943,38 @@ class _ChatRightPanel extends StatelessWidget {
                 Container(
                   width: 8,
                   height: 8,
-                  decoration: const BoxDecoration(color: _elioGreen, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                    color: _elioGreen,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'AI Correction Assistant',
+                    l10n.ovAssistant,
                     style: GoogleFonts.sora(
-                        color: _elioInk, fontSize: 16, fontWeight: FontWeight.w600),
+                      color: _elioInk,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 6),
-                if (onStop != null) ...[_StopPill(onStop: onStop!), const SizedBox(width: 6)],
+                if (onStop != null) ...[
+                  _StopPill(onStop: onStop!),
+                  const SizedBox(width: 6),
+                ],
                 _WindowIconButton(
                   icon: Icons.remove_rounded,
-                  tooltip: 'Kecilkan',
+                  tooltip: l10n.qzMinimise,
                   onTap: notifier.minimize,
                 ),
                 const SizedBox(width: 6),
                 _WindowIconButton(
                   icon: Icons.close_rounded,
-                  tooltip: 'Tutup',
+                  tooltip: l10n.commonClose,
                   onTap: notifier.dismiss,
                 ),
               ],
@@ -924,9 +1015,15 @@ class _ChatRightPanel extends StatelessWidget {
                       isDense: true,
                       filled: true,
                       fillColor: Colors.white,
-                      hintText: 'Tanya AI...',
-                      hintStyle: GoogleFonts.inter(color: elioOutline, fontSize: 13),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                      hintText: l10n.ovAskAi,
+                      hintStyle: GoogleFonts.inter(
+                        color: elioOutline,
+                        fontSize: 13,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 11,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: _elioBorder),
@@ -948,7 +1045,11 @@ class _ChatRightPanel extends StatelessWidget {
                     child: const SizedBox(
                       width: 40,
                       height: 40,
-                      child: Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                      child: Icon(
+                        Icons.send_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                     ),
                   ),
                 ),
@@ -966,7 +1067,11 @@ class _ChatRightPanel extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _ChatBubble extends StatelessWidget {
-  const _ChatBubble({required this.message, required this.isSpeaking, required this.onListen});
+  const _ChatBubble({
+    required this.message,
+    required this.isSpeaking,
+    required this.onListen,
+  });
 
   final ChatMessage message;
   final bool isSpeaking;
@@ -980,7 +1085,9 @@ class _ChatBubble extends StatelessWidget {
       child: Align(
         alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
         child: Column(
-          crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isUser
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
             Container(
               constraints: const BoxConstraints(maxWidth: 260),
@@ -1039,7 +1146,10 @@ class _TypingBubble extends StatelessWidget {
             child: SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: _elioGreen),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: _elioGreen,
+              ),
             ),
           ),
         ),
@@ -1057,7 +1167,9 @@ class _ListenChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: playing ? _elioGreen : Colors.white,
-      shape: StadiumBorder(side: BorderSide(color: playing ? _elioGreen : _elioBorder)),
+      shape: StadiumBorder(
+        side: BorderSide(color: playing ? _elioGreen : _elioBorder),
+      ),
       child: InkWell(
         onTap: onTap,
         customBorder: const StadiumBorder(),
@@ -1073,9 +1185,12 @@ class _ListenChip extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                playing ? 'Playing' : 'Listen',
+                playing ? l10n.qzPlaying : l10n.qzListen,
                 style: GoogleFonts.manrope(
-                    color: playing ? Colors.white : elioMuted, fontSize: 11, fontWeight: FontWeight.w800),
+                  color: playing ? Colors.white : elioMuted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ],
           ),
@@ -1099,10 +1214,17 @@ class _InfoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(100)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(100),
+      ),
       child: Text(
         label,
-        style: GoogleFonts.inter(color: fg, fontSize: 12, fontWeight: FontWeight.w500),
+        style: GoogleFonts.inter(
+          color: fg,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
@@ -1135,9 +1257,12 @@ class _VoiceToggle extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Suara',
+                l10n.ovVoice,
                 style: GoogleFonts.inter(
-                    color: on ? _elioGreen : elioMuted, fontSize: 12, fontWeight: FontWeight.w500),
+                  color: on ? _elioGreen : elioMuted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -1148,7 +1273,11 @@ class _VoiceToggle extends StatelessWidget {
 }
 
 class _WindowIconButton extends StatelessWidget {
-  const _WindowIconButton({required this.icon, required this.tooltip, required this.onTap});
+  const _WindowIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
   final IconData icon;
   final String tooltip;
   final VoidCallback onTap;
@@ -1163,7 +1292,11 @@ class _WindowIconButton extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(8),
-          child: SizedBox(width: 32, height: 32, child: Icon(icon, size: 18, color: _elioInk)),
+          child: SizedBox(
+            width: 32,
+            height: 32,
+            child: Icon(icon, size: 18, color: _elioInk),
+          ),
         ),
       ),
     );
@@ -1178,7 +1311,7 @@ class _StopPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Berhenti darurat',
+      label: l10n.ctlEmergencyStop,
       child: Material(
         color: const Color(0xFFD32F2F),
         shape: const StadiumBorder(),

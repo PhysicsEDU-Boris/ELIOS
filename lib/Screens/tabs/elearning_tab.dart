@@ -21,6 +21,7 @@ import 'elearning/progress_page.dart';
 import 'elearning/quiz_page.dart';
 import 'elearning/simulations/simulations_page.dart';
 import 'elearning/video_lessons_page.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// Learn hub, L1 v2 (Figma 309:4863). Content streams from Firestore
 /// through [elearningContentServiceProvider]; progress from the providers.
@@ -208,21 +209,19 @@ class _HubContent extends ConsumerWidget {
         const SizedBox(height: 8),
         if (firstLaunch)
           _Hero(
-            title: 'Welcome to Learn',
+            title: l10n.lnWelcome,
             body:
-                'Start with ${binLabel(modules.first.id)}: '
-                '${lessons.where((l) => l.moduleId == modules.first.id).length} '
-                'short lessons, then try the quiz.',
-            buttonLabel: 'Start module 1',
+                l10n.lnWelcomeBody(binLabel(modules.first.id), lessons.where((l) => l.moduleId == modules.first.id).length),
+            buttonLabel: l10n.lnStartModule1,
             onPressed: () => push(ModulePage(module: modules.first)),
           )
         else
           _Hero(
-            title: 'Knowledge challenge',
+            title: l10n.quizKnowledgeChallenge,
             body: quizSets == null || quizSets!.isEmpty
-                ? 'Test how ELIO sorts waste.'
-                : '${quizSets!.length} quizzes. Test how ELIO sorts waste.',
-            buttonLabel: 'Take quiz',
+                ? l10n.lnTestElio
+                : l10n.lnQuizzesTest(quizSets!.length),
+            buttonLabel: l10n.lnTakeQuiz,
             buttonIcon: Icons.help_outline_rounded,
             onPressed: () => push(
               const QuizPage(),
@@ -231,16 +230,16 @@ class _HubContent extends ConsumerWidget {
         const SizedBox(height: 16),
         ProgressSummaryCard(
           onTap: () => push(const ProgressPage()),
-          title: 'Your learning progress',
+          title: l10n.lnYourProgress,
           subtitle: started == 0
-              ? 'No modules started yet'
-              : '$started of ${modules.length} modules in progress',
+              ? l10n.lnNoModulesStarted
+              : l10n.lnModulesInProgress(started, modules.length),
           value: overall,
-          footer: '${(overall * 100).round()}% overall completion',
+          footer: l10n.lnOverall((overall * 100).round()),
         ),
         LearnSectionHeader(
-          title: 'Course modules',
-          actionLabel: 'See all',
+          title: l10n.lnCourseModules,
+          actionLabel: l10n.lnSeeAll,
           onAction: () => push(const ProgressPage()),
         ),
         _BinRow(
@@ -249,18 +248,18 @@ class _HubContent extends ConsumerWidget {
           onTap: (m) => push(ModulePage(module: m)),
         ),
         LearnSectionHeader(
-          title: 'Continue learning',
-          actionLabel: 'See all',
+          title: l10n.lnContinueLearning,
+          actionLabel: l10n.lnSeeAll,
           onAction: () => push(
-            LessonListPage(title: 'All lessons', lessons: lessons),
+            LessonListPage(title: l10n.lnAllLessons, lessons: lessons),
           ),
         ),
         if (!lessonsLoaded)
           const LearnSkeleton(height: 200)
         else if (continuing.isEmpty)
-          const LearnHintCard(
+          LearnHintCard(
             text:
-                'Nothing in progress yet. Lessons you open will wait for you here.',
+                l10n.lnNothingInProgress,
           )
         else
           LearnCarousel(
@@ -270,11 +269,11 @@ class _HubContent extends ConsumerWidget {
             ],
           ),
         LearnSectionHeader(
-          title: 'Watch and learn',
-          actionLabel: videos == null ? null : '${videos!.length} videos',
+          title: l10n.lnWatchLearn,
+          actionLabel: videos == null ? null : l10n.lnVideoCount(videos!.length),
           onAction: () => push(
             LessonListPage(
-              title: 'Videos',
+              title: l10n.lnVideos,
               lessons: [for (final v in videos!) LearnLesson.video(v)],
             ),
           ),
@@ -282,7 +281,7 @@ class _HubContent extends ConsumerWidget {
         if (videos == null)
           const LearnSkeleton(height: 150)
         else if (videos!.isEmpty)
-          const LearnHintCard(text: 'No videos published yet.')
+          LearnHintCard(text: l10n.lnNoVideos)
         else
           LearnCarousel(
             itemWidth: 180,
@@ -296,8 +295,8 @@ class _HubContent extends ConsumerWidget {
             ],
           ),
         LearnSectionHeader(
-          title: 'Physics simulations',
-          actionLabel: '${physicsModules.length} modules',
+          title: l10n.lnPhysicsSims,
+          actionLabel: l10n.lnModuleCount(physicsModules.length),
           onAction: () => push(const SimulationListPage()),
         ),
         LearnCarousel(
@@ -306,7 +305,7 @@ class _HubContent extends ConsumerWidget {
             for (final m in physicsModules)
               SimulationCard(
                 canvasAsset: LearnArt.simulation(m.id),
-                tag: 'Simulasi · ${m.tag.split(' · ').first}',
+                tag: l10n.lnSimTag(m.tag.split(' · ').first),
                 title: m.title,
                 minutes: m.durationMinutes,
                 done: physics?.viewedModuleIds.contains(m.id.name) ?? false,
@@ -315,11 +314,11 @@ class _HubContent extends ConsumerWidget {
           ],
         ),
         LearnSectionHeader(
-          title: 'Guides',
-          actionLabel: 'See all',
+          title: l10n.lnGuides,
+          actionLabel: l10n.lnSeeAll,
           onAction: () => push(
             LessonListPage(
-              title: 'Guides',
+              title: l10n.lnGuides,
               lessons: [for (final g in guides ?? const <GuideLesson>[]) LearnLesson.guide(g)],
             ),
           ),
@@ -327,7 +326,7 @@ class _HubContent extends ConsumerWidget {
         if (guides == null)
           const LearnSkeleton(height: 160)
         else if (guides!.isEmpty)
-          const LearnHintCard(text: 'No guides published yet.')
+          LearnHintCard(text: l10n.lnNoGuides)
         else
           LearnListCard(
             children: [
@@ -358,7 +357,7 @@ bool isFirstLaunch(LearningProgress? p) =>
 
 String moduleTitleFor(List<ElearningModule> modules, String id) {
   final m = modules.where((m) => m.id == id).firstOrNull;
-  return m == null || m.order <= 0 ? binLabel(id) : 'Module ${m.order}';
+  return m == null || m.order <= 0 ? binLabel(id) : l10n.lnModuleN(m.order);
 }
 
 class _Hero extends StatelessWidget {
@@ -481,12 +480,12 @@ class LessonTile extends StatelessWidget {
           ? null
           : LearnMeta(
               icon: lesson.isVideo ? Icons.play_circle_outline_rounded : Icons.description_outlined,
-              label: lesson.isVideo ? lesson.lengthLabel : 'Guide',
+              label: lesson.isVideo ? lesson.lengthLabel : l10n.lnGuide,
             ),
       trailing: switch (state) {
-        LessonState.done => LearnMeta(icon: Icons.check_rounded, label: 'Done', color: p.primaryText),
+        LessonState.done => LearnMeta(icon: Icons.check_rounded, label: l10n.lnDone, color: p.primaryText),
         LessonState.inProgress => LearnMeta(icon: Icons.trending_up_rounded, label: '$pct%', color: p.primaryText),
-        LessonState.start => LearnMeta(icon: Icons.trending_up_rounded, label: 'New', color: p.primaryText),
+        LessonState.start => LearnMeta(icon: Icons.trending_up_rounded, label: l10n.lnNew, color: p.primaryText),
       },
       buttonLabel: showButton ? lesson.actionLabel(progress) : null,
       primaryButton: state != LessonState.done,
@@ -552,13 +551,12 @@ class LearnModulesError extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LearnStateView(
     asset: LearnArt.stateOffline,
-    title: 'Learning modules could not be loaded.',
+    title: l10n.lnLoadFailed,
     message:
-        'Check the connection to ELIO or the internet, then try again. '
-        'Lessons you already opened still work offline.',
-    primaryLabel: 'Try again',
+        l10n.lnLoadFailedBody,
+    primaryLabel: l10n.cfgTryAgain,
     onPrimary: onRetry,
-    secondaryLabel: 'Open offline lessons',
+    secondaryLabel: l10n.lnOpenOffline,
     onSecondary: () => Navigator.of(context).push(learnRoute<void>(const OfflineLessonsPage())),
   );
 }
@@ -568,10 +566,10 @@ class LearnNoModules extends StatelessWidget {
   const LearnNoModules({super.key});
 
   @override
-  Widget build(BuildContext context) => const LearnStateView(
+  Widget build(BuildContext context) => LearnStateView(
     asset: LearnArt.stateEmpty,
-    title: 'No learning modules available yet.',
-    message: 'New lessons appear here as soon as they are published.',
+    title: l10n.lnNoModules,
+    message: l10n.lnNoModulesBody,
   );
 }
 
@@ -590,7 +588,7 @@ class LessonListPage extends ConsumerWidget {
       body: LearnListView(
         children: [
           if (lessons.isEmpty)
-            const LearnStateView(asset: LearnArt.stateEmpty, title: 'Nothing here yet.')
+            LearnStateView(asset: LearnArt.stateEmpty, title: l10n.lnNothingHere)
           else
             // Three columns of thumbnails (owner request, 1 Nov).
             LessonCardGrid(
@@ -627,7 +625,7 @@ class LessonThumbTile extends StatelessWidget {
       onTap: onTap,
       padding: const EdgeInsets.all(6),
       radius: learnRadiusM,
-      semanticLabel: '${lesson.isVideo ? 'Video' : 'Guide'} ${lesson.title}',
+      semanticLabel: '${lesson.isVideo ? l10n.lnVideo : l10n.lnGuide} ${lesson.title}',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -655,7 +653,7 @@ class LessonThumbTile extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  lesson.isVideo ? lesson.meta.replaceFirst('Video · ', '') : lesson.meta.replaceFirst('Guide · ', ''),
+                  lesson.isVideo ? lesson.meta.replaceFirst('${l10n.lnVideo} · ', '') : lesson.meta.replaceFirst('${l10n.lnGuide} · ', ''),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: context.text.labelMedium?.copyWith(color: p.textSecondary),
@@ -678,7 +676,7 @@ class SimulationListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final physics = ref.watch(physicsProgressProvider).valueOrNull;
     return LearnPageScaffold(
-      title: 'Simulasi',
+      title: l10n.lnSimulations,
       body: LearnListView(
         children: [
           for (final m in physicsModules) ...[
@@ -716,26 +714,26 @@ class _OfflineLessonsPageState extends ConsumerState<OfflineLessonsPage> {
   Widget build(BuildContext context) {
     final progress = ref.watch(learningProgressProvider).valueOrNull;
     return LearnPageScaffold(
-      title: 'Offline lessons',
+      title: l10n.lnOfflineLessons,
       body: FutureBuilder(
         future: _cached,
         builder: (context, snap) {
           if (snap.connectionState != ConnectionState.done) {
-            return const Center(child: LearnSpinner(label: 'Loading offline lessons'));
+            return Center(child: LearnSpinner(label: l10n.lnLoadingOffline));
           }
           final data = snap.data;
           final lessons = data == null ? <LearnLesson>[] : mergeLessons(data.guides, data.videos);
           return LearnListView(
             children: [
               Text(
-                'Guides you opened before work offline. Videos need the internet.',
+                l10n.lnOfflineNote,
                 style: context.text.bodySmall?.copyWith(color: context.elio.textSecondary),
               ),
               const SizedBox(height: 16),
               if (lessons.isEmpty)
-                const LearnStateView(
+                LearnStateView(
                   asset: LearnArt.stateOffline,
-                  title: 'No lessons saved on this device yet.',
+                  title: l10n.lnNoSaved,
                 )
               else
                 LearnListCard(

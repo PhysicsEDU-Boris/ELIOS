@@ -1,10 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'content_i18n.dart';
+
 class QuizSet {
+  /// Translated fields by language (decision 0185); empty when none.
+  final Map<String, dynamic> i18n;
   final String id;
   final String moduleId;
-  final String title;
-  final String description;
+  final String _title;
+  String get title => contentText(i18n, 'title', _title);
+  final String _description;
+  String get description => contentText(i18n, 'description', _description);
   final String level;
   final int questionCount;
   final String iconType;
@@ -15,15 +21,16 @@ class QuizSet {
   const QuizSet({
     required this.id,
     required this.moduleId,
-    required this.title,
-    required this.description,
+    required String title,
+    required String description,
     required this.level,
     required this.questionCount,
     required this.iconType,
     required this.theme,
     required this.order,
     required this.isPublished,
-  });
+    this.i18n = const {},
+  }) : _title = title, _description = description;
 
   factory QuizSet.fromMap(Map<String, dynamic> map, String documentId) {
     final rawId = map['id'];
@@ -32,6 +39,7 @@ class QuizSet {
         : documentId;
 
     return QuizSet(
+      i18n: contentI18n(map),
       id: parsedId,
       moduleId: map['moduleId'] is String ? map['moduleId'] as String : '',
       title: map['title'] is String ? map['title'] as String : '',
@@ -58,10 +66,11 @@ class QuizSet {
 
   Map<String, dynamic> toMap() {
     return {
+      if (i18n.isNotEmpty) 'i18n': i18n,
       'id': id,
       'moduleId': moduleId,
-      'title': title,
-      'description': description,
+      'title': _title,
+      'description': _description,
       'level': level,
       'questionCount': questionCount,
       'iconType': iconType,

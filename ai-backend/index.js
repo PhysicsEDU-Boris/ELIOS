@@ -20,8 +20,8 @@ export async function handle(request, env, deps = {}) {
     return reply({ error: 'body must be JSON' }, 400);
   }
   const { prompt, system, image, json } = body ?? {};
-  if (typeof prompt !== 'string' || !prompt || prompt.length > 8000) {
-    return reply({ error: 'prompt must be text up to 8000 characters' }, 400);
+  if (typeof prompt !== 'string' || !prompt || prompt.length > 16000) {
+    return reply({ error: 'prompt must be text up to 16000 characters' }, 400);
   }
   if (system != null && (typeof system !== 'string' || system.length > 2000)) {
     return reply({ error: 'system must be text up to 2000 characters' }, 400);

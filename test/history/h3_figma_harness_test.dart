@@ -8,6 +8,7 @@ import 'dart:ui' as ui;
 import 'package:elio/Screens/question_explanation_screen.dart';
 import 'package:elio/Screens/scan_history_screen.dart';
 import 'package:elio/models/quiz_explanation.dart';
+import 'package:elio/models/record_translation.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/quiz_tts_service.dart';
@@ -19,12 +20,16 @@ import 'package:elio/widgets/elio_top_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:elio/l10n/l10n.dart';
 import 'package:image/image.dart' as img;
 import '../screens/auth_test_support.dart' show loadElioFonts;
 import 'h3_fixture.dart';
 
 const _figma = 'docs/design/h3-figma';
-const _out = 'docs/test-results/0184-h3-fix';
+// en/id renders for decision 0185; PNGs are written only with L10N_RENDER=1 so a
+// plain test run never rewrites tracked files. (The 0184 images are frozen.)
+const _out = 'docs/test-results/0185-l10n';
+final _write = Platform.environment['L10N_RENDER'] == '1';
 
 const figmaExplanation = QuizExplanation(
   summary: 'Kosongkan dan bilas wadah, lalu pisahkan baterainya.',
@@ -43,6 +48,27 @@ const figmaExplanation = QuizExplanation(
   source: 'bank',
   bankId: 'harness',
   groundingStatus: GroundingStatus.bankGrounded,
+  lang: 'id',
+  // The Figma sample text, as the bilingual reply's English twin (decision 0185).
+  alt: QuizExplanation(
+    summary: 'Empty and rinse the case, then take the battery out.',
+    correctAnswerReason:
+        'Recycling machines sort plastic by type. Dirt, leftover cables or a battery inside the case contaminate the whole batch, and a load of clean plastic can be rejected. Emptying and rinsing the case keeps the plastic pure, so it can be melted and moulded into something new.',
+    selectedAnswerFeedback:
+        'Batteries are B3 (hazardous) waste. They hold lithium, nickel or cadmium and can catch fire when they are crushed in a garbage truck. Mixing them with plastic puts sorting workers at risk and spoils the recycling.',
+    keyIdea:
+        'Separate before you sort. One item can hold more than one type of waste: the case is recyclable plastic, the battery inside it is B3.',
+    steps: [
+      'Take out the earbuds and any battery.',
+      'Shake out the dust, rinse the case and let it dry.',
+      'Put the case in the Recyclable (anorganik) bin.',
+      'Bring the battery to a B3 drop box at school or the supermarket.',
+    ],
+    source: 'bank',
+    bankId: 'harness',
+    groundingStatus: GroundingStatus.bankGrounded,
+    lang: 'en',
+  ),
 );
 
 DateTime _at(int h, int m, {int daysAgo = 0}) {
@@ -87,6 +113,28 @@ ScanRecord earphone({bool cached = true}) => ScanRecord(
       explanation: figmaExplanation,
     ),
   ],
+  translations: const {
+    'en': RecordTranslation(
+      itemName: 'Earphone case',
+      questions: [
+        QuestionText(
+          question: 'Why should a plastic earphone case go to the recycling bin, not general waste?',
+          yourAnswer: 'It can be melted and reused, so less new plastic is made.',
+          rightAnswer: 'It can be melted and reused, so less new plastic is made.',
+        ),
+        QuestionText(
+          question: 'What should you do before recycling the earphone case?',
+          yourAnswer: 'Throw it in with the batteries.',
+          rightAnswer: 'Empty it, rinse it and remove any batteries or electronics first.',
+        ),
+        QuestionText(
+          question: 'An empty plastic case floats in water even though plastic is denser. Why?',
+          yourAnswer: 'The air inside makes its average density lower than water.',
+          rightAnswer: 'The air inside makes its average density lower than water.',
+        ),
+      ],
+    ),
+  },
 );
 
 ScanRecord _simple(
@@ -94,8 +142,9 @@ ScanRecord _simple(
   String name,
   ScanCategory c,
   DateTime t,
-  int ok,
-) => ScanRecord(
+  int ok, [
+  String? english,
+]) => ScanRecord(
   id: id,
   time: t,
   itemName: name,
@@ -110,11 +159,20 @@ ScanRecord _simple(
         isCorrect: i < ok,
       ),
   ],
+  translations: {
+    'en': RecordTranslation(
+      itemName: english ?? name,
+      questions: [
+        for (var i = 0; i < 3; i++)
+          QuestionText(question: 'Question $i', yourAnswer: 'a', rightAnswer: 'a'),
+      ],
+    ),
+  },
 );
 
 List<ScanRecord> figmaRecords() => [
-  _simple('e', 'Wadah earphone', ScanCategory.recyclable, _at(23, 29), 3),
-  _simple('b', 'Modul buck converter', ScanCategory.b3, _at(22, 47), 0),
+  _simple('e', 'Wadah earphone', ScanCategory.recyclable, _at(23, 29), 3, 'Earphone case'),
+  _simple('b', 'Modul buck converter', ScanCategory.b3, _at(22, 47), 0, 'Buck converter module'),
   _simple('j', 'Jalangkote', ScanCategory.organic, _at(21, 15), 1),
   _simple(
     'p',
@@ -122,8 +180,9 @@ List<ScanRecord> figmaRecords() => [
     ScanCategory.recyclable,
     _at(12, 0, daysAgo: 1),
     2,
+    'Plastic cup',
   ),
-  _simple('t', 'Baterai', ScanCategory.b3, _at(11, 0, daysAgo: 1), 0),
+  _simple('t', 'Baterai', ScanCategory.b3, _at(11, 0, daysAgo: 1), 0, 'Battery'),
 ];
 
 class FigmaStore extends HistoryTestStore {
@@ -172,6 +231,7 @@ Widget shell(Widget child) => Builder(
 );
 
 void main() {
+  tearDownAll(() => debugSetL10n(const Locale('en')));
   setUpAll(loadElioFonts);
   tearDown(() {
     AiQuizService.instance.mockSendExecute = null;
@@ -179,8 +239,9 @@ void main() {
     QuizTtsService.instance.mockStop = null;
   });
 
+  for (final lang in ['en', 'id']) {
   for (final mode in Brightness.values) {
-    final m = mode.name;
+    final m = '$lang-${mode.name}';
     Future<void> render(
       WidgetTester t,
       String name,
@@ -188,8 +249,9 @@ void main() {
       Future<void> Function()? act,
     }) async {
       final ref = img.decodePng(
-        File('$_figma/$m-$name.png').readAsBytesSync(),
+        File('$_figma/${mode.name}-$name.png').readAsBytesSync(),
       )!;
+      debugSetL10n(Locale(lang));
       final size = Size(390, ref.height.toDouble());
       t.view.physicalSize = size;
       t.view.devicePixelRatio = 1;
@@ -205,6 +267,9 @@ void main() {
         RepaintBoundary(
           key: const Key('capture'),
           child: MaterialApp(
+        locale: Locale(lang),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
             debugShowCheckedModeBanner: false,
             theme: mode == Brightness.dark
                 ? ElioDarkTheme.data
@@ -220,7 +285,8 @@ void main() {
       final boundary = t.renderObject<RenderRepaintBoundary>(
         find.byKey(const Key('capture')),
       );
-      await t.runAsync(() async {
+      if (_write) {
+        await t.runAsync(() async {
         final image = await boundary.toImage(pixelRatio: 1);
         final data = (await image.toByteData(format: ui.ImageByteFormat.png))!;
         image.dispose();
@@ -237,6 +303,7 @@ void main() {
           '$_out/compare/$m-$name.png',
         ).writeAsBytesSync(img.encodePng(side));
       });
+      }
       await t.pumpWidget(const SizedBox());
       await t.pump(const Duration(seconds: 60)); // drain load timeouts
     }
@@ -307,8 +374,8 @@ void main() {
         act: () async {
           // Listen on the question and the two text sections only; Key idea
           // and Steps are read with the whole question (README).
-          expect(find.byTooltip('Dengarkan'), findsNWidgets(3));
-          expect(find.text('IDE UTAMA'), findsOneWidget);
+          expect(find.byTooltip(lookupAppLocalizations(Locale(lang)).h3Listen), findsNWidgets(3));
+          expect(find.text(lookupAppLocalizations(Locale(lang)).h3KeyIdea), findsOneWidget);
         },
       );
     });
@@ -318,7 +385,7 @@ void main() {
         '07-explanation-reading',
         explanation(),
         act: () async {
-          await t.tap(find.byTooltip('Dengarkan').at(1));
+          await t.tap(find.byTooltip(lookupAppLocalizations(Locale(lang)).h3Listen).at(1));
           await t.pump();
         },
       );
@@ -329,7 +396,7 @@ void main() {
         '08-export-sheet',
         explanation(),
         act: () async {
-          await t.tap(find.text('Ekspor PDF'));
+          await t.tap(find.text(lookupAppLocalizations(Locale(lang)).h3ExportPdf));
           await t.pump();
           await t.pump(const Duration(milliseconds: 600));
         },
@@ -338,5 +405,6 @@ void main() {
     testWidgets('$m 09 explanation loading', (t) async {
       await render(t, '09-explanation-loading', explanation(cached: false));
     });
+  }
   }
 }

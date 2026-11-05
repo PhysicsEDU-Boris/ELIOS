@@ -54,6 +54,9 @@ dependencies:
 
   # Robot Wi-Fi QR (decision 0178); already in the lock through `pdf`.
   barcode: ^2.2.9
+  flutter_localizations:
+    sdk: flutter
+  intl: any
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +71,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
 
   assets:
     - .env.dev

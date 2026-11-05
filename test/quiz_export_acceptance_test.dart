@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:elio/l10n/l10n.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:elio/models/home_stats.dart' show questBonus;
 import 'package:elio/Screens/scan_history_screen.dart';
@@ -36,6 +37,9 @@ const explanation = QuizExplanation(
 );
 
 void main() {
+  // H3 copy is asserted in Indonesian (decision 0185).
+  setUpAll(() => debugSetL10n(const Locale('id')));
+  tearDownAll(() => debugSetL10n(const Locale('en')));
   TestWidgetsFlutterBinding.ensureInitialized();
   GoogleFonts.config.allowRuntimeFetching = false;
   for (final size in [const Size(800, 600), const Size(844, 390)]) {
@@ -58,6 +62,9 @@ void main() {
         ProviderScope(
           overrides: [wasteQuizProvider.overrideWith(() => SeededQuiz(state))],
           child: const MaterialApp(
+        locale: Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(body: QuizExplanationOverlay()),
           ),
         ),
@@ -197,6 +204,9 @@ void main() {
       ProviderScope(
         overrides: [wasteQuizProvider.overrideWith(() => SeededQuiz(state))],
         child: const MaterialApp(
+        locale: Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(body: QuizEssayExplanationOverlay()),
         ),
       ),
@@ -245,7 +255,10 @@ void main() {
     expect(reopened.records.single.questions.single.gradingPending, isTrue);
     expect(reopened.totalTrophies, 0);
     await tester.pumpWidget(
-      MaterialApp(home: ScanHistoryScreen(store: reopened)),
+      MaterialApp(
+        locale: const Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,home: ScanHistoryScreen(store: reopened)),
     );
     await tester.pumpAndSettle();
     expect(find.text('Pending'), findsNothing);

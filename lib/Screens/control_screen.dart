@@ -51,6 +51,7 @@ import '../services/frame_source/maix_cam_source.dart';
 import '../services/frame_source/frame_source.dart';
 import '../services/robot/arm_tag_switch.dart';
 import 'login_screen.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// The MaixCAM2 already draws its box, mask and label into the video, so the
 /// app's own box is a debug aid, shown with the live-scan debug overlay only.
@@ -543,22 +544,22 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       final p = context.elio;
       final tall = MediaQuery.sizeOf(context).height >= 700;
       final (driveWord, driveColor) = switch (link) {
-        ControlLink.waiting => ('Waiting', p.secondaryText),
-        ControlLink.disconnected => ('Offline', p.errorText),
-        _ when _gate.stopped => ('Stopped', p.errorText),
+        ControlLink.waiting => (l10n.ctlWaiting, p.secondaryText),
+        ControlLink.disconnected => (l10n.ctlOffline, p.errorText),
+        _ when _gate.stopped => (l10n.ctlStopped, p.errorText),
         _ => (switch (_driveDir) {
-            DriveDir.forward => 'Forward',
-            DriveDir.back => 'Back',
-            DriveDir.left => 'Left',
-            DriveDir.right => 'Right',
-            null => 'Ready',
+            DriveDir.forward => l10n.ctlForward,
+            DriveDir.back => l10n.ctlBack,
+            DriveDir.left => l10n.ctlLeft,
+            DriveDir.right => l10n.ctlRight,
+            null => l10n.ctlReady,
           }, p.primaryText),
       };
       final (armWord, armColor) = switch (link) {
-        ControlLink.waiting => ('Waiting', p.secondaryText),
-        ControlLink.disconnected => ('Offline', p.errorText),
-        _ when _gate.stopped => ('Stopped', p.errorText),
-        _ => (_gate.isHoming ? 'Homing' : 'Ready', p.primaryText),
+        ControlLink.waiting => (l10n.ctlWaiting, p.secondaryText),
+        ControlLink.disconnected => (l10n.ctlOffline, p.errorText),
+        _ when _gate.stopped => (l10n.ctlStopped, p.errorText),
+        _ => (_gate.isHoming ? l10n.ctlHoming : l10n.ctlReady, p.primaryText),
       };
       Widget hint(String art, String text) => Container(
             padding: const EdgeInsets.all(8),
@@ -640,10 +641,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                   : ControlLayout(
                 stoppedBanner: _gate.stopped ? StoppedBanner(reason: _gate.stopReason, onResume: _resumeAfterStop) : null,
                 stoppedPill: _gate.stopped ? StoppedPill(reason: _gate.stopReason) : null,
-                exitButton: ControlPill(icon: Icons.arrow_back_rounded, label: 'Exit', onTap: () => Navigator.of(context).pop()),
+                exitButton: ControlPill(icon: Icons.arrow_back_rounded, label: l10n.ctlExit, onTap: () => Navigator.of(context).pop()),
                 debugScanButton: ControlPill(
                   icon: Icons.bug_report_outlined,
-                  label: 'Debug Scan',
+                  label: l10n.ctlDebugScan,
                   dashed: true,
                   onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
                 ),
@@ -664,17 +665,17 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                     },
                   ),
                 ),
-                driveHint: hint('tyre_buddy', isOperational ? 'Push to drive · let go to stop' : 'Unlocks when the robot connects'),
+                driveHint: hint('tyre_buddy', isOperational ? l10n.ctlPushToDrive : l10n.ctlUnlocksOnConnect),
                 speed: controlEnabled(
                   isOperational,
                   Column(mainAxisSize: MainAxisSize.min, children: [
                     Row(children: [
-                      const Expanded(child: ControlCaps('SPEED (PWM)')),
+                      Expanded(child: ControlCaps(l10n.ctlSpeedPwm)),
                       Text('${speed.toInt()}%', style: TextStyle(color: p.primaryText, fontWeight: FontWeight.w700, fontSize: 14)),
                     ]),
                     SizedBox(
                       height: 40,
-                      child: ControlFader(value: speed, max: 100, semanticLabel: 'Speed', onChanged: isOperational ? notifier.setPwmSpeed : null),
+                      child: ControlFader(value: speed, max: 100, semanticLabel: l10n.ctlSpeed, onChanged: isOperational ? notifier.setPwmSpeed : null),
                     ),
                     const SizedBox(height: 4),
                     GearChips(speed: speed, onSelect: isOperational ? notifier.setPwmSpeed : null),
@@ -718,7 +719,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                       const SizedBox(width: 10),
                       TransportKey(
                         icon: Icons.back_hand_outlined,
-                        label: 'PICK UP',
+                        label: l10n.ctlPickUp,
                         primary: true,
                         size: key,
                         onTap: isOperational
@@ -734,7 +735,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                       const SizedBox(width: 10),
                       TransportKey(
                         icon: Icons.front_hand_outlined,
-                        label: 'RELEASE',
+                        label: l10n.ctlRelease,
                         size: key,
                         onTap: isOperational
                             ? () {
@@ -746,7 +747,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                       Expanded(
                         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                           Row(children: [
-                            const Expanded(child: ControlCaps('GRIPPER')),
+                            Expanded(child: ControlCaps(l10n.ctlGripperCaps)),
                             Text('${robotState.gripperVal.round()}%',
                                 style: TextStyle(color: p.primaryText, fontWeight: FontWeight.w700, fontSize: 14)),
                           ]),
@@ -755,7 +756,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                             child: ControlFader(
                               value: robotState.gripperVal,
                               max: 100,
-                              semanticLabel: 'Gripper',
+                              semanticLabel: l10n.ctlGripper,
                               onChanged: isOperational
                                   ? (value) {
                                       final width = value.round();
@@ -766,9 +767,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                           ),
                           if (c.maxHeight >= 90)
                             Row(children: [
-                              Text('Open', style: TextStyle(color: p.textTertiary, fontSize: 11)),
+                              Text(context.l10n.controlGripOpen, style: TextStyle(color: p.textTertiary, fontSize: 11)),
                               const Spacer(),
-                              Text('Closed', style: TextStyle(color: p.textTertiary, fontSize: 11)),
+                              Text(context.l10n.controlGripClosed, style: TextStyle(color: p.textTertiary, fontSize: 11)),
                             ]),
                         ]),
                       ),
@@ -778,7 +779,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                 armStatus: ControlStatusChip(label: armWord, color: armColor),
                 armHeight: controlEnabled(
                   isOperational,
-                  armFader('HEIGHT', 'Up / Down', (robotState.heightValue / 180).clamp(0.0, 1.0), (value) {
+                  armFader(l10n.ctlHeight, l10n.ctlUpDown, (robotState.heightValue / 180).clamp(0.0, 1.0), (value) {
                     if (_gate.servo('height', (value * 180).toInt())) {
                       notifier.setHeightValue(value * 180);
                       _scheduleStatusRequest();
@@ -787,7 +788,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                 ),
                 armReach: controlEnabled(
                   isOperational,
-                  armFader('REACH', 'Fwd / Back', (robotState.reachValue / 180).clamp(0.0, 1.0), (value) {
+                  armFader(l10n.ctlReach, l10n.ctlFwdBack, (robotState.reachValue / 180).clamp(0.0, 1.0), (value) {
                     if (_gate.servo('reach', (value * 180).toInt())) {
                       notifier.setReachValue(value * 180);
                       _scheduleStatusRequest();
@@ -805,8 +806,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                 armTip: hint(
                   'gear_buddy',
                   isOperational
-                      ? 'Slide up to lift, slide forward to reach. The arm only moves when the robot is not STOPPED.'
-                      : 'Arm controls unlock when the robot is connected. STOP always works.',
+                      ? l10n.ctlArmHint
+                      : l10n.ctlArmLocked,
                 ),
                 bottomCards: [
                   MissionCard(done: missionDone),
@@ -1011,8 +1012,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       ScaffoldMessenger.of(context)
         ..removeCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(answer.failure == 'busy'
-            ? 'ELIOS AI is busy. Try LOCK again in a moment.'
-            : answer.failure ?? 'No item found. Point the camera at one item and try again.')));
+            ? l10n.ctlAiBusy
+            : answer.failure ?? l10n.ctlNoItem)));
     }
     return answer.lock;
   }
@@ -1034,15 +1035,15 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           padding: const EdgeInsets.all(12),
           children: [
             Row(mainAxisSize: MainAxisSize.min, children: [
-              const Text('Base', style: TextStyle(color: Colors.white)),
-              IconButton(onPressed: () => _nudgeBase(-2), icon: const Icon(Icons.chevron_left, color: Colors.white), tooltip: 'Base left'),
-              IconButton(onPressed: () => _nudgeBase(2), icon: const Icon(Icons.chevron_right, color: Colors.white), tooltip: 'Base right'),
+              Text(context.l10n.controlBase, style: TextStyle(color: Colors.white)),
+              IconButton(onPressed: () => _nudgeBase(-2), icon: const Icon(Icons.chevron_left, color: Colors.white), tooltip: l10n.ctlBaseLeft),
+              IconButton(onPressed: () => _nudgeBase(2), icon: const Icon(Icons.chevron_right, color: Colors.white), tooltip: l10n.ctlBaseRight),
               const SizedBox(width: 8),
               OutlinedButton.icon(
                 key: const ValueKey('debug_home_button'),
                 onPressed: () => _gate.home(),
                 icon: const Icon(Icons.home_outlined, size: 18),
-                label: const Text('HOME'),
+                label: Text(context.l10n.controlHome),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: const BorderSide(color: Colors.white54),
@@ -1062,7 +1063,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
               ),
             if (_r1 != null) ...[
               const SizedBox(height: 6),
-              Text('R1: ${_r1Status ?? 'memeriksa robot...'}',
+              Text(context.l10n.controlR1Status(_r1Status ?? context.l10n.controlCheckingRobot),
                   style: const TextStyle(color: Colors.white, fontSize: 12, backgroundColor: Colors.black54)),
             ],
             const SizedBox(height: 6),
@@ -1082,7 +1083,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                   builder: (_) => const DebugPhoneCameraSheet(),
                 ),
                 icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                label: const Text('Scan dengan kamera HP'),
+                label: Text(context.l10n.controlPhoneScan),
                 style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white54)),
               ),
             ),

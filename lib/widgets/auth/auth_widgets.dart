@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/elio_dark_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../splash/elio_leaf.dart';
+import 'package:elio/l10n/l10n.dart';
 
 // Design file 0091: radius/m for inputs and banners, Full (pill) for buttons and links.
 const _radiusM = 12.0;
@@ -154,7 +155,7 @@ class AuthVisibilityToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => IconButton(
     onPressed: onPressed,
-    tooltip: obscured ? 'Show password' : 'Hide password',
+    tooltip: obscured ? l10n.qrShowPassword : l10n.qrHidePassword,
     constraints: const BoxConstraints.tightFor(width: 48, height: 48),
     icon: Icon(
       obscured ? Icons.visibility_outlined : Icons.visibility_off_outlined,
@@ -255,7 +256,7 @@ class AuthPrimaryButton extends StatelessWidget {
             ),
         child: loading
             ? Semantics(
-                label: 'Please wait',
+                label: l10n.authPleaseWait,
                 child: SizedBox(
                   width: 22,
                   height: 22,
@@ -361,9 +362,9 @@ class AuthLink extends StatelessWidget {
 
 /// "Atau" divider.
 class AuthDivider extends StatelessWidget {
-  const AuthDivider({super.key, this.label = 'Atau'});
+  const AuthDivider({super.key, this.label});
 
-  final String label;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -376,7 +377,7 @@ class AuthDivider extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
-              label,
+              label ?? l10n.authOr,
               style: ElioTokens.caption.copyWith(color: p.textSecondary),
             ),
           ),

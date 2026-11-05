@@ -1,13 +1,18 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:image/image.dart' as img;
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:elio/l10n/l10n.dart';
 import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/quiz_pdf_service.dart';
 
 void main() {
+  // PDF copy is asserted in Indonesian (decision 0185).
+  setUpAll(() => debugSetL10n(const Locale('id')));
+  tearDownAll(() => debugSetL10n(const Locale('en')));
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late Directory tempDir;

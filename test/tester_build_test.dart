@@ -46,8 +46,8 @@ void main() {
         container: c,
         child: const MaterialApp(home: Scaffold(body: SingleChildScrollView(child: TesterPanel()))),
       ));
-      expect(find.text('Sumber soal'), findsOneWidget);
-      expect(find.text('AI: Belum dipakai'), findsOneWidget);
+      expect(find.text('Question source'), findsOneWidget);
+      expect(find.text('AI: Not used yet'), findsOneWidget);
       expect(c.read(appPreferencesProvider).questionSource, QuestionSource.ai);
       await tester.tap(find.text('Bank'));
       await tester.pump();
@@ -76,8 +76,8 @@ void main() {
 
   group('AI offline', () {
     test('the panel names the model that answered, and says when none did', () {
-      expect(aiStateLabel(AiStatus.ready, 'gemini-3.5-flash-lite'), 'Siap (gemini-3.5-flash-lite)');
-      expect(aiStateLabel(AiStatus.offline, null), 'Tidak tersambung, mode bank');
+      expect(aiStateLabel(AiStatus.ready, 'gemini-3.5-flash-lite'), 'Ready (gemini-3.5-flash-lite)');
+      expect(aiStateLabel(AiStatus.offline, null), 'Not connected, bank mode');
     });
 
     test('identify and essay grading say so, without throwing', () async {
@@ -101,7 +101,7 @@ void main() {
       expect(s.question?.bankId, isNotNull);
       expect(s.isFallback, isFalse);
       expect(s.questionSource, QuestionSource.bank);
-      expect(s.messages.last.text, contains('AI tidak tersambung'));
+      expect(s.messages.last.text, contains('The AI is not connected'));
     });
 
     test('a real call without Firebase fails soft: null, status offline', () async {

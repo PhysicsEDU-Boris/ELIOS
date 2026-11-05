@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/elio_tokens.dart';
 import 'auth/auth_widgets.dart' show authPalette;
+import 'package:elio/l10n/l10n.dart';
 
 const _barHeight = 56.0;
 const _tapTarget = 48.0;
@@ -106,7 +107,7 @@ class _AvatarState extends State<ElioAvatar> {
     final hasPhoto = photo != null && photo.isNotEmpty;
     return Semantics(
       button: true,
-      label: 'Open profile menu',
+      label: l10n.openProfileMenu,
       excludeSemantics: true,
       onTap: widget.onTap,
       child: InkResponse(

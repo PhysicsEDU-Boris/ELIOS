@@ -5,16 +5,22 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/home_stats.dart' show questBonus;
+import '../models/record_translation.dart';
 import '../models/scan_record.dart';
 import '../models/trophy_rules.dart';
 import 'ai_quiz_service.dart';
 
 /// `--dart-define=SCAN_RECORDS_FILE=scan_records_r3test.json`: a phone test build
 /// keeps its records in a separate file, so the owner's `scan_records.json` is never written.
-const _recordsFileName = String.fromEnvironment('SCAN_RECORDS_FILE', defaultValue: 'scan_records.json');
+const _recordsFileName = String.fromEnvironment(
+  'SCAN_RECORDS_FILE',
+  defaultValue: 'scan_records.json',
+);
 
 /// History photos go next to their records: `scans/` normally, `scans_<file>/` in a test build.
-const scanPhotosDirName = _recordsFileName == 'scan_records.json' ? 'scans' : 'scans_$_recordsFileName';
+const scanPhotosDirName = _recordsFileName == 'scan_records.json'
+    ? 'scans'
+    : 'scans_$_recordsFileName';
 
 /// Local storage service for [ScanRecord] items and cumulative trophies.
 /// Data is persisted as a JSON file in the application documents directory.
@@ -166,19 +172,50 @@ class ScanRecordStore extends ChangeNotifier {
     });
   }
 
-  Future<void> saveExplanation(String recordId, int questionIndex, QuizExplanation explanation) {
+  Future<void> saveExplanation(
+    String recordId,
+    int questionIndex,
+    QuizExplanation explanation,
+  ) {
     return _synchronized(() async {
       if (!_loaded) await _doLoad();
       if (loadError != null) throw StateError('History could not be loaded');
       final i = _records.indexWhere((r) => r.id == recordId);
-      if (i < 0) return; // The owner may have deleted the record while AI was running.
+      if (i < 0) {
+        return; // The owner may have deleted the record while AI was running.
+      }
       final record = _records[i];
       if (questionIndex < 0 || questionIndex >= record.questions.length) return;
       final questions = [...record.questions];
-      questions[questionIndex] = questions[questionIndex].copyWith(explanation: explanation);
-      _records[i] = ScanRecord(id: record.id, time: record.time, itemName: record.itemName,
-        category: record.category, cropPhotoPath: record.cropPhotoPath,
-        difficulty: record.difficulty, questions: questions, trophies: record.trophies);
+      questions[questionIndex] = questions[questionIndex].copyWith(
+        explanation: explanation,
+      );
+      _records[i] = record.copyWith(questions: questions);
+      try {
+        await _doSave(propagateError: true);
+      } catch (_) {
+        _records[i] = record;
+        rethrow;
+      }
+      notifyListeners();
+    });
+  }
+
+  /// Caches [translation] of record [recordId] in [lang] (decision 0185).
+  Future<void> saveTranslation(
+    String recordId,
+    String lang,
+    RecordTranslation translation,
+  ) {
+    return _synchronized(() async {
+      if (!_loaded) await _doLoad();
+      if (loadError != null) throw StateError('History could not be loaded');
+      final i = _records.indexWhere((r) => r.id == recordId);
+      if (i < 0) return;
+      final record = _records[i];
+      _records[i] = record.copyWith(
+        translations: {...record.translations, lang: translation},
+      );
       try {
         await _doSave(propagateError: true);
       } catch (_) {

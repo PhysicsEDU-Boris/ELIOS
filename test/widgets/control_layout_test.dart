@@ -122,7 +122,7 @@ void main() {
                 }
               }
               if (stopped) {
-                await tester.tap(find.text('Lanjutkan'));
+                await tester.tap(find.text('Continue'));
                 await tester.pump();
                 expect(taps['resume'], 1, reason: 'one tap on Lanjutkan');
               }
@@ -147,12 +147,12 @@ void main() {
           // Minimise, then the yellow button brings it back.
           await tester.tap(find.byKey(const ValueKey('quiz_minimise')));
           await tester.pump(const Duration(milliseconds: 300));
-          await tester.ensureVisible(find.byTooltip('Buka kuis'));
+          await tester.ensureVisible(find.byTooltip('Open quiz'));
           await tester.pump();
-          expectTappable(tester, find.byTooltip('Buka kuis'), 'yellow quiz button');
-          await tester.tap(find.byTooltip('Buka kuis'));
+          expectTappable(tester, find.byTooltip('Open quiz'), 'yellow quiz button');
+          await tester.tap(find.byTooltip('Open quiz'));
           await tester.pump(const Duration(milliseconds: 300));
-          expect(find.byTooltip('Buka kuis'), findsNothing, reason: 'no quiz button while the quiz is open');
+          expect(find.byTooltip('Open quiz'), findsNothing, reason: 'no quiz button while the quiz is open');
           expectTappable(tester, find.byKey(const ValueKey('quiz_close')), 'quiz reopened');
           await tester.pump(const Duration(seconds: 2)); // tooltip timers
           return;
@@ -192,10 +192,10 @@ void main() {
         expectTappable(tester, find.text('History'), 'History');
         await tapOnce(find.byKey(const ValueKey('robot_power')), 'power');
         if (quiz == Quiz.minimised) {
-          await tester.ensureVisible(find.byTooltip('Buka kuis'));
-          expectTappable(tester, find.byTooltip('Buka kuis'), 'yellow quiz button');
+          await tester.ensureVisible(find.byTooltip('Open quiz'));
+          expectTappable(tester, find.byTooltip('Open quiz'), 'yellow quiz button');
         } else {
-          expect(find.byTooltip('Buka kuis'), findsNothing, reason: 'no quiz button without a minimised quiz');
+          expect(find.byTooltip('Open quiz'), findsNothing, reason: 'no quiz button without a minimised quiz');
         }
         await tester.pump(const Duration(seconds: 2)); // tooltip timers
       });

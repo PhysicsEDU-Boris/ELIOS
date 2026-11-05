@@ -6,7 +6,6 @@ import '../../../models/guide_lesson.dart';
 import '../../../models/physics_module.dart';
 import '../../../models/quiz_set.dart';
 import '../../../models/video_lesson.dart';
-import '../../../models/waste_category.dart';
 import '../../../providers/learning_progress_provider.dart';
 import '../../../providers/physics_progress_provider.dart';
 import '../../../services/elearning_content_service.dart';
@@ -17,6 +16,7 @@ import 'lesson_page.dart';
 import 'quiz_page.dart';
 import 'quiz_review_page.dart';
 import 'simulations/simulations_page.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// One page for every waste module (Figma 309:5927).
 class ModulePage extends ConsumerStatefulWidget {
@@ -79,7 +79,11 @@ class _ModulePageState extends ConsumerState<ModulePage> {
 }
 
 class _ModuleBody extends ConsumerWidget {
-  const _ModuleBody({required this.module, required this.lessons, required this.quizSet});
+  const _ModuleBody({
+    required this.module,
+    required this.lessons,
+    required this.quizSet,
+  });
 
   final ElearningModule module;
 
@@ -94,17 +98,21 @@ class _ModuleBody extends ConsumerWidget {
     final physics = ref.watch(physicsProgressProvider).valueOrNull;
     final list = lessons ?? const <LearnLesson>[];
     final value = moduleProgress(module.id, list, progress);
-    final examples = wasteCategories
-        .where((c) => c.id == module.id)
-        .expand((c) => c.examples)
-        .map((e) => e.split(' (').first)
-        .toList();
-    final sim = physicsModules.firstWhere((m) => m.id == relatedSimulation(module.id));
+    final examples = switch (module.id) {
+      'organic' => context.l10n.catExamplesOrganic,
+      'inorganic' => context.l10n.catExamplesInorganic,
+      'hazardous' => context.l10n.catExamplesHazardous,
+      _ => '',
+    }.split('; ').where((e) => e.isNotEmpty).toList();
+    final sim = physicsModules.firstWhere(
+      (m) => m.id == relatedSimulation(module.id),
+    );
     final review = progress?.quizReviews[module.id];
     final best = progress?.quizScores[module.id];
     final attempted = (progress?.categories[module.id]?.quizAttempts ?? 0) > 0;
 
-    void push(Widget page) => Navigator.of(context).push(learnRoute<void>(page));
+    void push(Widget page) =>
+        Navigator.of(context).push(learnRoute<void>(page));
 
     return LearnListView(
       children: [
@@ -126,10 +134,15 @@ class _ModuleBody extends ConsumerWidget {
                 children: [
                   if (module.level.isNotEmpty) LevelChip(label: module.level),
                   if (module.durationMinutes > 0)
-                    LearnMeta(icon: Icons.schedule_rounded, label: '${module.durationMinutes} min'),
+                    LearnMeta(
+                      icon: Icons.schedule_rounded,
+                      label: context.l10n.learnMinutes(module.durationMinutes),
+                    ),
                   LearnMeta(
                     icon: Icons.menu_book_outlined,
-                    label: '${lessons?.length ?? module.lessonCount} lessons',
+                    label: context.l10n.learnLessonCount(
+                      lessons?.length ?? module.lessonCount,
+                    ),
                   ),
                 ],
               ),
@@ -137,15 +150,27 @@ class _ModuleBody extends ConsumerWidget {
               Text(module.title, style: context.text.titleLarge),
               if (module.description.isNotEmpty) ...[
                 const SizedBox(height: 4),
-                Text(module.description, style: context.text.bodySmall?.copyWith(color: p.textSecondary)),
+                Text(
+                  module.description,
+                  style: context.text.bodySmall?.copyWith(
+                    color: p.textSecondary,
+                  ),
+                ),
               ],
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(child: Text('Module progress', style: context.text.labelMedium)),
+                  Expanded(
+                    child: Text(
+                      context.l10n.moduleProgress,
+                      style: context.text.labelMedium,
+                    ),
+                  ),
                   Text(
                     '${(value * 100).round()}%',
-                    style: context.text.labelLarge?.copyWith(color: p.primaryText),
+                    style: context.text.labelLarge?.copyWith(
+                      color: p.primaryText,
+                    ),
                   ),
                 ],
               ),
@@ -159,9 +184,20 @@ class _ModuleBody extends ConsumerWidget {
                   children: [
                     for (final e in examples)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: ShapeDecoration(color: p.surfaceRaised, shape: learnShape(8)),
-                        child: Text(e, style: context.text.labelMedium?.copyWith(color: p.textSecondary)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: ShapeDecoration(
+                          color: p.surfaceRaised,
+                          shape: learnShape(8),
+                        ),
+                        child: Text(
+                          e,
+                          style: context.text.labelMedium?.copyWith(
+                            color: p.textSecondary,
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -170,23 +206,20 @@ class _ModuleBody extends ConsumerWidget {
           ),
         ),
         // Videos and guides as separate sections (owner request, 1 Nov).
-        for (final (title, isVideo, unit) in const [
-          ('Videos', true, 'videos'),
-          ('Guides', false, 'guides'),
+        for (final (title, isVideo, count, none) in [
+          (l10n.lnVideos, true, l10n.lnVideoCount, l10n.lnNoVideosModule),
+          (l10n.lnGuides, false, l10n.lnGuideCount, l10n.lnNoGuidesModule),
         ]) ...[
           LearnSectionHeader(
             title: title,
             actionLabel: lessons == null
                 ? null
-                : switch (list.where((l) => l.isVideo == isVideo).length) {
-                    1 => '1 ${unit.substring(0, unit.length - 1)}',
-                    final n => '$n $unit',
-                  },
+                : count(list.where((l) => l.isVideo == isVideo).length),
           ),
           if (lessons == null)
             const LearnSkeleton(height: 220)
           else if (!list.any((l) => l.isVideo == isVideo))
-            LearnHintCard(text: 'No $unit in this module yet.')
+            LearnHintCard(text: none)
           else
             LessonCardGrid(
               children: [
@@ -200,7 +233,7 @@ class _ModuleBody extends ConsumerWidget {
               ],
             ),
         ],
-        const LearnSectionHeader(title: 'Simulation for this module'),
+        LearnSectionHeader(title: l10n.lnSimForModule),
         SimulationRow(
           icon: sim.icon,
           tag: sim.tag,
@@ -212,22 +245,24 @@ class _ModuleBody extends ConsumerWidget {
           onTap: () => openSimulation(context, ref, sim),
         ),
         LearnSectionHeader(
-          title: 'Quiz',
-          actionLabel: review == null ? null : 'History',
-          onAction: review == null ? null : () => push(QuizReviewPage(review: review)),
+          title: l10n.lqTitle,
+          actionLabel: review == null ? null : l10n.navHistory,
+          onAction: review == null
+              ? null
+              : () => push(QuizReviewPage(review: review)),
         ),
         if (quizSet case final q?)
           QuizCard(
             title: q.title,
             subtitle: [
-              '${q.questionCount} questions',
-              if (best != null) 'best score $best%',
+              l10n.lqQuestions(q.questionCount),
+              if (best != null) l10n.lqBestScore(best),
             ].join(' · '),
-            buttonLabel: attempted ? 'Open' : 'Start',
+            buttonLabel: attempted ? l10n.lnOpen : l10n.lnStart,
             onPressed: () => push(QuizPage(moduleId: module.id)),
           )
         else
-          const LearnHintCard(text: 'No quiz published for this module yet.'),
+          LearnHintCard(text: l10n.lnNoQuizPublished),
         const SizedBox(height: 24),
       ],
     );

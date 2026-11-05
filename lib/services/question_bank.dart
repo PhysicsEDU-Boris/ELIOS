@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter/services.dart' show rootBundle;
 
 import '../models/scanned_waste.dart';
@@ -14,7 +14,9 @@ class QuestionBank {
 
   factory QuestionBank.fromJson(String objectBankJson, String poolBankJson) {
     final objects = [
-      for (final o in (jsonDecode(objectBankJson) as Map<String, dynamic>)['objects'] as List)
+      for (final o
+          in (jsonDecode(objectBankJson) as Map<String, dynamic>)['objects']
+              as List)
         _BankObject.fromJson(o as Map<String, dynamic>),
     ];
     final pool = jsonDecode(poolBankJson) as Map<String, dynamic>;
@@ -35,13 +37,50 @@ class QuestionBank {
   /// The bank once [load] has finished (for synchronous lookups such as logging).
   static QuestionBank? loaded;
 
-  /// Loaded once from the bundled assets.
+  /// Loaded once from the bundled assets: the reviewed Indonesian bank and,
+  /// when bundled, its English twin (decision 0185).
   static Future<QuestionBank> load() => _loading ??= () async {
-        return loaded = QuestionBank.fromJson(
-          await rootBundle.loadString('assets/quiz/object_bank_draft.json'),
-          await rootBundle.loadString('assets/quiz/question_bank_draft.json'),
-        );
-      }();
+    final bank = QuestionBank.fromJson(
+      await rootBundle.loadString('assets/quiz/object_bank_draft.json'),
+      await rootBundle.loadString('assets/quiz/question_bank_draft.json'),
+    );
+    try {
+      bank.addEnglish(
+        await rootBundle.loadString('assets/quiz/object_bank_draft.en.json'),
+        await rootBundle.loadString('assets/quiz/question_bank_draft.en.json'),
+      );
+    } catch (e) {
+      debugPrint('[QuestionBank] no English bank: $e');
+    }
+    return loaded = bank;
+  }();
+
+  /// English items by id (same ids, option order and answers as Indonesian).
+  final _english = <String, Map<String, dynamic>>{};
+
+  /// Adds the English files: items become bilingual and English item names
+  /// ("plastic bottle") match the same objects.
+  void addEnglish(String objectBankJson, String poolBankJson) {
+    for (final o
+        in (jsonDecode(objectBankJson) as Map<String, dynamic>)['objects']
+            as List) {
+      final obj = o as Map<String, dynamic>;
+      final target = _objects.where((x) => x.name == obj['object']).firstOrNull;
+      for (final syn in obj['synonyms'] as List) {
+        if (target != null && !target.synonyms.contains(syn)) {
+          target.synonyms.add(syn as String);
+        }
+      }
+      for (final i in obj['items'] as List) {
+        _english[(i as Map)['id'] as String] = Map<String, dynamic>.from(i);
+      }
+    }
+    for (final i
+        in (jsonDecode(poolBankJson) as Map<String, dynamic>)['items']
+            as List) {
+      _english[(i as Map)['id'] as String] = Map<String, dynamic>.from(i);
+    }
+  }
 
   final List<_BankObject> _objects;
   final Map<String, List<Map<String, dynamic>>> _pools;
@@ -50,14 +89,20 @@ class QuestionBank {
   /// What the "Bukan ini?" picker offers: each bank object by its main name,
   /// with the bin its detector class implies (null when it has none).
   List<({String name, String? category})> get pickerItems => [
-        for (final o in _objects)
-          (name: o.synonyms.first, category: o.label == null ? null : ScannedWaste.detectorCategory(o.label!)),
-      ];
+    for (final o in _objects)
+      (
+        name: o.synonyms.first,
+        category: o.label == null
+            ? null
+            : ScannedWaste.detectorCategory(o.label!),
+      ),
+  ];
 
   static String normalize(String s) =>
       ' ${s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9 ]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim()} ';
 
-  static bool _has(String normalized, String phrase) => normalized.contains(normalize(phrase));
+  static bool _has(String normalized, String phrase) =>
+      normalized.contains(normalize(phrase));
 
   /// The bank object for the scanned item: the longest synonym found in the item
   /// name wins; a synonym found only with a material word ("botol" + "plastik")
@@ -78,10 +123,14 @@ class QuestionBank {
     var bestScore = 0;
     for (final o in _objects) {
       if (o.notIf.any((w) => _has(everything, w))) continue;
-      if ((o.pool == 'e_waste_b3') != hazardous && scan.category != null) continue;
+      if ((o.pool == 'e_waste_b3') != hazardous && scan.category != null) {
+        continue;
+      }
       for (final syn in o.synonyms) {
         final words = normalize(syn).trim().split(' ').length;
-        final score = _has(item, syn) ? 100 + words : (withMaterial.any((c) => _has(c, syn)) ? words : 0);
+        final score = _has(item, syn)
+            ? 100 + words
+            : (withMaterial.any((c) => _has(c, syn)) ? words : 0);
         if (score > bestScore) {
           bestScore = score;
           best = o;
@@ -93,10 +142,30 @@ class QuestionBank {
 
   // Item/material words -> label pool when no object matches.
   static const _poolWords = <(String, String)>[
-    ('karton minuman', 'tetra_pak'), ('kotak susu', 'tetra_pak'),
-    ('plastik', 'plastic'), ('kaca', 'glass'),
-    ('kaleng', 'metal'), ('aluminium', 'metal'), ('logam', 'metal'), ('besi', 'metal'), ('baja', 'metal'),
-    ('kardus', 'paper_family'), ('karton', 'paper_family'), ('kertas', 'paper_family'),
+    ('karton minuman', 'tetra_pak'),
+    ('kotak susu', 'tetra_pak'),
+    ('drink carton', 'tetra_pak'),
+    ('milk carton', 'tetra_pak'),
+    ('juice box', 'tetra_pak'),
+    ('plastic', 'plastic'),
+    ('glass', 'glass'),
+    ('can', 'metal'),
+    ('aluminum', 'metal'),
+    ('metal', 'metal'),
+    ('iron', 'metal'),
+    ('steel', 'metal'),
+    ('cardboard', 'paper_family'),
+    ('paper', 'paper_family'),
+    ('plastik', 'plastic'),
+    ('kaca', 'glass'),
+    ('kaleng', 'metal'),
+    ('aluminium', 'metal'),
+    ('logam', 'metal'),
+    ('besi', 'metal'),
+    ('baja', 'metal'),
+    ('kardus', 'paper_family'),
+    ('karton', 'paper_family'),
+    ('kertas', 'paper_family'),
   ];
 
   /// The detector class when it can decide (decision 0025): it has a label
@@ -117,7 +186,9 @@ class QuestionBank {
   ({String? object, String? pool}) selection(ScannedWaste scan) {
     final det = _decidingClass(scan);
     final object = _match(scan);
-    if (object != null && (det == null || object.label == det)) return (object: object.name, pool: object.pool);
+    if (object != null && (det == null || object.label == det)) {
+      return (object: object.name, pool: object.pool);
+    }
     if (det != null) return (object: null, pool: _labelPools[det]);
     return (object: null, pool: poolFor(scan));
   }
@@ -157,40 +228,116 @@ class QuestionBank {
   /// This session's questions of [type], in serving order: the object's own,
   /// then its pool's (the object's pool when matched). Options are shuffled.
   /// Drafts are available only in debug; other statuses are never served.
-  List<GeneratedQuestion> questionsFor(ScannedWaste scan, QuizQuestionType type, {Random? random, bool includeDrafts = kDebugMode}) {
+  List<GeneratedQuestion> questionsFor(
+    ScannedWaste scan,
+    QuizQuestionType type, {
+    Random? random,
+    bool includeDrafts = kDebugMode,
+  }) {
     final rng = random ?? Random();
     final chosen = selection(scan);
     final object = _objects.where((o) => o.name == chosen.object).firstOrNull;
     final kind = type == QuizQuestionType.multipleChoice ? 'mc' : 'essay';
-    final items = [
-      ...?object?.items,
-      ...?_pools[chosen.pool],
-    ].where((i) => i['type'] == kind &&
-        (i['status'] == 'accepted' || (kDebugMode && includeDrafts && i['status'] == 'draft')));
-    return [for (final i in items) _toQuestion(i, type, rng)];
+    final items = [...?object?.items, ...?_pools[chosen.pool]].where(
+      (i) =>
+          i['type'] == kind &&
+          (i['status'] == 'accepted' ||
+              (kDebugMode && includeDrafts && i['status'] == 'draft')),
+    );
+    return [for (final i in items) _bilingual(i, type, rng)];
   }
 
-  static GeneratedQuestion _toQuestion(Map<String, dynamic> item, QuizQuestionType type, Random rng) {
+  /// The item in the app language with its twin in the other one, shuffled
+  /// with one permutation so the correct index is shared (decision 0185).
+  GeneratedQuestion _bilingual(
+    Map<String, dynamic> item,
+    QuizQuestionType type,
+    Random rng,
+  ) {
+    final en = _english[item['id']];
+    final wantEnglish = AiQuizService.replyLang == 'en' && en != null;
+    final mainItem = wantEnglish ? en : item;
+    final altItem = wantEnglish ? item : en;
+    final seed = rng.nextInt(1 << 31);
+    final main = _toQuestion(
+      mainItem,
+      type,
+      Random(seed),
+      lang: wantEnglish ? 'en' : 'id',
+    );
+    if (altItem == null) return main;
+    final twin = _toQuestion(
+      altItem,
+      type,
+      Random(seed),
+      lang: wantEnglish ? 'id' : 'en',
+    );
+    if (twin.options.length != main.options.length ||
+        twin.correctIndex != main.correctIndex) {
+      return main;
+    }
+    return GeneratedQuestion(
+      type: main.type,
+      question: main.question,
+      options: main.options,
+      correctIndex: main.correctIndex,
+      explanation: main.explanation,
+      bankId: main.bankId,
+      bankReviewed: main.bankReviewed,
+      quote: main.quote,
+      sourceSection: main.sourceSection,
+      sourcePage: main.sourcePage,
+      wrongWhy: main.wrongWhy,
+      lang: main.lang,
+      alt: (
+        lang: twin.lang,
+        question: twin.question,
+        options: twin.options,
+        explanation: twin.explanation,
+      ),
+    );
+  }
+
+  static GeneratedQuestion _toQuestion(
+    Map<String, dynamic> item,
+    QuizQuestionType type,
+    Random rng, {
+    String lang = 'id',
+  }) {
     if (type == QuizQuestionType.essay) {
       final rubric = [for (final p in item['rubricPoints'] as List) p as Map];
       final points = [for (final p in rubric) p['point'] as String];
       // Essays cite their rubric points' own quotes, sections and pages.
       String? joined(String key) {
-        final values = {for (final p in rubric) if (p[key] != null) '${p[key]}'};
+        final values = {
+          for (final p in rubric)
+            if (p[key] != null) '${p[key]}',
+        };
         return values.isEmpty ? null : values.join(', ');
       }
-      final quotes = [for (final p in rubric) if (p['quote'] != null) p['quote'] as String];
-      return GeneratedQuestion(type: type, question: item['question'] as String, explanation: points.join(' '),
-          bankId: item['id'] as String,
-      bankReviewed: item['status'] == 'accepted',
-          quote: quotes.isEmpty ? null : quotes.join(' … '),
-          sourceSection: joined('sourceChunk') ?? item['sourceChunk'] as String?,
-          sourcePage: joined('pdfPage') ?? item['pdfPage']?.toString());
+
+      final quotes = [
+        for (final p in rubric)
+          if (p['quote'] != null) p['quote'] as String,
+      ];
+      return GeneratedQuestion(
+        type: type,
+        question: item['question'] as String,
+        explanation: points.join(' '),
+        lang: lang,
+        bankId: item['id'] as String,
+        bankReviewed: item['status'] == 'accepted',
+        quote: quotes.isEmpty ? null : quotes.join(' … '),
+        sourceSection: joined('sourceChunk') ?? item['sourceChunk'] as String?,
+        sourcePage: joined('pdfPage') ?? item['pdfPage']?.toString(),
+      );
     }
     final correct = item['correct'] as String;
-    final options = [correct, ...(item['wrong'] as List).cast<String>()]..shuffle(rng);
+    final options = [correct, ...(item['wrong'] as List).cast<String>()]
+      ..shuffle(rng);
     return GeneratedQuestion(
       type: type,
+      lang: lang,
       question: item['question'] as String,
       options: options,
       correctIndex: options.indexOf(correct),
@@ -201,22 +348,32 @@ class QuestionBank {
       sourceSection: item['sourceChunk'] as String?,
       sourcePage: item['pdfPage']?.toString(),
       // Optional, reviewed per wrong option (decision 0175); never written by the app.
-      wrongWhy: {for (final e in ((item['wrongWhy'] as Map?) ?? const {}).entries) e.key as String: e.value as String},
+      wrongWhy: {
+        for (final e in ((item['wrongWhy'] as Map?) ?? const {}).entries)
+          e.key as String: e.value as String,
+      },
     );
   }
 }
 
 class _BankObject {
-  _BankObject(this.name, this.label, this.pool, this.synonyms, this.notIf, this.items);
+  _BankObject(
+    this.name,
+    this.label,
+    this.pool,
+    this.synonyms,
+    this.notIf,
+    this.items,
+  );
 
   factory _BankObject.fromJson(Map<String, dynamic> j) => _BankObject(
-        j['object'] as String,
-        j['label'] as String?,
-        j['pool'] as String,
-        [for (final s in j['synonyms'] as List) s as String],
-        [for (final s in (j['notIf'] as List?) ?? const []) s as String],
-        [for (final i in j['items'] as List) i as Map<String, dynamic>],
-      );
+    j['object'] as String,
+    j['label'] as String?,
+    j['pool'] as String,
+    [for (final s in j['synonyms'] as List) s as String],
+    [for (final s in (j['notIf'] as List?) ?? const []) s as String],
+    [for (final i in j['items'] as List) i as Map<String, dynamic>],
+  );
 
   final String name;
 

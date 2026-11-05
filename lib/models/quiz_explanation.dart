@@ -46,18 +46,18 @@ class ComparisonRow {
   final bool isCorrect;
 
   Map<String, dynamic> toJson() => {
-        'bin': bin,
-        'material': material,
-        'accepted': accepted,
-        'isCorrect': isCorrect,
-      };
+    'bin': bin,
+    'material': material,
+    'accepted': accepted,
+    'isCorrect': isCorrect,
+  };
 
   factory ComparisonRow.fromJson(Map<String, dynamic> json) => ComparisonRow(
-        bin: json['bin'] as String? ?? '',
-        material: json['material'] as String? ?? '',
-        accepted: json['accepted'] as String? ?? '',
-        isCorrect: json['isCorrect'] as bool? ?? false,
-      );
+    bin: json['bin'] as String? ?? '',
+    material: json['material'] as String? ?? '',
+    accepted: json['accepted'] as String? ?? '',
+    isCorrect: json['isCorrect'] as bool? ?? false,
+  );
 }
 
 /// One rubric criterion row for essay scoring.
@@ -75,18 +75,18 @@ class RubricRow {
   final String comment;
 
   Map<String, dynamic> toJson() => {
-        'criterion': criterion,
-        'maxScore': maxScore,
-        'awardedScore': awardedScore,
-        'comment': comment,
-      };
+    'criterion': criterion,
+    'maxScore': maxScore,
+    'awardedScore': awardedScore,
+    'comment': comment,
+  };
 
   factory RubricRow.fromJson(Map<String, dynamic> json) => RubricRow(
-        criterion: json['criterion'] as String? ?? '',
-        maxScore: (json['maxScore'] as num?)?.toInt() ?? 0,
-        awardedScore: (json['awardedScore'] as num?)?.toInt() ?? 0,
-        comment: json['comment'] as String? ?? '',
-      );
+    criterion: json['criterion'] as String? ?? '',
+    maxScore: (json['maxScore'] as num?)?.toInt() ?? 0,
+    awardedScore: (json['awardedScore'] as num?)?.toInt() ?? 0,
+    comment: json['comment'] as String? ?? '',
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -118,7 +118,15 @@ class QuizExplanation {
     this.essayFeedback,
     this.rubricRows,
     this.referenceAnswer,
+    this.lang,
+    this.alt,
   });
+
+  /// Language the text was written in ('en'/'id'); null = the record's language (decision 0185).
+  final String? lang;
+
+  /// The same explanation in the other app language, made in the same AI reply.
+  final QuizExplanation? alt;
 
   /// Short paragraph summarising what was asked and what was correct.
   final String summary;
@@ -192,6 +200,8 @@ class QuizExplanation {
     if (rubricRows != null)
       'rubricRows': rubricRows!.map((r) => r.toJson()).toList(),
     if (referenceAnswer != null) 'referenceAnswer': referenceAnswer,
+    if (lang != null) 'lang': lang,
+    if (alt != null) 'alt': alt!.toJson(),
   };
 
   factory QuizExplanation.fromJson(Map<String, dynamic> json) {
@@ -228,6 +238,12 @@ class QuizExplanation {
           ?.map((r) => RubricRow.fromJson(r as Map<String, dynamic>))
           .toList(),
       referenceAnswer: json['referenceAnswer'] as String?,
+      lang: json['lang'] as String?,
+      alt: json['alt'] is Map
+          ? QuizExplanation.fromJson(
+              Map<String, dynamic>.from(json['alt'] as Map),
+            )
+          : null,
     );
   }
 

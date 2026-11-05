@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/app_preferences_provider.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// Debug switch between the reviewed question bank and cloud AI questions
 /// (decision 0018). Applies from the next scan; saved with the other app
@@ -25,9 +26,9 @@ class QuestionSourceSwitch extends ConsumerWidget {
             visualDensity: VisualDensity.compact,
             textStyle: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
           ),
-          segments: const [
-            ButtonSegment(value: QuestionSource.bank, label: Text('Bank soal')),
-            ButtonSegment(value: QuestionSource.ai, label: Text('ELIOS AI')),
+          segments: [
+            ButtonSegment(value: QuestionSource.bank, label: Text(context.l10n.questionBank)),
+            const ButtonSegment(value: QuestionSource.ai, label: Text('ELIOS AI')),
           ],
           selected: {source},
           onSelectionChanged: (s) =>

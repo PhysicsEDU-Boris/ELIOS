@@ -9,7 +9,9 @@ import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/question_bank.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:elio/l10n/l10n.dart';
 
 class _SeededPrefs extends AppPreferencesNotifier {
   _SeededPrefs(this.seed);
@@ -28,6 +30,9 @@ ScannedWaste _scan(String item, {String? material, String? category}) =>
 bool _isQuestionRequest(String prompt) => prompt.contains('Buat SATU soal');
 
 void main() {
+  // The bank text is asserted in Indonesian (decision 0185 serves English in an English UI).
+  setUpAll(() => debugSetL10n(const Locale('id')));
+  tearDownAll(() => debugSetL10n(const Locale('en')));
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('name matching', () {

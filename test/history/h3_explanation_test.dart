@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:elio/l10n/l10n.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/services/ai_quiz_service.dart';
@@ -41,6 +43,9 @@ ScanRecord sample({String answer = 'Campur'}) => ScanRecord(
 );
 
 void main() {
+  // H3 copy is asserted in Indonesian (decision 0185).
+  setUpAll(() => debugSetL10n(const Locale('id')));
+  tearDownAll(() => debugSetL10n(const Locale('en')));
   TestWidgetsFlutterBinding.ensureInitialized();
   final ai = AiQuizService.instance;
   tearDown(() async {
@@ -212,7 +217,7 @@ void main() {
         'sourceSection': '1.3',
       };
       final old = ScanRecord.fromJson(raw);
-      expect(old.schemaVersion, 4);
+      expect(old.schemaVersion, 5);
       expect(old.questions.single.explanation!.correctAnswerReason, isEmpty);
       expect(old.questions.single.explanation!.sourceSection, '1.3');
       (questions.single as Map)['explanation'] = {

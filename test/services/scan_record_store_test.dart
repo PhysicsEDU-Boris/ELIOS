@@ -270,7 +270,7 @@ void main() {
       expect(store2.records.length, 1);
       final revived = store2.records.first;
       expect(revived.id, 'rec-exp');
-      expect(revived.schemaVersion, 4);
+      expect(revived.schemaVersion, 5);
       expect(revived.questions.first.explanation, isNotNull);
       final revivedExp = revived.questions.first.explanation!;
       expect(revivedExp.summary, 'Ringkasan edukasi botol PET');

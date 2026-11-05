@@ -10,6 +10,7 @@ import '../../../models/guide_lesson.dart';
 import '../../../providers/learning_progress_provider.dart';
 import '../../../widgets/learn/learn_ui.dart';
 import 'learn_content.dart';
+import 'package:elio/l10n/l10n.dart';
 
 
 Future<void> openGuideLesson({
@@ -45,7 +46,7 @@ Future<void> openGuideLesson({
 
 void _showGuideUnavailableMessage(BuildContext context) {
   ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Guide PDF is not available yet.')),
+    SnackBar(content: Text(context.l10n.guidePdfUnavailable)),
   );
 }
 
@@ -185,13 +186,13 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
     final ready = !_isDownloading && !_loadFailed && _cachedFile != null;
     final Widget body;
     if (_isDownloading) {
-      body = const Center(child: LearnSpinner(label: 'Loading guide'));
+      body = Center(child: LearnSpinner(label: l10n.lnLoadingGuide));
     } else if (!ready) {
-      body = const SingleChildScrollView(
+      body = SingleChildScrollView(
         child: LearnStateView(
           asset: LearnArt.stateOffline,
-          title: 'Guide PDF is not available yet.',
-          message: 'Check the connection and open the guide again.',
+          title: l10n.guidePdfUnavailable,
+          message: l10n.lnCheckOpenAgain,
         ),
       );
     } else {
@@ -237,21 +238,21 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
                   child: Row(
                     children: [
                       IconButton(
-                        tooltip: 'Previous page',
+                        tooltip: l10n.lnPrevPage,
                         onPressed: _latestPageReached > 1 ? _controller.previousPage : null,
                         icon: const Icon(Icons.chevron_left_rounded),
                       ),
                       Expanded(
                         child: Text(
                           _effectivePageCount > 0
-                              ? 'Page $_latestPageReached of $_effectivePageCount'
-                              : 'Page $_latestPageReached',
+                              ? l10n.lnPageOf(_latestPageReached, _effectivePageCount)
+                              : l10n.lnPage(_latestPageReached),
                           textAlign: TextAlign.center,
                           style: context.text.labelLarge,
                         ),
                       ),
                       IconButton(
-                        tooltip: 'Next page',
+                        tooltip: l10n.lnNextPage,
                         onPressed: _effectivePageCount == 0 || _latestPageReached < _effectivePageCount
                             ? _controller.nextPage
                             : null,

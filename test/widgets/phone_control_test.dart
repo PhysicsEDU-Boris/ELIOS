@@ -3,9 +3,11 @@
 import 'dart:typed_data';
 
 import 'package:elio/models/control_session.dart';
+import 'package:elio/l10n/l10n.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/widgets/waste_quiz_popup.dart' show EliosAiBadge;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image/image.dart' as img;
@@ -38,6 +40,22 @@ void main() {
 
   for (final size in phoneSizes) {
     for (final dark in [false, true]) {
+      testWidgets('Indonesian arm captions fit $size dark=$dark', (t) async {
+        debugSetL10n(const Locale('id'));
+        addTearDown(() => debugSetL10n(const Locale('en')));
+        await pumpPhone(t, size, dark: dark);
+        expect(t.takeException(), isNull);
+        for (final label in [l10n.ctlHeight, l10n.ctlReach]) {
+          final paragraph = t.renderObject<RenderParagraph>(find.text(label));
+          expect(paragraph.didExceedMaxLines, isFalse, reason: label);
+        }
+        expectStopReachable(t, size);
+      });
+    }
+  }
+
+  for (final size in phoneSizes) {
+    for (final dark in [false, true]) {
       final tag =
           '${size.width.toInt()}x${size.height.toInt()} ${dark ? 'dark' : 'light'}';
 
@@ -47,7 +65,7 @@ void main() {
         expectStopReachable(t, size);
         expect(find.text('Robot Control'), findsOneWidget);
         expect(find.text('Resume driving'), findsNothing);
-        expect(find.text('Lanjutkan'), findsNothing);
+        expect(find.text('Continue'), findsNothing);
         await shot(t, 'driving', size, dark);
       });
 
@@ -209,7 +227,7 @@ void main() {
       (t) async {
         await pumpPhone(t, size, stopped: true);
         expect(find.textContaining('Resume'), findsNothing);
-        expect(find.textContaining('Lanjutkan'), findsNothing);
+        expect(find.textContaining('Continue'), findsNothing);
         expect(
           find.byType(EliosAiBadge),
           findsNothing,

@@ -6,12 +6,13 @@ import '../providers/app_preferences_provider.dart';
 import '../services/device_health.dart';
 import '../services/ai_quiz_service.dart';
 import '../services/tester_log.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// Cloud AI state label for the tester panel: the model that last answered.
 String aiStateLabel(AiStatus status, String? model) => switch (status) {
-      AiStatus.idle => 'Belum dipakai',
-      AiStatus.ready => 'Siap (${model ?? '-'})',
-      AiStatus.offline => 'Tidak tersambung, mode bank',
+      AiStatus.idle => l10n.tpNotUsed,
+      AiStatus.ready => l10n.tpReady(model ?? '-'),
+      AiStatus.offline => l10n.tpOffline,
     };
 
 /// Settings block of the tester build (decision 0040): question source switch,
@@ -28,16 +29,16 @@ class TesterPanel extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Divider(height: 24),
-        const Text('Mode penguji', style: TextStyle(fontWeight: FontWeight.w800)),
+        Text(context.l10n.testerMode, style: TextStyle(fontWeight: FontWeight.w800)),
         const SizedBox(height: 8),
         Row(
           children: [
-            const Expanded(child: Text('Sumber soal')),
+            Expanded(child: Text(context.l10n.testerQuestionSource)),
             SegmentedButton<QuestionSource>(
               showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: QuestionSource.bank, label: Text('Bank')),
-                ButtonSegment(value: QuestionSource.ai, label: Text('ELIOS AI')),
+              segments: [
+                ButtonSegment(value: QuestionSource.bank, label: Text(context.l10n.testerBank)),
+                const ButtonSegment(value: QuestionSource.ai, label: Text('ELIOS AI')),
               ],
               selected: {source},
               onSelectionChanged: (s) =>
@@ -57,30 +58,30 @@ class TesterPanel extends ConsumerWidget {
           children: [
             OutlinedButton(
               onPressed: () => DeviceHealth.shareText(_tail()),
-              child: const Text('Bagikan log'),
+              child: Text(context.l10n.testerShareLog),
             ),
             OutlinedButton(
               onPressed: () async {
                 await Clipboard.setData(ClipboardData(text: _tail()));
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Log disalin')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.testerLogCopied)));
                 }
               },
-              child: const Text('Salin log'),
+              child: Text(context.l10n.testerCopyLog),
             ),
             OutlinedButton(
               onPressed: () => showDialog<void>(
                 context: context,
                 builder: (_) => AlertDialog(
-                  title: const Text('Log penguji'),
+                  title: Text(context.l10n.testerLog),
                   content: SingleChildScrollView(
                     child: SelectableText(_tail(), style: const TextStyle(fontSize: 10, fontFamily: 'monospace')),
                   ),
                 ),
               ),
-              child: const Text('Lihat log'),
+              child: Text(context.l10n.testerViewLog),
             ),
-            OutlinedButton(onPressed: TesterLog.instance.clear, child: const Text('Hapus log')),
+            OutlinedButton(onPressed: TesterLog.instance.clear, child: Text(context.l10n.testerClearLog)),
           ],
         ),
       ],

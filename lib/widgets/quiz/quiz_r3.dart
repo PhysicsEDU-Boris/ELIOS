@@ -6,9 +6,9 @@
 part of '../waste_quiz_popup.dart';
 
 String _level(QuizDifficulty d) => switch (d) {
-  QuizDifficulty.easy => 'Easy',
-  QuizDifficulty.medium => 'Medium',
-  QuizDifficulty.hard => 'Hard',
+  QuizDifficulty.easy => l10n.setEasy,
+  QuizDifficulty.medium => l10n.setMedium,
+  QuizDifficulty.hard => l10n.setHard,
 };
 
 /// Green ring, filled core, white ELIOS leaf (Figma Brand/ELIOS AI badge 388:8631).
@@ -122,7 +122,7 @@ class _HeaderActions extends ConsumerWidget {
       children: [
         Semantics(
           toggled: voiceOn,
-          label: 'Voice',
+          label: l10n.ctlVoice,
           excludeSemantics: true,
           onTap: n.toggleVoice,
           child: GestureDetector(
@@ -159,14 +159,14 @@ class _HeaderActions extends ConsumerWidget {
         const SizedBox(width: 8),
         round(
           Icons.remove_rounded,
-          'Minimise quiz',
+          l10n.qzMinimiseQuiz,
           n.minimize,
           const ValueKey('quiz_minimise'),
         ),
         const SizedBox(width: 6),
         round(
           Icons.close_rounded,
-          'Close quiz',
+          l10n.qzCloseQuiz,
           n.dismiss,
           const ValueKey('quiz_close'),
         ),
@@ -211,7 +211,7 @@ class _CompactStop extends StatelessWidget {
     final p = context.elio;
     return Semantics(
       button: true,
-      label: 'Berhenti darurat',
+      label: l10n.ctlEmergencyStop,
       excludeSemantics: true,
       child: GestureDetector(
         key: const ValueKey('quiz_stop'),
@@ -326,7 +326,7 @@ Widget? _notThisChip(
   WasteQuizNotifier n,
 ) => s.canCorrectItem
     ? _InfoChip(
-        'Not this?',
+        l10n.qzNotThis,
         chipKey: const ValueKey('quiz_not_this'),
         onTap: () => _pickCorrectItem(context, n),
       )
@@ -728,24 +728,24 @@ class _LoadingView extends ConsumerWidget {
     // event in the code, so it is not shown (decision 0175).
     final steps = [
       (
-        'Read the scan',
+        l10n.qzReadScan,
         state.scan == null
-            ? 'ELIOS AI is looking'
+            ? l10n.qzAiLooking
             : '${state.scan!.displayName}${state.scan!.category == null ? '' : ' · ${ScanCategory.fromString(state.scan!.category!.id).badgeLabel}'}',
         identifying ? 1 : 2,
       ),
       (
-        'Picked a topic',
+        l10n.qzPickedTopic,
         identifying
-            ? 'After the scan'
+            ? l10n.qzAfterScan
             : ai
-            ? 'ELIOS AI topic'
-            : (pool == null ? 'Question bank' : 'Bank pool · $pool'),
+            ? l10n.qzAiTopic
+            : (pool == null ? l10n.questionBank : l10n.qzBankPool(pool)),
         identifying ? 0 : 2,
       ),
       (
-        'Writing the question',
-        '${_level(state.difficulty)} · ${essay ? 'essay' : 'multiple choice'}',
+        l10n.qzWriting,
+        '${_level(state.difficulty)} · ${essay ? l10n.qzEssay : l10n.qzMultipleChoice}',
         identifying ? 0 : 1,
       ),
     ];
@@ -857,9 +857,15 @@ class _LoadingView extends ConsumerWidget {
             onStop: onStop,
             chips: [
               _InfoChip(
-                'Question ${state.questionIndex + 1} of ${state.totalQuestions} · ${_level(state.difficulty)}',
+                l10n.qzQuestionOfLevel(
+                  state.questionIndex + 1,
+                  state.totalQuestions,
+                  _level(state.difficulty),
+                ),
               ),
-              _InfoChip('Scanned: ${state.scan?.displayName ?? 'reading…'}'),
+              _InfoChip(
+                l10n.qzScanned(state.scan?.displayName ?? l10n.qzReading),
+              ),
               ?_notThisChip(context, state, n),
             ],
           ),
@@ -896,8 +902,8 @@ class _LoadingView extends ConsumerWidget {
                     children: [
                       Text(
                         identifying
-                            ? 'ELIOS AI · READING THE SCAN'
-                            : 'ELIOS AI · WRITING YOUR QUESTION',
+                            ? l10n.qzAiReadingCaps
+                            : l10n.qzAiWritingCaps,
                         style: TextStyle(
                           color: p.primaryText,
                           fontSize: 11,
@@ -906,9 +912,7 @@ class _LoadingView extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        identifying
-                            ? 'Reading the scan…'
-                            : 'Preparing the next question…',
+                        identifying ? l10n.qzReadingScan : l10n.qzPreparingNext,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -918,9 +922,7 @@ class _LoadingView extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        ai || identifying
-                            ? 'ELIOS AI is writing it online. This usually takes 2–4 seconds.'
-                            : 'From the reviewed question bank. This takes a moment.',
+                        ai || identifying ? l10n.qzAiOnline : l10n.qzFromBank,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: p.textSecondary, fontSize: 12),
@@ -942,7 +944,7 @@ class _LoadingView extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      'elapsed',
+                      l10n.qzElapsed,
                       style: TextStyle(color: p.textSecondary, fontSize: 11),
                     ),
                   ],
@@ -999,7 +1001,7 @@ class _LoadingView extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '${onStop != null ? 'Keep driving. ' : ''}Minimise this and the Quiz button lights up when the question is ready.',
+                  '${onStop != null ? l10n.qzKeepDriving : ''}${l10n.qzMinimiseHint}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: p.textSecondary, fontSize: 12),
@@ -1009,7 +1011,7 @@ class _LoadingView extends ConsumerWidget {
               _Pill(
                 key: const ValueKey('quiz_loading_minimise'),
                 icon: Icons.remove_rounded,
-                label: 'Minimise',
+                label: l10n.qzMinimise,
                 onTap: n.minimize,
               ),
             ],
@@ -1122,9 +1124,12 @@ class _QuestionView extends ConsumerWidget {
             onStop: onStop,
             chips: [
               _InfoChip(
-                'Question ${state.questionIndex + 1} of ${state.totalQuestions}',
+                l10n.qzQuestionOf(
+                  state.questionIndex + 1,
+                  state.totalQuestions,
+                ),
               ),
-              _InfoChip('Scanned: ${state.scan?.displayName ?? '-'}'),
+              _InfoChip(l10n.qzScanned(state.scan?.displayName ?? '-')),
               ?_notThisChip(context, state, n),
             ],
           ),
@@ -1144,7 +1149,7 @@ class _QuestionView extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'MULTIPLE CHOICE · ${_level(state.difficulty).toUpperCase()}',
+                      l10n.qzMcCaps(_level(state.difficulty).toUpperCase()),
                       style: TextStyle(
                         color: p.primaryText,
                         fontSize: 11,
@@ -1223,7 +1228,7 @@ class _QuestionFooter extends ConsumerWidget {
     final read = _Pill(
       key: const ValueKey('quiz_read'),
       icon: Icons.volume_up_outlined,
-      label: 'Read it to me',
+      label: l10n.qzReadToMe,
       iconOnly: compact,
       onTap: () => n.listen(readText),
     );
@@ -1239,7 +1244,9 @@ class _QuestionFooter extends ConsumerWidget {
             TextButton(
               key: const ValueKey('quiz_skip'),
               onPressed: n.skipQuestion,
-              child: Text(state.isLastQuestion ? 'Skip and finish' : 'Skip'),
+              child: Text(
+                state.isLastQuestion ? l10n.qzSkipFinish : l10n.qzSkip,
+              ),
             ),
           ...trailing.where((w) => w is! SizedBox),
           read,
@@ -1280,8 +1287,8 @@ class _QuestionFooter extends ConsumerWidget {
                   ),
                   child: Text(
                     state.question?.type == QuizQuestionType.essay
-                        ? 'Up to +10 trophies for a full answer'
-                        : '+10 trophies for a right answer',
+                        ? l10n.qzUpTo10
+                        : l10n.qz10Right,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -1304,7 +1311,7 @@ class _QuestionFooter extends ConsumerWidget {
               foregroundColor: p.textSecondary,
               backgroundColor: Colors.transparent,
             ),
-            child: Text(state.isLastQuestion ? 'Skip and finish' : 'Skip'),
+            child: Text(state.isLastQuestion ? l10n.qzSkipFinish : l10n.qzSkip),
           ),
           const SizedBox(width: 6),
         ],
@@ -1358,9 +1365,12 @@ class _EssayInputView extends ConsumerWidget {
                 onStop: onStop,
                 chips: [
                   _InfoChip(
-                    'Question ${state.questionIndex + 1} of ${state.totalQuestions}',
+                    l10n.qzQuestionOf(
+                      state.questionIndex + 1,
+                      state.totalQuestions,
+                    ),
                   ),
-                  _InfoChip('Scanned: ${state.scan?.displayName ?? '-'}'),
+                  _InfoChip(l10n.qzScanned(state.scan?.displayName ?? '-')),
                   ?_notThisChip(context, state, n),
                 ],
               ),
@@ -1382,7 +1392,10 @@ class _EssayInputView extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'ESSAY · ${_level(state.difficulty).toUpperCase()} · MAX $wordLimit WORDS',
+                            l10n.qzEssayCaps(
+                              _level(state.difficulty).toUpperCase(),
+                              wordLimit,
+                            ),
                             style: TextStyle(
                               color: p.primaryText,
                               fontSize: 11,
@@ -1429,7 +1442,7 @@ class _EssayInputView extends ConsumerWidget {
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              'ELIOS AI is grading your answer…',
+                              l10n.qzGrading,
                               style: TextStyle(
                                 color: p.textPrimary,
                                 fontSize: 14,
@@ -1456,7 +1469,7 @@ class _EssayInputView extends ConsumerWidget {
                                 fontSize: 15,
                               ),
                               decoration: InputDecoration(
-                                hintText: 'Type your answer here…',
+                                hintText: l10n.qzTypeAnswer,
                                 filled: true,
                                 fillColor: p.surfaceRaised,
                                 border: OutlineInputBorder(
@@ -1469,7 +1482,7 @@ class _EssayInputView extends ConsumerWidget {
                           const SizedBox(width: 8),
                           _GreenButton(
                             key: const ValueKey('quiz_essay_submit'),
-                            label: 'Submit',
+                            label: l10n.qzSubmit,
                             icon: Icons.send_rounded,
                             onTap: canSend
                                 ? () => n.submitEssay(controller.text)
@@ -1486,7 +1499,7 @@ class _EssayInputView extends ConsumerWidget {
                         textAlignVertical: TextAlignVertical.top,
                         style: TextStyle(color: p.textPrimary, fontSize: 15),
                         decoration: InputDecoration(
-                          hintText: 'Type your answer here…',
+                          hintText: l10n.qzTypeAnswer,
                           filled: true,
                           fillColor: p.surfaceRaised,
                           border: OutlineInputBorder(
@@ -1503,7 +1516,7 @@ class _EssayInputView extends ConsumerWidget {
                   readText: q.question,
                   trailing: [
                     Text(
-                      '$words / $wordLimit words',
+                      l10n.qzWordCount(words, wordLimit),
                       style: TextStyle(
                         color: words > wordLimit
                             ? p.errorText
@@ -1515,14 +1528,14 @@ class _EssayInputView extends ConsumerWidget {
                     _Pill(
                       key: const ValueKey('quiz_essay_clear'),
                       icon: Icons.backspace_outlined,
-                      label: 'Clear',
+                      label: l10n.qzClear,
                       iconOnly: MediaQuery.sizeOf(context).width < 820,
                       onTap: state.essaySubmitted ? null : controller.clear,
                     ),
                     const SizedBox(width: 8),
                     _GreenButton(
                       key: const ValueKey('quiz_essay_submit'),
-                      label: 'Submit',
+                      label: l10n.qzSubmit,
                       icon: Icons.send_rounded,
                       onTap: canSend
                           ? () => n.submitEssay(controller.text)
@@ -1571,7 +1584,7 @@ class _ConfirmShell extends StatelessWidget {
             onStop: onStop,
             chips: [
               if (state != null)
-                _InfoChip('Scanned: ${state!.scan?.displayName ?? '-'}'),
+                _InfoChip(l10n.qzScanned(state!.scan?.displayName ?? '-')),
             ],
           ),
           const SizedBox(height: 10),
@@ -1635,19 +1648,18 @@ class _HazardView extends ConsumerWidget {
       danger: true,
       onStop: onStop,
       state: state,
-      title: 'Possibly hazardous (B3): ${state.scan?.displayName ?? ''}',
-      body:
-          "Don't take it apart or put it in a normal bin. Ask staff to handle it. Continue the quiz about this item?",
+      title: l10n.qzHazardTitle(state.scan?.displayName ?? ''),
+      body: l10n.qzHazardBody,
       actions: [
         _Pill(
           key: const ValueKey('quiz_scan_again'),
           icon: Icons.refresh_rounded,
-          label: 'Scan again',
+          label: l10n.scanAgain,
           onTap: n.dismiss,
         ),
         _GreenButton(
           key: const ValueKey('quiz_continue'),
-          label: 'Continue quiz',
+          label: l10n.qzContinueQuiz,
           onTap: n.confirmHazard,
         ),
       ],
@@ -1670,22 +1682,26 @@ class _MismatchView extends ConsumerWidget {
       key: const ValueKey('quiz_mismatch'),
       onStop: onStop,
       state: state,
-      title: 'Which bin is right?',
-      body:
-          'The detector says $detector ($detectorCategory). ELIOS AI says ${state.scan?.displayName ?? '-'} ($gemmaCategory). Pick the right one.',
+      title: l10n.qzWhichBin,
+      body: l10n.qzMismatchBody(
+        detector,
+        detectorCategory,
+        state.scan?.displayName ?? '-',
+        gemmaCategory,
+      ),
       actions: [
         _Pill(
           icon: Icons.refresh_rounded,
-          label: 'Scan again',
+          label: l10n.scanAgain,
           onTap: n.dismiss,
         ),
         _Pill(
           icon: Icons.auto_awesome,
-          label: 'Use ELIOS AI ($gemmaCategory)',
+          label: l10n.qzUseAi(gemmaCategory),
           onTap: () => n.resolveMismatch(useDetector: false),
         ),
         _GreenButton(
-          label: 'Use detector ($detectorCategory)',
+          label: l10n.qzUseDetector(detectorCategory),
           icon: null,
           onTap: () => n.resolveMismatch(useDetector: true),
         ),
@@ -1709,7 +1725,11 @@ class _FinishedView extends StatelessWidget {
           _Header(
             logo: true,
             onStop: onStop,
-            chips: [_InfoChip(state.notice != null ? 'Scan' : 'Quiz complete')],
+            chips: [
+              _InfoChip(
+                state.notice != null ? l10n.qzScanChip : l10n.qzComplete,
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Expanded(
@@ -1769,7 +1789,7 @@ class _ReviewView extends ConsumerWidget {
                   _Pill(
                     key: const ValueKey('quiz_back'),
                     icon: Icons.arrow_back_rounded,
-                    label: 'Back',
+                    label: l10n.qzBack,
                     iconOnly: narrow,
                     onTap: n.minimize,
                   ),
@@ -1778,7 +1798,7 @@ class _ReviewView extends ConsumerWidget {
                     child: _Pill(
                       key: const ValueKey('quiz_listen'),
                       icon: Icons.volume_up_outlined,
-                      label: 'Listen to explanation',
+                      label: l10n.qzListenExplanation,
                       iconOnly: narrow,
                       onTap: () => onListen(listenText),
                     ),
@@ -1792,7 +1812,9 @@ class _ReviewView extends ConsumerWidget {
                 alignment: Alignment.centerRight,
                 child: _GreenButton(
                   key: const ValueKey('quiz_next'),
-                  label: state.isLastQuestion ? 'Finish quiz' : 'Next question',
+                  label: state.isLastQuestion
+                      ? l10n.qzFinish
+                      : l10n.qzNextQuestion,
                   onTap: state.sendingChat ? null : n.nextQuestion,
                 ),
               ),
@@ -1809,7 +1831,11 @@ class _ReviewView extends ConsumerWidget {
             onStop: onStop,
             chips: [
               _InfoChip(
-                'Question ${state.questionIndex + 1} of ${state.totalQuestions} · ${essay ? 'Essay review' : 'Review'}',
+                l10n.qzQuestionOfLevel(
+                  state.questionIndex + 1,
+                  state.totalQuestions,
+                  essay ? l10n.qzEssayReview : l10n.qzReview,
+                ),
               ),
             ],
           ),
@@ -1861,7 +1887,7 @@ class _NarrowTabsState extends State<_NarrowTabs> {
             child: _Pill(
               key: const ValueKey('tab_explanation'),
               icon: Icons.article_outlined,
-              label: 'Explanation',
+              label: l10n.qzExplanation,
               small: true,
               onTap: () => setState(() => _coach = false),
             ),
@@ -1871,7 +1897,7 @@ class _NarrowTabsState extends State<_NarrowTabs> {
             child: _Pill(
               key: const ValueKey('tab_coach'),
               icon: Icons.chat_bubble_outline_rounded,
-              label: 'ELIOS AI coach',
+              label: l10n.qzCoach,
               small: true,
               onTap: () => setState(() => _coach = true),
             ),
@@ -1913,8 +1939,8 @@ class _ResultBanner extends StatelessWidget {
       String key,
     ) = switch ((essay, pending, right)) {
       (true, true, _) => (
-        'Waiting for grading',
-        'ELIOS AI has not graded this answer yet. It is saved and graded later.',
+        l10n.qzWaitingGrading,
+        l10n.qzNotGradedYet,
         'assets/illustrations/home/bulb_buddy.svg',
         'assets/illustrations/home/medal_locked.svg',
         0,
@@ -1922,7 +1948,7 @@ class _ResultBanner extends StatelessWidget {
         'banner_pending',
       ),
       (true, false, _) => (
-        'Score ${ex!.essayScore} / 10',
+        l10n.qzScoreOf10(ex!.essayScore!),
         ex.essayFeedback ?? '',
         'assets/illustrations/home/bulb_buddy.svg',
         ex.essayScore! > 0
@@ -1933,8 +1959,8 @@ class _ResultBanner extends StatelessWidget {
         'banner_essay',
       ),
       (false, _, true) => (
-        'Correct!',
-        'You chose “$picked”.',
+        l10n.qzCorrect,
+        l10n.qzYouChose(picked),
         'assets/illustrations/control/bottle_buddy_happy.svg',
         'assets/illustrations/home/medal_gold.svg',
         10,
@@ -1942,8 +1968,8 @@ class _ResultBanner extends StatelessWidget {
         'banner_good',
       ),
       _ => (
-        'Not quite',
-        'The right answer is “${q.options[q.correctIndex]}”.',
+        l10n.qzNotQuite,
+        l10n.qzRightAnswerIs(q.options[q.correctIndex]),
         'assets/illustrations/control/bottle_buddy_sad.svg',
         'assets/illustrations/home/medal_locked.svg',
         0,
@@ -2079,7 +2105,7 @@ class _DocumentState extends State<_Document> {
           ),
           const SizedBox(width: 3),
           Text(
-            good ? 'Correct' : 'Wrong',
+            good ? l10n.histCorrect : l10n.histWrong,
             style: TextStyle(
               color: good ? p.primaryText : p.errorText,
               fontSize: 12,
@@ -2203,7 +2229,7 @@ class _DocumentState extends State<_Document> {
         children: [
           Expanded(
             child: Text(
-              essay ? 'Answer review' : 'Detailed explanation',
+              essay ? l10n.qzAnswerReview : l10n.qzDetailed,
               style: TextStyle(
                 color: p.textPrimary,
                 fontSize: 17,
@@ -2213,7 +2239,11 @@ class _DocumentState extends State<_Document> {
           ),
           Flexible(
             child: Text(
-              'QUESTION ${s.questionIndex + 1} OF ${s.totalQuestions} · ${essay ? 'ESSAY' : _level(s.difficulty).toUpperCase()}',
+              l10n.qzQuestionOfCaps(
+                s.questionIndex + 1,
+                s.totalQuestions,
+                essay ? l10n.qzEssayUpper : _level(s.difficulty).toUpperCase(),
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.right,
@@ -2234,12 +2264,12 @@ class _DocumentState extends State<_Document> {
         ),
         child: Column(
           children: [
-            checkRow('QUESTION', q.question),
+            checkRow(l10n.qzQuestionCaps, q.question),
             if (essay)
-              checkRow('YOUR ANSWER', s.essayAnswer ?? '')
+              checkRow(l10n.histYourAnswer, s.essayAnswer ?? '')
             else ...[
               checkRow(
-                'YOUR ANSWER',
+                l10n.histYourAnswer,
                 picked ?? '-',
                 style: right
                     ? TextStyle(
@@ -2257,7 +2287,7 @@ class _DocumentState extends State<_Document> {
               ),
               if (!right)
                 checkRow(
-                  'CORRECT ANSWER',
+                  l10n.qzCorrectAnswerCaps,
                   rightAnswer!,
                   style: TextStyle(
                     color: p.primaryText,
@@ -2284,7 +2314,7 @@ class _DocumentState extends State<_Document> {
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                'Loading the explanation…',
+                l10n.qzLoadingExplanation,
                 style: TextStyle(color: p.textSecondary, fontSize: 13),
               ),
             ),
@@ -2294,11 +2324,9 @@ class _DocumentState extends State<_Document> {
         if (essay) ...[
           if (ex.essayScore == null) ...[
             const SizedBox(height: 10),
-            para(
-              'Your answer is saved. ELIOS AI grades it when it is ready; no trophies until then.',
-            ),
+            para(l10n.qzSavedNoTrophies),
           ] else if ((ex.essayFeedback ?? '').isNotEmpty) ...[
-            heading('Feedback', p.primaryText),
+            heading(l10n.qzFeedback, p.primaryText),
             para(ex.essayFeedback!),
           ],
         ] else if (right) ...[
@@ -2307,10 +2335,10 @@ class _DocumentState extends State<_Document> {
         ] else ...[
           // Only a reviewed reason; without one the heading is hidden (decision 0175).
           if (ex.selectedAnswerFeedback.isNotEmpty) ...[
-            heading('Why your answer is not right', p.errorText),
+            heading(l10n.qzWhyWrong, p.errorText),
             para(ex.selectedAnswerFeedback),
           ],
-          heading('Why the correct answer is right', p.primaryText),
+          heading(l10n.qzWhyRight, p.primaryText),
           para(
             ex.correctAnswerReason.isNotEmpty
                 ? ex.correctAnswerReason
@@ -2350,7 +2378,7 @@ class _DocumentState extends State<_Document> {
                     const SizedBox(width: 4),
                     Text(
                       [
-                        'ELIOS module',
+                        l10n.qzElioModule,
                         if (ex.sourceSection != null)
                           'section ${ex.sourceSection}',
                         if (ex.sourcePage != null) 'page ${ex.sourcePage}',
@@ -2369,8 +2397,8 @@ class _DocumentState extends State<_Document> {
         ],
         if (essay && (ex.rubricRows?.isNotEmpty ?? false))
           table(
-            'Table 1. Scoring breakdown',
-            const ['CRITERIA', 'FEEDBACK', 'SCORE'],
+            l10n.qzScoringTable,
+            [l10n.qzCriteria, l10n.qzFeedbackCaps, l10n.histScore],
             [
               for (final r in ex.rubricRows!)
                 (
@@ -2386,8 +2414,8 @@ class _DocumentState extends State<_Document> {
           )
         else if (!essay && right && ex.comparisonRows.isNotEmpty)
           table(
-            'Table 1. Where ${s.scan?.displayName ?? 'this item'} goes',
-            const ['BIN', 'EXAMPLES', 'ACCEPTS'],
+            l10n.qzWhereGoes(s.scan?.displayName ?? l10n.qzThisItem),
+            [l10n.qzBin, l10n.qzExamples, l10n.qzAccepts],
             [
               for (final r in ex.comparisonRows)
                 (
@@ -2403,8 +2431,8 @@ class _DocumentState extends State<_Document> {
           )
         else if (!essay && !right)
           table(
-            'Table 1. The answer options',
-            const ['OPTION', 'STATUS'],
+            l10n.qzOptionsTable,
+            [l10n.qzOption, l10n.qzStatus],
             [
               for (final r in QuizExplanationService.optionRows(
                 q,
@@ -2414,8 +2442,8 @@ class _DocumentState extends State<_Document> {
                   [
                     r.option,
                     r.correct
-                        ? 'Correct answer'
-                        : (r.picked ? 'Your answer' : '—'),
+                        ? l10n.qzCorrectAnswer
+                        : (r.picked ? l10n.qzYourAnswer : '—'),
                   ],
                   r.correct ? p.primary : (r.picked ? p.error : null),
                 ),
@@ -2482,14 +2510,10 @@ class _SourceChip extends StatelessWidget {
     final p = context.elio;
     final bank = explanation.groundingStatus == GroundingStatus.bankGrounded;
     final (icon, text, sub) = essay
-        ? (Icons.auto_awesome, 'AI graded · check with your teacher', null)
+        ? (Icons.auto_awesome, l10n.qzAiGraded, null)
         : bank
-        ? (
-            Icons.verified_outlined,
-            'Reviewed question bank',
-            explanation.bankId,
-          )
-        : (Icons.auto_awesome, 'AI generated · not reviewed', null);
+        ? (Icons.verified_outlined, l10n.qzReviewedBank, explanation.bankId)
+        : (Icons.auto_awesome, l10n.qzAiGenerated, null);
     return Row(
       key: const ValueKey('doc_source'),
       mainAxisSize: MainAxisSize.min,
@@ -2551,8 +2575,8 @@ class _Coach extends StatelessWidget {
     final p = context.elio;
     final essay = state.question?.type == QuizQuestionType.essay;
     final suggestions = essay
-        ? const ['Show a full-mark answer', 'Explain key terms']
-        : const ['Give me a hint', 'Say it simpler'];
+        ? [l10n.qzSugFullMark, l10n.qzSugKeyTerms]
+        : [l10n.qzSugHint, l10n.qzSugSimpler];
     final user = Firebase.apps.isEmpty
         ? null
         : FirebaseAuth.instance.currentUser;
@@ -2574,7 +2598,7 @@ class _Coach extends StatelessWidget {
               const EliosAiBadge(size: 28),
               const SizedBox(width: 8),
               Text(
-                'ELIOS AI coach',
+                l10n.qzCoach,
                 style: TextStyle(
                   color: p.textPrimary,
                   fontSize: 14,
@@ -2602,8 +2626,8 @@ class _Coach extends StatelessWidget {
                     fromAi: !m.isUser,
                     initial: initial,
                     status: m.isUser
-                        ? 'Sent'
-                        : (speaking == m.text ? 'Playing' : null),
+                        ? l10n.qzSent
+                        : (speaking == m.text ? l10n.qzPlaying : null),
                     onListen: m.isUser ? null : () => onListen(m.text),
                   ),
               ],
@@ -2645,9 +2669,7 @@ class _Coach extends StatelessWidget {
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
-                      hintText: essay
-                          ? 'Ask ELIOS AI about your score…'
-                          : 'Ask ELIOS AI…',
+                      hintText: essay ? l10n.qzAskScore : l10n.qzAsk,
                       hintStyle: TextStyle(color: p.textTertiary, fontSize: 12),
                     ),
                     onSubmitted: onSend,
@@ -2655,7 +2677,7 @@ class _Coach extends StatelessWidget {
                 ),
                 Semantics(
                   button: true,
-                  label: 'Send',
+                  label: l10n.qzSend,
                   excludeSemantics: true,
                   child: InkResponse(
                     key: const ValueKey('quiz_send'),
@@ -2767,10 +2789,10 @@ class _ChatMessageTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (fromAi && onListen != null) ...[
-                icon(Icons.volume_up_outlined, 'Listen', onListen!),
+                icon(Icons.volume_up_outlined, l10n.qzListen, onListen!),
                 icon(
                   Icons.copy_rounded,
-                  'Copy',
+                  l10n.qzCopy,
                   () => Clipboard.setData(ClipboardData(text: text)),
                 ),
               ],
@@ -2780,7 +2802,7 @@ class _ChatMessageTile extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (status == 'Playing')
+                      if (status == l10n.qzPlaying)
                         Icon(
                           Icons.graphic_eq_rounded,
                           size: 12,
@@ -2790,7 +2812,7 @@ class _ChatMessageTile extends StatelessWidget {
                       Text(
                         status!,
                         style: TextStyle(
-                          color: status == 'Playing'
+                          color: status == l10n.qzPlaying
                               ? p.primaryText
                               : p.textSecondary,
                           fontSize: 11,
@@ -2847,7 +2869,7 @@ Future<void> _pickCorrectItem(
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Which item is this?',
+                        l10n.qzWhichItem,
                         style: TextStyle(
                           color: p.textPrimary,
                           fontSize: 18,
@@ -2857,7 +2879,7 @@ Future<void> _pickCorrectItem(
                     ),
                     _Pill(
                       icon: Icons.close_rounded,
-                      label: 'Cancel',
+                      label: l10n.commonCancel,
                       small: true,
                       onTap: () => Navigator.pop(context),
                     ),

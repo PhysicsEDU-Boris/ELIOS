@@ -1,4 +1,9 @@
 # Handoff — 5 Nov 2026
+## L2 languages — `feat/ui-localization` (PR #93, decision 0185)
+- Rebased on `feature/live-scan` after #94; decision renumbered 0184 -> 0185. Whole app via ARB (audit 0), live sidebar switch, intl dates/numbers, bilingual ELIOS AI (owner system prompt), History schema 5 with translation cache, English bank (needs owner review), Learn `i18n` fields, InfoPlist.strings, ELIO -> ELIOS.
+- Owner to do: deploy ai-backend (`cd ai-backend && npx vercel --prod`, prompt cap 16000); review `assets/quiz/*_draft.en.json`; run `tools/l10n/translate_firestore.py export en` / `upload` and `translate_assets.py module en` with `GEMINI_API_KEY`; re-export the module PDF (still says ELIO); airplane-mode check on the phone.
+- Phone: Edge 60 Fusion updated in place (data kept), left in Bahasa Indonesia as found. Two test PDFs added to Download/ELIOS. Resume backup: `/tmp/elios-pr93-resume-20261105/owner-backup/history-settings.tar` (40 main records, 2 R3 test records, photos, settings).
+- Resume installed APP_COMMIT `96c832a` (rebased source `5e7ae70`, app inputs identical; LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION), launched in Indonesian/light: 40 scans / 442 trophies; both History JSON files unchanged. Fixed clipped Indonesian arm captions without shrinking text or stretching the column; six real-font regressions break-checked in three sizes, light/dark. Final validation and install are recorded in `docs/test-results/0185-l10n/README.md` and `docs/local-build-notes.md`.
 ## H3 History — `feat/history-h3` (decision 0184)
 - PR #94 targets `feature/live-scan`; owner merges. No merge or Mac build by this task.
 - H3 phone list → detail → question explanation; wide two-pane detail, saved crops, real trophies, Indonesian copy, light/dark tokens, skeletons/timeouts, section TTS and per-question PDF.
@@ -45,3 +50,7 @@
 - U4c combined native acceptance, U7 Firebase sync, U8 docs/Figma (see NEXT_TASK.md). wrongWhy texts for the bank are still unwritten.
 ## R2, Q3, R3 (merged #80-#82, 3 Nov)
 - Details in decisions 0173-0175 and `docs/test-results/r2|q3|r3/`.
+
+## Marketing website — Figma (5 Nov 2026)
+- Editable desktop 1440 and mobile 390: https://www.figma.com/design/J2jSbARJSyJCStNFeWkWDj/?node-id=473-2389 (W1 Marketing website). Uses docs/design.md light tokens, original mascot/bin buddies, and real home-screen previews.
+- All sections visually reviewed. Revision: removed 18 decorative icons and 15 arrow/star/checkmark accents in desktop/mobile; retained main mascot and app previews. Static UI; CTA wiring/implementation remain. No app build or robot test.

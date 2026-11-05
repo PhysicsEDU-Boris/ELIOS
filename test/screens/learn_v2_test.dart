@@ -236,7 +236,7 @@ void main() {
         }
         expect(find.text('Continue learning'), findsOneWidget);
         expect(find.text('Composting fundamentals'), findsWidgets);
-        expect(find.text('1 videos'), findsOneWidget);
+        expect(find.text('1 video'), findsOneWidget);
         expect(find.text('9 modules'), findsOneWidget);
         expect(find.text('Introduction & definitions of waste'), findsWidgets);
         // Failing Cloudinary URL falls back to the module illustration.
@@ -330,7 +330,7 @@ void main() {
           progress: () => _active().copyWith(quizScores: {'organic': 80}),
         );
         expect(t.takeException(), isNull);
-        expect(find.text('Progres simulasi'), findsOneWidget);
+        expect(find.text('Simulation progress'), findsOneWidget);
         expect(find.text('Organic waste management'), findsOneWidget);
         expect(find.text('Best 80% · 2 questions'), findsOneWidget);
         expect(find.text('Organic waste management quiz'), findsOneWidget);
@@ -370,8 +370,8 @@ void main() {
       testWidgets('physics quiz uses the v2 question layout', (t) async {
         await _pump(t, const PhysicsQuizPage(), brightness: b);
         expect(t.takeException(), isNull);
-        expect(find.textContaining('Pertanyaan 1 /'), findsOneWidget);
-        expect(find.text('Fisika lanjutan'), findsOneWidget);
+        expect(find.textContaining('Question 1 /'), findsOneWidget);
+        expect(find.text('Advanced physics'), findsOneWidget);
         expect(find.text('D'), findsOneWidget);
       });
     });
@@ -424,9 +424,9 @@ void main() {
       testWidgets('density ${b.name}', (t) async {
         await _pump(t, const DensitySimulationPage(), brightness: b);
         expect(t.takeException(), isNull);
-        expect(find.text('Simulasi'), findsWidgets);
-        expect(find.text('Materi'), findsOneWidget);
-        expect(find.text('Rumus'), findsWidgets);
+        expect(find.text('Simulations'), findsWidgets);
+        expect(find.text('Theory'), findsOneWidget);
+        expect(find.text('Formula'), findsWidgets);
         final s = read(t, densityProvider);
         expect(calcText(t), contains(s.density.toStringAsFixed(2)));
         // Moving the mass slider changes the shown result.
@@ -465,7 +465,7 @@ void main() {
     testWidgets('deep dive renders its tabs', (t) async {
       await _pump(t, const DeepDiveSimulationPage(), brightness: Brightness.dark);
       expect(t.takeException(), isNull);
-      expect(find.text('Simulasi'), findsWidgets);
+      expect(find.text('Simulations'), findsWidgets);
     });
   });
 

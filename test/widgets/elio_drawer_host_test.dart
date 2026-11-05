@@ -268,7 +268,7 @@ void main() {
       brightness: Brightness.light,
     );
     expect(find.text('Profile'), findsNothing);
-    for (final l in ['Home', 'Learn', 'Control', 'Config', 'Riwayat']) {
+    for (final l in ['Home', 'Learn', 'Control', 'Config', 'History']) {
       expect(find.text(l), findsOneWidget);
     }
   });

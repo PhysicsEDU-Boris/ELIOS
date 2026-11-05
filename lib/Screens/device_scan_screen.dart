@@ -28,6 +28,7 @@ import '../widgets/learn/learn_ui.dart' show LearnTheme;
 import '../widgets/waste_quiz_popup.dart';
 import 'login_screen.dart';
 import 'scan_history_screen.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// Scan waste with this device's own camera (no robot needed) and get the
 /// ELIOS AI quiz. Figma: "Device Scan · Kamera perangkat (landscape)".
@@ -107,7 +108,7 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Gagal memotret: $e')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.photoFailed(e))));
       }
     } finally {
       if (mounted) setState(() => _capturing = false);
@@ -290,8 +291,8 @@ class ScanScreenLayout extends StatelessWidget {
         // The AI never blocks Scan: with no AI answer the quiz uses the bank (decision 0179).
         final canScan = ready && error == null && !capturing;
         final (chipText, chipColor) = switch (status) {
-          AiStatus.offline => ('ELIOS AI offline · question bank', p.error),
-          _ => ('ELIOS AI ready', p.primary),
+          AiStatus.offline => (l10n.dsAiOffline, p.error),
+          _ => (l10n.dsAiReady, p.primary),
         };
         return LayoutBuilder(
           builder: (context, c) {
@@ -368,7 +369,7 @@ class ScanScreenLayout extends StatelessWidget {
                             children: [
                               PhonePill(
                                 key: const ValueKey('scan_back'),
-                                semantic: 'Back',
+                                semantic: l10n.dsBack,
                                 onTap: onBack,
                                 padding: const EdgeInsets.all(10),
                                 child: Icon(
@@ -379,7 +380,7 @@ class ScanScreenLayout extends StatelessWidget {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Scan an item',
+                                l10n.homeScanItem,
                                 style: TextStyle(
                                   color: p.textPrimary,
                                   fontSize: 18,
@@ -393,7 +394,7 @@ class ScanScreenLayout extends StatelessWidget {
                                 animation: ScanRecordStore.instance,
                                 builder: (context, _) => PhonePill(
                                   key: const ValueKey('scan_history'),
-                                  semantic: 'History',
+                                  semantic: l10n.navHistory,
                                   onTap: onHistory,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 12,
@@ -439,8 +440,8 @@ class ScanScreenLayout extends StatelessWidget {
                                                 ? p.error
                                                 : p.borderStrong,
                                             text: ready && error == null
-                                                ? 'LIVE'
-                                                : 'No camera',
+                                                ? l10n.dsLive
+                                                : l10n.dsNoCamera,
                                           ),
                                           const SizedBox(width: 6),
                                           _Chip(
@@ -732,8 +733,8 @@ class _ScanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.elio;
     final (word, wordColor) = status == AiStatus.offline
-        ? ('Bank mode', p.textSecondary)
-        : ('Ready', p.primaryText);
+        ? (l10n.dsBankMode, p.textSecondary)
+        : (l10n.ctlReady, p.primaryText);
     return PhoneCard(
       child: LayoutBuilder(
         builder: (context, c) {
@@ -750,7 +751,7 @@ class _ScanCard extends StatelessWidget {
                     color: p.primaryText,
                   ),
                   const SizedBox(width: 6),
-                  const ControlCaps('SCAN'),
+                  ControlCaps(l10n.ctlScan),
                   const Spacer(),
                   ControlStatusChip(label: word, color: wordColor),
                 ],
@@ -773,7 +774,7 @@ class _ScanCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Put one item inside the white box, then tap Scan.',
+                        l10n.dsPutItem,
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -790,7 +791,7 @@ class _ScanCard extends StatelessWidget {
               Semantics(
                 button: true,
                 enabled: canScan,
-                label: 'Scan and make quiz',
+                label: l10n.dsScanMakeQuiz,
                 excludeSemantics: true,
                 child: GestureDetector(
                   key: const ValueKey('scan_button'),
@@ -831,7 +832,7 @@ class _ScanCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Scan & make quiz',
+                l10n.dsScanMakeQuizShort,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -851,7 +852,7 @@ class _ScanCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'About 2–4 s · needs internet',
+                    l10n.dsTiming,
                     style: TextStyle(color: p.textSecondary, fontSize: 11),
                   ),
                 ],
@@ -863,7 +864,7 @@ class _ScanCard extends StatelessWidget {
                     flex: 5,
                     child: PhonePill(
                       key: const ValueKey('scan_switch_camera'),
-                      semantic: 'Switch camera',
+                      semantic: l10n.dsSwitchCamera,
                       onTap: onSwitchCamera ?? () {},
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -880,7 +881,7 @@ class _ScanCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
-                              'Switch camera',
+                              l10n.dsSwitchCamera,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -900,7 +901,7 @@ class _ScanCard extends StatelessWidget {
                       flex: 4,
                       child: PopupMenuButton<String>(
                         key: const ValueKey('scan_test_mode'),
-                        tooltip: 'Test mode: quiz without the camera',
+                        tooltip: l10n.dsTestModeHint,
                         onSelected: onTestLabel,
                         itemBuilder: (context) => [
                           for (final l in testLabels!)
@@ -927,7 +928,7 @@ class _ScanCard extends StatelessWidget {
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  'Test mode',
+                                  l10n.dsTestMode,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(

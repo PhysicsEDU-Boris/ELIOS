@@ -1,3 +1,4 @@
+import 'package:elio/l10n/l10n.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../../widgets/learn/learn_ui.dart';
@@ -34,127 +35,136 @@ class _HeatSimulationPageState extends ConsumerState<HeatSimulationPage> {
     final q = state.heatJoules;
     final t = state.finalTemp;
     final phase = state.phase;
-    
+
     // Cross-module requirement:
     // When porosityPercent < 25 && finalTemp > 55, show "anaerob — risiko metana"
     final isAnaerobic = porosity.isAnaerobic && t > 55.0;
 
     return SimulationPageScaffold(
       module: PhysicsModuleId.heat,
-      appBarTitle: 'Kalor & Termodinamika',
-      header: const SimModuleHeader(
-        tag: 'MODUL B · MATERI',
-        title: 'Kalor & Termodinamika Pengomposan',
-        subtitle: 'Kalor dari aktivitas mikroba mengubah suhu tumpukan kompos. Pantau fasenya.',
+      appBarTitle: l10n.simHeat1,
+      header: SimModuleHeader(
+        tag: l10n.simHeat2,
+        title: l10n.simHeat3,
+        subtitle: l10n.simHeat16,
       ),
       formulaBox: FormulaBox(
-        title: 'RUMUS KALOR (Q)',
+        title: l10n.simHeat4,
         formulaText: TextSpan(
           children: [
             const TextSpan(text: 'Q = m·c·ΔT = '),
             TextSpan(
-              text: q.toStringAsFixed(0),
+              text: fmtNum(q, 0),
               style: TextStyle(color: context.elio.secondaryText),
             ),
             const TextSpan(text: ' J'),
           ],
         ),
-        subtitle: 'm = massa · c = 4000 J/kg°C · ΔT = perubahan suhu',
+        subtitle: l10n.simHeat5,
       ),
       simulationContent: [
         const SizedBox(height: 16),
-                  SimCanvasFrame(
-                    noteText: 'Partikel mewakili aktivitas mikroba',
-                    canvas: _HeatCanvas(temp: t),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Sliders
-                  LabeledSlider(
-                    label: 'Massa (m)',
-                    valueLabel: '${state.massKg.toStringAsFixed(1)} kg',
-                    value: state.massKg,
-                    min: 1.0,
-                    max: 5.0,
-                    onChanged: (v) => notifier.setMass(v),
-                  ),
-                  const SizedBox(height: 14),
-                  LabeledSlider(
-                    label: 'Perubahan Suhu (ΔT)',
-                    valueLabel: '${state.deltaT.toStringAsFixed(1)} °C',
-                    value: state.deltaT,
-                    min: 5.0,
-                    max: 40.0,
-                    onChanged: (v) => notifier.setDeltaT(v),
-                  ),
-                  const SizedBox(height: 14),
-                  // Include porosity slider for testing the cross-module link visually
-                  LabeledSlider(
-                    label: 'Porositas (Lintas Modul)',
-                    valueLabel: '${porosity.porosityPercent.toStringAsFixed(0)} %',
-                    value: porosity.porosityPercent,
-                    min: 10.0,
-                    max: 80.0,
-                    onChanged: (v) => ref.read(porosityProvider.notifier).setPorosity(v),
-                  ),
-                  const SizedBox(height: 16),
+        SimCanvasFrame(
+          noteText: l10n.simHeat6,
+          canvas: _HeatCanvas(temp: t),
+        ),
+        const SizedBox(height: 16),
 
-                  CalcBox(
-                    headerTitle: 'HASIL FASE',
-                    formulaExpression: 'Suhu Akhir = 25°C + ${state.deltaT.toStringAsFixed(1)}°C = ${t.toStringAsFixed(1)}°C',
-                    statusIcon: _getPhaseIcon(phase),
-                    statusColor: _getPhaseColor(phase),
-                    statusText: _getPhaseName(phase),
-                  ),
-                  
-                  ThresholdBanner(
-                    visible: isAnaerobic,
-                    text: 'Peringatan: anaerob — risiko metana. Porositas rendah (<25%) dan suhu tinggi (>55°C).',
-                  ),
-                  ThresholdBanner(
-                    visible: phase == CompostPhase.thermophilic && !isAnaerobic,
-                    text: 'Fase Termofilik: Bakteri tahan panas bekerja optimal, patogen mulai mati.',
-                  ),
-                  ThresholdBanner(
-                    visible: phase == CompostPhase.overheated && !isAnaerobic,
-                    text: 'Overheated: Terlalu panas! Aktivitas mikroba terhambat.',
-                  ),
+        // Sliders
+        LabeledSlider(
+          label: l10n.simDensity7,
+          valueLabel: '${fmtNum(state.massKg, 1)} kg',
+          value: state.massKg,
+          min: 1.0,
+          max: 5.0,
+          onChanged: (v) => notifier.setMass(v),
+        ),
+        const SizedBox(height: 14),
+        LabeledSlider(
+          label: l10n.simHeat7,
+          valueLabel: '${fmtNum(state.deltaT, 1)} °C',
+          value: state.deltaT,
+          min: 5.0,
+          max: 40.0,
+          onChanged: (v) => notifier.setDeltaT(v),
+        ),
+        const SizedBox(height: 14),
+        // Include porosity slider for testing the cross-module link visually
+        LabeledSlider(
+          label: l10n.simHeat8,
+          valueLabel: '${fmtNum(porosity.porosityPercent, 0)} %',
+          value: porosity.porosityPercent,
+          min: 10.0,
+          max: 80.0,
+          onChanged: (v) => ref.read(porosityProvider.notifier).setPorosity(v),
+        ),
+        const SizedBox(height: 16),
+
+        CalcBox(
+          headerTitle: l10n.simHeat9,
+          formulaExpression: l10n.simHeatFinal(
+            fmtNum(state.deltaT, 1),
+            fmtNum(t, 1),
+          ),
+          statusIcon: _getPhaseIcon(phase),
+          statusColor: _getPhaseColor(phase),
+          statusText: _getPhaseName(phase),
+        ),
+
+        ThresholdBanner(visible: isAnaerobic, text: l10n.simHeat17),
+        ThresholdBanner(
+          visible: phase == CompostPhase.thermophilic && !isAnaerobic,
+          text: l10n.simHeat10,
+        ),
+        ThresholdBanner(
+          visible: phase == CompostPhase.overheated && !isAnaerobic,
+          text: l10n.simHeat18,
+        ),
       ],
-      deepExplainCard: const DeepExplainCard(
-                    title: 'Modul B — Kalor & Termodinamika Pengomposan',
-                    bodyText: 'Saat mikroorganisme di tumpukan kompos memecah sampah organik, mereka melepaskan energi dalam bentuk kalor (heat) — ini disebut proses eksotermik biologis. Suhu tumpukan kompos naik bukan karena api atau listrik, tapi karena aktivitas metabolisme jutaan bakteri dan jamur yang bekerja memecah rantai molekul organik.\n\nModul ini memodelkan berapa banyak kalor yang perlu diserap atau dilepas suatu massa kompos untuk mengalami perubahan suhu tertentu, dan menghubungkannya ke fase biologis nyata dari proses pengomposan.',
-                    bulletPoints: [
-                      'Q = m · c · ΔT (Kalor = massa × kalor jenis × perubahan suhu).',
-                      'Fase Mesofilik (< 55°C): Bakteri suhu-sedang mulai memecah gula & protein sederhana.',
-                      'Fase Termofilik (55–60°C): Bakteri tahan-panas mendominasi, fase membunuh patogen & biji gulma.',
-                      'Overheated (> 60°C): Aktivitas mikroba mulai terhambat/mati; perlu diaduk untuk melepas panas.',
-                      'Hubungan dengan Porositas: Ketika porositas < 25% DAN suhu > 55°C, tumpukan berisiko masuk kondisi anaerobik (oksigen habis). Mikroba anaerob mengambil alih dan menghasilkan gas metana (CH₄) yang berbahaya.'
-                    ],
-                  ),
+      deepExplainCard: DeepExplainCard(
+        title: l10n.simHeat11,
+        bodyText: l10n.simHeat12,
+        bulletPoints: [
+          l10n.simHeat19,
+          l10n.simHeat20,
+          l10n.simHeat21,
+          l10n.simHeat22,
+          l10n.simHeat23,
+        ],
+      ),
     );
   }
 
   IconData _getPhaseIcon(CompostPhase phase) {
     switch (phase) {
-      case CompostPhase.mesophilic: return Icons.eco_rounded;
-      case CompostPhase.thermophilic: return Icons.local_fire_department_rounded;
-      case CompostPhase.overheated: return Icons.warning_rounded;
+      case CompostPhase.mesophilic:
+        return Icons.eco_rounded;
+      case CompostPhase.thermophilic:
+        return Icons.local_fire_department_rounded;
+      case CompostPhase.overheated:
+        return Icons.warning_rounded;
     }
   }
 
   Color _getPhaseColor(CompostPhase phase) {
     switch (phase) {
-      case CompostPhase.mesophilic: return context.elio.primaryText;
-      case CompostPhase.thermophilic: return Colors.orange;
-      case CompostPhase.overheated: return context.elio.secondaryText;
+      case CompostPhase.mesophilic:
+        return context.elio.primaryText;
+      case CompostPhase.thermophilic:
+        return Colors.orange;
+      case CompostPhase.overheated:
+        return context.elio.secondaryText;
     }
   }
 
   String _getPhaseName(CompostPhase phase) {
     switch (phase) {
-      case CompostPhase.mesophilic: return 'Mesofilik (< 55°C)';
-      case CompostPhase.thermophilic: return 'Termofilik (55 - 60°C)';
-      case CompostPhase.overheated: return 'Terlalu Panas (> 60°C)';
+      case CompostPhase.mesophilic:
+        return l10n.simHeat13;
+      case CompostPhase.thermophilic:
+        return l10n.simHeat14;
+      case CompostPhase.overheated:
+        return l10n.simHeat15;
     }
   }
 }
@@ -168,12 +178,13 @@ class _HeatCanvas extends StatefulWidget {
   State<_HeatCanvas> createState() => _HeatCanvasState();
 }
 
-class _HeatCanvasState extends State<_HeatCanvas> with SingleTickerProviderStateMixin {
+class _HeatCanvasState extends State<_HeatCanvas>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   Animation<double>? _secondaryAnimation;
   final List<Particle> _particles = [];
   final Random _rnd = Random();
-  
+
   // Logical bounds of compost pile
   final double width = 240.0;
   final double height = 160.0; // from 180 down to 20
@@ -183,16 +194,24 @@ class _HeatCanvasState extends State<_HeatCanvas> with SingleTickerProviderState
     super.initState();
     // Initialize 20 particles inside the compost bounds
     for (int i = 0; i < 20; i++) {
-      _particles.add(Particle(
-        position: Offset(50 + _rnd.nextDouble() * 140, 180 - _rnd.nextDouble() * 100),
-        velocity: Offset((_rnd.nextDouble() - 0.5) * 2, (_rnd.nextDouble() - 0.5) * 2),
-      ));
+      _particles.add(
+        Particle(
+          position: Offset(
+            50 + _rnd.nextDouble() * 140,
+            180 - _rnd.nextDouble() * 100,
+          ),
+          velocity: Offset(
+            (_rnd.nextDouble() - 0.5) * 2,
+            (_rnd.nextDouble() - 0.5) * 2,
+          ),
+        ),
+      );
     }
 
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..addListener(_tick)..repeat();
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 1))
+          ..addListener(_tick)
+          ..repeat();
   }
 
   @override
@@ -206,9 +225,11 @@ class _HeatCanvasState extends State<_HeatCanvas> with SingleTickerProviderState
 
   void _onRouteAnimation() {
     if (_secondaryAnimation != null) {
-      if (_secondaryAnimation!.status == AnimationStatus.forward || _secondaryAnimation!.status == AnimationStatus.completed) {
+      if (_secondaryAnimation!.status == AnimationStatus.forward ||
+          _secondaryAnimation!.status == AnimationStatus.completed) {
         _controller.stop();
-      } else if (_secondaryAnimation!.status == AnimationStatus.reverse || _secondaryAnimation!.status == AnimationStatus.dismissed) {
+      } else if (_secondaryAnimation!.status == AnimationStatus.reverse ||
+          _secondaryAnimation!.status == AnimationStatus.dismissed) {
         if (!mounted) return;
         _controller.repeat();
       }
@@ -217,9 +238,9 @@ class _HeatCanvasState extends State<_HeatCanvas> with SingleTickerProviderState
 
   void _tick() {
     if (!mounted) return;
-    
+
     // Speed scales with temp
-    final speed = widget.temp / 20.0; 
+    final speed = widget.temp / 20.0;
 
     for (var p in _particles) {
       p.position += p.velocity * speed;
@@ -243,7 +264,7 @@ class _HeatCanvasState extends State<_HeatCanvas> with SingleTickerProviderState
       }
     }
     // We call setState implicitly by returning in a CustomPaint that depends on particles?
-    // Actually, CustomPainter needs to be rebuilt if state changes. 
+    // Actually, CustomPainter needs to be rebuilt if state changes.
     // We can just call setState.
     setState(() {});
   }
@@ -280,9 +301,7 @@ class _HeatCanvasState extends State<_HeatCanvas> with SingleTickerProviderState
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 180),
             child: CustomPaint(
-              painter: ThermometerPainter(
-                temp: widget.temp,
-              ),
+              painter: ThermometerPainter(temp: widget.temp),
               size: const Size(40, 180),
             ),
           ),

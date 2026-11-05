@@ -1,0 +1,1247 @@
+{
+  "translation": "Machine translation (Claude, 5 Nov 2026) of the reviewed Indonesian file next to it; needs owner review. Same ids, option order and correct answers as the Indonesian source (decision 0185).",
+  "status": "accepted",
+  "schemaNote": "mc follows decision 0013 (correct + wrong[3]); every quote is verbatim from its sourceChunk in assets/module/module_chunks.json",
+  "chunksFile": "assets/module/module_chunks.json",
+  "pools": {
+    "organik": [
+      "Organic"
+    ],
+    "paper_family": [
+      "Paper",
+      "Paperboard",
+      "Cardboard"
+    ],
+    "plastic": [
+      "Plastic"
+    ],
+    "glass": [
+      "Glass"
+    ],
+    "metal": [
+      "Metal"
+    ],
+    "tetra_pak": [
+      "Tetra_Pak"
+    ],
+    "e_waste_b3": [
+      "E_Waste"
+    ]
+  },
+  "items": [
+    {
+      "id": "organik-mc-01",
+      "pool": "organik",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Food scraps and dry leaves break down naturally. What is true about the material this waste comes from?",
+      "correct": "It comes from living things and is broken down naturally by microorganisms",
+      "wrong": [
+        "It comes from synthetic materials and is very hard for microorganisms to break down",
+        "It contains hazardous and toxic materials, so it must be kept in a special container",
+        "It comes from mineral materials and can stay in the environment for hundreds of years"
+      ],
+      "explanation": "The module defines organic waste as waste from animals and plants that microorganisms break down naturally.",
+      "sourceChunk": "1.3",
+      "pdfPage": 6,
+      "quote": "Sampah organik adalah sampah yang berasal dari makhluk hidup (hewan dan tumbuhan) dan dapat terurai secara alami oleh mikroorganisme dalam jangka waktu tertentu.",
+      "status": "accepted"
+    },
+    {
+      "id": "organik-mc-02",
+      "pool": "organik",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "What is the property of organic waste that can be broken down biologically called?",
+      "correct": "Biodegradable",
+      "wrong": [
+        "Non-biodegradable",
+        "Corrosive",
+        "Reactive"
+      ],
+      "explanation": "The module calls being biologically degradable 'biodegradable'; corrosive and reactive are B3 characteristics.",
+      "sourceChunk": "1.3",
+      "pdfPage": 6,
+      "quote": "Sifat ini disebut biodegradable, yaitu dapat diuraikan secara biologis (Damanhuri dan Padmi, 2010).",
+      "status": "accepted"
+    },
+    {
+      "id": "organik-mc-03",
+      "pool": "organik",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Why can aerobic composting help kill pathogens and weed seeds?",
+      "correct": "Because the process produces heat of 50-70°C",
+      "wrong": [
+        "Because the process happens without oxygen",
+        "Because the process produces methane gas that kills germs",
+        "Because the process uses earthworms that eat weed seeds"
+      ],
+      "explanation": "Aerobic composting uses microorganisms that need oxygen and produces heat of 50-70°C, which helps kill pathogens.",
+      "sourceChunk": "3.2",
+      "pdfPage": 17,
+      "quote": "Prosesnya lebih cepat dan menghasilkan panas 50-70°C yang membantu membunuh patogen (kuman penyakit) dan biji gulma.",
+      "status": "accepted"
+    },
+    {
+      "id": "organik-mc-04",
+      "pool": "organik",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Which process produces biogas from organic waste?",
+      "correct": "Anaerobic fermentation of organic matter by methanogenic bacteria",
+      "wrong": [
+        "Aerobic composting with a pile that is turned regularly",
+        "Breakdown by earthworms in a vermicompost box",
+        "Open burning of organic waste at the landfill"
+      ],
+      "explanation": "The module explains that biogas comes from anaerobic fermentation by methanogenic bacteria, mainly methane and carbon dioxide.",
+      "sourceChunk": "3.3",
+      "pdfPage": 18,
+      "quote": "Biogas dihasilkan dari fermentasi anaerobik bahan organik oleh bakteri metanogen.",
+      "status": "accepted"
+    },
+    {
+      "id": "organik-mc-05",
+      "pool": "organik",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Why is capturing methane from organic waste and burning it for energy considered good for the climate?",
+      "correct": "Methane, which has a high warming potential, is turned into CO2 with a lower potential, while producing energy",
+      "wrong": [
+        "Burning removes all the carbon, so no greenhouse gas is left",
+        "Methane is not a greenhouse gas, so burning is only useful as an energy source",
+        "Burning turns CO2 into methane, which is safer for the climate"
+      ],
+      "explanation": "The module calls landfill methane a strong greenhouse gas; burning it turns it into CO2, which has a lower warming potential.",
+      "sourceChunk": "3.3",
+      "pdfPage": 18,
+      "quote": "Menangkap dan membakarnya sebagai energi mengubah metana (potensi pemanasan tinggi) menjadi CO2 (potensi lebih rendah) sambil menghasilkan energi.",
+      "status": "accepted"
+    },
+    {
+      "id": "organik-mc-06",
+      "pool": "organik",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Food scraps thrown into a landfill rot without oxygen. Which gas forms, and how can its emissions be reduced?",
+      "correct": "Methane; emissions are reduced by aerobic composting and biogas capture",
+      "wrong": [
+        "Mercury; emissions are reduced by putting food scraps in the B3 group",
+        "Dioxin from rotting; emissions are reduced by burning food scraps",
+        "No gas forms because organic waste can break down"
+      ],
+      "explanation": "Organic waste rotting without oxygen produces methane; the module says aerobic composting and biogas capture reduce those emissions.",
+      "sourceChunk": "9.qa",
+      "pdfPage": 34,
+      "quote": "Sampah organik yang membusuk tanpa oksigen di TPA menghasilkan metana, gas rumah kaca dengan potensi pemanasan sekitar 25-28 kali CO2.",
+      "status": "accepted"
+    },
+    {
+      "id": "organik-essay-01",
+      "pool": "organik",
+      "type": "essay",
+      "difficulty": "Sedang",
+      "question": "Explain the difference between aerobic and anaerobic composting, including what each one produces.",
+      "sourceChunk": "3.2",
+      "pdfPage": 17,
+      "rubricPoints": [
+        {
+          "point": "Aerobic composting uses microorganisms that need oxygen.",
+          "sourceChunk": "3.2",
+          "pdfPage": 17,
+          "quote": "Mikroorganisme yang memerlukan oksigen mengurai bahan organik."
+        },
+        {
+          "point": "Aerobic composting is faster, and its heat helps kill pathogens and weed seeds.",
+          "sourceChunk": "3.2",
+          "pdfPage": 17,
+          "quote": "Prosesnya lebih cepat dan menghasilkan panas 50-70°C yang membantu membunuh patogen (kuman penyakit) dan biji gulma."
+        },
+        {
+          "point": "The process without oxygen (anaerobic) produces biogas through fermentation by methanogenic bacteria.",
+          "sourceChunk": "3.3",
+          "pdfPage": 18,
+          "quote": "Biogas dihasilkan dari fermentasi anaerobik bahan organik oleh bakteri metanogen."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "organik-essay-02",
+      "pool": "organik",
+      "type": "essay",
+      "difficulty": "Sulit",
+      "question": "Why should organic waste be turned into compost or biogas instead of being thrown into the landfill? Give reasons about its environmental impact.",
+      "sourceChunk": "9.qa",
+      "pdfPage": 34,
+      "rubricPoints": [
+        {
+          "point": "Organic waste rotting without oxygen in a landfill produces methane, a greenhouse gas.",
+          "sourceChunk": "9.qa",
+          "pdfPage": 34,
+          "quote": "Sampah organik yang membusuk tanpa oksigen di TPA menghasilkan metana, gas rumah kaca dengan potensi pemanasan sekitar 25-28 kali CO2."
+        },
+        {
+          "point": "Recycling reduces the load on landfills and the negative impact of waste.",
+          "sourceChunk": "3.1",
+          "pdfPage": 17,
+          "quote": "Daur ulang adalah bagian dari strategi pengelolaan sampah untuk mengurangi beban TPA (Tempat Pemrosesan Akhir) dan dampak negatif sampah terhadap lingkungan."
+        },
+        {
+          "point": "Composting produces compost that is useful as organic fertiliser.",
+          "sourceChunk": "3.2",
+          "pdfPage": 17,
+          "quote": "Pengomposan adalah proses dekomposisi bahan organik oleh mikroorganisme dalam kondisi terkontrol untuk menghasilkan kompos sebagai pupuk organik (Damanhuri dan Padmi, 2010)."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-mc-01",
+      "pool": "paper_family",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Used paper and cardboard break down naturally. Which fibres are they made from?",
+      "correct": "Plant fibres",
+      "wrong": [
+        "Synthetic materials",
+        "Mineral materials",
+        "Plastic and aluminium layers"
+      ],
+      "explanation": "The module says paper and cardboard come from plant fibres, so they can break down.",
+      "sourceChunk": "1.3",
+      "pdfPage": 7,
+      "quote": "Kertas dan karton berasal dari serat tumbuhan sehingga dapat terurai, tetapi di sistem pemilahan sehari-hari sering ditaruh pada kelompok anorganik daur ulang karena lebih bernilai bila didaur ulang menjadi kertas baru (lihat Bab 4).",
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-mc-02",
+      "pool": "paper_family",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "In everyday sorting, which group is used paper often put in, and why?",
+      "correct": "Recyclable inorganic, because it is worth more when recycled into new paper",
+      "wrong": [
+        "The B3 group, because paper ink is a hazardous and toxic material",
+        "The residual group, because paper cannot be recycled",
+        "The rubber and synthetic textile group"
+      ],
+      "explanation": "Paper is biodegradable, but in everyday sorting it is often put with recyclable inorganic waste because it is worth more recycled.",
+      "sourceChunk": "9.qa",
+      "pdfPage": 34,
+      "quote": "Kertas berasal dari serat tumbuhan sehingga bersifat dapat terurai, namun dalam pemilahan sehari-hari sering dimasukkan ke anorganik daur ulang karena lebih bernilai didaur ulang menjadi kertas.",
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-mc-03",
+      "pool": "paper_family",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Why can paper only be recycled a few times?",
+      "correct": "Its cellulose fibres get shorter every time it is recycled",
+      "wrong": [
+        "Its ink cannot be removed after the first recycling",
+        "Paper must be melted at high temperatures like metal",
+        "Paper becomes non-biodegradable after being mixed with water"
+      ],
+      "explanation": "The module explains that cellulose fibres get shorter with each recycling, so paper can only be recycled about 5-7 times.",
+      "sourceChunk": "4.3",
+      "pdfPage": 21,
+      "quote": "Serat selulosa kertas memendek setiap kali didaur ulang, sehingga kertas dapat didaur ulang sekitar 5-7 kali (Arief, 2016).",
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-mc-04",
+      "pool": "paper_family",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "In paper recycling, what happens in the de-inking stage?",
+      "correct": "The ink is removed from the paper",
+      "wrong": [
+        "The paper is melted into pellets",
+        "The paper is separated with a magnet",
+        "The paper is coated with plastic to make it last"
+      ],
+      "explanation": "In the module's paper recycling stages, de-inking is the stage where ink is removed; pellets and magnets are used for plastic and metal.",
+      "sourceChunk": "4.3",
+      "pdfPage": 21,
+      "quote": "3. Penghilangan tinta (de-inking).",
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-mc-05",
+      "pool": "paper_family",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Plain cardboard and greasy paper from a fried-food wrapper are both made of paper. What is the difference when composting them?",
+      "correct": "Greasy paper is not suitable for composting, while plain cardboard is an organic product that can break down",
+      "wrong": [
+        "Greasy paper breaks down faster because the oil helps microbes",
+        "Both are B3 because they come from food packaging",
+        "Plain cardboard cannot break down because it is thick, while greasy paper can"
+      ],
+      "explanation": "The module lists plain cardboard as a biodegradable organic product, but plastic-coated, greasy or laminated paper is not suitable for composting.",
+      "sourceChunk": "1.3",
+      "pdfPage": 7,
+      "quote": "Kertas berlapis plastik, berminyak, atau berlaminasi (misalnya kemasan karton minuman, lihat 4.6) tidak cocok dikomposkan.",
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-mc-06",
+      "pool": "paper_family",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "A student quotes a number of trees saved per tonne of recycled paper. What is the recommended attitude?",
+      "correct": "Check that number against a primary source, because it varies between sources and between mills",
+      "wrong": [
+        "Use the number straight away because every source gives the same number",
+        "Assume that recycling paper saves no raw material at all",
+        "Replace it with the aluminium energy saving figure because it applies to every material"
+      ],
+      "explanation": "The module says recycling paper saves raw material, water and energy, but the quoted savings vary and need to be checked.",
+      "sourceChunk": "4.3",
+      "pdfPage": 21,
+      "quote": "Besaran penghematan yang sering dikutip (misalnya jumlah pohon atau liter air per ton) bervariasi antar sumber dan antar pabrik, sehingga sebaiknya diverifikasi dari sumber primer sebelum dipakai sebagai data.",
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-essay-01",
+      "pool": "paper_family",
+      "type": "essay",
+      "difficulty": "Sedang",
+      "question": "Explain where paper and cardboard sit in waste classification: their material properties and their group in sorting practice.",
+      "sourceChunk": "1.3",
+      "pdfPage": 7,
+      "rubricPoints": [
+        {
+          "point": "Paper and cardboard come from plant fibres, so they can break down.",
+          "sourceChunk": "1.3",
+          "pdfPage": 7,
+          "quote": "Kertas dan karton berasal dari serat tumbuhan sehingga dapat terurai, tetapi di sistem pemilahan sehari-hari sering ditaruh pada kelompok anorganik daur ulang karena lebih bernilai bila didaur ulang menjadi kertas baru (lihat Bab 4)."
+        },
+        {
+          "point": "In everyday sorting, paper is often put with recyclable inorganic waste because it is worth more recycled.",
+          "sourceChunk": "9.qa",
+          "pdfPage": 34,
+          "quote": "Kertas berasal dari serat tumbuhan sehingga bersifat dapat terurai, namun dalam pemilahan sehari-hari sering dimasukkan ke anorganik daur ulang karena lebih bernilai didaur ulang menjadi kertas."
+        },
+        {
+          "point": "Plastic-coated, greasy or laminated paper is not suitable for composting.",
+          "sourceChunk": "1.3",
+          "pdfPage": 7,
+          "quote": "Kertas berlapis plastik, berminyak, atau berlaminasi (misalnya kemasan karton minuman, lihat 4.6) tidak cocok dikomposkan."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "paper_family-essay-02",
+      "pool": "paper_family",
+      "type": "essay",
+      "difficulty": "Sulit",
+      "question": "Describe how used paper is made into new paper and why the number of times it can be recycled is limited.",
+      "sourceChunk": "4.3",
+      "pdfPage": 21,
+      "rubricPoints": [
+        {
+          "point": "The fibres are broken down in water (pulping).",
+          "sourceChunk": "4.3",
+          "pdfPage": 21,
+          "quote": "2. Perendaman dan pelumatan serat dalam air (pulping)."
+        },
+        {
+          "point": "The ink is removed (de-inking) before the fibres are screened and formed again.",
+          "sourceChunk": "4.3",
+          "pdfPage": 21,
+          "quote": "3. Penghilangan tinta (de-inking)."
+        },
+        {
+          "point": "The cellulose fibres get shorter each time they are recycled, so the number of recycling rounds is limited.",
+          "sourceChunk": "4.3",
+          "pdfPage": 21,
+          "quote": "Serat selulosa kertas memendek setiap kali didaur ulang, sehingga kertas dapat didaur ulang sekitar 5-7 kali (Arief, 2016)."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-mc-01",
+      "pool": "plastic",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Used plastic packaging is hard to break down in the environment. Which property of the material causes this?",
+      "correct": "It comes from synthetic materials that are very hard for microorganisms to break down",
+      "wrong": [
+        "It comes from living things",
+        "It contains hazardous materials, so it is always B3",
+        "It can be composted together with food scraps"
+      ],
+      "explanation": "The module says non-organic waste, including plastic, comes from synthetic or inorganic materials that are very hard for microorganisms to break down.",
+      "sourceChunk": "1.4",
+      "pdfPage": 7,
+      "quote": "Sampah non-organik berasal dari bahan sintetis atau bahan anorganis yang tidak dapat atau sangat sulit diuraikan mikroorganisme.",
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-mc-02",
+      "pool": "plastic",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "According to SIPSN 2024 data, where does plastic rank in Indonesia's national waste composition?",
+      "correct": "Second, after food scraps",
+      "wrong": [
+        "First, ahead of food scraps",
+        "Third, after wood and twigs",
+        "Last, after paper and cardboard"
+      ],
+      "explanation": "The Chapter 1 summary names food scraps as the largest component, followed by plastic.",
+      "sourceChunk": "1.summary",
+      "pdfPage": 8,
+      "quote": "Di Indonesia 2024, sisa makanan adalah komponen terbesar (39,87%), disusul plastik (19,54%).",
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-mc-03",
+      "pool": "plastic",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "In plastic recycling, what is the resin identification code (1 = PET, 2 = HDPE, and so on) used for?",
+      "correct": "To sort plastic at the collection stage",
+      "wrong": [
+        "To set the temperature of a compost pile",
+        "To mark plastic as B3 waste",
+        "To separate plastic with a magnet"
+      ],
+      "explanation": "The first stage of plastic recycling in the module is collection and sorting by resin identification code.",
+      "sourceChunk": "4.2",
+      "pdfPage": 20,
+      "quote": "1. Pengumpulan dan pemilahan berdasarkan kode jenis resin (1 = PET, 2 = HDPE, dan seterusnya).",
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-mc-04",
+      "pool": "plastic",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "PET and HDPE flakes are mixed in a water tank. Which plastic is taken from the water surface?",
+      "correct": "HDPE, because its density is lower than water's",
+      "wrong": [
+        "PET, because its density is lower than water's",
+        "PET, because its density is higher than water's",
+        "Neither, because both sink"
+      ],
+      "explanation": "The worked example in the module shows HDPE (0.95) floats and PET (1.38) sinks compared with water (1.00).",
+      "sourceChunk": "6.1",
+      "pdfPage": 26,
+      "quote": "Jawab: HDPE (0,95 < 1,00) mengapung dan diambil dari permukaan; PET (1,38 > 1,00) tenggelam dan diambil dari dasar.",
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-mc-05",
+      "pool": "plastic",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "PP and HDPE flakes both float in water. What is needed to separate them?",
+      "correct": "A liquid with a density between 0.90 and 0.95 g/cm3, for example a mixture of alcohol and water",
+      "wrong": [
+        "A magnet, because PP is attracted to magnets and HDPE is not",
+        "A liquid with a density above 1.38 g/cm3",
+        "A liquid with a density below 0.90 g/cm3"
+      ],
+      "explanation": "Because both are lighter than water, the module suggests a liquid with a density between those of PP and HDPE.",
+      "sourceChunk": "6.1",
+      "pdfPage": 26,
+      "quote": "Untuk memisahkan PP dari HDPE, diperlukan larutan dengan massa jenis antara 0,90 dan 0,95 g/cm3 (misalnya campuran alkohol dan air).",
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-mc-06",
+      "pool": "plastic",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "According to the 3R priority order, which action comes first for single-use plastic?",
+      "correct": "Using less of it in the first place (reduce)",
+      "wrong": [
+        "Recycling it straight away, because recycle comes before reduce",
+        "Using it again (reuse), because reuse comes before reduce",
+        "Burying it in the landfill so it does not spread in the environment"
+      ],
+      "explanation": "The module says the 3R order shows priority: reduce comes before reuse, and reuse comes before recycle.",
+      "sourceChunk": "4.1",
+      "pdfPage": 20,
+      "quote": "Urutan menunjukkan prioritas: Reduce lebih utama daripada Reuse, dan Reuse lebih utama daripada Recycle.",
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-essay-01",
+      "pool": "plastic",
+      "type": "essay",
+      "difficulty": "Sedang",
+      "question": "Explain the stages of plastic recycling, from collection to material for new products.",
+      "sourceChunk": "4.2",
+      "pdfPage": 20,
+      "rubricPoints": [
+        {
+          "point": "Plastic is collected and sorted by resin identification code.",
+          "sourceChunk": "4.2",
+          "pdfPage": 20,
+          "quote": "1. Pengumpulan dan pemilahan berdasarkan kode jenis resin (1 = PET, 2 = HDPE, dan seterusnya)."
+        },
+        {
+          "point": "The plastic is cleaned and then shredded into flakes.",
+          "sourceChunk": "4.2",
+          "pdfPage": 20,
+          "quote": "3. Pencacahan (shredding) menjadi serpihan (flakes)."
+        },
+        {
+          "point": "The flakes are melted at a high temperature.",
+          "sourceChunk": "4.2",
+          "pdfPage": 20,
+          "quote": "4. Peleburan pada suhu tinggi (sekitar 200-300°C)."
+        },
+        {
+          "point": "The melt is formed into recycled plastic pellets.",
+          "sourceChunk": "4.2",
+          "pdfPage": 20,
+          "quote": "5. Pembentukan pelet plastik daur ulang."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "plastic-essay-02",
+      "pool": "plastic",
+      "type": "essay",
+      "difficulty": "Sulit",
+      "question": "Explain how the idea of density is used to separate types of plastic in recycling facilities, using PET and HDPE as examples.",
+      "sourceChunk": "6.1",
+      "pdfPage": 26,
+      "rubricPoints": [
+        {
+          "point": "An object floats when its density is lower than the density of the fluid.",
+          "sourceChunk": "6.1",
+          "pdfPage": 26,
+          "quote": "Benda mengapung dalam fluida bila massa jenisnya lebih kecil daripada massa jenis fluida."
+        },
+        {
+          "point": "HDPE floats and PET sinks in water, so they can be collected separately.",
+          "sourceChunk": "6.1",
+          "pdfPage": 26,
+          "quote": "Jawab: HDPE (0,95 < 1,00) mengapung dan diambil dari permukaan; PET (1,38 > 1,00) tenggelam dan diambil dari dasar."
+        },
+        {
+          "point": "This sink-float separation is used in recycling facilities.",
+          "sourceChunk": "4.2",
+          "pdfPage": 21,
+          "quote": "Kerapatan dipakai pada pemisahan apung-tenggelam (float-sink) di fasilitas daur ulang."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "glass-mc-01",
+      "pool": "glass",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "When sorting glass items, which group of items can be collected together?",
+      "correct": "Glass bottles, broken window glass and mirrors",
+      "wrong": [
+        "Fluorescent tubes and energy-saving lamps (CFL)",
+        "Aluminium cans and metal wire",
+        "Styrofoam and plastic bags"
+      ],
+      "explanation": "The module gives glass bottles, broken window glass and mirrors as examples of glass waste; fluorescent tubes and CFLs are B3.",
+      "sourceChunk": "1.4",
+      "pdfPage": 7,
+      "quote": "Botol kaca, pecahan kaca jendela dan cermin.",
+      "status": "accepted"
+    },
+    {
+      "id": "glass-mc-02",
+      "pool": "glass",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "In glass recycling, how is glass waste sorted?",
+      "correct": "By its colour",
+      "wrong": [
+        "By its resin identification code",
+        "By its magnetic properties",
+        "By its moisture content"
+      ],
+      "explanation": "The module says glass is sorted by colour before it is washed, crushed, melted and formed again.",
+      "sourceChunk": "4.5",
+      "pdfPage": 21,
+      "quote": "Kaca: dipilah menurut warna, dicuci, dihancurkan (cullet), dilebur, dan dibentuk ulang.",
+      "status": "accepted"
+    },
+    {
+      "id": "glass-mc-03",
+      "pool": "glass",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Why are fluorescent tubes, neon lamps and CFLs not put with ordinary glass waste?",
+      "correct": "Because they contain mercury, so they are B3 waste",
+      "wrong": [
+        "Because they are made of plastic, not glass",
+        "Because they can be composted with organic waste",
+        "Because their glass is attracted to magnets"
+      ],
+      "explanation": "The module separates ordinary incandescent bulbs from fluorescent tubes, neon lamps and CFLs, which contain mercury and are therefore B3.",
+      "sourceChunk": "1.4",
+      "pdfPage": 7,
+      "quote": "Lampu bohlam pijar biasa terbuat dari kaca dan kawat logam, tetapi lampu TL, neon, dan lampu hemat energi (CFL) mengandung merkuri sehingga termasuk sampah B3 (Bab 2).",
+      "status": "accepted"
+    },
+    {
+      "id": "glass-mc-04",
+      "pool": "glass",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "When waste is sorted with a magnet in a recycling facility, how does glass behave?",
+      "correct": "It is not attracted to the magnet, just like aluminium and plastic",
+      "wrong": [
+        "It is attracted to the magnet like iron and steel",
+        "It is attracted to the magnet if the glass is dark",
+        "It is attracted to the magnet if the glass is broken into cullet"
+      ],
+      "explanation": "The module says only ferromagnetic metals such as iron and steel are attracted to magnets; glass is not.",
+      "sourceChunk": "6.8",
+      "pdfPage": 27,
+      "quote": "Logam feromagnetik (besi, baja) tertarik magnet, sedangkan aluminium, tembaga, kaca, dan plastik tidak.",
+      "status": "accepted"
+    },
+    {
+      "id": "glass-mc-05",
+      "pool": "glass",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "What is the difference between recycling glass and recycling paper?",
+      "correct": "Glass can be recycled many times without losing quality, while paper fibres get shorter every time they are recycled",
+      "wrong": [
+        "Paper can be recycled endlessly, while glass only once",
+        "Both lose quality and can only be recycled once",
+        "Both are processed by breaking them down in water (pulping)"
+      ],
+      "explanation": "The module says glass does not lose quality when recycled, while paper fibres get shorter, so paper can only be recycled a few times.",
+      "sourceChunk": "4.5",
+      "pdfPage": 21,
+      "quote": "Kaca dapat didaur ulang berkali-kali tanpa kehilangan mutu; botol utuh lebih baik dipakai ulang (reuse).",
+      "status": "accepted"
+    },
+    {
+      "id": "glass-mc-06",
+      "pool": "glass",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "A CFL breaks in a bedroom. Which action is safe?",
+      "correct": "Wearing gloves and collecting the pieces with stiff card or sticky tape",
+      "wrong": [
+        "Sweeping up the pieces and throwing them in the ordinary glass group",
+        "Vacuuming the pieces so none are left behind",
+        "Burning the pieces so the mercury disappears"
+      ],
+      "explanation": "CFLs contain mercury; the module asks for the pieces to be collected with gloves, without a broom or vacuum cleaner, and treated as B3.",
+      "sourceChunk": "2.8",
+      "pdfPage": 15,
+      "quote": "Gunakan sarung tangan; kumpulkan pecahan dengan kertas karton atau selotip.",
+      "status": "accepted"
+    },
+    {
+      "id": "glass-essay-01",
+      "pool": "glass",
+      "type": "essay",
+      "difficulty": "Sedang",
+      "question": "Explain the glass recycling process and why intact glass bottles are better reused.",
+      "sourceChunk": "4.5",
+      "pdfPage": 21,
+      "rubricPoints": [
+        {
+          "point": "Glass is sorted by colour, washed, crushed into cullet, melted and formed again.",
+          "sourceChunk": "4.5",
+          "pdfPage": 21,
+          "quote": "Kaca: dipilah menurut warna, dicuci, dihancurkan (cullet), dilebur, dan dibentuk ulang."
+        },
+        {
+          "point": "Glass can be recycled many times without losing quality, but intact bottles are better reused.",
+          "sourceChunk": "4.5",
+          "pdfPage": 21,
+          "quote": "Kaca dapat didaur ulang berkali-kali tanpa kehilangan mutu; botol utuh lebih baik dipakai ulang (reuse)."
+        },
+        {
+          "point": "In the 3Rs, reuse comes before recycle.",
+          "sourceChunk": "4.1",
+          "pdfPage": 20,
+          "quote": "Urutan menunjukkan prioritas: Reduce lebih utama daripada Reuse, dan Reuse lebih utama daripada Recycle."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "glass-essay-02",
+      "pool": "glass",
+      "type": "essay",
+      "difficulty": "Sulit",
+      "question": "Explain why not every glass item may be put in the ordinary non-organic group.",
+      "sourceChunk": "1.4",
+      "pdfPage": 7,
+      "rubricPoints": [
+        {
+          "point": "Fluorescent tubes, neon lamps and CFLs contain mercury, so they are B3.",
+          "sourceChunk": "1.4",
+          "pdfPage": 7,
+          "quote": "Lampu bohlam pijar biasa terbuat dari kaca dan kawat logam, tetapi lampu TL, neon, dan lampu hemat energi (CFL) mengandung merkuri sehingga termasuk sampah B3 (Bab 2)."
+        },
+        {
+          "point": "Non-organic items such as glass move to the B3 group when they contain hazardous materials.",
+          "sourceChunk": "1.6",
+          "pdfPage": 8,
+          "quote": "Sebagian benda non-organik (logam, kaca) sebenarnya berpindah ke kelompok B3 bila mengandung bahan berbahaya."
+        },
+        {
+          "point": "Broken neon lamps or CFLs are kept in a closed container and treated as B3.",
+          "sourceChunk": "2.8",
+          "pdfPage": 15,
+          "quote": "3. Masukkan semua pecahan ke wadah tertutup (misalnya toples kaca bertutup) dan perlakukan sebagai sampah B3."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "metal-mc-01",
+      "pool": "metal",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "When sorting metal items, which group of items can be collected together?",
+      "correct": "Aluminium drink cans, iron scraps and metal pipes",
+      "wrong": [
+        "Glass bottles and mirrors",
+        "Plastic bags and styrofoam",
+        "Old tyres and rubber sandals"
+      ],
+      "explanation": "The module gives aluminium cans, iron scraps, steel, copper, pipes and metal wire as examples of metal waste.",
+      "sourceChunk": "1.4",
+      "pdfPage": 7,
+      "quote": "Kaleng aluminium minuman dan makanan kaleng, potongan besi, baja, tembaga, pipa dan kawat logam.",
+      "status": "accepted"
+    },
+    {
+      "id": "metal-mc-02",
+      "pool": "metal",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Roughly how much energy does recycling aluminium need compared with making it from bauxite ore?",
+      "correct": "About 5%",
+      "wrong": [
+        "About 50%",
+        "About 95%",
+        "The same, about 100%"
+      ],
+      "explanation": "The module says recycling aluminium needs only about 5% of the energy of producing it from bauxite; 95% is the saving.",
+      "sourceChunk": "4.4",
+      "pdfPage": 21,
+      "quote": "Daur ulang logam, khususnya aluminium, sangat hemat energi: mendaur ulang aluminium hanya memerlukan sekitar 5% energi dibanding membuatnya dari bijih bauksit (Tchobanoglous dkk., 1993).",
+      "status": "accepted"
+    },
+    {
+      "id": "metal-mc-03",
+      "pool": "metal",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "What is a simple way to tell a steel can from an aluminium can?",
+      "correct": "Hold a magnet near it: the can that sticks is steel",
+      "wrong": [
+        "Hold a magnet near it: the can that sticks is aluminium",
+        "Read the resin identification code on the can",
+        "Sort the cans by colour, like sorting glass"
+      ],
+      "explanation": "The module explains that iron and steel are attracted to magnets while aluminium is not, so a magnet separates the two kinds of cans.",
+      "sourceChunk": "6.8",
+      "pdfPage": 27,
+      "quote": "Uji sederhana di kelas: dekatkan magnet ke kaleng; bila menempel, kaleng berbahan baja.",
+      "status": "accepted"
+    },
+    {
+      "id": "metal-mc-04",
+      "pool": "metal",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "In the melting stage of metal recycling, which metal melts at a lower temperature?",
+      "correct": "Aluminium, at about 660°C",
+      "wrong": [
+        "Iron, at about 660°C",
+        "Aluminium, at about 1538°C",
+        "Both are the same, about 200-300°C"
+      ],
+      "explanation": "The module says aluminium is melted at about 660°C and iron at about 1538°C; 200-300°C is the melting temperature of plastic.",
+      "sourceChunk": "4.4",
+      "pdfPage": 21,
+      "quote": "3. Peleburan di tanur: aluminium sekitar 660°C, besi sekitar 1538°C.",
+      "status": "accepted"
+    },
+    {
+      "id": "metal-mc-05",
+      "pool": "metal",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "In theory, melting 1 kg of aluminium from 25°C needs about 0.97 MJ. Why does a real furnace need more energy?",
+      "correct": "Because heat is lost; that calculation is only the minimum energy for melting",
+      "wrong": [
+        "Because aluminium has to be heated to about 1538°C",
+        "Because the calculation already includes the energy for bauxite electrolysis",
+        "Because the latent heat of melting aluminium was left out"
+      ],
+      "explanation": "The module stresses that 0.97 MJ is the theoretical limit; real furnaces need more because of heat losses.",
+      "sourceChunk": "6.2",
+      "pdfPage": 26,
+      "quote": "Ini hanya energi minimum untuk meleburkan; tanur nyata memerlukan lebih banyak karena rugi panas.",
+      "status": "accepted"
+    },
+    {
+      "id": "metal-mc-06",
+      "pool": "metal",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "What is the basis of the claim that recycling aluminium saves about 95% of the energy?",
+      "correct": "The energy to melt aluminium is far smaller than the energy to produce it from bauxite by electrolysis",
+      "wrong": [
+        "Used aluminium does not need to be melted when recycled",
+        "Aluminium melts at a higher temperature than iron",
+        "Aluminium cans can be separated with a magnet, so they do not need sorting"
+      ],
+      "explanation": "The module compares the theoretical energy for melting aluminium with the much larger energy for producing it from bauxite by electrolysis.",
+      "sourceChunk": "6.2",
+      "pdfPage": 26,
+      "quote": "Namun nilai ini jauh lebih kecil daripada energi untuk memproduksi aluminium dari bauksit lewat elektrolisis, yang menjadi dasar klaim bahwa daur ulang aluminium hemat sekitar 95% energi.",
+      "status": "accepted"
+    },
+    {
+      "id": "metal-essay-01",
+      "pool": "metal",
+      "type": "essay",
+      "difficulty": "Sedang",
+      "question": "Explain the stages of metal recycling and how iron-based metals are separated from other metals.",
+      "sourceChunk": "4.4",
+      "pdfPage": 21,
+      "rubricPoints": [
+        {
+          "point": "Metals are sorted by type; a magnet can separate iron-based metals.",
+          "sourceChunk": "4.4",
+          "pdfPage": 21,
+          "quote": "1. Pengumpulan dan pemilahan menurut jenis logam (magnet dapat memisahkan logam besi)."
+        },
+        {
+          "point": "The metal is cleaned of contaminants such as paint and plastic.",
+          "sourceChunk": "4.4",
+          "pdfPage": 21,
+          "quote": "2. Pembersihan dari kontaminan (cat, plastik)."
+        },
+        {
+          "point": "The metal is melted, refined, and then cast into ingots or new products.",
+          "sourceChunk": "4.4",
+          "pdfPage": 21,
+          "quote": "5. Pencetakan menjadi ingot atau produk baru."
+        },
+        {
+          "point": "Iron and steel are attracted to magnets, while aluminium is not.",
+          "sourceChunk": "6.8",
+          "pdfPage": 27,
+          "quote": "Logam feromagnetik (besi, baja) tertarik magnet, sedangkan aluminium, tembaga, kaca, dan plastik tidak."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "metal-essay-02",
+      "pool": "metal",
+      "type": "essay",
+      "difficulty": "Sulit",
+      "question": "Explain why recycling aluminium is strongly recommended, comparing the energy of recycling with producing it from ore.",
+      "sourceChunk": "6.2",
+      "pdfPage": 26,
+      "rubricPoints": [
+        {
+          "point": "Recycling aluminium needs only about 5% of the energy of producing it from bauxite.",
+          "sourceChunk": "4.4",
+          "pdfPage": 21,
+          "quote": "Daur ulang logam, khususnya aluminium, sangat hemat energi: mendaur ulang aluminium hanya memerlukan sekitar 5% energi dibanding membuatnya dari bijih bauksit (Tchobanoglous dkk., 1993)."
+        },
+        {
+          "point": "The theoretical energy to melt 1 kg of aluminium is about 0.97 MJ.",
+          "sourceChunk": "6.2",
+          "pdfPage": 26,
+          "quote": "Total Q = 968.500 J ≈ 0,97 MJ."
+        },
+        {
+          "point": "That energy is far smaller than producing it from bauxite by electrolysis, even though real furnaces need more because of heat losses.",
+          "sourceChunk": "6.2",
+          "pdfPage": 26,
+          "quote": "Namun nilai ini jauh lebih kecil daripada energi untuk memproduksi aluminium dari bauksit lewat elektrolisis, yang menjadi dasar klaim bahwa daur ulang aluminium hemat sekitar 95% energi."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "tetra_pak-mc-01",
+      "pool": "tetra_pak",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "What kind of packaging is a drink carton such as a milk or juice box?",
+      "correct": "Multilayer packaging",
+      "wrong": [
+        "Metal packaging without layers",
+        "Plain paper packaging without layers",
+        "Glass packaging"
+      ],
+      "explanation": "The module calls drink cartons multilayer packaging.",
+      "sourceChunk": "4.6",
+      "pdfPage": 21,
+      "quote": "Kemasan karton minuman, misalnya kotak susu atau jus (sering dikenal dengan merek Tetra Pak), adalah kemasan berlapis (multilayer).",
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "tetra_pak-mc-02",
+      "pool": "tetra_pak",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Which materials make up a drink carton?",
+      "correct": "Paperboard coated with plastic and a thin layer of aluminium foil",
+      "wrong": [
+        "Paperboard coated with glass",
+        "Plastic and steel",
+        "Plain paper only"
+      ],
+      "explanation": "The module says this packaging is mostly paperboard, coated with plastic and thin aluminium foil.",
+      "sourceChunk": "4.6",
+      "pdfPage": 21,
+      "quote": "Sebagian besar terdiri dari kertas karton, dilapisi plastik dan lapisan tipis aluminium foil.",
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "tetra_pak-mc-03",
+      "pool": "tetra_pak",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "Why is a used drink carton put with recyclable non-organic waste rather than compost?",
+      "correct": "Its plastic and aluminium layers mean the packaging cannot be composted",
+      "wrong": [
+        "Its paper contains mercury",
+        "The packaging is B3 waste",
+        "Its paper cannot be recycled at all"
+      ],
+      "explanation": "Even though it is mostly paper, this packaging has plastic and aluminium layers, so it cannot be composted and goes with recyclable non-organic waste.",
+      "sourceChunk": "4.6",
+      "pdfPage": 22,
+      "quote": "Kemasan karton minuman bekas termasuk sampah non-organik yang dapat didaur ulang meskipun sebagian besar bahannya kertas, karena berlapis plastik dan aluminium sehingga tidak dapat dikomposkan.",
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "tetra_pak-mc-04",
+      "pool": "tetra_pak",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "What do the plastic and aluminium layers in a drink carton do?",
+      "correct": "They keep the drink fresh and stop leaks",
+      "wrong": [
+        "They make the packaging easy to compost",
+        "They make the packaging stick to a magnet when sorted",
+        "They make the packaging B3 waste"
+      ],
+      "explanation": "The module says the plastic and aluminium layers keep the drink fresh and stop leaks.",
+      "sourceChunk": "4.6",
+      "pdfPage": 21,
+      "quote": "Lapisan plastik dan aluminium menjaga isi minuman tetap awet dan tidak bocor.",
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "tetra_pak-mc-05",
+      "pool": "tetra_pak",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "What happens in the pulping stage of drink carton recycling?",
+      "correct": "The carton is mixed with water in a pulper so the paper fibres come away from the plastic and aluminium layers",
+      "wrong": [
+        "The packaging is melted at about 660°C to separate the aluminium",
+        "The packaging is separated with a magnet to take out the aluminium",
+        "The packaging is composted so its plastic layer breaks down"
+      ],
+      "explanation": "According to the recycling stages quoted in the module, pulping uses water in a pulper to free the fibres from the plastic and aluminium.",
+      "sourceChunk": "4.6",
+      "pdfPage": 22,
+      "quote": "2. Pulping: karton dicampur dengan air di mesin pulper sehingga serat kertas terlepas dari lapisan plastik dan aluminium.",
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "tetra_pak-mc-06",
+      "pool": "tetra_pak",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "After the paper fibres are separated, what happens to the PolyAl (the leftover plastic and aluminium)?",
+      "correct": "It is shredded and processed into granules, then made into things such as corrugated roofing sheets",
+      "wrong": [
+        "It is sent to the landfill because it cannot be processed",
+        "It is composted together with organic waste",
+        "It is handed to a B3 management facility"
+      ],
+      "explanation": "The module says PolyAl is shredded and processed into granules, and its products include corrugated roofing sheets.",
+      "sourceChunk": "4.6",
+      "pdfPage": 22,
+      "quote": "4. Daur ulang PolyAl: plastik dan aluminium yang tersisa dicacah dan diolah menjadi granul.",
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "tetra_pak-essay-01",
+      "pool": "tetra_pak",
+      "type": "essay",
+      "difficulty": "Sedang",
+      "question": "Explain why drink cartons are treated differently from plain paper in waste sorting.",
+      "sourceChunk": "4.6",
+      "pdfPage": 21,
+      "rubricPoints": [
+        {
+          "point": "This packaging has layers: paperboard, plastic and aluminium foil.",
+          "sourceChunk": "4.6",
+          "pdfPage": 21,
+          "quote": "Sebagian besar terdiri dari kertas karton, dilapisi plastik dan lapisan tipis aluminium foil."
+        },
+        {
+          "point": "Because it is layered, the packaging cannot be composted and goes with recyclable non-organic waste.",
+          "sourceChunk": "4.6",
+          "pdfPage": 22,
+          "quote": "Kemasan karton minuman bekas termasuk sampah non-organik yang dapat didaur ulang meskipun sebagian besar bahannya kertas, karena berlapis plastik dan aluminium sehingga tidak dapat dikomposkan."
+        },
+        {
+          "point": "Laminated paper such as drink cartons is not suitable for composting.",
+          "sourceChunk": "1.3",
+          "pdfPage": 7,
+          "quote": "Kertas berlapis plastik, berminyak, atau berlaminasi (misalnya kemasan karton minuman, lihat 4.6) tidak cocok dikomposkan."
+        }
+      ],
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "tetra_pak-essay-02",
+      "pool": "tetra_pak",
+      "type": "essay",
+      "difficulty": "Sulit",
+      "question": "Describe how drink cartons are recycled in a facility that separates the fibres from the PolyAl layer.",
+      "sourceChunk": "4.6",
+      "pdfPage": 22,
+      "rubricPoints": [
+        {
+          "point": "Pulping frees the paper fibres from the plastic and aluminium layers.",
+          "sourceChunk": "4.6",
+          "pdfPage": 22,
+          "quote": "2. Pulping: karton dicampur dengan air di mesin pulper sehingga serat kertas terlepas dari lapisan plastik dan aluminium."
+        },
+        {
+          "point": "The fibres are cleaned, dried and then made into new paper sheets.",
+          "sourceChunk": "4.6",
+          "pdfPage": 22,
+          "quote": "3. Daur ulang serat: serat dibersihkan, diperas, dikeringkan, lalu dibuat menjadi lembaran kertas baru."
+        },
+        {
+          "point": "The PolyAl is shredded and processed into granules.",
+          "sourceChunk": "4.6",
+          "pdfPage": 22,
+          "quote": "4. Daur ulang PolyAl: plastik dan aluminium yang tersisa dicacah dan diolah menjadi granul."
+        },
+        {
+          "point": "The final products include paper products and corrugated roofing sheets.",
+          "sourceChunk": "4.6",
+          "pdfPage": 22,
+          "quote": "5. Produk: serat kertas menjadi produk kertas; PolyAl menjadi antara lain lembar atap gelombang."
+        }
+      ],
+      "status": "accepted",
+      "sourceQuality": "company_sourced"
+    },
+    {
+      "id": "e_waste_b3-mc-01",
+      "pool": "e_waste_b3",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "Broken electronics contain metals that can be recovered. Why must they still be kept apart from ordinary metal waste?",
+      "correct": "Because they also contain hazardous materials, so they are treated as B3 waste",
+      "wrong": [
+        "Because they can be composted",
+        "Because they contain no recoverable metals",
+        "Because they are paper waste"
+      ],
+      "explanation": "The module says e-waste contains metals but also hazardous materials, so it is treated as B3 waste.",
+      "sourceChunk": "1.4",
+      "pdfPage": 7,
+      "quote": "Perangkat elektronik rusak (e-waste) mengandung logam, tetapi juga mengandung bahan berbahaya sehingga dibahas sebagai sampah B3 di Bab 2.",
+      "status": "accepted"
+    },
+    {
+      "id": "e_waste_b3-mc-02",
+      "pool": "e_waste_b3",
+      "type": "mc",
+      "difficulty": "Mudah",
+      "question": "How many groups are used in good waste sorting at the source?",
+      "correct": "Three: organic, non-organic and B3",
+      "wrong": [
+        "Two: organic and non-organic",
+        "Four: organic, plastic, paper and metal",
+        "One: all waste is mixed and then sorted at the landfill"
+      ],
+      "explanation": "The module stresses that good sorting at the source uses three groups, with B3 as the third group.",
+      "sourceChunk": "1.6",
+      "pdfPage": 8,
+      "quote": "Pemilahan di sumber yang baik memakai tiga kelompok, bukan dua.",
+      "status": "accepted"
+    },
+    {
+      "id": "e_waste_b3-mc-03",
+      "pool": "e_waste_b3",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "What is the community's role in managing e-waste?",
+      "correct": "Sorting it, storing it safely and handing it in at a collection point",
+      "wrong": [
+        "Taking it apart and melting it themselves to get the metals",
+        "Burning the cables so the copper is easy to take",
+        "Throwing it away with ordinary metal waste"
+      ],
+      "explanation": "The module says recovering materials from B3 may only be done by licensed facilities; the community sorts, stores and hands it in.",
+      "sourceChunk": "4.7",
+      "pdfPage": 22,
+      "quote": "Peran masyarakat adalah memilah, menyimpan aman, dan menyetor.",
+      "status": "accepted"
+    },
+    {
+      "id": "e_waste_b3-mc-04",
+      "pool": "e_waste_b3",
+      "type": "mc",
+      "difficulty": "Sedang",
+      "question": "What happens if B3 such as broken electronics ends up in the landfill with ordinary waste?",
+      "correct": "Leachate can carry heavy metals into the soil and groundwater",
+      "wrong": [
+        "The electronics break down into compost",
+        "The electronics produce biogas that is worth energy",
+        "Their heavy metals turn into harmless methane"
+      ],
+      "explanation": "The module explains that B3 piling up in the landfill is carried by leachate, so heavy metals pollute the soil and groundwater.",
+      "sourceChunk": "2.7",
+      "pdfPage": 14,
+      "quote": "B3 yang terbuang bersama sampah biasa menumpuk di TPA, lalu lindi (cairan rembesan) membawa logam berat ke tanah dan air tanah.",
+      "status": "accepted"
+    },
+    {
+      "id": "e_waste_b3-mc-05",
+      "pool": "e_waste_b3",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Someone burns old cables and soaks circuit boards in acid to get the metals out. Why is this dangerous?",
+      "correct": "It is very dangerous for workers and the environment; B3 recycling may only be done by licensed facilities",
+      "wrong": [
+        "It is recommended because it counts as recycle in the 3R principle",
+        "It is safe as long as it is done outdoors",
+        "It is fine because metals from e-waste are not dangerous"
+      ],
+      "explanation": "The module warns that informal e-waste recycling is very dangerous and may only be done by licensed facilities.",
+      "sourceChunk": "2.9",
+      "pdfPage": 15,
+      "quote": "Daur ulang e-waste secara informal (membakar kabel, merendam papan sirkuit dengan asam) sangat berbahaya bagi pekerja dan lingkungan.",
+      "status": "accepted"
+    },
+    {
+      "id": "e_waste_b3-mc-06",
+      "pool": "e_waste_b3",
+      "type": "mc",
+      "difficulty": "Sulit",
+      "question": "Substances such as mercury and lead from B3 can biomagnify. What does that mean?",
+      "correct": "Their concentration rises at each level of the food chain",
+      "wrong": [
+        "Their concentration falls at each level of the food chain",
+        "Microorganisms break them down into compost",
+        "They turn into methane in the landfill"
+      ],
+      "explanation": "The module explains biomagnification as the concentration of a substance rising at each level of the food chain.",
+      "sourceChunk": "2.7",
+      "pdfPage": 14,
+      "quote": "Zat seperti merkuri dan timbal terakumulasi di tubuh makhluk hidup dan terbiomagnifikasi (konsentrasi naik di setiap tingkat rantai makanan).",
+      "status": "accepted"
+    },
+    {
+      "id": "e_waste_b3-essay-01",
+      "pool": "e_waste_b3",
+      "type": "essay",
+      "difficulty": "Sedang",
+      "question": "Explain the safe steps for handling e-waste or used batteries at home until they are handed to the right place.",
+      "sourceChunk": "2.8",
+      "pdfPage": 14,
+      "rubricPoints": [
+        {
+          "point": "Recognise B3 from its label and hazard symbols.",
+          "sourceChunk": "2.8",
+          "pdfPage": 14,
+          "quote": "1. Kenali: baca label produk; simbol bahaya (api, tengkorak, korosif, tanda seru) menandakan B3."
+        },
+        {
+          "point": "Keep it apart in a special container that is dry, closed and away from children and heat.",
+          "sourceChunk": "2.8",
+          "pdfPage": 14,
+          "quote": "2. Pisahkan: sediakan satu wadah khusus B3 yang kering, tertutup, dan jauh dari anak-anak serta panas."
+        },
+        {
+          "point": "Do not burn batteries or electronic waste.",
+          "sourceChunk": "2.8",
+          "pdfPage": 14,
+          "quote": "Jangan membakar baterai, aerosol, atau sampah elektronik."
+        },
+        {
+          "point": "Hand it in at a collection point, for example an e-waste drop box or a manufacturer take-back programme.",
+          "sourceChunk": "2.8",
+          "pdfPage": 14,
+          "quote": "4. Kumpulkan sedikit demi sedikit, lalu serahkan ke titik pengumpulan: dinas lingkungan hidup, bank sampah yang menerima B3 atau e-waste, drop box e-waste, program take-back produsen, atau pengelola limbah B3 berizin."
+        }
+      ],
+      "status": "accepted"
+    },
+    {
+      "id": "e_waste_b3-essay-02",
+      "pool": "e_waste_b3",
+      "type": "essay",
+      "difficulty": "Sulit",
+      "question": "Why is e-waste not recycled by people themselves, even though it contains valuable metals? Also explain the impact if it is thrown away or processed carelessly.",
+      "sourceChunk": "4.7",
+      "pdfPage": 22,
+      "rubricPoints": [
+        {
+          "point": "B3 waste is not recycled by people themselves.",
+          "sourceChunk": "4.7",
+          "pdfPage": 22,
+          "quote": "Berbeda dari plastik atau kertas, sampah B3 tidak didaur ulang oleh masyarakat sendiri."
+        },
+        {
+          "point": "Recovering materials from B3 may only be done by licensed facilities.",
+          "sourceChunk": "4.7",
+          "pdfPage": 22,
+          "quote": "Pemulihan material dari B3 hanya boleh dilakukan fasilitas berizin."
+        },
+        {
+          "point": "Informal recycling is very dangerous for workers and the environment.",
+          "sourceChunk": "2.9",
+          "pdfPage": 15,
+          "quote": "Daur ulang e-waste secara informal (membakar kabel, merendam papan sirkuit dengan asam) sangat berbahaya bagi pekerja dan lingkungan."
+        },
+        {
+          "point": "B3 thrown into the landfill is carried by leachate into the soil and groundwater.",
+          "sourceChunk": "2.7",
+          "pdfPage": 14,
+          "quote": "B3 yang terbuang bersama sampah biasa menumpuk di TPA, lalu lindi (cairan rembesan) membawa logam berat ke tanah dan air tanah."
+        }
+      ],
+      "status": "accepted"
+    }
+  ]
+}
