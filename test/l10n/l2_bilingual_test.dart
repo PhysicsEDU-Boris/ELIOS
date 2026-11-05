@@ -244,6 +244,26 @@ void main() {
       expect(q.yourAnswer, 'Its density is lower');
     });
 
+    test('records saved without options (before H3) translate their answers as text', () async {
+      final old = _record();
+      final noOptions = old.copyWith(questions: [
+        RecordQuestion(question: old.questions.first.question, yourAnswer: old.questions.first.yourAnswer,
+            rightAnswer: old.questions.first.rightAnswer, isCorrect: false),
+      ]);
+      await store.clearRecords();
+      await store.addRecord(noOptions);
+      Map<String, dynamic>? sent;
+      AiQuizService.instance.mockSendExecute = (p, {imageBytes, isUser = false}) async {
+        sent = jsonDecode(p.substring(p.indexOf('Data: ') + 6)) as Map<String, dynamic>;
+        return jsonEncode({'en': {'item': 'Plastic bottle', 'questions': [
+          {'question': 'Why?', 'yourAnswer': 'Lower density', 'rightAnswer': 'Higher density'},
+        ]}});
+      };
+      expect(await HistoryTranslationService.ensure(store, store.records.first, 'en'), isTrue);
+      expect((sent!['questions'] as List).first.containsKey('options'), isFalse);
+      expect(store.records.first.localized('en').questions.first.rightAnswer, 'Higher density');
+    });
+
     test(
       'a reply that changes the correct answer is rejected and nothing is saved',
       () async {

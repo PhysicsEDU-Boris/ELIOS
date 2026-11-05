@@ -77,7 +77,8 @@ class HistoryTranslationService {
           {
             if (withQuestions) ...{
               'question': r.questions[i].question,
-              'options': r.questions[i].options,
+              // Records before H3 saved no options; then the answers travel alone.
+              if (r.questions[i].options.isNotEmpty) 'options': r.questions[i].options,
               'yourAnswer': r.questions[i].yourAnswer,
               'rightAnswer': r.questions[i].rightAnswer,
             },
@@ -136,7 +137,7 @@ class HistoryTranslationService {
             got['rightAnswer'],
             empty: src.rightAnswer.isEmpty,
           );
-          final opts = got['options'];
+          final opts = src.options.isEmpty ? const [] : got['options'];
           if (question == null ||
               yours == null ||
               right == null ||
@@ -159,10 +160,10 @@ class HistoryTranslationService {
             return fail('question $i chosen answer moved');
           }
           final rightText = rightAt >= 0 ? list[rightAt] : right;
-          final yoursText = yoursAt >= 0 ? list[yoursAt] : yours;
-          if (src.yourAnswer == src.rightAnswer && yoursText != rightText) {
-            return fail('question $i answers differ');
-          }
+          // A right answer stays identical to the key in every language.
+          final yoursText = src.yourAnswer == src.rightAnswer
+              ? rightText
+              : (yoursAt >= 0 ? list[yoursAt] : yours);
           base = QuestionText(
             question: question,
             options: list,
