@@ -63,3 +63,4 @@ their status changed.
 | [0184](0184-history-h3-ai-explanations.md) | H3 History: scan list/detail, per-question explanation route with saved ELIOS AI explanations, TTS and per-question PDF | Accepted |
 | [0185](0185-ui-localization-gen-l10n.md) | UI languages: gen-l10n with English ARB as source, Gemini script fills other ARB files, language picker under Dark mode in the sidebar; L2 live switch of all content and ELIO→ELIOS rename | Proposed |
 | [0187](0187-h3-history-redesign.md) | H3 History redesign from Figma: trophy hero, category tiles, day groups, result stats, difficulty tabs, gamified explanation (result hero, answer tiles, learn/key idea/mission cards), all strings via ARB | Proposed |
+| [0188](0188-history-cloud-storage.md) | History cloud storage: not needed for space (shrink photos/WebView cache first); optional Firestore JSON backup with local-first sync, photos stay local (R2 later) | Proposed |

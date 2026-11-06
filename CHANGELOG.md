@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- Docs: History cloud storage study (decision 0188, proposed). History is ~75 KB per scan, so phone storage is not a reason for the cloud; shrink photos and the WebView cache first. Optional backup: Firestore record JSON with local-first sync; photos stay on the phone. No app change.
+
 - History cards: recent scans are now a grid of cards with the whole scan photo as a tilted polaroid (never cropped), a score bar and "Lihat hasil". Scan detail shows the photo uncropped in a frame, and a new full-screen viewer lets you pinch or double-tap to zoom, swipe down to close and share the photo (decision 0187).
 
 - History redesign (newest Figma): a green trophy hero with your level art, category tiles with bin buddies to filter, scans grouped by day, result stats and difficulty tabs on the detail, and a playful explanation screen (result hero with the bottle buddy, answer tiles, learn cards, key idea and a "Misimu" step path). Light and dark, English and Bahasa Indonesia, switching live with the language picker. The History list now scrolls right up to the bottom bar like the other tabs, with no empty band above it (decision 0187).
