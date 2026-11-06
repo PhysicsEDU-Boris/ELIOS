@@ -7444,7 +7444,7 @@ abstract class AppLocalizations {
   /// No description provided for @h3MissionDone.
   ///
   /// In en, this message translates to:
-  /// **'Mission complete:'**
+  /// **'Mission complete: you know how to sort it right.'**
   String get h3MissionDone;
 }
 

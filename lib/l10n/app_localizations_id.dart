@@ -4247,5 +4247,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get h3MissionDone => 'Misi selesai:';
+  String get h3MissionDone =>
+      'Misi selesai: kamu tahu cara memilahnya dengan benar.';
 }

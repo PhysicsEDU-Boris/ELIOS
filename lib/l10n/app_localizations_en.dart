@@ -4321,5 +4321,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get h3MissionDone => 'Mission complete:';
+  String get h3MissionDone =>
+      'Mission complete: you know how to sort it right.';
 }

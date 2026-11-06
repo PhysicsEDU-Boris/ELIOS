@@ -348,7 +348,6 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                     const SizedBox(height: 16),
                     HistoryMission(
                       steps: steps,
-                      done: _explanation?.summary ?? '',
                       active: _playing == 'steps',
                       onListen: () => _listen('steps', body('steps')!),
                     ),

@@ -1484,29 +1484,28 @@ class HistoryKeyIdea extends StatelessWidget {
 }
 
 /// Mission card: flag tile, "Misimu" + step count, listen, numbered path
-/// with a `primary/fill` rail, medal finish row ([done], when there is one).
+/// with a `primary/fill` rail and a medal finish row. The finish line is a
+/// fixed sentence: the saved AI summary repeats the "why" text at length.
 class HistoryMission extends StatelessWidget {
   const HistoryMission({
     super.key,
     required this.steps,
-    required this.done,
     required this.active,
     required this.onListen,
   });
   final List<String> steps;
-  final String done;
   final bool active;
   final VoidCallback onListen;
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context), t = context.l10n;
     final warn = historyTint(p, HistoryTone.warning);
-    Widget rail({required bool line, Widget? head}) => SizedBox(
+    Widget rail(Widget head) => SizedBox(
       width: 28,
       child: Column(
         children: [
-          ?head,
-          if (line) Expanded(child: Container(width: 2, color: p.primary)),
+          head,
+          Expanded(child: Container(width: 2, color: p.primary)),
         ],
       ),
     );
@@ -1546,8 +1545,7 @@ class HistoryMission extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 rail(
-                  line: i < steps.length - 1 || done.isNotEmpty,
-                  head: Container(
+                  Container(
                     width: 28,
                     height: 28,
                     alignment: Alignment.center,
@@ -1574,24 +1572,23 @@ class HistoryMission extends StatelessWidget {
               ],
             ),
           ),
-        if (done.isNotEmpty)
-          Row(
-            children: [
-              SvgPicture.asset(
-                'assets/illustrations/home/medal_gold.svg',
-                width: 28,
-                height: 33,
-                excludeFromSemantics: true,
+        Row(
+          children: [
+            SvgPicture.asset(
+              'assets/illustrations/home/medal_gold.svg',
+              width: 28,
+              height: 33,
+              excludeFromSemantics: true,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                t.h3MissionDone,
+                style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  '${t.h3MissionDone} $done',
-                  style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
+        ),
       ],
     );
   }
