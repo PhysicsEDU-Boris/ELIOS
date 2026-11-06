@@ -5194,7 +5194,7 @@ abstract class AppLocalizations {
   /// No description provided for @h3All.
   ///
   /// In en, this message translates to:
-  /// **'All'**
+  /// **'All scans'**
   String get h3All;
 
   /// No description provided for @h3CatB3.
@@ -5329,29 +5329,11 @@ abstract class AppLocalizations {
   /// **'Scan detail couldn\'t be loaded'**
   String get h3DetailLoadFailed;
 
-  /// No description provided for @h3ScannedMeta.
-  ///
-  /// In en, this message translates to:
-  /// **'Scanned {time} · photo and {count, plural, =1{1 question} other{{count} questions}} saved locally'**
-  String h3ScannedMeta(Object time, int count);
-
   /// No description provided for @h3DiffChip.
   ///
   /// In en, this message translates to:
   /// **'{level} · {count}Q'**
   String h3DiffChip(Object level, Object count);
-
-  /// No description provided for @h3CorrectOf.
-  ///
-  /// In en, this message translates to:
-  /// **'{correct} of {total} correct'**
-  String h3CorrectOf(Object correct, Object total);
-
-  /// No description provided for @h3TrophyRule.
-  ///
-  /// In en, this message translates to:
-  /// **'10 trophies for every correct answer'**
-  String get h3TrophyRule;
 
   /// No description provided for @h3Questions.
   ///
@@ -7374,6 +7356,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'(skipped)'**
   String get quizSkippedAnswer;
+
+  /// No description provided for @h3YourTrophies.
+  ///
+  /// In en, this message translates to:
+  /// **'Your trophies'**
+  String get h3YourTrophies;
+
+  /// No description provided for @h3TrophyUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{trophy} other{trophies}}'**
+  String h3TrophyUnit(int count);
+
+  /// No description provided for @h3StatTrophies.
+  ///
+  /// In en, this message translates to:
+  /// **'Trophies'**
+  String get h3StatTrophies;
+
+  /// No description provided for @h3StatScanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanned'**
+  String get h3StatScanned;
+
+  /// No description provided for @h3QuestionOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {index} of {total}'**
+  String h3QuestionOf(int index, int total);
+
+  /// No description provided for @h3HeroRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice one!'**
+  String get h3HeroRight;
+
+  /// No description provided for @h3HeroRightBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You got it right. Here\'s why it works.'**
+  String get h3HeroRightBody;
+
+  /// No description provided for @h3HeroWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite!'**
+  String get h3HeroWrong;
+
+  /// No description provided for @h3HeroWrongBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Good try. Let\'s find out why.'**
+  String get h3HeroWrongBody;
+
+  /// No description provided for @h3PlusTrophies.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{+1 trophy} other{+{count} trophies}}'**
+  String h3PlusTrophies(int count);
+
+  /// No description provided for @h3TheQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'The question'**
+  String get h3TheQuestion;
+
+  /// No description provided for @h3LearnWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s learn why'**
+  String get h3LearnWhy;
+
+  /// No description provided for @h3Mission.
+  ///
+  /// In en, this message translates to:
+  /// **'Your mission'**
+  String get h3Mission;
+
+  /// No description provided for @h3MissionSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 step to sort it right} other{{count} steps to sort it right}}'**
+  String h3MissionSteps(int count);
+
+  /// No description provided for @h3MissionDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Mission complete:'**
+  String get h3MissionDone;
 }
 
 class _AppLocalizationsDelegate

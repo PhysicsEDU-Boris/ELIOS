@@ -154,7 +154,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
       if (_q.isEssay && (e.essayFeedback ?? '').isNotEmpty)
         ('feedback', t.h3Feedback, e.essayFeedback!),
       if (e.keyIdea.isNotEmpty) ('idea', t.h3KeyIdeaTitle, e.keyIdea),
-      if (e.steps.isNotEmpty) ('steps', t.h3HowTo, e.steps.join('\n')),
+      if (e.steps.isNotEmpty) ('steps', t.h3Mission, e.steps.join('\n')),
     ];
   }
 
@@ -208,6 +208,25 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
     );
   }
 
+  /// Bulb buddy on the warning tint; "why wrong" shows the item's bin buddy.
+  Widget _learnArt(ElioPalette p, String id) => id == 'wrong'
+      ? historyArtTile(
+          historyTint(p, HistoryTone.error).bg,
+          homeArt(
+            switch (_record.category) {
+              ScanCategory.b3 => 'bin_b3',
+              ScanCategory.organic => 'bin_organik',
+              _ => 'bin_anorganik',
+            },
+            width: 36,
+            height: 40,
+          ),
+        )
+      : historyArtTile(
+          historyTint(p, HistoryTone.warning).bg,
+          homeArt('bulb_buddy', width: 40, height: 40),
+        );
+
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context), q = _q;
@@ -231,7 +250,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
           trailing: ListenableBuilder(
             listenable: widget.store,
             builder: (_, child) =>
-                HistoryTrophyPill(widget.store.totalTrophies),
+                HistoryTrophyPill('${widget.store.totalTrophies}'),
           ),
         ),
         body: _loading
@@ -245,71 +264,76 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                       lang: _record.lang,
                       onRetry: () => unawaited(_load()),
                     ),
-                  ConstrainedBox(
-                    // Figma meta row is 100 high with the chips centred.
-                    constraints: const BoxConstraints(minHeight: 100),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              HistoryQuestionBadge(
-                                _index + 1,
-                                correct: q.isCorrect,
-                                essay: q.isEssay,
-                              ),
-                              HistoryChip(
-                                historyDifficulty(
-                                  context.l10n,
-                                  _record.difficulty,
-                                ),
-                              ),
-                              HistoryResultChip(q),
-                              HistoryTrophyChip(q.trophies),
-                            ],
+                  HistoryResultHero(
+                    correct: q.isCorrect,
+                    index: _index,
+                    total: _record.questions.length,
+                    trophies: q.trophies,
+                  ),
+                  const SizedBox(height: 16),
+                  HistoryQuestionPanel(
+                    question: q.question,
+                    listen: _listenButton('question', q.question),
+                  ),
+                  const SizedBox(height: 16),
+                  if (q.isEssay) ...[
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: HistoryResultChip(q),
+                    ),
+                    const SizedBox(height: 8),
+                    HistoryAnswerTile(
+                      context.l10n.h3YourAnswer,
+                      q.yourAnswer,
+                      tone: HistoryTone.neutral,
+                    ),
+                    const SizedBox(height: 8),
+                    HistoryAnswerTile(
+                      context.l10n.h3ReferenceAnswer,
+                      q.rightAnswer,
+                      tone: HistoryTone.neutral,
+                    ),
+                  ] else if (q.isCorrect)
+                    HistoryAnswerTile(
+                      '${context.l10n.h3YourAnswer} · ${context.l10n.h3Correct}',
+                      q.yourAnswer,
+                    )
+                  else ...[
+                    HistoryAnswerTile(
+                      context.l10n.h3YourAnswer,
+                      q.yourAnswer,
+                      tone: HistoryTone.error,
+                    ),
+                    const SizedBox(height: 8),
+                    HistoryAnswerTile(
+                      context.l10n.h3CorrectAnswer,
+                      q.rightAnswer,
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      HistorySparkle(18, p.secondaryText),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Semantics(
+                          header: true,
+                          child: Text(
+                            context.l10n.h3LearnWhy,
+                            style: ElioTokens.subhead.copyWith(
+                              color: p.textPrimary,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        _listenButton('question', q.question),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    q.question,
-                    style: ElioTokens.headline.copyWith(color: p.textPrimary),
-                  ),
-                  const SizedBox(height: 16),
-                  HistoryAnswer(
-                    context.l10n.h3YourAnswer,
-                    q.yourAnswer,
-                    tone: q.isEssay
-                        ? HistoryTone.neutral
-                        : q.isCorrect
-                        ? HistoryTone.success
-                        : HistoryTone.error,
-                  ),
-                  const SizedBox(height: 8),
-                  HistoryAnswer(
-                    q.isEssay
-                        ? context.l10n.h3ReferenceAnswer
-                        : context.l10n.h3CorrectAnswer,
-                    q.rightAnswer,
-                    tone: q.isEssay ? HistoryTone.neutral : HistoryTone.success,
-                    check: !q.isEssay,
-                  ),
-                  const SizedBox(height: 16),
-                  HistorySectionHeader(context.l10n.h3ExplanationTitle),
-                  const SizedBox(height: 16),
-                  for (final (i, s)
-                      in sections
-                          .where((s) => s.$1 != 'idea' && s.$1 != 'steps')
-                          .indexed) ...[
-                    if (i > 0) const SizedBox(height: 4),
-                    HistoryExplanationSection(
+                  for (final s in sections.where(
+                    (s) => s.$1 != 'idea' && s.$1 != 'steps',
+                  )) ...[
+                    const SizedBox(height: 12),
+                    HistoryLearnCard(
+                      art: _learnArt(p, s.$1),
                       title: s.$2,
                       body: s.$3,
                       active: _playing == s.$1,
@@ -318,26 +342,15 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                   ],
                   if (idea != null) ...[
                     const SizedBox(height: 16),
-                    HistoryKeyIdea(
-                      active: _playing == 'idea',
-                      text: idea,
-                      art: homeArt(
-                        switch (_record.category) {
-                          ScanCategory.b3 => 'history_buddy_b3',
-                          ScanCategory.organic => 'bin_organik',
-                          _ => 'bin_anorganik',
-                        },
-                        width: 64,
-                        height: 76,
-                      ),
-                    ),
+                    HistoryKeyIdea(active: _playing == 'idea', text: idea),
                   ],
                   if (body('steps') != null) ...[
                     const SizedBox(height: 16),
-                    HistorySteps(
-                      title: context.l10n.h3HowTo,
+                    HistoryMission(
                       steps: steps,
+                      done: _explanation?.summary ?? '',
                       active: _playing == 'steps',
+                      onListen: () => _listen('steps', body('steps')!),
                     ),
                   ],
                   if (_explanation == null ||

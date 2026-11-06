@@ -1,4 +1,7 @@
-# Handoff — 5 Nov 2026
+# Handoff — 6 Nov 2026
+## H3 redesign — `feat/history-h3-redesign` (decision 0187)
+- Implements the newest Figma H3 (`design/h3-figma-refs`, merged in): trophy hero, category tiles, day groups, result stats, difficulty tabs, gamified explanation (right/wrong). All strings in ARB; live language switch tested (id <-> en), string audit 0.
+- Compare images en/id x light/dark: `docs/test-results/0187-h3-redesign/compare/`. Full suite: only the known token-radius failure (also on base). Not phone-tested, no build/install, owner data untouched.
 ## L2 languages — `feat/ui-localization` (PR #93, decision 0185)
 - Rebased on `feature/live-scan` after #94; decision renumbered 0184 -> 0185. Whole app via ARB (audit 0), live sidebar switch, intl dates/numbers, bilingual ELIOS AI (owner system prompt), History schema 5 with translation cache, English bank (needs owner review), Learn `i18n` fields, InfoPlist.strings, ELIO -> ELIOS.
 - Owner to do: deploy ai-backend (`cd ai-backend && npx vercel --prod`, prompt cap 16000); review `assets/quiz/*_draft.en.json`; run `tools/l10n/translate_firestore.py export en` / `upload` and `translate_assets.py module en` with `GEMINI_API_KEY`; re-export the module PDF (still says ELIO); airplane-mode check on the phone.

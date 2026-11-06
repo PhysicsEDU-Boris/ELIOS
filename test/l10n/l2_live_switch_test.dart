@@ -69,11 +69,11 @@ void main() {
     await pump(t, ScanHistoryScreen(store: HistoryTestStore([record])));
     expect(find.text('Recent scans'), findsOneWidget);
     expect(find.text('Yesterday · 2 questions'), findsOneWidget);
-    expect(find.text('1 scan'), findsOneWidget);
+    expect(find.text('1 scan'), findsWidgets); // tile + header count
     await switchTo(t, 'id');
     expect(find.text('Scan terbaru'), findsOneWidget);
     expect(find.text('Kemarin · 2 soal'), findsOneWidget);
-    expect(find.text('B3 · Berbahaya'), findsOneWidget);
+    expect(find.text('B3 · Berbahaya'), findsWidgets); // tile + row chip
     expect(find.text('Recent scans'), findsNothing);
     await switchTo(t, 'en');
     expect(find.text('Recent scans'), findsOneWidget);
@@ -98,6 +98,13 @@ void main() {
     await switchTo(t, 'id');
     expect(find.text('Penjelasan'), findsWidgets);
     expect(find.text('JAWABANMU'), findsOneWidget);
+    expect(find.text('Belum tepat!'), findsOneWidget); // result hero
+    expect(find.text('PERTANYAAN'), findsOneWidget);
+    await t.scrollUntilVisible(
+      find.text('Kenapa ini jawaban yang benar'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Kenapa ini jawaban yang benar'), findsOneWidget);
   });
 

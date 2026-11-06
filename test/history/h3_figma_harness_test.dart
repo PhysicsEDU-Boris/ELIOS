@@ -26,9 +26,9 @@ import '../screens/auth_test_support.dart' show loadElioFonts;
 import 'h3_fixture.dart';
 
 const _figma = 'docs/design/h3-figma';
-// en/id renders for decision 0185; PNGs are written only with L10N_RENDER=1 so a
+// en/id renders (decision 0187 redesign; 0185 l10n); PNGs are written only with L10N_RENDER=1 so a
 // plain test run never rewrites tracked files. (The 0184 images are frozen.)
-const _out = 'docs/test-results/0185-l10n';
+const _out = 'docs/test-results/0187-h3-redesign';
 final _write = Platform.environment['L10N_RENDER'] == '1';
 
 const figmaExplanation = QuizExplanation(
@@ -308,11 +308,11 @@ void main() {
       await t.pump(const Duration(seconds: 60)); // drain load timeouts
     }
 
-    Widget explanation({bool cached = true}) {
+    Widget explanation({bool cached = true, int index = 1}) {
       final r = earphone(cached: cached);
       return QuestionExplanationScreen(
         record: r,
-        questionIndex: 1,
+        questionIndex: index,
         store: FigmaStore([r]),
       );
     }
@@ -372,9 +372,9 @@ void main() {
         '06-explanation',
         explanation(),
         act: () async {
-          // Listen on the question and the two text sections only; Key idea
-          // and Steps are read with the whole question (README).
-          expect(find.byTooltip(lookupAppLocalizations(Locale(lang)).h3Listen), findsNWidgets(3));
+          // Listen on the question, the two learn cards and the mission; Key
+          // idea is read with the whole question (README).
+          expect(find.byTooltip(lookupAppLocalizations(Locale(lang)).h3Listen), findsNWidgets(4));
           expect(find.text(lookupAppLocalizations(Locale(lang)).h3KeyIdea), findsOneWidget);
         },
       );
@@ -404,6 +404,18 @@ void main() {
     });
     testWidgets('$m 09 explanation loading', (t) async {
       await render(t, '09-explanation-loading', explanation(cached: false));
+    });
+    testWidgets('$m 10 explanation correct', (t) async {
+      await render(
+        t,
+        '10-explanation-correct',
+        explanation(index: 0),
+        act: () async {
+          final l = lookupAppLocalizations(Locale(lang));
+          expect(find.text(l.h3HeroRight), findsOneWidget);
+          expect(find.text(l.h3WhyWrong), findsNothing);
+        },
+      );
     });
   }
   }
