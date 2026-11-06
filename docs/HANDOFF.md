@@ -54,7 +54,6 @@
 ## Queue after the architecture change
 - U4c combined native acceptance, U7 Firebase sync, U8 docs/Figma (see NEXT_TASK.md). wrongWhy texts for the bank are still unwritten.
 - R2, Q3, R3 (merged #80-#82, 3 Nov): decisions 0173-0175, `docs/test-results/r2|q3|r3/`.
-
 ## Marketing website — Figma (5 Nov 2026)
 - Editable desktop 1440 and mobile 390: https://www.figma.com/design/J2jSbARJSyJCStNFeWkWDj/?node-id=473-2389 (W1 Marketing website). Uses docs/design.md light tokens, original mascot/bin buddies, and real home-screen previews.
 - All sections visually reviewed. Revision: removed 18 decorative icons and 15 arrow/star/checkmark accents in desktop/mobile; retained main mascot and app previews. Static UI; CTA wiring/implementation remain. No app build or robot test.
