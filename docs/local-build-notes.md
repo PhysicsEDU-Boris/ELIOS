@@ -1,5 +1,10 @@
 # Local build notes
 
+## 6 Nov 2026 — H3 redesign phone test (`feat/history-h3-redesign`)
+- Phone: Motorola Edge 60 Fusion, `com.boris.elio` debug, same signing; `adb install -r` (Success, last 23:47:34 Jakarta). No uninstall/data clear. Cold launch Status ok.
+- Built in worktree `../elios-h3-redesign`: arm64 debug APK (157 MB), LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION, APP_COMMIT `5385e16+mission+essayfix` (branch + localized essay fix `d67aba3..dfb7f67` applied uncommitted, then removed). `.env.dev/.env.prod` and `android/app/google-services.json` copied in from the main checkout (gitignored, not committed).
+- Private backup before install (History, R3 History, photos, prefs) in the session scratchpad; after testing both History files md5-identical. Phone left English/light on Home. No Mac bundle, model, firmware or signing change.
+
 ## 5 Nov 2026 — H3 USB acceptance
 
 - Device: Motorola Edge 60 Fusion, Android 16 / API 36; one Android phone connected over USB.

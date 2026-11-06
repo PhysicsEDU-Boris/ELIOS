@@ -11,6 +11,10 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- History cards: recent scans are now a grid of cards with the whole scan photo as a tilted polaroid (never cropped), a score bar and "Lihat hasil". Scan detail shows the photo uncropped in a frame, and a new full-screen viewer lets you pinch or double-tap to zoom, swipe down to close and share the photo (decision 0187).
+
+- History redesign (newest Figma): a green trophy hero with your level art, category tiles with bin buddies to filter, scans grouped by day, result stats and difficulty tabs on the detail, and a playful explanation screen (result hero with the bottle buddy, answer tiles, learn cards, key idea and a "Misimu" step path). Light and dark, English and Bahasa Indonesia, switching live with the language picker. The History list now scrolls right up to the bottom bar like the other tabs, with no empty band above it (decision 0187).
+
 - Phone Control: Indonesian arm captions now fit beside the sliders without truncation or vertical overflow (decision 0185).
 
 - Languages (L2): one tap in the sidebar switches the whole app live, with no restart: History, Home, Learn, Control, Config, simulations, notifications, PDFs, dates and numbers. ELIOS AI answers in English and Bahasa Indonesia at once, so new scans switch language instantly; older History records are translated once when opened in the other language and kept, or shown in their original language with a note when offline. Read-aloud uses the voice of the chosen language. The quiz bank has an English version for review. "ELIO" is now "ELIOS" everywhere you can see it (decision 0185).

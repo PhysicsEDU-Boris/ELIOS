@@ -1,4 +1,9 @@
-# Handoff — 5 Nov 2026
+# Handoff — 6 Nov 2026
+## H3-cards — `feat/history-cards` (stacked on `feat/history-h3-redesign`, decision 0187)
+- Scan card grid, uncropped photo frame, full-screen photo viewer (design `ae25ef1`). Phone-tested en/id, light/dark, md5 History unchanged; share = photo as a one-page PDF. Results: `docs/test-results/h3-cards/README.md`. Not pushed, no PR.
+## H3 redesign — `feat/history-h3-redesign` (decision 0187)
+- Implements the newest Figma H3 (`design/h3-figma-refs`, merged in): trophy hero, category tiles, day groups, result stats, difficulty tabs, gamified explanation (right/wrong). All strings in ARB; live language switch tested (id <-> en), string audit 0.
+- Compare images: `docs/test-results/0187-h3-redesign/compare/`. Phone-tested 6 Nov on Edge 60 Fusion (`adb install -r`, APP_COMMIT `5385e16+mission+essayfix` = branch + uncommitted localized essay fix so the phone keeps it). History files md5-identical to backup; left English/light on Home. 7 Nov: removed the empty band above the bottom nav (owner feedback), reinstalled and checked. Results: `docs/test-results/0187-h3-redesign/README.md`. Not pushed, no PR.
 ## L2 languages — `feat/ui-localization` (PR #93, decision 0185)
 - Rebased on `feature/live-scan` after #94; decision renumbered 0184 -> 0185. Whole app via ARB (audit 0), live sidebar switch, intl dates/numbers, bilingual ELIOS AI (owner system prompt), History schema 5 with translation cache, English bank (needs owner review), Learn `i18n` fields, InfoPlist.strings, ELIO -> ELIOS.
 - Owner to do: deploy ai-backend (`cd ai-backend && npx vercel --prod`, prompt cap 16000); review `assets/quiz/*_draft.en.json`; run `tools/l10n/translate_firestore.py export en` / `upload` and `translate_assets.py module en` with `GEMINI_API_KEY`; re-export the module PDF (still says ELIO); airplane-mode check on the phone.
@@ -48,9 +53,7 @@
 - The 29 Oct owner History record was overwritten and is still unrecovered. Do not invent or reconstruct its missing answers from guesses.
 ## Queue after the architecture change
 - U4c combined native acceptance, U7 Firebase sync, U8 docs/Figma (see NEXT_TASK.md). wrongWhy texts for the bank are still unwritten.
-## R2, Q3, R3 (merged #80-#82, 3 Nov)
-- Details in decisions 0173-0175 and `docs/test-results/r2|q3|r3/`.
-
+- R2, Q3, R3 (merged #80-#82, 3 Nov): decisions 0173-0175, `docs/test-results/r2|q3|r3/`.
 ## Marketing website — Figma (5 Nov 2026)
 - Editable desktop 1440 and mobile 390: https://www.figma.com/design/J2jSbARJSyJCStNFeWkWDj/?node-id=473-2389 (W1 Marketing website). Uses docs/design.md light tokens, original mascot/bin buddies, and real home-screen previews.
 - All sections visually reviewed. Revision: removed 18 decorative icons and 15 arrow/star/checkmark accents in desktop/mobile; retained main mascot and app previews. Static UI; CTA wiring/implementation remain. No app build or robot test.

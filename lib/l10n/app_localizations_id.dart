@@ -2893,7 +2893,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get h3Back => 'Kembali';
 
   @override
-  String get h3All => 'Semua';
+  String get h3All => 'Semua scan';
 
   @override
   String get h3CatB3 => 'B3';
@@ -2970,22 +2970,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get h3DetailLoadFailed => 'Detail scan belum dapat dimuat';
 
   @override
-  String h3ScannedMeta(Object time, int count) {
-    return 'Scan $time · foto dan $count soal tersimpan lokal';
-  }
-
-  @override
   String h3DiffChip(Object level, Object count) {
     return '$level · ${count}Q';
   }
-
-  @override
-  String h3CorrectOf(Object correct, Object total) {
-    return '$correct dari $total benar';
-  }
-
-  @override
-  String get h3TrophyRule => '10 piala untuk setiap jawaban benar';
 
   @override
   String get h3Questions => 'Soal';
@@ -4193,4 +4180,109 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get quizSkippedAnswer => '(dilewati)';
+
+  @override
+  String get h3YourTrophies => 'Piala kamu';
+
+  @override
+  String h3TrophyUnit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'piala',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get h3StatTrophies => 'Piala';
+
+  @override
+  String get h3StatScanned => 'Dipindai';
+
+  @override
+  String h3QuestionOf(int index, int total) {
+    return 'Soal $index dari $total';
+  }
+
+  @override
+  String get h3HeroRight => 'Mantap!';
+
+  @override
+  String get h3HeroRightBody => 'Jawabanmu benar. Ini alasannya.';
+
+  @override
+  String get h3HeroWrong => 'Belum tepat!';
+
+  @override
+  String get h3HeroWrongBody => 'Coba lagi, yuk cari tahu alasannya.';
+
+  @override
+  String h3PlusTrophies(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count piala',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get h3TheQuestion => 'Pertanyaan';
+
+  @override
+  String get h3LearnWhy => 'Yuk pelajari alasannya';
+
+  @override
+  String get h3Mission => 'Misimu';
+
+  @override
+  String h3MissionSteps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count langkah agar benar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get h3MissionDone =>
+      'Misi selesai: kamu tahu cara memilahnya dengan benar.';
+
+  @override
+  String get h3SeeResults => 'Lihat hasil';
+
+  @override
+  String h3CardSemantics(
+    String item,
+    String category,
+    int correct,
+    int total,
+    int trophies,
+  ) {
+    return '$item, $category, $correct dari $total benar, +$trophies piala';
+  }
+
+  @override
+  String get h3OpenPhoto => 'Lihat foto layar penuh';
+
+  @override
+  String get h3Close => 'Tutup';
+
+  @override
+  String get h3SharePhoto => 'Bagikan foto';
+
+  @override
+  String get h3PinchHint => 'Cubit untuk zoom · ketuk dua kali untuk reset';
+
+  @override
+  String h3ViewerMeta(String when, String category) {
+    return 'Dipindai $when · $category';
+  }
+
+  @override
+  String h3ScanPhoto(String item) {
+    return 'Foto scan $item';
+  }
 }

@@ -25,17 +25,23 @@ String historyDifficulty(AppLocalizations t, QuizDifficulty d) => switch (d) {
   QuizDifficulty.hard => t.h3Hard,
 };
 
-/// "23:29" today, "Yesterday", else "3 Nov" (with the year when not this year).
-String historyTime(AppLocalizations t, DateTime time, {DateTime? now}) {
+/// "Today", "Yesterday", else "3 Nov" (with the year when not this year).
+String historyDay(AppLocalizations t, DateTime time, {DateTime? now}) {
   now ??= DateTime.now();
   final day = DateTime(time.year, time.month, time.day);
   final today = DateTime(now.year, now.month, now.day);
+  if (day == today) return t.h3Today;
   if (day == today.subtract(const Duration(days: 1))) return t.h3Yesterday;
-  if (day == today) return DateFormat.Hm(dateLocaleOf(t)).format(time);
   return (time.year == now.year
           ? DateFormat.MMMd(dateLocaleOf(t))
           : DateFormat.yMMMd(dateLocaleOf(t)))
       .format(time);
+}
+
+/// "23:29" today, else [historyDay].
+String historyTime(AppLocalizations t, DateTime time, {DateTime? now}) {
+  final day = historyDay(t, time, now: now);
+  return day == t.h3Today ? DateFormat.Hm(dateLocaleOf(t)).format(time) : day;
 }
 
 /// Figma Button style (SemiBold 14, line height 1.4).
@@ -155,42 +161,197 @@ class HistoryChip extends StatelessWidget {
   }
 }
 
-/// Filter chip: height 40, pill, `primary/fill` when selected, else `raised`.
-class HistoryFilterChip extends StatelessWidget {
-  const HistoryFilterChip(
-    this.label, {
+/// Category tile (2x2 grid, 96 high): label, "n scan", bin buddy art cut by
+/// the bottom edge. Selected = success tint, 2 dp `primary/fill`, check badge.
+class HistoryCategoryTile extends StatelessWidget {
+  const HistoryCategoryTile({
     super.key,
+    required this.label,
+    required this.count,
+    required this.art,
     required this.selected,
-    this.onSelected,
+    required this.onTap,
   });
   final String label;
+  final int count;
+  final Widget art;
   final bool selected;
-  final VoidCallback? onSelected;
+  final VoidCallback onTap;
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context);
+    final shape = RoundedSuperellipseBorder(
+      borderRadius: BorderRadius.circular(16),
+      side: selected
+          ? BorderSide(color: p.primary, width: 2)
+          : BorderSide(color: p.borderSubtle),
+    );
     return Semantics(
       selected: selected,
-      button: onSelected != null,
+      button: true,
       child: Material(
-        color: selected ? p.primary : p.surfaceRaised,
-        shape: const StadiumBorder(),
+        color: selected ? historyTint(p, HistoryTone.success).bg : p.surface,
+        shape: shape,
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
-          customBorder: const StadiumBorder(),
-          onTap: onSelected,
-          child: Container(
-            height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Center(
-              widthFactor: 1,
+          onTap: onTap,
+          customBorder: shape,
+          child: SizedBox(
+            height: 96,
+            child: Stack(
+              children: [
+                Positioned(
+                  right: 7,
+                  top: 44,
+                  child: Transform.rotate(
+                    angle: selected ? 8 * math.pi / 180 : 0,
+                    child: art,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(right: 24),
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: ElioTokens.body.copyWith(color: p.textPrimary),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        context.l10n.h3ScanCount(count),
+                        style: ElioTokens.caption.copyWith(
+                          color: selected ? p.primaryText : p.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (selected)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: ShapeDecoration(
+                        color: p.primary,
+                        shape: const CircleBorder(),
+                      ),
+                      child: Icon(Icons.check, size: 14, color: p.onPrimary),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Bin buddy art of a category tile; "all" (null) shows the three bins.
+Widget historyBinArt(ScanCategory? c) {
+  Widget bin(String name, double w, double h) => SvgPicture.asset(
+    'assets/illustrations/home/bin_$name.svg',
+    width: w,
+    height: h,
+    excludeFromSemantics: true,
+  );
+  if (c != null) {
+    return bin(
+      switch (c) {
+        ScanCategory.b3 => 'b3',
+        ScanCategory.organic => 'organik',
+        _ => 'anorganik',
+      },
+      52,
+      62,
+    );
+  }
+  return SizedBox(
+    width: 84,
+    height: 62,
+    child: Stack(
+      children: [
+        for (final (i, name) in ['organik', 'anorganik', 'b3'].indexed)
+          Positioned(left: i * 24.0, top: 4, child: bin(name, 36, 43)),
+      ],
+    ),
+  );
+}
+
+/// Difficulty tabs (L1 switch look): track 48 `raised`, segments 40, the
+/// record's set selected with a count badge. Display only (one set is saved).
+class HistoryDifficultyTabs extends StatelessWidget {
+  const HistoryDifficultyTabs(this.record, {super.key});
+  final ScanRecord record;
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.all(4),
+      decoration: ShapeDecoration(
+        color: p.surfaceRaised,
+        shape: const StadiumBorder(),
+      ),
+      child: Row(
+        children: [
+          for (final d in QuizDifficulty.values) ...[
+            if (d.index > 0) const SizedBox(width: 4),
+            Expanded(child: _tab(context, p, d, d == record.difficulty)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _tab(BuildContext context, ElioPalette p, QuizDifficulty d, bool on) {
+    final count = on ? record.totalQuestions : d.questionCount;
+    return Semantics(
+      selected: on,
+      child: Container(
+        height: 40,
+        decoration: on
+            ? ShapeDecoration(color: p.primary, shape: const StadiumBorder())
+            : null,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
               child: Text(
-                label,
+                historyDifficulty(context.l10n, d),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: historyButtonText.copyWith(
-                  color: selected ? p.onPrimary : p.textPrimary,
+                  color: on ? p.onPrimary : p.textSecondary,
                 ),
               ),
             ),
-          ),
+            const SizedBox(width: 6),
+            Container(
+              height: 20,
+              constraints: const BoxConstraints(minWidth: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              alignment: Alignment.center,
+              decoration: ShapeDecoration(
+                color: on ? p.primaryHover : p.surface,
+                shape: const StadiumBorder(),
+              ),
+              child: Text(
+                '$count',
+                style: ElioTokens.caption.copyWith(
+                  color: on ? p.onPrimary : p.textSecondary,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -331,231 +492,711 @@ class HistoryTrophyChip extends StatelessWidget {
   );
 }
 
-class HistoryPhoto extends StatelessWidget {
-  const HistoryPhoto(
+/// True when the record's saved crop exists on disk (the viewer needs it).
+bool historyHasPhoto(ScanRecord r) =>
+    r.cropPhotoPath != null && File(r.cropPhotoPath!).existsSync();
+
+/// The saved crop, contained (never cropped); the category bin buddy when
+/// there is no photo or it cannot be read.
+Widget historyPhotoImage(ScanRecord r) {
+  final art = Padding(
+    padding: const EdgeInsets.all(6),
+    child: SvgPicture.asset(
+      'assets/illustrations/home/bin_${switch (r.category) {
+        ScanCategory.b3 => 'b3',
+        ScanCategory.organic => 'organik',
+        _ => 'anorganik',
+      }}.svg',
+      fit: BoxFit.contain,
+      excludeFromSemantics: true,
+    ),
+  );
+  if (!historyHasPhoto(r)) return art;
+  return Image.file(
+    File(r.cropPhotoPath!),
+    fit: BoxFit.contain,
+    errorBuilder: (_, error, stack) => art,
+  );
+}
+
+/// Polaroid: `surface` frame pad 4 r8, soft shadow, rotated, the image
+/// letterboxed on `raised`.
+class HistoryPolaroid extends StatelessWidget {
+  const HistoryPolaroid(
     this.record, {
     super.key,
-    this.width = 64,
-    this.height = 64,
+    required this.width,
+    required this.height,
+    this.degrees = -4,
   });
   final ScanRecord record;
-  final double width, height;
+  final double width, height, degrees;
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context);
-    final large = height > 100;
-    final name = switch (record.category) {
-      ScanCategory.b3 => 'b3',
-      ScanCategory.organic => 'organik',
-      _ => 'anorganik',
-    };
-    final color = historyTint(p, historyCategoryTone(record.category)).fg;
-    final placeholder = Center(
-      child: SizedBox.square(
-        dimension: large ? 88 : 40,
-        child: SvgPicture.asset(
-          'assets/illustrations/home/history_bin_$name.svg',
-          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-          excludeFromSemantics: true,
+    return Transform.rotate(
+      angle: degrees * math.pi / 180,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: p.surface,
+          borderRadius: BorderRadius.circular(8),
+          // Fixed polaroid shadow (#0F172A 14 %), allowed by the spec.
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x240F172A),
+              offset: Offset(0, 4),
+              blurRadius: 10,
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(5),
+          child: Container(
+            width: width,
+            height: height,
+            color: p.surfaceRaised,
+            child: historyPhotoImage(record),
+          ),
         ),
       ),
     );
-    return ClipRSuperellipse(
-      borderRadius: BorderRadius.circular(large ? 16 : 12),
-      child: Container(
-        width: width,
-        height: height,
-        color: p.surfaceRaised,
-        child: record.cropPhotoPath == null
-            ? placeholder
-            : Image.file(
-                File(record.cropPhotoPath!),
-                fit: BoxFit.cover,
-                errorBuilder: (_, error, stack) =>
-                    Icon(Icons.broken_image_outlined, color: p.textSecondary),
-              ),
-      ),
-    );
   }
 }
 
-/// Trophy summary: badge 44, count and level, progress, next level + chip.
-class HistoryTrophySummary extends StatelessWidget {
-  const HistoryTrophySummary({
-    super.key,
-    required this.total,
-    required this.level,
-    required this.progress,
-    required this.next,
+/// Category-tinted cover with a corner circle and sparkles; [child] centred.
+class _TintCover extends StatelessWidget {
+  const _TintCover({
+    required this.category,
+    required this.height,
+    required this.radius,
+    required this.circles,
+    required this.sparkles,
+    required this.child,
   });
-  final int total;
-  final String level, next;
-  final double progress;
+  final ScanCategory category;
+  final double height, radius;
+  final List<
+    (double size, double? left, double? top, double? right, double? bottom)
+  > circles,
+      sparkles;
+  final Widget child;
   @override
   Widget build(BuildContext context) {
-    final p = authPalette(context);
-    final warn = historyTint(p, HistoryTone.warning);
-    return HistoryCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: ShapeDecoration(
-                  color: warn.bg,
-                  shape: CircleBorder(side: BorderSide(color: warn.border!)),
-                ),
-                child: Icon(
-                  Icons.emoji_events_outlined,
-                  size: 24,
-                  color: warn.fg,
-                ),
+    final t = historyTint(authPalette(context), historyCategoryTone(category));
+    final edge = t.border ?? authPalette(context).borderMedium;
+    return ClipRSuperellipse(
+      borderRadius: BorderRadius.circular(radius),
+      child: Container(
+        height: height,
+        color: t.bg,
+        child: Stack(
+          children: [
+            for (final (s, l, tp, r, b) in circles)
+              Positioned(
+                left: l,
+                top: tp,
+                right: r,
+                bottom: b,
+                child: _circle(s, edge),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.l10n.h3Trophies(total),
-                      style: ElioTokens.subhead.copyWith(color: p.textPrimary),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      level,
-                      style: ElioTokens.caption.copyWith(
-                        color: p.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+            for (final (s, l, tp, r, b) in sparkles)
+              Positioned(
+                left: l,
+                top: tp,
+                right: r,
+                bottom: b,
+                child: HistorySparkle(s, t.fg),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-              color: p.primary,
-              backgroundColor: p.surfaceRaised,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  next,
-                  style: ElioTokens.caption.copyWith(color: p.textSecondary),
-                ),
-              ),
-              const SizedBox(width: 8),
-              HistoryChip(
-                context.l10n.h3SavedLocally,
-                tone: HistoryTone.success,
-                icon: Icons.check,
-              ),
-            ],
-          ),
-        ],
+            Positioned.fill(child: child),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// Scan row: photo 64, title/chip/meta column, trophies on the right.
-class HistoryScanRow extends StatelessWidget {
-  const HistoryScanRow(this.record, {super.key, this.onTap});
+/// Scan card (2-column grid): polaroid cover with sticker and trophies, meta,
+/// 2-line title slot, score bar and "Lihat hasil". One tap target: the card.
+class HistoryScanCard extends StatelessWidget {
+  const HistoryScanCard(this.record, {super.key, required this.onTap});
   final ScanRecord record;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
   @override
   Widget build(BuildContext context) {
-    final p = authPalette(context), warn = p.secondaryText;
-    return HistoryCard(
-      padding: const EdgeInsets.all(12),
-      onTap: onTap,
-      child: Row(
-        children: [
-          HistoryPhoto(record),
-          const SizedBox(width: 12),
-          Expanded(
+    final p = authPalette(context), t = context.l10n;
+    final tint = historyTint(p, historyCategoryTone(record.category));
+    final cat = historyCategory(t, record.category);
+    final total = record.totalQuestions, correct = record.correctCount;
+    final ratio = total == 0 ? 0.0 : correct / total;
+    final shape = RoundedSuperellipseBorder(
+      borderRadius: BorderRadius.circular(20),
+      side: BorderSide(color: p.borderSubtle),
+    );
+    final title = ElioTokens.body.copyWith(color: p.textPrimary);
+    final soft = [
+      BoxShadow(color: p.textPrimary.withValues(alpha: .12), blurRadius: 4),
+    ];
+    return Semantics(
+      button: true,
+      excludeSemantics: true,
+      label: t.h3CardSemantics(
+        record.itemName,
+        cat,
+        correct,
+        total,
+        record.trophies,
+      ),
+      child: Material(
+        color: p.surface,
+        shape: shape,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: shape,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  record.itemName,
-                  style: ElioTokens.body.copyWith(color: p.textPrimary),
-                ),
-                const SizedBox(height: 4),
-                HistoryCategoryChip(record.category),
-                const SizedBox(height: 4),
-                Text(
-                  context.l10n.h3RowMeta(
-                    historyTime(context.l10n, record.time),
-                    record.totalQuestions,
+                _TintCover(
+                  category: record.category,
+                  height: 116,
+                  radius: 16,
+                  circles: const [(110, null, -40, -30, null)],
+                  sparkles: const [
+                    (14, 14, 14, null, null),
+                    (10, null, null, 10, 34),
+                    (8, 30, null, null, 40),
+                  ],
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: HistoryPolaroid(record, width: 104, height: 58),
+                      ),
+                      Positioned(
+                        left: 8,
+                        bottom: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: ShapeDecoration(
+                            color: p.surface,
+                            shape: const StadiumBorder(),
+                            shadows: soft,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _circle(8, tint.fg),
+                              const SizedBox(width: 4),
+                              Text(
+                                cat,
+                                style: ElioTokens.caption.copyWith(
+                                  color: tint.fg,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(6, 3, 8, 3),
+                          decoration: ShapeDecoration(
+                            color: p.secondaryText,
+                            shape: const StadiumBorder(),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.emoji_events_outlined,
+                                size: 14,
+                                color: p.surface,
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                '+${record.trophies}',
+                                style: ElioTokens.caption.copyWith(
+                                  color: p.surface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  style: ElioTokens.caption.copyWith(color: p.textSecondary),
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        t.h3RowMeta(historyTime(t, record.time), total),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: ElioTokens.caption.copyWith(
+                          color: p.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      // Always two lines high, so every card lines up.
+                      Stack(
+                        children: [
+                          Text('\n', style: title, maxLines: 2),
+                          Text(
+                            record.itemName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: title,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                const SizedBox(height: 10),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 6,
+                          alignment: Alignment.centerLeft,
+                          decoration: ShapeDecoration(
+                            color: p.surfaceRaised,
+                            shape: const StadiumBorder(),
+                          ),
+                          child: ratio == 0
+                              ? null
+                              : FractionallySizedBox(
+                                  key: const ValueKey('score_fill'),
+                                  widthFactor: ratio,
+                                  child: Container(
+                                    decoration: ShapeDecoration(
+                                      color: p.primary,
+                                      shape: const StadiumBorder(),
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '$correct/$total',
+                        style: ElioTokens.caption.copyWith(
+                          color: p.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  height: 36,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: ShapeDecoration(
+                    color: p.primary,
+                    shape: const StadiumBorder(),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          t.h3SeeResults,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: historyButtonText.copyWith(color: p.onPrimary),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.chevron_right, size: 16, color: p.onPrimary),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          Icon(Icons.emoji_events_outlined, size: 18, color: warn),
-          const SizedBox(width: 4),
-          Text(
-            '+${record.trophies}',
-            style: historyButtonText.copyWith(color: warn),
+        ),
+      ),
+    );
+  }
+}
+
+/// Scan cards in rows of [columns]; rows share one height, a lone last card
+/// keeps its column width.
+class HistoryScanGrid extends StatelessWidget {
+  const HistoryScanGrid({
+    super.key,
+    required this.records,
+    required this.columns,
+    required this.onOpen,
+  });
+  final List<ScanRecord> records;
+  final int columns;
+  final ValueChanged<ScanRecord> onOpen;
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      for (var i = 0; i < records.length; i += columns) ...[
+        if (i > 0) const SizedBox(height: 12),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var c = 0; c < columns; c++) ...[
+                if (c > 0) const SizedBox(width: 12),
+                Expanded(
+                  child: i + c < records.length
+                      ? HistoryScanCard(
+                          records[i + c],
+                          onTap: () => onOpen(records[i + c]),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ],
           ),
+        ),
+      ],
+    ],
+  );
+}
+
+/// Scan detail photo frame: category tint, blobs, sparkles, the polaroid
+/// (contain), time pill and a 48 dp fullscreen button when [onOpen] is set.
+class HistoryPhotoFrame extends StatelessWidget {
+  const HistoryPhotoFrame(this.record, {super.key, this.onOpen});
+  final ScanRecord record;
+  final VoidCallback? onOpen;
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context), t = context.l10n;
+    final shadow = [
+      BoxShadow(color: p.textPrimary.withValues(alpha: .14), blurRadius: 8),
+    ];
+    return _TintCover(
+      category: record.category,
+      height: 184,
+      radius: 20,
+      circles: const [(150, -50, null, null, -70), (120, null, -50, -30, null)],
+      sparkles: const [
+        (14, 92, 40, null, null),
+        (10, null, 44, 96, null),
+        (12, null, 28, 36, null),
+        (8, 30, null, null, 30),
+      ],
+      child: Stack(
+        children: [
+          Center(
+            child: Semantics(
+              container: true,
+              image: true,
+              button: onOpen != null,
+              label: t.h3ScanPhoto(record.itemName),
+              child: GestureDetector(
+                onTap: onOpen,
+                child: Hero(
+                  tag: 'history-photo-${record.id}',
+                  child: HistoryPolaroid(
+                    record,
+                    width: 224,
+                    height: 126,
+                    degrees: -3,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 12,
+            top: 12,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(6, 3, 8, 3),
+              decoration: ShapeDecoration(
+                color: p.surface,
+                shape: const StadiumBorder(),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.schedule, size: 14, color: p.textSecondary),
+                  const SizedBox(width: 4),
+                  Text(
+                    historyTime(t, record.time),
+                    style: ElioTokens.caption.copyWith(color: p.textPrimary),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (onOpen != null)
+            Positioned(
+              right: 6,
+              bottom: 6,
+              child: IconButton(
+                tooltip: t.h3OpenPhoto,
+                onPressed: onOpen,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 48,
+                  height: 48,
+                ),
+                icon: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: ShapeDecoration(
+                    color: p.surface,
+                    shape: const CircleBorder(),
+                    shadows: shadow,
+                  ),
+                  child: Icon(
+                    Icons.open_in_full,
+                    size: 20,
+                    color: p.textPrimary,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-/// Score card: trophy 28 + Display score, "n dari m benar", hint.
-class HistoryScoreCard extends StatelessWidget {
-  const HistoryScoreCard(this.record, {super.key});
+/// Four-point sparkle star of the hero and section headers.
+class HistorySparkle extends StatelessWidget {
+  const HistorySparkle(this.size, this.color, {super.key});
+  final double size;
+  final Color color;
+  @override
+  Widget build(BuildContext context) =>
+      CustomPaint(size: Size.square(size), painter: _SparklePainter(color));
+}
+
+class _SparklePainter extends CustomPainter {
+  _SparklePainter(this.color);
+  final Color color;
+  @override
+  void paint(Canvas canvas, Size s) {
+    final c = s.center(Offset.zero), k = s.width * .12;
+    canvas.drawPath(
+      Path()
+        ..moveTo(c.dx, 0)
+        ..quadraticBezierTo(c.dx + k, c.dy - k, s.width, c.dy)
+        ..quadraticBezierTo(c.dx + k, c.dy + k, c.dx, s.height)
+        ..quadraticBezierTo(c.dx - k, c.dy + k, 0, c.dy)
+        ..quadraticBezierTo(c.dx - k, c.dy - k, c.dx, 0),
+      Paint()..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SparklePainter old) => old.color != color;
+}
+
+/// Pill on a filled hero (`*-fill-hover` bg, on-fill content).
+Widget _heroPill(Color bg, Widget child, EdgeInsets padding) => Container(
+  padding: padding,
+  decoration: ShapeDecoration(color: bg, shape: const StadiumBorder()),
+  child: child,
+);
+
+/// Trophy hero: `primary/fill` block (green in both modes) with the total,
+/// level, progress and the level art cut by the corner.
+class HistoryTrophyHero extends StatelessWidget {
+  const HistoryTrophyHero({
+    super.key,
+    required this.total,
+    required this.levelNumber,
+    required this.level,
+    required this.progress,
+    required this.next,
+  });
+  final int total, levelNumber;
+  final String level, next;
+  final double progress;
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context), on = p.onPrimary, t = context.l10n;
+    final soft = on.withValues(alpha: .72);
+    return ClipRSuperellipse(
+      borderRadius: BorderRadius.circular(20),
+      child: ColoredBox(
+        color: p.primary,
+        child: Stack(
+          children: [
+            Positioned(
+              right: -42,
+              top: -40,
+              child: _circle(190, p.primaryHover),
+            ),
+            Positioned(
+              right: 12,
+              top: 34,
+              child: SvgPicture.asset(
+                levelNumber >= 3
+                    ? 'assets/illustrations/home/tree_lv3.svg'
+                    : 'assets/illustrations/home/sprout_lv1.svg',
+                width: 120,
+                height: 124,
+                excludeFromSemantics: true,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          t.h3YourTrophies.toUpperCase(),
+                          style: ElioTokens.overline.copyWith(color: soft),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _heroPill(
+                        p.primaryHover,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check, size: 12, color: on),
+                            const SizedBox(width: 4),
+                            Text(
+                              t.h3SavedLocally,
+                              style: ElioTokens.caption.copyWith(color: on),
+                            ),
+                          ],
+                        ),
+                        const EdgeInsets.fromLTRB(6, 2, 8, 2),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '$total',
+                        style: ElioTokens.display.copyWith(color: on),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        t.h3TrophyUnit(total),
+                        style: ElioTokens.body.copyWith(color: on),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 110),
+                    child: Text(
+                      level,
+                      style: ElioTokens.bodySmall.copyWith(color: on),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: 190,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 8,
+                        color: on,
+                        backgroundColor: p.primaryHover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(next, style: ElioTokens.caption.copyWith(color: soft)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Widget _circle(double size, Color color) => Container(
+  width: size,
+  height: size,
+  decoration: ShapeDecoration(color: color, shape: const CircleBorder()),
+);
+
+/// Result stats: Trofi | Benar | Dipindai, split by 1x40 lines.
+class HistoryResultStats extends StatelessWidget {
+  const HistoryResultStats(this.record, {super.key});
   final ScanRecord record;
   @override
   Widget build(BuildContext context) {
-    final p = authPalette(context);
-    return HistoryCard(
-      tone: HistoryTone.warning,
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+    final p = authPalette(context), t = context.l10n;
+    Widget stat(IconData icon, Color color, String value, String label) =>
+        Expanded(
+          child: Column(
             children: [
-              Icon(
-                Icons.emoji_events_outlined,
-                size: 28,
-                color: p.secondaryText,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 18, color: color),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: ElioTokens.subhead.copyWith(color: p.textPrimary),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
               Text(
-                '${record.trophies}',
-                style: ElioTokens.display.copyWith(color: p.secondaryText),
+                label,
+                style: ElioTokens.caption.copyWith(color: p.textSecondary),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            context.l10n.h3CorrectOf(
-              record.correctCount,
-              record.totalQuestions,
-            ),
-            style: historyButtonText.copyWith(color: p.textPrimary),
+        );
+    final line = Container(width: 1, height: 40, color: p.borderSubtle);
+    return HistoryCard(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      child: Row(
+        children: [
+          stat(
+            Icons.emoji_events_outlined,
+            p.secondaryText,
+            '+${record.trophies}',
+            t.h3StatTrophies,
           ),
-          const SizedBox(height: 4),
-          Text(
-            context.l10n.h3TrophyRule,
-            textAlign: TextAlign.center,
-            style: ElioTokens.caption.copyWith(color: p.textSecondary),
+          line,
+          stat(
+            Icons.check,
+            p.primaryText,
+            '${record.correctCount}/${record.totalQuestions}',
+            t.h3Correct,
+          ),
+          line,
+          stat(
+            Icons.schedule_outlined,
+            p.tertiaryText,
+            historyTime(t, record.time),
+            t.h3StatScanned,
           ),
         ],
       ),
@@ -749,10 +1390,10 @@ class HistoryTopBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-/// Trophy pill: warning tint, trophy 18 + count Button.
+/// Trophy pill (explanation top bar): warning tint, trophy 18 + label.
 class HistoryTrophyPill extends StatelessWidget {
-  const HistoryTrophyPill(this.count, {super.key});
-  final int count;
+  const HistoryTrophyPill(this.label, {super.key});
+  final String label;
   @override
   Widget build(BuildContext context) {
     final t = historyTint(authPalette(context), HistoryTone.warning);
@@ -767,7 +1408,7 @@ class HistoryTrophyPill extends StatelessWidget {
         children: [
           Icon(Icons.emoji_events_outlined, size: 18, color: t.fg),
           const SizedBox(width: 6),
-          Text('$count', style: historyButtonText.copyWith(color: t.fg)),
+          Text(label, style: historyButtonText.copyWith(color: t.fg)),
         ],
       ),
     );
@@ -810,132 +1451,364 @@ class HistoryListenButton extends StatelessWidget {
   }
 }
 
-/// Tinted answer block of the explanation screen (pad 12, r12).
-class HistoryAnswer extends StatelessWidget {
-  const HistoryAnswer(
-    this.label,
-    this.answer, {
+/// Result hero of the explanation: green "Mantap!" or red "Belum tepat!"
+/// block with question dots, trophies and the bottle buddy (both modes).
+class HistoryResultHero extends StatelessWidget {
+  const HistoryResultHero({
     super.key,
-    this.tone = HistoryTone.neutral,
-    this.check = false,
+    required this.correct,
+    required this.index,
+    required this.total,
+    required this.trophies,
   });
-  final String label, answer;
-  final HistoryTone tone;
-  final bool check;
+  final bool correct;
+  final int index, total, trophies;
   @override
   Widget build(BuildContext context) {
-    final p = authPalette(context), t = historyTint(p, tone);
-    final fg = tone == HistoryTone.neutral ? p.textTertiary : t.fg;
+    final p = authPalette(context), t = context.l10n;
+    final (fill, on, hover) = correct
+        ? (p.primary, p.onPrimary, p.primaryHover)
+        : (p.error, p.onError, p.destructiveHover);
+    return ClipRSuperellipse(
+      borderRadius: BorderRadius.circular(20),
+      child: ColoredBox(
+        color: fill,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 176),
+          child: Stack(
+            children: [
+              Positioned(right: -42, top: -40, child: _circle(200, hover)),
+              Positioned(
+                right: 22,
+                top: 46,
+                child: SvgPicture.asset(
+                  correct
+                      ? 'assets/illustrations/control/bottle_buddy_happy.svg'
+                      : 'assets/illustrations/control/bottle_buddy_sad.svg',
+                  width: 90,
+                  height: 122,
+                  excludeFromSemantics: true,
+                ),
+              ),
+              Positioned(right: 106, top: 34, child: HistorySparkle(18, on)),
+              Positioned(right: 14, top: 24, child: HistorySparkle(12, on)),
+              Positioned(right: 118, top: 118, child: HistorySparkle(10, on)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          t.h3QuestionOf(index + 1, total).toUpperCase(),
+                          style: ElioTokens.overline.copyWith(
+                            color: on.withValues(alpha: .8),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        for (var i = 0; i < total; i++)
+                          Container(
+                            width: i == index ? 20 : 8,
+                            height: 8,
+                            margin: const EdgeInsets.only(right: 4),
+                            decoration: ShapeDecoration(
+                              color: on.withValues(alpha: i == index ? 1 : .45),
+                              shape: const StadiumBorder(),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      correct ? t.h3HeroRight : t.h3HeroWrong,
+                      style: ElioTokens.headline.copyWith(color: on),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: 200,
+                      child: Text(
+                        correct ? t.h3HeroRightBody : t.h3HeroWrongBody,
+                        style: ElioTokens.bodySmall.copyWith(color: on),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _heroPill(
+                      hover,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.emoji_events_outlined,
+                            size: 16,
+                            color: on,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            t.h3PlusTrophies(trophies),
+                            style: historyButtonText.copyWith(color: on),
+                          ),
+                        ],
+                      ),
+                      const EdgeInsets.fromLTRB(8, 4, 10, 4),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Card shape r20 with a 2 dp `primary/fill` edge while it is read aloud.
+ShapeBorder _cardShape(ElioPalette p, bool active) => RoundedSuperellipseBorder(
+  borderRadius: BorderRadius.circular(20),
+  side: active
+      ? BorderSide(color: p.primary, width: 2)
+      : BorderSide(color: p.borderSubtle),
+);
+
+/// The question card: info tile, "PERTANYAAN", listen button, Subhead text.
+class HistoryQuestionPanel extends StatelessWidget {
+  const HistoryQuestionPanel({
+    super.key,
+    required this.question,
+    required this.listen,
+  });
+  final String question;
+  final Widget listen;
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context), info = historyTint(p, HistoryTone.info);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 16),
       decoration: ShapeDecoration(
-        color: t.bg,
-        shape: _shape(12, t.border ?? Colors.transparent),
+        color: p.surface,
+        shape: _cardShape(p, false),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              if (check) ...[
-                Icon(Icons.check, size: 14, color: fg),
-                const SizedBox(width: 6),
-              ],
-              Flexible(
+              Container(
+                width: 28,
+                height: 28,
+                decoration: ShapeDecoration(color: info.bg, shape: _shape(8)),
+                child: Icon(Icons.help_outline, size: 18, color: info.fg),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
                 child: Text(
-                  label.toUpperCase(),
-                  style: ElioTokens.overline.copyWith(color: fg),
+                  context.l10n.h3TheQuestion.toUpperCase(),
+                  style: ElioTokens.overline.copyWith(color: p.textTertiary),
                 ),
               ),
+              listen,
             ],
           ),
-          const SizedBox(height: 4),
-          Text(answer, style: ElioTokens.body.copyWith(color: p.textPrimary)),
+          const SizedBox(height: 8),
+          Text(
+            question,
+            style: ElioTokens.subhead.copyWith(color: p.textPrimary),
+          ),
         ],
       ),
     );
   }
 }
 
-/// "SEDANG DIBACAKAN" row (volume 14 + Overline `primary/text`).
-class HistoryReadingLabel extends StatelessWidget {
-  const HistoryReadingLabel({super.key});
+/// Answer tile: 2 dp edge, 32 badge (X / check). Neutral (essay) has no badge.
+class HistoryAnswerTile extends StatelessWidget {
+  const HistoryAnswerTile(
+    this.label,
+    this.answer, {
+    super.key,
+    this.tone = HistoryTone.success,
+  });
+  final String label, answer;
+  final HistoryTone tone;
   @override
   Widget build(BuildContext context) {
-    final c = authPalette(context).primaryText;
-    return Row(
-      children: [
-        Icon(Icons.volume_up_outlined, size: 14, color: c),
-        const SizedBox(width: 6),
-        Text(
-          context.l10n.h3ReadingNow,
-          style: ElioTokens.overline.copyWith(color: c),
+    final p = authPalette(context), t = historyTint(p, tone);
+    final (fill, onFill, tag) = switch (tone) {
+      HistoryTone.success => (p.primary, p.onPrimary, p.primaryText),
+      HistoryTone.error => (p.error, p.onError, p.errorText),
+      _ => (p.borderSubtle, p.textPrimary, p.textTertiary),
+    };
+    final badge = tone == HistoryTone.success || tone == HistoryTone.error;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
+      decoration: ShapeDecoration(
+        color: t.bg,
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: fill, width: badge ? 2 : 1),
         ),
-      ],
+      ),
+      child: Row(
+        children: [
+          if (badge) ...[
+            Container(
+              width: 32,
+              height: 32,
+              decoration: ShapeDecoration(
+                color: fill,
+                shape: const CircleBorder(),
+              ),
+              child: Icon(
+                tone == HistoryTone.success ? Icons.check : Icons.close,
+                size: 18,
+                color: onFill,
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  style: ElioTokens.overline.copyWith(color: tag),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  answer,
+                  style: ElioTokens.body.copyWith(color: p.textPrimary),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-/// Explanation section: pad 12, gap 8, r12, no fill; success tint while read.
-class HistoryExplanationSection extends StatelessWidget {
-  const HistoryExplanationSection({
-    super.key,
-    required this.title,
-    required this.body,
-    required this.active,
-    required this.onListen,
-  });
-  final String title, body;
-  final bool active;
-  final VoidCallback onListen;
+/// "SEDANG DIBACAKAN" pill (`primary/fill`, volume 14 + Overline on-fill).
+class HistoryReadingLabel extends StatelessWidget {
+  const HistoryReadingLabel({super.key});
   @override
   Widget build(BuildContext context) {
-    final p = authPalette(context), t = historyTint(p, HistoryTone.success);
+    final p = authPalette(context);
+    return _heroPill(
+      p.primary,
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.volume_up_outlined, size: 14, color: p.onPrimary),
+          const SizedBox(width: 6),
+          Text(
+            context.l10n.h3ReadingNow,
+            style: ElioTokens.overline.copyWith(color: p.onPrimary),
+          ),
+        ],
+      ),
+      const EdgeInsets.fromLTRB(8, 4, 10, 4),
+    );
+  }
+}
+
+/// A card that turns success-tinted with a reading pill while it is read.
+class _ReadCard extends StatelessWidget {
+  const _ReadCard({
+    required this.active,
+    required this.padding,
+    required this.children,
+  });
+  final bool active;
+  final EdgeInsets padding;
+  final List<Widget> children;
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: padding,
       decoration: ShapeDecoration(
-        color: active ? t.bg : null,
-        shape: _shape(12, active ? t.border : Colors.transparent),
+        color: active ? historyTint(p, HistoryTone.success).bg : p.surface,
+        shape: _cardShape(p, active),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (active) ...[
             const HistoryReadingLabel(),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
           ],
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: ElioTokens.subhead.copyWith(color: p.textPrimary),
-                ),
-              ),
-              const SizedBox(width: 8),
-              HistoryListenButton(active: active, onPressed: onListen),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(body, style: ElioTokens.body.copyWith(color: p.textPrimary)),
+          ...children,
         ],
       ),
     );
   }
 }
 
-/// Key idea card: info tint, buddy art 64x76, IDE UTAMA + Body Small. No
-/// listen button (it is read with the whole question).
-class HistoryKeyIdea extends StatelessWidget {
-  const HistoryKeyIdea({
+/// 52 dp r16 art tile of the learn, key idea and mission cards.
+Widget historyArtTile(Color bg, Widget art) => Container(
+  width: 52,
+  height: 52,
+  alignment: Alignment.center,
+  decoration: ShapeDecoration(color: bg, shape: _shape(16)),
+  child: art,
+);
+
+/// Learn card: art tile, title Subhead, listen button, Body text.
+class HistoryLearnCard extends StatelessWidget {
+  const HistoryLearnCard({
     super.key,
     required this.art,
-    required this.text,
-    this.active = false,
+    required this.title,
+    required this.body,
+    required this.active,
+    required this.onListen,
   });
   final Widget art;
+  final String title, body;
+  final bool active;
+  final VoidCallback onListen;
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
+    return _ReadCard(
+      active: active,
+      padding: const EdgeInsets.fromLTRB(16, 16, 12, 16),
+      children: [
+        Row(
+          children: [
+            art,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: ElioTokens.subhead.copyWith(color: p.textPrimary),
+              ),
+            ),
+            HistoryListenButton(active: active, onPressed: onListen),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: Text(
+            body,
+            style: ElioTokens.body.copyWith(color: p.textPrimary),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Key idea card: info tint, quest art on a `surface` tile, IDE UTAMA + Body.
+/// No listen button (it is read with the whole question).
+class HistoryKeyIdea extends StatelessWidget {
+  const HistoryKeyIdea({super.key, required this.text, this.active = false});
   final String text;
   final bool active;
   @override
@@ -944,11 +1817,27 @@ class HistoryKeyIdea extends StatelessWidget {
     final t = historyTint(p, active ? HistoryTone.success : HistoryTone.info);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(12, 16, 16, 16),
-      decoration: ShapeDecoration(color: t.bg, shape: _shape(16, t.border)),
+      padding: const EdgeInsets.all(16),
+      decoration: ShapeDecoration(
+        color: t.bg,
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: active
+              ? BorderSide(color: p.primary, width: 2)
+              : BorderSide(color: t.border!),
+        ),
+      ),
       child: Row(
         children: [
-          art,
+          historyArtTile(
+            p.surface,
+            SvgPicture.asset(
+              'assets/illustrations/home/quest_target.svg',
+              width: 40,
+              height: 40,
+              excludeFromSemantics: true,
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -957,14 +1846,20 @@ class HistoryKeyIdea extends StatelessWidget {
                 if (active)
                   const HistoryReadingLabel()
                 else
-                  Text(
-                    context.l10n.h3KeyIdea,
-                    style: ElioTokens.overline.copyWith(color: t.fg),
+                  Row(
+                    children: [
+                      HistorySparkle(12, t.fg),
+                      const SizedBox(width: 6),
+                      Text(
+                        context.l10n.h3KeyIdea,
+                        style: ElioTokens.overline.copyWith(color: t.fg),
+                      ),
+                    ],
                   ),
                 const SizedBox(height: 4),
                 Text(
                   text,
-                  style: ElioTokens.bodySmall.copyWith(color: p.textPrimary),
+                  style: ElioTokens.body.copyWith(color: p.textPrimary),
                 ),
               ],
             ),
@@ -975,66 +1870,113 @@ class HistoryKeyIdea extends StatelessWidget {
   }
 }
 
-/// Steps block: pad 0/12, gap 12, numbered rows (circle 28 `raised`).
-class HistorySteps extends StatelessWidget {
-  const HistorySteps({
+/// Mission card: flag tile, "Misimu" + step count, listen, numbered path
+/// with a `primary/fill` rail and a medal finish row. The finish line is a
+/// fixed sentence: the saved AI summary repeats the "why" text at length.
+class HistoryMission extends StatelessWidget {
+  const HistoryMission({
     super.key,
-    required this.title,
     required this.steps,
-    this.active = false,
+    required this.active,
+    required this.onListen,
   });
-  final String title;
   final List<String> steps;
   final bool active;
+  final VoidCallback onListen;
   @override
   Widget build(BuildContext context) {
-    final p = authPalette(context), t = historyTint(p, HistoryTone.success);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: active
-          ? ShapeDecoration(color: t.bg, shape: _shape(12, t.border))
-          : null,
+    final p = authPalette(context), t = context.l10n;
+    final warn = historyTint(p, HistoryTone.warning);
+    Widget rail(Widget head) => SizedBox(
+      width: 28,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (active) ...[
-            const SizedBox(height: 8),
-            const HistoryReadingLabel(),
-            const SizedBox(height: 8),
-          ],
-          Text(title, style: ElioTokens.subhead.copyWith(color: p.textPrimary)),
-          for (var i = 0; i < steps.length; i++) ...[
-            const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  alignment: Alignment.center,
-                  decoration: ShapeDecoration(
-                    color: p.surfaceRaised,
-                    shape: const CircleBorder(),
+          head,
+          Expanded(child: Container(width: 2, color: p.primary)),
+        ],
+      ),
+    );
+    return _ReadCard(
+      active: active,
+      padding: const EdgeInsets.all(16),
+      children: [
+        Row(
+          children: [
+            historyArtTile(
+              warn.bg,
+              Icon(Icons.outlined_flag, size: 26, color: warn.fg),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    t.h3Mission,
+                    style: ElioTokens.subhead.copyWith(color: p.textPrimary),
                   ),
-                  child: Text(
-                    '${i + 1}',
-                    style: historyButtonText.copyWith(color: p.textPrimary),
+                  Text(
+                    t.h3MissionSteps(steps.length),
+                    style: ElioTokens.caption.copyWith(color: p.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            HistoryListenButton(active: active, onPressed: onListen),
+          ],
+        ),
+        const SizedBox(height: 16),
+        for (var i = 0; i < steps.length; i++)
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                rail(
+                  Container(
+                    width: 28,
+                    height: 28,
+                    alignment: Alignment.center,
+                    decoration: ShapeDecoration(
+                      color: p.primary,
+                      shape: const CircleBorder(),
+                    ),
+                    child: Text(
+                      '${i + 1}',
+                      style: historyButtonText.copyWith(color: p.onPrimary),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    steps[i],
-                    style: ElioTokens.body.copyWith(color: p.textPrimary),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 3, bottom: 16),
+                    child: Text(
+                      steps[i],
+                      style: ElioTokens.body.copyWith(color: p.textPrimary),
+                    ),
                   ),
                 ),
               ],
             ),
+          ),
+        Row(
+          children: [
+            SvgPicture.asset(
+              'assets/illustrations/home/medal_gold.svg',
+              width: 28,
+              height: 33,
+              excludeFromSemantics: true,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                t.h3MissionDone,
+                style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
+              ),
+            ),
           ],
-          if (active) const SizedBox(height: 12),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1259,67 +2201,63 @@ class HistorySkeleton extends StatelessWidget {
     ),
   );
 
-  List<Widget> _list() => [
-    HistoryCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _b(width: 44, height: 44, radius: 22),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _b(width: 140, height: 18),
-                  _gap(8),
-                  _b(width: 190, height: 12),
-                ],
-              ),
-            ],
-          ),
-          _gap(),
-          _b(height: 8, radius: 4),
-          _gap(),
-          _b(width: 150, height: 12),
-        ],
+  static Widget _pair(double h, double r) => Row(
+    children: [
+      Expanded(
+        child: _b(height: h, radius: r),
       ),
-    ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: _b(height: h, radius: r),
+      ),
+    ],
+  );
+
+  List<Widget> _list() => [
+    _b(height: 164, radius: 20),
     _gap(),
-    _pills([56, 44, 96, 80], 40),
+    _pair(96, 16),
+    _gap(12),
+    _pair(96, 16),
     _gap(),
     _b(width: 140, height: 22),
     _gap(),
-    for (var i = 0; i < 5; i++) ...[
-      HistoryCard(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            _b(width: 64, height: 64, radius: 12),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _b(width: 190, height: 16),
-                  _gap(8),
-                  _b(width: 84, height: 20, radius: 999),
-                  _gap(8),
-                  _b(width: 130, height: 12),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            _b(width: 40, height: 16, radius: 999),
-          ],
-        ),
+    for (var i = 0; i < 2; i++) ...[
+      Row(
+        children: [
+          Expanded(child: _card()),
+          const SizedBox(width: 12),
+          Expanded(child: _card()),
+        ],
       ),
       _gap(12),
     ],
   ];
 
+  /// Scan card skeleton: 116 cover, meta, 2 title lines, bar, 36 button.
+  static Widget _card() => HistoryCard(
+    radius: 20,
+    padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _b(height: 116, radius: 16),
+        _gap(10),
+        _b(width: 90, height: 12),
+        _gap(8),
+        _b(height: 16),
+        _gap(6),
+        _b(width: 80, height: 16),
+        _gap(14),
+        _b(height: 6, radius: 999),
+        _gap(12),
+        _b(height: 36, radius: 999),
+      ],
+    ),
+  );
+
   List<Widget> _detail() => [
-    _b(height: 200, radius: 16),
+    _b(height: 184, radius: 20),
     _gap(),
     Row(
       children: [
@@ -1329,11 +2267,9 @@ class HistorySkeleton extends StatelessWidget {
       ],
     ),
     _gap(),
-    _b(width: 260, height: 12),
+    _b(height: 80, radius: 16),
     _gap(),
-    _pills([76, 100, 84], 40),
-    _gap(),
-    _b(height: 112, radius: 16),
+    _b(height: 48, radius: 999),
     _gap(),
     _b(width: 120, height: 22),
     _gap(),
@@ -1366,45 +2302,44 @@ class HistorySkeleton extends StatelessWidget {
   ];
 
   List<Widget> _explanation() => [
-    SizedBox(
-      height: 100,
-      child: Row(
-        children: [
-          _pills([36, 64, 76, 44], 24),
-          const Spacer(),
-          const SizedBox(
-            width: 48,
-            child: Center(
-              child: HistorySkeletonBlock(width: 36, height: 36, radius: 18),
-            ),
-          ),
-        ],
-      ),
-    ),
-    _gap(16),
-    _b(width: 320, height: 28),
-    _gap(8),
-    _b(width: 220, height: 28),
+    _b(height: 176, radius: 20),
     _gap(),
-    _b(height: 72, radius: 12),
-    _gap(),
-    _b(height: 72, radius: 12),
-    _gap(),
-    _b(width: 140, height: 22),
-    _gap(),
-    Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+    HistoryCard(
+      radius: 20,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _b(width: 240, height: 20),
-          for (final w in [
-            double.infinity,
-            double.infinity,
-            300.0,
-            double.infinity,
-            210.0,
-          ]) ...[_gap(12), _b(width: w, height: 12)],
+          _b(width: 110, height: 12),
+          _gap(12),
+          _b(height: 16),
+          _gap(12),
+          _b(width: 200, height: 16),
+        ],
+      ),
+    ),
+    _gap(),
+    _b(height: 64, radius: 16),
+    _gap(8),
+    _b(height: 64, radius: 16),
+    _gap(),
+    _b(width: 150, height: 22),
+    _gap(),
+    HistoryCard(
+      radius: 20,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _b(width: 52, height: 52, radius: 16),
+              const SizedBox(width: 12),
+              _b(width: 200, height: 16),
+            ],
+          ),
+          for (final w in [double.infinity, double.infinity, 280.0]) ...[
+            _gap(12),
+            _b(width: w, height: 12),
+          ],
         ],
       ),
     ),

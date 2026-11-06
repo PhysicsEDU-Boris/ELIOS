@@ -1947,7 +1947,7 @@
   "h3Title": "History",
   "h3Subtitle": "Scan results, quizzes & trophies",
   "h3Back": "Back",
-  "h3All": "All",
+  "h3All": "All scans",
   "h3CatB3": "B3",
   "h3CatB3Long": "B3 · Hazardous",
   "h3CatRecyclable": "Recyclable",
@@ -2004,17 +2004,6 @@
   "h3DetailTitle": "Scan detail",
   "h3ExportPdf": "Export PDF",
   "h3DetailLoadFailed": "Scan detail couldn't be loaded",
-  "h3ScannedMeta": "Scanned {time} · photo and {count, plural, =1{1 question} other{{count} questions}} saved locally",
-  "@h3ScannedMeta": {
-    "placeholders": {
-      "time": {
-        "type": "Object"
-      },
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "h3DiffChip": "{level} · {count}Q",
   "@h3DiffChip": {
     "placeholders": {
@@ -2026,18 +2015,6 @@
       }
     }
   },
-  "h3CorrectOf": "{correct} of {total} correct",
-  "@h3CorrectOf": {
-    "placeholders": {
-      "correct": {
-        "type": "Object"
-      },
-      "total": {
-        "type": "Object"
-      }
-    }
-  },
-  "h3TrophyRule": "10 trophies for every correct answer",
   "h3Questions": "Questions",
   "h3PdfFailed": "The PDF couldn't be exported. Try again.",
   "h3Correct": "Correct",
@@ -2854,5 +2831,95 @@
       }
     }
   },
-  "quizSkippedAnswer": "(skipped)"
+  "quizSkippedAnswer": "(skipped)",
+  "h3YourTrophies": "Your trophies",
+  "h3TrophyUnit": "{count, plural, =1{trophy} other{trophies}}",
+  "@h3TrophyUnit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "h3StatTrophies": "Trophies",
+  "h3StatScanned": "Scanned",
+  "h3QuestionOf": "Question {index} of {total}",
+  "@h3QuestionOf": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "h3HeroRight": "Nice one!",
+  "h3HeroRightBody": "You got it right. Here's why it works.",
+  "h3HeroWrong": "Not quite!",
+  "h3HeroWrongBody": "Good try. Let's find out why.",
+  "h3PlusTrophies": "{count, plural, =1{+1 trophy} other{+{count} trophies}}",
+  "@h3PlusTrophies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "h3TheQuestion": "The question",
+  "h3LearnWhy": "Let's learn why",
+  "h3Mission": "Your mission",
+  "h3MissionSteps": "{count, plural, =1{1 step to sort it right} other{{count} steps to sort it right}}",
+  "@h3MissionSteps": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "h3MissionDone": "Mission complete: you know how to sort it right.",
+  "h3SeeResults": "See results",
+  "h3CardSemantics": "{item}, {category}, {correct} of {total} correct, +{trophies} trophies",
+  "@h3CardSemantics": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      },
+      "category": {
+        "type": "String"
+      },
+      "correct": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "trophies": {
+        "type": "int"
+      }
+    }
+  },
+  "h3OpenPhoto": "View photo full screen",
+  "h3Close": "Close",
+  "h3SharePhoto": "Share photo",
+  "h3PinchHint": "Pinch to zoom · double-tap to reset",
+  "h3ViewerMeta": "Scanned {when} · {category}",
+  "@h3ViewerMeta": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      },
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "h3ScanPhoto": "Scan photo of {item}",
+  "@h3ScanPhoto": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  }
 }

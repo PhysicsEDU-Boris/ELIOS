@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/scan_record.dart';
-import '../services/ai_quiz_service.dart';
 import '../services/quiz_pdf_service.dart';
 import '../services/history_translation_service.dart';
 import '../services/scan_record_store.dart';
@@ -11,6 +10,7 @@ import '../widgets/auth/auth_widgets.dart' show authPalette;
 import '../widgets/history_ui.dart';
 import 'home/home_parts.dart' show homeArt;
 import 'device_scan_screen.dart';
+import 'history_photo_viewer.dart';
 import 'question_explanation_screen.dart';
 
 class ScanHistoryScreen extends StatefulWidget {
@@ -112,7 +112,10 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
               ),
             )
           : null,
+      // In the tab shell the bottom nav owns the gesture inset; reserving it
+      // here too left an empty band above the nav (other tabs have none).
       body: SafeArea(
+        bottom: widget.showHeader,
         child: LayoutBuilder(
           builder: (context, box) {
             if (_failed || _store.loadError != null) {
@@ -136,59 +139,51 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
               children: [
                 _summary(),
                 const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final c in [
-                      null,
-                      ScanCategory.b3,
-                      ScanCategory.recyclable,
-                      ScanCategory.organic,
-                    ])
-                      HistoryFilterChip(
-                        c == null
-                            ? context.l10n.h3All
-                            : historyCategory(context.l10n, c),
-                        selected: _filter == c,
-                        onSelected: () => setState(() {
-                          _filter = c;
-                          _selected = null;
-                        }),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                _tiles(),
+                const SizedBox(height: 24),
                 HistorySectionHeader(
                   context.l10n.h3RecentScans,
                   action: context.l10n.h3ScanCount(records.length),
                 ),
-                const SizedBox(height: 16),
-                for (final r in records)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: HistoryScanRow(
-                      r.localized(context.l10n.localeName),
-                      onTap: () {
-                        if (box.maxWidth >= 750) {
-                          setState(() => _selected = r.id);
-                        } else {
-                          final theme = Theme.of(context);
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => Theme(
-                                data: theme,
-                                child: ScanDetailScreen(
-                                  record: r,
-                                  store: _store,
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                    ),
+                // Day groups (Overline, 12 above the group, 20 apart), each a
+                // card grid: 2 columns, 3 when the list pane is over 560 dp.
+                for (final (i, group) in _byDay(records).indexed) ...[
+                  SizedBox(height: i == 0 ? 16 : 20),
+                  Text(
+                    historyDay(context.l10n, group.first.time).toUpperCase(),
+                    style: ElioTokens.overline.copyWith(color: p.textTertiary),
                   ),
+                  const SizedBox(height: 12),
+                  HistoryScanGrid(
+                    records: [
+                      for (final r in group)
+                        r.localized(context.l10n.localeName),
+                    ],
+                    columns:
+                        (box.maxWidth >= 750
+                                    ? box.maxWidth * .42
+                                    : box.maxWidth) -
+                                32 >
+                            560
+                        ? 3
+                        : 2,
+                    onOpen: (r) {
+                      if (box.maxWidth >= 750) {
+                        setState(() => _selected = r.id);
+                      } else {
+                        final theme = Theme.of(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => Theme(
+                              data: theme,
+                              child: ScanDetailScreen(record: r, store: _store),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
                 if (records.isEmpty)
                   Padding(
                     padding: const EdgeInsets.all(24),
@@ -224,10 +219,26 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
     );
   }
 
+  /// Consecutive records of the same day (records are newest first).
+  List<List<ScanRecord>> _byDay(List<ScanRecord> records) {
+    final groups = <List<ScanRecord>>[];
+    for (final r in records) {
+      if (groups.isNotEmpty &&
+          historyDay(context.l10n, groups.last.first.time) ==
+              historyDay(context.l10n, r.time)) {
+        groups.last.add(r);
+      } else {
+        groups.add([r]);
+      }
+    }
+    return groups;
+  }
+
   Widget _summary() {
     final level = _store.userLevel, total = _store.totalTrophies;
-    return HistoryTrophySummary(
+    return HistoryTrophyHero(
       total: total,
+      levelNumber: level.levelNumber,
       level: level.levelAndTitle,
       progress: _store.levelProgress,
       next: level.nextLevelThreshold == null
@@ -236,6 +247,48 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
               level.nextLevelThreshold! - total,
               level.levelNumber + 1,
             ),
+    );
+  }
+
+  /// 2x2 category tiles; tapping one filters the list.
+  Widget _tiles() {
+    final t = context.l10n, all = _store.records;
+    Widget tile(ScanCategory? c) => Expanded(
+      child: HistoryCategoryTile(
+        label: c == null
+            ? t.h3All
+            : c == ScanCategory.b3
+            ? t.h3CatB3Long
+            : historyCategory(t, c),
+        count: c == null
+            ? all.length
+            : all.where((r) => r.category == c).length,
+        art: historyBinArt(c),
+        selected: _filter == c,
+        onTap: () => setState(() {
+          _filter = c;
+          _selected = null;
+        }),
+      ),
+    );
+    return Column(
+      children: [
+        Row(
+          children: [
+            tile(null),
+            const SizedBox(width: 12),
+            tile(ScanCategory.b3),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            tile(ScanCategory.recyclable),
+            const SizedBox(width: 12),
+            tile(ScanCategory.organic),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -362,7 +415,12 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
               lang: _saved.lang,
               onRetry: () => unawaited(_translate()),
             ),
-          HistoryPhoto(record, width: double.infinity, height: 200),
+          HistoryPhotoFrame(
+            record,
+            onOpen: historyHasPhoto(record)
+                ? () => HistoryPhotoViewer.open(context, record)
+                : null,
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -376,60 +434,12 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
               HistoryCategoryChip(record.category),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 1),
-                child: Icon(
-                  Icons.schedule_outlined,
-                  size: 16,
-                  color: p.textSecondary,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  context.l10n.h3ScannedMeta(
-                    historyTime(context.l10n, record.time),
-                    record.totalQuestions,
-                  ),
-                  style: ElioTokens.caption.copyWith(color: p.textSecondary),
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 16),
-          // One row as in Figma ("Mudah · 1Q", like the Q badges); scrolls on
-          // phones narrower than the three chips.
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final d in QuizDifficulty.values) ...[
-                  if (d.index > 0) const SizedBox(width: 8),
-                  HistoryFilterChip(
-                    context.l10n.h3DiffChip(
-                      historyDifficulty(context.l10n, d),
-                      d == record.difficulty
-                          ? record.totalQuestions
-                          : d.questionCount,
-                    ),
-                    selected: d == record.difficulty,
-                  ),
-                ],
-              ],
-            ),
-          ),
+          HistoryResultStats(record),
           const SizedBox(height: 16),
-          HistoryScoreCard(record),
+          HistoryDifficultyTabs(record),
           const SizedBox(height: 16),
-          HistorySectionHeader(
-            context.l10n.h3Questions,
-            action: context.l10n.h3ExportPdf,
-            onAction: () => _export(context),
-          ),
+          HistorySectionHeader(context.l10n.h3Questions),
           const SizedBox(height: 16),
           for (var i = 0; i < record.questions.length; i++)
             Padding(

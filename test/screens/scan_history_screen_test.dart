@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:elio/l10n/l10n.dart';
 import 'package:elio/Screens/scan_history_screen.dart';
+import 'package:elio/Screens/history_photo_viewer.dart';
 import 'package:elio/Screens/question_explanation_screen.dart';
 import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/quiz_tts_service.dart';
@@ -67,6 +68,72 @@ void main() {
     await t.pump();
   }
 
+  testWidgets('tab list reaches the bottom nav with a gesture inset', (
+    t,
+  ) async {
+    t.view.physicalSize = const Size(390, 844);
+    t.view.devicePixelRatio = 1;
+    t.view.padding = const FakeViewPadding(bottom: 24);
+    t.view.viewPadding = const FakeViewPadding(bottom: 24);
+    addTearDown(t.view.reset);
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: ElioLightTheme.data,
+        // As HomeShell: padding re-read from above the Scaffold, so the
+        // gesture inset reaches the tab body.
+        home: Builder(
+          builder: (outer) => Scaffold(
+            body: MediaQuery.removePadding(
+              context: outer,
+              removeTop: true,
+              child: ScanHistoryScreen(
+                store: HistoryTestStore([h3Record()]),
+                showHeader: false,
+              ),
+            ),
+            bottomNavigationBar: ElioBottomNav(
+              currentIndex: 4,
+              onSelectTab: (_) {},
+              onControl: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pump();
+    // Like the other tabs: no empty band between the list and the nav.
+    expect(
+      t.getBottomLeft(find.byKey(const ValueKey('history_list'))).dy,
+      t.getTopLeft(find.byType(ElioBottomNav)).dy,
+    );
+  });
+  testWidgets('redesigned list follows a live language switch', (t) async {
+    final store = HistoryTestStore([h3Record()]);
+    Widget app(String lang) => MaterialApp(
+      locale: Locale(lang),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      theme: ElioLightTheme.data,
+      home: ScanHistoryScreen(store: store, showHeader: false),
+    );
+    t.view.physicalSize = const Size(390, 844);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    await t.pumpWidget(app('id'));
+    await t.pump();
+    expect(find.text('PIALA KAMU'), findsOneWidget);
+    expect(find.text('Semua scan'), findsOneWidget);
+    expect(find.text('HARI INI'), findsOneWidget);
+    await t.pumpWidget(app('en'));
+    await t.pump();
+    expect(find.text('YOUR TROPHIES'), findsOneWidget);
+    expect(find.text('All scans'), findsOneWidget);
+    expect(find.text('TODAY'), findsOneWidget);
+    expect(find.text('PIALA KAMU'), findsNothing);
+  });
   for (final mode in Brightness.values) {
     final name = mode.name;
     testWidgets(
@@ -75,32 +142,22 @@ void main() {
         final record = h3Record(), store = HistoryTestStore([h3Record()]);
         await pump(t, ScanHistoryScreen(store: store), mode);
         expect(find.text('Riwayat'), findsOneWidget);
-        expect(find.text('${record.trophies} piala'), findsOneWidget);
+        expect(find.text('${record.trophies}'), findsOneWidget);
+        expect(find.text('PIALA KAMU'), findsOneWidget);
+        expect(find.text('HARI INI'), findsOneWidget);
         expect(find.text('Tersimpan lokal'), findsOneWidget);
-        await t.tap(find.widgetWithText(HistoryFilterChip, 'Organik'));
+        await t.tap(find.widgetWithText(HistoryCategoryTile, 'Organik'));
         await t.pumpAndSettle();
         expect(find.text('Wadah earphone'), findsNothing);
-        await t.tap(find.widgetWithText(HistoryFilterChip, 'Semua'));
+        await t.tap(find.widgetWithText(HistoryCategoryTile, 'Semua scan'));
         await t.pumpAndSettle();
         await t.tap(find.text('Wadah earphone'));
         await t.pumpAndSettle();
         expect(find.byType(ScanDetailScreen), findsOneWidget);
         expect(find.text('Detail scan'), findsOneWidget);
-        // Score card: Figma chip/warning-bg (light 4 %, dark 12 %).
-        final card = t.widget<Material>(
-          find
-              .descendant(
-                of: find.byType(HistoryScoreCard),
-                matching: find.byType(Material),
-              )
-              .first,
-        );
-        expect(
-          card.color,
-          mode == Brightness.dark
-              ? ElioTokens.dark.secondaryText.withValues(alpha: .12)
-              : ElioTokens.light.secondaryText.withValues(alpha: .04),
-        );
+        // Result stats replace the score card (Figma 02 redesign).
+        expect(find.byType(HistoryResultStats), findsOneWidget);
+        expect(find.byType(HistoryDifficultyTabs), findsOneWidget);
         expect(t.takeException(), isNull);
       },
     );
@@ -164,9 +221,9 @@ void main() {
           RepaintBoundary(
             key: const Key('capture'),
             child: MaterialApp(
-        locale: const Locale('id'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
+              locale: const Locale('id'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
               debugShowCheckedModeBanner: false,
               theme: mode == Brightness.dark
                   ? ElioDarkTheme.data
@@ -195,7 +252,15 @@ void main() {
         });
         await t.drag(find.byType(ListView).first, const Offset(0, -600));
         await t.pumpAndSettle();
-        expect(t.getSize(find.byType(SvgPicture)), const Size(64, 76));
+        expect(
+          t.getSize(
+            find.descendant(
+              of: find.byType(HistoryKeyIdea),
+              matching: find.byType(SvgPicture),
+            ),
+          ),
+          const Size(40, 40),
+        );
         await t.runAsync(() async {
           final image = await boundary.toImage(pixelRatio: 2);
           final bytes = (await image.toByteData(
@@ -448,13 +513,14 @@ void main() {
     for (final shape in [
       'portrait',
       'landscape',
+      'wide',
       'tiny',
       'missing',
       'unreadable',
       'legacy',
     ]) {
       testWidgets(
-        '${mode.name} $shape photo is retained and cover-fit in list and detail',
+        '${mode.name} $shape photo is contained in card, frame and viewer',
         (t) async {
           final dir = Directory.systemTemp.createTempSync('h3-photo-');
           addTearDown(() => dir.deleteSync(recursive: true));
@@ -463,8 +529,15 @@ void main() {
               ? (90, 240)
               : shape == 'tiny'
               ? (2, 1)
+              : shape == 'wide'
+              ? (1200, 200)
               : (380, 270);
-          final valid = ['portrait', 'landscape', 'tiny'].contains(shape);
+          final valid = [
+            'portrait',
+            'landscape',
+            'wide',
+            'tiny',
+          ].contains(shape);
           if (valid) {
             file.writeAsBytesSync(
               img.encodeJpg(
@@ -490,9 +563,12 @@ void main() {
             }
           });
           await t.pumpAndSettle();
+          // Contain, never cropped: the whole photo fits the polaroid slot.
           if (valid) {
-            expect(t.widget<Image>(find.byType(Image)).fit, BoxFit.cover);
-            expect(t.getSize(find.byType(Image)), const Size(64, 64));
+            expect(t.widget<Image>(find.byType(Image)).fit, BoxFit.contain);
+            expect(t.getSize(find.byType(Image)), const Size(104, 58));
+          } else {
+            expect(find.byType(SvgPicture), findsWidgets); // bin buddy
           }
           await t.runAsync(() async {
             await t.tap(find.text(record.itemName));
@@ -506,17 +582,29 @@ void main() {
             }
           });
           await t.pumpAndSettle();
+          final open = find.byTooltip('Lihat foto layar penuh');
           if (valid) {
             final photo = find.descendant(
               of: find.byType(ScanDetailScreen),
               matching: find.byType(Image),
             );
-            expect(t.widget<Image>(photo).fit, BoxFit.cover);
-            expect(t.getSize(photo).height, 200);
-          } else if (shape == 'legacy') {
-            expect(find.byType(SvgPicture), findsWidgets);
+            expect(t.widget<Image>(photo).fit, BoxFit.contain);
+            expect(t.getSize(photo), const Size(224, 126));
+            await t.tap(open);
+            await t.pumpAndSettle();
+            final full = find.descendant(
+              of: find.byType(HistoryPhotoViewer),
+              matching: find.byType(Image),
+            );
+            expect(t.widget<Image>(full).fit, BoxFit.contain);
+            await t.tap(find.byTooltip('Tutup'));
+            await t.pumpAndSettle();
+            expect(find.byType(HistoryPhotoViewer), findsNothing);
+            expect(find.byType(ScanDetailScreen), findsOneWidget);
           } else {
-            expect(find.byIcon(Icons.broken_image_outlined), findsWidgets);
+            // Bin buddy in the polaroid; no viewer when the file is missing.
+            expect(open, shape == 'unreadable' ? findsOneWidget : findsNothing);
+            expect(find.byType(SvgPicture), findsWidgets);
           }
           expect(t.takeException(), isNull);
           await t.pumpWidget(const SizedBox());
@@ -525,7 +613,7 @@ void main() {
     }
   }
   for (final mode in Brightness.values) {
-    testWidgets('${mode.name} History filters keep H3 rounded sans styling', (
+    testWidgets('${mode.name} category tiles select with H3 styling', (
       t,
     ) async {
       await pump(
@@ -533,22 +621,27 @@ void main() {
         ScanHistoryScreen(store: HistoryTestStore([h3Record()])),
         mode,
       );
-      final chip = find.byType(HistoryFilterChip).first;
-      expect(
-        t
-            .widget<Material>(
-              find.descendant(of: chip, matching: find.byType(Material)).first,
+      final p = mode == Brightness.dark ? ElioTokens.dark : ElioTokens.light;
+      Material tile(String label) => t.widget<Material>(
+        find
+            .descendant(
+              of: find.widgetWithText(HistoryCategoryTile, label),
+              matching: find.byType(Material),
             )
-            .shape,
-        isA<StadiumBorder>(),
+            .first,
       );
       expect(
-        t
-            .widget<Text>(
-              find.descendant(of: chip, matching: find.byType(Text)),
-            )
-            .style
-            ?.fontFamily,
+        (tile('Semua scan').shape as RoundedSuperellipseBorder).side.color,
+        p.primary,
+      );
+      await t.tap(find.widgetWithText(HistoryCategoryTile, 'B3 · Berbahaya'));
+      await t.pump();
+      expect(
+        (tile('B3 · Berbahaya').shape as RoundedSuperellipseBorder).side.width,
+        2,
+      );
+      expect(
+        t.widget<Text>(find.text('Semua scan')).style?.fontFamily,
         ElioTokens.fontSans,
       );
     });

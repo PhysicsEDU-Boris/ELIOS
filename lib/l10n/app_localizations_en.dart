@@ -2938,7 +2938,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get h3Back => 'Back';
 
   @override
-  String get h3All => 'All';
+  String get h3All => 'All scans';
 
   @override
   String get h3CatB3 => 'B3';
@@ -3033,28 +3033,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get h3DetailLoadFailed => 'Scan detail couldn\'t be loaded';
 
   @override
-  String h3ScannedMeta(Object time, int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count questions',
-      one: '1 question',
-    );
-    return 'Scanned $time · photo and $_temp0 saved locally';
-  }
-
-  @override
   String h3DiffChip(Object level, Object count) {
     return '$level · ${count}Q';
   }
-
-  @override
-  String h3CorrectOf(Object correct, Object total) {
-    return '$correct of $total correct';
-  }
-
-  @override
-  String get h3TrophyRule => '10 trophies for every correct answer';
 
   @override
   String get h3Questions => 'Questions';
@@ -4270,4 +4251,112 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get quizSkippedAnswer => '(skipped)';
+
+  @override
+  String get h3YourTrophies => 'Your trophies';
+
+  @override
+  String h3TrophyUnit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'trophies',
+      one: 'trophy',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get h3StatTrophies => 'Trophies';
+
+  @override
+  String get h3StatScanned => 'Scanned';
+
+  @override
+  String h3QuestionOf(int index, int total) {
+    return 'Question $index of $total';
+  }
+
+  @override
+  String get h3HeroRight => 'Nice one!';
+
+  @override
+  String get h3HeroRightBody => 'You got it right. Here\'s why it works.';
+
+  @override
+  String get h3HeroWrong => 'Not quite!';
+
+  @override
+  String get h3HeroWrongBody => 'Good try. Let\'s find out why.';
+
+  @override
+  String h3PlusTrophies(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count trophies',
+      one: '+1 trophy',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get h3TheQuestion => 'The question';
+
+  @override
+  String get h3LearnWhy => 'Let\'s learn why';
+
+  @override
+  String get h3Mission => 'Your mission';
+
+  @override
+  String h3MissionSteps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count steps to sort it right',
+      one: '1 step to sort it right',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get h3MissionDone =>
+      'Mission complete: you know how to sort it right.';
+
+  @override
+  String get h3SeeResults => 'See results';
+
+  @override
+  String h3CardSemantics(
+    String item,
+    String category,
+    int correct,
+    int total,
+    int trophies,
+  ) {
+    return '$item, $category, $correct of $total correct, +$trophies trophies';
+  }
+
+  @override
+  String get h3OpenPhoto => 'View photo full screen';
+
+  @override
+  String get h3Close => 'Close';
+
+  @override
+  String get h3SharePhoto => 'Share photo';
+
+  @override
+  String get h3PinchHint => 'Pinch to zoom · double-tap to reset';
+
+  @override
+  String h3ViewerMeta(String when, String category) {
+    return 'Scanned $when · $category';
+  }
+
+  @override
+  String h3ScanPhoto(String item) {
+    return 'Scan photo of $item';
+  }
 }
