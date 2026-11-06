@@ -153,6 +153,19 @@ class QuizPdfService {
     return file.path;
   }
 
+  /// Shares the saved scan photo through the same share sheet as the reports.
+  /// `printing` only shares PDFs, so the photo goes out as a one-page PDF
+  /// (no extra share dependency).
+  static Future<void> sharePhoto(ScanRecord record) async {
+    final image = pw.MemoryImage(await File(record.cropPhotoPath!).readAsBytes());
+    final doc = pw.Document()
+      ..addPage(pw.Page(build: (_) => pw.Center(child: pw.Image(image, fit: pw.BoxFit.contain))));
+    await Printing.sharePdf(
+      bytes: await doc.save(),
+      filename: _safeFilename(record).replaceFirst(RegExp(r'\.pdf$'), '_photo.pdf'),
+    );
+  }
+
   static Future<void> shareQuestion(ScanRecord record, int index,
       {QuestionPdfOptions options = const QuestionPdfOptions()}) async {
     await Printing.sharePdf(bytes: await generateQuestionPdfBytes(record, index, options: options),

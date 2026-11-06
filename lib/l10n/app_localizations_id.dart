@@ -4249,4 +4249,40 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get h3MissionDone =>
       'Misi selesai: kamu tahu cara memilahnya dengan benar.';
+
+  @override
+  String get h3SeeResults => 'Lihat hasil';
+
+  @override
+  String h3CardSemantics(
+    String item,
+    String category,
+    int correct,
+    int total,
+    int trophies,
+  ) {
+    return '$item, $category, $correct dari $total benar, +$trophies piala';
+  }
+
+  @override
+  String get h3OpenPhoto => 'Lihat foto layar penuh';
+
+  @override
+  String get h3Close => 'Tutup';
+
+  @override
+  String get h3SharePhoto => 'Bagikan foto';
+
+  @override
+  String get h3PinchHint => 'Cubit untuk zoom · ketuk dua kali untuk reset';
+
+  @override
+  String h3ViewerMeta(String when, String category) {
+    return 'Dipindai $when · $category';
+  }
+
+  @override
+  String h3ScanPhoto(String item) {
+    return 'Foto scan $item';
+  }
 }

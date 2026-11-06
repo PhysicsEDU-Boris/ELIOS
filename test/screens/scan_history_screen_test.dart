@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:elio/l10n/l10n.dart';
 import 'package:elio/Screens/scan_history_screen.dart';
+import 'package:elio/Screens/history_photo_viewer.dart';
 import 'package:elio/Screens/question_explanation_screen.dart';
 import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/quiz_tts_service.dart';
@@ -512,13 +513,14 @@ void main() {
     for (final shape in [
       'portrait',
       'landscape',
+      'wide',
       'tiny',
       'missing',
       'unreadable',
       'legacy',
     ]) {
       testWidgets(
-        '${mode.name} $shape photo is retained and cover-fit in list and detail',
+        '${mode.name} $shape photo is contained in card, frame and viewer',
         (t) async {
           final dir = Directory.systemTemp.createTempSync('h3-photo-');
           addTearDown(() => dir.deleteSync(recursive: true));
@@ -527,8 +529,15 @@ void main() {
               ? (90, 240)
               : shape == 'tiny'
               ? (2, 1)
+              : shape == 'wide'
+              ? (1200, 200)
               : (380, 270);
-          final valid = ['portrait', 'landscape', 'tiny'].contains(shape);
+          final valid = [
+            'portrait',
+            'landscape',
+            'wide',
+            'tiny',
+          ].contains(shape);
           if (valid) {
             file.writeAsBytesSync(
               img.encodeJpg(
@@ -554,9 +563,12 @@ void main() {
             }
           });
           await t.pumpAndSettle();
+          // Contain, never cropped: the whole photo fits the polaroid slot.
           if (valid) {
-            expect(t.widget<Image>(find.byType(Image)).fit, BoxFit.cover);
-            expect(t.getSize(find.byType(Image)), const Size(64, 64));
+            expect(t.widget<Image>(find.byType(Image)).fit, BoxFit.contain);
+            expect(t.getSize(find.byType(Image)), const Size(104, 58));
+          } else {
+            expect(find.byType(SvgPicture), findsWidgets); // bin buddy
           }
           await t.runAsync(() async {
             await t.tap(find.text(record.itemName));
@@ -570,17 +582,29 @@ void main() {
             }
           });
           await t.pumpAndSettle();
+          final open = find.byTooltip('Lihat foto layar penuh');
           if (valid) {
             final photo = find.descendant(
               of: find.byType(ScanDetailScreen),
               matching: find.byType(Image),
             );
-            expect(t.widget<Image>(photo).fit, BoxFit.cover);
-            expect(t.getSize(photo).height, 200);
-          } else if (shape == 'legacy') {
-            expect(find.byType(SvgPicture), findsWidgets);
+            expect(t.widget<Image>(photo).fit, BoxFit.contain);
+            expect(t.getSize(photo), const Size(224, 126));
+            await t.tap(open);
+            await t.pumpAndSettle();
+            final full = find.descendant(
+              of: find.byType(HistoryPhotoViewer),
+              matching: find.byType(Image),
+            );
+            expect(t.widget<Image>(full).fit, BoxFit.contain);
+            await t.tap(find.byTooltip('Tutup'));
+            await t.pumpAndSettle();
+            expect(find.byType(HistoryPhotoViewer), findsNothing);
+            expect(find.byType(ScanDetailScreen), findsOneWidget);
           } else {
-            expect(find.byIcon(Icons.broken_image_outlined), findsWidgets);
+            // Bin buddy in the polaroid; no viewer when the file is missing.
+            expect(open, shape == 'unreadable' ? findsOneWidget : findsNothing);
+            expect(find.byType(SvgPicture), findsWidgets);
           }
           expect(t.takeException(), isNull);
           await t.pumpWidget(const SizedBox());

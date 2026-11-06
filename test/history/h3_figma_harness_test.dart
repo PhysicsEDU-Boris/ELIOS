@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:elio/Screens/history_photo_viewer.dart';
 import 'package:elio/Screens/question_explanation_screen.dart';
 import 'package:elio/Screens/scan_history_screen.dart';
 import 'package:elio/models/quiz_explanation.dart';
@@ -28,7 +29,7 @@ import 'h3_fixture.dart';
 const _figma = 'docs/design/h3-figma';
 // en/id renders (decision 0187 redesign; 0185 l10n); PNGs are written only with L10N_RENDER=1 so a
 // plain test run never rewrites tracked files. (The 0184 images are frozen.)
-const _out = 'docs/test-results/0187-h3-redesign';
+const _out = 'docs/test-results/h3-cards';
 final _write = Platform.environment['L10N_RENDER'] == '1';
 
 const figmaExplanation = QuizExplanation(
@@ -71,13 +72,33 @@ const figmaExplanation = QuizExplanation(
   ),
 );
 
+/// A 16:9 test photo (two colour bands) on disk; never the owner's History.
+String widePhoto() {
+  final f = File('${Directory.systemTemp.path}/h3_cards_wide.png');
+  if (!f.existsSync()) {
+    final im = img.Image(width: 640, height: 360);
+    img.fill(im, color: img.ColorRgb8(186, 230, 253));
+    img.fillRect(
+      im,
+      x1: 0,
+      y1: 260,
+      x2: 640,
+      y2: 360,
+      color: img.ColorRgb8(34, 211, 238),
+    );
+    f.writeAsBytesSync(img.encodePng(im));
+  }
+  return f.path;
+}
+
 DateTime _at(int h, int m, {int daysAgo = 0}) {
   final n = DateTime.now();
   return DateTime(n.year, n.month, n.day - daysAgo, h, m);
 }
 
-ScanRecord earphone({bool cached = true}) => ScanRecord(
+ScanRecord earphone({bool cached = true, String? photo}) => ScanRecord(
   id: 'figma-earphone',
+  cropPhotoPath: photo,
   time: _at(23, 29),
   trophies: 20,
   itemName: 'Wadah earphone',
@@ -118,19 +139,26 @@ ScanRecord earphone({bool cached = true}) => ScanRecord(
       itemName: 'Earphone case',
       questions: [
         QuestionText(
-          question: 'Why should a plastic earphone case go to the recycling bin, not general waste?',
-          yourAnswer: 'It can be melted and reused, so less new plastic is made.',
-          rightAnswer: 'It can be melted and reused, so less new plastic is made.',
+          question:
+              'Why should a plastic earphone case go to the recycling bin, not general waste?',
+          yourAnswer:
+              'It can be melted and reused, so less new plastic is made.',
+          rightAnswer:
+              'It can be melted and reused, so less new plastic is made.',
         ),
         QuestionText(
           question: 'What should you do before recycling the earphone case?',
           yourAnswer: 'Throw it in with the batteries.',
-          rightAnswer: 'Empty it, rinse it and remove any batteries or electronics first.',
+          rightAnswer:
+              'Empty it, rinse it and remove any batteries or electronics first.',
         ),
         QuestionText(
-          question: 'An empty plastic case floats in water even though plastic is denser. Why?',
-          yourAnswer: 'The air inside makes its average density lower than water.',
-          rightAnswer: 'The air inside makes its average density lower than water.',
+          question:
+              'An empty plastic case floats in water even though plastic is denser. Why?',
+          yourAnswer:
+              'The air inside makes its average density lower than water.',
+          rightAnswer:
+              'The air inside makes its average density lower than water.',
         ),
       ],
     ),
@@ -164,15 +192,33 @@ ScanRecord _simple(
       itemName: english ?? name,
       questions: [
         for (var i = 0; i < 3; i++)
-          QuestionText(question: 'Question $i', yourAnswer: 'a', rightAnswer: 'a'),
+          QuestionText(
+            question: 'Question $i',
+            yourAnswer: 'a',
+            rightAnswer: 'a',
+          ),
       ],
     ),
   },
 );
 
 List<ScanRecord> figmaRecords() => [
-  _simple('e', 'Wadah earphone', ScanCategory.recyclable, _at(23, 29), 3, 'Earphone case'),
-  _simple('b', 'Modul buck converter', ScanCategory.b3, _at(22, 47), 0, 'Buck converter module'),
+  _simple(
+    'e',
+    'Wadah earphone',
+    ScanCategory.recyclable,
+    _at(23, 29),
+    3,
+    'Earphone case',
+  ),
+  _simple(
+    'b',
+    'Modul buck converter',
+    ScanCategory.b3,
+    _at(22, 47),
+    0,
+    'Buck converter module',
+  ),
   _simple('j', 'Jalangkote', ScanCategory.organic, _at(21, 15), 1),
   _simple(
     'p',
@@ -182,7 +228,14 @@ List<ScanRecord> figmaRecords() => [
     2,
     'Plastic cup',
   ),
-  _simple('t', 'Baterai', ScanCategory.b3, _at(11, 0, daysAgo: 1), 0, 'Battery'),
+  _simple(
+    't',
+    'Baterai',
+    ScanCategory.b3,
+    _at(11, 0, daysAgo: 1),
+    0,
+    'Battery',
+  ),
 ];
 
 class FigmaStore extends HistoryTestStore {
@@ -240,183 +293,226 @@ void main() {
   });
 
   for (final lang in ['en', 'id']) {
-  for (final mode in Brightness.values) {
-    final m = '$lang-${mode.name}';
-    Future<void> render(
-      WidgetTester t,
-      String name,
-      Widget screen, {
-      Future<void> Function()? act,
-    }) async {
-      final ref = img.decodePng(
-        File('$_figma/${mode.name}-$name.png').readAsBytesSync(),
-      )!;
-      debugSetL10n(Locale(lang));
-      final size = Size(390, ref.height.toDouble());
-      t.view.physicalSize = size;
-      t.view.devicePixelRatio = 1;
-      t.view.padding = const FakeViewPadding(top: 28);
-      t.view.viewPadding = const FakeViewPadding(top: 28);
-      addTearDown(t.view.reset);
-      QuizTtsService.instance.mockStop = () async {};
-      QuizTtsService.instance.mockSpeak = (_) => Completer<void>().future;
-      AiQuizService.instance.mockSendExecute =
-          (p, {imageBytes, isUser = false}) =>
-              Completer<String?>().future; // explanation stays loading
-      await t.pumpWidget(
-        RepaintBoundary(
-          key: const Key('capture'),
-          child: MaterialApp(
-        locale: Locale(lang),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-            debugShowCheckedModeBanner: false,
-            theme: mode == Brightness.dark
-                ? ElioDarkTheme.data
-                : ElioLightTheme.data,
-            home: screen,
+    for (final mode in Brightness.values) {
+      final m = '$lang-${mode.name}';
+      Future<void> render(
+        WidgetTester t,
+        String name,
+        Widget screen, {
+        Future<void> Function()? act,
+      }) async {
+        final both = File('$_figma/both-$name.png');
+        final ref = img.decodePng(
+          (both.existsSync() ? both : File('$_figma/${mode.name}-$name.png'))
+              .readAsBytesSync(),
+        )!;
+        debugSetL10n(Locale(lang));
+        final size = Size(390, ref.height.toDouble());
+        t.view.physicalSize = size;
+        t.view.devicePixelRatio = 1;
+        t.view.padding = const FakeViewPadding(top: 28);
+        t.view.viewPadding = const FakeViewPadding(top: 28);
+        addTearDown(t.view.reset);
+        QuizTtsService.instance.mockStop = () async {};
+        QuizTtsService.instance.mockSpeak = (_) => Completer<void>().future;
+        AiQuizService.instance.mockSendExecute =
+            (p, {imageBytes, isUser = false}) =>
+                Completer<String?>().future; // explanation stays loading
+        await t.pumpWidget(
+          RepaintBoundary(
+            key: const Key('capture'),
+            child: MaterialApp(
+              locale: Locale(lang),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              debugShowCheckedModeBanner: false,
+              theme: mode == Brightness.dark
+                  ? ElioDarkTheme.data
+                  : ElioLightTheme.data,
+              home: screen,
+            ),
           ),
-        ),
-      );
-      await t.pump();
-      await t.pump(const Duration(milliseconds: 400));
-      if (act != null) await act();
-      expect(t.takeException(), isNull);
-      final boundary = t.renderObject<RenderRepaintBoundary>(
-        find.byKey(const Key('capture')),
-      );
-      if (_write) {
-        await t.runAsync(() async {
-        final image = await boundary.toImage(pixelRatio: 1);
-        final data = (await image.toByteData(format: ui.ImageByteFormat.png))!;
-        image.dispose();
-        final png = data.buffer.asUint8List();
-        Directory('$_out/app').createSync(recursive: true);
-        Directory('$_out/compare').createSync(recursive: true);
-        File('$_out/app/$m-$name.png').writeAsBytesSync(png);
-        final app = img.decodePng(png)!;
-        final side = img.Image(width: 390 * 2 + 12, height: ref.height);
-        img.fill(side, color: img.ColorRgb8(255, 0, 255));
-        img.compositeImage(side, ref);
-        img.compositeImage(side, app, dstX: 390 + 12);
-        File(
-          '$_out/compare/$m-$name.png',
-        ).writeAsBytesSync(img.encodePng(side));
-      });
+        );
+        await t.pump();
+        await t.pump(const Duration(milliseconds: 400));
+        if (act != null) await act();
+        expect(t.takeException(), isNull);
+        final boundary = t.renderObject<RenderRepaintBoundary>(
+          find.byKey(const Key('capture')),
+        );
+        if (_write) {
+          await t.runAsync(() async {
+            final image = await boundary.toImage(pixelRatio: 1);
+            final data = (await image.toByteData(
+              format: ui.ImageByteFormat.png,
+            ))!;
+            image.dispose();
+            final png = data.buffer.asUint8List();
+            Directory('$_out/app').createSync(recursive: true);
+            Directory('$_out/compare').createSync(recursive: true);
+            File('$_out/app/$m-$name.png').writeAsBytesSync(png);
+            final app = img.decodePng(png)!;
+            final side = img.Image(width: 390 * 2 + 12, height: ref.height);
+            img.fill(side, color: img.ColorRgb8(255, 0, 255));
+            img.compositeImage(side, ref);
+            img.compositeImage(side, app, dstX: 390 + 12);
+            File(
+              '$_out/compare/$m-$name.png',
+            ).writeAsBytesSync(img.encodePng(side));
+          });
+        }
+        await t.pumpWidget(const SizedBox());
+        await t.pump(const Duration(seconds: 60)); // drain load timeouts
       }
-      await t.pumpWidget(const SizedBox());
-      await t.pump(const Duration(seconds: 60)); // drain load timeouts
-    }
 
-    Widget explanation({bool cached = true, int index = 1}) {
-      final r = earphone(cached: cached);
-      return QuestionExplanationScreen(
-        record: r,
-        questionIndex: index,
-        store: FigmaStore([r]),
-      );
-    }
+      Widget explanation({bool cached = true, int index = 1}) {
+        final r = earphone(cached: cached);
+        return QuestionExplanationScreen(
+          record: r,
+          questionIndex: index,
+          store: FigmaStore([r]),
+        );
+      }
 
-    testWidgets('$m 01 history list', (t) async {
-      await render(
-        t,
-        '01-history-list',
-        shell(
-          ScanHistoryScreen(
-            store: FigmaStore(figmaRecords()),
-            showHeader: false,
+      testWidgets('$m 01 history list', (t) async {
+        await render(
+          t,
+          '01-history-list',
+          shell(
+            ScanHistoryScreen(
+              store: FigmaStore(figmaRecords()),
+              showHeader: false,
+            ),
           ),
-        ),
-      );
-    });
-    testWidgets('$m 02 scan detail', (t) async {
-      final r = earphone();
-      await render(
-        t,
-        '02-scan-detail',
-        ScanDetailScreen(record: r, store: FigmaStore([r])),
-      );
-    });
-    testWidgets('$m 03 loading list', (t) async {
-      await render(
-        t,
-        '03-loading-list',
-        shell(
-          ScanHistoryScreen(
-            store: FigmaStore(const [], loaded: false),
-            showHeader: false,
+        );
+      });
+      testWidgets('$m 02 scan detail', (t) async {
+        final r = earphone();
+        await render(
+          t,
+          '02-scan-detail',
+          ScanDetailScreen(record: r, store: FigmaStore([r])),
+        );
+      });
+      testWidgets('$m 03 loading list', (t) async {
+        await render(
+          t,
+          '03-loading-list',
+          shell(
+            ScanHistoryScreen(
+              store: FigmaStore(const [], loaded: false),
+              showHeader: false,
+            ),
           ),
-        ),
-      );
-    });
-    testWidgets('$m 04 loading detail', (t) async {
-      final r = earphone();
-      await render(
-        t,
-        '04-loading-detail',
-        ScanDetailScreen(record: r, store: FigmaStore([r], loaded: false)),
-      );
-    });
-    testWidgets('$m 05 empty', (t) async {
-      await render(
-        t,
-        '05-empty',
-        shell(
-          ScanHistoryScreen(store: FigmaStore(const []), showHeader: false),
-        ),
-      );
-    });
-    testWidgets('$m 06 explanation', (t) async {
-      await render(
-        t,
-        '06-explanation',
-        explanation(),
-        act: () async {
-          // Listen on the question, the two learn cards and the mission; Key
-          // idea is read with the whole question (README).
-          expect(find.byTooltip(lookupAppLocalizations(Locale(lang)).h3Listen), findsNWidgets(4));
-          expect(find.text(lookupAppLocalizations(Locale(lang)).h3KeyIdea), findsOneWidget);
-        },
-      );
-    });
-    testWidgets('$m 07 explanation reading', (t) async {
-      await render(
-        t,
-        '07-explanation-reading',
-        explanation(),
-        act: () async {
-          await t.tap(find.byTooltip(lookupAppLocalizations(Locale(lang)).h3Listen).at(1));
-          await t.pump();
-        },
-      );
-    });
-    testWidgets('$m 08 export sheet', (t) async {
-      await render(
-        t,
-        '08-export-sheet',
-        explanation(),
-        act: () async {
-          await t.tap(find.text(lookupAppLocalizations(Locale(lang)).h3ExportPdf));
-          await t.pump();
-          await t.pump(const Duration(milliseconds: 600));
-        },
-      );
-    });
-    testWidgets('$m 09 explanation loading', (t) async {
-      await render(t, '09-explanation-loading', explanation(cached: false));
-    });
-    testWidgets('$m 10 explanation correct', (t) async {
-      await render(
-        t,
-        '10-explanation-correct',
-        explanation(index: 0),
-        act: () async {
-          final l = lookupAppLocalizations(Locale(lang));
-          expect(find.text(l.h3HeroRight), findsOneWidget);
-          expect(find.text(l.h3WhyWrong), findsNothing);
-        },
-      );
-    });
-  }
+        );
+      });
+      testWidgets('$m 04 loading detail', (t) async {
+        final r = earphone();
+        await render(
+          t,
+          '04-loading-detail',
+          ScanDetailScreen(record: r, store: FigmaStore([r], loaded: false)),
+        );
+      });
+      testWidgets('$m 05 empty', (t) async {
+        await render(
+          t,
+          '05-empty',
+          shell(
+            ScanHistoryScreen(store: FigmaStore(const []), showHeader: false),
+          ),
+        );
+      });
+      testWidgets('$m 06 explanation', (t) async {
+        await render(
+          t,
+          '06-explanation',
+          explanation(),
+          act: () async {
+            // Listen on the question, the two learn cards and the mission; Key
+            // idea is read with the whole question (README).
+            expect(
+              find.byTooltip(lookupAppLocalizations(Locale(lang)).h3Listen),
+              findsNWidgets(4),
+            );
+            expect(
+              find.text(lookupAppLocalizations(Locale(lang)).h3KeyIdea),
+              findsOneWidget,
+            );
+          },
+        );
+      });
+      testWidgets('$m 07 explanation reading', (t) async {
+        await render(
+          t,
+          '07-explanation-reading',
+          explanation(),
+          act: () async {
+            await t.tap(
+              find
+                  .byTooltip(lookupAppLocalizations(Locale(lang)).h3Listen)
+                  .at(1),
+            );
+            await t.pump();
+          },
+        );
+      });
+      testWidgets('$m 08 export sheet', (t) async {
+        await render(
+          t,
+          '08-export-sheet',
+          explanation(),
+          act: () async {
+            await t.tap(
+              find.text(lookupAppLocalizations(Locale(lang)).h3ExportPdf),
+            );
+            await t.pump();
+            await t.pump(const Duration(milliseconds: 600));
+          },
+        );
+      });
+      testWidgets('$m 09 explanation loading', (t) async {
+        await render(t, '09-explanation-loading', explanation(cached: false));
+      });
+      testWidgets('$m 11 photo viewer', (t) async {
+        await render(
+          t,
+          '11-photo-viewer',
+          HistoryPhotoViewer(record: earphone(photo: widePhoto())),
+          act: () async {
+            // The first load ran on the fake clock: load it for real, then
+            // let the Image resolve again (reassemble re-resolves images).
+            imageCache
+              ..clear()
+              ..clearLiveImages();
+            await t.runAsync(
+              () => precacheImage(
+                FileImage(File(widePhoto())),
+                t.element(find.byType(HistoryPhotoViewer)),
+              ).timeout(const Duration(seconds: 10)),
+            );
+            // reassemble waits for a frame, so pump instead of awaiting it.
+            unawaited(t.binding.reassembleApplication());
+            await t.pump();
+            await t.pump();
+            final l = lookupAppLocalizations(Locale(lang));
+            expect(find.byTooltip(l.h3Close), findsOneWidget);
+            expect(find.text(l.h3PinchHint), findsOneWidget);
+          },
+        );
+      });
+      testWidgets('$m 10 explanation correct', (t) async {
+        await render(
+          t,
+          '10-explanation-correct',
+          explanation(index: 0),
+          act: () async {
+            final l = lookupAppLocalizations(Locale(lang));
+            expect(find.text(l.h3HeroRight), findsOneWidget);
+            expect(find.text(l.h3WhyWrong), findsNothing);
+          },
+        );
+      });
+    }
   }
 }

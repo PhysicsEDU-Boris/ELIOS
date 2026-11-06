@@ -4323,4 +4323,40 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get h3MissionDone =>
       'Mission complete: you know how to sort it right.';
+
+  @override
+  String get h3SeeResults => 'See results';
+
+  @override
+  String h3CardSemantics(
+    String item,
+    String category,
+    int correct,
+    int total,
+    int trophies,
+  ) {
+    return '$item, $category, $correct of $total correct, +$trophies trophies';
+  }
+
+  @override
+  String get h3OpenPhoto => 'View photo full screen';
+
+  @override
+  String get h3Close => 'Close';
+
+  @override
+  String get h3SharePhoto => 'Share photo';
+
+  @override
+  String get h3PinchHint => 'Pinch to zoom · double-tap to reset';
+
+  @override
+  String h3ViewerMeta(String when, String category) {
+    return 'Scanned $when · $category';
+  }
+
+  @override
+  String h3ScanPhoto(String item) {
+    return 'Scan photo of $item';
+  }
 }

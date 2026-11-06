@@ -492,49 +492,484 @@ class HistoryTrophyChip extends StatelessWidget {
   );
 }
 
-class HistoryPhoto extends StatelessWidget {
-  const HistoryPhoto(
+/// True when the record's saved crop exists on disk (the viewer needs it).
+bool historyHasPhoto(ScanRecord r) =>
+    r.cropPhotoPath != null && File(r.cropPhotoPath!).existsSync();
+
+/// The saved crop, contained (never cropped); the category bin buddy when
+/// there is no photo or it cannot be read.
+Widget historyPhotoImage(ScanRecord r) {
+  final art = Padding(
+    padding: const EdgeInsets.all(6),
+    child: SvgPicture.asset(
+      'assets/illustrations/home/bin_${switch (r.category) {
+        ScanCategory.b3 => 'b3',
+        ScanCategory.organic => 'organik',
+        _ => 'anorganik',
+      }}.svg',
+      fit: BoxFit.contain,
+      excludeFromSemantics: true,
+    ),
+  );
+  if (!historyHasPhoto(r)) return art;
+  return Image.file(
+    File(r.cropPhotoPath!),
+    fit: BoxFit.contain,
+    errorBuilder: (_, error, stack) => art,
+  );
+}
+
+/// Polaroid: `surface` frame pad 4 r8, soft shadow, rotated, the image
+/// letterboxed on `raised`.
+class HistoryPolaroid extends StatelessWidget {
+  const HistoryPolaroid(
     this.record, {
     super.key,
-    this.width = 64,
-    this.height = 64,
+    required this.width,
+    required this.height,
+    this.degrees = -4,
   });
   final ScanRecord record;
-  final double width, height;
+  final double width, height, degrees;
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context);
-    final large = height > 100;
-    final name = switch (record.category) {
-      ScanCategory.b3 => 'b3',
-      ScanCategory.organic => 'organik',
-      _ => 'anorganik',
-    };
-    final tint = historyTint(p, historyCategoryTone(record.category));
-    final placeholder = Center(
-      child: SizedBox.square(
-        dimension: large ? 88 : 40,
-        child: SvgPicture.asset(
-          'assets/illustrations/home/history_bin_$name.svg',
-          colorFilter: ColorFilter.mode(tint.fg, BlendMode.srcIn),
-          excludeFromSemantics: true,
+    return Transform.rotate(
+      angle: degrees * math.pi / 180,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: p.surface,
+          borderRadius: BorderRadius.circular(8),
+          // Fixed polaroid shadow (#0F172A 14 %), allowed by the spec.
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x240F172A),
+              offset: Offset(0, 4),
+              blurRadius: 10,
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(5),
+          child: Container(
+            width: width,
+            height: height,
+            color: p.surfaceRaised,
+            child: historyPhotoImage(record),
+          ),
         ),
       ),
     );
+  }
+}
+
+/// Category-tinted cover with a corner circle and sparkles; [child] centred.
+class _TintCover extends StatelessWidget {
+  const _TintCover({
+    required this.category,
+    required this.height,
+    required this.radius,
+    required this.circles,
+    required this.sparkles,
+    required this.child,
+  });
+  final ScanCategory category;
+  final double height, radius;
+  final List<
+    (double size, double? left, double? top, double? right, double? bottom)
+  > circles,
+      sparkles;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    final t = historyTint(authPalette(context), historyCategoryTone(category));
+    final edge = t.border ?? authPalette(context).borderMedium;
     return ClipRSuperellipse(
-      borderRadius: BorderRadius.circular(large ? 16 : 12),
+      borderRadius: BorderRadius.circular(radius),
       child: Container(
-        width: width,
         height: height,
-        color: tint.bg,
-        child: record.cropPhotoPath == null
-            ? placeholder
-            : Image.file(
-                File(record.cropPhotoPath!),
-                fit: BoxFit.cover,
-                errorBuilder: (_, error, stack) =>
-                    Icon(Icons.broken_image_outlined, color: p.textSecondary),
+        color: t.bg,
+        child: Stack(
+          children: [
+            for (final (s, l, tp, r, b) in circles)
+              Positioned(
+                left: l,
+                top: tp,
+                right: r,
+                bottom: b,
+                child: _circle(s, edge),
               ),
+            for (final (s, l, tp, r, b) in sparkles)
+              Positioned(
+                left: l,
+                top: tp,
+                right: r,
+                bottom: b,
+                child: HistorySparkle(s, t.fg),
+              ),
+            Positioned.fill(child: child),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Scan card (2-column grid): polaroid cover with sticker and trophies, meta,
+/// 2-line title slot, score bar and "Lihat hasil". One tap target: the card.
+class HistoryScanCard extends StatelessWidget {
+  const HistoryScanCard(this.record, {super.key, required this.onTap});
+  final ScanRecord record;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context), t = context.l10n;
+    final tint = historyTint(p, historyCategoryTone(record.category));
+    final cat = historyCategory(t, record.category);
+    final total = record.totalQuestions, correct = record.correctCount;
+    final ratio = total == 0 ? 0.0 : correct / total;
+    final shape = RoundedSuperellipseBorder(
+      borderRadius: BorderRadius.circular(20),
+      side: BorderSide(color: p.borderSubtle),
+    );
+    final title = ElioTokens.body.copyWith(color: p.textPrimary);
+    final soft = [
+      BoxShadow(color: p.textPrimary.withValues(alpha: .12), blurRadius: 4),
+    ];
+    return Semantics(
+      button: true,
+      excludeSemantics: true,
+      label: t.h3CardSemantics(
+        record.itemName,
+        cat,
+        correct,
+        total,
+        record.trophies,
+      ),
+      child: Material(
+        color: p.surface,
+        shape: shape,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: shape,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _TintCover(
+                  category: record.category,
+                  height: 116,
+                  radius: 16,
+                  circles: const [(110, null, -40, -30, null)],
+                  sparkles: const [
+                    (14, 14, 14, null, null),
+                    (10, null, null, 10, 34),
+                    (8, 30, null, null, 40),
+                  ],
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: HistoryPolaroid(record, width: 104, height: 58),
+                      ),
+                      Positioned(
+                        left: 8,
+                        bottom: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: ShapeDecoration(
+                            color: p.surface,
+                            shape: const StadiumBorder(),
+                            shadows: soft,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _circle(8, tint.fg),
+                              const SizedBox(width: 4),
+                              Text(
+                                cat,
+                                style: ElioTokens.caption.copyWith(
+                                  color: tint.fg,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(6, 3, 8, 3),
+                          decoration: ShapeDecoration(
+                            color: p.secondaryText,
+                            shape: const StadiumBorder(),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.emoji_events_outlined,
+                                size: 14,
+                                color: p.surface,
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                '+${record.trophies}',
+                                style: ElioTokens.caption.copyWith(
+                                  color: p.surface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        t.h3RowMeta(historyTime(t, record.time), total),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: ElioTokens.caption.copyWith(
+                          color: p.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      // Always two lines high, so every card lines up.
+                      Stack(
+                        children: [
+                          Text('\n', style: title, maxLines: 2),
+                          Text(
+                            record.itemName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: title,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                const SizedBox(height: 10),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 6,
+                          alignment: Alignment.centerLeft,
+                          decoration: ShapeDecoration(
+                            color: p.surfaceRaised,
+                            shape: const StadiumBorder(),
+                          ),
+                          child: ratio == 0
+                              ? null
+                              : FractionallySizedBox(
+                                  key: const ValueKey('score_fill'),
+                                  widthFactor: ratio,
+                                  child: Container(
+                                    decoration: ShapeDecoration(
+                                      color: p.primary,
+                                      shape: const StadiumBorder(),
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '$correct/$total',
+                        style: ElioTokens.caption.copyWith(
+                          color: p.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  height: 36,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: ShapeDecoration(
+                    color: p.primary,
+                    shape: const StadiumBorder(),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          t.h3SeeResults,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: historyButtonText.copyWith(color: p.onPrimary),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.chevron_right, size: 16, color: p.onPrimary),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Scan cards in rows of [columns]; rows share one height, a lone last card
+/// keeps its column width.
+class HistoryScanGrid extends StatelessWidget {
+  const HistoryScanGrid({
+    super.key,
+    required this.records,
+    required this.columns,
+    required this.onOpen,
+  });
+  final List<ScanRecord> records;
+  final int columns;
+  final ValueChanged<ScanRecord> onOpen;
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      for (var i = 0; i < records.length; i += columns) ...[
+        if (i > 0) const SizedBox(height: 12),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var c = 0; c < columns; c++) ...[
+                if (c > 0) const SizedBox(width: 12),
+                Expanded(
+                  child: i + c < records.length
+                      ? HistoryScanCard(
+                          records[i + c],
+                          onTap: () => onOpen(records[i + c]),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    ],
+  );
+}
+
+/// Scan detail photo frame: category tint, blobs, sparkles, the polaroid
+/// (contain), time pill and a 48 dp fullscreen button when [onOpen] is set.
+class HistoryPhotoFrame extends StatelessWidget {
+  const HistoryPhotoFrame(this.record, {super.key, this.onOpen});
+  final ScanRecord record;
+  final VoidCallback? onOpen;
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context), t = context.l10n;
+    final shadow = [
+      BoxShadow(color: p.textPrimary.withValues(alpha: .14), blurRadius: 8),
+    ];
+    return _TintCover(
+      category: record.category,
+      height: 184,
+      radius: 20,
+      circles: const [(150, -50, null, null, -70), (120, null, -50, -30, null)],
+      sparkles: const [
+        (14, 92, 40, null, null),
+        (10, null, 44, 96, null),
+        (12, null, 28, 36, null),
+        (8, 30, null, null, 30),
+      ],
+      child: Stack(
+        children: [
+          Center(
+            child: Semantics(
+              container: true,
+              image: true,
+              button: onOpen != null,
+              label: t.h3ScanPhoto(record.itemName),
+              child: GestureDetector(
+                onTap: onOpen,
+                child: Hero(
+                  tag: 'history-photo-${record.id}',
+                  child: HistoryPolaroid(
+                    record,
+                    width: 224,
+                    height: 126,
+                    degrees: -3,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 12,
+            top: 12,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(6, 3, 8, 3),
+              decoration: ShapeDecoration(
+                color: p.surface,
+                shape: const StadiumBorder(),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.schedule, size: 14, color: p.textSecondary),
+                  const SizedBox(width: 4),
+                  Text(
+                    historyTime(t, record.time),
+                    style: ElioTokens.caption.copyWith(color: p.textPrimary),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (onOpen != null)
+            Positioned(
+              right: 6,
+              bottom: 6,
+              child: IconButton(
+                tooltip: t.h3OpenPhoto,
+                onPressed: onOpen,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 48,
+                  height: 48,
+                ),
+                icon: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: ShapeDecoration(
+                    color: p.surface,
+                    shape: const CircleBorder(),
+                    shadows: shadow,
+                  ),
+                  child: Icon(
+                    Icons.open_in_full,
+                    size: 20,
+                    color: p.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -704,50 +1139,6 @@ Widget _circle(double size, Color color) => Container(
   height: size,
   decoration: ShapeDecoration(color: color, shape: const CircleBorder()),
 );
-
-/// Scan row: tinted photo 64, title/chip/meta column, trophy pill.
-class HistoryScanRow extends StatelessWidget {
-  const HistoryScanRow(this.record, {super.key, this.onTap});
-  final ScanRecord record;
-  final VoidCallback? onTap;
-  @override
-  Widget build(BuildContext context) {
-    final p = authPalette(context);
-    return HistoryCard(
-      padding: const EdgeInsets.all(12),
-      onTap: onTap,
-      child: Row(
-        children: [
-          HistoryPhoto(record),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  record.itemName,
-                  style: ElioTokens.body.copyWith(color: p.textPrimary),
-                ),
-                const SizedBox(height: 4),
-                HistoryCategoryChip(record.category),
-                const SizedBox(height: 4),
-                Text(
-                  context.l10n.h3RowMeta(
-                    historyTime(context.l10n, record.time),
-                    record.totalQuestions,
-                  ),
-                  style: ElioTokens.caption.copyWith(color: p.textSecondary),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          HistoryTrophyPill('+${record.trophies}', small: true),
-        ],
-      ),
-    );
-  }
-}
 
 /// Result stats: Trofi | Benar | Dipindai, split by 1x40 lines.
 class HistoryResultStats extends StatelessWidget {
@@ -999,19 +1390,15 @@ class HistoryTopBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-/// Trophy pill: warning tint, trophy + label. [small] is the scan row's
-/// (pad 4/10/4/8, icon 16), else the top bar's (pad 6/12/6/10, icon 18).
+/// Trophy pill (explanation top bar): warning tint, trophy 18 + label.
 class HistoryTrophyPill extends StatelessWidget {
-  const HistoryTrophyPill(this.label, {super.key, this.small = false});
+  const HistoryTrophyPill(this.label, {super.key});
   final String label;
-  final bool small;
   @override
   Widget build(BuildContext context) {
     final t = historyTint(authPalette(context), HistoryTone.warning);
     return Container(
-      padding: small
-          ? const EdgeInsets.fromLTRB(8, 4, 10, 4)
-          : const EdgeInsets.fromLTRB(10, 6, 12, 6),
+      padding: const EdgeInsets.fromLTRB(10, 6, 12, 6),
       decoration: ShapeDecoration(
         color: t.bg,
         shape: StadiumBorder(side: BorderSide(color: t.border!)),
@@ -1019,8 +1406,8 @@ class HistoryTrophyPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.emoji_events_outlined, size: small ? 16 : 18, color: t.fg),
-          SizedBox(width: small ? 4 : 6),
+          Icon(Icons.emoji_events_outlined, size: 18, color: t.fg),
+          const SizedBox(width: 6),
           Text(label, style: historyButtonText.copyWith(color: t.fg)),
         ],
       ),
@@ -1835,36 +2222,42 @@ class HistorySkeleton extends StatelessWidget {
     _gap(),
     _b(width: 140, height: 22),
     _gap(),
-    for (var i = 0; i < 5; i++) ...[
-      HistoryCard(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            _b(width: 64, height: 64, radius: 12),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _b(width: 190, height: 16),
-                  _gap(8),
-                  _b(width: 84, height: 20, radius: 999),
-                  _gap(8),
-                  _b(width: 130, height: 12),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            _b(width: 40, height: 16, radius: 999),
-          ],
-        ),
+    for (var i = 0; i < 2; i++) ...[
+      Row(
+        children: [
+          Expanded(child: _card()),
+          const SizedBox(width: 12),
+          Expanded(child: _card()),
+        ],
       ),
       _gap(12),
     ],
   ];
 
+  /// Scan card skeleton: 116 cover, meta, 2 title lines, bar, 36 button.
+  static Widget _card() => HistoryCard(
+    radius: 20,
+    padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _b(height: 116, radius: 16),
+        _gap(10),
+        _b(width: 90, height: 12),
+        _gap(8),
+        _b(height: 16),
+        _gap(6),
+        _b(width: 80, height: 16),
+        _gap(14),
+        _b(height: 6, radius: 999),
+        _gap(12),
+        _b(height: 36, radius: 999),
+      ],
+    ),
+  );
+
   List<Widget> _detail() => [
-    _b(height: 200, radius: 16),
+    _b(height: 184, radius: 20),
     _gap(),
     Row(
       children: [

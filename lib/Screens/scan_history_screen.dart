@@ -10,6 +10,7 @@ import '../widgets/auth/auth_widgets.dart' show authPalette;
 import '../widgets/history_ui.dart';
 import 'home/home_parts.dart' show homeArt;
 import 'device_scan_screen.dart';
+import 'history_photo_viewer.dart';
 import 'question_explanation_screen.dart';
 
 class ScanHistoryScreen extends StatefulWidget {
@@ -144,43 +145,43 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                   context.l10n.h3RecentScans,
                   action: context.l10n.h3ScanCount(records.length),
                 ),
-                for (final (i, r) in records.indexed) ...[
-                  // Day groups: Overline 12 above the group's first row, 20 apart.
-                  if (i == 0 ||
-                      historyDay(context.l10n, r.time) !=
-                          historyDay(context.l10n, records[i - 1].time)) ...[
-                    SizedBox(height: i == 0 ? 16 : 8),
-                    Text(
-                      historyDay(context.l10n, r.time).toUpperCase(),
-                      style: ElioTokens.overline.copyWith(
-                        color: p.textTertiary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: HistoryScanRow(
-                      r.localized(context.l10n.localeName),
-                      onTap: () {
-                        if (box.maxWidth >= 750) {
-                          setState(() => _selected = r.id);
-                        } else {
-                          final theme = Theme.of(context);
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => Theme(
-                                data: theme,
-                                child: ScanDetailScreen(
-                                  record: r,
-                                  store: _store,
-                                ),
-                              ),
+                // Day groups (Overline, 12 above the group, 20 apart), each a
+                // card grid: 2 columns, 3 when the list pane is over 560 dp.
+                for (final (i, group) in _byDay(records).indexed) ...[
+                  SizedBox(height: i == 0 ? 16 : 20),
+                  Text(
+                    historyDay(context.l10n, group.first.time).toUpperCase(),
+                    style: ElioTokens.overline.copyWith(color: p.textTertiary),
+                  ),
+                  const SizedBox(height: 12),
+                  HistoryScanGrid(
+                    records: [
+                      for (final r in group)
+                        r.localized(context.l10n.localeName),
+                    ],
+                    columns:
+                        (box.maxWidth >= 750
+                                    ? box.maxWidth * .42
+                                    : box.maxWidth) -
+                                32 >
+                            560
+                        ? 3
+                        : 2,
+                    onOpen: (r) {
+                      if (box.maxWidth >= 750) {
+                        setState(() => _selected = r.id);
+                      } else {
+                        final theme = Theme.of(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => Theme(
+                              data: theme,
+                              child: ScanDetailScreen(record: r, store: _store),
                             ),
-                          );
-                        }
-                      },
-                    ),
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ],
                 if (records.isEmpty)
@@ -216,6 +217,21 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
         ),
       ),
     );
+  }
+
+  /// Consecutive records of the same day (records are newest first).
+  List<List<ScanRecord>> _byDay(List<ScanRecord> records) {
+    final groups = <List<ScanRecord>>[];
+    for (final r in records) {
+      if (groups.isNotEmpty &&
+          historyDay(context.l10n, groups.last.first.time) ==
+              historyDay(context.l10n, r.time)) {
+        groups.last.add(r);
+      } else {
+        groups.add([r]);
+      }
+    }
+    return groups;
   }
 
   Widget _summary() {
@@ -399,7 +415,12 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
               lang: _saved.lang,
               onRetry: () => unawaited(_translate()),
             ),
-          HistoryPhoto(record, width: double.infinity, height: 200),
+          HistoryPhotoFrame(
+            record,
+            onOpen: historyHasPhoto(record)
+                ? () => HistoryPhotoViewer.open(context, record)
+                : null,
+          ),
           const SizedBox(height: 16),
           Row(
             children: [

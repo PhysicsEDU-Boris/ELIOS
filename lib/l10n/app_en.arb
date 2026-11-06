@@ -2877,5 +2877,49 @@
       }
     }
   },
-  "h3MissionDone": "Mission complete: you know how to sort it right."
+  "h3MissionDone": "Mission complete: you know how to sort it right.",
+  "h3SeeResults": "See results",
+  "h3CardSemantics": "{item}, {category}, {correct} of {total} correct, +{trophies} trophies",
+  "@h3CardSemantics": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      },
+      "category": {
+        "type": "String"
+      },
+      "correct": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "trophies": {
+        "type": "int"
+      }
+    }
+  },
+  "h3OpenPhoto": "View photo full screen",
+  "h3Close": "Close",
+  "h3SharePhoto": "Share photo",
+  "h3PinchHint": "Pinch to zoom · double-tap to reset",
+  "h3ViewerMeta": "Scanned {when} · {category}",
+  "@h3ViewerMeta": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      },
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "h3ScanPhoto": "Scan photo of {item}",
+  "@h3ScanPhoto": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  }
 }

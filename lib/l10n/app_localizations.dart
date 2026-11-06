@@ -7446,6 +7446,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mission complete: you know how to sort it right.'**
   String get h3MissionDone;
+
+  /// No description provided for @h3SeeResults.
+  ///
+  /// In en, this message translates to:
+  /// **'See results'**
+  String get h3SeeResults;
+
+  /// No description provided for @h3CardSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{item}, {category}, {correct} of {total} correct, +{trophies} trophies'**
+  String h3CardSemantics(
+    String item,
+    String category,
+    int correct,
+    int total,
+    int trophies,
+  );
+
+  /// No description provided for @h3OpenPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'View photo full screen'**
+  String get h3OpenPhoto;
+
+  /// No description provided for @h3Close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get h3Close;
+
+  /// No description provided for @h3SharePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Share photo'**
+  String get h3SharePhoto;
+
+  /// No description provided for @h3PinchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinch to zoom · double-tap to reset'**
+  String get h3PinchHint;
+
+  /// No description provided for @h3ViewerMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanned {when} · {category}'**
+  String h3ViewerMeta(String when, String category);
+
+  /// No description provided for @h3ScanPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan photo of {item}'**
+  String h3ScanPhoto(String item);
 }
 
 class _AppLocalizationsDelegate
