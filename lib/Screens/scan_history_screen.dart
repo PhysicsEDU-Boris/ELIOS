@@ -111,7 +111,10 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
               ),
             )
           : null,
+      // In the tab shell the bottom nav owns the gesture inset; reserving it
+      // here too left an empty band above the nav (other tabs have none).
       body: SafeArea(
+        bottom: widget.showHeader,
         child: LayoutBuilder(
           builder: (context, box) {
             if (_failed || _store.loadError != null) {

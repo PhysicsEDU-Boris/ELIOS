@@ -10,6 +10,7 @@
 - **Detail:** result stats (piala | benar | dipindai) replace the score card and scan-time line; difficulty tabs replace the chips (display only, one set is saved); the "Soal" header has no action, the top-bar icon is the only whole-record PDF export.
 - **Explanation:** one widget for right and wrong: result hero (green "Mantap!" / red "Belum tepat!", question dots, +n piala, happy/sad bottle buddy), question card, answer tiles (one "Jawabanmu · Benar" tile when right), "Yuk pelajari alasannya" learn cards with bulb / category bin art, key idea card, mission card (AI steps as a path; the finish row is a fixed localized sentence, because the saved AI `summary` repeats the "why" text at length on real records). Listen buttons: question, learn cards, mission. Essays keep a score chip and neutral answer tiles.
 - **Language:** every new label is an ARB key in `app_en.arb` / `app_id.arb`, so the screens follow the sidebar language switch live (string audit 0). Indonesian keeps the app's word "piala" (Figma says "trofi"). Removed unused keys `h3ScannedMeta`, `h3TrophyRule`, `h3CorrectOf`; `h3All` is now "All scans" / "Semua scan".
+- As a tab, the list runs to the bottom nav like the other tabs (no bottom `SafeArea`; the nav owns the gesture inset).
 - No data, store, AI, PDF or TTS logic changed.
 
 ## Checks

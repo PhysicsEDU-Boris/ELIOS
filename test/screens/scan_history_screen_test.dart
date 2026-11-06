@@ -67,6 +67,48 @@ void main() {
     await t.pump();
   }
 
+  testWidgets('tab list reaches the bottom nav with a gesture inset', (
+    t,
+  ) async {
+    t.view.physicalSize = const Size(390, 844);
+    t.view.devicePixelRatio = 1;
+    t.view.padding = const FakeViewPadding(bottom: 24);
+    t.view.viewPadding = const FakeViewPadding(bottom: 24);
+    addTearDown(t.view.reset);
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: ElioLightTheme.data,
+        // As HomeShell: padding re-read from above the Scaffold, so the
+        // gesture inset reaches the tab body.
+        home: Builder(
+          builder: (outer) => Scaffold(
+            body: MediaQuery.removePadding(
+              context: outer,
+              removeTop: true,
+              child: ScanHistoryScreen(
+                store: HistoryTestStore([h3Record()]),
+                showHeader: false,
+              ),
+            ),
+            bottomNavigationBar: ElioBottomNav(
+              currentIndex: 4,
+              onSelectTab: (_) {},
+              onControl: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pump();
+    // Like the other tabs: no empty band between the list and the nav.
+    expect(
+      t.getBottomLeft(find.byKey(const ValueKey('history_list'))).dy,
+      t.getTopLeft(find.byType(ElioBottomNav)).dy,
+    );
+  });
   testWidgets('redesigned list follows a live language switch', (t) async {
     final store = HistoryTestStore([h3Record()]);
     Widget app(String lang) => MaterialApp(

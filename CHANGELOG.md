@@ -11,7 +11,7 @@ kept outside the repo.
 
 ## [Unreleased]
 
-- History redesign (newest Figma): a green trophy hero with your level art, category tiles with bin buddies to filter, scans grouped by day, result stats and difficulty tabs on the detail, and a playful explanation screen (result hero with the bottle buddy, answer tiles, learn cards, key idea and a "Misimu" step path). Light and dark, English and Bahasa Indonesia, switching live with the language picker (decision 0187).
+- History redesign (newest Figma): a green trophy hero with your level art, category tiles with bin buddies to filter, scans grouped by day, result stats and difficulty tabs on the detail, and a playful explanation screen (result hero with the bottle buddy, answer tiles, learn cards, key idea and a "Misimu" step path). Light and dark, English and Bahasa Indonesia, switching live with the language picker. The History list now scrolls right up to the bottom bar like the other tabs, with no empty band above it (decision 0187).
 
 - Phone Control: Indonesian arm captions now fit beside the sliders without truncation or vertical overflow (decision 0185).
 
