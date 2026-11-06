@@ -13,6 +13,14 @@
 - As a tab, the list runs to the bottom nav like the other tabs (no bottom `SafeArea`; the nav owns the gesture inset).
 - No data, store, AI, PDF or TTS logic changed.
 
+## H3-cards (7 Nov 2026, `feat/history-cards`, design `ae25ef1`)
+
+- Recent scans: 2-column card grid (3 when the list pane is over 560 dp), day groups kept. Card: tinted cover, polaroid of the saved crop (BoxFit.contain, -4 degrees, fixed soft shadow), sticker, trophy pill, 1-line meta, 2-line title slot, score bar (correct/total, hidden at 0), "Lihat hasil". One tap target with a spoken summary.
+- Scan detail: 184 dp photo frame (tint, blobs, sparkles, contained polaroid -3 degrees, time pill, 48 dp fullscreen button) replaces the cropped photo.
+- Photo viewer route: #05080F in both modes (fixed), light status bar, InteractiveViewer 1x-4x, double-tap 1x/2.5x, swipe down closes, hint fades after 2 s, Hero from the frame. Hidden when the file is missing. Share: the photo as a one-page PDF through `Printing.sharePdf` (the only share path; no new dependency).
+- No photo: the category bin buddy in the polaroid. Skeletons: 2-column cards, 184 r20 photo block.
+- Results: `docs/test-results/h3-cards/README.md`.
+
 ## Checks
 
 - Phone results: `docs/test-results/0187-h3-redesign/README.md`.

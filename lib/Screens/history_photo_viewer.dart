@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../l10n/l10n.dart';
 import '../models/scan_record.dart';
@@ -89,50 +90,54 @@ class _HistoryPhotoViewerState extends State<HistoryPhotoViewer> {
         ? '${day.toLowerCase()} $at'
         : '$day $at';
     final fade = (1 - _drag / 300).clamp(0.3, 1.0);
-    return Scaffold(
-      backgroundColor: _bg.withValues(alpha: fade),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Transform.translate(
-              offset: Offset(0, _drag),
-              child: GestureDetector(
-                onDoubleTapDown: (d) => _tap = d.localPosition,
-                onDoubleTap: _toggleZoom,
-                child: InteractiveViewer(
-                  transformationController: _zoom,
-                  minScale: 1,
-                  maxScale: 4,
-                  // Swipe down at 1x closes; zoomed, the drag pans instead.
-                  onInteractionUpdate: (d) {
-                    if (d.pointerCount == 1 && !_zoomed) {
-                      setState(
-                        () => _drag = (_drag + d.focalPointDelta.dy).clamp(
-                          0.0,
-                          double.infinity,
-                        ),
-                      );
-                    }
-                  },
-                  onInteractionEnd: (_) {
-                    if (_drag > 120) {
-                      Navigator.of(context).maybePop();
-                    } else if (_drag != 0) {
-                      setState(() => _drag = 0);
-                    }
-                  },
-                  child: Center(
-                    child: Hero(
-                      tag: 'history-photo-${r.id}',
-                      child: Image.file(
-                        File(r.cropPhotoPath!),
-                        width: double.infinity,
-                        fit: BoxFit.contain,
-                        semanticLabel: t.h3ScanPhoto(r.itemName),
-                        errorBuilder: (_, error, stack) => Icon(
-                          Icons.broken_image_outlined,
-                          size: 48,
-                          color: _on.textSecondary,
+    // Light status bar icons on the near-black viewer in both modes.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: _bg.withValues(alpha: fade),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: Transform.translate(
+                offset: Offset(0, _drag),
+                child: GestureDetector(
+                  onDoubleTapDown: (d) => _tap = d.localPosition,
+                  onDoubleTap: _toggleZoom,
+                  child: InteractiveViewer(
+                    transformationController: _zoom,
+                    minScale: 1,
+                    maxScale: 4,
+                    // Swipe down at 1x closes; zoomed, the drag pans instead.
+                    onInteractionUpdate: (d) {
+                      if (d.pointerCount == 1 && !_zoomed) {
+                        setState(
+                          () => _drag = (_drag + d.focalPointDelta.dy).clamp(
+                            0.0,
+                            double.infinity,
+                          ),
+                        );
+                      }
+                    },
+                    onInteractionEnd: (_) {
+                      if (_drag > 120) {
+                        Navigator.of(context).maybePop();
+                      } else if (_drag != 0) {
+                        setState(() => _drag = 0);
+                      }
+                    },
+                    child: Center(
+                      child: Hero(
+                        tag: 'history-photo-${r.id}',
+                        child: Image.file(
+                          File(r.cropPhotoPath!),
+                          width: double.infinity,
+                          fit: BoxFit.contain,
+                          semanticLabel: t.h3ScanPhoto(r.itemName),
+                          errorBuilder: (_, error, stack) => Icon(
+                            Icons.broken_image_outlined,
+                            size: 48,
+                            color: _on.textSecondary,
+                          ),
                         ),
                       ),
                     ),
@@ -140,108 +145,127 @@ class _HistoryPhotoViewerState extends State<HistoryPhotoViewer> {
                 ),
               ),
             ),
-          ),
-          Positioned(
-            left: 0,
-            top: 0,
-            right: 0,
-            child: SafeArea(
-              child: SizedBox(
-                height: 64,
-                child: Row(
-                  children: [
-                    const SizedBox(width: 4),
-                    IconButton(
-                      tooltip: t.h3Close,
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      icon: Icon(Icons.close, size: 22, color: _on.textPrimary),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            r.itemName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: ElioTokens.subhead.copyWith(
-                              color: _on.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            t.h3ViewerMeta(
-                              when,
-                              historyCategory(t, r.category),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: ElioTokens.caption.copyWith(
-                              color: _on.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: t.h3SharePhoto,
-                      onPressed: _share,
-                      icon: Icon(
-                        Icons.share_outlined,
-                        size: 22,
-                        color: _on.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                  ],
+            Positioned(
+              left: 0,
+              top: 0,
+              right: 0,
+              // Fade behind the bar so it stays readable over a zoomed photo.
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      _bg.withValues(alpha: .9),
+                      _bg.withValues(alpha: .7),
+                      _bg.withValues(alpha: 0),
+                    ],
+                    stops: const [0, .7, 1],
+                  ),
                 ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 24 + MediaQuery.viewPaddingOf(context).bottom,
-            child: IgnorePointer(
-              child: AnimatedOpacity(
-                opacity: _hint ? 1 : 0,
-                duration: const Duration(milliseconds: 400),
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: _on.surfaceRaised,
-                      shape: const StadiumBorder(),
-                    ),
+                child: SafeArea(
+                  child: SizedBox(
+                    height: 64,
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.open_in_full,
-                          size: 14,
-                          color: _on.textSecondary,
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            t.h3PinchHint,
-                            style: ElioTokens.caption.copyWith(
-                              color: _on.textSecondary,
-                            ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          tooltip: t.h3Close,
+                          onPressed: () => Navigator.of(context).maybePop(),
+                          icon: Icon(
+                            Icons.close,
+                            size: 22,
+                            color: _on.textPrimary,
                           ),
                         ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                r.itemName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: ElioTokens.subhead.copyWith(
+                                  color: _on.textPrimary,
+                                ),
+                              ),
+                              Text(
+                                t.h3ViewerMeta(
+                                  when,
+                                  historyCategory(t, r.category),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: ElioTokens.caption.copyWith(
+                                  color: _on.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: t.h3SharePhoto,
+                          onPressed: _share,
+                          icon: Icon(
+                            Icons.share_outlined,
+                            size: 22,
+                            color: _on.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
                       ],
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 24 + MediaQuery.viewPaddingOf(context).bottom,
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  opacity: _hint ? 1 : 0,
+                  duration: const Duration(milliseconds: 400),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: ShapeDecoration(
+                        color: _on.surfaceRaised,
+                        shape: const StadiumBorder(),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.open_in_full,
+                            size: 14,
+                            color: _on.textSecondary,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              t.h3PinchHint,
+                              style: ElioTokens.caption.copyWith(
+                                color: _on.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
