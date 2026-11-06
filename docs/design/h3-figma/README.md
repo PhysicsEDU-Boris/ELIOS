@@ -8,16 +8,17 @@ Figma copy is English; the app shows the Indonesian strings from decision 0184.
 
 | File | Figma node (light / dark) |
 | --- | --- |
-| 01 History list | 435:2395 / 454:4480 |
-| 02 Scan detail | 435:2581 / 454:4505 |
-| 03 Loading list | 435:2781 / 454:4525 |
-| 04 Loading detail | 435:2936 / 454:4576 |
+| 01 History list | 435:2395 / 520:7486 |
+| 02 Scan detail | 435:2581 / 520:6055 |
+| 03 Loading list | 435:2781 / 520:6074 |
+| 04 Loading detail | 435:2936 / 520:6116 |
 | 05 Empty | 435:3060 / 436:3649 |
 | 06 Explanation | 439:3603 / 459:5288 |
 | 07 Explanation, reading aloud | 439:3764 / 459:5355 |
 | 08 Export this question sheet | 459:5039 / 459:5422 |
 | 09 Explanation loading | 439:4165 / 459:5529 |
 | 10 Explanation, correct answer | 460:5171 / 460:5436 |
+| 11 Photo viewer (one dark screen for both modes) | 520:5626 |
 
 ## Type (font: Google Sans Flex; code: Google Sans Code)
 
@@ -65,13 +66,34 @@ Figma copy is English; the app shows the Indonesian strings from decision 0184.
   success = `chip/success-*` + `primary/text`; error = `chip/error-*` + `error/text`;
   warning = `chip/warning-*` + `warning/text`; info = `chip/info-*` + `info/text`; neutral = `raised` + `text/secondary`.
 - **Section header**: the existing Learn section header (title Subhead, action Button `primary/text`).
-- **Scan row** 358 wide, pad 12, gap 12, r16, `surface` + `border/subtle`, centred vertically.
-  Photo 64x64 r12 tinted by category: `chip/success-bg` (daur ulang), `chip/error-bg` (B3), `chip/warning-bg`
-  (organik); the saved crop cover-fits it; bin icon 40 only when there is no photo.
-  Info column gap 4: title Body `text/primary` (wraps), category chip, meta Caption `text/secondary` (wraps).
-  Right: trophy pill pad 4/10/4/8, gap 4, r full, `chip/warning-bg` + `chip/warning-border`,
-  trophy 16 + "+n" Button `warning/text`. Rows gap 12.
-- **Scan detail**: photo 358x200 r16 tinted by category (as the scan row); title Headline + category chip
+- **Scan card** (replaces the scan row; like the reference's course cards): 2-column grid, gap 12, cards fill
+  half the width, rows 12 apart; a lone last card keeps half width. Card pad 8/8/12/8, gap 8, r20,
+  `surface` + `border/subtle`. All cards in a list are the same height (title slot is always 2 lines).
+  - Cover 116 high, r16, clipped, tinted by category (`chip/success-bg` daur ulang, `chip/error-bg` B3,
+    `chip/warning-bg` organik); a 110 circle of the category border colour at 35 % top-right; three sparkles
+    (14, 10, 8) in the category text colour.
+  - The scan photo as a **polaroid**: `surface` frame pad 4 r8 with a soft shadow (0/4/10, #0F172A 14 %),
+    rotated -4 degrees, image about 104x58 shown **contain (BoxFit.contain), never cropped**, letterboxed on
+    `raised`. Category sticker bottom-left (pad 3/8, r full, `surface`, shadow, 8 dot + Caption in the category
+    text colour); trophy pill top-right (`warning/text` fill, trophy 14 + "+n" Caption in `surface`).
+  - Text pad 0/4: meta Caption `text/secondary` ("23:29 · 3 soal"), title Body `text/primary`, max 2 lines,
+    ellipsis, fixed 2-line height.
+  - Score row: 6 high track r full `raised`, fill `primary/fill` = correct/total of the record (hidden at 0),
+    "2/3" Caption `text/primary`.
+  - "Lihat hasil" button 36 high r full `primary/fill`, Button `primary/on-fill` + chevron 16. The whole card
+    is also tappable (one target: the card).
+- **Scan photo frame** (Scan detail; replaces the big cropped photo) 358x184, r20, clipped, category tint,
+  two blobs of the category border colour at 30 %, four sparkles. The photo is a polaroid (pad 4,
+  r8, shadow, rotated -3 degrees) about 224x126, **contain, never cropped**. Time pill top-left
+  (clock 14 + Caption). Fullscreen button bottom-right: 44 visual / 48 dp target, `surface` circle, shadow,
+  expand icon 20 `text/primary`. Tapping the photo or the button opens the photo viewer.
+- **Photo viewer** (frame 11): full-screen route, near-black background #05080F in both modes (fixed colour,
+  allowed), status inset, top bar 64: close 48 dp (X 22), title Subhead + Caption "Dipindai hari ini 23:29 ·
+  Daur ulang", share 48 dp. The photo fills the width with BoxFit.contain, centred; InteractiveViewer pinch
+  zoom 1x to 4x, double-tap toggles 1x/2.5x, swipe down to close. Hint pill at the bottom ("Cubit untuk zoom ·
+  ketuk dua kali untuk reset") fades after 2 s. Hero animation from the detail photo. Accessible labels on
+  close/share.
+- **Scan detail**: scan photo frame (above); title Headline + category chip
   (row gap 12); result stats; difficulty tabs; "Soal" section header WITHOUT an action; question cards gap 12.
   No separate scan-time line and no big score card. The only PDF export on this screen is the file icon
   button in the top bar (whole record, existing QuizPdfService).
@@ -143,6 +165,7 @@ Figma copy is English; the app shows the Indonesian strings from decision 0184.
   ("Bagikan" outline with share icon, "Simpan PDF" primary with file icon).
 - **Skeleton block**: `border/medium` (full opacity) with a white shimmer band (peak 16 % alpha), radii as the real element.
   Skeleton layouts mirror the real cards (see 03, 04, 09): explanation = hero block 176 r20, question card,
-  two 64 r16 answer blocks, a learn card skeleton; list hero block r20 164 high, 2x2 tile blocks 96 high,
+  two 64 r16 answer blocks, a learn card skeleton; list = hero block r20 164 high, 2-column skeleton cards
+  (116 cover, 2 lines, bar, 36 button); detail photo block 184 r20; 2x2 tile blocks 96 high,
   stats block 80 high r16, tabs block 48 high r full.
 - **Empty**: illustration 240x180, title Subhead, body Body Small `text/secondary` 280 wide centred, primary pill button.
