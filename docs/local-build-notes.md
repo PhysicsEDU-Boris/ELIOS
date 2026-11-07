@@ -1,5 +1,10 @@
 # Local build notes
 
+## 7 Nov 2026 — Control haptics phone test (`feat/control-haptics`)
+- Source `1c8caee`, main checkout, arm64 debug APK with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION, APP_COMMIT `1c8caee`; Gradle 94 s. `.env*` and `google-services.json` already present (gitignored).
+- Motorola Edge 60 Fusion over USB, `com.boris.elio` debug, same signing; `adb install -r` Success 16:11:29 Jakarta, no uninstall/data clear. Cold launch OK, no crash.
+- Pre-install backup (History, R3 History, scans, prefs) in the session scratchpad; both History files md5-identical after install. Phone has Touch sounds off (haptics on), so only the vibration is felt. No Mac app, model, firmware or signing change.
+
 ## 6 Nov 2026 — H3 redesign phone test (`feat/history-h3-redesign`)
 - Phone: Motorola Edge 60 Fusion, `com.boris.elio` debug, same signing; `adb install -r` (Success, last 23:47:34 Jakarta). No uninstall/data clear. Cold launch Status ok.
 - Built in worktree `../elios-h3-redesign`: arm64 debug APK (157 MB), LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION, APP_COMMIT `5385e16+mission+essayfix` (branch + localized essay fix `d67aba3..dfb7f67` applied uncommitted, then removed). `.env.dev/.env.prod` and `android/app/google-services.json` copied in from the main checkout (gitignored, not committed).
