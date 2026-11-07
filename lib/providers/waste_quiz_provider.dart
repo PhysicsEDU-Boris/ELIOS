@@ -1332,16 +1332,27 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   /// Only allowed when Config Settings → Quiz → Skip Allowed is on.
   void skipQuestion() {
+    if (!ref.read(appPreferencesProvider).skipAllowed) return;
+    _skipCurrent(timedOut: false);
+  }
+
+  /// Config Settings → Quiz → Timer ran out: recorded like a skip, 0 trophies.
+  void timeUp() => _skipCurrent(timedOut: true);
+
+  void _skipCurrent({required bool timedOut}) {
     final q = state.question;
     if (state.phase != WasteQuizPhase.active || state.answered || q == null) {
       return;
     }
-    if (!ref.read(appPreferencesProvider).skipAllowed) return;
+    String noAnswer(String lang) {
+      final t = lookupAppLocalizations(Locale(lang));
+      return timedOut ? t.quizTimeUpAnswer : t.quizSkippedAnswer;
+    }
     final isEssay = q.type == QuizQuestionType.essay;
     _recordedQuestions.add(
       RecordQuestion(
         question: q.question,
-        yourAnswer: lookupAppLocalizations(Locale(q.lang)).quizSkippedAnswer,
+        yourAnswer: noAnswer(q.lang),
         rightAnswer: isEssay
             ? (q.explanation.isNotEmpty ? q.explanation : '-')
             : (q.options.isNotEmpty ? q.options[q.correctIndex] : '-'),
@@ -1359,9 +1370,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
           : QuestionText(
               question: skippedAlt.question,
               options: skippedAlt.options,
-              yourAnswer: lookupAppLocalizations(
-                Locale(skippedAlt.lang),
-              ).quizSkippedAnswer,
+              yourAnswer: noAnswer(skippedAlt.lang),
               rightAnswer: isEssay
                   ? (skippedAlt.explanation.isNotEmpty
                         ? skippedAlt.explanation
@@ -1377,7 +1386,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         ...state.messages,
         ChatMessage(
           isUser: false,
-          text: l10n.wqSkipped(state.questionIndex + 1),
+          text: timedOut
+              ? l10n.wqTimeUp(state.questionIndex + 1)
+              : l10n.wqSkipped(state.questionIndex + 1),
         ),
       ],
       recordedQuestions: List.unmodifiable(_recordedQuestions),

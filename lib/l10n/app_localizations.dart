@@ -7357,6 +7357,24 @@ abstract class AppLocalizations {
   /// **'(skipped)'**
   String get quizSkippedAnswer;
 
+  /// No description provided for @quizTimeUpAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'(time\'s up)'**
+  String get quizTimeUpAnswer;
+
+  /// No description provided for @wqTimeUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Time\'s up for question {n}.'**
+  String wqTimeUp(int n);
+
+  /// No description provided for @qzTimeLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} seconds left'**
+  String qzTimeLeft(int n);
+
   /// No description provided for @h3YourTrophies.
   ///
   /// In en, this message translates to:

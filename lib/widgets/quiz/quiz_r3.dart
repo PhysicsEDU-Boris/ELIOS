@@ -1225,6 +1225,11 @@ class _QuestionFooter extends ConsumerWidget {
     final n = ref.read(wasteQuizProvider.notifier);
     final skip =
         ref.watch(appPreferencesProvider).skipAllowed && !state.answered;
+    // Config Settings → Quiz → Timer: multiple choice only (an essay needs typing time).
+    final seconds = int.tryParse(ref.watch(appPreferencesProvider).quizTimer.replaceAll('s', ''));
+    final timer = seconds != null && !state.answered && state.question?.type == QuizQuestionType.multipleChoice
+        ? QuizCountdown(key: ValueKey('quiz_timer_${state.questionIndex}'), seconds: seconds, onTimeUp: n.timeUp)
+        : null;
     final read = _Pill(
       key: const ValueKey('quiz_read'),
       icon: Icons.volume_up_outlined,
@@ -1240,6 +1245,7 @@ class _QuestionFooter extends ConsumerWidget {
         spacing: 6,
         runSpacing: 6,
         children: [
+          ?timer,
           if (skip)
             TextButton(
               key: const ValueKey('quiz_skip'),
@@ -1303,6 +1309,7 @@ class _QuestionFooter extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 8),
+        if (timer != null) ...[timer, const SizedBox(width: 6)],
         if (skip) ...[
           TextButton(
             key: const ValueKey('quiz_skip'),
@@ -2911,5 +2918,56 @@ Future<void> _pickCorrectItem(
   );
   if (picked != null) {
     notifier.correctItem(picked.name, category: picked.category);
+  }
+}
+
+/// Seconds left on a question; calls [onTimeUp] once at zero.
+// ponytail: the count lives in the widget, so minimizing the popup restarts it; move it to the provider if that matters.
+class QuizCountdown extends StatefulWidget {
+  const QuizCountdown({super.key, required this.seconds, required this.onTimeUp});
+  final int seconds;
+  final VoidCallback onTimeUp;
+
+  @override
+  State<QuizCountdown> createState() => _QuizCountdownState();
+}
+
+class _QuizCountdownState extends State<QuizCountdown> {
+  late int _left = widget.seconds;
+  late final Timer _tick;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(const Duration(seconds: 1), (t) {
+      setState(() => _left--);
+      if (_left <= 0) {
+        t.cancel();
+        widget.onTimeUp();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    final low = _left <= 10;
+    return Semantics(
+      liveRegion: low,
+      label: l10n.qzTimeLeft(_left),
+      excludeSemantics: true,
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.schedule_rounded, size: 18, color: low ? p.errorText : p.textSecondary),
+        const SizedBox(width: 4),
+        Text('${_left}s',
+            style: TextStyle(color: low ? p.errorText : p.textSecondary, fontSize: 14, fontWeight: FontWeight.w800)),
+      ]),
+    );
   }
 }

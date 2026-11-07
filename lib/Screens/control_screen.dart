@@ -15,6 +15,7 @@ import 'package:flutter/services.dart'
 import '../models/config_model.dart';
 import '../models/control_session.dart';
 import '../models/scanned_waste.dart';
+import '../providers/app_preferences_provider.dart';
 import '../providers/config_link_provider.dart';
 import '../providers/esp_config_provider.dart';
 import '../providers/navigation_provider.dart';
@@ -143,6 +144,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _enterLandscapeFullscreen();
     _robotNotifier = ref.read(robotControlProvider.notifier);
     _quizNotifier = ref.read(wasteQuizProvider.notifier);
+    ref.read(appPreferencesProvider); // loads Sound effects before the first click
     _dropPending = ref.read(r1DropPendingProvider.notifier);
 
     setDesktopLandscape(true);

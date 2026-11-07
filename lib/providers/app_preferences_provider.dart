@@ -70,7 +70,14 @@ class AppPreferences {
     return AppPreferences(
       soundEffects: map['soundEffects'] is bool ? map['soundEffects'] as bool : d.soundEffects,
       masterVolume: map['masterVolume'] is num ? (map['masterVolume'] as num).toDouble() : d.masterVolume,
-      quizDifficulty: map['quizDifficulty'] is String ? map['quizDifficulty'] as String : d.quizDifficulty,
+      // Older builds saved the Indonesian label; the quiz only reads the English value.
+      quizDifficulty: switch (map['quizDifficulty']) {
+        'Mudah' => 'Easy',
+        'Sedang' => 'Medium',
+        'Sulit' => 'Hard',
+        final String v => v,
+        _ => d.quizDifficulty,
+      },
       quizTimer: map['quizTimer'] is String ? map['quizTimer'] as String : d.quizTimer,
       skipAllowed: map['skipAllowed'] is bool ? map['skipAllowed'] as bool : d.skipAllowed,
       questionSource: QuestionSource.values.asNameMap()[map['questionSource']] ?? d.questionSource,
@@ -83,12 +90,17 @@ final appPreferencesProvider =
   AppPreferencesNotifier.new,
 );
 
+/// Config → Settings → Sound effects, kept current by [AppPreferencesNotifier].
+bool soundEffectsOn = true;
+
 class AppPreferencesNotifier extends Notifier<AppPreferences> {
   static const _key = 'app_preferences_v1';
   bool _touched = false;
 
   @override
   AppPreferences build() {
+    // Mirrored for code with no ref (the Control click sound).
+    listenSelf((_, next) => soundEffectsOn = next.soundEffects);
     _load();
     return const AppPreferences();
   }

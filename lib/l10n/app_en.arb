@@ -2832,6 +2832,23 @@
     }
   },
   "quizSkippedAnswer": "(skipped)",
+  "quizTimeUpAnswer": "(time's up)",
+  "wqTimeUp": "Time's up for question {n}.",
+  "qzTimeLeft": "{n} seconds left",
+  "@qzTimeLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@wqTimeUp": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "h3YourTrophies": "Your trophies",
   "h3TrophyUnit": "{count, plural, =1{trophy} other{trophies}}",
   "@h3TrophyUnit": {

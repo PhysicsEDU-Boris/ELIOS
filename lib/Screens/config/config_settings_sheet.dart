@@ -194,7 +194,9 @@ class ConfigSettingsSheet extends ConsumerWidget {
                         const SizedBox(height: 12),
                         ConfigSegmented(
                           label: l10n.setDifficulty,
-                          options: [l10n.setEasy, l10n.setMedium, l10n.setHard],
+                          // Saved in English: the quiz reads 'Easy'/'Medium'/'Hard' in any language.
+                          options: const ['Easy', 'Medium', 'Hard'],
+                          labels: [l10n.setEasy, l10n.setMedium, l10n.setHard],
                           selected: prefs.quizDifficulty,
                           onSelected: (v) => patchPrefs((s) => s.copyWith(quizDifficulty: v)),
                         ),
@@ -250,10 +252,14 @@ class ConfigSegmented extends StatelessWidget {
     required this.options,
     required this.selected,
     required this.onSelected,
+    this.labels,
   });
 
   final String label;
   final List<String> options;
+
+  /// What each option shows, when it differs from the saved value.
+  final List<String>? labels;
   final String selected;
   final ValueChanged<String> onSelected;
 
@@ -265,13 +271,13 @@ class ConfigSegmented extends StatelessWidget {
       decoration: ShapeDecoration(color: p.surfaceRaised, shape: const StadiumBorder()),
       child: Row(
         children: [
-          for (final o in options)
+          for (final (i, o) in options.indexed)
             Expanded(
               child: Semantics(
                 button: true,
                 inMutuallyExclusiveGroup: true,
                 selected: o == selected,
-                label: '$label $o',
+                label: '$label ${labels?[i] ?? o}',
                 excludeSemantics: true,
                 onTap: () => onSelected(o),
                 child: Material(
@@ -283,7 +289,7 @@ class ConfigSegmented extends StatelessWidget {
                     child: SizedBox(
                       height: 44,
                       child: Center(
-                        child: Text(o,
+                        child: Text(labels?[i] ?? o,
                             style: configStrong(p, color: o == selected ? p.onPrimary : p.textSecondary)),
                       ),
                     ),

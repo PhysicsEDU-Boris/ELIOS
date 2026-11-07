@@ -106,6 +106,22 @@ void main() {
     expect(on.read(wasteQuizProvider).skippedCount, 1);
   });
 
+  test('Timer running out ends the question even with Skip off, as "time\'s up"', () async {
+    final c = _container(skipAllowed: false);
+    c.read(wasteQuizProvider.notifier).timeUp();
+    await pumpEventQueue();
+    final st = c.read(wasteQuizProvider);
+    expect(st.phase, WasteQuizPhase.finished);
+    expect(st.recordedQuestions.single.yourAnswer, anyOf("(time's up)", '(waktu habis)'));
+    expect(st.recordedQuestions.single.isCorrect, isFalse);
+  });
+
+  test('an Indonesian difficulty saved by older builds still counts', () {
+    expect(AppPreferences.fromMap({'quizDifficulty': 'Sulit'}).quizDifficulty, 'Hard');
+    expect(AppPreferences.fromMap({'quizDifficulty': 'Mudah'}).quizDifficulty, 'Easy');
+    expect(AppPreferences.fromMap({'quizDifficulty': 'Easy'}).quizDifficulty, 'Easy');
+  });
+
   group('AiQuizService single flight slot logic', () {
     late AiQuizService service;
     

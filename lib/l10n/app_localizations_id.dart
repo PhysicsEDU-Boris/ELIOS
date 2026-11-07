@@ -4182,6 +4182,19 @@ class AppLocalizationsId extends AppLocalizations {
   String get quizSkippedAnswer => '(dilewati)';
 
   @override
+  String get quizTimeUpAnswer => '(waktu habis)';
+
+  @override
+  String wqTimeUp(int n) {
+    return 'Waktu soal $n habis.';
+  }
+
+  @override
+  String qzTimeLeft(int n) {
+    return 'Sisa $n detik';
+  }
+
+  @override
   String get h3YourTrophies => 'Piala kamu';
 
   @override

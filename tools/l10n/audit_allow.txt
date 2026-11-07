@@ -53,3 +53,4 @@ lib/services/ai_quiz_service.dart	listrik, baterai, serta risiko korsleting dan 
 lib/services/ai_quiz_service.dart	cahaya, sinar UV, dan penuaan material	prompt-internal physics topic for Gemini (not shown); reply language is set per request
 lib/services/ai_quiz_service.dart	pemilahan berdasarkan sifat fisik (magnet, air, berat)	prompt-internal physics topic for Gemini (not shown); reply language is set per request
 lib/services/ai_quiz_service.dart	alasan benda ini berbahaya atau aman ditangani	prompt-internal physics topic for Gemini (not shown); reply language is set per request
+lib/Screens/device_scan_screen.dart	FPS $fps • $res	debug stream stats (units only)

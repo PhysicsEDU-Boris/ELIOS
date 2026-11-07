@@ -13,6 +13,18 @@ import 'yuv_jpeg.dart';
 /// into a JPEG in an isolate); `takePicture` is never mixed with the stream
 /// because CameraX rebinds its use cases between the two (decision 0040).
 class PhoneFrameSource extends FrameSource {
+  /// Config → Settings → Resolution ('480p' / '720p'); null keeps the platform
+  /// default (Android 720p, others 480p).
+  PhoneFrameSource({this.resolutionPreset});
+
+  final String? resolutionPreset;
+
+  /// Camera frames seen so far (Android image stream only), for the FPS overlay.
+  int frameCount = 0;
+
+  /// The preview size the camera picked, or null before it opens / on macOS.
+  Size? get previewSize => _controller?.value.previewSize;
+
   final bool _useStream =
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
   CameraImage? _latest;
@@ -88,14 +100,21 @@ class PhoneFrameSource extends FrameSource {
     _latest = null;
     final controller = CameraController(
       _cameras[index],
-      _useStream ? ResolutionPreset.high : ResolutionPreset.medium,
+      switch (resolutionPreset) {
+        '720p' => ResolutionPreset.high,
+        '480p' => ResolutionPreset.medium,
+        _ => _useStream ? ResolutionPreset.high : ResolutionPreset.medium,
+      },
       enableAudio: false,
       imageFormatGroup: _useStream ? ImageFormatGroup.yuv420 : null,
     );
     try {
       await controller.initialize();
       if (_useStream) {
-        await controller.startImageStream((image) => _latest = image);
+        await controller.startImageStream((image) {
+          _latest = image;
+          frameCount++;
+        });
       }
       _controller = controller;
       _errorMsg = null;

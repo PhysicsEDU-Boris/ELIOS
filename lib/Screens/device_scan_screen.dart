@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../providers/esp_config_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../services/frame_source/phone_frame_source.dart';
@@ -61,7 +62,10 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
 
   final _drawerKey = GlobalKey<ElioDrawerHostState>();
 
-  final PhoneFrameSource _source = PhoneFrameSource();
+  // Config → Settings → Resolution, read when the screen opens.
+  late final PhoneFrameSource _source = PhoneFrameSource(
+    resolutionPreset: ref.read(espConfigProvider).valueOrNull?.resolutionPreset,
+  );
   bool _capturing = false;
   late final WasteQuizNotifier _quiz;
 
@@ -213,6 +217,9 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
                     testLabels: kDebugMode ? _sampleLabels : null,
                     onTestLabel: _quiz.startForLabel,
                   ),
+                  // Config → Settings → Show FPS overlay (decision 0189).
+                  if (ref.watch(espConfigProvider.select((c) => c.valueOrNull?.showFpsOverlay ?? false)))
+                    Positioned(left: 28, bottom: 24, child: SafeArea(child: PhoneFpsOverlay(source: _source))),
                   // The photo is being taken and cropped: the popup is opening, no quiz state yet.
                   if (_capturing)
                     const Positioned.fill(
@@ -987,4 +994,54 @@ class _CornersPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Camera FPS (Android image stream; '-' elsewhere) and preview size, once a second.
+class PhoneFpsOverlay extends StatefulWidget {
+  const PhoneFpsOverlay({super.key, required this.source});
+  final PhoneFrameSource source;
+
+  @override
+  State<PhoneFpsOverlay> createState() => _PhoneFpsOverlayState();
+}
+
+class _PhoneFpsOverlayState extends State<PhoneFpsOverlay> {
+  late final Timer _tick;
+  int _lastCount = 0;
+  int _fps = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _lastCount = widget.source.frameCount;
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      final n = widget.source.frameCount;
+      setState(() {
+        _fps = n - _lastCount;
+        _lastCount = n;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = widget.source.previewSize;
+    final res = size == null ? 'Pending' : '${size.width.toInt()}x${size.height.toInt()}';
+    final fps = _lastCount == 0 ? '-' : '$_fps'; // no image stream: no count
+    return Container(
+      key: const ValueKey('phone_fps_overlay'),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(color: const Color(0xFF474747), borderRadius: BorderRadius.circular(12)),
+      child: Text(
+        'FPS $fps • $res',
+        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
 }

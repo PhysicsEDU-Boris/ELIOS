@@ -9,15 +9,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../models/control_session.dart';
+import '../../providers/app_preferences_provider.dart' show soundEffectsOn;
 import '../../theme/elio_tokens.dart';
 import '../learn/learn_ui.dart' show LearnTheme;
 import 'package:elio/l10n/l10n.dart';
 
 /// Feel for every Control input (decision 0188): a light haptic tick plus the
-/// platform click sound (silent when the device has touch sounds off).
+/// platform click sound (silent when the device has touch sounds off, or when
+/// Config → Settings → Sound effects is off).
 void controlFeedback() {
   HapticFeedback.selectionClick();
-  SystemSound.play(SystemSoundType.click);
+  if (soundEffectsOn) SystemSound.play(SystemSoundType.click);
 }
 
 /// [onTap] with [controlFeedback] first; null stays null (disabled).
