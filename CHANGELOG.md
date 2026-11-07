@@ -11,6 +11,7 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- Settings now work with both MaixCAM2 and the phone camera: Resolution and Show FPS also apply to the phone camera, Sound effects turns the Control click on/off, Timer counts down each multiple-choice question (time's up counts as skipped), and Difficulty is saved correctly in Bahasa Indonesia (decision 0189).
 - Control: buttons, toggles, sliders, the joystick and STOP now give a short haptic tick and the system click when pressed (once per press, direction or drag; silent when disabled) (decision 0188).
 - History cards: recent scans are now a grid of cards with the whole scan photo as a tilted polaroid (never cropped), a score bar and "Lihat hasil". Scan detail shows the photo uncropped in a frame, and a new full-screen viewer lets you pinch or double-tap to zoom, swipe down to close and share the photo (decision 0187).
 

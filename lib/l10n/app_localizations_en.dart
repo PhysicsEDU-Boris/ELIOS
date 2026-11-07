@@ -4253,6 +4253,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quizSkippedAnswer => '(skipped)';
 
   @override
+  String get quizTimeUpAnswer => '(time\'s up)';
+
+  @override
+  String wqTimeUp(int n) {
+    return 'Time\'s up for question $n.';
+  }
+
+  @override
+  String qzTimeLeft(int n) {
+    return '$n seconds left';
+  }
+
+  @override
   String get h3YourTrophies => 'Your trophies';
 
   @override
