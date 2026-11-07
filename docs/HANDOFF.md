@@ -1,4 +1,6 @@
-# Handoff — 6 Nov 2026
+# Handoff — 7 Nov 2026
+## Settings for both cameras — `feat/settings-both-cameras` (decision 0189)
+- Difficulty saved in English (fixes Bahasa Indonesia), Sound effects gates the Control click, phone camera follows Resolution + Show FPS, Timer counts down multiple-choice questions. No phone/robot build yet.
 ## H3-cards — `feat/history-cards` (stacked on `feat/history-h3-redesign`, decision 0187)
 - Scan card grid, uncropped photo frame, full-screen photo viewer (design `ae25ef1`). Phone-tested en/id, light/dark, md5 History unchanged; share = photo as a one-page PDF. Results: `docs/test-results/h3-cards/README.md`. Not pushed, no PR.
 ## H3 redesign — `feat/history-h3-redesign` (decision 0187)
@@ -9,15 +11,7 @@
 - Owner to do: deploy ai-backend (`cd ai-backend && npx vercel --prod`, prompt cap 16000); review `assets/quiz/*_draft.en.json`; run `tools/l10n/translate_firestore.py export en` / `upload` and `translate_assets.py module en` with `GEMINI_API_KEY`; re-export the module PDF (still says ELIO); airplane-mode check on the phone.
 - Phone: Edge 60 Fusion updated in place (data kept), left in Bahasa Indonesia as found. Two test PDFs added to Download/ELIOS. Resume backup: `/tmp/elios-pr93-resume-20261105/owner-backup/history-settings.tar` (40 main records, 2 R3 test records, photos, settings).
 - Resume installed APP_COMMIT `96c832a` (rebased source `5e7ae70`, app inputs identical; LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION), launched in Indonesian/light: 40 scans / 442 trophies; both History JSON files unchanged. Fixed clipped Indonesian arm captions without shrinking text or stretching the column; six real-font regressions break-checked in three sizes, light/dark. Final validation and install are recorded in `docs/test-results/0185-l10n/README.md` and `docs/local-build-notes.md`.
-## H3 History — `feat/history-h3` (decision 0184)
-- PR #94 targets `feature/live-scan`; owner merges. No merge or Mac build by this task.
-- H3 phone list → detail → question explanation; wide two-pane detail, saved crops, real trophies, Indonesian copy, light/dark tokens, skeletons/timeouts, section TTS and per-question PDF.
-- ELIOS Gemini slot supplies validated explanations (one retry), with reviewed-bank-only fallback. Schema 4 retains saved answers/source metadata and removes legacy local templates. Reopen/TTS/PDF use the saved result; Coba lagi retries only an incomplete explanation.
-- Whole-record export and in-quiz overlay remain; quiz-time explanation yields to busy prefetch. No source/module/guide/simulation references on the new route/question PDF; no demo seed UI or owner records created.
-- Validation, break-checks, screenshots and phone steps: `docs/test-results/0184-history-h3.md`. Final check results recorded there before PR creation.
-- USB phone acceptance: Motorola Edge 60 Fusion / Android 16 updated in place with source `500ae5a` (TESTER_BUILD, LIVE_SCAN, DARK_MODE_OPTION). 40 records / 120 answers / 442 trophies retained; History backed up privately before install. Live Gemini, offline retry/cache, TTS lifecycle and both PDF exports exercised. Styling/PDF refinement built; Android saves to Download/ELIOS; see `docs/local-build-notes.md`.
-- No Mac app bundles/registrations, model stores, signing/Keychain or private configuration changed. Existing owner work remains uncommitted and unchanged.
-- H3-fix (5 Nov): screens matched to `docs/design/h3-figma` (fonts commit `b9f076b`, UI `642e5c4`). Harness `test/history/h3_figma_harness_test.dart` writes app/compare/before images to `docs/test-results/0184-h3-fix/`. Phone re-tested over USB (434 dp wide), app reinstalled in place with TESTER_BUILD/LIVE_SCAN/DARK_MODE_OPTION, owner records untouched, light mode restored. One test PDF left in Download/ELIOS. Airplane-mode check not repeated (system setting).
+## H3 History — PR #94 merged (decision 0184); details in `docs/test-results/0184-history-h3.md`.
 ## Existing robot context
 - #89/#90 are merged into `feature/live-scan`. Next robot session: issue #92 (PICK UP→RELEASE tag search, sim-style tag overlay/axes and bin tags 2–4; owner questions remain).
 - 0183 calibration: camera `dcea9b1d`, 640×360/33 fps, fx 374, cx 303.9, cy 183.0, 81.1×51.4°; keep the 6.17 mm arm tag until the owner replaces it. Backups and the current phone/camera notes follow.
