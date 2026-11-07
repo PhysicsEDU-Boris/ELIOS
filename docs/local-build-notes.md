@@ -1,5 +1,11 @@
 # Local build notes
 
+## 7 Nov 2026 — Settings on both cameras phone test (`feat/settings-both-cameras`)
+- Source `e4d7036`, arm64 debug APK, LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION, APP_COMMIT `e4d7036`; Gradle 95 s.
+- Motorola Edge 60 Fusion over USB, `com.boris.elio` debug, same signing; `adb install -r` Success, no uninstall/data clear.
+- Backup of app data (History, prefs, secure storage) in the session scratchpad first. Tested: settings saved as English values; phone camera at 720p (Android ImageReader 1280x720) with `FPS 22-28 • 1280x720` overlay; Easy + 30s timer ended the quiz as "(time's up)", 0 trophies. Click sound not audible (phone Touch sounds off).
+- Afterwards the test scan record and settings were put back from the backup: both History files md5-identical, prefs as before (Medium, 60s, 480p, sound on, MaixCAM2), 568 trophies. No Mac app, model, firmware or signing change.
+
 ## 7 Nov 2026 — Control haptics phone test (`feat/control-haptics`)
 - Source `1c8caee`, main checkout, arm64 debug APK with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION, APP_COMMIT `1c8caee`; Gradle 94 s. `.env*` and `google-services.json` already present (gitignored).
 - Motorola Edge 60 Fusion over USB, `com.boris.elio` debug, same signing; `adb install -r` Success 16:11:29 Jakarta, no uninstall/data clear. Cold launch OK, no crash.

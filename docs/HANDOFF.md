@@ -1,6 +1,6 @@
 # Handoff — 7 Nov 2026
 ## Settings for both cameras — `feat/settings-both-cameras` (decision 0189)
-- Difficulty saved in English (fixes Bahasa Indonesia), Sound effects gates the Control click, phone camera follows Resolution + Show FPS, Timer counts down multiple-choice questions. No phone/robot build yet.
+- Difficulty saved in English (fixes Bahasa Indonesia), Sound effects gates the Control click, phone camera follows Resolution + Show FPS, Timer counts down multiple-choice questions. Phone-tested on Edge 60 Fusion (`e4d7036`, see `docs/local-build-notes.md`); owner data restored. Robot/MaixCAM2 path not re-tested; not pushed, no PR.
 ## H3-cards — `feat/history-cards` (stacked on `feat/history-h3-redesign`, decision 0187)
 - Scan card grid, uncropped photo frame, full-screen photo viewer (design `ae25ef1`). Phone-tested en/id, light/dark, md5 History unchanged; share = photo as a one-page PDF. Results: `docs/test-results/h3-cards/README.md`. Not pushed, no PR.
 ## H3 redesign — `feat/history-h3-redesign` (decision 0187)
