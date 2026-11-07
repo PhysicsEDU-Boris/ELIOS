@@ -946,7 +946,10 @@ class ControlCompactStrip extends StatelessWidget {
             child: Switch(
               key: key,
               value: v,
-              onChanged: on,
+              onChanged: (x) {
+                controlFeedback();
+                on(x);
+              },
               activeTrackColor: p.primary,
               activeThumbColor: p.surface,
             ),

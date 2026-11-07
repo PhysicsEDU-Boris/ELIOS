@@ -57,3 +57,4 @@
 ## Marketing website — Figma (5 Nov 2026)
 - Editable desktop 1440 and mobile 390: https://www.figma.com/design/J2jSbARJSyJCStNFeWkWDj/?node-id=473-2389 (W1 Marketing website). Uses docs/design.md light tokens, original mascot/bin buddies, and real home-screen previews.
 - All sections visually reviewed. Revision: removed 18 decorative icons and 15 arrow/star/checkmark accents in desktop/mobile; retained main mascot and app previews. Static UI; CTA wiring/implementation remain. No app build or robot test.
+- Control haptics (7 Nov, decision 0188): `controlFeedback()`/`withFeedback()` in `r2_controls.dart`: tick + click on Control buttons, toggles, slider start, joystick direction, STOP, HOME. Test: `test/widgets/control_feedback_test.dart`. Installed on the Motorola (1c8caee); owner feel-test pending.

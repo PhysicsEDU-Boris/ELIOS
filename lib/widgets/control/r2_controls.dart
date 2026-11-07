@@ -5,12 +5,28 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../models/control_session.dart';
 import '../../theme/elio_tokens.dart';
 import '../learn/learn_ui.dart' show LearnTheme;
 import 'package:elio/l10n/l10n.dart';
+
+/// Feel for every Control input (decision 0188): a light haptic tick plus the
+/// platform click sound (silent when the device has touch sounds off).
+void controlFeedback() {
+  HapticFeedback.selectionClick();
+  SystemSound.play(SystemSoundType.click);
+}
+
+/// [onTap] with [controlFeedback] first; null stays null (disabled).
+VoidCallback? withFeedback(VoidCallback? onTap) => onTap == null
+    ? null
+    : () {
+        controlFeedback();
+        onTap();
+      };
 
 /// Dimmed and inert: disabled controls send nothing (R2, waiting/disconnected).
 Widget controlEnabled(bool enabled, Widget child) => Opacity(
@@ -159,7 +175,10 @@ class _DriveJoystickState extends State<DriveJoystick> {
     if (dir == _dir) return;
     if (_dir != null) widget.onRelease();
     _dir = dir;
-    if (dir != null) widget.onDirection(dir);
+    if (dir != null) {
+      controlFeedback();
+      widget.onDirection(dir);
+    }
   }
 
   void _end(PointerEvent e) {
@@ -311,6 +330,7 @@ class ControlFader extends StatelessWidget {
         value: value.clamp(0, max),
         max: max,
         onChanged: onChanged,
+        onChangeStart: onChanged == null ? null : (_) => controlFeedback(),
         semanticFormatterCallback: (v) => '${(v / max * 100).round()}%',
       ),
     );
@@ -400,7 +420,8 @@ class GearChips extends StatelessWidget {
                 child: InkWell(
                   key: ValueKey('gear_$g'),
                   borderRadius: BorderRadius.circular(10),
-                  onTap: onSelect == null ? null : () => onSelect!(g.toDouble()),
+                  onTap: onSelect == null ? null : withFeedback(() => onSelect!(g.toDouble())),
+                  enableFeedback: false,
                   child: SizedBox(
                     height: 32,
                     child: FittedBox(
@@ -473,7 +494,8 @@ class TransportKey extends StatelessWidget {
       label: label,
       excludeSemantics: true,
       child: InkWell(
-        onTap: onTap,
+        onTap: withFeedback(onTap),
+        enableFeedback: false,
         borderRadius: BorderRadius.circular(12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -545,7 +567,8 @@ class PowerGlowButton extends StatelessWidget {
               child: InkWell(
                 key: const ValueKey('robot_power'),
                 customBorder: const CircleBorder(),
-                onTap: onTap,
+                onTap: withFeedback(onTap),
+                enableFeedback: false,
                 child: Icon(
                   Icons.power_settings_new_rounded,
                   size: size * 0.45,
@@ -611,7 +634,10 @@ class RockerToggle extends StatelessWidget {
           const SizedBox(width: 8),
           Switch(
             value: value,
-            onChanged: onChanged,
+            onChanged: (v) {
+              controlFeedback();
+              onChanged(v);
+            },
             activeThumbColor: p.surface,
             activeTrackColor: p.primary,
             inactiveThumbColor: p.textTertiary,
