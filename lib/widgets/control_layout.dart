@@ -369,7 +369,8 @@ class ControlPill extends StatelessWidget {
         side: BorderSide(color: dashed ? p.borderStrong : p.borderMedium, width: dashed ? 1 : 1.5),
       ),
       child: InkWell(
-        onTap: onTap,
+        onTap: withFeedback(onTap),
+        enableFeedback: false,
         customBorder: const StadiumBorder(),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 40),
@@ -483,6 +484,7 @@ class _HomeButtonState extends State<HomeButton> with SingleTickerProviderStateM
     _holdTimer?.cancel();
     _controller.forward(from: 0.0);
     _holdTimer = Timer(widget.holdDuration, () {
+      controlFeedback();
       widget.onConfirmed();
     });
   }
@@ -608,7 +610,8 @@ class EmergencyStopButton extends StatelessWidget {
               ),
               child: InkWell(
                 customBorder: const CircleBorder(),
-                onTap: onStop,
+                onTap: withFeedback(onStop),
+                enableFeedback: false,
                 // Scaled down, never wrapped, in whatever font the device has.
                 child: Padding(
                   padding: EdgeInsets.all(d * 0.16),

@@ -927,7 +927,8 @@ class PhonePill extends StatelessWidget {
         ),
         child: InkWell(
           customBorder: const StadiumBorder(),
-          onTap: onTap,
+          onTap: withFeedback(onTap),
+          enableFeedback: false,
           child: Padding(padding: padding, child: child),
         ),
       ),
@@ -1210,7 +1211,7 @@ class _IconToggle extends StatelessWidget {
       child: GestureDetector(
         key: ValueKey('toggle_$label'),
         behavior: HitTestBehavior.opaque,
-        onTap: () => onChanged(!value),
+        onTap: withFeedback(() => onChanged(!value)),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: p.surface,
@@ -1410,7 +1411,8 @@ class PhoneGlowButton extends StatelessWidget {
           ),
           child: InkWell(
             customBorder: const CircleBorder(),
-            onTap: onTap,
+            onTap: withFeedback(onTap),
+            enableFeedback: false,
             child: Center(
               child: power
                   ? Icon(
