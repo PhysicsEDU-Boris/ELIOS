@@ -58,3 +58,27 @@ const _indonesianGuides = <String, String>{
   'https://res.cloudinary.com/ks5c3ln4/image/upload/v1783509989/Module4_Biodegradable_vs_NonBiodegradable_xqivuz.pdf':
       'https://res.cloudinary.com/zkebg27g/image/upload/v1794123507/Module4_Biodegradable_vs_NonBiodegradable_xqivuz_id.pdf',
 };
+
+// Original published guides have no i18n fields; translated Firestore text still wins.
+String guideContentText(String value) =>
+    l10n.localeName == 'id' ? (_guideTextId[value] ?? value) : value;
+
+const _guideTextId = <String, String>{
+  'Introduction & Definitions of Waste': 'Pengantar dan Definisi Sampah',
+  'Categories of Organic Waste': 'Kategori Sampah Organik',
+  'Categories of Inorganic Waste': 'Kategori Sampah Anorganik',
+  'Biodegradable vs. Non-Biodegradable Properties':
+      'Sifat Biodegradabel dan Non-Biodegradabel',
+  'Foundational principles of physical waste streams and sorting logic.':
+      'Prinsip dasar aliran fisik sampah dan logika pemilahan.',
+  'Learn the types and characteristics of organic waste.':
+      'Pelajari jenis dan karakteristik sampah organik.',
+  'Learn the types and characteristics of inorganic waste.':
+      'Pelajari jenis dan karakteristik sampah anorganik.',
+  'Compare biodegradable and non-biodegradable waste properties.':
+      'Bandingkan sifat sampah biodegradabel dan non-biodegradabel.',
+  'Module 1: Waste Classification & Identification':
+      'Modul 1: Klasifikasi dan Identifikasi Sampah',
+  'Module 2: Inorganic / Recyclable Waste':
+      'Modul 2: Sampah Anorganik / Dapat Didaur Ulang',
+};

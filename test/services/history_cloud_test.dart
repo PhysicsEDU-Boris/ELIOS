@@ -42,6 +42,21 @@ ScanRecord record(String id) => ScanRecord(
   ],
 );
 void main() {
+  test('recovered guide title and PDF follow both app languages', () {
+    final guide = GuideLesson.fromMap({
+      'title': 'Categories of Organic Waste',
+      'pdfUrl':
+          'https://res.cloudinary.com/ks5c3ln4/image/upload/v1783509989/Module2_Categories_of_Organic_Waste_cb4tbs.pdf',
+    }, 'module2_organic_categories');
+    debugSetL10n(const Locale('id'));
+    expect(guide.title, 'Kategori Sampah Organik');
+    expect(guide.pdfUrl, contains('_id.pdf'));
+    debugSetL10n(const Locale('en'));
+    expect(guide.title, 'Categories of Organic Waste');
+    expect(guide.pdfUrl, contains('/zkebg27g/'));
+    expect(guide.pdfUrl, isNot(contains('_id.pdf')));
+    debugSetL10n(const Locale('id'));
+  });
   test('failed local insert never appears as durable history', () async {
     final dir = await Directory.systemTemp.createTemp(
       'history-insert-failure-',

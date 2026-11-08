@@ -9,11 +9,13 @@ class GuideLesson {
   final String id;
   final String moduleId;
   final String _moduleTitle;
-  String get moduleTitle => contentText(i18n, 'moduleTitle', _moduleTitle);
+  String get moduleTitle =>
+      guideContentText(contentText(i18n, 'moduleTitle', _moduleTitle));
   final String _title;
-  String get title => contentText(i18n, 'title', _title);
+  String get title => guideContentText(contentText(i18n, 'title', _title));
   final String _description;
-  String get description => contentText(i18n, 'description', _description);
+  String get description =>
+      guideContentText(contentText(i18n, 'description', _description));
   final String _pdfUrl;
   String get pdfUrl => guideMediaUrl(contentText(i18n, 'pdfUrl', _pdfUrl));
   final String _coverUrl;
