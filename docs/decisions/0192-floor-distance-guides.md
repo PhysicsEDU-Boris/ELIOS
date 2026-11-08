@@ -33,8 +33,9 @@ distortion). The missing piece is the floor: the lens height and its tilt and ro
 - **HUD (desktop/tablet Control).** The guides are projected from the floor model like the sim's:
   a line at 20 / 30 / 40 / 60 cm, rails ±6 cm, bands red → amber → green, labels on alternating
   sides, and the 20–28 cm pick zone shaded on the floor. They show when the floor is calibrated or the
-  firmware sends `dist_cm`. The target tag reads `Plastic · 24 cm · 3 cm ←`. The phone layout stays
-  bare (R3).
+  firmware sends `dist_cm`. The target tag reads `Plastic · 24 cm · 3 cm ←`. The phone layout
+  gets the same overlay (`FloorGuidesOverlay`, chip bottom-left): the one exception to the bare
+  R3 video, because floor lines only make sense on the frame.
 
 ## Consequences
 

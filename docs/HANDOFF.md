@@ -1,5 +1,5 @@
 ## Floor distance guides — `feat/floor-distance-guides` (decision 0192)
-- Sim-style 20/30/40/60 cm floor guides + item dist/side, from a floor AprilTag (tag36h11 id 2, 80 mm black) via Control → Calibrate floor; saved on device. Firmware sends tag corners + id 2. Tests pass; NOT robot-tested, firmware NOT flashed, no app build (robot steps in the decision doc).
+- Sim-style 20/30/40/60 cm floor guides + item dist/side, from a floor AprilTag (tag36h11 id 2, 80 mm black) via Control → Calibrate floor; saved on device. Firmware sends tag corners + id 2. Tests pass; NOT robot-tested, firmware NOT flashed, phone layout too; APK 53bf3cf installed on the Edge 60 Fusion (build notes). Firmware NOT flashed (robot steps in the decision doc).
 # Cloud history setup — 8 November 2026 (0191) · Branch codex/account-scan-history, based on origin/feature/live-scan; no merge to main.
 - Live Supabase ELIOS project tymiikfebewqvuokoyru (Free, Sydney); schema/RLS and update cursor applied. Vercel ai-backend serves /api/history with Firebase UID ownership checks; secrets in Vercel only.
 - Cloudinary zkebg27g: recovered 4 PDFs, 4 covers, 11 thumbnails; added 4 Indonesian guide PDFs and translated guide-list metadata. PDF delivery enabled with owner approval. App maps exact old public URLs; Firestore originals and YouTube IDs retained.
