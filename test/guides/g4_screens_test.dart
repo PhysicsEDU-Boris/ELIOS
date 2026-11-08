@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:elio/Screens/tabs/elearning/daily_guides_page.dart';
 import 'package:elio/Screens/tabs/elearning/guides/guide_issue_page.dart';
@@ -10,11 +8,9 @@ import 'package:elio/Screens/tabs/elearning_tab.dart';
 import 'package:elio/l10n/l10n.dart';
 import 'package:elio/services/daily_guide_service.dart';
 import 'package:elio/services/elearning_content_service.dart';
-import 'package:elio/services/guide_progress.dart';
 import 'package:elio/services/quiz_tts_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -31,7 +27,6 @@ GuideQuestion q(String id, int answer) => GuideQuestion(
 
 void main() {
   setUpAll(loadElioFonts);
-  late Directory dir;
   late FakeGuidesServer server;
   late ValueNotifier<Locale> locale;
 
@@ -39,7 +34,6 @@ void main() {
     SharedPreferences.setMockInitialValues({
       'daily-guide-notified': '2099-01-01',
     });
-    dir = Directory.systemTemp.createTempSync('g4-screens-');
     server = FakeGuidesServer();
     locale = ValueNotifier(const Locale('en'));
     debugSetL10n(const Locale('en'));

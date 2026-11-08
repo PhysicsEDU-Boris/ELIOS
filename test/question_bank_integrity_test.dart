@@ -100,8 +100,9 @@ void main() {
               ..['id'] = '${original['id']}-$status'
               ..['status'] = status;
             items.add(item);
-            if (identical(items, poolItems))
+            if (identical(items, poolItems)) {
               (fixturePools['items'] as List).add(item);
+            }
             excluded.add(item['id'] as String);
           }
         }

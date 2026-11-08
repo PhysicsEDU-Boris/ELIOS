@@ -42,8 +42,6 @@ class FakeCamera extends PhoneFrameSource {
       CapturedFrame(bytes: _photo, width: 600, height: 400, timestamp: DateTime(2026, 11, 8));
   @override
   Widget buildPreview({BoxFit fit = BoxFit.cover}) => const ColoredBox(color: Color(0xFF334155));
-  @override
-  void dispose() {}
 }
 
 void main() {

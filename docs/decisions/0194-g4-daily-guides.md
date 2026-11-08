@@ -20,3 +20,8 @@ Implements the approved Figma "G4 · Daily Guides (app)" (J2jSbARJSyJCStNFeWkWDj
 Differences from the Figma/prompt: share buttons omitted (no share plugin); source links are copied,
 not opened (no url_launcher dependency); parked quiz cards sit at -95 % so a sliver shows as in the
 Figma; migration lives in `supabase/migrations/` (repo convention), not `ai-backend/migrations/`.
+
+Validation follow-up: G4 widgets and ordinary progress tests use the in-memory store/cache; only
+restart persistence uses a temporary real store, reopened with a fresh store instance. The stale
+radius test now pins existing DevLog token values; migrating shared tokens to the newer design
+scale is separate work. No app tokens or Figma template slots were changed.

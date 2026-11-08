@@ -9,19 +9,21 @@ import '../guides/g4_fixture.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  late Directory dir;
+  Directory? dir;
+  late GuideProgressFiles files;
   late FakeGuidesServer server;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
-    dir = Directory.systemTemp.createTempSync('g4-progress-');
+    dir = null;
+    files = MemoryProgressFiles();
     server = FakeGuidesServer();
   });
-  tearDown(() => dir.deleteSync(recursive: true));
+  tearDown(() => dir?.deleteSync(recursive: true));
 
   Future<(ProviderContainer, GuideProgressNotifier)> open() async {
     final c = ProviderContainer(
-      overrides: guideOverrides(server: server, dir: dir),
+      overrides: guideOverrides(server: server, files: files),
     );
     final n = c.read(guideProgressProvider.notifier);
     await n.ready;
@@ -57,6 +59,8 @@ void main() {
   test(
     'offline: events show at once, survive a restart and are sent once with the same id',
     () async {
+      dir = Directory.systemTemp.createTempSync('g4-progress-');
+      files = GuideProgressFiles(() async => dir!);
       server.offline = true;
       var (c, n) = await open();
       await n.pageReached(date, 3);
@@ -84,6 +88,7 @@ void main() {
       c.dispose();
 
       server.offline = false;
+      files = GuideProgressFiles(() async => dir!);
       (c, n) = await open(); // app restart
       expect(c.read(guideProgressProvider).pending, 0);
       final sent = server.calls.where((b) => b['op'] == 'event').toList();

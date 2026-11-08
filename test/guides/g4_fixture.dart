@@ -1,5 +1,5 @@
 // G4 Daily Guides test fixture: manifest v1/v2, issue JSON (en/id), a fake backend and photo cache.
-// Isolated: temp directories only, never the owner's data.
+// Isolated: in-memory storage by default, never the owner's data.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -361,18 +361,18 @@ class MemoryProgressFiles extends GuideProgressFiles {
   ];
 }
 
-/// Overrides for an isolated account: fake service, fake backend, progress files in a temp dir.
+/// Overrides for an isolated account with in-memory progress by default.
 List<Override> guideOverrides({
   required FakeGuidesServer server,
   DailyGuideService? service,
-  Directory? dir,
+  GuideProgressFiles? files,
   User? user,
 }) {
   return [
     dailyGuideServiceProvider.overrideWithValue(service ?? fakeService()),
     guidesCallProvider.overrideWithValue(server.call),
     guideProgressFilesProvider.overrideWithValue(
-      dir == null ? MemoryProgressFiles() : GuideProgressFiles(() async => dir),
+      files ?? MemoryProgressFiles(),
     ),
     currentUserProvider.overrideWithValue(
       user ?? MockUser(uid: 'student-1', isAnonymous: false),
