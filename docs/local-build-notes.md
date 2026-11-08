@@ -1,5 +1,14 @@
 # Local build notes
 
+## 8 Nov 2026 — Account history cloud setup (0191, PR #101)
+- Source / APP_COMMIT `8cdfac1`; Android arm64 debug APK, LIVE_SCAN=true, Flutter 3.44.2. Final clean packaging 7.8 s; APK 156.6 MB at `build/app/outputs/flutter-apk/app-debug.apk`.
+- Existing debug signing retained. No USB device connected: APK built, not installed or robot-tested. No Mac bundle, LaunchServices registration, Keychain, firmware or runtime model changes.
+- Kept original `assets/models/gemma-4-E2B-it.litertlm` on disk. Replaced directory-wide asset inclusion with the 2 used GLBs; verified no `.litertlm` entry in the APK. Removed task-produced APK outputs/stale packaging state before final package; no owner source/model files deleted.
+- Supabase Free project `tymiikfebewqvuokoyru` (Sydney), Cloudinary `zkebg27g`, Vercel `elios5/ai-backend` production deployment `dpl_8gfZviHZBBweAfKjmpaJBdPSVPDk`. Secrets configured only in Vercel; no billing upgrade.
+- Live record/cursor/private-photo/ownership tests passed. All 8 EN/ID guide PDFs HTTP 200. Test fixtures removed with owner approval; local transfer helpers stopped. Accidental task-created Vercel `elios-clean` project removed with owner approval.
+- Verification: 16 backend tests; full Flutter run 1333 pass / 20 skipped / 1 unchanged design-token spacing failure; follow-up Learn/cloud tests 43 pass and store tests 13 pass. Analyze: 2 unchanged test-file infos. Secret scan clean; store/guide/write-failure tests break-checked.
+- Next phone check: A → scan/quiz/photo/explanation/export/EN-ID → B → A; offline/reconnect and guest isolation. Anonymous sign-out cannot recover a guest UID without permanent identity linking.
+
 ## 7 Nov 2026 — Settings on both cameras phone test (`feat/settings-both-cameras`)
 - Source `e4d7036`, arm64 debug APK, LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION, APP_COMMIT `e4d7036`; Gradle 95 s.
 - Motorola Edge 60 Fusion over USB, `com.boris.elio` debug, same signing; `adb install -r` Success, no uninstall/data clear.
