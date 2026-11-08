@@ -1234,5 +1234,12 @@
   "h3SharePhoto": "Bagikan foto",
   "h3PinchHint": "Cubit untuk zoom · ketuk dua kali untuk reset",
   "h3ViewerMeta": "Dipindai {when} · {category}",
-  "h3ScanPhoto": "Foto scan {item}"
+  "h3ScanPhoto": "Foto scan {item}",
+  "historySyncing": "Menyinkronkan riwayat…",
+  "historySynced": "Riwayat tersinkron",
+  "historyLocalOnly": "Tersimpan di perangkat · menunggu sinkronisasi",
+  "historySyncRetry": "Sinkronkan sekarang",
+  "historyImport": "Impor riwayat lama perangkat",
+  "historyImportBody": "Scan lama ini belum memiliki pemilik akun. Impor ke akun yang sedang dipakai? Riwayat asli perangkat tetap disimpan.",
+  "historyImportFailed": "Riwayat lama gagal diimpor. File asli tetap disimpan."
 }

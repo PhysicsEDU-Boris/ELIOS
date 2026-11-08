@@ -2938,5 +2938,12 @@
         "type": "String"
       }
     }
-  }
+  },
+  "historySyncing": "Syncing history…",
+  "historySynced": "History synced",
+  "historyLocalOnly": "Saved on this device · sync pending",
+  "historySyncRetry": "Sync now",
+  "historyImport": "Import previous device history",
+  "historyImportBody": "These older scans have no account owner. Import them into your current account? The original device history will be kept.",
+  "historyImportFailed": "Could not import previous history. The original files are kept."
 }

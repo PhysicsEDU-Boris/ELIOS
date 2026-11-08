@@ -76,6 +76,36 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
     ).push(MaterialPageRoute(builder: (_) => const DeviceScanScreen()));
   }
 
+  Future<void> _importLegacy() async {
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.historyImport),
+        content: Text(context.l10n.historyImportBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(context.l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(context.l10n.historyImport),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true || !mounted) return;
+    try {
+      await _store.importLegacyHistory();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.historyImportFailed)),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context);
@@ -116,104 +146,155 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
       // here too left an empty band above the nav (other tabs have none).
       body: SafeArea(
         bottom: widget.showHeader,
-        child: LayoutBuilder(
-          builder: (context, box) {
-            if (_failed || _store.loadError != null) {
-              return HistoryError(
-                message: context.l10n.h3LoadFailed,
-                onRetry: _load,
-              );
-            }
-            if (!_store.isLoaded) {
-              return const HistorySkeleton(HistoryLoadingLayout.list);
-            }
-            if (_store.records.isEmpty) {
-              return HistoryEmpty(
-                art: homeArt('history_empty', width: 240, height: 180),
-                onScan: _scan,
-              );
-            }
-            final list = ListView(
-              key: const ValueKey('history_list'),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              children: [
-                _summary(),
-                const SizedBox(height: 16),
-                _tiles(),
-                const SizedBox(height: 24),
-                HistorySectionHeader(
-                  context.l10n.h3RecentScans,
-                  action: context.l10n.h3ScanCount(records.length),
+        child: Column(
+          children: [
+            if (_store.cloud != null)
+              ListTile(
+                dense: true,
+                leading: Icon(
+                  _store.syncing
+                      ? Icons.cloud_sync_outlined
+                      : _store.syncError != null ||
+                            _store.lastSynced == null ||
+                            _store.pendingCount > 0
+                      ? Icons.cloud_off_outlined
+                      : Icons.cloud_done_outlined,
                 ),
-                // Day groups (Overline, 12 above the group, 20 apart), each a
-                // card grid: 2 columns, 3 when the list pane is over 560 dp.
-                for (final (i, group) in _byDay(records).indexed) ...[
-                  SizedBox(height: i == 0 ? 16 : 20),
-                  Text(
-                    historyDay(context.l10n, group.first.time).toUpperCase(),
-                    style: ElioTokens.overline.copyWith(color: p.textTertiary),
-                  ),
-                  const SizedBox(height: 12),
-                  HistoryScanGrid(
-                    records: [
-                      for (final r in group)
-                        r.localized(context.l10n.localeName),
-                    ],
-                    columns:
-                        (box.maxWidth >= 750
-                                    ? box.maxWidth * .42
-                                    : box.maxWidth) -
-                                32 >
-                            560
-                        ? 3
-                        : 2,
-                    onOpen: (r) {
-                      if (box.maxWidth >= 750) {
-                        setState(() => _selected = r.id);
-                      } else {
-                        final theme = Theme.of(context);
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => Theme(
-                              data: theme,
-                              child: ScanDetailScreen(record: r, store: _store),
+                title: Text(
+                  _store.syncing
+                      ? context.l10n.historySyncing
+                      : _store.syncError != null ||
+                            _store.lastSynced == null ||
+                            _store.pendingCount > 0
+                      ? context.l10n.historyLocalOnly
+                      : context.l10n.historySynced,
+                ),
+                trailing: IconButton(
+                  tooltip: context.l10n.historySyncRetry,
+                  onPressed: _store.syncing ? null : _store.sync,
+                  icon: const Icon(Icons.sync),
+                ),
+              ),
+            if (_store.ownerId != null)
+              FutureBuilder<bool>(
+                future: _store.hasLegacyHistory(),
+                builder: (context, snapshot) => snapshot.data == true
+                    ? TextButton(
+                        onPressed: _importLegacy,
+                        child: Text(context.l10n.historyImport),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  if (_failed || _store.loadError != null) {
+                    return HistoryError(
+                      message: context.l10n.h3LoadFailed,
+                      onRetry: _load,
+                    );
+                  }
+                  if (!_store.isLoaded) {
+                    return const HistorySkeleton(HistoryLoadingLayout.list);
+                  }
+                  if (_store.records.isEmpty) {
+                    return HistoryEmpty(
+                      art: homeArt('history_empty', width: 240, height: 180),
+                      onScan: _scan,
+                    );
+                  }
+                  final list = ListView(
+                    key: const ValueKey('history_list'),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    children: [
+                      _summary(),
+                      const SizedBox(height: 16),
+                      _tiles(),
+                      const SizedBox(height: 24),
+                      HistorySectionHeader(
+                        context.l10n.h3RecentScans,
+                        action: context.l10n.h3ScanCount(records.length),
+                      ),
+                      // Day groups (Overline, 12 above the group, 20 apart), each a
+                      // card grid: 2 columns, 3 when the list pane is over 560 dp.
+                      for (final (i, group) in _byDay(records).indexed) ...[
+                        SizedBox(height: i == 0 ? 16 : 20),
+                        Text(
+                          historyDay(
+                            context.l10n,
+                            group.first.time,
+                          ).toUpperCase(),
+                          style: ElioTokens.overline.copyWith(
+                            color: p.textTertiary,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        HistoryScanGrid(
+                          records: [
+                            for (final r in group)
+                              r.localized(context.l10n.localeName),
+                          ],
+                          columns:
+                              (box.maxWidth >= 750
+                                          ? box.maxWidth * .42
+                                          : box.maxWidth) -
+                                      32 >
+                                  560
+                              ? 3
+                              : 2,
+                          onOpen: (r) {
+                            if (box.maxWidth >= 750) {
+                              setState(() => _selected = r.id);
+                            } else {
+                              final theme = Theme.of(context);
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => Theme(
+                                    data: theme,
+                                    child: ScanDetailScreen(
+                                      record: r,
+                                      store: _store,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                      if (records.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            context.l10n.h3NoScansInCategory,
+                            style: ElioTokens.bodySmall.copyWith(
+                              color: p.textSecondary,
                             ),
                           ),
-                        );
-                      }
-                    },
-                  ),
-                ],
-                if (records.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      context.l10n.h3NoScansInCategory,
-                      style: ElioTokens.bodySmall.copyWith(
-                        color: p.textSecondary,
-                      ),
-                    ),
-                  ),
-              ],
-            );
-            if (box.maxWidth < 750) return list;
-            return Row(
-              children: [
-                SizedBox(width: box.maxWidth * .42, child: list),
-                VerticalDivider(width: 1, color: p.borderSubtle),
-                Expanded(
-                  child: selected == null
-                      ? const SizedBox.shrink()
-                      : ScanDetailScreen(
-                          key: ValueKey(selected.id),
-                          record: selected,
-                          store: _store,
-                          embedded: true,
                         ),
-                ),
-              ],
-            );
-          },
+                    ],
+                  );
+                  if (box.maxWidth < 750) return list;
+                  return Row(
+                    children: [
+                      SizedBox(width: box.maxWidth * .42, child: list),
+                      VerticalDivider(width: 1, color: p.borderSubtle),
+                      Expanded(
+                        child: selected == null
+                            ? const SizedBox.shrink()
+                            : ScanDetailScreen(
+                                key: ValueKey(selected.id),
+                                record: selected,
+                                store: _store,
+                                embedded: true,
+                              ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'content_i18n.dart';
+import 'content_media.dart';
 
 class GuideLesson {
   /// Translated fields by language (decision 0185); empty when none.
@@ -8,13 +9,17 @@ class GuideLesson {
   final String id;
   final String moduleId;
   final String _moduleTitle;
-  String get moduleTitle => contentText(i18n, 'moduleTitle', _moduleTitle);
+  String get moduleTitle =>
+      guideContentText(contentText(i18n, 'moduleTitle', _moduleTitle));
   final String _title;
-  String get title => contentText(i18n, 'title', _title);
+  String get title => guideContentText(contentText(i18n, 'title', _title));
   final String _description;
-  String get description => contentText(i18n, 'description', _description);
-  final String pdfUrl;
-  final String coverUrl;
+  String get description =>
+      guideContentText(contentText(i18n, 'description', _description));
+  final String _pdfUrl;
+  String get pdfUrl => guideMediaUrl(contentText(i18n, 'pdfUrl', _pdfUrl));
+  final String _coverUrl;
+  String get coverUrl => contentMediaUrl(_coverUrl);
   final int pageCount;
   final int readTimeMinutes;
   final int order;
@@ -26,14 +31,18 @@ class GuideLesson {
     required String moduleTitle,
     required String title,
     required String description,
-    required this.pdfUrl,
-    required this.coverUrl,
+    required String pdfUrl,
+    required String coverUrl,
     this.pageCount = 0,
     this.readTimeMinutes = 0,
     required this.order,
     required this.isPublished,
     this.i18n = const {},
-  }) : _moduleTitle = moduleTitle, _title = title, _description = description;
+  }) : _coverUrl = coverUrl,
+       _pdfUrl = pdfUrl,
+       _moduleTitle = moduleTitle,
+       _title = title,
+       _description = description;
 
   factory GuideLesson.fromMap(Map<String, dynamic> map, String documentId) {
     final rawId = map['id'];
@@ -85,8 +94,8 @@ class GuideLesson {
       'moduleTitle': _moduleTitle,
       'title': _title,
       'description': _description,
-      'pdfUrl': pdfUrl,
-      'coverUrl': coverUrl,
+      'pdfUrl': _pdfUrl,
+      'coverUrl': _coverUrl,
       'pageCount': pageCount,
       'readTimeMinutes': readTimeMinutes,
       'order': order,

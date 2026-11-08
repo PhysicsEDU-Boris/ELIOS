@@ -164,6 +164,7 @@ class ScanRecord {
   }) : trophies = trophies ?? trophiesFor(questions);
 
   ScanRecord copyWith({
+    String? cropPhotoPath,
     List<RecordQuestion>? questions,
     Map<String, RecordTranslation>? translations,
   }) => ScanRecord(
@@ -171,7 +172,7 @@ class ScanRecord {
     time: time,
     itemName: itemName,
     category: category,
-    cropPhotoPath: cropPhotoPath,
+    cropPhotoPath: cropPhotoPath ?? this.cropPhotoPath,
     difficulty: difficulty,
     questions: questions ?? this.questions,
     trophies: trophies,

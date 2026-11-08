@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-08",
+  "supabaseProject": "tymiikfebewqvuokoyru",
+  "cloudinaryCloud": "zkebg27g",
+  "backendDeployment": "dpl_8gfZviHZBBweAfKjmpaJBdPSVPDk",
+  "recoveredAssets": 19,
+  "indonesianGuides": 4,
+  "liveChecks": {
+    "recordRoundtrip": true,
+    "incrementalCursor": true,
+    "privatePhotoRoundtrip": true,
+    "otherUidListDenied": true,
+    "otherUidPhotoDenied": true,
+    "invalidTokenRejected": true,
+    "unsignedPhotoDeliveryRejected": true,
+    "allEightGuidePdfsHttp200": true,
+    "testFixturesRemoved": true
+  },
+  "flutterFullSuite": {
+    "passed": 1333,
+    "skipped": 20,
+    "preexistingFailure": "test/theme/elio_tokens_test.dart: spacing scale and radii match the tables"
+  },
+  "backendTestsPassed": 16,
+  "learnAndCloudTestsPassed": 43,
+  "storeTestsPassed": 13,
+  "analyzePreexistingInfos": 2,
+  "deviceAcceptance": "Not run: no connected USB device",
+  "androidBuild": {
+    "appCommit": "8cdfac1",
+    "megabytes": 156.6,
+    "arch": "arm64",
+    "mode": "debug",
+    "gemmaBundled": false,
+    "installed": false
+  }
+}

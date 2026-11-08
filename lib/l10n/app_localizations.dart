@@ -7518,6 +7518,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scan photo of {item}'**
   String h3ScanPhoto(String item);
+
+  /// No description provided for @historySyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing history…'**
+  String get historySyncing;
+
+  /// No description provided for @historySynced.
+  ///
+  /// In en, this message translates to:
+  /// **'History synced'**
+  String get historySynced;
+
+  /// No description provided for @historyLocalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this device · sync pending'**
+  String get historyLocalOnly;
+
+  /// No description provided for @historySyncRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get historySyncRetry;
+
+  /// No description provided for @historyImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import previous device history'**
+  String get historyImport;
+
+  /// No description provided for @historyImportBody.
+  ///
+  /// In en, this message translates to:
+  /// **'These older scans have no account owner. Import them into your current account? The original device history will be kept.'**
+  String get historyImportBody;
+
+  /// No description provided for @historyImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not import previous history. The original files are kept.'**
+  String get historyImportFailed;
 }
 
 class _AppLocalizationsDelegate
