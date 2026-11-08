@@ -3,7 +3,7 @@
 - App/backend/migration complete. G4 tests use memory except the restart persistence test; legacy radius test repaired without changing tokens; analyzer lints cleared.
 - Validation: full Flutter suite 1419 passed, 20 skipped; backend 26/26; analyze clean; secret scan clean; string audit 0.
 - Preview: https://ai-backend-24phg5dz3-elios5.vercel.app (`/api/guides` unauthenticated POST returns 401). Vercel authentication protection is enabled.
-- Owner: apply `supabase/migrations/202611090001_guide_progress.sql`, then `cd ai-backend && npx vercel --prod` after review. Migration/production untouched here.
+- Applied `202611090001_guide_progress.sql` to ELIOS Supabase `tymiikfebewqvuokoyru` in a transaction; verified all 3 tables: RLS on, anon/authenticated reads denied, service_role inserts allowed. Production deployed: https://ai-backend-seven-orpin.vercel.app (deployment `dpl_E9RHpvWHYegNy5K3Ef86iTjJRpJx`); public `/api/guides` POST returns expected 401 without sign-in.
 - Device check: Learn → Today/Guides → EN/ID issue → quiz → lab; reconnect after reading offline and restart. USB phone/robot untested; no app build/install, model, firmware or signing changes.
 - Renders: `docs/test-results/g4-guides/app/` (48 app frames plus comparisons). Sources copy only; no share; quiz park -95%; Figma slots unchanged.
 
