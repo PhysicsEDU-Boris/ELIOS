@@ -1,8 +1,8 @@
 # Daily Guide — 8 November 2026 (0193)
-- Branch codex/daily-guides, based on origin/feature/live-scan; separate worktree leaves owner's floor/control edits untouched.
+- App PR #102: https://github.com/PhysicsEDU-Boris/ELIOS/pull/102 (base feature/live-scan, unmerged); isolated worktree leaves owner floor/control edits untouched.
 - Daily Guide link survives empty/loading/error Firestore modules; bilingual Pages catalogue, latest/archive, refresh/resume and validated offline fallback.
 - Reuses cached PDF viewer; daily page position is local per UID/date, separate from course completion/XP. Revisioned assets refresh corrections.
-- Focused tests: 10 pass. Empty-module entry regression fails with old LearnHub, passes restored. Full suite: 1343 pass, 20 skipped, 1 existing elio_tokens spacing/radii failure.
+- Focused tests: 10 pass; live deployed-manifest Flutter contract passes. Empty-module entry regression fails with old LearnHub, passes restored. Full suite: 1343 pass, 20 skipped, 1 existing elio_tokens spacing/radii failure.
 - flutter analyze: only 2 pre-existing test-file infos. No app build/device install, model, firmware or signing changes.
 - Backend PR #16: https://github.com/PhysicsEDU-Boris/elios-guides/pull/16; merge needed for default-branch schedules. Claude/Figma already runs daily; secrets exist.
 - First EN/ID issue is live and verified: https://physicsedu-boris.github.io/elios-guides/manifest.json; export+publish run 42492874079 succeeded. Pages uses Actions and published archive.
