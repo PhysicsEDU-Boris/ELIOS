@@ -49,8 +49,6 @@ class SlowCamera extends PhoneFrameSource {
 
   @override
   Widget buildPreview({BoxFit fit = BoxFit.cover}) => const SizedBox();
-  @override
-  void dispose() {}
 }
 
 void main() {
