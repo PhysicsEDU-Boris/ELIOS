@@ -63,6 +63,7 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
   }
 
   Future<void> _openCamera(_Step step) async {
+    _stopping = false;
     _samples.clear();
     _seconds = 0;
     final cam = widget.camera ?? PhoneFrameSource();
@@ -70,18 +71,29 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
     setState(() => _step = step);
     await cam.initialize();
     if (step == _Step.recording && mounted) {
-      _tick = Timer.periodic(const Duration(seconds: 1), (_) async {
+      _tick = Timer.periodic(const Duration(seconds: 1), (_) {
         _seconds++;
-        await _sample();
         if (_seconds >= labMaxSeconds) {
-          await _stop(); // longer clips: the first 30 s are used
+          unawaited(_stop()); // longer clips: the first 30 s are used
+        } else {
+          unawaited(_sample());
         }
         if (mounted) setState(() {});
       });
     }
   }
 
-  Future<void> _sample() async {
+  /// Frame conversions still running; [_stop] waits for them (a slow phone may lag a second or two).
+  final _pending = <Future<void>>[];
+  bool _stopping = false;
+
+  Future<void> _sample() {
+    final f = _sampleOnce();
+    _pending.add(f);
+    return f.whenComplete(() => _pending.remove(f));
+  }
+
+  Future<void> _sampleOnce() async {
     try {
       final shot = await _camera?.capture();
       if (shot != null) {
@@ -95,8 +107,12 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
   }
 
   Future<void> _stop() async {
+    // One stop per clip: overlapping timer ticks used to stop again and replace the frames with none.
+    if (_stopping) return;
+    _stopping = true;
     _tick?.cancel();
     _tick = null;
+    await Future.wait(List.of(_pending));
     await _closeCamera();
     var frames = pickEvenly(_samples, labFrames);
     _samples.clear();
@@ -454,7 +470,14 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
                     Text(l10n.g4SafetyTitle, style: context.text.titleSmall),
                     const SizedBox(height: 4),
                     Text(
-                      [...c.safety, l10n.g4PrivacyNote].join(' '),
+                      [
+                        // Published safety items often have no full stop; keep them as sentences.
+                        for (final x in c.safety)
+                          RegExp(r'[.!?]$').hasMatch(x.trim())
+                              ? x.trim()
+                              : '${x.trim()}.',
+                        l10n.g4PrivacyNote,
+                      ].join(' '),
                       style: context.text.bodySmall?.copyWith(
                         color: p.textSecondary,
                       ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:elio/Screens/tabs/elearning/daily_guides_page.dart';
 import 'package:elio/Screens/tabs/elearning/guides/guide_issue_page.dart';
@@ -8,6 +9,8 @@ import 'package:elio/Screens/tabs/elearning_tab.dart';
 import 'package:elio/l10n/l10n.dart';
 import 'package:elio/services/daily_guide_service.dart';
 import 'package:elio/services/elearning_content_service.dart';
+import 'package:elio/services/frame_source/frame_source.dart';
+import 'package:elio/services/frame_source/phone_frame_source.dart';
 import 'package:elio/services/quiz_tts_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +27,31 @@ GuideQuestion q(String id, int answer) => GuideQuestion(
   options: const ['a', 'b', 'c', 'd'],
   answer: answer,
 );
+
+/// Camera whose captures finish only when the test releases them (a slow phone).
+class SlowCamera extends PhoneFrameSource {
+  final waiting = <Completer<void>>[];
+  final _photo = testPhoto();
+  @override
+  Future<void> initialize() async {}
+  @override
+  Future<CapturedFrame?> capture() async {
+    final c = Completer<void>();
+    waiting.add(c);
+    await c.future;
+    return CapturedFrame(
+      bytes: _photo,
+      width: 600,
+      height: 400,
+      timestamp: DateTime(2026),
+    );
+  }
+
+  @override
+  Widget buildPreview({BoxFit fit = BoxFit.cover}) => const SizedBox();
+  @override
+  void dispose() {}
+}
 
 void main() {
   setUpAll(loadElioFonts);
@@ -336,6 +364,34 @@ void main() {
       );
       expect(find.text('Record 15–30 s'), findsOneWidget);
       expect(server.calls.where((c) => c['op'] == 'lab'), isEmpty);
+    },
+  );
+
+  testWidgets(
+    'lab: a 30 s clip whose frames convert late still gives 8 photos (phone: "0 photos ready")',
+    (t) async {
+      final cam = SlowCamera();
+      await pump(t, GuideLabPage(guide: await guide(), camera: cam));
+      await t.tap(find.text('Record 15–30 s'));
+      await t.pump();
+      for (var i = 0; i < 31; i++) {
+        await t.pump(const Duration(seconds: 1));
+      }
+      for (final c in cam.waiting) {
+        c.complete();
+      }
+      for (var i = 0; i < 20; i++) {
+        await t.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)),
+        );
+        await t.pump();
+      }
+      expect(find.text('8 photos ready'), findsOneWidget);
+      expect(
+        server.calls.where((c) => c['op'] == 'lab'),
+        isEmpty,
+        reason: 'nothing leaves before Send',
+      );
     },
   );
 
