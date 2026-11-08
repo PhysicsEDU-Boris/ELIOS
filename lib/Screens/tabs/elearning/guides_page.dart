@@ -4,11 +4,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 import '../../../models/guide_lesson.dart';
-import '../../../providers/auth_provider.dart';
 import '../../../providers/learning_progress_provider.dart';
 import '../../../widgets/learn/learn_ui.dart';
 import 'learn_content.dart';
@@ -18,7 +16,9 @@ Future<void> openGuideLesson({
   required BuildContext context,
   required WidgetRef ref,
   required GuideLesson lesson,
-  bool isDaily = false,
+  /// Daily guides keep their page in the guide progress store (0194): start page and page callback.
+  int? dailyInitialPage,
+  ValueChanged<int>? onDailyPage,
 }) async {
   debugPrint('[StartupDiag] opening WebView/PDF only after user action');
 
@@ -29,17 +29,9 @@ Future<void> openGuideLesson({
   }
 
   if (!context.mounted) return;
-  final localProgressKey = isDaily
-      ? 'daily-guide-page:${ref.read(currentUserProvider)?.uid ?? 'guest'}:${lesson.id}'
-      : null;
-  final initialPage = localProgressKey == null
-      ? ref
-                .read(learningProgressProvider)
-                .valueOrNull
-                ?.guideReadProgress[lesson.id] ??
-            0
-      : (await SharedPreferences.getInstance()).getInt(localProgressKey) ?? 0;
-  if (!context.mounted) return;
+  final initialPage = onDailyPage == null
+      ? ref.read(learningProgressProvider).valueOrNull?.guideReadProgress[lesson.id] ?? 0
+      : dailyInitialPage ?? 0;
   await Navigator.of(context).push(
     learnRoute<void>(
       _GuidePdfPage(
@@ -50,7 +42,7 @@ Future<void> openGuideLesson({
         pageCount: lesson.pageCount,
         readTimeMinutes: lesson.readTimeMinutes,
         initialPage: initialPage,
-        localProgressKey: localProgressKey,
+        onPage: onDailyPage,
       ),
     ),
   );
@@ -70,7 +62,7 @@ class _GuidePdfPage extends ConsumerStatefulWidget {
   final int pageCount;
   final int readTimeMinutes;
   final int initialPage;
-  final String? localProgressKey;
+  final ValueChanged<int>? onPage;
 
   const _GuidePdfPage({
     required this.title,
@@ -80,7 +72,7 @@ class _GuidePdfPage extends ConsumerStatefulWidget {
     required this.pageCount,
     required this.readTimeMinutes,
     required this.initialPage,
-    this.localProgressKey,
+    this.onPage,
   });
 
   @override
@@ -100,7 +92,7 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.localProgressKey == null) {
+    if (widget.onPage == null) {
       _progressNotifier = ref.read(learningProgressProvider.notifier);
     }
     _controller = PdfViewerController();
@@ -144,7 +136,7 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
   }
 
   void _saveProgressAfterDispose(int pageReached, {required int pageCount}) {
-    if (widget.localProgressKey != null) {
+    if (widget.onPage != null) {
       _saveLocalProgress(pageReached);
       return;
     }
@@ -166,18 +158,10 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
     });
   }
 
-  void _saveLocalProgress(int pageReached) {
-    final key = widget.localProgressKey!;
-    unawaited(
-      SharedPreferences.getInstance().then((prefs) async {
-        final previous = prefs.getInt(key) ?? 0;
-        if (pageReached > previous) await prefs.setInt(key, pageReached);
-      }),
-    );
-  }
+  void _saveLocalProgress(int pageReached) => widget.onPage!(pageReached);
 
   void _saveProgress(int pageReached, {required int pageCount}) {
-    if (widget.localProgressKey != null) {
+    if (widget.onPage != null) {
       _saveLocalProgress(pageReached);
       return;
     }

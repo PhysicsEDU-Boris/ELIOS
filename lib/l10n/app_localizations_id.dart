@@ -4345,4 +4345,497 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get dailyGuidesArchive => 'Edisi sebelumnya';
+
+  @override
+  String get g4AiLooksFor => 'Yang dicari ELIOS AI';
+
+  @override
+  String get g4All => 'Semua';
+
+  @override
+  String get g4AllStopsDone => 'Ketiga perhentian selesai';
+
+  @override
+  String get g4AlmostBody =>
+      'Belum ada XP. Kamu boleh mencoba sesering yang kamu mau.';
+
+  @override
+  String get g4AlmostTitle => 'Hampir! Coba sekali lagi';
+
+  @override
+  String get g4Archive => 'Arsip';
+
+  @override
+  String g4ArchiveLabel(Object date, Object stops, Object title, Object xp) {
+    return '$title, $date, $stops dari 3 perhentian, $xp XP';
+  }
+
+  @override
+  String get g4AskTeacher => 'Minta guru memeriksa';
+
+  @override
+  String get g4AskTeacherHint =>
+      'Merasa hasilnya salah? Minta gurumu memeriksanya. Guru melihat alasan AI, bukan fotomu.';
+
+  @override
+  String get g4BackToResult => 'Kembali ke hasil';
+
+  @override
+  String get g4BadgeUnlocked => 'Lencana terbuka';
+
+  @override
+  String get g4Cancel => 'Batal';
+
+  @override
+  String get g4Check => 'Periksa';
+
+  @override
+  String get g4CheckAgain => 'Periksa lagi';
+
+  @override
+  String get g4ContinueGuide => 'Lanjutkan panduan';
+
+  @override
+  String g4ContinueStop(Object n) {
+    return 'Lanjut · Perhentian $n';
+  }
+
+  @override
+  String get g4CopyLink => 'Salin tautan';
+
+  @override
+  String get g4DayFuture => 'belum tiba';
+
+  @override
+  String get g4DayMissed => 'terlewat';
+
+  @override
+  String get g4DayRead => 'dibaca';
+
+  @override
+  String get g4DayToday => 'hari ini, belum dibaca';
+
+  @override
+  String get g4DidYouKnow => 'Tahukah kamu?';
+
+  @override
+  String get g4EmptyBody =>
+      'Cerita fisika baru datang setiap pagi sekitar pukul 06.00. Tarik ke bawah untuk memeriksa lagi.';
+
+  @override
+  String get g4EmptyTitle => 'Panduan pertama sedang dalam perjalanan';
+
+  @override
+  String get g4FeedError => 'Panduan gagal dimuat';
+
+  @override
+  String get g4FeedSubtitle => 'Fisika di balik berita nyata';
+
+  @override
+  String get g4FinishStop2 => 'Selesaikan Perhentian 2 untuk membuka';
+
+  @override
+  String get g4FollowApp => 'Sama dengan aplikasi';
+
+  @override
+  String g4FrameN(Object n) {
+    return 'Bingkai $n';
+  }
+
+  @override
+  String get g4GuideArchive => 'Arsip panduan';
+
+  @override
+  String get g4GuideLanguage => 'Bahasa panduan';
+
+  @override
+  String get g4GuideXp => 'XP panduan';
+
+  @override
+  String get g4Import => 'Impor';
+
+  @override
+  String g4ImportBody(Object xp) {
+    return 'HP ini punya $xp XP panduan dari sesi tamu.';
+  }
+
+  @override
+  String g4ImportConfirm(Object xp) {
+    return 'Tambahkan progres panduan tamu ($xp XP, perhentian, dan hari beruntun) ke akun ini? Tidak ada yang digabung tanpa persetujuanmu.';
+  }
+
+  @override
+  String get g4ImportFailed => 'Belum bisa mengimpor. Coba lagi saat online.';
+
+  @override
+  String get g4ImportTitle => 'Impor progres panduan tamu';
+
+  @override
+  String g4IssueCount(int count) {
+    return '$count edisi';
+  }
+
+  @override
+  String g4IssueN(Object n) {
+    return 'Edisi #$n';
+  }
+
+  @override
+  String g4IssuesStreak(int count, Object days) {
+    return '$count edisi · beruntun $days hari';
+  }
+
+  @override
+  String get g4LabApproved => 'Lab disetujui';
+
+  @override
+  String get g4LabApprovedBy => 'Lab disetujui ELIOS AI';
+
+  @override
+  String get g4LabBusy =>
+      'Pemeriksaan lab sedang sibuk. Fotomu tetap di HP; coba lagi sebentar lagi.';
+
+  @override
+  String get g4LabChecking => 'ELIOS AI sedang memeriksa fotomu…';
+
+  @override
+  String get g4LabLimit =>
+      'Sudah 5 kali pemeriksaan lab untuk panduan ini hari ini. Coba lagi besok.';
+
+  @override
+  String g4LabMeta(Object xp) {
+    return 'Sekitar 10 menit · +$xp XP · lencana';
+  }
+
+  @override
+  String get g4LabOffline =>
+      'Pemeriksaan lab perlu internet. Sambungkan lalu coba lagi; belum ada yang terkirim.';
+
+  @override
+  String get g4LabResult => 'Hasil lab mini';
+
+  @override
+  String get g4LangEn => 'Bahasa Inggris';
+
+  @override
+  String get g4LangId => 'Bahasa Indonesia';
+
+  @override
+  String get g4LangMissing =>
+      'Edisi ini belum ada dalam bahasamu, jadi ditampilkan dalam bahasa lain.';
+
+  @override
+  String get g4LangPill => 'EN · ID';
+
+  @override
+  String get g4Listen => 'Dengarkan';
+
+  @override
+  String get g4MiniLab => 'Lab mini';
+
+  @override
+  String get g4Missing => 'belum terlihat';
+
+  @override
+  String get g4New => 'BARU';
+
+  @override
+  String get g4NewGuide => 'Panduan baru';
+
+  @override
+  String get g4NextCard => 'Kartu berikutnya';
+
+  @override
+  String get g4NotNow => 'Nanti saja';
+
+  @override
+  String get g4NotQuite => 'Belum tepat.';
+
+  @override
+  String get g4OfflineBanner =>
+      'Offline. Menampilkan panduan tersimpan. Sambungkan untuk memeriksa edisi baru.';
+
+  @override
+  String get g4Ok => 'OK';
+
+  @override
+  String get g4Pass => 'terlihat';
+
+  @override
+  String get g4Pdf => 'PDF';
+
+  @override
+  String g4PdfMeta(Object language, Object pages) {
+    return 'PDF $pages halaman · $language · tersimpan untuk offline';
+  }
+
+  @override
+  String get g4PhotoCredit => 'Kredit foto';
+
+  @override
+  String get g4PhotoHint =>
+      'Ambil 3 foto: awal, tengah, dan akhir percobaanmu.';
+
+  @override
+  String g4PhotosTaken(Object n) {
+    return '$n dari 3 foto';
+  }
+
+  @override
+  String g4PlusXp(Object xp) {
+    return '+$xp XP';
+  }
+
+  @override
+  String get g4PrivacyNote =>
+      'ELIOS memeriksa 8 foto diam dari klipmu, lalu menghapusnya. Hanya hasilnya yang disimpan.';
+
+  @override
+  String get g4QuestMap => 'Peta misimu';
+
+  @override
+  String get g4QuickQuiz => 'Kuis cepat';
+
+  @override
+  String get g4QuizAlmost =>
+      '2 jawaban benar sudah lulus. Coba lagi kuisnya dengan soal baru.';
+
+  @override
+  String get g4QuizNice => 'Kerja bagus!';
+
+  @override
+  String get g4QuizParkedHint =>
+      'Kartu yang sudah dijawab ada di kiri. Ketuk Q1–Q3 di hasil untuk melihat lagi.';
+
+  @override
+  String get g4QuizPassed => 'Kuis lulus';
+
+  @override
+  String get g4QuizResultHint => 'Ketuk Q1–Q3 untuk melihat lagi jawabanmu.';
+
+  @override
+  String get g4QuizUnavailable => 'Kuis gagal dimuat';
+
+  @override
+  String get g4ReadAgain => 'Baca panduan lagi';
+
+  @override
+  String get g4ReadFullGuide => 'Baca panduan lengkap';
+
+  @override
+  String g4ReadPage(Object page) {
+    return 'Baca halaman $page';
+  }
+
+  @override
+  String get g4Record => 'Rekam 15–30 dtk';
+
+  @override
+  String g4RecordHint(Object min) {
+    return 'Rekam hanya tangan dan percobaanmu. Berhenti setelah $min dtk; rekaman berakhir di 30 dtk.';
+  }
+
+  @override
+  String g4RecordingSeconds(Object max, Object s) {
+    return 'Merekam $s / $max dtk';
+  }
+
+  @override
+  String get g4Retake => 'Rekam ulang';
+
+  @override
+  String get g4Retry => 'Coba lagi';
+
+  @override
+  String get g4ReviewBody =>
+      'Hanya gambar ini yang akan dikirim. Tidak ada yang keluar dari HP sampai kamu mengetuk Kirim.';
+
+  @override
+  String g4ReviewQuestion(Object n) {
+    return 'Lihat lagi soal $n';
+  }
+
+  @override
+  String get g4ReviewSent => 'Terkirim ke gurumu.';
+
+  @override
+  String g4ReviewTitle(Object n) {
+    return '$n foto siap';
+  }
+
+  @override
+  String get g4SafetyTitle => 'Rekam hanya tangan dan percobaanmu';
+
+  @override
+  String get g4SavedAccount => 'Tersimpan di akunmu';
+
+  @override
+  String get g4SavedPhone =>
+      'Tersimpan di HP ini. Akan tersinkron saat online.';
+
+  @override
+  String get g4Saving => 'Menyimpan…';
+
+  @override
+  String g4ScoreOf(Object score, Object total) {
+    return '$score dari $total benar';
+  }
+
+  @override
+  String get g4SeeResult => 'Lihat hasil';
+
+  @override
+  String get g4Send => 'Kirim ke ELIOS AI';
+
+  @override
+  String get g4Sources => 'Sumber';
+
+  @override
+  String g4SourcesCount(int count) {
+    return '$count sumber';
+  }
+
+  @override
+  String get g4StartGuide => 'Mulai panduan';
+
+  @override
+  String get g4StartLab => 'Mulai lab mini';
+
+  @override
+  String get g4StopDone => 'selesai';
+
+  @override
+  String get g4StopLocked => 'terkunci';
+
+  @override
+  String get g4StopMission => 'Misimu';
+
+  @override
+  String get g4StopMissionSub => 'Perhentian 3 · Misimu';
+
+  @override
+  String g4StopN(Object n) {
+    return 'Perhentian $n';
+  }
+
+  @override
+  String get g4StopOpen => 'terbuka';
+
+  @override
+  String g4StopPage(Object n, Object page) {
+    return 'PERHENTIAN $n · HLM.$page';
+  }
+
+  @override
+  String get g4StopPhysics => 'Fisikanya';
+
+  @override
+  String get g4StopRecording => 'Berhenti merekam';
+
+  @override
+  String get g4StopStory => 'Ceritanya';
+
+  @override
+  String g4StopsDoneNext(Object done, Object next) {
+    return '$done dari 3 perhentian selesai · Berikutnya: $next';
+  }
+
+  @override
+  String g4StopsOf(Object done) {
+    return '$done/3 perhentian';
+  }
+
+  @override
+  String g4StreakDays(Object days) {
+    return 'Beruntun membaca $days hari';
+  }
+
+  @override
+  String get g4StreakHint => 'Baca panduan hari ini agar terus berlanjut';
+
+  @override
+  String get g4TakePhoto => 'Ambil foto';
+
+  @override
+  String get g4TeacherBody =>
+      'ELIOS AI belum yakin, jadi gurumu akan melihat hasilnya. Tidak ada foto yang disimpan.';
+
+  @override
+  String get g4TeacherNote =>
+      'Gurumu bisa melihat dan mengubah hasil ini. Foto sudah dihapus setelah pemeriksaan.';
+
+  @override
+  String get g4TeacherTitle => 'Gurumu akan memeriksanya';
+
+  @override
+  String get g4ThreePhotos => 'Ambil 3 foto saja';
+
+  @override
+  String g4TodayDate(Object date) {
+    return 'HARI INI · $date';
+  }
+
+  @override
+  String g4TodayLabel(Object done, Object title) {
+    return 'Panduan hari ini: $title, $done dari 3 perhentian selesai';
+  }
+
+  @override
+  String get g4TodaysGuide => 'PANDUAN HARI INI';
+
+  @override
+  String g4TodaysGuideIssue(Object n) {
+    return 'PANDUAN HARI INI · #$n';
+  }
+
+  @override
+  String get g4TopicAir => 'Udara';
+
+  @override
+  String get g4TopicEnergy => 'Energi';
+
+  @override
+  String get g4TopicHeat => 'Panas';
+
+  @override
+  String get g4TopicOther => 'Sains';
+
+  @override
+  String get g4TopicStorm => 'Badai';
+
+  @override
+  String get g4TopicWaste => 'Sampah';
+
+  @override
+  String get g4TopicWater => 'Air';
+
+  @override
+  String get g4TryAgain => 'Coba lagi';
+
+  @override
+  String get g4TryQuizAgain => 'Coba kuis lagi';
+
+  @override
+  String get g4WeekLetters => 'S,S,R,K,J,S,M';
+
+  @override
+  String get g4WhatAiSaw => 'Yang dilihat ELIOS AI';
+
+  @override
+  String get g4WhatToDo => 'Yang dilakukan';
+
+  @override
+  String g4XpDone(Object xp) {
+    return '✓ $xp XP';
+  }
+
+  @override
+  String g4XpOf(Object total, Object xp) {
+    return '$xp / $total XP';
+  }
+
+  @override
+  String g4YourQuestion(Object q) {
+    return 'Pertanyaanmu: $q';
+  }
 }

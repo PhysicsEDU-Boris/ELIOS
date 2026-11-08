@@ -4418,4 +4418,516 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dailyGuidesArchive => 'Previous issues';
+
+  @override
+  String get g4AiLooksFor => 'ELIOS AI will look for';
+
+  @override
+  String get g4All => 'All';
+
+  @override
+  String get g4AllStopsDone => 'All 3 stops done';
+
+  @override
+  String get g4AlmostBody =>
+      'No XP yet. You can try as many times as you like.';
+
+  @override
+  String get g4AlmostTitle => 'Almost! Try one more time';
+
+  @override
+  String get g4Archive => 'Archive';
+
+  @override
+  String g4ArchiveLabel(Object date, Object stops, Object title, Object xp) {
+    return '$title, $date, $stops of 3 stops, $xp XP';
+  }
+
+  @override
+  String get g4AskTeacher => 'Ask teacher to review';
+
+  @override
+  String get g4AskTeacherHint =>
+      'Think the check is wrong? Ask your teacher to review it. They see the AI reason, not your photos.';
+
+  @override
+  String get g4BackToResult => 'Back to result';
+
+  @override
+  String get g4BadgeUnlocked => 'Badge unlocked';
+
+  @override
+  String get g4Cancel => 'Cancel';
+
+  @override
+  String get g4Check => 'Check';
+
+  @override
+  String get g4CheckAgain => 'Check again';
+
+  @override
+  String get g4ContinueGuide => 'Continue guide';
+
+  @override
+  String g4ContinueStop(Object n) {
+    return 'Continue · Stop $n';
+  }
+
+  @override
+  String get g4CopyLink => 'Copy link';
+
+  @override
+  String get g4DayFuture => 'coming up';
+
+  @override
+  String get g4DayMissed => 'missed';
+
+  @override
+  String get g4DayRead => 'read';
+
+  @override
+  String get g4DayToday => 'today, not read yet';
+
+  @override
+  String get g4DidYouKnow => 'Did you know?';
+
+  @override
+  String get g4EmptyBody =>
+      'A new physics story arrives every morning around 06:00. Pull down to check again.';
+
+  @override
+  String get g4EmptyTitle => 'The first guide is on its way';
+
+  @override
+  String get g4FeedError => 'Guides couldn\'t load';
+
+  @override
+  String get g4FeedSubtitle => 'Physics behind real news';
+
+  @override
+  String get g4FinishStop2 => 'Finish Stop 2 to unlock';
+
+  @override
+  String get g4FollowApp => 'Same as the app';
+
+  @override
+  String g4FrameN(Object n) {
+    return 'Frame $n';
+  }
+
+  @override
+  String get g4GuideArchive => 'Guide archive';
+
+  @override
+  String get g4GuideLanguage => 'Guide language';
+
+  @override
+  String get g4GuideXp => 'guide XP';
+
+  @override
+  String get g4Import => 'Import';
+
+  @override
+  String g4ImportBody(Object xp) {
+    return 'This phone has $xp guide XP from a guest session.';
+  }
+
+  @override
+  String g4ImportConfirm(Object xp) {
+    return 'Add the guest\'s guide progress ($xp XP, stops and streak days) to this account? Nothing is merged without your OK.';
+  }
+
+  @override
+  String get g4ImportFailed =>
+      'Couldn\'t import now. Try again when you\'re online.';
+
+  @override
+  String get g4ImportTitle => 'Import guest guide progress';
+
+  @override
+  String g4IssueCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count issues',
+      one: '1 issue',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String g4IssueN(Object n) {
+    return 'Issue #$n';
+  }
+
+  @override
+  String g4IssuesStreak(int count, Object days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count issues',
+      one: '1 issue',
+    );
+    return '$_temp0 · $days-day streak';
+  }
+
+  @override
+  String get g4LabApproved => 'Lab approved';
+
+  @override
+  String get g4LabApprovedBy => 'Lab approved by ELIOS AI';
+
+  @override
+  String get g4LabBusy =>
+      'The lab check is busy. Your photos stayed on your phone; try again in a minute.';
+
+  @override
+  String get g4LabChecking => 'ELIOS AI is checking your photos…';
+
+  @override
+  String get g4LabLimit =>
+      'That\'s 5 lab checks for this guide today. Try again tomorrow.';
+
+  @override
+  String g4LabMeta(Object xp) {
+    return 'About 10 minutes · +$xp XP · badge';
+  }
+
+  @override
+  String get g4LabOffline =>
+      'The lab check needs internet. Connect and try again; nothing was sent.';
+
+  @override
+  String get g4LabResult => 'Mini lab result';
+
+  @override
+  String get g4LangEn => 'English';
+
+  @override
+  String get g4LangId => 'Bahasa Indonesia';
+
+  @override
+  String get g4LangMissing =>
+      'This issue isn\'t in your language yet, so it\'s shown in the other one.';
+
+  @override
+  String get g4LangPill => 'EN · ID';
+
+  @override
+  String get g4Listen => 'Listen';
+
+  @override
+  String get g4MiniLab => 'Mini lab';
+
+  @override
+  String get g4Missing => 'missing';
+
+  @override
+  String get g4New => 'NEW';
+
+  @override
+  String get g4NewGuide => 'New guide';
+
+  @override
+  String get g4NextCard => 'Next card';
+
+  @override
+  String get g4NotNow => 'Not now';
+
+  @override
+  String get g4NotQuite => 'Not quite.';
+
+  @override
+  String get g4OfflineBanner =>
+      'Offline. Showing saved guides. Connect to check for new issues.';
+
+  @override
+  String get g4Ok => 'OK';
+
+  @override
+  String get g4Pass => 'seen';
+
+  @override
+  String get g4Pdf => 'PDF';
+
+  @override
+  String g4PdfMeta(Object language, Object pages) {
+    return '$pages-page PDF · $language · saved for offline';
+  }
+
+  @override
+  String get g4PhotoCredit => 'Photo credit';
+
+  @override
+  String get g4PhotoHint =>
+      'Take 3 photos: the start, the middle and the end of your experiment.';
+
+  @override
+  String g4PhotosTaken(Object n) {
+    return '$n of 3 photos';
+  }
+
+  @override
+  String g4PlusXp(Object xp) {
+    return '+$xp XP';
+  }
+
+  @override
+  String get g4PrivacyNote =>
+      'ELIOS checks 8 still photos from your clip, then deletes them. Only the result is saved.';
+
+  @override
+  String get g4QuestMap => 'Your quest map';
+
+  @override
+  String get g4QuickQuiz => 'Quick quiz';
+
+  @override
+  String get g4QuizAlmost =>
+      '2 correct answers pass. Try the quiz again with new questions.';
+
+  @override
+  String get g4QuizNice => 'Nice work!';
+
+  @override
+  String get g4QuizParkedHint =>
+      'Answered cards stay on the left. Tap Q1–Q3 on the result to look again.';
+
+  @override
+  String get g4QuizPassed => 'Quiz passed';
+
+  @override
+  String get g4QuizResultHint => 'Tap Q1–Q3 to flip back to any answer.';
+
+  @override
+  String get g4QuizUnavailable => 'The quiz couldn\'t load';
+
+  @override
+  String get g4ReadAgain => 'Read the guide again';
+
+  @override
+  String get g4ReadFullGuide => 'Read the full guide';
+
+  @override
+  String g4ReadPage(Object page) {
+    return 'Read page $page';
+  }
+
+  @override
+  String get g4Record => 'Record 15–30 s';
+
+  @override
+  String g4RecordHint(Object min) {
+    return 'Film only your hands and the experiment. Stop after $min s; recording ends at 30 s.';
+  }
+
+  @override
+  String g4RecordingSeconds(Object max, Object s) {
+    return 'Recording $s / $max s';
+  }
+
+  @override
+  String get g4Retake => 'Record again';
+
+  @override
+  String get g4Retry => 'Retry';
+
+  @override
+  String get g4ReviewBody =>
+      'These are the only pictures that will be sent. Nothing leaves your phone until you tap Send.';
+
+  @override
+  String g4ReviewQuestion(Object n) {
+    return 'Look at question $n again';
+  }
+
+  @override
+  String get g4ReviewSent => 'Sent to your teacher.';
+
+  @override
+  String g4ReviewTitle(Object n) {
+    return '$n photos ready';
+  }
+
+  @override
+  String get g4SafetyTitle => 'Film only your hands and the experiment';
+
+  @override
+  String get g4SavedAccount => 'Saved to your account';
+
+  @override
+  String get g4SavedPhone =>
+      'Saved on this phone. It syncs when you\'re online.';
+
+  @override
+  String get g4Saving => 'Saving…';
+
+  @override
+  String g4ScoreOf(Object score, Object total) {
+    return '$score of $total correct';
+  }
+
+  @override
+  String get g4SeeResult => 'See result';
+
+  @override
+  String get g4Send => 'Send to ELIOS AI';
+
+  @override
+  String get g4Sources => 'Sources';
+
+  @override
+  String g4SourcesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sources',
+      one: '1 source',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get g4StartGuide => 'Start guide';
+
+  @override
+  String get g4StartLab => 'Start mini lab';
+
+  @override
+  String get g4StopDone => 'done';
+
+  @override
+  String get g4StopLocked => 'locked';
+
+  @override
+  String get g4StopMission => 'Your mission';
+
+  @override
+  String get g4StopMissionSub => 'Stop 3 · Your mission';
+
+  @override
+  String g4StopN(Object n) {
+    return 'Stop $n';
+  }
+
+  @override
+  String get g4StopOpen => 'open';
+
+  @override
+  String g4StopPage(Object n, Object page) {
+    return 'STOP $n · P.$page';
+  }
+
+  @override
+  String get g4StopPhysics => 'The physics';
+
+  @override
+  String get g4StopRecording => 'Stop recording';
+
+  @override
+  String get g4StopStory => 'The story';
+
+  @override
+  String g4StopsDoneNext(Object done, Object next) {
+    return '$done of 3 stops done · Next: $next';
+  }
+
+  @override
+  String g4StopsOf(Object done) {
+    return '$done/3 stops';
+  }
+
+  @override
+  String g4StreakDays(Object days) {
+    return '$days-day reading streak';
+  }
+
+  @override
+  String get g4StreakHint => 'Read today\'s guide to keep it going';
+
+  @override
+  String get g4TakePhoto => 'Take photo';
+
+  @override
+  String get g4TeacherBody =>
+      'ELIOS AI wasn\'t sure, so your teacher will look at the result. No photos are kept.';
+
+  @override
+  String get g4TeacherNote =>
+      'Your teacher can see this result and change it. Photos were deleted after the check.';
+
+  @override
+  String get g4TeacherTitle => 'Your teacher will check this';
+
+  @override
+  String get g4ThreePhotos => 'Take 3 photos instead';
+
+  @override
+  String g4TodayDate(Object date) {
+    return 'TODAY · $date';
+  }
+
+  @override
+  String g4TodayLabel(Object done, Object title) {
+    return 'Today\'s guide: $title, $done of 3 stops done';
+  }
+
+  @override
+  String get g4TodaysGuide => 'TODAY\'S GUIDE';
+
+  @override
+  String g4TodaysGuideIssue(Object n) {
+    return 'TODAY\'S GUIDE · #$n';
+  }
+
+  @override
+  String get g4TopicAir => 'Air';
+
+  @override
+  String get g4TopicEnergy => 'Energy';
+
+  @override
+  String get g4TopicHeat => 'Heat';
+
+  @override
+  String get g4TopicOther => 'Science';
+
+  @override
+  String get g4TopicStorm => 'Storm';
+
+  @override
+  String get g4TopicWaste => 'Waste';
+
+  @override
+  String get g4TopicWater => 'Water';
+
+  @override
+  String get g4TryAgain => 'Try again';
+
+  @override
+  String get g4TryQuizAgain => 'Try the quiz again';
+
+  @override
+  String get g4WeekLetters => 'M,T,W,T,F,S,S';
+
+  @override
+  String get g4WhatAiSaw => 'What ELIOS AI saw';
+
+  @override
+  String get g4WhatToDo => 'What to do';
+
+  @override
+  String g4XpDone(Object xp) {
+    return '✓ $xp XP';
+  }
+
+  @override
+  String g4XpOf(Object total, Object xp) {
+    return '$xp / $total XP';
+  }
+
+  @override
+  String g4YourQuestion(Object q) {
+    return 'Your question: $q';
+  }
 }

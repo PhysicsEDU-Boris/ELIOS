@@ -7602,6 +7602,840 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Previous issues'**
   String get dailyGuidesArchive;
+
+  /// No description provided for @g4AiLooksFor.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI will look for'**
+  String get g4AiLooksFor;
+
+  /// No description provided for @g4All.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get g4All;
+
+  /// No description provided for @g4AllStopsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'All 3 stops done'**
+  String get g4AllStopsDone;
+
+  /// No description provided for @g4AlmostBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No XP yet. You can try as many times as you like.'**
+  String get g4AlmostBody;
+
+  /// No description provided for @g4AlmostTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Almost! Try one more time'**
+  String get g4AlmostTitle;
+
+  /// No description provided for @g4Archive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get g4Archive;
+
+  /// No description provided for @g4ArchiveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, {date}, {stops} of 3 stops, {xp} XP'**
+  String g4ArchiveLabel(Object date, Object stops, Object title, Object xp);
+
+  /// No description provided for @g4AskTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask teacher to review'**
+  String get g4AskTeacher;
+
+  /// No description provided for @g4AskTeacherHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Think the check is wrong? Ask your teacher to review it. They see the AI reason, not your photos.'**
+  String get g4AskTeacherHint;
+
+  /// No description provided for @g4BackToResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to result'**
+  String get g4BackToResult;
+
+  /// No description provided for @g4BadgeUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Badge unlocked'**
+  String get g4BadgeUnlocked;
+
+  /// No description provided for @g4Cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get g4Cancel;
+
+  /// No description provided for @g4Check.
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get g4Check;
+
+  /// No description provided for @g4CheckAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get g4CheckAgain;
+
+  /// No description provided for @g4ContinueGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue guide'**
+  String get g4ContinueGuide;
+
+  /// No description provided for @g4ContinueStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue · Stop {n}'**
+  String g4ContinueStop(Object n);
+
+  /// No description provided for @g4CopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get g4CopyLink;
+
+  /// No description provided for @g4DayFuture.
+  ///
+  /// In en, this message translates to:
+  /// **'coming up'**
+  String get g4DayFuture;
+
+  /// No description provided for @g4DayMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'missed'**
+  String get g4DayMissed;
+
+  /// No description provided for @g4DayRead.
+  ///
+  /// In en, this message translates to:
+  /// **'read'**
+  String get g4DayRead;
+
+  /// No description provided for @g4DayToday.
+  ///
+  /// In en, this message translates to:
+  /// **'today, not read yet'**
+  String get g4DayToday;
+
+  /// No description provided for @g4DidYouKnow.
+  ///
+  /// In en, this message translates to:
+  /// **'Did you know?'**
+  String get g4DidYouKnow;
+
+  /// No description provided for @g4EmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A new physics story arrives every morning around 06:00. Pull down to check again.'**
+  String get g4EmptyBody;
+
+  /// No description provided for @g4EmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The first guide is on its way'**
+  String get g4EmptyTitle;
+
+  /// No description provided for @g4FeedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Guides couldn\'t load'**
+  String get g4FeedError;
+
+  /// No description provided for @g4FeedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Physics behind real news'**
+  String get g4FeedSubtitle;
+
+  /// No description provided for @g4FinishStop2.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish Stop 2 to unlock'**
+  String get g4FinishStop2;
+
+  /// No description provided for @g4FollowApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as the app'**
+  String get g4FollowApp;
+
+  /// No description provided for @g4FrameN.
+  ///
+  /// In en, this message translates to:
+  /// **'Frame {n}'**
+  String g4FrameN(Object n);
+
+  /// No description provided for @g4GuideArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Guide archive'**
+  String get g4GuideArchive;
+
+  /// No description provided for @g4GuideLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Guide language'**
+  String get g4GuideLanguage;
+
+  /// No description provided for @g4GuideXp.
+  ///
+  /// In en, this message translates to:
+  /// **'guide XP'**
+  String get g4GuideXp;
+
+  /// No description provided for @g4Import.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get g4Import;
+
+  /// No description provided for @g4ImportBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone has {xp} guide XP from a guest session.'**
+  String g4ImportBody(Object xp);
+
+  /// No description provided for @g4ImportConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the guest\'s guide progress ({xp} XP, stops and streak days) to this account? Nothing is merged without your OK.'**
+  String g4ImportConfirm(Object xp);
+
+  /// No description provided for @g4ImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t import now. Try again when you\'re online.'**
+  String get g4ImportFailed;
+
+  /// No description provided for @g4ImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import guest guide progress'**
+  String get g4ImportTitle;
+
+  /// No description provided for @g4IssueCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 issue} other{{count} issues}}'**
+  String g4IssueCount(int count);
+
+  /// No description provided for @g4IssueN.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue #{n}'**
+  String g4IssueN(Object n);
+
+  /// No description provided for @g4IssuesStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 issue} other{{count} issues}} · {days}-day streak'**
+  String g4IssuesStreak(int count, Object days);
+
+  /// No description provided for @g4LabApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Lab approved'**
+  String get g4LabApproved;
+
+  /// No description provided for @g4LabApprovedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Lab approved by ELIOS AI'**
+  String get g4LabApprovedBy;
+
+  /// No description provided for @g4LabBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'The lab check is busy. Your photos stayed on your phone; try again in a minute.'**
+  String get g4LabBusy;
+
+  /// No description provided for @g4LabChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI is checking your photos…'**
+  String get g4LabChecking;
+
+  /// No description provided for @g4LabLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s 5 lab checks for this guide today. Try again tomorrow.'**
+  String get g4LabLimit;
+
+  /// No description provided for @g4LabMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'About 10 minutes · +{xp} XP · badge'**
+  String g4LabMeta(Object xp);
+
+  /// No description provided for @g4LabOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'The lab check needs internet. Connect and try again; nothing was sent.'**
+  String get g4LabOffline;
+
+  /// No description provided for @g4LabResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Mini lab result'**
+  String get g4LabResult;
+
+  /// No description provided for @g4LangEn.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get g4LangEn;
+
+  /// No description provided for @g4LangId.
+  ///
+  /// In en, this message translates to:
+  /// **'Bahasa Indonesia'**
+  String get g4LangId;
+
+  /// No description provided for @g4LangMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This issue isn\'t in your language yet, so it\'s shown in the other one.'**
+  String get g4LangMissing;
+
+  /// No description provided for @g4LangPill.
+  ///
+  /// In en, this message translates to:
+  /// **'EN · ID'**
+  String get g4LangPill;
+
+  /// No description provided for @g4Listen.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get g4Listen;
+
+  /// No description provided for @g4MiniLab.
+  ///
+  /// In en, this message translates to:
+  /// **'Mini lab'**
+  String get g4MiniLab;
+
+  /// No description provided for @g4Missing.
+  ///
+  /// In en, this message translates to:
+  /// **'missing'**
+  String get g4Missing;
+
+  /// No description provided for @g4New.
+  ///
+  /// In en, this message translates to:
+  /// **'NEW'**
+  String get g4New;
+
+  /// No description provided for @g4NewGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'New guide'**
+  String get g4NewGuide;
+
+  /// No description provided for @g4NextCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Next card'**
+  String get g4NextCard;
+
+  /// No description provided for @g4NotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get g4NotNow;
+
+  /// No description provided for @g4NotQuite.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite.'**
+  String get g4NotQuite;
+
+  /// No description provided for @g4OfflineBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline. Showing saved guides. Connect to check for new issues.'**
+  String get g4OfflineBanner;
+
+  /// No description provided for @g4Ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get g4Ok;
+
+  /// No description provided for @g4Pass.
+  ///
+  /// In en, this message translates to:
+  /// **'seen'**
+  String get g4Pass;
+
+  /// No description provided for @g4Pdf.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF'**
+  String get g4Pdf;
+
+  /// No description provided for @g4PdfMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'{pages}-page PDF · {language} · saved for offline'**
+  String g4PdfMeta(Object language, Object pages);
+
+  /// No description provided for @g4PhotoCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo credit'**
+  String get g4PhotoCredit;
+
+  /// No description provided for @g4PhotoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Take 3 photos: the start, the middle and the end of your experiment.'**
+  String get g4PhotoHint;
+
+  /// No description provided for @g4PhotosTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} of 3 photos'**
+  String g4PhotosTaken(Object n);
+
+  /// No description provided for @g4PlusXp.
+  ///
+  /// In en, this message translates to:
+  /// **'+{xp} XP'**
+  String g4PlusXp(Object xp);
+
+  /// No description provided for @g4PrivacyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS checks 8 still photos from your clip, then deletes them. Only the result is saved.'**
+  String get g4PrivacyNote;
+
+  /// No description provided for @g4QuestMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Your quest map'**
+  String get g4QuestMap;
+
+  /// No description provided for @g4QuickQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick quiz'**
+  String get g4QuickQuiz;
+
+  /// No description provided for @g4QuizAlmost.
+  ///
+  /// In en, this message translates to:
+  /// **'2 correct answers pass. Try the quiz again with new questions.'**
+  String get g4QuizAlmost;
+
+  /// No description provided for @g4QuizNice.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice work!'**
+  String get g4QuizNice;
+
+  /// No description provided for @g4QuizParkedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered cards stay on the left. Tap Q1–Q3 on the result to look again.'**
+  String get g4QuizParkedHint;
+
+  /// No description provided for @g4QuizPassed.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz passed'**
+  String get g4QuizPassed;
+
+  /// No description provided for @g4QuizResultHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Q1–Q3 to flip back to any answer.'**
+  String get g4QuizResultHint;
+
+  /// No description provided for @g4QuizUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The quiz couldn\'t load'**
+  String get g4QuizUnavailable;
+
+  /// No description provided for @g4ReadAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the guide again'**
+  String get g4ReadAgain;
+
+  /// No description provided for @g4ReadFullGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the full guide'**
+  String get g4ReadFullGuide;
+
+  /// No description provided for @g4ReadPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Read page {page}'**
+  String g4ReadPage(Object page);
+
+  /// No description provided for @g4Record.
+  ///
+  /// In en, this message translates to:
+  /// **'Record 15–30 s'**
+  String get g4Record;
+
+  /// No description provided for @g4RecordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Film only your hands and the experiment. Stop after {min} s; recording ends at 30 s.'**
+  String g4RecordHint(Object min);
+
+  /// No description provided for @g4RecordingSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording {s} / {max} s'**
+  String g4RecordingSeconds(Object max, Object s);
+
+  /// No description provided for @g4Retake.
+  ///
+  /// In en, this message translates to:
+  /// **'Record again'**
+  String get g4Retake;
+
+  /// No description provided for @g4Retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get g4Retry;
+
+  /// No description provided for @g4ReviewBody.
+  ///
+  /// In en, this message translates to:
+  /// **'These are the only pictures that will be sent. Nothing leaves your phone until you tap Send.'**
+  String get g4ReviewBody;
+
+  /// No description provided for @g4ReviewQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Look at question {n} again'**
+  String g4ReviewQuestion(Object n);
+
+  /// No description provided for @g4ReviewSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent to your teacher.'**
+  String get g4ReviewSent;
+
+  /// No description provided for @g4ReviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} photos ready'**
+  String g4ReviewTitle(Object n);
+
+  /// No description provided for @g4SafetyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Film only your hands and the experiment'**
+  String get g4SafetyTitle;
+
+  /// No description provided for @g4SavedAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your account'**
+  String get g4SavedAccount;
+
+  /// No description provided for @g4SavedPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this phone. It syncs when you\'re online.'**
+  String get g4SavedPhone;
+
+  /// No description provided for @g4Saving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get g4Saving;
+
+  /// No description provided for @g4ScoreOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{score} of {total} correct'**
+  String g4ScoreOf(Object score, Object total);
+
+  /// No description provided for @g4SeeResult.
+  ///
+  /// In en, this message translates to:
+  /// **'See result'**
+  String get g4SeeResult;
+
+  /// No description provided for @g4Send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to ELIOS AI'**
+  String get g4Send;
+
+  /// No description provided for @g4Sources.
+  ///
+  /// In en, this message translates to:
+  /// **'Sources'**
+  String get g4Sources;
+
+  /// No description provided for @g4SourcesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 source} other{{count} sources}}'**
+  String g4SourcesCount(int count);
+
+  /// No description provided for @g4StartGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Start guide'**
+  String get g4StartGuide;
+
+  /// No description provided for @g4StartLab.
+  ///
+  /// In en, this message translates to:
+  /// **'Start mini lab'**
+  String get g4StartLab;
+
+  /// No description provided for @g4StopDone.
+  ///
+  /// In en, this message translates to:
+  /// **'done'**
+  String get g4StopDone;
+
+  /// No description provided for @g4StopLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'locked'**
+  String get g4StopLocked;
+
+  /// No description provided for @g4StopMission.
+  ///
+  /// In en, this message translates to:
+  /// **'Your mission'**
+  String get g4StopMission;
+
+  /// No description provided for @g4StopMissionSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop 3 · Your mission'**
+  String get g4StopMissionSub;
+
+  /// No description provided for @g4StopN.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop {n}'**
+  String g4StopN(Object n);
+
+  /// No description provided for @g4StopOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'open'**
+  String get g4StopOpen;
+
+  /// No description provided for @g4StopPage.
+  ///
+  /// In en, this message translates to:
+  /// **'STOP {n} · P.{page}'**
+  String g4StopPage(Object n, Object page);
+
+  /// No description provided for @g4StopPhysics.
+  ///
+  /// In en, this message translates to:
+  /// **'The physics'**
+  String get g4StopPhysics;
+
+  /// No description provided for @g4StopRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop recording'**
+  String get g4StopRecording;
+
+  /// No description provided for @g4StopStory.
+  ///
+  /// In en, this message translates to:
+  /// **'The story'**
+  String get g4StopStory;
+
+  /// No description provided for @g4StopsDoneNext.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of 3 stops done · Next: {next}'**
+  String g4StopsDoneNext(Object done, Object next);
+
+  /// No description provided for @g4StopsOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{done}/3 stops'**
+  String g4StopsOf(Object done);
+
+  /// No description provided for @g4StreakDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}-day reading streak'**
+  String g4StreakDays(Object days);
+
+  /// No description provided for @g4StreakHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Read today\'s guide to keep it going'**
+  String get g4StreakHint;
+
+  /// No description provided for @g4TakePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get g4TakePhoto;
+
+  /// No description provided for @g4TeacherBody.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI wasn\'t sure, so your teacher will look at the result. No photos are kept.'**
+  String get g4TeacherBody;
+
+  /// No description provided for @g4TeacherNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your teacher can see this result and change it. Photos were deleted after the check.'**
+  String get g4TeacherNote;
+
+  /// No description provided for @g4TeacherTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your teacher will check this'**
+  String get g4TeacherTitle;
+
+  /// No description provided for @g4ThreePhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Take 3 photos instead'**
+  String get g4ThreePhotos;
+
+  /// No description provided for @g4TodayDate.
+  ///
+  /// In en, this message translates to:
+  /// **'TODAY · {date}'**
+  String g4TodayDate(Object date);
+
+  /// No description provided for @g4TodayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s guide: {title}, {done} of 3 stops done'**
+  String g4TodayLabel(Object done, Object title);
+
+  /// No description provided for @g4TodaysGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'TODAY\'S GUIDE'**
+  String get g4TodaysGuide;
+
+  /// No description provided for @g4TodaysGuideIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'TODAY\'S GUIDE · #{n}'**
+  String g4TodaysGuideIssue(Object n);
+
+  /// No description provided for @g4TopicAir.
+  ///
+  /// In en, this message translates to:
+  /// **'Air'**
+  String get g4TopicAir;
+
+  /// No description provided for @g4TopicEnergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy'**
+  String get g4TopicEnergy;
+
+  /// No description provided for @g4TopicHeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Heat'**
+  String get g4TopicHeat;
+
+  /// No description provided for @g4TopicOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Science'**
+  String get g4TopicOther;
+
+  /// No description provided for @g4TopicStorm.
+  ///
+  /// In en, this message translates to:
+  /// **'Storm'**
+  String get g4TopicStorm;
+
+  /// No description provided for @g4TopicWaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Waste'**
+  String get g4TopicWaste;
+
+  /// No description provided for @g4TopicWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Water'**
+  String get g4TopicWater;
+
+  /// No description provided for @g4TryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get g4TryAgain;
+
+  /// No description provided for @g4TryQuizAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try the quiz again'**
+  String get g4TryQuizAgain;
+
+  /// No description provided for @g4WeekLetters.
+  ///
+  /// In en, this message translates to:
+  /// **'M,T,W,T,F,S,S'**
+  String get g4WeekLetters;
+
+  /// No description provided for @g4WhatAiSaw.
+  ///
+  /// In en, this message translates to:
+  /// **'What ELIOS AI saw'**
+  String get g4WhatAiSaw;
+
+  /// No description provided for @g4WhatToDo.
+  ///
+  /// In en, this message translates to:
+  /// **'What to do'**
+  String get g4WhatToDo;
+
+  /// No description provided for @g4XpDone.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ {xp} XP'**
+  String g4XpDone(Object xp);
+
+  /// No description provided for @g4XpOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{xp} / {total} XP'**
+  String g4XpOf(Object total, Object xp);
+
+  /// No description provided for @g4YourQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Your question: {q}'**
+  String g4YourQuestion(Object q);
 }
 
 class _AppLocalizationsDelegate

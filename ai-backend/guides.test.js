@@ -189,12 +189,16 @@ test('streak: a day without a published issue does not break it; days are Asia/J
   assert.deepEqual(lastWeek.map((d) => d.status), ['off', 'missed', 'off', 'off', 'read', 'off', 'read']);
 });
 
-test('import moves a guest\'s progress only with a valid guest token and keeps earliest stop times', async () => {
+test('import needs the server-signed guest claim and keeps earliest stop times', async () => {
   const world = fakeWorld();
-  await call(world, { op: 'event', id: 'evt-guest1', date: '2026-11-08', type: 'story_read' }, { token: 'tok-G' });
-  assert.equal((await call(world, { op: 'import', guest_token: 'tok-B' })).status, 400);
-  const res = await (await call(world, { op: 'import', guest_token: 'tok-G' })).json();
+  const guest = await (await call(world, { op: 'event', id: 'evt-guest1', date: '2026-11-08', type: 'story_read' }, { token: 'tok-G' })).json();
+  assert.match(guest.progress.guest_claim, /^[a-f0-9]{64}$/);
+  const mine = await (await call(world, { op: 'progress' })).json();
+  assert.equal(mine.guest_claim, undefined, 'only guests get a claim');
+  assert.equal((await call(world, { op: 'import', guest_uid: 'G', guest_claim: 'f'.repeat(64) })).status, 400);
+  assert.equal((await call(world, { op: 'import', guest_uid: 'B', guest_claim: guest.progress.guest_claim })).status, 400);
+  const res = await (await call(world, { op: 'import', guest_uid: 'G', guest_claim: guest.progress.guest_claim })).json();
   assert.equal(res.progress.total_xp, 10);
-  const again = await (await call(world, { op: 'import', guest_token: 'tok-G' })).json();
+  const again = await (await call(world, { op: 'import', guest_uid: 'G', guest_claim: guest.progress.guest_claim })).json();
   assert.equal(again.progress.total_xp, 10);
 });

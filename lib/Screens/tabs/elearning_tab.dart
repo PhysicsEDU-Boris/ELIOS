@@ -140,15 +140,15 @@ class LearnHub extends ConsumerWidget {
       builder: (context, modulesSnap) {
         if (modulesSnap.hasError) {
           return LearnListView(
-            children: [const DailyGuidesLink(), LearnModulesError(onRetry: onRetry)],
+            children: [const GuidesHubSection(), LearnModulesError(onRetry: onRetry)],
           );
         }
         if (!modulesSnap.hasData) {
-          return const LearnListView(children: [DailyGuidesLink(), LearnHubSkeleton()]);
+          return const LearnListView(children: [GuidesHubSection(), LearnHubSkeleton()]);
         }
         final modules = modulesSnap.data!;
         if (modules.isEmpty) {
-          return const LearnListView(children: [DailyGuidesLink(), LearnNoModules()]);
+          return const LearnListView(children: [GuidesHubSection(), LearnNoModules()]);
         }
         return StreamBuilder<List<VideoLesson>>(
           stream: streams.videos,
@@ -208,7 +208,7 @@ class _HubContent extends ConsumerWidget {
     return LearnListView(
       children: [
         const SizedBox(height: 8),
-        const DailyGuidesLink(),
+        const GuidesHubSection(),
         const SizedBox(height: 16),
         if (firstLaunch)
           _Hero(

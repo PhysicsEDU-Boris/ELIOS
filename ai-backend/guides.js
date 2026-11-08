@@ -2,6 +2,7 @@
 // Same pattern as history.js (0191): the Firebase token gives the owner, Supabase is reached
 // only with the server key, and the published guide JSON (never the client) holds the answers.
 
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { verifyIdToken } from './auth.js';
 import { generate } from './chain.js';
 
@@ -143,6 +144,8 @@ export async function handleGuides(request, env, deps = {}) {
     return reply({ error: 'Invalid id or date' }, 400);
   }
   const lang = body.lang === 'id' ? 'id' : 'en';
+  // A guest keeps this on the phone; after signing in to another account it proves the old guest uid.
+  const claimOf = (uid) => createHmac('sha256', databaseKey).update(`guest:${uid}`).digest('hex');
 
   const db = async (path, options = {}) => {
     const response = await fetchFn(`${env.SUPABASE_URL}/rest/v1/${path}`, {
@@ -165,7 +168,8 @@ export async function handleGuides(request, env, deps = {}) {
     const rows = await rowsOf();
     const published = (await manifest(fetchFn, now())).map((g) => g?.date).filter((d) => typeof d === 'string');
     const issues = Object.fromEntries(rows.map((r) => [r.date, { stops: r.stops ?? {}, quiz: r.quiz ?? {}, lab: r.lab ?? {}, xp: xpOf(r.stops) }]));
-    return { issues, ...streakOf(rows, published, jakartaDay(now())), total_xp: rows.reduce((s, r) => s + xpOf(r.stops), 0) };
+    return { issues, ...streakOf(rows, published, jakartaDay(now())), total_xp: rows.reduce((s, r) => s + xpOf(r.stops), 0),
+      ...(claims.firebase?.sign_in_provider === 'anonymous' ? { guest_claim: claimOf(owner) } : {}) };
   };
   /** Claims the client's event id once; returns the updated row, or null for a repeat of the same id. */
   const record = async (type, update) => {
@@ -188,12 +192,14 @@ export async function handleGuides(request, env, deps = {}) {
     if (op === 'progress') return reply(await summary());
 
     if (op === 'import') {
-      const guest = typeof body.guest_token === 'string' && await verify(body.guest_token);
-      if (!guest || guest.firebase?.sign_in_provider !== 'anonymous' || guest.sub === owner) {
-        return reply({ error: 'Only a guest account can be imported' }, 400);
+      const guest = body.guest_uid;
+      const claim = typeof body.guest_claim === 'string' ? Buffer.from(body.guest_claim) : Buffer.alloc(0);
+      if (typeof guest !== 'string' || guest === owner || claim.length !== 64
+          || !timingSafeEqual(claim, Buffer.from(claimOf(guest)))) {
+        return reply({ error: 'Only this phone\'s guest progress can be imported' }, 400);
       }
       const mine = new Map((await rowsOf()).map((r) => [r.date, r]));
-      for (const g of await rowsOf(guest.sub)) {
+      for (const g of await rowsOf(guest)) {
         const m = mine.get(g.date) ?? { owner_id: owner, date: g.date, stops: {}, quiz: {}, lab: {} };
         const stops = { ...g.stops };
         for (const [k, t] of Object.entries(m.stops ?? {})) if (!stops[k] || t < stops[k]) stops[k] = t;

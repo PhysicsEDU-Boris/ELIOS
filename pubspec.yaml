@@ -79,6 +79,7 @@ flutter:
     - .env.example
     - assets/icon/
     - assets/illustrations/learn/
+    - assets/illustrations/guides/
     - assets/models/robot-elio.glb
     - assets/models/mobilElios5.glb
     - assets/module/

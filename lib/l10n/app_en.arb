@@ -2952,5 +2952,311 @@
   "dailyGuidesOffline": "Showing saved guides. Connect to check for new issues.",
   "dailyGuidesEmpty": "The first daily guide is on its way.",
   "dailyGuidesLatest": "Latest issue",
-  "dailyGuidesArchive": "Previous issues"
+  "dailyGuidesArchive": "Previous issues",
+  "g4AiLooksFor": "ELIOS AI will look for",
+  "g4All": "All",
+  "g4AllStopsDone": "All 3 stops done",
+  "g4AlmostBody": "No XP yet. You can try as many times as you like.",
+  "g4AlmostTitle": "Almost! Try one more time",
+  "g4Archive": "Archive",
+  "g4ArchiveLabel": "{title}, {date}, {stops} of 3 stops, {xp} XP",
+  "@g4ArchiveLabel": {
+    "placeholders": {
+      "date": {},
+      "stops": {},
+      "title": {},
+      "xp": {}
+    }
+  },
+  "g4AskTeacher": "Ask teacher to review",
+  "g4AskTeacherHint": "Think the check is wrong? Ask your teacher to review it. They see the AI reason, not your photos.",
+  "g4BackToResult": "Back to result",
+  "g4BadgeUnlocked": "Badge unlocked",
+  "g4Cancel": "Cancel",
+  "g4Check": "Check",
+  "g4CheckAgain": "Check again",
+  "g4ContinueGuide": "Continue guide",
+  "g4ContinueStop": "Continue · Stop {n}",
+  "@g4ContinueStop": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4CopyLink": "Copy link",
+  "g4DayFuture": "coming up",
+  "g4DayMissed": "missed",
+  "g4DayRead": "read",
+  "g4DayToday": "today, not read yet",
+  "g4DidYouKnow": "Did you know?",
+  "g4EmptyBody": "A new physics story arrives every morning around 06:00. Pull down to check again.",
+  "g4EmptyTitle": "The first guide is on its way",
+  "g4FeedError": "Guides couldn't load",
+  "g4FeedSubtitle": "Physics behind real news",
+  "g4FinishStop2": "Finish Stop 2 to unlock",
+  "g4FollowApp": "Same as the app",
+  "g4FrameN": "Frame {n}",
+  "@g4FrameN": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4GuideArchive": "Guide archive",
+  "g4GuideLanguage": "Guide language",
+  "g4GuideXp": "guide XP",
+  "g4Import": "Import",
+  "g4ImportBody": "This phone has {xp} guide XP from a guest session.",
+  "@g4ImportBody": {
+    "placeholders": {
+      "xp": {}
+    }
+  },
+  "g4ImportConfirm": "Add the guest's guide progress ({xp} XP, stops and streak days) to this account? Nothing is merged without your OK.",
+  "@g4ImportConfirm": {
+    "placeholders": {
+      "xp": {}
+    }
+  },
+  "g4ImportFailed": "Couldn't import now. Try again when you're online.",
+  "g4ImportTitle": "Import guest guide progress",
+  "g4IssueCount": "{count, plural, =1{1 issue} other{{count} issues}}",
+  "@g4IssueCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "g4IssueN": "Issue #{n}",
+  "@g4IssueN": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4IssuesStreak": "{count, plural, =1{1 issue} other{{count} issues}} · {days}-day streak",
+  "@g4IssuesStreak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {}
+    }
+  },
+  "g4LabApproved": "Lab approved",
+  "g4LabApprovedBy": "Lab approved by ELIOS AI",
+  "g4LabBusy": "The lab check is busy. Your photos stayed on your phone; try again in a minute.",
+  "g4LabChecking": "ELIOS AI is checking your photos…",
+  "g4LabLimit": "That's 5 lab checks for this guide today. Try again tomorrow.",
+  "g4LabMeta": "About 10 minutes · +{xp} XP · badge",
+  "@g4LabMeta": {
+    "placeholders": {
+      "xp": {}
+    }
+  },
+  "g4LabOffline": "The lab check needs internet. Connect and try again; nothing was sent.",
+  "g4LabResult": "Mini lab result",
+  "g4LangEn": "English",
+  "g4LangId": "Bahasa Indonesia",
+  "g4LangMissing": "This issue isn't in your language yet, so it's shown in the other one.",
+  "g4LangPill": "EN · ID",
+  "g4Listen": "Listen",
+  "g4MiniLab": "Mini lab",
+  "g4Missing": "missing",
+  "g4New": "NEW",
+  "g4NewGuide": "New guide",
+  "g4NextCard": "Next card",
+  "g4NotNow": "Not now",
+  "g4NotQuite": "Not quite.",
+  "g4OfflineBanner": "Offline. Showing saved guides. Connect to check for new issues.",
+  "g4Ok": "OK",
+  "g4Pass": "seen",
+  "g4Pdf": "PDF",
+  "g4PdfMeta": "{pages}-page PDF · {language} · saved for offline",
+  "@g4PdfMeta": {
+    "placeholders": {
+      "language": {},
+      "pages": {}
+    }
+  },
+  "g4PhotoCredit": "Photo credit",
+  "g4PhotoHint": "Take 3 photos: the start, the middle and the end of your experiment.",
+  "g4PhotosTaken": "{n} of 3 photos",
+  "@g4PhotosTaken": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4PlusXp": "+{xp} XP",
+  "@g4PlusXp": {
+    "placeholders": {
+      "xp": {}
+    }
+  },
+  "g4PrivacyNote": "ELIOS checks 8 still photos from your clip, then deletes them. Only the result is saved.",
+  "g4QuestMap": "Your quest map",
+  "g4QuickQuiz": "Quick quiz",
+  "g4QuizAlmost": "2 correct answers pass. Try the quiz again with new questions.",
+  "g4QuizNice": "Nice work!",
+  "g4QuizParkedHint": "Answered cards stay on the left. Tap Q1–Q3 on the result to look again.",
+  "g4QuizPassed": "Quiz passed",
+  "g4QuizResultHint": "Tap Q1–Q3 to flip back to any answer.",
+  "g4QuizUnavailable": "The quiz couldn't load",
+  "g4ReadAgain": "Read the guide again",
+  "g4ReadFullGuide": "Read the full guide",
+  "g4ReadPage": "Read page {page}",
+  "@g4ReadPage": {
+    "placeholders": {
+      "page": {}
+    }
+  },
+  "g4Record": "Record 15–30 s",
+  "g4RecordHint": "Film only your hands and the experiment. Stop after {min} s; recording ends at 30 s.",
+  "@g4RecordHint": {
+    "placeholders": {
+      "min": {}
+    }
+  },
+  "g4RecordingSeconds": "Recording {s} / {max} s",
+  "@g4RecordingSeconds": {
+    "placeholders": {
+      "max": {},
+      "s": {}
+    }
+  },
+  "g4Retake": "Record again",
+  "g4Retry": "Retry",
+  "g4ReviewBody": "These are the only pictures that will be sent. Nothing leaves your phone until you tap Send.",
+  "g4ReviewQuestion": "Look at question {n} again",
+  "@g4ReviewQuestion": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4ReviewSent": "Sent to your teacher.",
+  "g4ReviewTitle": "{n} photos ready",
+  "@g4ReviewTitle": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4SafetyTitle": "Film only your hands and the experiment",
+  "g4SavedAccount": "Saved to your account",
+  "g4SavedPhone": "Saved on this phone. It syncs when you're online.",
+  "g4Saving": "Saving…",
+  "g4ScoreOf": "{score} of {total} correct",
+  "@g4ScoreOf": {
+    "placeholders": {
+      "score": {},
+      "total": {}
+    }
+  },
+  "g4SeeResult": "See result",
+  "g4Send": "Send to ELIOS AI",
+  "g4Sources": "Sources",
+  "g4SourcesCount": "{count, plural, =1{1 source} other{{count} sources}}",
+  "@g4SourcesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "g4StartGuide": "Start guide",
+  "g4StartLab": "Start mini lab",
+  "g4StopDone": "done",
+  "g4StopLocked": "locked",
+  "g4StopMission": "Your mission",
+  "g4StopMissionSub": "Stop 3 · Your mission",
+  "g4StopN": "Stop {n}",
+  "@g4StopN": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4StopOpen": "open",
+  "g4StopPage": "STOP {n} · P.{page}",
+  "@g4StopPage": {
+    "placeholders": {
+      "n": {},
+      "page": {}
+    }
+  },
+  "g4StopPhysics": "The physics",
+  "g4StopRecording": "Stop recording",
+  "g4StopStory": "The story",
+  "g4StopsDoneNext": "{done} of 3 stops done · Next: {next}",
+  "@g4StopsDoneNext": {
+    "placeholders": {
+      "done": {},
+      "next": {}
+    }
+  },
+  "g4StopsOf": "{done}/3 stops",
+  "@g4StopsOf": {
+    "placeholders": {
+      "done": {}
+    }
+  },
+  "g4StreakDays": "{days}-day reading streak",
+  "@g4StreakDays": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "g4StreakHint": "Read today's guide to keep it going",
+  "g4TakePhoto": "Take photo",
+  "g4TeacherBody": "ELIOS AI wasn't sure, so your teacher will look at the result. No photos are kept.",
+  "g4TeacherNote": "Your teacher can see this result and change it. Photos were deleted after the check.",
+  "g4TeacherTitle": "Your teacher will check this",
+  "g4ThreePhotos": "Take 3 photos instead",
+  "g4TodayDate": "TODAY · {date}",
+  "@g4TodayDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "g4TodayLabel": "Today's guide: {title}, {done} of 3 stops done",
+  "@g4TodayLabel": {
+    "placeholders": {
+      "done": {},
+      "title": {}
+    }
+  },
+  "g4TodaysGuide": "TODAY'S GUIDE",
+  "g4TodaysGuideIssue": "TODAY'S GUIDE · #{n}",
+  "@g4TodaysGuideIssue": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4TopicAir": "Air",
+  "g4TopicEnergy": "Energy",
+  "g4TopicHeat": "Heat",
+  "g4TopicOther": "Science",
+  "g4TopicStorm": "Storm",
+  "g4TopicWaste": "Waste",
+  "g4TopicWater": "Water",
+  "g4TryAgain": "Try again",
+  "g4TryQuizAgain": "Try the quiz again",
+  "g4WeekLetters": "M,T,W,T,F,S,S",
+  "g4WhatAiSaw": "What ELIOS AI saw",
+  "g4WhatToDo": "What to do",
+  "g4XpDone": "✓ {xp} XP",
+  "@g4XpDone": {
+    "placeholders": {
+      "xp": {}
+    }
+  },
+  "g4XpOf": "{xp} / {total} XP",
+  "@g4XpOf": {
+    "placeholders": {
+      "total": {},
+      "xp": {}
+    }
+  },
+  "g4YourQuestion": "Your question: {q}",
+  "@g4YourQuestion": {
+    "placeholders": {
+      "q": {}
+    }
+  }
 }

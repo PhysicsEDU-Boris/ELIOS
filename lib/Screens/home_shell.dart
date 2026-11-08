@@ -10,6 +10,8 @@ import '../utils/system_ui.dart';
 
 import '../models/app_notification.dart';
 import '../providers/app_notification_provider.dart';
+import '../providers/daily_guide_provider.dart';
+import '../services/guide_progress.dart';
 import '../providers/elio_theme_mode_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/robot_provider.dart';
@@ -244,6 +246,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
     setState(() => _currentIndex = index);
     if (updateProvider) _syncNavigationProvider(index);
+    if (index == 1) unawaited(ref.read(dailyGuideFeedProvider.notifier).refresh());
   }
 
   @override
@@ -259,6 +262,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Guide catalogue and progress sync from app start (Home shows the "New guide" notification).
+    ref.listen(dailyGuideFeedProvider, (_, _) {});
+    ref.listen(guideProgressProvider, (_, _) {});
     ref.listen<int>(
       navigationIndexProvider,
       (_, next) => _handleNavigationProviderChange(next),
