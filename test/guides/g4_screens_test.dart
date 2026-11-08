@@ -160,6 +160,11 @@ void main() {
         await t.pump(const Duration(milliseconds: 100));
       }
       expect(find.text('2 of 3 correct'), findsOneWidget);
+      // The result card is centred and its Q1-Q3 chips sit in one row (phone bugs).
+      final card = t.getRect(find.byKey(const ValueKey('result')));
+      expect(card.center.dx, closeTo(195, 1));
+      final chips = [for (final q in ['✓ Q1', '✗ Q2', '✓ Q3']) t.getCenter(find.text(q).last)];
+      expect(chips.map((c) => c.dy).toSet().length, 1);
       expect(find.text('Saved to your account'), findsOneWidget);
       expect(server.calls.where((c) => c['op'] == 'quiz').length, 1);
       await t.tap(find.bySemanticsLabel('Look at question 2 again'));

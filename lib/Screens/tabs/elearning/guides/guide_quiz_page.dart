@@ -162,6 +162,8 @@ class _GuideQuizPageState extends ConsumerState<GuideQuizPage> {
                       ),
               )
             : Column(
+                // Full width: a short hint line must not shrink the page and push the deck left.
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _Dots(deck: deck),
                   Expanded(child: _deckView(deck, lang)),
@@ -332,6 +334,7 @@ class _Dots extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Wrap(
+        alignment: WrapAlignment.center,
         spacing: 8,
         children: [
           for (var i = 0; i < deck.questions.length; i++)
@@ -632,6 +635,7 @@ class _ResultCard extends StatelessWidget {
                           minWidth: 48,
                         ),
                         child: Center(
+                          widthFactor: 1,
                           child: GuideChip(
                             deck.correct(i) ? '✓ Q${i + 1}' : '✗ Q${i + 1}',
                             tone: deck.correct(i)
