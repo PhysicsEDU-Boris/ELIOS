@@ -194,11 +194,19 @@ class GuideProgressFiles {
     }
   }
 
-  Future<void> write(String uid, Map<String, dynamic> data) async {
-    final d = await dir();
-    final tmp = File('${d.path}/${Uri.encodeComponent(uid)}.json.tmp');
-    await tmp.writeAsString(jsonEncode(data), flush: true);
-    await tmp.rename('${d.path}/${Uri.encodeComponent(uid)}.json');
+  Future<void> _writes = Future.value();
+
+  /// Writes a snapshot of [data]; writes run one after another so two saves never share the temp file.
+  Future<void> write(String uid, Map<String, dynamic> data) {
+    final text = jsonEncode(data);
+    final next = _writes.then((_) async {
+      final d = await dir();
+      final tmp = File('${d.path}/${Uri.encodeComponent(uid)}.json.tmp');
+      await tmp.writeAsString(text, flush: true);
+      await tmp.rename('${d.path}/${Uri.encodeComponent(uid)}.json');
+    });
+    _writes = next.catchError((Object _) {});
+    return next;
   }
 
   /// Other accounts' files on this phone (for the guest import offer).
@@ -243,13 +251,15 @@ class GuideProgressNotifier extends Notifier<GuideProgressState> {
   Future<void> _ready = Future.value();
   bool _disposed = false;
 
-  GuidesCall? get _call => ref.read(guidesCallProvider);
-  GuideProgressFiles get _files => ref.read(guideProgressFilesProvider);
+  GuidesCall? _call;
+  late GuideProgressFiles _files;
   DateTime Function() now = DateTime.now;
 
   @override
   GuideProgressState build() {
     _uid = ref.watch(currentUserProvider.select((u) => u?.uid));
+    _call = ref.watch(guidesCallProvider);
+    _files = ref.read(guideProgressFilesProvider);
     _disposed = false;
     final listener = AppLifecycleListener(onResume: () => unawaited(sync()));
     _timer = Timer.periodic(
@@ -299,7 +309,7 @@ class GuideProgressNotifier extends Notifier<GuideProgressState> {
       }
       // Pages already read still earn their stops.
       for (final e in pages.entries) {
-        await pageReached(e.key, e.value as int, send: false);
+        await _pageReached(e.key, e.value as int);
       }
     } catch (e) {
       debugPrint('[GuideProgress] page migration failed: $e');
@@ -307,6 +317,7 @@ class GuideProgressNotifier extends Notifier<GuideProgressState> {
   }
 
   Future<void> _findGuest(String uid) async {
+    if (_disposed) return;
     final user = ref.read(currentUserProvider);
     if (user == null || user.isAnonymous) return;
     final declined =
@@ -346,24 +357,29 @@ class GuideProgressNotifier extends Notifier<GuideProgressState> {
     int page, {
     int storyXp = 10,
     int physicsXp = 20,
-    bool send = true,
   }) async {
     await _ready;
+    await _pageReached(date, page, storyXp: storyXp, physicsXp: physicsXp);
+    unawaited(sync());
+  }
+
+  Future<void> _pageReached(
+    String date,
+    int page, {
+    int storyXp = 10,
+    int physicsXp = 20,
+  }) async {
     final pages = Map<String, dynamic>.from(_data['pages'] as Map? ?? {});
     if ((pages[date] as int? ?? 0) < page) pages[date] = page;
     _data['pages'] = pages;
-    final p = state.of(date);
-    final queued = (_data['queue'] as List? ?? const [])
-        .whereType<Map>()
-        .where((e) => e['date'] == date)
-        .map((e) => e['type'])
-        .toSet();
+    // From the stored data (state may not be emitted yet during load); queued reads count as done.
+    final p = progressView(_data, today: jakartaDay(now())).of(date);
     final t = now();
     for (final (type, at, xp, done) in [
       ('story_read', 2, storyXp, p.story),
       ('physics_read', 3, physicsXp, p.physics),
     ]) {
-      if (page >= at && !done && !queued.contains(type)) {
+      if (page >= at && !done) {
         _data['queue'] = [
           ...?(_data['queue'] as List?),
           {
@@ -380,7 +396,6 @@ class GuideProgressNotifier extends Notifier<GuideProgressState> {
     }
     await _save();
     _emit();
-    if (send) unawaited(sync());
   }
 
   Future<void> setGuideLang(String? lang) async {
@@ -484,10 +499,10 @@ class GuideProgressNotifier extends Notifier<GuideProgressState> {
   Future<void> _sync() async {
     await _ready;
     final call = _call;
-    if (call == null || _uid == null) return;
+    if (call == null || _uid == null || _disposed) return;
     var ok = true;
     try {
-      while ((_data['queue'] as List? ?? const []).isNotEmpty) {
+      while (!_disposed && (_data['queue'] as List? ?? const []).isNotEmpty) {
         final item = Map<String, dynamic>.from(
           (_data['queue'] as List).first as Map,
         );

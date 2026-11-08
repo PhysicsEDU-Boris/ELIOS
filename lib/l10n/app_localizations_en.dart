@@ -4930,4 +4930,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String g4YourQuestion(Object q) {
     return 'Your question: $q';
   }
+
+  @override
+  String get g4FeedTitle => 'ELIOS Guides';
 }

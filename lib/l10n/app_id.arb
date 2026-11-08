@@ -1387,5 +1387,6 @@
   "g4WhatToDo": "Yang dilakukan",
   "g4XpDone": "✓ {xp} XP",
   "g4XpOf": "{xp} / {total} XP",
-  "g4YourQuestion": "Pertanyaanmu: {q}"
+  "g4YourQuestion": "Pertanyaanmu: {q}",
+  "g4FeedTitle": "Panduan ELIOS"
 }

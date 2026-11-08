@@ -8436,6 +8436,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your question: {q}'**
   String g4YourQuestion(Object q);
+
+  /// No description provided for @g4FeedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS Guides'**
+  String get g4FeedTitle;
 }
 
 class _AppLocalizationsDelegate

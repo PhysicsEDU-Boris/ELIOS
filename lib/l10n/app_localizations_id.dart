@@ -4838,4 +4838,7 @@ class AppLocalizationsId extends AppLocalizations {
   String g4YourQuestion(Object q) {
     return 'Pertanyaanmu: $q';
   }
+
+  @override
+  String get g4FeedTitle => 'Panduan ELIOS';
 }

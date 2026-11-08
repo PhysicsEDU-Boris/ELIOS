@@ -107,7 +107,7 @@ class _DailyGuidesPageState extends ConsumerState<DailyGuidesPage> {
     return Scaffold(
       backgroundColor: p.background,
       appBar: GuideTopBar(
-        title: l10n.dailyGuidesTitle,
+        title: l10n.g4FeedTitle,
         subtitle: l10n.g4FeedSubtitle,
         action: Semantics(
           button: true,

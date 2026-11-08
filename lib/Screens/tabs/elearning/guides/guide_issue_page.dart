@@ -194,6 +194,7 @@ class GuideIssuePage extends ConsumerWidget {
                     child: LearnThumbnail(
                       url: g.asset(g.cover[lang]!).toString(),
                       fallbackAsset: LearnArt.coverIntro,
+                      cacheManager: guideImageCache,
                     ),
                   ),
                 ),
