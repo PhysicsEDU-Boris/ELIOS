@@ -120,63 +120,70 @@ void main() {
     });
   });
 
-  testWidgets(
-    'quiz: a swipe never answers; buttons drive the deck to the result',
-    (t) async {
-      await pump(t, GuideQuizPage(guide: await guide()));
-      final question = find.text('What equation calculates speed?');
-      expect(question, findsOneWidget);
-      await t.drag(question, const Offset(-300, 0));
-      await t.drag(question, const Offset(300, 0));
+  testWidgets('quiz: a swipe never answers; buttons drive the deck to the result', (
+    t,
+  ) async {
+    await pump(t, GuideQuizPage(guide: await guide()));
+    final question = find.text('What equation calculates speed?');
+    expect(question, findsOneWidget);
+    // Screen readers hear only the front card (the phone UI dump listed all three).
+    expect(find.bySemanticsLabel(RegExp('Answer A: 6 m/s')), findsNothing);
+    expect(
+      find.bySemanticsLabel(RegExp(r'Answer A: v = s × t')),
+      findsOneWidget,
+    );
+    await t.drag(question, const Offset(-300, 0));
+    await t.drag(question, const Offset(300, 0));
+    await t.pump(const Duration(milliseconds: 400));
+    expect(find.textContaining('✓'), findsNothing);
+    expect(
+      t
+          .widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Check').hitTestable(),
+          )
+          .onPressed,
+      isNull,
+    );
+    for (final (choice, next) in [
+      ('v = s ÷ t', 'Next card'),
+      ('2,400 m/s', 'Next card'),
+      ('More energy and sediment', 'See result'),
+    ]) {
+      await t.tap(find.text(choice).hitTestable());
+      await t.pump();
+      await t.tap(find.widgetWithText(FilledButton, 'Check').hitTestable());
+      await t.pump();
+      if (choice == '2,400 m/s') {
+        expect(find.text('Not quite. You multiplied.'), findsOneWidget);
+      }
+      await t.tap(find.widgetWithText(FilledButton, next).hitTestable());
       await t.pump(const Duration(milliseconds: 400));
-      expect(find.textContaining('✓'), findsNothing);
-      expect(
-        t
-            .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Check').hitTestable(),
-            )
-            .onPressed,
-        isNull,
+    }
+    for (var i = 0; i < 4; i++) {
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
       );
-      for (final (choice, next) in [
-        ('v = s ÷ t', 'Next card'),
-        ('2,400 m/s', 'Next card'),
-        ('More energy and sediment', 'See result'),
-      ]) {
-        await t.tap(find.text(choice).hitTestable());
-        await t.pump();
-        await t.tap(find.widgetWithText(FilledButton, 'Check').hitTestable());
-        await t.pump();
-        if (choice == '2,400 m/s') {
-          expect(find.text('Not quite. You multiplied.'), findsOneWidget);
-        }
-        await t.tap(find.widgetWithText(FilledButton, next).hitTestable());
-        await t.pump(const Duration(milliseconds: 400));
-      }
-      for (var i = 0; i < 4; i++) {
-        await t.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 20)),
-        );
-        await t.pump(const Duration(milliseconds: 100));
-      }
-      expect(find.text('2 of 3 correct'), findsOneWidget);
-      // The result card is centred and its Q1-Q3 chips sit in one row (phone bugs).
-      final card = t.getRect(find.byKey(const ValueKey('result')));
-      expect(card.center.dx, closeTo(195, 1));
-      final chips = [for (final q in ['✓ Q1', '✗ Q2', '✓ Q3']) t.getCenter(find.text(q).last)];
-      expect(chips.map((c) => c.dy).toSet().length, 1);
-      expect(find.text('Saved to your account'), findsOneWidget);
-      expect(server.calls.where((c) => c['op'] == 'quiz').length, 1);
-      await t.tap(find.bySemanticsLabel('Look at question 2 again'));
-      await t.pump(const Duration(milliseconds: 400));
-      expect(find.text('Back to result'), findsOneWidget);
-      await t.tap(find.text('Back to result'));
-      await t.pump(const Duration(milliseconds: 400));
-      await t.tap(find.text('Try the quiz again'));
-      await t.pump(const Duration(milliseconds: 400));
-      expect(find.text('Spare question 1?'), findsOneWidget);
-    },
-  );
+      await t.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('2 of 3 correct'), findsOneWidget);
+    // The result card is centred and its Q1-Q3 chips sit in one row (phone bugs).
+    final card = t.getRect(find.byKey(const ValueKey('result')));
+    expect(card.center.dx, closeTo(195, 1));
+    final chips = [
+      for (final q in ['✓ Q1', '✗ Q2', '✓ Q3']) t.getCenter(find.text(q).last),
+    ];
+    expect(chips.map((c) => c.dy).toSet().length, 1);
+    expect(find.text('Saved to your account'), findsOneWidget);
+    expect(server.calls.where((c) => c['op'] == 'quiz').length, 1);
+    await t.tap(find.bySemanticsLabel('Look at question 2 again'));
+    await t.pump(const Duration(milliseconds: 400));
+    expect(find.text('Back to result'), findsOneWidget);
+    await t.tap(find.text('Back to result'));
+    await t.pump(const Duration(milliseconds: 400));
+    await t.tap(find.text('Try the quiz again'));
+    await t.pump(const Duration(milliseconds: 400));
+    expect(find.text('Spare question 1?'), findsOneWidget);
+  });
 
   testWidgets(
     'quiz: reduced motion shows one card at a time (cross-fade, no stack)',
@@ -291,9 +298,12 @@ void main() {
       await pump(t, GuideIssuePage(guide: await guide()));
       expect(find.text('Your quest map'), findsOneWidget);
       expect(find.text('Continue · Stop 1'), findsOneWidget);
-    // Multi-placeholder strings keep their argument order (phone bug: "60 / 0 XP", "English-page PDF").
-    expect(find.text('0 / 60 XP'), findsOneWidget);
-    expect(find.text('4-page PDF · English · saved for offline'), findsOneWidget);
+      // Multi-placeholder strings keep their argument order (phone bug: "60 / 0 XP", "English-page PDF").
+      expect(find.text('0 / 60 XP'), findsOneWidget);
+      expect(
+        find.text('4-page PDF · English · saved for offline'),
+        findsOneWidget,
+      );
       await t.tap(find.text('Bahasa Indonesia'));
       for (var i = 0; i < 4; i++) {
         await t.runAsync(

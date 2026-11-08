@@ -136,16 +136,14 @@ class _GuideQuizPageState extends ConsumerState<GuideQuizPage> {
       _start(data);
     }
     final deck = _deck;
-    final passedBefore = ref.watch(
-      guideProgressProvider.select((s) => s.of(g.date).quizPassed),
-    );
     return Scaffold(
       backgroundColor: p.background,
       appBar: GuideTopBar(
         title: l10n.g4QuickQuiz,
         subtitle: l10n.g4StopMissionSub,
         leadingIcon: Icons.close_rounded,
-        action: passedBefore && !(deck?.finished ?? false)
+        // XP on offer only before the first pass (a retry earns none).
+        action: _wasPassed
             ? null
             : GuideChip(l10n.g4PlusXp(g.xp.quiz), tone: LearnTone.warning),
       ),
@@ -247,9 +245,13 @@ class _GuideQuizPageState extends ConsumerState<GuideQuizPage> {
                   key: ValueKey('slot-$i'),
                   i: i,
                   deck: deck,
+                  // Only the front card is tappable and read by screen readers.
                   child: IgnorePointer(
                     ignoring: i != deck.current,
-                    child: card(i),
+                    child: ExcludeSemantics(
+                      excluding: i != deck.current,
+                      child: card(i),
+                    ),
                   ),
                 ),
             if (deck.finished)
