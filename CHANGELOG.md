@@ -11,6 +11,8 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- Learn: Daily Guide opens the bilingual elios-guides feed, newest issue and archive, with refresh, offline catalogue fallback and per-account reading position. Daily guides stay separate from course completion (decision 0193).
+
 - Account-owned history: separate local records/photos per Firebase UID, durable Supabase sync through the existing backend, authenticated Cloudinary scan photos, bilingual sync status and explicit legacy import. Guide PDFs can select an English or Indonesian URL (decision 0191).
 
 - Settings now work with both MaixCAM2 and the phone camera: Resolution and Show FPS also apply to the phone camera, Sound effects turns the Control click on/off, Timer counts down each multiple-choice question (time's up counts as skipped), and Difficulty is saved correctly in Bahasa Indonesia (decision 0189).

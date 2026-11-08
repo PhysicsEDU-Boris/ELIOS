@@ -14,6 +14,7 @@ import '../../services/elearning_content_service.dart';
 import '../../theme/elio_theme.dart';
 import '../../widgets/learn/learn_ui.dart';
 import 'elearning/guides_page.dart';
+import 'elearning/daily_guides_page.dart';
 import 'elearning/learn_content.dart';
 import 'elearning/lesson_page.dart';
 import 'elearning/module_page.dart';
@@ -139,15 +140,15 @@ class LearnHub extends ConsumerWidget {
       builder: (context, modulesSnap) {
         if (modulesSnap.hasError) {
           return LearnListView(
-            children: [LearnModulesError(onRetry: onRetry)],
+            children: [const DailyGuidesLink(), LearnModulesError(onRetry: onRetry)],
           );
         }
         if (!modulesSnap.hasData) {
-          return const LearnListView(children: [LearnHubSkeleton()]);
+          return const LearnListView(children: [DailyGuidesLink(), LearnHubSkeleton()]);
         }
         final modules = modulesSnap.data!;
         if (modules.isEmpty) {
-          return const LearnListView(children: [LearnNoModules()]);
+          return const LearnListView(children: [DailyGuidesLink(), LearnNoModules()]);
         }
         return StreamBuilder<List<VideoLesson>>(
           stream: streams.videos,
@@ -207,6 +208,8 @@ class _HubContent extends ConsumerWidget {
     return LearnListView(
       children: [
         const SizedBox(height: 8),
+        const DailyGuidesLink(),
+        const SizedBox(height: 16),
         if (firstLaunch)
           _Hero(
             title: l10n.lnWelcome,

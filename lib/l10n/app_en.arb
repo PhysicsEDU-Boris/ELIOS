@@ -2945,5 +2945,12 @@
   "historySyncRetry": "Sync now",
   "historyImport": "Import previous device history",
   "historyImportBody": "These older scans have no account owner. Import them into your current account? The original device history will be kept.",
-  "historyImportFailed": "Could not import previous history. The original files are kept."
+  "historyImportFailed": "Could not import previous history. The original files are kept.",
+  "dailyGuidesTitle": "Daily Guide",
+  "dailyGuidesDescription": "Explore the physics behind environmental news.",
+  "dailyGuidesRefresh": "Refresh guides",
+  "dailyGuidesOffline": "Showing saved guides. Connect to check for new issues.",
+  "dailyGuidesEmpty": "The first daily guide is on its way.",
+  "dailyGuidesLatest": "Latest issue",
+  "dailyGuidesArchive": "Previous issues"
 }

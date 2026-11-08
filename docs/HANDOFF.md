@@ -1,3 +1,12 @@
+# Daily Guide — 8 November 2026 (0193)
+- Branch codex/daily-guides, based on origin/feature/live-scan; separate worktree leaves owner's floor/control edits untouched.
+- Daily Guide link survives empty/loading/error Firestore modules; bilingual Pages catalogue, latest/archive, refresh/resume and validated offline fallback.
+- Reuses cached PDF viewer; daily page position is local per UID/date, separate from course completion/XP. Revisioned assets refresh corrections.
+- Focused tests: 10 pass. Empty-module entry regression fails with old LearnHub, passes restored. Full suite: 1343 pass, 20 skipped, 1 existing elio_tokens spacing/radii failure.
+- flutter analyze: only 2 pre-existing test-file infos. No app build/device install, model, firmware or signing changes.
+- Backend PR #16: https://github.com/PhysicsEDU-Boris/elios-guides/pull/16; merge needed for default-branch schedules. Claude/Figma already runs daily; secrets exist.
+- First EN/ID issue is live and verified: https://physicsedu-boris.github.io/elios-guides/manifest.json; export+publish run 42492874079 succeeded. Pages uses Actions and published archive.
+- Robot test after app release: Learn → Daily Guide, open EN/ID issue, resume after closing, refresh, then reopen a cached PDF offline.
 # Cloud history setup — 8 November 2026 (0191) · Branch codex/account-scan-history, based on origin/feature/live-scan; no merge to main.
 - Live Supabase ELIOS project tymiikfebewqvuokoyru (Free, Sydney); schema/RLS and update cursor applied. Vercel ai-backend serves /api/history with Firebase UID ownership checks; secrets in Vercel only.
 - Cloudinary zkebg27g: recovered 4 PDFs, 4 covers, 11 thumbnails; added 4 Indonesian guide PDFs and translated guide-list metadata. PDF delivery enabled with owner approval. App maps exact old public URLs; Firestore originals and YouTube IDs retained.
@@ -47,13 +56,3 @@
 - On-device Gemma removed. `lib/services/ai_quiz_service.dart` POSTs identify, questions, essay grading and chat with the Firebase ID token to the `ai-backend` Vercel function (`ai-backend/`, team ELIOS, region sin1, https://ai-backend-seven-orpin.vercel.app/api/ai), which checks the token, holds `GEMINI_API_KEY` and runs the 0176 chain (`node --test` in `ai-backend/`, break-checked). Firebase Blaze skipped (200k IDR); Cloudflare dropped (Gemini refuses its locations; the `elios-ai` Worker was deleted 3 Nov).
 - No AI answer: the quiz uses the bank and says so. ELIOS AI is the default source in every build. Thermal gate, model copy/sideload, Activate card states and the macOS LiteRT-LM phase are gone.
 - Phone-verified 3 Nov: identify + 3 AI questions, ~1.6 s each, `source=ai`; a 3.5 Flash-Lite timeout fell to 3.1 Flash-Lite. Phone runs the debug APK from this branch. Free key for now; paid before students. Redeploy: `npx vercel deploy --prod --scope elios5` in `ai-backend/`.
-- `macos/Podfile.lock` still lists the Gemma pods (`pod install` hit a Ruby error here); the next Mac build refreshes it. Phone Gemma files deleted 3 Nov (owner's OK): the pushed model, the app's copy and its 4 caches; app data 2.6 GB → 473 MB, scan records kept.
-- Benchmark spike (0176): `tools/cloud_ai_bench/`; resume with the same command, free caps reset 15:00 WIB.
-## Owner data incident
-- The 29 Oct owner History record was overwritten and is still unrecovered. Do not invent or reconstruct its missing answers from guesses.
-## Queue after the architecture change
-- U4c combined native acceptance, U7 Firebase sync, U8 docs/Figma (see NEXT_TASK.md). wrongWhy texts for the bank are still unwritten.
-- R2, Q3, R3 (merged #80-#82, 3 Nov): decisions 0173-0175, `docs/test-results/r2|q3|r3/`.
-## Marketing website — Figma (5 Nov 2026)
-- All sections visually reviewed. Revision: removed 18 decorative icons and 15 arrow/star/checkmark accents in desktop/mobile; retained main mascot and app previews. Static UI; CTA wiring/implementation remain. No app build or robot test. - Control haptics (7 Nov, decision 0188): `controlFeedback()`/`withFeedback()` in `r2_controls.dart`: tick + click on Control buttons, toggles, slider start, joystick direction, STOP, HOME. Test: `test/widgets/control_feedback_test.dart`. Installed on the Motorola (1c8caee); owner feel-test pending.
-- All sections visually reviewed. Revision: removed 18 decorative icons and 15 arrow/star/checkmark accents in desktop/mobile; retained main mascot and app previews. Static UI; CTA wiring/implementation remain. No app build or robot test.

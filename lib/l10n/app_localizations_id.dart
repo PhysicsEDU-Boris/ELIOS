@@ -4322,4 +4322,27 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get historyImportFailed =>
       'Riwayat lama gagal diimpor. File asli tetap disimpan.';
+
+  @override
+  String get dailyGuidesTitle => 'Panduan Harian';
+
+  @override
+  String get dailyGuidesDescription =>
+      'Pelajari fisika di balik berita lingkungan.';
+
+  @override
+  String get dailyGuidesRefresh => 'Muat ulang panduan';
+
+  @override
+  String get dailyGuidesOffline =>
+      'Menampilkan panduan tersimpan. Hubungkan internet untuk memeriksa edisi baru.';
+
+  @override
+  String get dailyGuidesEmpty => 'Panduan harian pertama akan segera hadir.';
+
+  @override
+  String get dailyGuidesLatest => 'Edisi terbaru';
+
+  @override
+  String get dailyGuidesArchive => 'Edisi sebelumnya';
 }

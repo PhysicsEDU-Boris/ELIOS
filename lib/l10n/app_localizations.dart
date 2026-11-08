@@ -7560,6 +7560,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not import previous history. The original files are kept.'**
   String get historyImportFailed;
+
+  /// No description provided for @dailyGuidesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Guide'**
+  String get dailyGuidesTitle;
+
+  /// No description provided for @dailyGuidesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore the physics behind environmental news.'**
+  String get dailyGuidesDescription;
+
+  /// No description provided for @dailyGuidesRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh guides'**
+  String get dailyGuidesRefresh;
+
+  /// No description provided for @dailyGuidesOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing saved guides. Connect to check for new issues.'**
+  String get dailyGuidesOffline;
+
+  /// No description provided for @dailyGuidesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'The first daily guide is on its way.'**
+  String get dailyGuidesEmpty;
+
+  /// No description provided for @dailyGuidesLatest.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest issue'**
+  String get dailyGuidesLatest;
+
+  /// No description provided for @dailyGuidesArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous issues'**
+  String get dailyGuidesArchive;
 }
 
 class _AppLocalizationsDelegate

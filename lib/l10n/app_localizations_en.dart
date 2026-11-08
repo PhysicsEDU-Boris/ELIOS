@@ -4395,4 +4395,27 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get historyImportFailed =>
       'Could not import previous history. The original files are kept.';
+
+  @override
+  String get dailyGuidesTitle => 'Daily Guide';
+
+  @override
+  String get dailyGuidesDescription =>
+      'Explore the physics behind environmental news.';
+
+  @override
+  String get dailyGuidesRefresh => 'Refresh guides';
+
+  @override
+  String get dailyGuidesOffline =>
+      'Showing saved guides. Connect to check for new issues.';
+
+  @override
+  String get dailyGuidesEmpty => 'The first daily guide is on its way.';
+
+  @override
+  String get dailyGuidesLatest => 'Latest issue';
+
+  @override
+  String get dailyGuidesArchive => 'Previous issues';
 }

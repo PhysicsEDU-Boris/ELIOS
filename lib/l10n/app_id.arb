@@ -1241,5 +1241,12 @@
   "historySyncRetry": "Sinkronkan sekarang",
   "historyImport": "Impor riwayat lama perangkat",
   "historyImportBody": "Scan lama ini belum memiliki pemilik akun. Impor ke akun yang sedang dipakai? Riwayat asli perangkat tetap disimpan.",
-  "historyImportFailed": "Riwayat lama gagal diimpor. File asli tetap disimpan."
+  "historyImportFailed": "Riwayat lama gagal diimpor. File asli tetap disimpan.",
+  "dailyGuidesTitle": "Panduan Harian",
+  "dailyGuidesDescription": "Pelajari fisika di balik berita lingkungan.",
+  "dailyGuidesRefresh": "Muat ulang panduan",
+  "dailyGuidesOffline": "Menampilkan panduan tersimpan. Hubungkan internet untuk memeriksa edisi baru.",
+  "dailyGuidesEmpty": "Panduan harian pertama akan segera hadir.",
+  "dailyGuidesLatest": "Edisi terbaru",
+  "dailyGuidesArchive": "Edisi sebelumnya"
 }
