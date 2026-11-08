@@ -1,5 +1,5 @@
 # G4-A Daily Guides — 9 November 2026 (0194)
-- Branch `feat/g4-daily-guides` contains #102; supersedes it. Target `feature/live-scan`; no merge.
+- PR #105: https://github.com/PhysicsEDU-Boris/ELIOS/pull/105 (`feat/g4-daily-guides` → `feature/live-scan`), contains #102 - supersedes it; no merge.
 - App/backend/migration complete. G4 tests use memory except the restart persistence test; legacy radius test repaired without changing tokens; analyzer lints cleared.
 - Validation: full Flutter suite 1419 passed, 20 skipped; backend 26/26; analyze clean; secret scan clean; string audit 0.
 - Preview: https://ai-backend-24phg5dz3-elios5.vercel.app (`/api/guides` unauthenticated POST returns 401). Vercel authentication protection is enabled.
