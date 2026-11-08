@@ -4,7 +4,7 @@
 - Validation: full Flutter suite 1419 passed, 20 skipped; backend 26/26; analyze clean; secret scan clean; string audit 0.
 - Preview: https://ai-backend-24phg5dz3-elios5.vercel.app (`/api/guides` unauthenticated POST returns 401). Vercel authentication protection is enabled.
 - Applied `202611090001_guide_progress.sql` to ELIOS Supabase `tymiikfebewqvuokoyru` in a transaction; verified all 3 tables: RLS on, anon/authenticated reads denied, service_role inserts allowed. Production deployed: https://ai-backend-seven-orpin.vercel.app (deployment `dpl_E9RHpvWHYegNy5K3Ef86iTjJRpJx`); public `/api/guides` POST returns expected 401 without sign-in.
-- Device check: Learn → Today/Guides → EN/ID issue → quiz → lab; reconnect after reading offline and restart. USB phone/robot untested; no app build/install, model, firmware or signing changes.
+- Phone (9 Nov, Edge 60 Fusion, Android 16, 1220x2712 @450, owner Google account, APK `0eb7730` via `adb install -r`, History 99 files md5-unchanged): hub, issue, PDF p.2/p.3 (+30 XP), quiz pass (+10, 2nd pass 0), real Gemini lab `retry` + teacher review OK, server totals 40 survive restart. Fixed: swapped XP/PDF strings, off-centre quiz result, a11y back cards, header XP chip, lab "0 photos ready" race. Not tested yet (need owner): lab `approved` (+20), offline queue, guest import. Notes: `docs/test-results/g4-guides/phone/README.md`.
 - Renders: `docs/test-results/g4-guides/app/` (48 app frames plus comparisons). Sources copy only; no share; quiz park -95%; Figma slots unchanged.
 
 # Daily Guide — 8 November 2026 (0193)
