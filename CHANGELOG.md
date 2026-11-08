@@ -11,6 +11,7 @@ kept outside the repo.
 
 ## [Unreleased]
 
+- Floor distance guides like robotic_hand_sim: Control → "Calibrate floor" reads a flat floor AprilTag (tag36h11 id 2, 80 mm) to learn the camera's height and tilt. The camera view then shows 20/30/40/60 cm floor lines with side rails and the pick zone, every detected item gets its distance and sideways offset (`Plastic · 24 cm · 3 cm ←`), and R1 uses them to position. The MaixCAM2 now sends tag corners and the floor tag (decision 0192).
 - Account-owned history: separate local records/photos per Firebase UID, durable Supabase sync through the existing backend, authenticated Cloudinary scan photos, bilingual sync status and explicit legacy import. Guide PDFs can select an English or Indonesian URL (decision 0191).
 
 - Settings now work with both MaixCAM2 and the phone camera: Resolution and Show FPS also apply to the phone camera, Sound effects turns the Control click on/off, Timer counts down each multiple-choice question (time's up counts as skipped), and Difficulty is saved correctly in Bahasa Indonesia (decision 0189).

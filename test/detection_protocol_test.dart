@@ -57,6 +57,23 @@ void main() {
       expect([for (final t in tags) (t.id, t.distMm)], [(0, 82.5), (1, 140.0)]);
       expect(ArmTag.listFromJson([]), isEmpty);
     });
+
+    test('corners (0192): 4 points in order, else null; the tag still parses', () {
+      final tags = ArmTag.listFromJson([
+        {'id': 2, 'dist_mm': 300, 'corners': [[1, 2], [3, 4], [5, 6], [7, 8]]},
+        {'id': 2, 'dist_mm': 300, 'corners': [[1, 2], [3, 4], [5, 6]]},
+        {'id': 2, 'dist_mm': 300, 'corners': [[1, 2], [3, 4], [5, 6], ['x', 8]]},
+        {'id': 0, 'dist_mm': 80},
+      ])!;
+      expect(tags.first.corners, const [Offset(1, 2), Offset(3, 4), Offset(5, 6), Offset(7, 8)]);
+      expect([for (final t in tags.skip(1)) t.corners], [null, null, null]);
+    });
+  });
+
+  test('withFloor (0192) keeps the box and sets the floor position', () {
+    final d = Detection.fromJson({...box, 'track_id': 4}).withFloor(24.5, -3);
+    expect((d.x, d.y, d.w, d.h, d.label, d.score, d.trackId), (320.0, 240.0, 120.0, 160.0, 'Plastic', 0.9, 4));
+    expect((d.distCm, d.lateralCm), (24.5, -3.0));
   });
 
   test('arm_moving (decision 0026): a bool, else null (unknown, old firmware)', () {
