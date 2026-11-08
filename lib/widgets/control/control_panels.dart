@@ -171,6 +171,51 @@ class ControlCameraHud extends StatelessWidget {
   }
 }
 
+/// The phone layout's floor overlay (0192): guides, the target's distance tag and
+/// "Calibrate floor", over a BoxFit.cover video of [imageSize].
+class FloorGuidesOverlay extends StatelessWidget {
+  const FloorGuidesOverlay({
+    super.key,
+    required this.imageSize,
+    required this.detections,
+    this.floor,
+    this.onCalibrateFloor,
+  });
+  final Size imageSize;
+  final List<Detection> detections;
+  final FloorCamera? floor;
+  final VoidCallback? onCalibrateFloor;
+
+  @override
+  Widget build(BuildContext context) {
+    final target = hudTarget(detections);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        CustomPaint(
+          painter: HudFloorPainter(
+            imageSize: imageSize,
+            showFloor: floor != null || detections.any((d) => d.distCm != null),
+            target: target,
+            floor: floor ?? FloorCamera.nominal,
+          ),
+        ),
+        if (target != null) _TargetTag(target: target, imageSize: imageSize),
+        if (onCalibrateFloor != null)
+          Positioned(
+            left: 8,
+            bottom: 8,
+            child: GestureDetector(
+              key: const ValueKey('phone_calibrate_floor'),
+              onTap: onCalibrateFloor,
+              child: _HudChip(dot: floor == null ? _hudMuted : _hudGreen, text: l10n.ctlCalibrateFloor),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 class _HudChip extends StatelessWidget {
   const _HudChip({required this.dot, required this.text});
   final Color dot;

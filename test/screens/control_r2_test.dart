@@ -163,5 +163,25 @@ void main() {
       await hud(t, const [], floor: FloorCamera.nominal);
       expect(painter(t).showFloor, isTrue);
     });
+
+    testWidgets('phone overlay (0192): guides, distance tag and calibrate chip', (t) async {
+      var taps = 0;
+      await t.pumpWidget(MaterialApp(
+        home: SizedBox(
+          width: 640,
+          height: 360,
+          child: FloorGuidesOverlay(
+            imageSize: const Size(640, 360),
+            detections: const [Detection(x: 320, y: 300, w: 80, h: 60, label: 'Plastic', score: 0.9, distCm: 24.4)],
+            floor: FloorCamera.nominal,
+            onCalibrateFloor: () => taps++,
+          ),
+        ),
+      ));
+      expect(painter(t).showFloor, isTrue);
+      expect(find.text('Plastic · 24 cm'), findsOneWidget);
+      await t.tap(find.byKey(const ValueKey('phone_calibrate_floor')));
+      expect(taps, 1);
+    });
   });
 }

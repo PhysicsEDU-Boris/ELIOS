@@ -1000,6 +1000,14 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           : lockOverlayBox(aiBox: _locked!.box, trackBox: _trackBox, trackSeenAt: _trackSeenAt, now: DateTime.now()),
       lockLabel: _locked == null ? null : ScannedWaste.fromLabel(_locked!.result.item!).displayName,
       tagText: _tagLine(),
+      floorOverlay: link == ControlLink.connected && _latestFrame != null && _latestFrame!.width > 0
+          ? FloorGuidesOverlay(
+              imageSize: Size(_latestFrame!.width.toDouble(), _latestFrame!.height.toDouble()),
+              detections: _hudDetections,
+              floor: _floor,
+              onCalibrateFloor: _calibrateFloor,
+            )
+          : null,
       frameAspect: _latestFrame == null || _latestFrame!.height == 0 ? 4 / 3 : _latestFrame!.width / _latestFrame!.height,
       driveKey: _driveKey,
       stopKey: _stopKey,

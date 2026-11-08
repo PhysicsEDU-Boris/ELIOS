@@ -72,6 +72,7 @@ class PhoneControlLayout extends StatelessWidget {
     this.lockBox,
     this.lockLabel,
     this.tagText,
+    this.floorOverlay,
     this.frameAspect = 4 / 3,
     this.driveKey,
     this.stopKey,
@@ -126,6 +127,10 @@ class PhoneControlLayout extends StatelessWidget {
 
   /// Debug builds: the arm-tag search's reading while it is on, shown at the top of the video.
   final String? tagText;
+
+  /// The floor guides and "Calibrate floor" over the video (0192): the one exception to the bare
+  /// R3 video, because the floor lines only make sense on the frame.
+  final Widget? floorOverlay;
 
   /// The camera frame's width / height, for placing [lockBox] (MaixCAM2 streams 640x480).
   final double frameAspect;
@@ -579,6 +584,7 @@ class PhoneControlLayout extends StatelessWidget {
       body = SizedBox.expand(
         child: Image.memory(frame!, fit: BoxFit.cover, gaplessPlayback: true),
       );
+      if (floorOverlay != null) body = Stack(children: [body, Positioned.fill(child: floorOverlay!)]);
       if (lockBox != null) body = Stack(children: [body, Positioned.fill(child: _lockOverlay())]);
       if (tagText != null) {
         body = Stack(children: [
