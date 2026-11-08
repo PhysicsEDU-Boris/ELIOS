@@ -153,8 +153,9 @@ void main() {
         await t.pump();
         await t.tap(find.widgetWithText(FilledButton, 'Check').hitTestable());
         await t.pump();
-        if (choice == '2,400 m/s')
+        if (choice == '2,400 m/s') {
           expect(find.text('Not quite. You multiplied.'), findsOneWidget);
+        }
         await t.tap(find.widgetWithText(FilledButton, next).hitTestable());
         await t.pump(const Duration(milliseconds: 400));
       }

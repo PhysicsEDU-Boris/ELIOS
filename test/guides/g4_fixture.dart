@@ -259,8 +259,9 @@ class FakeGuidesServer {
 
     switch (body['op']) {
       case 'event':
-        if (!events.add('${body['id']}'))
+        if (!events.add('${body['id']}')) {
           return {'ok': true, 'duplicate': true, 'progress': summary};
+        }
         award(body['type'] == 'story_read' ? 'story' : 'physics');
         return {'ok': true, 'progress': summary};
       case 'quiz':
