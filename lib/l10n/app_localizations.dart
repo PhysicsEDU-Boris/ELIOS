@@ -2366,6 +2366,24 @@ abstract class AppLocalizations {
   /// **'PICK ZONE'**
   String get ctlPickZone;
 
+  /// No description provided for @ctlCalibrateFloor.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibrate floor'**
+  String get ctlCalibrateFloor;
+
+  /// No description provided for @ctlFloorCalibrated.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor calibrated: camera {mm} mm up, tilted {deg}°'**
+  String ctlFloorCalibrated(String mm, String deg);
+
+  /// No description provided for @ctlFloorTagMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor tag (id 2) not seen. Lay it flat in front of the camera and try again.'**
+  String get ctlFloorTagMissing;
+
   /// No description provided for @ctlKeepTabletOnWifi.
   ///
   /// In en, this message translates to:

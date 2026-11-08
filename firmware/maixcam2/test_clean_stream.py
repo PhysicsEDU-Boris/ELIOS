@@ -68,8 +68,8 @@ class ArmTagsTest(unittest.TestCase):
     M = load()
 
     def test_only_arm_ids_with_rough_distance(self):
-        tags = self.M['arm_tags']([Tag(0, 40), Tag(7, 40), Tag(1, 20)])
-        self.assertEqual([t['id'] for t in tags], [0, 1])
+        tags = self.M['arm_tags']([Tag(0, 40), Tag(7, 40), Tag(1, 20), Tag(2, 60)])
+        self.assertEqual([t['id'] for t in tags], [0, 1, 2])
         # fx 374 at 640x360 (board solve, 0183); id 1 is a 10 mm print with a 6.17 mm black square
         self.assertEqual(tags[0]['dist_mm'], round(374 * 18.52 / 40, 1))
         self.assertEqual(tags[1]['dist_mm'], round(374 * 6.17 / 20, 1))
@@ -79,10 +79,12 @@ class ArmTagsTest(unittest.TestCase):
     def test_half_size_search_scales_back(self):
         tags = self.M['arm_tags']([Tag(0, 20, cx=50, cy=40)], 2)
         self.assertEqual((tags[0]['cx'], tags[0]['cy']), (100, 80))
+        self.assertEqual(tags[0]['corners'], [[100, 80], [140, 80], [140, 120], [100, 120]])
         self.assertEqual(tags[0]['dist_mm'], self.M['arm_tags']([Tag(0, 40)])[0]['dist_mm'])
 
     def test_degenerate_corners_leave_dist_out(self):
-        self.assertEqual(self.M['arm_tags']([Tag(0, 0)]), [{'id': 0, 'cx': 100, 'cy': 80}])
+        self.assertEqual(self.M['arm_tags']([Tag(0, 0)]),
+                         [{'id': 0, 'cx': 100, 'cy': 80, 'corners': [[100, 80], [100, 80], [100, 80], [100, 80]]}])
 
 
 class FakeTracker:

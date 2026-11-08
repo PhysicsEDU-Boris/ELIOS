@@ -1,3 +1,5 @@
+## Floor distance guides — `feat/floor-distance-guides` (decision 0192)
+- Sim-style 20/30/40/60 cm floor guides + item dist/side, from a floor AprilTag (tag36h11 id 2, 80 mm black) via Control → Calibrate floor; saved on device. Firmware sends tag corners + id 2. Tests pass; NOT robot-tested, firmware NOT flashed, phone layout too; APK 53bf3cf installed on the Edge 60 Fusion (build notes). Firmware 2149d09f flashed on the camera (backup /root/main.py.pre-floor.bak; restart/rollback in build notes); calibration with a printed tag not yet tried.
 # Cloud history setup — 8 November 2026 (0191) · Branch codex/account-scan-history, based on origin/feature/live-scan; no merge to main.
 - Live Supabase ELIOS project tymiikfebewqvuokoyru (Free, Sydney); schema/RLS and update cursor applied. Vercel ai-backend serves /api/history with Firebase UID ownership checks; secrets in Vercel only.
 - Cloudinary zkebg27g: recovered 4 PDFs, 4 covers, 11 thumbnails; added 4 Indonesian guide PDFs and translated guide-list metadata. PDF delivery enabled with owner approval. App maps exact old public URLs; Firestore originals and YouTube IDs retained.
@@ -17,7 +19,6 @@
 - Owner to do: deploy ai-backend (`cd ai-backend && npx vercel --prod`, prompt cap 16000); review `assets/quiz/*_draft.en.json`; run `tools/l10n/translate_firestore.py export en` / `upload` and `translate_assets.py module en` with `GEMINI_API_KEY`; re-export the module PDF (still says ELIO); airplane-mode check on the phone.
 - Phone: Edge 60 Fusion updated in place (data kept), left in Bahasa Indonesia as found. Two test PDFs added to Download/ELIOS. Resume backup: `/tmp/elios-pr93-resume-20261105/owner-backup/history-settings.tar` (40 main records, 2 R3 test records, photos, settings).
 - Resume installed APP_COMMIT `96c832a` (rebased source `5e7ae70`, app inputs identical; LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION), launched in Indonesian/light: 40 scans / 442 trophies; both History JSON files unchanged. Fixed clipped Indonesian arm captions without shrinking text or stretching the column; six real-font regressions break-checked in three sizes, light/dark. Final validation and install are recorded in `docs/test-results/0185-l10n/README.md` and `docs/local-build-notes.md`.
-## H3 History — PR #94 merged (decision 0184); details in `docs/test-results/0184-history-h3.md`.
 ## Existing robot context
 - #89/#90 are merged into `feature/live-scan`. Next robot session: issue #92 (PICK UP→RELEASE tag search, sim-style tag overlay/axes and bin tags 2–4; owner questions remain).
 - 0183 calibration: camera `dcea9b1d`, 640×360/33 fps, fx 374, cx 303.9, cy 183.0, 81.1×51.4°; keep the 6.17 mm arm tag until the owner replaces it. Backups and the current phone/camera notes follow.
@@ -53,7 +54,6 @@
 - The 29 Oct owner History record was overwritten and is still unrecovered. Do not invent or reconstruct its missing answers from guesses.
 ## Queue after the architecture change
 - U4c combined native acceptance, U7 Firebase sync, U8 docs/Figma (see NEXT_TASK.md). wrongWhy texts for the bank are still unwritten.
-- R2, Q3, R3 (merged #80-#82, 3 Nov): decisions 0173-0175, `docs/test-results/r2|q3|r3/`.
 ## Marketing website — Figma (5 Nov 2026)
 - All sections visually reviewed. Revision: removed 18 decorative icons and 15 arrow/star/checkmark accents in desktop/mobile; retained main mascot and app previews. Static UI; CTA wiring/implementation remain. No app build or robot test. - Control haptics (7 Nov, decision 0188): `controlFeedback()`/`withFeedback()` in `r2_controls.dart`: tick + click on Control buttons, toggles, slider start, joystick direction, STOP, HOME. Test: `test/widgets/control_feedback_test.dart`. Installed on the Motorola (1c8caee); owner feel-test pending.
 - All sections visually reviewed. Revision: removed 18 decorative icons and 15 arrow/star/checkmark accents in desktop/mobile; retained main mascot and app previews. Static UI; CTA wiring/implementation remain. No app build or robot test.

@@ -14,6 +14,7 @@ import '../../models/home_stats.dart' show HomeBin;
 import '../../providers/waste_quiz_provider.dart';
 import '../../services/robot/r1_constants.dart'
     show pickBandMaxCm, pickBandMinCm;
+import '../../services/robot/floor_camera.dart';
 import '../../services/websocket_service.dart' show Detection;
 import '../../theme/elio_tokens.dart';
 import '../learn/learn_ui.dart' show LearnTheme;
@@ -29,18 +30,12 @@ const _hudAmber = Color(0xFFFBBF24);
 const _hudRed = Color(0xFFF87171);
 const _cameraBg = Color(0xFF1E293B);
 
-/// Floor bands drawn when the firmware sends `dist_cm` (decision 0022).
+/// Floor guides, as in robotic_hand_sim's distance guides (decision 0192): a line at each
+/// distance ahead of the lens, side rails [hudGuideHalfWidthCm] either side, and the band
+/// colour that starts at it (the last entry only closes the far band).
 const hudBandsCm = [20.0, 30.0, 40.0, 60.0];
-
-// Nominal level-camera geometry from decision 0022 (lens 86.2 mm up, V-FOV 51 deg).
-// ponytail: uncalibrated, like the firmware's own dist_cm; replace with the
-// calibrated f_y and pitch once the camera is calibrated.
-const _lensHeightCm = 8.62;
-const _halfVFovDeg = 25.5;
-
-/// The image row (0..1 of the height) where the floor is [cm] ahead.
-double floorRowFraction(double cm) =>
-    0.5 + 0.5 * (_lensHeightCm / cm) / math.tan(_halfVFovDeg * math.pi / 180);
+const _bandColors = [_hudRed, _hudAmber, _hudGreen, _hudGreen];
+const hudGuideHalfWidthCm = 6.0;
 
 /// The object to tag: the highest-score detection that is not a hand.
 Detection? hudTarget(List<Detection> detections) {
@@ -66,6 +61,8 @@ class ControlCameraHud extends StatelessWidget {
     this.diagnostics,
     this.debugBoxes,
     this.quizButton,
+    this.floor,
+    this.onCalibrateFloor,
   });
 
   final Uint8List? frame;
@@ -80,12 +77,17 @@ class ControlCameraHud extends StatelessWidget {
   final Widget? debugBoxes;
   final Widget? quizButton;
 
+  /// The calibrated floor (0192); null draws the guides only when the firmware sends dist_cm.
+  final FloorCamera? floor;
+  final VoidCallback? onCalibrateFloor;
+
   @override
   Widget build(BuildContext context) {
     final live = link == ControlLink.connected && frame != null;
     final target = live ? hudTarget(detections) : null;
-    final showFloor =
-        live && imageSize.width > 0 && detections.any((d) => d.distCm != null);
+    final showFloor = live &&
+        imageSize.width > 0 &&
+        (floor != null || detections.any((d) => d.distCm != null));
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: ColoredBox(
@@ -109,6 +111,7 @@ class ControlCameraHud extends StatelessWidget {
                   imageSize: imageSize,
                   showFloor: showFloor,
                   target: target,
+                  floor: floor ?? FloorCamera.nominal,
                 ),
               ),
             if (target != null)
@@ -144,6 +147,19 @@ class ControlCameraHud extends StatelessWidget {
                 },
               ),
             ),
+            if (live && onCalibrateFloor != null)
+              Positioned(
+                left: 12,
+                top: 48,
+                child: GestureDetector(
+                  key: const ValueKey('hud_calibrate_floor'),
+                  onTap: onCalibrateFloor,
+                  child: _HudChip(
+                    dot: floor == null ? _hudMuted : _hudGreen,
+                    text: l10n.ctlCalibrateFloor,
+                  ),
+                ),
+              ),
             if (diagnostics != null)
               Positioned(left: 12, bottom: 12, child: diagnostics!),
             if (quizButton != null)
@@ -151,6 +167,51 @@ class ControlCameraHud extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The phone layout's floor overlay (0192): guides, the target's distance tag and
+/// "Calibrate floor", over a BoxFit.cover video of [imageSize].
+class FloorGuidesOverlay extends StatelessWidget {
+  const FloorGuidesOverlay({
+    super.key,
+    required this.imageSize,
+    required this.detections,
+    this.floor,
+    this.onCalibrateFloor,
+  });
+  final Size imageSize;
+  final List<Detection> detections;
+  final FloorCamera? floor;
+  final VoidCallback? onCalibrateFloor;
+
+  @override
+  Widget build(BuildContext context) {
+    final target = hudTarget(detections);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        CustomPaint(
+          painter: HudFloorPainter(
+            imageSize: imageSize,
+            showFloor: floor != null || detections.any((d) => d.distCm != null),
+            target: target,
+            floor: floor ?? FloorCamera.nominal,
+          ),
+        ),
+        if (target != null) _TargetTag(target: target, imageSize: imageSize),
+        if (onCalibrateFloor != null)
+          Positioned(
+            left: 8,
+            bottom: 8,
+            child: GestureDetector(
+              key: const ValueKey('phone_calibrate_floor'),
+              onTap: onCalibrateFloor,
+              child: _HudChip(dot: floor == null ? _hudMuted : _hudGreen, text: l10n.ctlCalibrateFloor),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -226,80 +287,80 @@ class HudFloorPainter extends CustomPainter {
     required this.imageSize,
     required this.showFloor,
     required this.target,
+    this.floor = FloorCamera.nominal,
   });
   final Size imageSize;
   final bool showFloor;
   final Detection? target;
+  final FloorCamera floor;
 
   @override
   void paint(Canvas canvas, Size size) {
     if (imageSize.width <= 0 || imageSize.height <= 0) return;
     final m = _cover(imageSize, size);
-    double rowY(double cm) =>
-        m.offset.dy + floorRowFraction(cm) * imageSize.height * m.scale;
+    Offset? at(double cm, double side) {
+      final px = floor.project(cm, side * hudGuideHalfWidthCm, imageSize);
+      return px == null ? null : m.offset + px * m.scale;
+    }
+
     if (showFloor) {
-      final zoneTop = rowY(pickBandMaxCm), zoneBottom = rowY(pickBandMinCm);
-      canvas.drawRect(
-        Rect.fromLTRB(0, zoneTop, size.width, zoneBottom),
-        Paint()..color = _hudGreen.withValues(alpha: 0.12),
-      );
-      for (final cm in hudBandsCm) {
-        final y = rowY(cm);
-        if (y < 0 || y > size.height) continue;
-        final inZone = cm >= pickBandMinCm && cm <= pickBandMaxCm;
-        // A dark under-stroke keeps the line visible on a bright floor.
-        canvas.drawLine(
-          Offset(0, y + 1),
-          Offset(size.width, y + 1),
-          Paint()
-            ..color = _glass.withValues(alpha: 0.35)
-            ..strokeWidth = 1.2,
-        );
-        canvas.drawLine(
-          Offset(0, y),
-          Offset(size.width, y),
-          Paint()
-            ..color = (inZone ? _hudGreen : _hudText).withValues(
-              alpha: inZone ? 0.9 : 0.6,
-            )
-            ..strokeWidth = 1.2,
+      final zone = [at(pickBandMinCm, -1), at(pickBandMinCm, 1), at(pickBandMaxCm, 1), at(pickBandMaxCm, -1)];
+      if (!zone.contains(null)) {
+        canvas.drawPath(
+          Path()..addPolygon(zone.cast<Offset>(), true),
+          Paint()..color = _hudGreen.withValues(alpha: 0.18),
         );
         final tp = TextPainter(
           text: TextSpan(
-            text: '${cm.round()} cm',
-            style: const TextStyle(color: _hudText, fontSize: 11),
+            text: l10n.ctlPickZone,
+            style: const TextStyle(color: _hudGreen, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1),
           ),
           textDirection: TextDirection.ltr,
         )..layout();
-        final at = Offset(14, y - tp.height - 4);
+        final mid = (zone[1]! + zone[2]!) / 2;
+        tp.paint(canvas, mid + Offset(8, -tp.height / 2));
+      }
+      for (var i = 0; i < hudBandsCm.length; i++) {
+        final cm = hudBandsCm[i];
+        final colour = _bandColors[i];
+        final a = at(cm, -1), b = at(cm, 1);
+        final segs = [
+          if (a != null && b != null) (a, b),
+          if (i + 1 < hudBandsCm.length)
+            for (final side in const [-1.0, 1.0])
+              if (at(cm, side) case final p?)
+                if (at(hudBandsCm[i + 1], side) case final q?) (p, q),
+        ];
+        for (final (p, q) in segs) {
+          // A dark under-stroke keeps the line visible on a bright floor.
+          canvas.drawLine(p + const Offset(0, 1), q + const Offset(0, 1), Paint()
+            ..color = _glass.withValues(alpha: 0.35)
+            ..strokeWidth = 2.5);
+          canvas.drawLine(p, q, Paint()
+            ..color = colour
+            ..strokeWidth = 2.5
+            ..strokeCap = StrokeCap.round);
+        }
+        if (a == null || b == null) continue;
+        final tp = TextPainter(
+          text: TextSpan(
+            text: '${cm.round()} cm',
+            style: TextStyle(color: colour, fontSize: 11, fontWeight: FontWeight.w700),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        // Alternate sides so the labels of close far lines never overlap (as in the sim).
+        final end = i.isEven ? (a.dx > b.dx ? a : b) : (a.dx < b.dx ? a : b);
+        final pos = end + Offset(i.isEven ? 6 : -6 - tp.width, -tp.height / 2);
         canvas.drawRRect(
           RRect.fromRectAndRadius(
-            (at - const Offset(5, 1)) & Size(tp.width + 10, tp.height + 2),
+            (pos - const Offset(4, 1)) & Size(tp.width + 8, tp.height + 2),
             const Radius.circular(6),
           ),
           Paint()..color = _glass,
         );
-        tp.paint(canvas, at);
+        tp.paint(canvas, pos);
       }
-      final tp = TextPainter(
-        text: TextSpan(
-          text: l10n.ctlPickZone,
-          style: TextStyle(
-            color: _hudGreen,
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      tp.paint(
-        canvas,
-        Offset(
-          size.width - tp.width - 14,
-          (zoneTop + zoneBottom) / 2 - tp.height / 2,
-        ),
-      );
     }
     final t = target;
     if (t == null) return;
@@ -338,10 +399,12 @@ class _TargetTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cm = target.distCm;
-    final text = cm == null
-        ? target.label
-        : '${target.label} · ${cm.round()} cm';
+    final cm = target.distCm, side = target.lateralCm;
+    final text = [
+      target.label,
+      if (cm != null) '${cm.round()} cm',
+      if (side != null && side.abs() >= 1) '${side.abs().round()} cm ${side > 0 ? '→' : '←'}',
+    ].join(' · ');
     return LayoutBuilder(
       builder: (context, c) {
         if (imageSize.width <= 0) return const SizedBox.shrink();

@@ -52,3 +52,10 @@
 - No Mac app build/registration, model downloads/copies, Keychain, signing configuration or private configuration changes. Existing Mac app/model stores and original build assets retained.
 - Install returned `Success`; package update time 20:41:58 on the phone. Both History JSON files are byte-for-byte identical to the backup after install (40 main / 2 R3 records). App launched successfully in Indonesian/light mode; Home shows 40 scans and 442 trophies, with zero crash/overflow markers in the fresh process log.
 - Push hygiene: replaced two harmless key-assignment placeholders in Python docstrings and replayed the local commits; full-history secret scan now passes. Installed APP_COMMIT `96c832a` corresponds to rebased source `5e7ae70`; verified no difference in lib/assets/android/ios/macos/pubspec/l10n build inputs, so no additional APK rebuild was needed.
+
+## Floor distance guides — 8 Nov 2026 (decision 0192, `feat/floor-distance-guides`)
+- `flutter build apk --debug --target-platform android-arm64 --dart-define=LIVE_SCAN=true --dart-define=TESTER_BUILD=true --dart-define=DARK_MODE_OPTION=true --dart-define=APP_COMMIT=53bf3cf` (206 MB, Gradle 42 s).
+- Motorola Edge 60 Fusion (ZP22233V8C) over USB, `com.boris.elio` debug, same signing; `adb install -r` Success 21:52:57, no uninstall/data clear. Cold launch OK, no crash in logcat.
+- No Mac app build, no model copy/download, no signing or Keychain change. MaixCAM2 firmware NOT flashed: floor tag corners need the new `main.py` on the camera.
+- MaixCAM2 firmware flashed 8 Nov ~23:05 over USB (10.73.69.1), owner OK: `/maixapp/apps/elios_clean_m2c_v1/main.py` dcea9b1d (0183) -> 2149d09f (0192). Backup `/root/main.py.pre-floor.bak` (dcea9b1d); app.yaml unchanged. WS check: sha 2149d09f, 640x360, detection frames OK; no tag in view, so corners not yet seen live.
+- Restarting the app over SSH: `printf "/maixapp/apps/elios_clean_m2c_v1/main.py\nelios_clean_m2c_v1\n\n" > /tmp/run_app.txt; kill $(pidof launcher)` (launcher_daemon then runs the app; a plain `nohup python3 main.py` fails, the launcher holds the display). Rollback: copy the backup back, restart the same way.

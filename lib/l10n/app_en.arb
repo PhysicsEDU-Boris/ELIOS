@@ -771,6 +771,15 @@
   "ctlMaixConnected": "MaixCAM2 connected",
   "ctlDisconnected": "Disconnected",
   "ctlPickZone": "PICK ZONE",
+  "ctlCalibrateFloor": "Calibrate floor",
+  "ctlFloorCalibrated": "Floor calibrated: camera {mm} mm up, tilted {deg}°",
+  "@ctlFloorCalibrated": {
+    "placeholders": {
+      "mm": {"type": "String"},
+      "deg": {"type": "String"}
+    }
+  },
+  "ctlFloorTagMissing": "Floor tag (id 2) not seen. Lay it flat in front of the camera and try again.",
   "ctlKeepTabletOnWifi": "Turn the robot on and keep this tablet on the ELIOS Wi-Fi.",
   "ctlRetryingIn": "Retrying in {s} s · attempt {attempt} of {max}",
   "@ctlRetryingIn": {

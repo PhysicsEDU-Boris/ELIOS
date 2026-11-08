@@ -51,6 +51,7 @@ import '../widgets/waste_quiz_popup.dart';
 import '../services/frame_source/maix_cam_source.dart';
 import '../services/frame_source/frame_source.dart';
 import '../services/robot/arm_tag_switch.dart';
+import '../services/robot/floor_camera.dart';
 import 'login_screen.dart';
 import 'package:elio/l10n/l10n.dart';
 
@@ -138,9 +139,19 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// carry none, and the HUD tag must not blink (R2).
   List<Detection> _hudDetections = const [];
 
+  /// The calibrated floor (decision 0192), and the floor tag's corners while calibrating.
+  FloorCamera? _floor;
+  List<List<Offset>>? _floorSamples;
+  DateTime? _floorUntil;
+
   @override
   void initState() {
     super.initState();
+    FloorCamera.load().then((f) {
+      if (f == null || !mounted) return;
+      WebSocketService().floorCamera = f;
+      setState(() => _floor = f);
+    });
     _enterLandscapeFullscreen();
     _robotNotifier = ref.read(robotControlProvider.notifier);
     _quizNotifier = ref.read(wasteQuizProvider.notifier);
@@ -286,6 +297,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       // Every frame, not only the R1 tick: a build without R1 has no tick, and PICK UP / HOME
       // never turned the tags on (phone test 4 Nov, 0183).
       _syncArmTags(now);
+      if (frame.detections != null) _collectFloorTag(now, frame);
 
       // Auto-generated waste quiz: only fed by the real MaixCAM2 stream, the
       // debug phone-camera path triggers it manually instead.
@@ -389,6 +401,43 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _tagSwitch.press(DateTime.now());
     _syncArmTags(DateTime.now());
     debugPrint('[Control] arm_tags on for $why');
+  }
+
+  /// "Calibrate floor" (0192): the tag search runs for a few seconds; the floor tag's corners
+  /// are averaged over up to 8 detection frames and give the floor.
+  void _calibrateFloor() {
+    _floorSamples = [];
+    _floorUntil = DateTime.now().add(const Duration(seconds: 4));
+    _armTagsFor('floor calibration');
+  }
+
+  void _collectFloorTag(DateTime now, CapturedFrame frame) {
+    final samples = _floorSamples;
+    if (samples == null) return;
+    final corners = WebSocketService().armTags?.where((t) => t.id == floorTagId).firstOrNull?.corners;
+    if (corners != null) samples.add(corners);
+    if (samples.length < 8 && now.isBefore(_floorUntil!)) return;
+    _floorSamples = null;
+    final floor = samples.length < 3
+        ? null
+        : FloorCamera.fromTag(
+            [for (var i = 0; i < 4; i++) samples.map((c) => c[i]).reduce((a, b) => a + b) / samples.length.toDouble()],
+            floorTagMm,
+            Size(frame.width.toDouble(), frame.height.toDouble()),
+          );
+    debugPrint('[Control] floor calibration: ${samples.length} tag frames -> '
+        '${floor == null ? 'none' : '${floor.heightMm.toStringAsFixed(1)} mm, ${floor.tiltDeg.toStringAsFixed(1)} deg'}');
+    if (floor != null) {
+      floor.save().catchError((Object e) => debugPrint('FloorCamera save failed: $e'));
+      WebSocketService().floorCamera = floor;
+      setState(() => _floor = floor);
+    }
+    ScaffoldMessenger.of(context)
+      ..removeCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+          content: Text(floor == null
+              ? l10n.ctlFloorTagMissing
+              : l10n.ctlFloorCalibrated(floor.heightMm.round().toString(), floor.tiltDeg.toStringAsFixed(1)))));
   }
 
   /// Debug builds: what the tag search sees while it is on (0183), over the video.
@@ -705,6 +754,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                   onWifiSettings: defaultTargetPlatform == TargetPlatform.android
                       ? () => const MethodChannel('elio/device_health').invokeMethod<void>('wifiSettings')
                       : null,
+                  floor: _floor,
+                  onCalibrateFloor: _calibrateFloor,
                 ),
                 actions: controlEnabled(
                   isOperational,
@@ -949,6 +1000,14 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           : lockOverlayBox(aiBox: _locked!.box, trackBox: _trackBox, trackSeenAt: _trackSeenAt, now: DateTime.now()),
       lockLabel: _locked == null ? null : ScannedWaste.fromLabel(_locked!.result.item!).displayName,
       tagText: _tagLine(),
+      floorOverlay: link == ControlLink.connected && _latestFrame != null && _latestFrame!.width > 0
+          ? FloorGuidesOverlay(
+              imageSize: Size(_latestFrame!.width.toDouble(), _latestFrame!.height.toDouble()),
+              detections: _hudDetections,
+              floor: _floor,
+              onCalibrateFloor: _calibrateFloor,
+            )
+          : null,
       frameAspect: _latestFrame == null || _latestFrame!.height == 0 ? 4 / 3 : _latestFrame!.width / _latestFrame!.height,
       driveKey: _driveKey,
       stopKey: _stopKey,
@@ -1123,6 +1182,8 @@ class _LandscapeCameraPanel extends StatelessWidget {
     required this.retry,
     required this.onReconnect,
     this.onWifiSettings,
+    this.floor,
+    this.onCalibrateFloor,
   });
 
   final Uint8List? currentFrame;
@@ -1136,6 +1197,8 @@ class _LandscapeCameraPanel extends StatelessWidget {
   final RetryInfo retry;
   final VoidCallback onReconnect;
   final VoidCallback? onWifiSettings;
+  final FloorCamera? floor;
+  final VoidCallback? onCalibrateFloor;
 
   @override
   Widget build(BuildContext context) {
@@ -1149,6 +1212,8 @@ class _LandscapeCameraPanel extends StatelessWidget {
       retry: retry,
       onReconnect: onReconnect,
       onWifiSettings: onWifiSettings,
+      floor: floor,
+      onCalibrateFloor: onCalibrateFloor,
       debugBoxes: _showAppDetectionBoxes &&
               detections.isNotEmpty &&
               detectionImageSize.width > 0 &&

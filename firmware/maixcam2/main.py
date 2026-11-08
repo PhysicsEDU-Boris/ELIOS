@@ -200,8 +200,9 @@ HAND_CONF_TH   = 0.7
 HAND_LABEL     = "Human_Hand"   # r1_orchestrator / motion_gate pause on this label
 
 # Black-square edge of each arm tag, ruler-measured on the print (owner, 4 Nov): id 0 arm5
-# bottom, id 1 arm3 rear (a 10 mm print, so 6.17 mm black).
-TAG_SIZES_MM = {0: 18.52, 1: 6.17}
+# bottom, id 1 arm3 rear (a 10 mm print, so 6.17 mm black). id 2 lies flat on the floor for the
+# app's floor calibration (0192; the app keeps its own copy of the size, floorTagMm).
+TAG_SIZES_MM = {0: 18.52, 1: 6.17, 2: 80.0}
 # fx in px at STREAM_RESOLUTION 640x360 from the ChArUco board solve (27 views, 0.29 px RMS,
 # docs/test-results/0183/maixcam2_intrinsics_640x360.json): 81.1 x 51.4 deg like the sim.
 # ponytail: pinhole only (no tilt, no distortion; the corner is off by ~6 px), so arm_tags keep
@@ -356,7 +357,8 @@ def hand_dets(frame):
     return out
 
 def arm_tags(tags, scale=1):
-    """0022 arm_tags from find_apriltags results (on a 1/scale image): ids 0 and 1, rough distance."""
+    """0022 arm_tags from find_apriltags results (on a 1/scale image): ids 0-2, rough distance,
+    and the corners in stream pixels (the app's floor calibration, 0192)."""
     out = []
     for t in tags:
         size = TAG_SIZES_MM.get(t.id())
@@ -364,7 +366,8 @@ def arm_tags(tags, scale=1):
             continue
         c = t.corners()
         side = scale * sum(math.hypot(c[i][0] - c[i-1][0], c[i][1] - c[i-1][1]) for i in range(4)) / 4
-        tag = {"id": t.id(), "cx": t.cx() * scale, "cy": t.cy() * scale}
+        tag = {"id": t.id(), "cx": t.cx() * scale, "cy": t.cy() * scale,
+               "corners": [[x * scale, y * scale] for x, y in c]}
         if side > 1:
             tag.update(dist_mm=round(CAMERA_FX * size / side, 1), dist_rough=True)
         out.append(tag)

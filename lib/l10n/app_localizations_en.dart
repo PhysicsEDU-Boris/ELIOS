@@ -1277,6 +1277,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ctlPickZone => 'PICK ZONE';
 
   @override
+  String get ctlCalibrateFloor => 'Calibrate floor';
+
+  @override
+  String ctlFloorCalibrated(String mm, String deg) {
+    return 'Floor calibrated: camera $mm mm up, tilted $deg°';
+  }
+
+  @override
+  String get ctlFloorTagMissing =>
+      'Floor tag (id 2) not seen. Lay it flat in front of the camera and try again.';
+
+  @override
   String get ctlKeepTabletOnWifi =>
       'Turn the robot on and keep this tablet on the ELIOS Wi-Fi.';
 

@@ -1255,6 +1255,18 @@ class AppLocalizationsId extends AppLocalizations {
   String get ctlPickZone => 'ZONA AMBIL';
 
   @override
+  String get ctlCalibrateFloor => 'Kalibrasi lantai';
+
+  @override
+  String ctlFloorCalibrated(String mm, String deg) {
+    return 'Lantai terkalibrasi: kamera $mm mm di atas lantai, miring $deg°';
+  }
+
+  @override
+  String get ctlFloorTagMissing =>
+      'Tag lantai (id 2) tidak terlihat. Letakkan datar di depan kamera, lalu coba lagi.';
+
+  @override
   String get ctlKeepTabletOnWifi =>
       'Nyalakan robot dan tetap sambungkan tablet ini ke Wi-Fi ELIOS.';
 

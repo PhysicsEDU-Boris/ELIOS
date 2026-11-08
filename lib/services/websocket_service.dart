@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show SocketException;
-import 'dart:ui' show Size;
+import 'dart:ui' show Offset, Size;
 
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'frame_source/frame_source.dart' show CapturedFrame;
+import 'robot/floor_camera.dart';
 
 class WebSocketService {
   factory WebSocketService() => _instance;
@@ -90,6 +91,10 @@ class WebSocketService {
   /// The last frame's `arm_tags` (decision 0022); null when it had none.
   /// Nothing reads this yet (R1 will).
   List<ArmTag>? get armTags => _armTags;
+
+  /// The calibrated floor (decision 0192). When set, every box the firmware sends without
+  /// `dist_cm` gets `distCm` / `lateralCm` from its bottom-centre pixel.
+  FloorCamera? floorCamera;
   List<ArmTag>? _armTags;
 
   /// The last frame's `arm_moving` (decision 0026); null when the firmware doesn't say.
@@ -442,7 +447,11 @@ class WebSocketService {
         currentDetections = <Detection>[];
         for (final item in raw) {
           if (item is! Map<String, dynamic>) continue;
-          currentDetections.add(Detection.fromJson(item));
+          final d = Detection.fromJson(item);
+          final at = floorCamera == null || d.distCm != null || _imageWidth <= 0
+              ? null
+              : floorCamera!.locate(Offset(d.x, d.y + d.h / 2), Size(_imageWidth, _imageHeight));
+          currentDetections.add(at == null ? d : d.withFloor(at.$1, at.$2));
         }
         _armTags = ArmTag.listFromJson(decoded['arm_tags']);
         _armMoving = armMovingFromJson(decoded['arm_moving']);
@@ -650,6 +659,12 @@ class Detection {
     lateralCm: _optDouble(item['lateral_cm']),
   );
 
+  /// This box with its floor position filled in (decision 0192).
+  Detection withFloor(double distCm, double lateralCm) => Detection(
+    x: x, y: y, w: w, h: h, label: label, score: score, trackId: trackId,
+    distCm: distCm, lateralCm: lateralCm,
+  );
+
   @override
   String toString() =>
       'Detection($label ${(score * 100).toStringAsFixed(0)}% '
@@ -657,12 +672,15 @@ class Detection {
 }
 
 /// One AprilTag on the arm, from a frame's `arm_tags` (decision 0022):
-/// id 0 = gripper underside, id 1 = arm B rear face.
+/// id 0 = gripper underside, id 1 = arm B rear face, id 2 = the floor tag (0192).
 class ArmTag {
-  const ArmTag({required this.id, required this.distMm});
+  const ArmTag({required this.id, required this.distMm, this.corners});
 
   final int id;
   final double distMm;
+
+  /// The 4 corners in stream pixels, in order around the tag; null when not sent (0192).
+  final List<Offset>? corners;
 
   /// Null when [raw] is not a list; malformed entries are skipped.
   static List<ArmTag>? listFromJson(Object? raw) {
@@ -670,8 +688,20 @@ class ArmTag {
     return [
       for (final t in raw)
         if (t is Map && _optInt(t['id']) != null && _optDouble(t['dist_mm']) != null)
-          ArmTag(id: _optInt(t['id'])!, distMm: _optDouble(t['dist_mm'])!),
+          ArmTag(id: _optInt(t['id'])!, distMm: _optDouble(t['dist_mm'])!, corners: _corners(t['corners'])),
     ];
+  }
+
+  static List<Offset>? _corners(Object? raw) {
+    if (raw is! List || raw.length != 4) return null;
+    final out = <Offset>[];
+    for (final p in raw) {
+      if (p is! List || p.length != 2) return null;
+      final x = _optDouble(p[0]), y = _optDouble(p[1]);
+      if (x == null || y == null) return null;
+      out.add(Offset(x, y));
+    }
+    return out;
   }
 }
 
