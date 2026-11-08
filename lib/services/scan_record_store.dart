@@ -223,8 +223,14 @@ class ScanRecordStore extends ChangeNotifier {
       if (_records.any((r) => r.id == record.id)) return;
       _records.insert(0, record);
       _dirty.add(record.id);
+      try {
+        await _doSave(propagateError: true);
+      } catch (_) {
+        _records.removeWhere((r) => r.id == record.id);
+        _dirty.remove(record.id);
+        rethrow;
+      }
       notifyListeners();
-      await _doSave(propagateError: true);
       unawaited(sync());
     });
   }

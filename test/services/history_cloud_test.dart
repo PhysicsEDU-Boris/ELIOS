@@ -42,6 +42,22 @@ ScanRecord record(String id) => ScanRecord(
   ],
 );
 void main() {
+  test('failed local insert never appears as durable history', () async {
+    final dir = await Directory.systemTemp.createTemp(
+      'history-insert-failure-',
+    );
+    addTearDown(() => dir.delete(recursive: true));
+    final file = File('${dir.path}/records.json');
+    final store = ScanRecordStore(customFile: file);
+    await store.load();
+    Directory(file.path).createSync();
+    await expectLater(
+      store.addRecord(record('scan-failed')),
+      throwsA(isA<FileSystemException>()),
+    );
+    expect(store.records, isEmpty);
+    expect(store.pendingCount, 0);
+  });
   test(
     'guide selects the language PDF while keeping original serialized content',
     () {
