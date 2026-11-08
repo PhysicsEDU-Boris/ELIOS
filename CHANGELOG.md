@@ -10,6 +10,7 @@ hashes updated after the history rewrite on 2026-10-08. The old-to-new map is
 kept outside the repo.
 
 ## [Unreleased]
+- G4 Daily Guides (0194): Today card, guides feed, issue page, quiz deck, mini lab, server-side guide XP and streaks (`/api/guides`), manifest v2 support.
 
 - Learn: Daily Guide opens the bilingual elios-guides feed, newest issue and archive, with refresh, offline catalogue fallback and per-account reading position. Daily guides stay separate from course completion (decision 0193).
 

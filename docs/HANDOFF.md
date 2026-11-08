@@ -56,3 +56,9 @@
 - On-device Gemma removed. `lib/services/ai_quiz_service.dart` POSTs identify, questions, essay grading and chat with the Firebase ID token to the `ai-backend` Vercel function (`ai-backend/`, team ELIOS, region sin1, https://ai-backend-seven-orpin.vercel.app/api/ai), which checks the token, holds `GEMINI_API_KEY` and runs the 0176 chain (`node --test` in `ai-backend/`, break-checked). Firebase Blaze skipped (200k IDR); Cloudflare dropped (Gemini refuses its locations; the `elios-ai` Worker was deleted 3 Nov).
 - No AI answer: the quiz uses the bank and says so. ELIOS AI is the default source in every build. Thermal gate, model copy/sideload, Activate card states and the macOS LiteRT-LM phase are gone.
 - Phone-verified 3 Nov: identify + 3 AI questions, ~1.6 s each, `source=ai`; a 3.5 Flash-Lite timeout fell to 3.1 Flash-Lite. Phone runs the debug APK from this branch. Free key for now; paid before students. Redeploy: `npx vercel deploy --prod --scope elios5` in `ai-backend/`.
+
+## G4-A Daily Guides (9 Nov 2026, branch feat/g4-daily-guides, contains PR #102)
+- Done: app screens, progress store/sync, backend `/api/guides` + tests, migration
+  `supabase/migrations/202611090001_guide_progress.sql`, renders in docs/test-results/g4-guides/app.
+- Not done: full `flutter test` run, secret scan, PR, Vercel preview, USB phone test.
+- Owner: run the migration SQL, then `cd ai-backend && npx vercel --prod` after review.
