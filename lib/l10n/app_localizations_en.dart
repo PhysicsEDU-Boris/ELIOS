@@ -4372,4 +4372,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String h3ScanPhoto(String item) {
     return 'Scan photo of $item';
   }
+
+  @override
+  String get historySyncing => 'Syncing history…';
+
+  @override
+  String get historySynced => 'History synced';
+
+  @override
+  String get historyLocalOnly => 'Saved on this device · sync pending';
+
+  @override
+  String get historySyncRetry => 'Sync now';
+
+  @override
+  String get historyImport => 'Import previous device history';
+
+  @override
+  String get historyImportBody =>
+      'These older scans have no account owner. Import them into your current account? The original device history will be kept.';
+
+  @override
+  String get historyImportFailed =>
+      'Could not import previous history. The original files are kept.';
 }

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'content_i18n.dart';
+import 'content_media.dart';
 
 class VideoLesson {
   /// Translated fields by language (decision 0185); empty when none.
@@ -17,7 +18,8 @@ class VideoLesson {
   final int durationSeconds;
   final String durationLabel;
   final String videoUrl;
-  final String thumbnailUrl;
+  final String _thumbnailUrl;
+  String get thumbnailUrl => contentMediaUrl(_thumbnailUrl);
   final String youtubeId;
   final String level;
   final String moduleLabel;
@@ -36,7 +38,7 @@ class VideoLesson {
     this.durationSeconds = 0,
     required this.durationLabel,
     required this.videoUrl,
-    required this.thumbnailUrl,
+    required String thumbnailUrl,
     required this.youtubeId,
     required this.level,
     required this.moduleLabel,
@@ -45,7 +47,10 @@ class VideoLesson {
     required this.order,
     required this.isPublished,
     this.i18n = const {},
-  }) : _sectionTitle = sectionTitle, _title = title, _description = description;
+  }) : _thumbnailUrl = thumbnailUrl,
+       _sectionTitle = sectionTitle,
+       _title = title,
+       _description = description;
 
   factory VideoLesson.fromMap(Map<String, dynamic> map, String documentId) {
     final rawId = map['id'];
@@ -113,7 +118,7 @@ class VideoLesson {
       'durationSeconds': durationSeconds,
       'durationLabel': durationLabel,
       'videoUrl': videoUrl,
-      'thumbnailUrl': thumbnailUrl,
+      'thumbnailUrl': _thumbnailUrl,
       'youtubeId': youtubeId,
       'level': level,
       'moduleLabel': moduleLabel,

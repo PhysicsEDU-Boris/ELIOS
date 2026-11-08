@@ -1,4 +1,10 @@
-# Handoff — 7 Nov 2026
+# Cloud history setup — 8 November 2026 (0191) · Branch codex/account-scan-history, based on origin/feature/live-scan; no merge to main.
+- Live Supabase ELIOS project tymiikfebewqvuokoyru (Free, Sydney); schema/RLS and update cursor applied. Vercel ai-backend serves /api/history with Firebase UID ownership checks; secrets in Vercel only.
+- Cloudinary zkebg27g: recovered 4 PDFs, 4 covers, 11 thumbnails; added 4 Indonesian guide PDFs. PDF delivery enabled with owner approval. App maps exact old public URLs; Firestore originals and YouTube IDs retained.
+- Per-UID local history/photos; durable pending writes; incremental sync on launch/resume/minute/manual; private photos via backend. Legacy shared files retained, import requires explicit ownership confirmation. Guest identity cannot be recovered after anonymous sign-out without linking.
+- Live tests passed: save/read, incremental cursor, private photo roundtrip, other UID denied, invalid token rejected, public private-photo URL 401. Temporary guest identities/test record/photo removed with owner approval.
+- Tests: 16 backend and changed-feature Flutter tests pass. Full Flutter suite has an existing design-token spacing assertion failure; analyze reports 2 existing test-file infos. New cloud-store test break-check fails against old store.
+- Android arm64 debug build succeeded; no USB device, not installed. Original Gemma asset kept on disk but excluded from app packaging; only the 2 GLBs are bundled. No Mac app/model/firmware/signing changes. Final build hash and PR to follow in local-build-notes.
 ## Settings for both cameras — `feat/settings-both-cameras` (decision 0189)
 - Difficulty saved in English (fixes Bahasa Indonesia), Sound effects gates the Control click, phone camera follows Resolution + Show FPS, Timer counts down multiple-choice questions. Phone-tested on Edge 60 Fusion (`e4d7036`, see `docs/local-build-notes.md`); owner data restored. Robot/MaixCAM2 path not re-tested; not pushed, no PR.
 ## H3-cards — `feat/history-cards` (stacked on `feat/history-h3-redesign`, decision 0187)
@@ -49,6 +55,5 @@
 - U4c combined native acceptance, U7 Firebase sync, U8 docs/Figma (see NEXT_TASK.md). wrongWhy texts for the bank are still unwritten.
 - R2, Q3, R3 (merged #80-#82, 3 Nov): decisions 0173-0175, `docs/test-results/r2|q3|r3/`.
 ## Marketing website — Figma (5 Nov 2026)
-- Editable desktop 1440 and mobile 390: https://www.figma.com/design/J2jSbARJSyJCStNFeWkWDj/?node-id=473-2389 (W1 Marketing website). Uses docs/design.md light tokens, original mascot/bin buddies, and real home-screen previews.
+- All sections visually reviewed. Revision: removed 18 decorative icons and 15 arrow/star/checkmark accents in desktop/mobile; retained main mascot and app previews. Static UI; CTA wiring/implementation remain. No app build or robot test. - Control haptics (7 Nov, decision 0188): `controlFeedback()`/`withFeedback()` in `r2_controls.dart`: tick + click on Control buttons, toggles, slider start, joystick direction, STOP, HOME. Test: `test/widgets/control_feedback_test.dart`. Installed on the Motorola (1c8caee); owner feel-test pending.
 - All sections visually reviewed. Revision: removed 18 decorative icons and 15 arrow/star/checkmark accents in desktop/mobile; retained main mascot and app previews. Static UI; CTA wiring/implementation remain. No app build or robot test.
-- Control haptics (7 Nov, decision 0188): `controlFeedback()`/`withFeedback()` in `r2_controls.dart`: tick + click on Control buttons, toggles, slider start, joystick direction, STOP, HOME. Test: `test/widgets/control_feedback_test.dart`. Installed on the Motorola (1c8caee); owner feel-test pending.

@@ -4298,4 +4298,28 @@ class AppLocalizationsId extends AppLocalizations {
   String h3ScanPhoto(String item) {
     return 'Foto scan $item';
   }
+
+  @override
+  String get historySyncing => 'Menyinkronkan riwayat…';
+
+  @override
+  String get historySynced => 'Riwayat tersinkron';
+
+  @override
+  String get historyLocalOnly =>
+      'Tersimpan di perangkat · menunggu sinkronisasi';
+
+  @override
+  String get historySyncRetry => 'Sinkronkan sekarang';
+
+  @override
+  String get historyImport => 'Impor riwayat lama perangkat';
+
+  @override
+  String get historyImportBody =>
+      'Scan lama ini belum memiliki pemilik akun. Impor ke akun yang sedang dipakai? Riwayat asli perangkat tetap disimpan.';
+
+  @override
+  String get historyImportFailed =>
+      'Riwayat lama gagal diimpor. File asli tetap disimpan.';
 }

@@ -1,10 +1,10 @@
+import 'dart:math' show Random;
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' show Locale, Rect;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../models/chat_message.dart';
 import '../models/essay_grade.dart';
@@ -276,6 +276,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   // The cropped JPEG bytes of the current waste item.
   Uint8List? _cropBytes;
   Uint8List? _historyPhotoBytes;
+  ScanRecordStore? _sessionStore;
 
   @override
   WasteQuizUiState build() => const WasteQuizUiState();
@@ -286,6 +287,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     ScannedWaste? scan,
     required WasteQuizPhase phase,
   }) {
+    _sessionStore = ScanRecordStore.instance;
     final difficulty = QuizDifficulty.fromSetting(
       ref.read(appPreferencesProvider).quizDifficulty,
     );
@@ -1348,6 +1350,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       final t = lookupAppLocalizations(Locale(lang));
       return timedOut ? t.quizTimeUpAnswer : t.quizSkippedAnswer;
     }
+
     final isEssay = q.type == QuizQuestionType.essay;
     _recordedQuestions.add(
       RecordQuestion(
@@ -1444,7 +1447,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final savedId = _savedExplanationRecordId;
     if (savedId != null && answeredIndex >= 0) {
       try {
-        await ScanRecordStore.instance.saveExplanation(
+        await (_sessionStore ?? ScanRecordStore.instance).saveExplanation(
           savedId,
           answeredIndex,
           explanation,
@@ -1470,6 +1473,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   }
 
   Future<void> _finish() async {
+    final store = _sessionStore ?? ScanRecordStore.instance;
     final sessionTrophies = _recordedQuestions.fold<int>(
       0,
       (sum, q) => sum + q.trophies,
@@ -1480,8 +1484,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     // ponytail: legacy/device crops lack a paired clean frame; keep their bytes until recaptured.
     if (photoBytes != null) {
       try {
-        final dir = await getApplicationDocumentsDirectory();
-        final scansDir = Directory('${dir.path}/$scanPhotosDirName');
+        final scansDir = await store.photoDirectory();
         if (!scansDir.existsSync()) scansDir.createSync(recursive: true);
         final file = File(
           '${scansDir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.jpg',
@@ -1496,7 +1499,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     if (_recordedQuestions.isNotEmpty) {
       final scan = state.scan;
       final record = ScanRecord(
-        id: 'scan-${DateTime.now().millisecondsSinceEpoch}',
+        id: 'scan-${DateTime.now().microsecondsSinceEpoch}-${_recordNonce()}',
         time: DateTime.now(),
         itemName: scan?.displayName ?? l10n.wasteGeneric,
         category: ScanCategory.fromString(scan?.category?.id),
@@ -1509,12 +1512,13 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       );
       try {
         _savedExplanationRecordId = record.id;
-        await ScanRecordStore.instance.addRecord(record);
+        await store.addRecord(record);
       } catch (e) {
         debugPrint('[WasteQuiz] Failed to add record to store: $e');
       }
     }
 
+    if (!store.active) return;
     _diagnostics?.event('session_result', {
       'correct': state.correctCount,
       'total': state.totalQuestions,
@@ -1615,3 +1619,8 @@ class LockedItem {
   final Uint8List photo;
   final Rect? box;
 }
+
+String _recordNonce() => List.generate(
+  12,
+  (_) => Random.secure().nextInt(256).toRadixString(16).padLeft(2, '0'),
+).join();
