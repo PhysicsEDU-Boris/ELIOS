@@ -7643,7 +7643,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'{title}, {date}, {stops} of 3 stops, {xp} XP'**
-  String g4ArchiveLabel(Object date, Object stops, Object title, Object xp);
+  String g4ArchiveLabel(Object title, Object date, Object stops, Object xp);
 
   /// No description provided for @g4AskTeacher.
   ///
@@ -7991,7 +7991,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'{pages}-page PDF · {language} · saved for offline'**
-  String g4PdfMeta(Object language, Object pages);
+  String g4PdfMeta(Object pages, Object language);
 
   /// No description provided for @g4PhotoCredit.
   ///
@@ -8105,7 +8105,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Recording {s} / {max} s'**
-  String g4RecordingSeconds(Object max, Object s);
+  String g4RecordingSeconds(Object s, Object max);
 
   /// No description provided for @g4Retake.
   ///
@@ -8333,7 +8333,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Today\'s guide: {title}, {done} of 3 stops done'**
-  String g4TodayLabel(Object done, Object title);
+  String g4TodayLabel(Object title, Object done);
 
   /// No description provided for @g4TodaysGuide.
   ///
@@ -8429,7 +8429,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'{xp} / {total} XP'**
-  String g4XpOf(Object total, Object xp);
+  String g4XpOf(Object xp, Object total);
 
   /// No description provided for @g4YourQuestion.
   ///

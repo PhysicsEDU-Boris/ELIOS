@@ -4439,7 +4439,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get g4Archive => 'Archive';
 
   @override
-  String g4ArchiveLabel(Object date, Object stops, Object title, Object xp) {
+  String g4ArchiveLabel(Object title, Object date, Object stops, Object xp) {
     return '$title, $date, $stops of 3 stops, $xp XP';
   }
 
@@ -4651,7 +4651,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get g4Pdf => 'PDF';
 
   @override
-  String g4PdfMeta(Object language, Object pages) {
+  String g4PdfMeta(Object pages, Object language) {
     return '$pages-page PDF · $language · saved for offline';
   }
 
@@ -4722,7 +4722,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String g4RecordingSeconds(Object max, Object s) {
+  String g4RecordingSeconds(Object s, Object max) {
     return 'Recording $s / $max s';
   }
 
@@ -4868,7 +4868,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String g4TodayLabel(Object done, Object title) {
+  String g4TodayLabel(Object title, Object done) {
     return 'Today\'s guide: $title, $done of 3 stops done';
   }
 
@@ -4922,7 +4922,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String g4XpOf(Object total, Object xp) {
+  String g4XpOf(Object xp, Object total) {
     return '$xp / $total XP';
   }
 

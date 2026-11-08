@@ -2962,9 +2962,9 @@
   "g4ArchiveLabel": "{title}, {date}, {stops} of 3 stops, {xp} XP",
   "@g4ArchiveLabel": {
     "placeholders": {
+      "title": {},
       "date": {},
       "stops": {},
-      "title": {},
       "xp": {}
     }
   },
@@ -3073,8 +3073,8 @@
   "g4PdfMeta": "{pages}-page PDF · {language} · saved for offline",
   "@g4PdfMeta": {
     "placeholders": {
-      "language": {},
-      "pages": {}
+      "pages": {},
+      "language": {}
     }
   },
   "g4PhotoCredit": "Photo credit",
@@ -3118,8 +3118,8 @@
   "g4RecordingSeconds": "Recording {s} / {max} s",
   "@g4RecordingSeconds": {
     "placeholders": {
-      "max": {},
-      "s": {}
+      "s": {},
+      "max": {}
     }
   },
   "g4Retake": "Record again",
@@ -3217,8 +3217,8 @@
   "g4TodayLabel": "Today's guide: {title}, {done} of 3 stops done",
   "@g4TodayLabel": {
     "placeholders": {
-      "done": {},
-      "title": {}
+      "title": {},
+      "done": {}
     }
   },
   "g4TodaysGuide": "TODAY'S GUIDE",
@@ -3249,8 +3249,8 @@
   "g4XpOf": "{xp} / {total} XP",
   "@g4XpOf": {
     "placeholders": {
-      "total": {},
-      "xp": {}
+      "xp": {},
+      "total": {}
     }
   },
   "g4YourQuestion": "Your question: {q}",

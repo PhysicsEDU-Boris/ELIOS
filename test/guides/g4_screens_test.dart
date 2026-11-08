@@ -286,6 +286,9 @@ void main() {
       await pump(t, GuideIssuePage(guide: await guide()));
       expect(find.text('Your quest map'), findsOneWidget);
       expect(find.text('Continue · Stop 1'), findsOneWidget);
+    // Multi-placeholder strings keep their argument order (phone bug: "60 / 0 XP", "English-page PDF").
+    expect(find.text('0 / 60 XP'), findsOneWidget);
+    expect(find.text('4-page PDF · English · saved for offline'), findsOneWidget);
       await t.tap(find.text('Bahasa Indonesia'));
       for (var i = 0; i < 4; i++) {
         await t.runAsync(
