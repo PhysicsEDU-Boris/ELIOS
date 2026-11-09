@@ -4841,4 +4841,71 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get g4FeedTitle => 'Panduan ELIOS';
+
+  @override
+  String get lnShortcuts => 'Pintasan belajar';
+
+  @override
+  String get lnJumpBackIn => 'Lanjut belajar';
+
+  @override
+  String get lnExplore => 'Jelajahi';
+
+  @override
+  String lnExploreSub(int lessons, int modules) {
+    return '$lessons pelajaran di $modules modul';
+  }
+
+  @override
+  String get lnModules => 'Modul';
+
+  @override
+  String get lnPdfGuides => 'Panduan PDF';
+
+  @override
+  String get lnPractice => 'Latihan';
+
+  @override
+  String get lnYou => 'Kamu';
+
+  @override
+  String get lnQuizShort => 'Kuis';
+
+  @override
+  String get lnMiniLab => 'Lab mini';
+
+  @override
+  String get lnTodaysLab => 'Eksperimen hari ini';
+
+  @override
+  String get lnArchive => 'Arsip';
+
+  @override
+  String get lnProgressShort => 'Progres';
+
+  @override
+  String get lnStartHere => 'Mulai di sini';
+
+  @override
+  String lnQuizCount(num count) {
+    return '$count kuis';
+  }
+
+  @override
+  String lnTotalXp(int xp) {
+    return 'Total $xp XP';
+  }
+
+  @override
+  String lnGuideStops(String issue, int done) {
+    return '#$issue · $done dari 3 tahap';
+  }
+
+  @override
+  String lnPctDone(int pct) {
+    return '$pct%';
+  }
+
+  @override
+  String get lnTodaysGuide => 'Panduan hari ini';
 }

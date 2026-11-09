@@ -15,6 +15,10 @@ import '../../theme/elio_theme.dart';
 import '../../widgets/learn/learn_ui.dart';
 import 'elearning/guides_page.dart';
 import 'elearning/daily_guides_page.dart';
+import 'elearning/guides/guide_lab_page.dart';
+import 'elearning/learn_hub_v3.dart';
+import '../../providers/daily_guide_provider.dart';
+import '../../providers/learn_shortcut_provider.dart';
 import 'elearning/learn_content.dart';
 import 'elearning/lesson_page.dart';
 import 'elearning/module_page.dart';
@@ -170,7 +174,7 @@ class LearnHub extends ConsumerWidget {
   }
 }
 
-class _HubContent extends ConsumerWidget {
+class _HubContent extends ConsumerStatefulWidget {
   const _HubContent({
     required this.modules,
     required this.videos,
@@ -184,11 +188,86 @@ class _HubContent extends ConsumerWidget {
   final List<QuizSet>? quizSets;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_HubContent> createState() => _HubContentState();
+}
+
+/// Learn hub L2 v3 (Figma 570:5147, decision 0195).
+class _HubContentState extends ConsumerState<_HubContent> {
+  final _exploreKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    // A shortcut tapped while the hub was still loading.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final s = ref.read(learnShortcutProvider);
+      if (mounted && s != null) _onShortcut(s);
+    });
+  }
+
+  void _push(Widget page) => Navigator.of(context).push(learnRoute<void>(page));
+
+  List<LearnLesson> get _lessons =>
+      mergeLessons(widget.guides ?? const [], widget.videos ?? const []);
+
+  void _onShortcut(LearnShortcut s) {
+    ref.read(learnShortcutProvider.notifier).state = null;
+    final today = ref.read(dailyGuideFeedProvider).valueOrNull?.guides.firstOrNull;
+    void tab(LearnExploreTab t) {
+      ref.read(learnExploreTabProvider.notifier).state = t;
+      final c = _exploreKey.currentContext;
+      if (c != null) {
+        Scrollable.ensureVisible(
+          c,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    }
+
+    switch (s) {
+      case LearnShortcut.today:
+        today == null ? _push(const DailyGuidesPage()) : openGuideIssue(context, today);
+      case LearnShortcut.resume:
+        final l = inProgressLessons(
+          _lessons,
+          ref.read(learningProgressProvider).valueOrNull,
+        ).firstOrNull;
+        _push(l == null ? ModulePage(module: widget.modules.first) : LessonPage(lesson: l));
+      case LearnShortcut.modules:
+        tab(LearnExploreTab.modules);
+      case LearnShortcut.videos:
+        tab(LearnExploreTab.videos);
+      case LearnShortcut.simulations:
+        tab(LearnExploreTab.simulations);
+      case LearnShortcut.guides:
+        tab(LearnExploreTab.guides);
+      case LearnShortcut.quiz:
+        _push(const QuizPage());
+      case LearnShortcut.miniLab:
+        _push(today == null ? const DailyGuidesPage() : GuideLabPage(guide: today));
+      case LearnShortcut.progress:
+        _push(const ProgressPage());
+      case LearnShortcut.archive:
+        _push(const DailyGuidesPage());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<LearnShortcut?>(learnShortcutProvider, (_, next) {
+      if (next != null) _onShortcut(next);
+    });
+    final modules = widget.modules;
+    final videos = widget.videos;
+    final guides = widget.guides;
     final progress = ref.watch(learningProgressProvider).valueOrNull;
-    final physics = ref.watch(physicsProgressProvider).valueOrNull;
+    final viewed = viewedSimulations(ref);
+    final feed = ref.watch(dailyGuideFeedProvider).valueOrNull;
+    final today = feed?.guides.firstOrNull;
+    final tab = ref.watch(learnExploreTabProvider);
+    final lessons = _lessons;
     final lessonsLoaded = videos != null && guides != null;
-    final lessons = mergeLessons(guides ?? const [], videos ?? const []);
     final firstLaunch = isFirstLaunch(progress);
     final overall = progress?.weightedProgressFor(
           totalVideos: videos?.length ?? 0,
@@ -196,153 +275,156 @@ class _HubContent extends ConsumerWidget {
           totalQuizModules: modules.length,
         ) ??
         0;
-    final started = modules
-        .where((m) => moduleProgress(m.id, lessons, progress) > 0)
-        .length;
-    final continuing = inProgressLessons(lessons, progress);
-    final recentModule = continuing.firstOrNull?.moduleId;
+    final values = [for (final m in modules) moduleProgress(m.id, lessons, progress)];
+    final started = values.where((v) => v > 0).length;
+    final recentModule = inProgressLessons(lessons, progress).firstOrNull?.moduleId;
 
-    void push(Widget page) => Navigator.of(context).push(learnRoute<void>(page));
-    void openLesson(LearnLesson l) => push(LessonPage(lesson: l));
+    List<LearnLesson> recentFirst(List<LearnLesson> list) {
+      final active = inProgressLessons(list, progress);
+      return [...active, ...list.where((l) => !active.contains(l))];
+    }
 
-    return LearnListView(
-      children: [
-        const SizedBox(height: 8),
-        const GuidesHubSection(),
-        const SizedBox(height: 16),
-        if (firstLaunch)
-          _Hero(
-            title: l10n.lnWelcome,
-            body:
-                l10n.lnWelcomeBody(binLabel(modules.first.id), lessons.where((l) => l.moduleId == modules.first.id).length),
-            buttonLabel: l10n.lnStartModule1,
-            onPressed: () => push(ModulePage(module: modules.first)),
-          )
-        else
-          _Hero(
-            title: l10n.quizKnowledgeChallenge,
-            body: quizSets == null || quizSets!.isEmpty
-                ? l10n.lnTestElio
-                : l10n.lnQuizzesTest(quizSets!.length),
-            buttonLabel: l10n.lnTakeQuiz,
-            buttonIcon: Icons.help_outline_rounded,
-            onPressed: () => push(
-              const QuizPage(),
-            ),
+    ExploreItem lessonItem(LearnLesson l, int i, LearnTone tone) {
+      final v = l.progress(progress);
+      final resume = i == 0 && l.state(progress) == LessonState.inProgress;
+      final st = stickerFor(v, done: l.state(progress) == LessonState.done);
+      return ExploreItem(
+        title: l.title,
+        meta: l.lengthLabel,
+        tag: resume ? l10n.lnJumpBackIn : (l.isVideo ? l10n.lnVideo : l10n.lnGuide),
+        art: popArt(url: l.imageUrl, fallback: l.fallbackArt),
+        tone: tone,
+        progress: v,
+        sticker: st.text,
+        done: st.done,
+        highlight: resume,
+        onTap: () => _push(LessonPage(lesson: l)),
+      );
+    }
+
+    final videoLessons = [for (final v in videos ?? const <VideoLesson>[]) LearnLesson.video(v)];
+    final guideLessons = [for (final g in guides ?? const <GuideLesson>[]) LearnLesson.guide(g)];
+    final orderedModules = [
+      ...modules.where((m) => m.id == recentModule),
+      ...modules.where((m) => m.id != recentModule),
+    ];
+    final items = switch (tab) {
+      LearnExploreTab.modules => [
+        for (final (i, m) in orderedModules.indexed)
+          () {
+            final v = moduleProgress(m.id, lessons, progress);
+            final resume = i == 0 && m.id == recentModule;
+            final start = i == 0 && firstLaunch;
+            final st = stickerFor(v);
+            return ExploreItem(
+              title: m.title,
+              meta: l10n.lnLessonCount(lessons.where((l) => l.moduleId == m.id).length),
+              tag: resume
+                  ? l10n.lnJumpBackIn
+                  : start
+                  ? l10n.lnStartHere
+                  : l10n.lnModuleN(m.order),
+              art: popArt(svg: moduleBuddy(m.id)),
+              tone: moduleTone(m.id),
+              progress: v,
+              sticker: st.text,
+              done: st.done,
+              highlight: resume || start,
+              onTap: () => _push(ModulePage(module: m)),
+            );
+          }(),
+      ],
+      LearnExploreTab.videos => [
+        for (final (i, l) in recentFirst(videoLessons).indexed) lessonItem(l, i, LearnTone.success),
+      ],
+      LearnExploreTab.simulations => [
+        for (final m in physicsModules)
+          ExploreItem(
+            title: m.title,
+            meta: l10n.lnMinutes(m.durationMinutes),
+            tag: m.tag.split(' · ').first,
+            art: popArt(svg: LearnArt.simulation(m.id), rounded: true),
+            tone: LearnTone.info,
+            progress: viewed.contains(m.id.name) ? 1 : 0,
+            sticker: stickerFor(0, done: viewed.contains(m.id.name)).text,
+            done: viewed.contains(m.id.name),
+            onTap: () => openSimulation(context, ref, m),
           ),
-        const SizedBox(height: 16),
-        ProgressSummaryCard(
-          onTap: () => push(const ProgressPage()),
-          title: l10n.lnYourProgress,
+      ],
+      LearnExploreTab.guides => [
+        for (final (i, l) in recentFirst(guideLessons).indexed) lessonItem(l, i, LearnTone.warning),
+      ],
+    };
+    final seeAll = switch (tab) {
+      LearnExploreTab.modules => () => _push(const ProgressPage()),
+      LearnExploreTab.videos => () => _push(LessonListPage(title: l10n.lnVideos, lessons: videoLessons)),
+      LearnExploreTab.simulations => () => _push(const SimulationListPage()),
+      LearnExploreTab.guides => () => _push(LessonListPage(title: l10n.lnPdfGuides, lessons: guideLessons)),
+    };
+
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 32),
+      children: [
+        LearnCurvedHeader(
+          modules: modules,
+          moduleValues: values,
+          overall: overall,
+          title: firstLaunch ? l10n.lnWelcome : l10n.lnYourProgress,
           subtitle: started == 0
               ? l10n.lnNoModulesStarted
               : l10n.lnModulesInProgress(started, modules.length),
-          value: overall,
-          footer: l10n.lnOverall((overall * 100).round()),
+          onOpenProgress: () => _push(const ProgressPage()),
+          ticket: today == null
+              ? null
+              : GuideTicket(guide: today, onOpen: () => openGuideIssue(context, today)),
         ),
-        LearnSectionHeader(
-          title: l10n.lnCourseModules,
-          actionLabel: l10n.lnSeeAll,
-          onAction: () => push(const ProgressPage()),
-        ),
-        _BinRow(
-          modules: modules,
-          selectedId: recentModule,
-          onTap: (m) => push(ModulePage(module: m)),
-        ),
-        LearnSectionHeader(
-          title: l10n.lnContinueLearning,
-          actionLabel: l10n.lnSeeAll,
-          onAction: () => push(
-            LessonListPage(title: l10n.lnAllLessons, lessons: lessons),
-          ),
-        ),
-        if (!lessonsLoaded)
-          const LearnSkeleton(height: 200)
-        else if (continuing.isEmpty)
-          LearnHintCard(
-            text:
-                l10n.lnNothingInProgress,
-          )
-        else
-          LearnCarousel(
-            children: [
-              for (final l in continuing)
-                LessonTile(lesson: l, progress: progress, onTap: () => openLesson(l)),
-            ],
-          ),
-        LearnSectionHeader(
-          title: l10n.lnWatchLearn,
-          actionLabel: videos == null ? null : l10n.lnVideoCount(videos!.length),
-          onAction: () => push(
-            LessonListPage(
-              title: l10n.lnVideos,
-              lessons: [for (final v in videos!) LearnLesson.video(v)],
+        LearnBubbles(
+          items: [
+            LearnBubble(
+              label: l10n.lnQuizShort,
+              asset: LearnArt.mascot,
+              tone: LearnTone.info,
+              badge: widget.quizSets?.length,
+              onTap: () => _push(const QuizPage()),
             ),
-          ),
-        ),
-        if (videos == null)
-          const LearnSkeleton(height: 150)
-        else if (videos!.isEmpty)
-          LearnHintCard(text: l10n.lnNoVideos)
-        else
-          LearnCarousel(
-            itemWidth: 180,
-            children: [
-              for (final v in videos!)
-                VideoTile(
-                  lesson: LearnLesson.video(v),
-                  moduleTitle: moduleTitleFor(modules, v.moduleId),
-                  onTap: () => openLesson(LearnLesson.video(v)),
-                ),
-            ],
-          ),
-        LearnSectionHeader(
-          title: l10n.lnPhysicsSims,
-          actionLabel: l10n.lnModuleCount(physicsModules.length),
-          onAction: () => push(const SimulationListPage()),
-        ),
-        LearnCarousel(
-          itemWidth: 200,
-          children: [
-            for (final m in physicsModules)
-              SimulationCard(
-                canvasAsset: LearnArt.simulation(m.id),
-                tag: l10n.lnSimTag(m.tag.split(' · ').first),
-                title: m.title,
-                minutes: m.durationMinutes,
-                done: physics?.viewedModuleIds.contains(m.id.name) ?? false,
-                onTap: () => openSimulation(context, ref, m),
+            if (today != null)
+              LearnBubble(
+                label: l10n.lnMiniLab,
+                asset: 'assets/illustrations/home/bulb_buddy.svg',
+                tone: LearnTone.warning,
+                onTap: () => _push(GuideLabPage(guide: today)),
               ),
+            LearnBubble(
+              label: l10n.lnArchive,
+              asset: 'assets/illustrations/home/streak_flame.svg',
+              tone: LearnTone.success,
+              badge: feed?.guides.length,
+              onTap: () => _push(const DailyGuidesPage()),
+            ),
+            LearnBubble(
+              label: l10n.lnProgressShort,
+              asset: 'assets/illustrations/home/tree_lv3.svg',
+              tone: LearnTone.error,
+              onTap: () => _push(const ProgressPage()),
+            ),
           ],
         ),
-        LearnSectionHeader(
-          title: l10n.lnGuides,
-          actionLabel: l10n.lnSeeAll,
-          onAction: () => push(
-            LessonListPage(
-              title: l10n.lnGuides,
-              lessons: [for (final g in guides ?? const <GuideLesson>[]) LearnLesson.guide(g)],
-            ),
+        KeyedSubtree(
+          key: _exploreKey,
+          child: ExploreSection(
+            subtitle: l10n.lnExploreSub(lessons.length, modules.length),
+            counts: {
+              LearnExploreTab.modules: modules.length,
+              if (videos != null) LearnExploreTab.videos: videos.length,
+              LearnExploreTab.simulations: physicsModules.length,
+              if (guides != null) LearnExploreTab.guides: guides.length,
+            },
+            items: items,
+            loading: !lessonsLoaded &&
+                (tab == LearnExploreTab.videos || tab == LearnExploreTab.guides),
+            onSeeAll: seeAll,
           ),
         ),
-        if (guides == null)
-          const LearnSkeleton(height: 160)
-        else if (guides!.isEmpty)
-          LearnHintCard(text: l10n.lnNoGuides)
-        else
-          LearnListCard(
-            children: [
-              for (final g in guides!.take(4))
-                LessonRow(
-                  lesson: LearnLesson.guide(g),
-                  progress: progress,
-                  subtitle: '${moduleTitleFor(modules, g.moduleId)} · ${g.description}',
-                  onTap: () => openLesson(LearnLesson.guide(g)),
-                ),
-            ],
-          ),
-        const SizedBox(height: 24),
       ],
     );
   }
@@ -361,97 +443,6 @@ bool isFirstLaunch(LearningProgress? p) =>
 String moduleTitleFor(List<ElearningModule> modules, String id) {
   final m = modules.where((m) => m.id == id).firstOrNull;
   return m == null || m.order <= 0 ? binLabel(id) : l10n.lnModuleN(m.order);
-}
-
-class _Hero extends StatelessWidget {
-  const _Hero({
-    required this.title,
-    required this.body,
-    required this.buttonLabel,
-    required this.onPressed,
-    this.buttonIcon,
-  });
-
-  final String title;
-  final String body;
-  final String buttonLabel;
-  final IconData? buttonIcon;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.elio;
-    return LearnCard(
-      color: p.primary,
-      borderColor: p.primary,
-      radius: learnRadiusXl,
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: context.text.headlineLarge?.copyWith(color: p.onPrimary)),
-                const SizedBox(height: 8),
-                Text(body, style: context.text.bodySmall?.copyWith(color: p.onPrimary)),
-                const SizedBox(height: 16),
-                FilledButton.icon(
-                  onPressed: onPressed,
-                  icon: buttonIcon == null ? null : Icon(buttonIcon),
-                  label: Text(buttonLabel),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: p.surface,
-                    foregroundColor: p.textPrimary,
-                    minimumSize: const Size(48, 48),
-                    shape: const StadiumBorder(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Expanded(flex: 2, child: LearnIllustration(LearnArt.mascot, height: 120)),
-        ],
-      ),
-    );
-  }
-}
-
-class _BinRow extends StatelessWidget {
-  const _BinRow({required this.modules, required this.selectedId, required this.onTap});
-
-  final List<ElearningModule> modules;
-  final String? selectedId;
-  final ValueChanged<ElearningModule> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cards = [
-      for (final m in modules)
-        BinCard(
-          label: binLabel(m.id),
-          iconAsset: LearnArt.bin(m.id),
-          selected: m.id == selectedId,
-          onTap: () => onTap(m),
-        ),
-    ];
-    if (cards.length <= 3) {
-      return IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (var i = 0; i < cards.length; i++) ...[
-              if (i > 0) const SizedBox(width: 8),
-              Expanded(child: cards[i]),
-            ],
-          ],
-        ),
-      );
-    }
-    return LearnCarousel(itemWidth: 120, children: cards);
-  }
 }
 
 /// Lesson card for carousels and the module grid.

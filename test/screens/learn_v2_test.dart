@@ -35,6 +35,9 @@ import 'package:elio/services/elearning_content_service.dart';
 import 'package:elio/services/progress_service.dart';
 import 'package:elio/theme/elio_theme.dart';
 import 'package:elio/widgets/learn/learn_ui.dart';
+import 'package:elio/widgets/learn/learn_shortcuts.dart';
+import 'package:elio/widgets/elio_sidebar.dart';
+import 'package:elio/providers/learn_shortcut_provider.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -226,21 +229,34 @@ void main() {
 
   for (final b in Brightness.values) {
     group(b.name, () {
-      testWidgets('hub shows all sections from Firestore', (t) async {
+      testWidgets('hub shows header, bubbles and Explore tabs (L2 v3)', (t) async {
         await _pump(t, const ElearningTab(), brightness: b);
         expect(t.takeException(), isNull);
-        expect(find.text('Knowledge challenge'), findsOneWidget);
-        expect(find.text('Your learning progress'), findsOneWidget);
+        expect(find.text('YOUR LEARNING PROGRESS'), findsOneWidget);
+        expect(find.text('1 of 3 modules in progress'), findsOneWidget);
         for (final label in ['Organik', 'Anorganik', 'B3']) {
+          expect(find.textContaining(label), findsWidgets);
+        }
+        for (final label in ['Quiz', 'Archive', 'Progress', 'Explore']) {
           expect(find.text(label), findsWidgets);
         }
-        expect(find.text('Continue learning'), findsOneWidget);
-        expect(find.text('Composting fundamentals'), findsWidgets);
-        expect(find.text('1 video'), findsOneWidget);
-        expect(find.text('9 modules'), findsOneWidget);
-        expect(find.text('Introduction & definitions of waste'), findsWidgets);
+        // Modules tab: the module with recent activity comes first.
+        expect(find.text('Jump back in'), findsOneWidget);
+        expect(find.text('Organic waste management'), findsOneWidget);
+        await t.ensureVisible(find.bySemanticsLabel(RegExp(r'^Videos, 1$')));
+        await t.tap(find.bySemanticsLabel(RegExp(r'^Videos, 1$')));
+        await t.pump();
+        expect(find.text('Composting fundamentals'), findsOneWidget);
         // Failing Cloudinary URL falls back to the module illustration.
         expect(_svg(LearnArt.coverBiogas), findsWidgets);
+        await t.ensureVisible(find.bySemanticsLabel(RegExp(r'^Simulations, 9$')));
+        await t.tap(find.bySemanticsLabel(RegExp(r'^Simulations, 9$')));
+        await t.pump();
+        expect(find.text('Module A'), findsWidgets);
+        await t.ensureVisible(find.bySemanticsLabel(RegExp(r'^PDF guides, 1$')));
+        await t.tap(find.bySemanticsLabel(RegExp(r'^PDF guides, 1$')));
+        await t.pump();
+        expect(find.text('Introduction & definitions of waste'), findsOneWidget);
       });
 
       testWidgets('hub first launch', (t) async {
@@ -251,9 +267,61 @@ void main() {
           progress: () => LearningProgress(userId: 'guest'),
         );
         expect(t.takeException(), isNull);
-        expect(find.text('Welcome to Learn'), findsOneWidget);
+        expect(find.text('WELCOME TO LEARN'), findsOneWidget);
         expect(find.text('No modules started yet'), findsOneWidget);
-        expect(find.textContaining('Nothing in progress yet'), findsOneWidget);
+        expect(find.text('Start here'), findsOneWidget);
+      });
+
+      testWidgets('Learn shortcuts drive the hub (sidebar body)', (t) async {
+        await _pump(
+          t,
+          Row(
+            children: [
+              SizedBox(
+                width: 304,
+                child: Consumer(
+                  builder: (context, ref, _) => ElioSidebar(
+                    user: null,
+                    currentIndex: 1,
+                    onSelect: (_) {},
+                    onSignOut: () {},
+                    onClose: () {},
+                    subtitle: 'Learn shortcuts',
+                    body: LearnShortcutsMenu(
+                      onPick: (s) => ref.read(learnShortcutProvider.notifier).state = s,
+                    ),
+                  ),
+                ),
+              ),
+              const Expanded(child: ElearningTab()),
+            ],
+          ),
+          brightness: b,
+          size: const Size(900, 2400),
+        );
+        expect(t.takeException(), isNull);
+        // Only Learn features: no app navigation rows.
+        for (final nav in ['Home', 'Configure', 'Control', 'NAVIGATE']) {
+          expect(find.text(nav), findsNothing);
+        }
+        expect(find.text('Learn shortcuts'), findsOneWidget);
+        expect(find.text('Dark mode'), findsOneWidget);
+        // Videos row selects the Videos tab in the hub.
+        expect(find.text('Composting fundamentals'), findsNothing);
+        await t.tap(find.bySemanticsLabel(RegExp(r'^Videos, 1$')).first);
+        await t.pumpAndSettle();
+        expect(find.text('Composting fundamentals'), findsOneWidget);
+        // Continue is a dropdown holding Jump back in.
+        expect(find.text('Jump back in'), findsWidgets);
+        await t.tap(find.bySemanticsLabel(RegExp(r'^Continue, 1$')));
+        await t.pump();
+        Finder inSidebar(Finder f) => find.descendant(of: find.byType(ElioSidebar), matching: f);
+        expect(inSidebar(find.text('Jump back in')), findsNothing);
+        await t.tap(find.bySemanticsLabel(RegExp(r'^Continue, 1$')));
+        await t.pump();
+        await t.tap(inSidebar(find.text('Jump back in')));
+        await t.pumpAndSettle();
+        expect(find.byType(LessonPage), findsOneWidget);
       });
 
       testWidgets('hub loading shows the skeleton', (t) async {
@@ -264,7 +332,7 @@ void main() {
           service: _StreamService(const Stream.empty()),
         );
         expect(find.byType(LearnHubSkeleton), findsOneWidget);
-        expect(find.text('Course modules'), findsNothing);
+        expect(find.text('Explore'), findsNothing);
       });
 
       testWidgets('hub error offers retry and offline lessons', (t) async {

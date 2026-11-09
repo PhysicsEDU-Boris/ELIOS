@@ -3259,5 +3259,29 @@
       "q": {}
     }
   },
-  "g4FeedTitle": "ELIOS Guides"
+  "g4FeedTitle": "ELIOS Guides",
+  "lnShortcuts": "Learn shortcuts",
+  "lnJumpBackIn": "Jump back in",
+  "lnExplore": "Explore",
+  "lnExploreSub": "{lessons} lessons across {modules} modules",
+  "@lnExploreSub": {"placeholders": {"lessons": {"type": "int"}, "modules": {"type": "int"}}},
+  "lnModules": "Modules",
+  "lnPdfGuides": "PDF guides",
+  "lnPractice": "Practice",
+  "lnYou": "You",
+  "lnQuizShort": "Quiz",
+  "lnMiniLab": "Mini lab",
+  "lnTodaysLab": "Today's experiment",
+  "lnArchive": "Archive",
+  "lnProgressShort": "Progress",
+  "lnStartHere": "Start here",
+  "lnQuizCount": "{count, plural, =1{1 quiz} other{{count} quizzes}}",
+  "@lnQuizCount": {"placeholders": {"count": {"type": "num"}}},
+  "lnTotalXp": "{xp} XP total",
+  "@lnTotalXp": {"placeholders": {"xp": {"type": "int"}}},
+  "lnGuideStops": "#{issue} · {done} of 3 stops",
+  "@lnGuideStops": {"placeholders": {"issue": {"type": "String"}, "done": {"type": "int"}}},
+  "lnPctDone": "{pct}%",
+  "@lnPctDone": {"placeholders": {"pct": {"type": "int"}}},
+  "lnTodaysGuide": "Today's Guide"
 }

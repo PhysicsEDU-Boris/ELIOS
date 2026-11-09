@@ -4933,4 +4933,77 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get g4FeedTitle => 'ELIOS Guides';
+
+  @override
+  String get lnShortcuts => 'Learn shortcuts';
+
+  @override
+  String get lnJumpBackIn => 'Jump back in';
+
+  @override
+  String get lnExplore => 'Explore';
+
+  @override
+  String lnExploreSub(int lessons, int modules) {
+    return '$lessons lessons across $modules modules';
+  }
+
+  @override
+  String get lnModules => 'Modules';
+
+  @override
+  String get lnPdfGuides => 'PDF guides';
+
+  @override
+  String get lnPractice => 'Practice';
+
+  @override
+  String get lnYou => 'You';
+
+  @override
+  String get lnQuizShort => 'Quiz';
+
+  @override
+  String get lnMiniLab => 'Mini lab';
+
+  @override
+  String get lnTodaysLab => 'Today\'s experiment';
+
+  @override
+  String get lnArchive => 'Archive';
+
+  @override
+  String get lnProgressShort => 'Progress';
+
+  @override
+  String get lnStartHere => 'Start here';
+
+  @override
+  String lnQuizCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count quizzes',
+      one: '1 quiz',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lnTotalXp(int xp) {
+    return '$xp XP total';
+  }
+
+  @override
+  String lnGuideStops(String issue, int done) {
+    return '#$issue · $done of 3 stops';
+  }
+
+  @override
+  String lnPctDone(int pct) {
+    return '$pct%';
+  }
+
+  @override
+  String get lnTodaysGuide => 'Today\'s Guide';
 }

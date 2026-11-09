@@ -24,6 +24,8 @@ class ElioSidebar extends ConsumerWidget {
     required this.onSignOut,
     required this.onClose,
     this.showThemeToggle = true,
+    this.body,
+    this.subtitle,
   });
 
   final User? user;
@@ -34,6 +36,12 @@ class ElioSidebar extends ConsumerWidget {
   final VoidCallback onSignOut;
   final VoidCallback onClose;
   final bool showThemeToggle;
+
+  /// Replaces the Navigate section (Learn tab: Learn shortcuts, decision 0195).
+  final Widget? body;
+
+  /// Shown under "ELIOS" when [body] is set.
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -62,11 +70,23 @@ class ElioSidebar extends ConsumerWidget {
                       ElioMark(size: 40, color: p.primaryText),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          'ELIOS',
-                          style: ElioTokens.subhead.copyWith(
-                            color: p.textPrimary,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ELIOS',
+                              style: ElioTokens.subhead.copyWith(
+                                color: p.textPrimary,
+                              ),
+                            ),
+                            if (subtitle != null)
+                              Text(
+                                subtitle!,
+                                style: ElioTokens.caption.copyWith(
+                                  color: p.textSecondary,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                       IconButton(
@@ -83,6 +103,10 @@ class ElioSidebar extends ConsumerWidget {
                       ),
                     ],
                   ),
+                  if (body != null) ...[
+                    const SizedBox(height: 8),
+                    body!,
+                  ] else ...[
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -125,6 +149,7 @@ class ElioSidebar extends ConsumerWidget {
                     active: false,
                     onTap: () => onSelect(3),
                   ),
+                  ],
                 ],
               ),
             ),

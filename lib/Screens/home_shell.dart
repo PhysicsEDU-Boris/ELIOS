@@ -21,6 +21,8 @@ import '../widgets/app_notification_banner.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
 import '../widgets/elio_bottom_nav.dart';
 import '../widgets/elio_drawer_host.dart';
+import '../widgets/learn/learn_shortcuts.dart';
+import '../providers/learn_shortcut_provider.dart';
 import '../widgets/elio_sidebar.dart';
 import '../widgets/elio_top_bar.dart';
 import 'login_screen.dart';
@@ -290,6 +292,15 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                 currentIndex: _currentIndex,
                 onSelect: _onDrawerTap,
                 onClose: () => _drawerKey.currentState?.close(),
+                subtitle: _currentIndex == 1 ? l10n.lnShortcuts : null,
+                body: _currentIndex == 1
+                    ? LearnShortcutsMenu(
+                        onPick: (s) {
+                          _drawerKey.currentState?.close();
+                          ref.read(learnShortcutProvider.notifier).state = s;
+                        },
+                      )
+                    : null,
                 onSignOut: () async {
                   _drawerKey.currentState?.close();
                   await widget.auth.signOut();
@@ -316,7 +327,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
               ElioTheme.wrap(
                 Builder(
                   builder: (context) => ColoredBox(
-                    color: authPalette(context).background,
+                    // Learn: the bar sits on the curved green header (L2 v3).
+                    color: _currentIndex == 1
+                        ? authPalette(context).primary
+                        : authPalette(context).background,
                     child: SafeArea(
                       bottom: false,
                       child: ElioTopBar(
@@ -333,9 +347,13 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                           0 => HomeHeaderActions(
                             onOpenLearning: () => _onBottomNavigationTap(1),
                           ),
+                          1 => const LearnTopPills(),
                           2 => const ConfigSettingsButton(),
                           _ => null,
                         },
+                        foreground: _currentIndex == 1
+                            ? authPalette(context).onPrimary
+                            : null,
                         photoUrl: user?.photoURL,
                         avatarFocusNode: _avatarFocus,
                         onOpenProfile: () => _drawerKey.currentState?.open(),

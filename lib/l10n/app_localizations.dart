@@ -8442,6 +8442,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ELIOS Guides'**
   String get g4FeedTitle;
+
+  /// No description provided for @lnShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn shortcuts'**
+  String get lnShortcuts;
+
+  /// No description provided for @lnJumpBackIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump back in'**
+  String get lnJumpBackIn;
+
+  /// No description provided for @lnExplore.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore'**
+  String get lnExplore;
+
+  /// No description provided for @lnExploreSub.
+  ///
+  /// In en, this message translates to:
+  /// **'{lessons} lessons across {modules} modules'**
+  String lnExploreSub(int lessons, int modules);
+
+  /// No description provided for @lnModules.
+  ///
+  /// In en, this message translates to:
+  /// **'Modules'**
+  String get lnModules;
+
+  /// No description provided for @lnPdfGuides.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF guides'**
+  String get lnPdfGuides;
+
+  /// No description provided for @lnPractice.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice'**
+  String get lnPractice;
+
+  /// No description provided for @lnYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get lnYou;
+
+  /// No description provided for @lnQuizShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz'**
+  String get lnQuizShort;
+
+  /// No description provided for @lnMiniLab.
+  ///
+  /// In en, this message translates to:
+  /// **'Mini lab'**
+  String get lnMiniLab;
+
+  /// No description provided for @lnTodaysLab.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s experiment'**
+  String get lnTodaysLab;
+
+  /// No description provided for @lnArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get lnArchive;
+
+  /// No description provided for @lnProgressShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get lnProgressShort;
+
+  /// No description provided for @lnStartHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Start here'**
+  String get lnStartHere;
+
+  /// No description provided for @lnQuizCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 quiz} other{{count} quizzes}}'**
+  String lnQuizCount(num count);
+
+  /// No description provided for @lnTotalXp.
+  ///
+  /// In en, this message translates to:
+  /// **'{xp} XP total'**
+  String lnTotalXp(int xp);
+
+  /// No description provided for @lnGuideStops.
+  ///
+  /// In en, this message translates to:
+  /// **'#{issue} · {done} of 3 stops'**
+  String lnGuideStops(String issue, int done);
+
+  /// No description provided for @lnPctDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{pct}%'**
+  String lnPctDone(int pct);
+
+  /// No description provided for @lnTodaysGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Guide'**
+  String get lnTodaysGuide;
 }
 
 class _AppLocalizationsDelegate
