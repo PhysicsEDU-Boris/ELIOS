@@ -1,3 +1,4 @@
+## Learn L2 v3 — `feat/learn-l2v3` (stacked on `feat/g4-daily-guides` #105, decision 0195) · Curved header + module ring, Today's Guide ticket, bubbles, Explore tabs with leaf cards; Learn tab sidebar = Learn shortcuts. Phone-tested 9 Nov on Edge 60 Fusion (APP_COMMIT `1e4810f`, `adb install -r`, History md5 unchanged, left English/light): `docs/test-results/0195-learn-l2v3/`. Tablet layout not done. Not pushed, no PR.
 # G4-A Daily Guides — 9 November 2026 (0194)
 - PR #105: https://github.com/PhysicsEDU-Boris/ELIOS/pull/105 (`feat/g4-daily-guides` → `feature/live-scan`), contains #102 - supersedes it; no merge.
 - App/backend/migration complete. G4 tests use memory except the restart persistence test; legacy radius test repaired without changing tokens; analyzer lints cleared.
