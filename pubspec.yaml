@@ -86,6 +86,7 @@ flutter:
     - assets/quiz/
     - assets/illustrations/home/
     - assets/illustrations/control/
+    - assets/illustrations/scan/
 
   fonts:
     - family: Google Sans Code

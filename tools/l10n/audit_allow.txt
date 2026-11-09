@@ -54,3 +54,4 @@ lib/services/ai_quiz_service.dart	cahaya, sinar UV, dan penuaan material	prompt-
 lib/services/ai_quiz_service.dart	pemilahan berdasarkan sifat fisik (magnet, air, berat)	prompt-internal physics topic for Gemini (not shown); reply language is set per request
 lib/services/ai_quiz_service.dart	alasan benda ini berbahaya atau aman ditangani	prompt-internal physics topic for Gemini (not shown); reply language is set per request
 lib/Screens/device_scan_screen.dart	FPS $fps • $res	debug stream stats (units only)
+lib/Screens/scan/select_vehicle_screen.dart	ELIOS	brand name (vehicle)

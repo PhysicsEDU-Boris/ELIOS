@@ -1,11 +1,10 @@
-// C1 Settings sheet 349:4445 / 349:4681 (decision 0145). Theme stays in the
-// sidebar; every value is saved where it was before (EspConfig in secure
-// storage, AppPreferences in shared preferences).
+// C1 Settings sheet 349:4445 / 349:4681 (decision 0145), now robot-only on
+// ELIOS setup: connection and video. Sound and quiz moved to Profile (ELIOS 3).
+// EspConfig is saved in secure storage as before.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/config_model.dart';
-import '../../providers/app_preferences_provider.dart';
 import '../../providers/esp_config_provider.dart';
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
@@ -51,9 +50,7 @@ class ConfigSettingsSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final p = context.elio;
     final esp = ref.watch(espConfigProvider).valueOrNull ?? const EspConfig();
-    final prefs = ref.watch(appPreferencesProvider);
     void patchEsp(EspConfig Function(EspConfig) f) => ref.read(espConfigProvider.notifier).patch(f);
-    void patchPrefs(AppPreferences Function(AppPreferences) f) => ref.read(appPreferencesProvider.notifier).update(f);
 
     return DraggableScrollableSheet(
       expand: false,
@@ -146,76 +143,6 @@ class ConfigSettingsSheet extends ConsumerWidget {
                           subtitle: l10n.setShowFpsSub,
                           value: esp.showFpsOverlay,
                           onChanged: (v) => patchEsp((c) => c.copyWith(showFpsOverlay: v)),
-                        ),
-                      ],
-                    ),
-                  ),
-                  _Overline(l10n.setSound),
-                  ConfigCard(
-                    child: Column(
-                      children: [
-                        _SwitchRow(
-                          icon: Icons.music_note_outlined,
-                          title: l10n.setSoundEffects,
-                          subtitle: l10n.setSoundEffectsSub,
-                          value: prefs.soundEffects,
-                          onChanged: (v) => patchPrefs((s) => s.copyWith(soundEffects: v)),
-                        ),
-                        const _Divider(),
-                        _RowHeader(
-                          icon: Icons.volume_up_outlined,
-                          title: l10n.setMasterVolume,
-                          trailing: Text('${(prefs.masterVolume * 100).round()}%',
-                              style: configStrong(p, color: p.primaryText)),
-                        ),
-                        Row(
-                          children: [
-                            Icon(Icons.volume_mute_outlined, color: p.textSecondary),
-                            Expanded(
-                              child: Slider(
-                                value: prefs.masterVolume,
-                                activeColor: p.primary,
-                                inactiveColor: p.surfaceRaised,
-                                semanticFormatterCallback: (v) => l10n.setMasterVolumeValue((v * 100).round()),
-                                onChanged: (v) => patchPrefs((s) => s.copyWith(masterVolume: v)),
-                              ),
-                            ),
-                            Icon(Icons.volume_up_outlined, color: p.textSecondary),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  _Overline(l10n.setQuiz),
-                  ConfigCard(
-                    child: Column(
-                      children: [
-                        _RowHeader(icon: Icons.signal_cellular_alt_rounded, title: l10n.setDifficulty),
-                        const SizedBox(height: 12),
-                        ConfigSegmented(
-                          label: l10n.setDifficulty,
-                          // Saved in English: the quiz reads 'Easy'/'Medium'/'Hard' in any language.
-                          options: const ['Easy', 'Medium', 'Hard'],
-                          labels: [l10n.setEasy, l10n.setMedium, l10n.setHard],
-                          selected: prefs.quizDifficulty,
-                          onSelected: (v) => patchPrefs((s) => s.copyWith(quizDifficulty: v)),
-                        ),
-                        const _Divider(),
-                        _RowHeader(icon: Icons.schedule_rounded, title: l10n.setTimer, subtitle: l10n.setTimerSub),
-                        const SizedBox(height: 12),
-                        ConfigSegmented(
-                          label: l10n.setTimer,
-                          options: const ['30s', '60s', '90s', '120s'],
-                          selected: prefs.quizTimer,
-                          onSelected: (v) => patchPrefs((s) => s.copyWith(quizTimer: v)),
-                        ),
-                        const _Divider(),
-                        _SwitchRow(
-                          icon: Icons.skip_next_outlined,
-                          title: l10n.setAllowSkip,
-                          subtitle: l10n.setAllowSkipSub,
-                          value: prefs.skipAllowed,
-                          onChanged: (v) => patchPrefs((s) => s.copyWith(skipAllowed: v)),
                         ),
                       ],
                     ),
@@ -327,11 +254,10 @@ class _Divider extends StatelessWidget {
 }
 
 class _RowHeader extends StatelessWidget {
-  const _RowHeader({required this.icon, required this.title, this.subtitle, this.trailing});
+  const _RowHeader({required this.icon, required this.title, this.subtitle});
   final IconData icon;
   final String title;
   final String? subtitle;
-  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -349,7 +275,6 @@ class _RowHeader extends StatelessWidget {
             ],
           ),
         ),
-        ?trailing,
       ],
     );
   }

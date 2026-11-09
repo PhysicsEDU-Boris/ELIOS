@@ -176,17 +176,17 @@ void main() {
         expect(find.byType(SnackBar), findsNothing, reason: 'the inline alert is on screen');
       });
 
-      testWidgets('phone camera, AI offline', (t) async {
+      testWidgets('a saved phone camera is ignored: robots use MaixCAM2 (ELIOS 3)', (t) async {
         await _pumpConfig(t,
             dark: dark,
             esp: const EspConfig(cameraSource: CameraSource.device),
             ai: AiStatus.offline);
         _expectPalette(t, dark);
-        expect(find.text('Robot not used'), findsOneWidget);
-        expect(find.text('Not used'), findsOneWidget);
-        expect(find.text('Phone'), findsOneWidget);
-        expect(find.text('Start scan'), findsOneWidget);
-        expect(find.text('Connection'), findsNothing, reason: 'phone mode hides the connection card');
+        expect(find.text('MaixCAM2'), findsOneWidget);
+        expect(find.text('Phone camera'), findsNothing);
+        expect(find.text('Start scan'), findsNothing);
+        expect(find.text('Robot not used'), findsNothing);
+        expect(find.text('Connection'), findsOneWidget);
         expect(find.text('ELIOS AI is not reachable'), findsOneWidget);
       });
     });
@@ -257,7 +257,7 @@ void main() {
   });
 
   testWidgets('failure snackbar only when the connection card is scrolled away', (t) async {
-    await _pumpConfig(t, dark: false, size: const Size(400, 700));
+    await _pumpConfig(t, dark: false, size: const Size(400, 480));
     _link.fail('first');
     await t.pump();
     expect(find.byType(SnackBar), findsOneWidget, reason: 'card below the fold');
@@ -269,15 +269,6 @@ void main() {
     _link.fail('second');
     await t.pump();
     expect(find.byType(SnackBar), findsNothing, reason: 'the inline alert says it already');
-  });
-
-  testWidgets('camera tiles save the source; phone mode shows Start scan', (t) async {
-    await _pumpConfig(t, dark: false);
-    await t.tap(find.text('Phone camera'));
-    await t.pump();
-    final container = ProviderScope.containerOf(t.element(find.byType(ConfigScreen)));
-    expect(container.read(espConfigProvider).valueOrNull?.cameraSource, CameraSource.device);
-    expect(find.text('Start scan'), findsOneWidget);
   });
 
   testWidgets('ELIOS AI quiz tile can be chosen any time, offline included (decision 0179)', (t) async {
@@ -293,7 +284,7 @@ void main() {
     expect(t.getSemantics(find.text('Question bank')).flagsCollection.isSelected, Tristate.isFalse);
   });
 
-  testWidgets('settings sheet saves every value and they load after a restart', (t) async {
+  testWidgets('robot settings sheet saves connection and video; sound and quiz moved to Profile', (t) async {
     t.view.physicalSize = const Size(800, 4400);
     t.view.devicePixelRatio = 2;
     addTearDown(t.view.reset);
@@ -312,20 +303,13 @@ void main() {
     await toggle('Auto-reconnect'); // on → off
     await t.tap(find.text('720p'));
     await toggle('Show FPS overlay');
-    await toggle('Sound effects'); // on → off
-    await t.tap(find.text('Hard'));
-    await t.tap(find.text('90s'));
-    await toggle('Allow skipping');
-    await t.pumpAndSettle();
+    for (final moved in ['Sound effects', 'Hard', '90s', 'Allow skipping']) {
+      expect(find.text(moved), findsNothing, reason: '$moved is on Profile now');
+    }
     await t.tap(find.text('Done'));
     await t.pumpAndSettle();
-    expect(find.text('Connection, video, sound and quiz'), findsNothing);
+    expect(find.text('Connection and video'), findsNothing);
 
-    final prefs = jsonDecode((await SharedPreferences.getInstance()).getString('app_preferences_v1')!);
-    expect(prefs, containsPair('quizDifficulty', 'Hard'));
-    expect(prefs, containsPair('quizTimer', '90s'));
-    expect(prefs, containsPair('skipAllowed', true));
-    expect(prefs, containsPair('soundEffects', false));
     final esp = jsonDecode((await const FlutterSecureStorage().read(key: 'elio_esp_config'))!);
     expect(esp, containsPair('resolutionPreset', '720p'));
     expect(esp, containsPair('showFpsOverlay', true));
@@ -336,8 +320,5 @@ void main() {
     final config = await restarted.read(espConfigProvider.future);
     expect(config.resolutionPreset, '720p');
     expect(config.autoReconnect, isFalse);
-    restarted.read(appPreferencesProvider);
-    await t.pump();
-    expect(restarted.read(appPreferencesProvider).quizTimer, '90s');
   });
 }

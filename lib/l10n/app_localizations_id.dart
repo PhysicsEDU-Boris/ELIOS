@@ -322,7 +322,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsTitle => 'Pengaturan';
 
   @override
-  String get settingsSubtitle => 'Koneksi, video, suara dan kuis';
+  String get settingsSubtitle => 'Koneksi dan video';
 
   @override
   String get aiNeedsInternet => 'Gemini · perlu internet';
@@ -4908,4 +4908,101 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get lnTodaysGuide => 'Panduan hari ini';
+
+  @override
+  String get navScan => 'Pindai';
+
+  @override
+  String get navScanHint => 'Pindai, membuka pilihan pindai';
+
+  @override
+  String get navProfile => 'Profil';
+
+  @override
+  String get scanHubSubtitle => 'Pilih cara memindai hari ini';
+
+  @override
+  String get scanPhoneOverline => 'Dengan ponselmu';
+
+  @override
+  String get scanPhoneTitle => 'Pindai & kuis';
+
+  @override
+  String get scanPhoneBody =>
+      'Arahkan kamera ke satu benda. ELIOS menamainya dan membuat kuis untukmu.';
+
+  @override
+  String get scanOpenCamera => 'Buka kamera';
+
+  @override
+  String get scanRobotOverline => 'Dengan robot';
+
+  @override
+  String get scanRobotTitle => 'Pindai dengan robot';
+
+  @override
+  String get scanRobotBody =>
+      'Pilih kendaraan. ELIOS siap; drone segera hadir.';
+
+  @override
+  String get scanSelectVehicle => 'Pilih kendaraan';
+
+  @override
+  String get vehicleEliosDesc => 'Robot darat · kamera MaixCAM2';
+
+  @override
+  String get vehicleDrone => 'Drone';
+
+  @override
+  String get vehicleComingSoon => 'Segera hadir';
+
+  @override
+  String get vehicleReady => 'Siap';
+
+  @override
+  String get vehicleMaixNote => 'Robot memakai kamera MaixCAM2 secara otomatis';
+
+  @override
+  String get setupTitle => 'Pengaturan ELIOS';
+
+  @override
+  String get profileTapPicture => 'Ketuk fotomu untuk opsi akun';
+
+  @override
+  String get profileSynced => 'Akun Google · riwayat tersinkron';
+
+  @override
+  String get profileGuestChip => 'Tamu · riwayat tersimpan di ponsel ini saja';
+
+  @override
+  String get profileAppearance => 'Tampilan';
+
+  @override
+  String get profileDarkModeSub => 'Ubah seluruh aplikasi ke tema gelap';
+
+  @override
+  String get profileLanguageSub => 'Teks dan suara aplikasi';
+
+  @override
+  String get profileQuestionSource => 'Sumber soal';
+
+  @override
+  String get profileQuestionSourceSub => 'Asal soal untuk kuis pindai';
+
+  @override
+  String get profileAccountMenu => 'Opsi akun';
+
+  @override
+  String get profileSwitchAccount => 'Ganti akun';
+
+  @override
+  String vehicleUse(String name) {
+    return 'Pakai $name';
+  }
+
+  @override
+  String get profileNotSignedIn => 'Belum masuk';
+
+  @override
+  String get profileGuestTap => 'Ketuk gambar untuk masuk atau ganti akun';
 }

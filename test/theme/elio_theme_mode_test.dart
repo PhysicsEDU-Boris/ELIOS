@@ -151,7 +151,7 @@ void main() {
     );
   }
 
-  testWidgets('the Config settings sheet has no theme row: theme lives in the sidebar (0145)', (
+  testWidgets('the robot settings sheet has no theme row: theme lives in Profile (0196)', (
     t,
   ) async {
     await t.pumpWidget(
@@ -161,7 +161,7 @@ void main() {
     );
     await t.tap(find.byTooltip('Settings'));
     await t.pumpAndSettle();
-    expect(find.text('Connection, video, sound and quiz'), findsOneWidget);
+    expect(find.text('Connection and video'), findsOneWidget);
     expect(find.text('Mode tampilan'), findsNothing);
     expect(find.text('Tampilan'), findsNothing);
   });

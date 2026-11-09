@@ -97,7 +97,6 @@ void main() {
             bottomNavigationBar: ElioBottomNav(
               currentIndex: 4,
               onSelectTab: (_) {},
-              onControl: () {},
             ),
           ),
         ),
@@ -326,7 +325,6 @@ void main() {
             bottomNavigationBar: ElioBottomNav(
               currentIndex: 4,
               onSelectTab: (_) {},
-              onControl: () {},
             ),
           ),
           mode,

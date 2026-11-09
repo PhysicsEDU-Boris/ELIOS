@@ -1167,7 +1167,14 @@ class LearnListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final list = ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      // In the Learn tab (no top bar since ELIOS 3) this clears the status
+      // bar; under an AppBar the inset is already 0.
+      padding: EdgeInsets.fromLTRB(
+        16,
+        8 + MediaQuery.paddingOf(context).top,
+        16,
+        32,
+      ),
       children: [
         for (final c in children)
           Center(

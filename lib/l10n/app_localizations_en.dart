@@ -321,7 +321,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
-  String get settingsSubtitle => 'Connection, video, sound and quiz';
+  String get settingsSubtitle => 'Connection and video';
 
   @override
   String get aiNeedsInternet => 'Gemini · needs internet';
@@ -5006,4 +5006,102 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lnTodaysGuide => 'Today\'s Guide';
+
+  @override
+  String get navScan => 'Scan';
+
+  @override
+  String get navScanHint => 'Scan, opens the scan hub';
+
+  @override
+  String get navProfile => 'Profile';
+
+  @override
+  String get scanHubSubtitle => 'Pick how you want to scan today';
+
+  @override
+  String get scanPhoneOverline => 'With your phone';
+
+  @override
+  String get scanPhoneTitle => 'Scan & quiz';
+
+  @override
+  String get scanPhoneBody =>
+      'Point the camera at an item. ELIOS names it and makes a quiz for you.';
+
+  @override
+  String get scanOpenCamera => 'Open camera';
+
+  @override
+  String get scanRobotOverline => 'With a robot';
+
+  @override
+  String get scanRobotTitle => 'Robot scan';
+
+  @override
+  String get scanRobotBody =>
+      'Choose a vehicle. ELIOS is ready; the drone is coming soon.';
+
+  @override
+  String get scanSelectVehicle => 'Select vehicle';
+
+  @override
+  String get vehicleEliosDesc => 'Ground robot · camera MaixCAM2';
+
+  @override
+  String get vehicleDrone => 'Drone';
+
+  @override
+  String get vehicleComingSoon => 'Coming soon';
+
+  @override
+  String get vehicleReady => 'Ready';
+
+  @override
+  String get vehicleMaixNote => 'Robots use the MaixCAM2 camera automatically';
+
+  @override
+  String get setupTitle => 'ELIOS setup';
+
+  @override
+  String get profileTapPicture => 'Tap your picture for account options';
+
+  @override
+  String get profileSynced => 'Google account · history synced';
+
+  @override
+  String get profileGuestChip => 'Guest · history saved on this phone only';
+
+  @override
+  String get profileAppearance => 'Appearance';
+
+  @override
+  String get profileDarkModeSub => 'Switch the whole app to the dark theme';
+
+  @override
+  String get profileLanguageSub => 'App text and voice';
+
+  @override
+  String get profileQuestionSource => 'Question source';
+
+  @override
+  String get profileQuestionSourceSub =>
+      'Where the scan quiz gets its questions';
+
+  @override
+  String get profileAccountMenu => 'Account options';
+
+  @override
+  String get profileSwitchAccount => 'Switch account';
+
+  @override
+  String vehicleUse(String name) {
+    return 'Use $name';
+  }
+
+  @override
+  String get profileNotSignedIn => 'Not signed in';
+
+  @override
+  String get profileGuestTap => 'Tap the picture to sign in or switch account';
 }

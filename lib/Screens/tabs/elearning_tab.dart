@@ -19,6 +19,7 @@ import 'elearning/guides/guide_lab_page.dart';
 import 'elearning/learn_hub_v3.dart';
 import '../../providers/daily_guide_provider.dart';
 import '../../providers/learn_shortcut_provider.dart';
+import '../../widgets/learn/learn_shortcuts.dart' show LearnTabTitle;
 import 'elearning/learn_content.dart';
 import 'elearning/lesson_page.dart';
 import 'elearning/module_page.dart';
@@ -374,6 +375,7 @@ class _HubContentState extends ConsumerState<_HubContent> {
               ? l10n.lnNoModulesStarted
               : l10n.lnModulesInProgress(started, modules.length),
           onOpenProgress: () => _push(const ProgressPage()),
+          top: const LearnTabTitle(),
           ticket: today == null
               ? null
               : GuideTicket(guide: today, onOpen: () => openGuideIssue(context, today)),

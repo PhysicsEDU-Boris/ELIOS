@@ -274,11 +274,10 @@ Widget shell(Widget child) => Builder(
       ],
     ),
     floatingActionButtonLocation: const ElioControlFabLocation(),
-    floatingActionButton: ElioControlButton(onTap: () {}),
+    floatingActionButton: ElioScanOrb(onTap: () {}),
     bottomNavigationBar: ElioBottomNav(
       currentIndex: 4,
       onSelectTab: (_) {},
-      onControl: () {},
     ),
   ),
 );

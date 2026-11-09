@@ -337,7 +337,38 @@ class _Row extends StatelessWidget {
   }
 }
 
-/// Streak and XP pills on the Learn top bar (Daily Guides progress, decision 0194).
+/// "Learn" title and the reward pills on the curved green header (ELIOS 3:
+/// no top bar).
+class LearnTabTitle extends StatelessWidget {
+  const LearnTabTitle({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Semantics(
+            header: true,
+            child: Text(
+              l10n.navLearn,
+              style: ElioTokens.body.copyWith(
+                fontSize: 32,
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+                letterSpacing: -0.64,
+                color: p.onPrimary,
+              ),
+            ),
+          ),
+        ),
+        const LearnTopPills(),
+      ],
+    );
+  }
+}
+
+/// Streak and XP pills on the Learn header (Daily Guides progress, decision 0194).
 class LearnTopPills extends ConsumerWidget {
   const LearnTopPills({super.key});
 

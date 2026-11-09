@@ -71,7 +71,51 @@ String homeDisplayName(User? user) {
   return l10n.homeGuest;
 }
 
-/// Trophy pill and bell for the Home top bar.
+class _HomeGreeting extends StatelessWidget {
+  const _HomeGreeting({required this.name, required this.onOpenLearning});
+  final String name;
+  final VoidCallback onOpenLearning;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Semantics(
+                header: true,
+                child: Text(
+                  l10n.homeHello(name),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: ElioTokens.body.copyWith(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    height: 1.25,
+                    letterSpacing: -0.28,
+                    color: p.textPrimary,
+                  ),
+                ),
+              ),
+              Text(
+                l10n.homeReady,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
+              ),
+            ],
+          ),
+        ),
+        HomeHeaderActions(onOpenLearning: onOpenLearning),
+      ],
+    );
+  }
+}
+
+/// Trophy pill and bell beside the Home greeting.
 class HomeHeaderActions extends ConsumerWidget {
   const HomeHeaderActions({
     super.key,
@@ -391,7 +435,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 );
                 final results = _results(stats, progress);
                 return ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    8 + MediaQuery.paddingOf(context).top,
+                    16,
+                    32,
+                  ),
                   children: [
                     Center(
                       child: ConstrainedBox(
@@ -401,6 +450,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            // ELIOS 3: the greeting scrolls with Home; no top bar.
+                            _HomeGreeting(
+                              name: homeDisplayName(user),
+                              onOpenLearning: widget.onOpenLearning,
+                            ),
+                            const SizedBox(height: 16),
                             HomeSearchField(
                               controller: _search,
                               focusNode: _searchFocus,

@@ -689,7 +689,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Connection, video, sound and quiz'**
+  /// **'Connection and video'**
   String get settingsSubtitle;
 
   /// No description provided for @aiNeedsInternet.
@@ -8556,6 +8556,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today\'s Guide'**
   String get lnTodaysGuide;
+
+  /// No description provided for @navScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan'**
+  String get navScan;
+
+  /// No description provided for @navScanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan, opens the scan hub'**
+  String get navScanHint;
+
+  /// No description provided for @navProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get navProfile;
+
+  /// No description provided for @scanHubSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick how you want to scan today'**
+  String get scanHubSubtitle;
+
+  /// No description provided for @scanPhoneOverline.
+  ///
+  /// In en, this message translates to:
+  /// **'With your phone'**
+  String get scanPhoneOverline;
+
+  /// No description provided for @scanPhoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan & quiz'**
+  String get scanPhoneTitle;
+
+  /// No description provided for @scanPhoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at an item. ELIOS names it and makes a quiz for you.'**
+  String get scanPhoneBody;
+
+  /// No description provided for @scanOpenCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Open camera'**
+  String get scanOpenCamera;
+
+  /// No description provided for @scanRobotOverline.
+  ///
+  /// In en, this message translates to:
+  /// **'With a robot'**
+  String get scanRobotOverline;
+
+  /// No description provided for @scanRobotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot scan'**
+  String get scanRobotTitle;
+
+  /// No description provided for @scanRobotBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a vehicle. ELIOS is ready; the drone is coming soon.'**
+  String get scanRobotBody;
+
+  /// No description provided for @scanSelectVehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select vehicle'**
+  String get scanSelectVehicle;
+
+  /// No description provided for @vehicleEliosDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Ground robot · camera MaixCAM2'**
+  String get vehicleEliosDesc;
+
+  /// No description provided for @vehicleDrone.
+  ///
+  /// In en, this message translates to:
+  /// **'Drone'**
+  String get vehicleDrone;
+
+  /// No description provided for @vehicleComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get vehicleComingSoon;
+
+  /// No description provided for @vehicleReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get vehicleReady;
+
+  /// No description provided for @vehicleMaixNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Robots use the MaixCAM2 camera automatically'**
+  String get vehicleMaixNote;
+
+  /// No description provided for @setupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS setup'**
+  String get setupTitle;
+
+  /// No description provided for @profileTapPicture.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap your picture for account options'**
+  String get profileTapPicture;
+
+  /// No description provided for @profileSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Google account · history synced'**
+  String get profileSynced;
+
+  /// No description provided for @profileGuestChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest · history saved on this phone only'**
+  String get profileGuestChip;
+
+  /// No description provided for @profileAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get profileAppearance;
+
+  /// No description provided for @profileDarkModeSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch the whole app to the dark theme'**
+  String get profileDarkModeSub;
+
+  /// No description provided for @profileLanguageSub.
+  ///
+  /// In en, this message translates to:
+  /// **'App text and voice'**
+  String get profileLanguageSub;
+
+  /// No description provided for @profileQuestionSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Question source'**
+  String get profileQuestionSource;
+
+  /// No description provided for @profileQuestionSourceSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Where the scan quiz gets its questions'**
+  String get profileQuestionSourceSub;
+
+  /// No description provided for @profileAccountMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Account options'**
+  String get profileAccountMenu;
+
+  /// No description provided for @profileSwitchAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch account'**
+  String get profileSwitchAccount;
+
+  /// No description provided for @vehicleUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {name}'**
+  String vehicleUse(String name);
+
+  /// No description provided for @profileNotSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in'**
+  String get profileNotSignedIn;
+
+  /// No description provided for @profileGuestTap.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the picture to sign in or switch account'**
+  String get profileGuestTap;
 }
 
 class _AppLocalizationsDelegate

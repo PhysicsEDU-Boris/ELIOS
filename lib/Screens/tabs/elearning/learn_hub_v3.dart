@@ -54,6 +54,7 @@ class LearnCurvedHeader extends StatelessWidget {
     required this.subtitle,
     required this.onOpenProgress,
     this.ticket,
+    this.top,
   });
 
   final List<ElearningModule> modules;
@@ -62,6 +63,9 @@ class LearnCurvedHeader extends StatelessWidget {
   final String title, subtitle;
   final VoidCallback onOpenProgress;
   final Widget? ticket;
+
+  /// Title row above the ring (Learn tab title and reward pills).
+  final Widget? top;
 
   @override
   Widget build(BuildContext context) {
@@ -83,68 +87,87 @@ class LearnCurvedHeader extends StatelessWidget {
               bottom: 30,
               child: _Blob(size: 64, color: p.primaryHover),
             ),
-            Semantics(
-              button: true,
-              label: '$title. $subtitle',
-              excludeSemantics: true,
-              onTap: onOpenProgress,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: onOpenProgress,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    20,
-                    4,
-                    16,
-                    ticket == null ? 36 : 84,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ELIOS 3: the page title sits on the green, under the status bar.
+                if (top != null)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      20,
+                      MediaQuery.paddingOf(context).top + 8,
+                      0,
+                      8,
+                    ),
+                    child: top,
                   ),
-                  child: Row(
-                    children: [
-                      _ModuleRing(
-                        values: moduleValues,
-                        tones: [for (final m in modules) moduleTone(m.id)],
-                        overall: overall,
+                Semantics(
+                  button: true,
+                  label: '$title. $subtitle',
+                  excludeSemantics: true,
+                  onTap: onOpenProgress,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onOpenProgress,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        20,
+                        4,
+                        16,
+                        ticket == null ? 36 : 84,
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              title.toUpperCase(),
-                              style: context.text.labelSmall?.copyWith(
-                                color: on.withValues(alpha: 0.75),
-                                letterSpacing: 1.4,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              subtitle,
-                              style: context.text.titleLarge?.copyWith(
-                                color: on,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 4,
+                      child: Row(
+                        children: [
+                          _ModuleRing(
+                            values: moduleValues,
+                            tones: [for (final m in modules) moduleTone(m.id)],
+                            overall: overall,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                for (var i = 0; i < modules.length; i++)
-                                  _LegendDot(
-                                    color: toneFg(p, moduleTone(modules[i].id)),
-                                    label:
-                                        '${binLabel(modules[i].id)} ${(moduleValues[i] * 100).round()}',
+                                Text(
+                                  title.toUpperCase(),
+                                  style: context.text.labelSmall?.copyWith(
+                                    color: on.withValues(alpha: 0.75),
+                                    letterSpacing: 1.4,
+                                    fontWeight: FontWeight.w700,
                                   ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  subtitle,
+                                  style: context.text.titleLarge?.copyWith(
+                                    color: on,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 10,
+                                  runSpacing: 4,
+                                  children: [
+                                    for (var i = 0; i < modules.length; i++)
+                                      _LegendDot(
+                                        color: toneFg(
+                                          p,
+                                          moduleTone(modules[i].id),
+                                        ),
+                                        label:
+                                            '${binLabel(modules[i].id)} ${(moduleValues[i] * 100).round()}',
+                                      ),
+                                  ],
+                                ),
                               ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ],
         ),

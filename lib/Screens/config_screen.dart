@@ -21,7 +21,6 @@ import '../widgets/tester_panel.dart';
 import 'config/config_parts.dart';
 import 'config/robot_wifi_qr_sheet.dart';
 import 'control_screen.dart';
-import 'device_scan_screen.dart';
 import 'package:elio/l10n/l10n.dart';
 
 /// "Enter an IP like 192.168.4.1", or null when [value] is a dotted IPv4.
@@ -69,27 +68,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   }
 
   Future<void> _openControlScreen() =>
-      _openLandscapeScreen(const ControlScreen());
-
-  Future<void> _openDeviceScan() =>
-      _openLandscapeScreen(const DeviceScanScreen());
-
-  Future<void> _openLandscapeScreen(Widget screen) async {
-    try {
-      await Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
-    } finally {
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      try {
-        await SystemChrome.setPreferredOrientations(const [
-          DeviceOrientation.portraitUp,
-        ]);
-        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-        applyTransparentSystemBars();
-      } catch (error) {
-        debugPrint('Unable to restore portrait mode: $error');
-      }
-    }
-  }
+      pushLandscapeScreen(context, const ControlScreen());
 
   Future<void> _connect() async {
     if (!(_form.currentState?.validate() ?? false)) return;
@@ -176,9 +155,6 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   Widget build(BuildContext context) {
     final espConfigAsync = ref.watch(espConfigProvider);
     espConfigAsync.whenData(_populateControllersFromConfig);
-    final cameraSource =
-        espConfigAsync.valueOrNull?.cameraSource ?? CameraSource.maixCam2;
-    final deviceMode = cameraSource == CameraSource.device;
     final status = ref.watch(robotStatusProvider).valueOrNull ?? 'Disconnected';
     final link = ref.watch(configLinkProvider);
     final view = linkView(status, link);
@@ -218,40 +194,13 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                       children: [
                         _RobotHero(
                           view: view,
-                          deviceMode: deviceMode,
                           endpoint: '${_ip.text} : ${_port.text}',
                         ),
                         const SizedBox(height: 16),
                         const EliosAiCard(),
                         if (testerBuild) const TesterPanel(),
-                        const SizedBox(height: 24),
-                        ConfigSectionHeader(
-                          l10n.cfgCameraSource,
-                          l10n.cfgCameraSourceSub,
-                        ),
-                        const SizedBox(height: 12),
-                        _TilePair(
-                          left: ChoiceTile(
-                            icon: Icons.photo_camera_outlined,
-                            title: 'MaixCAM2',
-                            description: l10n.cfgMaixDesc,
-                            selected: !deviceMode,
-                            onTap: () =>
-                                _setCameraSource(CameraSource.maixCam2),
-                          ),
-                          right: ChoiceTile(
-                            icon: Icons.smartphone_outlined,
-                            title: l10n.cfgPhoneCamera,
-                            description: l10n.cfgPhoneCameraDesc,
-                            selected: deviceMode,
-                            onTap: () => _setCameraSource(CameraSource.device),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        if (deviceMode)
-                          _startScanCard(p)
-                        else
-                          _connectionCardFor(p, view, link),
+                        const SizedBox(height: 16),
+                        _connectionCardFor(p, view, link),
                         const SizedBox(height: 24),
                         ConfigSectionHeader(
                           l10n.cfgQuizQuestions,
@@ -270,25 +219,6 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
       ),
     );
   }
-
-  void _setCameraSource(CameraSource source) => ref
-      .read(espConfigProvider.notifier)
-      .patch((c) => c.copyWith(cameraSource: source));
-
-  Widget _startScanCard(ElioPalette p) => ConfigCard(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(context.l10n.configPhoneOnlyHint, style: configBody(p)),
-        const SizedBox(height: 12),
-        ConfigButton(
-          label: l10n.cfgStartScan,
-          icon: Icons.center_focus_strong_outlined,
-          onPressed: _openDeviceScan,
-        ),
-      ],
-    ),
-  );
 
   Widget _connectionCardFor(ElioPalette p, LinkView view, ConfigLink link) {
     final connecting = view == LinkView.connecting;
@@ -625,36 +555,28 @@ class _AddressField extends StatelessWidget {
 
 /// Robot hero: name, address line, the real 3D model and status tiles.
 class _RobotHero extends StatelessWidget {
-  const _RobotHero({
-    required this.view,
-    required this.deviceMode,
-    required this.endpoint,
-  });
+  const _RobotHero({required this.view, required this.endpoint});
   final LinkView view;
-  final bool deviceMode;
   final String endpoint;
 
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
-    final connected = !deviceMode && view == LinkView.connected;
+    final connected = view == LinkView.connected;
     final onHero = connected ? p.onPrimary : p.textPrimary;
-    final subtitle = deviceMode
-        ? l10n.cfgRobotNotUsed
-        : switch (view) {
-            LinkView.connected => '$endpoint · MaixCAM2',
-            LinkView.connecting => l10n.cfgConnectingTo(endpoint),
-            LinkView.failed => l10n.cfgLastTryFailed,
-            LinkView.notConnected => l10n.cfgNotConnectedYet,
-          };
-    final (statusText, dot) = deviceMode
-        ? (l10n.cfgNotUsed, p.textTertiary)
-        : switch (view) {
-            LinkView.connected => (l10n.cfgOnline, p.primaryText),
-            LinkView.connecting => (l10n.cfgConnectingShort, p.secondaryText),
-            LinkView.failed => (l10n.cfgOffline, p.errorText),
-            LinkView.notConnected => (l10n.cfgOffline, p.textTertiary),
-          };
+    // Robots always use MaixCAM2 (ELIOS 3); the phone scans from the Scan hub.
+    final subtitle = switch (view) {
+      LinkView.connected => '$endpoint · MaixCAM2',
+      LinkView.connecting => l10n.cfgConnectingTo(endpoint),
+      LinkView.failed => l10n.cfgLastTryFailed,
+      LinkView.notConnected => l10n.cfgNotConnectedYet,
+    };
+    final (statusText, dot) = switch (view) {
+      LinkView.connected => (l10n.cfgOnline, p.primaryText),
+      LinkView.connecting => (l10n.cfgConnectingShort, p.secondaryText),
+      LinkView.failed => (l10n.cfgOffline, p.errorText),
+      LinkView.notConnected => (l10n.cfgOffline, p.textTertiary),
+    };
     return DecoratedBox(
       decoration: ShapeDecoration(
         color: connected ? p.primary : p.surfaceRaised,
@@ -738,7 +660,7 @@ class _RobotHero extends StatelessWidget {
               child: Stack(
                 children: [
                   const Positioned.fill(child: _ElioModelViewer()),
-                  if (view == LinkView.connecting && !deviceMode)
+                  if (view == LinkView.connecting)
                     Positioned(
                       left: 0,
                       right: 0,
@@ -817,10 +739,7 @@ class _RobotHero extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: StatusTile(
-                    label: l10n.cfgCamera,
-                    value: deviceMode ? l10n.cfgPhone : 'MaixCAM2',
-                  ),
+                  child: StatusTile(label: l10n.cfgCamera, value: 'MaixCAM2'),
                 ),
               ],
             ),
