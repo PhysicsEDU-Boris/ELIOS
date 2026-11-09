@@ -4,13 +4,16 @@
 //   334:5353 / 334:5681 / 334:5993 the same in dark (ElioTokens.dark via the theme)
 //   329:3722 Search results   329:3836 Calendar month
 // Every number comes from the local scan records (HomeStats) or learning
-// progress (medals). The header pill and bell live in the shell's top bar.
+// progress (medals). ELIOS 3 (L4 Home 629:80734, decision 0197): leaf logo +
+// greeting + bell, resume-control card while a robot is connected, level dial
+// hero with the trophy sticker, stat pebbles and pop quest cards.
 import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../models/guide_lesson.dart';
 import '../models/home_stats.dart';
@@ -23,12 +26,14 @@ import '../providers/app_notification_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/learning_progress_provider.dart';
 import '../providers/navigation_provider.dart';
+import '../providers/robot_provider.dart';
 import '../services/elearning_content_service.dart';
 import '../services/scan_record_store.dart';
 import '../theme/elio_theme.dart';
 import '../theme/elio_tokens.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
 import '../widgets/home_notifications_sheet.dart';
+import '../widgets/splash/elio_leaf.dart' show ElioMark;
 import 'home/home_activity.dart';
 import 'home/home_parts.dart';
 import 'home/home_search.dart';
@@ -36,6 +41,7 @@ import 'login_screen.dart';
 import 'package:elio/l10n/l10n.dart';
 import 'tabs/elearning/simulations/simulations_page.dart' show openSimulation;
 
+const _scanTab = 2;
 const _controlTab = 3;
 const _historyTab = 4;
 const _maxContentWidth = 720.0;
@@ -81,6 +87,8 @@ class _HomeGreeting extends StatelessWidget {
     final p = authPalette(context);
     return Row(
       children: [
+        ElioMark(size: 40, color: p.primaryText),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,82 +123,158 @@ class _HomeGreeting extends StatelessWidget {
   }
 }
 
-/// Trophy pill and bell beside the Home greeting.
+/// The bell beside the Home greeting (the trophy total sits on the hero).
 class HomeHeaderActions extends ConsumerWidget {
-  const HomeHeaderActions({
-    super.key,
-    required this.onOpenLearning,
-    this.store,
-  });
+  const HomeHeaderActions({super.key, required this.onOpenLearning});
 
   final VoidCallback onOpenLearning;
-  final ScanRecordStore? store;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = authPalette(context);
-    final s = store ?? ScanRecordStore.instance;
     final unread = ref.watch(unreadNotificationCountProvider);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ListenableBuilder(
-          listenable: s,
-          builder: (context, _) => Semantics(
-            label: l10n.a11yTrophies(s.totalTrophies),
-            container: true,
-            excludeSemantics: true,
-            child: DecoratedBox(
-              decoration: ShapeDecoration(
-                color: p.surface,
-                shape: homeShape(999, p.borderSubtle),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.emoji_events_outlined,
-                      size: 20,
-                      color: p.secondaryText,
+    return IconButton(
+      tooltip: l10n.homeOpenNotifications,
+      style: IconButton.styleFrom(minimumSize: const Size.square(48)),
+      onPressed: () => showNotificationsSheet(
+        context: context,
+        onOpenLearning: onOpenLearning,
+      ),
+      icon: Badge(
+        isLabelVisible: unread > 0,
+        label: Text(unread > 9 ? '9+' : '$unread'),
+        backgroundColor: p.error,
+        textColor: p.onError,
+        child: Icon(Icons.notifications_none_rounded, color: p.textPrimary),
+      ),
+    );
+  }
+}
+
+/// "ELIOS robot · Still connected · Continue" (629:81091): only while a robot
+/// session is still connected; Continue reopens Control.
+class HomeResumeControl extends ConsumerWidget {
+  const HomeResumeControl({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = ref.watch(robotStatusProvider).valueOrNull ?? '';
+    if (status.trim().toLowerCase() != 'connected') {
+      return const SizedBox.shrink();
+    }
+    final p = authPalette(context);
+    void open() =>
+        ref.read(navigationIndexProvider.notifier).state = _controlTab;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Semantics(
+        button: true,
+        label:
+            '${l10n.homeRobotOverline}, ${l10n.homeStillConnected}. '
+            '${l10n.homeResumeControl}',
+        excludeSemantics: true,
+        onTap: open,
+        child: Material(
+          color: p.primary,
+          elevation: 0,
+          shape: const RoundedRectangleBorder(borderRadius: _leaf),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: open,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 12, 12, 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: p.isDark ? p.background : p.surface,
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${s.totalTrophies}',
-                      style: ElioTokens.button.copyWith(
-                        fontSize: 16,
-                        color: p.textPrimary,
-                      ),
+                    child: SvgPicture.asset(
+                      'assets/illustrations/scan/elios_robot.svg',
+                      excludeFromSemantics: true,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.homeRobotOverline.toUpperCase(),
+                          style: _overline11(p.onPrimary),
+                        ),
+                        Text(
+                          l10n.homeStillConnected,
+                          style: ElioTokens.body.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: p.onPrimary,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: ShapeDecoration(
+                      color: p.isDark ? p.background : p.surface,
+                      shape: const StadiumBorder(),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          l10n.commonContinue,
+                          style: ElioTokens.button.copyWith(
+                            color: p.primaryText,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 16,
+                          color: p.primaryText,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ),
-        IconButton(
-          tooltip: l10n.homeOpenNotifications,
-          style: IconButton.styleFrom(minimumSize: const Size.square(48)),
-          onPressed: () => showNotificationsSheet(
-            context: context,
-            onOpenLearning: onOpenLearning,
-          ),
-          icon: Badge(
-            isLabelVisible: unread > 0,
-            label: Text(unread > 9 ? '9+' : '$unread'),
-            backgroundColor: p.error,
-            textColor: p.onError,
-            child: Icon(Icons.notifications_none_rounded, color: p.textPrimary),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
+
+/// Organic leaf corners (30 on one diagonal, 10 on the other).
+const _leaf = BorderRadius.only(
+  topLeft: Radius.circular(30),
+  topRight: Radius.circular(10),
+  bottomRight: Radius.circular(30),
+  bottomLeft: Radius.circular(10),
+);
+const _leafFlip = BorderRadius.only(
+  topLeft: Radius.circular(10),
+  topRight: Radius.circular(30),
+  bottomRight: Radius.circular(10),
+  bottomLeft: Radius.circular(30),
+);
+
+TextStyle _overline11(Color c) => ElioTokens.label.copyWith(
+  fontSize: 11,
+  letterSpacing: 1.1,
+  height: 1.4,
+  color: c,
+);
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
@@ -514,6 +598,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       stats.today.day,
     ).difference(DateTime.utc(stats.today.year)).inDays;
     return [
+      const HomeResumeControl(),
       if (isGuest) ...[
         _GuestBanner(
           onSignIn: () => Navigator.of(context).pushReplacement(
@@ -648,7 +733,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             if (stats.isEmpty) ...[
               const SizedBox(height: 16),
               FilledButton(
-                onPressed: () => _goTab(_controlTab),
+                onPressed: () => _goTab(_scanTab),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
                   shape: homeShape(999),
@@ -782,11 +867,41 @@ class _Hero extends StatelessWidget {
     final p = authPalette(context);
     final level = stats.level;
     final toNext = stats.trophiesToNext;
-    final ink = p.onPrimary;
-    final label = ElioTokens.bodySmall.copyWith(
-      color: ink,
-      fontWeight: FontWeight.w600,
+    final next = level.levelNumber + 1;
+    final sticker = Transform.rotate(
+      angle: 0.14,
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          color: p.primary,
+          shape: const StadiumBorder(),
+          shadows: const [
+            BoxShadow(
+              color: Color(0x24000000),
+              blurRadius: 4,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.emoji_events_outlined, size: 14, color: p.onPrimary),
+              const SizedBox(width: 4),
+              Text(
+                context.l10n.homeTrophies(stats.totalTrophies),
+                style: ElioTokens.caption.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: p.onPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
+    final lv = ElioTokens.caption.copyWith(color: p.textSecondary);
     return Semantics(
       container: true,
       label:
@@ -797,104 +912,180 @@ class _Hero extends StatelessWidget {
           ) +
           (toNext == null
               ? l10n.levelSemanticsTop
-              : l10n.levelSemanticsNext(toNext, level.levelNumber + 1)),
+              : l10n.levelSemanticsNext(toNext, next)),
       excludeSemantics: true,
-      child: HomeCard(
-        color: p.primary,
-        padding: 18,
-        child: Row(
+      child: SizedBox(
+        height: 330,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.topCenter,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  DecoratedBox(
-                    decoration: ShapeDecoration(
-                      color: p.field,
-                      shape: homeShape(999),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 3,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.emoji_events_outlined,
-                            size: 16,
-                            color: p.secondaryText,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            l10n.homeLevel(level.levelNumber),
-                            style: ElioTokens.bodySmall.copyWith(
-                              color: p.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+            // Soft hill and sun dots (629:80753-55).
+            Positioned(
+              top: 40,
+              left: -106,
+              right: -106,
+              height: 430,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: p.primary.withValues(alpha: p.isDark ? 0.10 : 0.08),
+                  borderRadius: const BorderRadius.all(
+                    Radius.elliptical(285, 215),
                   ),
-                  const SizedBox(height: 8),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 6,
+              right: 34,
+              child: _dot(p.primary.withValues(alpha: 0.45), 40),
+            ),
+            Positioned(
+              top: 70,
+              left: 2,
+              child: _dot(p.primary.withValues(alpha: 0.45), 18),
+            ),
+            Positioned(
+              top: 40,
+              child: SizedBox(
+                width: 300,
+                height: 150,
+                child: CustomPaint(
+                  painter: _DialPainter(
+                    value: toNext == null ? 1 : stats.levelProgress,
+                    track: p.borderSubtle,
+                    fill: p.primary,
+                    knob: p.surface,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 52,
+              child: homeArt(
+                level.levelNumber >= 3 ? 'tree_lv3' : 'sprout_lv1',
+                width: 156,
+                height: 161,
+              ),
+            ),
+            Positioned(
+              top: 196,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: SizedBox(
+                  width: 300,
+                  child: Row(
+                    children: [
+                      Text(l10n.homeLvShort(level.levelNumber), style: lv),
+                      const Spacer(),
+                      if (toNext != null)
+                        Text(l10n.homeLvShort(next), style: lv),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(top: 44, right: 4, child: sticker),
+            Positioned(
+              top: 220,
+              left: 0,
+              right: 0,
+              child: Column(
+                children: [
+                  Text(
+                    l10n.homeLevel(level.levelNumber).toUpperCase(),
+                    style: _overline11(p.primaryText),
+                  ),
+                  const SizedBox(height: 2),
                   Text(
                     level.title,
-                    style: homeNumber(p, 28).copyWith(color: ink),
+                    textAlign: TextAlign.center,
+                    style: homeNumber(
+                      p,
+                      36,
+                    ).copyWith(height: 1.2, letterSpacing: -0.72),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 2),
                   Text(
                     stats.totalTrophies == 0
                         ? l10n.homePlantFirst
-                        : l10n.homeTreeGrows,
-                    style: ElioTokens.body.copyWith(color: ink, height: 1.4),
-                  ),
-                  const SizedBox(height: 12),
-                  HomeBar(
-                    value: stats.levelProgress,
-                    color: ink,
-                    track: p.isDark ? ink.withValues(alpha: 0.25) : p.field,
-                  ),
-                  const SizedBox(height: 6),
-                  SizedBox(
-                    width: double.infinity,
-                    child: Wrap(
-                      alignment: WrapAlignment.spaceBetween,
-                      spacing: 8,
-                      children: [
-                        Text(
-                          context.l10n.homeTrophies(stats.totalTrophies),
-                          style: label,
-                        ),
-                        Text(
-                          toNext == null
-                              ? l10n.homeTopLevel
-                              : l10n.homeToNextLevel(
-                                  toNext,
-                                  level.levelNumber + 1,
-                                ),
-                          style: label,
-                        ),
-                      ],
-                    ),
+                        : toNext == null
+                        ? l10n.homeTopLevel
+                        : l10n.homeToNextLong(toNext, next),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: homeSmall(p),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(width: 8),
-            // Lv1-2 sprout, Lv3-5 tree until more art exists.
-            homeArt(
-              level.levelNumber >= 3 ? 'tree_lv3' : 'sprout_lv1',
-              width: 96,
-              height: 99,
             ),
           ],
         ),
       ),
     );
   }
+
+  Widget _dot(Color c, double size) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+  );
 }
 
+/// Top half-circle dial: track, progress to the next level and a knob.
+class _DialPainter extends CustomPainter {
+  _DialPainter({
+    required this.value,
+    required this.track,
+    required this.fill,
+    required this.knob,
+  });
+
+  final double value;
+  final Color track, fill, knob;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const stroke = 18.0;
+    final rect = Rect.fromLTWH(
+      stroke / 2,
+      stroke / 2,
+      size.width - stroke,
+      size.width - stroke,
+    );
+    Paint line(Color c) => Paint()
+      ..color = c
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(rect, math.pi, math.pi, false, line(track));
+    final v = value.clamp(0.0, 1.0);
+    if (v > 0) canvas.drawArc(rect, math.pi, math.pi * v, false, line(fill));
+    final a = math.pi + math.pi * v;
+    final c = rect.center + Offset(math.cos(a), math.sin(a)) * rect.width / 2;
+    canvas
+      ..drawCircle(c, 9, Paint()..color = knob)
+      ..drawCircle(
+        c,
+        9,
+        Paint()
+          ..color = fill
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3,
+      );
+  }
+
+  @override
+  bool shouldRepaint(_DialPainter old) =>
+      old.value != value ||
+      old.track != track ||
+      old.fill != fill ||
+      old.knob != knob;
+}
+
+/// Three stat pebbles (629:80775-91), staggered like stones.
 class _StatsRow extends StatelessWidget {
   const _StatsRow({required this.stats});
   final HomeStats stats;
@@ -904,67 +1095,73 @@ class _StatsRow extends StatelessWidget {
     final p = authPalette(context);
     final acc = stats.quizAccuracy;
     final streak = stats.currentStreak;
-    final tiles = [
+    final pebbles = [
       (
-        homeArt('scan_line_art', width: 28, height: 28),
+        homeArt('scan_line_art', width: 22, height: 22),
         '${stats.totalScans}',
         l10n.homeScans,
+        p.surface,
+        6.0,
       ),
       (
-        Icon(Icons.help_outline_rounded, size: 28, color: p.tertiaryText),
+        Icon(Icons.track_changes_rounded, size: 20, color: p.primaryText),
         acc == null ? '—' : '$acc%',
         l10n.homeQuizAccuracy,
+        p.tertiaryText.withValues(alpha: p.isDark ? 0.14 : 0.06),
+        32.0,
       ),
       (
-        homeArt('streak_flame', width: 26, height: 30),
+        homeArt('streak_flame', width: 24, height: 28),
         '$streak',
         l10n.homeDayStreak,
+        p.secondaryText.withValues(alpha: p.isDark ? 0.14 : 0.05),
+        0.0,
       ),
     ];
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (var i = 0; i < tiles.length; i++) ...[
-          if (i > 0) const SizedBox(width: 10),
+        for (final (i, s) in pebbles.indexed) ...[
+          if (i > 0) const SizedBox(width: 8),
           Expanded(
-            child: Semantics(
-              label: l10n.a11yLabelValue(
-                tiles[i].$3,
-                tiles[i].$2 == '—' ? l10n.noData : tiles[i].$2,
-              ),
-              container: true,
-              excludeSemantics: true,
-              child: HomeCard(
-                padding: 12,
-                child: LayoutBuilder(
-                  builder: (context, c) {
-                    final text = Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(tiles[i].$2, style: homeNumber(p, 22)),
-                        Text(tiles[i].$3, style: homeSmall(p)),
-                      ],
-                    );
-                    // Narrow phones and large text: icon above the number.
-                    if (c.maxWidth <
-                        100 * MediaQuery.textScalerOf(context).scale(1)) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          tiles[i].$1,
-                          const SizedBox(height: 4),
-                          text,
-                        ],
-                      );
-                    }
-                    return Row(
-                      children: [
-                        tiles[i].$1,
-                        const SizedBox(width: 8),
-                        Expanded(child: text),
-                      ],
-                    );
-                  },
+            child: Padding(
+              padding: EdgeInsets.only(top: s.$5),
+              child: Semantics(
+                label: l10n.a11yLabelValue(
+                  s.$3,
+                  s.$2 == '—' ? l10n.noData : s.$2,
+                ),
+                container: true,
+                excludeSemantics: true,
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: DecoratedBox(
+                    decoration: ShapeDecoration(
+                      color: s.$4,
+                      shape: CircleBorder(
+                        side: BorderSide(color: p.borderSubtle),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            s.$1,
+                            Text(s.$2, style: homeNumber(p, 28)),
+                            Text(
+                              s.$3,
+                              style: ElioTokens.caption.copyWith(
+                                color: p.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -975,6 +1172,8 @@ class _StatsRow extends StatelessWidget {
   }
 }
 
+/// Daily quests: heading with squiggle and ring, then three pop cards
+/// (629:81029) with an art bubble, reward and a progress ring check.
 class _Quests extends StatelessWidget {
   const _Quests({required this.stats});
   final HomeStats stats;
@@ -984,123 +1183,196 @@ class _Quests extends StatelessWidget {
     final p = authPalette(context);
     final quests = stats.quests;
     final done = quests.where((q) => q.done).length;
-    return HomeCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              homeArt('quest_target', width: 40, height: 40),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        context.l10n.homeDailyQuests,
-                        style: homeTitle(p),
-                      ),
+    // Quest order is fixed: scan 3, finish a quiz, sort a B3 item.
+    final art = [
+      (homeArt('scan_line_art', width: 38, height: 38), p.primaryText),
+      (homeArt('quest_target', width: 38, height: 38), p.tertiaryText),
+      (homeArt('bin_b3', width: 30, height: 38), p.errorText),
+    ];
+    const tilt = [0.035, 0.0, -0.035];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      context.l10n.homeDailyQuests,
+                      style: homeTitle(
+                        p,
+                      ).copyWith(fontSize: 22, fontWeight: FontWeight.w700),
                     ),
-                    Text(l10n.questsDoneLine(done), style: homeSmall(p)),
-                  ],
-                ),
-              ),
-              Semantics(
-                label: l10n.questsDoneSemantics(done),
-                container: true,
-                excludeSemantics: true,
-                child: SizedBox.square(
-                  dimension: 44,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox.expand(
-                        child: CircularProgressIndicator(
-                          value: done / 3,
-                          strokeWidth: 4,
-                          color: p.primary,
-                          backgroundColor: p.borderSubtle,
-                          strokeCap: StrokeCap.round,
-                        ),
-                      ),
-                      Text(
-                        '$done/3',
-                        style: homeSmall(p, color: p.textPrimary),
-                      ),
-                    ],
                   ),
-                ),
+                  SvgPicture.asset(
+                    'assets/illustrations/scan/squiggle.svg',
+                    width: 72,
+                    height: 10,
+                    excludeFromSemantics: true,
+                    colorFilter: ColorFilter.mode(p.primary, BlendMode.srcIn),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(l10n.questsDoneLine(done), style: homeSmall(p)),
+                ],
               ),
-            ],
-          ),
-          for (final q in quests) ...[
-            const SizedBox(height: 10),
+            ),
             Semantics(
-              label: l10n.questSemantics(
-                q.title,
-                q.done
-                    ? l10n.questDone
-                    : l10n.percentValue((q.progress * 100).round()),
-                q.reward,
-              ),
+              label: l10n.questsDoneSemantics(done),
               container: true,
               excludeSemantics: true,
-              child: DecoratedBox(
-                decoration: ShapeDecoration(
-                  color: q.done
-                      ? p.primary.withValues(alpha: 0.12)
-                      : p.surfaceRaised.withValues(alpha: p.isDark ? 0.4 : 0.6),
-                  shape: homeShape(homeRadiusM),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      q.done
-                          ? Icon(
-                              Icons.check_circle_rounded,
-                              color: p.primary,
-                              size: 26,
-                            )
-                          : Icon(
-                              Icons.radio_button_unchecked_rounded,
-                              color: p.textSecondary,
-                              size: 26,
-                            ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              q.title,
-                              style: ElioTokens.body.copyWith(
-                                color: q.done ? p.textSecondary : p.textPrimary,
-                                height: 1.35,
-                              ),
-                            ),
-                            if (!q.done) ...[
-                              const SizedBox(height: 6),
-                              HomeBar(
-                                value: q.progress,
-                                color: p.primary,
-                                track: p.borderSubtle,
-                                height: 6,
-                              ),
-                            ],
-                          ],
-                        ),
+              child: SizedBox.square(
+                dimension: 48,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox.expand(
+                      child: CircularProgressIndicator(
+                        value: done / 3,
+                        strokeWidth: 4,
+                        color: p.primary,
+                        backgroundColor: p.borderSubtle,
+                        strokeCap: StrokeCap.round,
                       ),
-                      const SizedBox(width: 12),
-                      TrophyAmount('+${q.reward}', chip: true),
-                    ],
-                  ),
+                    ),
+                    Text(
+                      '$done/3',
+                      style: homeSmall(
+                        p,
+                        color: p.textPrimary,
+                        weight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 40),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (i, q) in quests.indexed) ...[
+                if (i > 0) const SizedBox(width: 10),
+                Expanded(
+                  child: Transform.rotate(
+                    angle: tilt[i % 3],
+                    child: _QuestCard(
+                      quest: q,
+                      art: art[i % 3].$1,
+                      tone: art[i % 3].$2,
+                      radius: i.isOdd ? _leafFlip : _leaf,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuestCard extends StatelessWidget {
+  const _QuestCard({
+    required this.quest,
+    required this.art,
+    required this.tone,
+    required this.radius,
+  });
+
+  final DailyQuest quest;
+  final Widget art;
+  final Color tone;
+  final BorderRadius radius;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
+    final q = quest;
+    return Semantics(
+      label: l10n.questSemantics(
+        q.title,
+        q.done ? l10n.questDone : l10n.percentValue((q.progress * 100).round()),
+        q.reward,
+      ),
+      container: true,
+      excludeSemantics: true,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 0),
+            padding: const EdgeInsets.fromLTRB(8, 40, 8, 12),
+            decoration: BoxDecoration(
+              color: q.done ? p.primary.withValues(alpha: 0.12) : p.surface,
+              borderRadius: radius,
+              border: Border.all(color: p.borderSubtle),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x24000000),
+                  blurRadius: 4,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Text(
+                  q.title,
+                  textAlign: TextAlign.center,
+                  style: ElioTokens.bodySmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: q.done ? p.textSecondary : p.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                const SizedBox(height: 8),
+                TrophyAmount('+${q.reward}', chip: true),
+                const SizedBox(height: 8),
+                // Done check that fills up with the quest's progress.
+                SizedBox.square(
+                  dimension: 24,
+                  child: q.done
+                      ? Icon(
+                          Icons.check_circle_rounded,
+                          size: 24,
+                          color: p.primaryText,
+                        )
+                      : CircularProgressIndicator(
+                          value: q.progress,
+                          strokeWidth: 2.5,
+                          color: p.primary,
+                          backgroundColor: p.borderMedium,
+                        ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: -29,
+            child: Container(
+              width: 60,
+              height: 60,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Color.alphaBlend(
+                  tone.withValues(alpha: p.isDark ? 0.18 : 0.08),
+                  p.surface,
+                ),
+                shape: BoxShape.circle,
+                border: Border.all(color: p.surface, width: 3),
+              ),
+              child: art,
+            ),
+          ),
         ],
       ),
     );

@@ -19,6 +19,7 @@ import 'elearning/guides/guide_lab_page.dart';
 import 'elearning/learn_hub_v3.dart';
 import '../../providers/daily_guide_provider.dart';
 import '../../providers/learn_shortcut_provider.dart';
+import '../../services/guide_progress.dart' show guideProgressProvider;
 import '../../widgets/learn/learn_shortcuts.dart' show LearnTabTitle;
 import 'elearning/learn_content.dart';
 import 'elearning/lesson_page.dart';
@@ -84,7 +85,9 @@ class _ElearningTabState extends ConsumerState<ElearningTab> {
         case LearningResumeType.quiz:
           if (mounted) {
             await Navigator.of(context).push(
-              learnRoute<void>(QuizPage(moduleId: intent.moduleId ?? intent.id)),
+              learnRoute<void>(
+                QuizPage(moduleId: intent.moduleId ?? intent.id),
+              ),
             );
           }
       }
@@ -145,15 +148,22 @@ class LearnHub extends ConsumerWidget {
       builder: (context, modulesSnap) {
         if (modulesSnap.hasError) {
           return LearnListView(
-            children: [const GuidesHubSection(), LearnModulesError(onRetry: onRetry)],
+            children: [
+              const GuidesHubSection(),
+              LearnModulesError(onRetry: onRetry),
+            ],
           );
         }
         if (!modulesSnap.hasData) {
-          return const LearnListView(children: [GuidesHubSection(), LearnHubSkeleton()]);
+          return const LearnListView(
+            children: [GuidesHubSection(), LearnHubSkeleton()],
+          );
         }
         final modules = modulesSnap.data!;
         if (modules.isEmpty) {
-          return const LearnListView(children: [GuidesHubSection(), LearnNoModules()]);
+          return const LearnListView(
+            children: [GuidesHubSection(), LearnNoModules()],
+          );
         }
         return StreamBuilder<List<VideoLesson>>(
           stream: streams.videos,
@@ -213,7 +223,11 @@ class _HubContentState extends ConsumerState<_HubContent> {
 
   void _onShortcut(LearnShortcut s) {
     ref.read(learnShortcutProvider.notifier).state = null;
-    final today = ref.read(dailyGuideFeedProvider).valueOrNull?.guides.firstOrNull;
+    final today = ref
+        .read(dailyGuideFeedProvider)
+        .valueOrNull
+        ?.guides
+        .firstOrNull;
     void tab(LearnExploreTab t) {
       ref.read(learnExploreTabProvider.notifier).state = t;
       final c = _exploreKey.currentContext;
@@ -228,13 +242,19 @@ class _HubContentState extends ConsumerState<_HubContent> {
 
     switch (s) {
       case LearnShortcut.today:
-        today == null ? _push(const DailyGuidesPage()) : openGuideIssue(context, today);
+        today == null
+            ? _push(const DailyGuidesPage())
+            : openGuideIssue(context, today);
       case LearnShortcut.resume:
         final l = inProgressLessons(
           _lessons,
           ref.read(learningProgressProvider).valueOrNull,
         ).firstOrNull;
-        _push(l == null ? ModulePage(module: widget.modules.first) : LessonPage(lesson: l));
+        _push(
+          l == null
+              ? ModulePage(module: widget.modules.first)
+              : LessonPage(lesson: l),
+        );
       case LearnShortcut.modules:
         tab(LearnExploreTab.modules);
       case LearnShortcut.videos:
@@ -246,7 +266,9 @@ class _HubContentState extends ConsumerState<_HubContent> {
       case LearnShortcut.quiz:
         _push(const QuizPage());
       case LearnShortcut.miniLab:
-        _push(today == null ? const DailyGuidesPage() : GuideLabPage(guide: today));
+        _push(
+          today == null ? const DailyGuidesPage() : GuideLabPage(guide: today),
+        );
       case LearnShortcut.progress:
         _push(const ProgressPage());
       case LearnShortcut.archive:
@@ -270,15 +292,21 @@ class _HubContentState extends ConsumerState<_HubContent> {
     final lessons = _lessons;
     final lessonsLoaded = videos != null && guides != null;
     final firstLaunch = isFirstLaunch(progress);
-    final overall = progress?.weightedProgressFor(
+    final overall =
+        progress?.weightedProgressFor(
           totalVideos: videos?.length ?? 0,
           totalGuides: guides?.length ?? 0,
           totalQuizModules: modules.length,
         ) ??
         0;
-    final values = [for (final m in modules) moduleProgress(m.id, lessons, progress)];
+    final values = [
+      for (final m in modules) moduleProgress(m.id, lessons, progress),
+    ];
     final started = values.where((v) => v > 0).length;
-    final recentModule = inProgressLessons(lessons, progress).firstOrNull?.moduleId;
+    final recentModule = inProgressLessons(
+      lessons,
+      progress,
+    ).firstOrNull?.moduleId;
 
     List<LearnLesson> recentFirst(List<LearnLesson> list) {
       final active = inProgressLessons(list, progress);
@@ -292,7 +320,9 @@ class _HubContentState extends ConsumerState<_HubContent> {
       return ExploreItem(
         title: l.title,
         meta: l.lengthLabel,
-        tag: resume ? l10n.lnJumpBackIn : (l.isVideo ? l10n.lnVideo : l10n.lnGuide),
+        tag: resume
+            ? l10n.lnJumpBackIn
+            : (l.isVideo ? l10n.lnVideo : l10n.lnGuide),
         art: popArt(url: l.imageUrl, fallback: l.fallbackArt),
         tone: tone,
         progress: v,
@@ -303,8 +333,12 @@ class _HubContentState extends ConsumerState<_HubContent> {
       );
     }
 
-    final videoLessons = [for (final v in videos ?? const <VideoLesson>[]) LearnLesson.video(v)];
-    final guideLessons = [for (final g in guides ?? const <GuideLesson>[]) LearnLesson.guide(g)];
+    final videoLessons = [
+      for (final v in videos ?? const <VideoLesson>[]) LearnLesson.video(v),
+    ];
+    final guideLessons = [
+      for (final g in guides ?? const <GuideLesson>[]) LearnLesson.guide(g),
+    ];
     final orderedModules = [
       ...modules.where((m) => m.id == recentModule),
       ...modules.where((m) => m.id != recentModule),
@@ -319,7 +353,9 @@ class _HubContentState extends ConsumerState<_HubContent> {
             final st = stickerFor(v);
             return ExploreItem(
               title: m.title,
-              meta: l10n.lnLessonCount(lessons.where((l) => l.moduleId == m.id).length),
+              meta: l10n.lnLessonCount(
+                lessons.where((l) => l.moduleId == m.id).length,
+              ),
               tag: resume
                   ? l10n.lnJumpBackIn
                   : start
@@ -336,7 +372,8 @@ class _HubContentState extends ConsumerState<_HubContent> {
           }(),
       ],
       LearnExploreTab.videos => [
-        for (final (i, l) in recentFirst(videoLessons).indexed) lessonItem(l, i, LearnTone.success),
+        for (final (i, l) in recentFirst(videoLessons).indexed)
+          lessonItem(l, i, LearnTone.success),
       ],
       LearnExploreTab.simulations => [
         for (final m in physicsModules)
@@ -353,14 +390,19 @@ class _HubContentState extends ConsumerState<_HubContent> {
           ),
       ],
       LearnExploreTab.guides => [
-        for (final (i, l) in recentFirst(guideLessons).indexed) lessonItem(l, i, LearnTone.warning),
+        for (final (i, l) in recentFirst(guideLessons).indexed)
+          lessonItem(l, i, LearnTone.warning),
       ],
     };
     final seeAll = switch (tab) {
       LearnExploreTab.modules => () => _push(const ProgressPage()),
-      LearnExploreTab.videos => () => _push(LessonListPage(title: l10n.lnVideos, lessons: videoLessons)),
+      LearnExploreTab.videos => () => _push(
+        LessonListPage(title: l10n.lnVideos, lessons: videoLessons),
+      ),
       LearnExploreTab.simulations => () => _push(const SimulationListPage()),
-      LearnExploreTab.guides => () => _push(LessonListPage(title: l10n.lnPdfGuides, lessons: guideLessons)),
+      LearnExploreTab.guides => () => _push(
+        LessonListPage(title: l10n.lnPdfGuides, lessons: guideLessons),
+      ),
     };
 
     return ListView(
@@ -376,9 +418,18 @@ class _HubContentState extends ConsumerState<_HubContent> {
               : l10n.lnModulesInProgress(started, modules.length),
           onOpenProgress: () => _push(const ProgressPage()),
           top: const LearnTabTitle(),
+          rewards: l10n.lnGuideRewards(
+            ref.watch(guideProgressProvider.select((s) => s.totalXp)),
+            l10n.lnClovers(
+              ref.watch(guideProgressProvider.select((s) => s.streak)),
+            ),
+          ),
           ticket: today == null
               ? null
-              : GuideTicket(guide: today, onOpen: () => openGuideIssue(context, today)),
+              : GuideTicket(
+                  guide: today,
+                  onOpen: () => openGuideIssue(context, today),
+                ),
         ),
         LearnBubbles(
           items: [
@@ -398,7 +449,7 @@ class _HubContentState extends ConsumerState<_HubContent> {
               ),
             LearnBubble(
               label: l10n.lnArchive,
-              asset: 'assets/illustrations/home/streak_flame.svg',
+              asset: 'assets/illustrations/learn/clover.svg',
               tone: LearnTone.success,
               badge: feed?.guides.length,
               onTap: () => _push(const DailyGuidesPage()),
@@ -422,8 +473,10 @@ class _HubContentState extends ConsumerState<_HubContent> {
               if (guides != null) LearnExploreTab.guides: guides.length,
             },
             items: items,
-            loading: !lessonsLoaded &&
-                (tab == LearnExploreTab.videos || tab == LearnExploreTab.guides),
+            loading:
+                !lessonsLoaded &&
+                (tab == LearnExploreTab.videos ||
+                    tab == LearnExploreTab.guides),
             onSeeAll: seeAll,
           ),
         ),
@@ -469,19 +522,36 @@ class LessonTile extends StatelessWidget {
     final pct = (lesson.progress(progress) * 100).round();
     return LessonCard(
       onTap: onTap,
-      cover: LearnThumbnail(url: lesson.imageUrl, fallbackAsset: lesson.fallbackArt),
+      cover: LearnThumbnail(
+        url: lesson.imageUrl,
+        fallbackAsset: lesson.fallbackArt,
+      ),
       meta: lesson.meta,
       title: lesson.title,
       leading: lesson.lengthLabel.isEmpty
           ? null
           : LearnMeta(
-              icon: lesson.isVideo ? Icons.play_circle_outline_rounded : Icons.description_outlined,
+              icon: lesson.isVideo
+                  ? Icons.play_circle_outline_rounded
+                  : Icons.description_outlined,
               label: lesson.isVideo ? lesson.lengthLabel : l10n.lnGuide,
             ),
       trailing: switch (state) {
-        LessonState.done => LearnMeta(icon: Icons.check_rounded, label: l10n.lnDone, color: p.primaryText),
-        LessonState.inProgress => LearnMeta(icon: Icons.trending_up_rounded, label: '$pct%', color: p.primaryText),
-        LessonState.start => LearnMeta(icon: Icons.trending_up_rounded, label: l10n.lnNew, color: p.primaryText),
+        LessonState.done => LearnMeta(
+          icon: Icons.check_rounded,
+          label: l10n.lnDone,
+          color: p.primaryText,
+        ),
+        LessonState.inProgress => LearnMeta(
+          icon: Icons.trending_up_rounded,
+          label: '$pct%',
+          color: p.primaryText,
+        ),
+        LessonState.start => LearnMeta(
+          icon: Icons.trending_up_rounded,
+          label: l10n.lnNew,
+          color: p.primaryText,
+        ),
       },
       buttonLabel: showButton ? lesson.actionLabel(progress) : null,
       primaryButton: state != LessonState.done,
@@ -491,7 +561,12 @@ class LessonTile extends StatelessWidget {
 
 /// Video card with thumbnail and fallback.
 class VideoTile extends StatelessWidget {
-  const VideoTile({super.key, required this.lesson, required this.moduleTitle, required this.onTap});
+  const VideoTile({
+    super.key,
+    required this.lesson,
+    required this.moduleTitle,
+    required this.onTap,
+  });
 
   final LearnLesson lesson;
   final String moduleTitle;
@@ -499,7 +574,10 @@ class VideoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => VideoCard(
-    thumbnail: LearnThumbnail(url: lesson.imageUrl, fallbackAsset: lesson.fallbackArt),
+    thumbnail: LearnThumbnail(
+      url: lesson.imageUrl,
+      fallbackAsset: lesson.fallbackArt,
+    ),
     duration: lesson.lengthLabel,
     title: lesson.title,
     subtitle: moduleTitle,
@@ -530,7 +608,9 @@ class LessonRow extends StatelessWidget {
     return GuideLessonRow(
       title: lesson.title,
       subtitle: subtitle,
-      icon: lesson.isVideo ? Icons.play_circle_outline_rounded : Icons.description_outlined,
+      icon: lesson.isVideo
+          ? Icons.play_circle_outline_rounded
+          : Icons.description_outlined,
       highlighted: highlighted,
       trailing: done ? const DoneCheck() : null,
       onTap: onTap,
@@ -548,12 +628,13 @@ class LearnModulesError extends StatelessWidget {
   Widget build(BuildContext context) => LearnStateView(
     asset: LearnArt.stateOffline,
     title: l10n.lnLoadFailed,
-    message:
-        l10n.lnLoadFailedBody,
+    message: l10n.lnLoadFailedBody,
     primaryLabel: l10n.cfgTryAgain,
     onPrimary: onRetry,
     secondaryLabel: l10n.lnOpenOffline,
-    onSecondary: () => Navigator.of(context).push(learnRoute<void>(const OfflineLessonsPage())),
+    onSecondary: () => Navigator.of(
+      context,
+    ).push(learnRoute<void>(const OfflineLessonsPage())),
   );
 }
 
@@ -584,7 +665,10 @@ class LessonListPage extends ConsumerWidget {
       body: LearnListView(
         children: [
           if (lessons.isEmpty)
-            LearnStateView(asset: LearnArt.stateEmpty, title: l10n.lnNothingHere)
+            LearnStateView(
+              asset: LearnArt.stateEmpty,
+              title: l10n.lnNothingHere,
+            )
           else
             // Three columns of thumbnails (owner request, 1 Nov).
             LessonCardGrid(
@@ -595,7 +679,9 @@ class LessonListPage extends ConsumerWidget {
                   LessonThumbTile(
                     lesson: l,
                     progress: progress,
-                    onTap: () => Navigator.of(context).push(learnRoute<void>(LessonPage(lesson: l))),
+                    onTap: () => Navigator.of(
+                      context,
+                    ).push(learnRoute<void>(LessonPage(lesson: l))),
                   ),
               ],
             ),
@@ -607,7 +693,12 @@ class LessonListPage extends ConsumerWidget {
 
 /// Compact thumbnail card for the three-column lesson lists.
 class LessonThumbTile extends StatelessWidget {
-  const LessonThumbTile({super.key, required this.lesson, required this.progress, required this.onTap});
+  const LessonThumbTile({
+    super.key,
+    required this.lesson,
+    required this.progress,
+    required this.onTap,
+  });
 
   final LearnLesson lesson;
   final LearningProgress? progress;
@@ -621,7 +712,8 @@ class LessonThumbTile extends StatelessWidget {
       onTap: onTap,
       padding: const EdgeInsets.all(6),
       radius: learnRadiusM,
-      semanticLabel: '${lesson.isVideo ? l10n.lnVideo : l10n.lnGuide} ${lesson.title}',
+      semanticLabel:
+          '${lesson.isVideo ? l10n.lnVideo : l10n.lnGuide} ${lesson.title}',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -631,7 +723,10 @@ class LessonThumbTile extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                LearnThumbnail(url: lesson.imageUrl, fallbackAsset: lesson.fallbackArt),
+                LearnThumbnail(
+                  url: lesson.imageUrl,
+                  fallbackAsset: lesson.fallbackArt,
+                ),
                 if (lesson.isVideo) const Center(child: PlayBadge(size: 28)),
               ],
             ),
@@ -649,13 +744,22 @@ class LessonThumbTile extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  lesson.isVideo ? lesson.meta.replaceFirst('${l10n.lnVideo} · ', '') : lesson.meta.replaceFirst('${l10n.lnGuide} · ', ''),
+                  lesson.isVideo
+                      ? lesson.meta.replaceFirst('${l10n.lnVideo} · ', '')
+                      : lesson.meta.replaceFirst('${l10n.lnGuide} · ', ''),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: context.text.labelMedium?.copyWith(color: p.textSecondary),
+                  style: context.text.labelMedium?.copyWith(
+                    color: p.textSecondary,
+                  ),
                 ),
               ),
-              if (done) Icon(Icons.check_circle_rounded, size: 16, color: p.primaryText),
+              if (done)
+                Icon(
+                  Icons.check_circle_rounded,
+                  size: 16,
+                  color: p.primaryText,
+                ),
             ],
           ),
         ],
@@ -703,8 +807,8 @@ class OfflineLessonsPage extends ConsumerStatefulWidget {
 }
 
 class _OfflineLessonsPageState extends ConsumerState<OfflineLessonsPage> {
-  late final Future<({List<GuideLesson> guides, List<VideoLesson> videos})> _cached =
-      ref.read(elearningContentServiceProvider).fetchCachedLessons();
+  late final Future<({List<GuideLesson> guides, List<VideoLesson> videos})>
+  _cached = ref.read(elearningContentServiceProvider).fetchCachedLessons();
 
   @override
   Widget build(BuildContext context) {
@@ -718,12 +822,16 @@ class _OfflineLessonsPageState extends ConsumerState<OfflineLessonsPage> {
             return Center(child: LearnSpinner(label: l10n.lnLoadingOffline));
           }
           final data = snap.data;
-          final lessons = data == null ? <LearnLesson>[] : mergeLessons(data.guides, data.videos);
+          final lessons = data == null
+              ? <LearnLesson>[]
+              : mergeLessons(data.guides, data.videos);
           return LearnListView(
             children: [
               Text(
                 l10n.lnOfflineNote,
-                style: context.text.bodySmall?.copyWith(color: context.elio.textSecondary),
+                style: context.text.bodySmall?.copyWith(
+                  color: context.elio.textSecondary,
+                ),
               ),
               const SizedBox(height: 16),
               if (lessons.isEmpty)
@@ -741,7 +849,11 @@ class _OfflineLessonsPageState extends ConsumerState<OfflineLessonsPage> {
                         subtitle: l.meta,
                         onTap: () => l.isVideo
                             ? openVideoLesson(context, ref, l.video!)
-                            : openGuideLesson(context: context, ref: ref, lesson: l.guide!),
+                            : openGuideLesson(
+                                context: context,
+                                ref: ref,
+                                lesson: l.guide!,
+                              ),
                       ),
                   ],
                 ),

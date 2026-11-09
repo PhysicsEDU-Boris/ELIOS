@@ -10,6 +10,8 @@ hashes updated after the history rewrite on 2026-10-08. The old-to-new map is
 kept outside the repo.
 
 ## [Unreleased]
+- ELIOS 3 Home and Learn (0197): Home has the leaf logo and bell, a "Still connected · Continue" card while a robot is connected (leaving Control now keeps the robot connected; disconnect from ELIOS setup), a level dial hero with the trophy sticker, stat pebbles and pop-card daily quests. Learn shows the Daily Guides streak as clovers and the guide XP under the progress legend.
+
 - ELIOS 3 navigation (0196): the bottom bar is now Home · Learn · Scan · History · Profile. Scan opens a hub with Scan & quiz (phone) and Robot scan (Select vehicle, ELIOS ready and the drone coming soon, then ELIOS setup, which connects and opens Control). Profile holds dark mode, language, sound and quiz settings and the account menu (switch account, sign out). The top bar and sidebar are gone; each page shows its own title. Robots always use MaixCAM2.
 
 - Learn hub redesign L2 v3 (0195): curved green header with a module progress ring, Today's Guide as a ticket, Quiz / Mini lab / Archive / Progress bubbles, and Explore tabs (Modules, Videos, Simulations, PDF guides) with leaf-shaped cards. On Learn the sidebar shows Learn shortcuts (Continue dropdown, Explore, Practice, You) instead of app navigation; the top bar shows the guide streak and XP.

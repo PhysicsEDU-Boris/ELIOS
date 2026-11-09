@@ -117,8 +117,8 @@ class _LearnShortcutsMenuState extends ConsumerState<LearnShortcutsMenu> {
               color: p.textSecondary,
             ),
             expanded: continueOpen,
-            onTap: () =>
-                ref.read(learnContinueOpenProvider.notifier).state = !continueOpen,
+            onTap: () => ref.read(learnContinueOpenProvider.notifier).state =
+                !continueOpen,
           ),
           if (continueOpen)
             Padding(
@@ -368,7 +368,8 @@ class LearnTabTitle extends StatelessWidget {
   }
 }
 
-/// Streak and XP pills on the Learn header (Daily Guides progress, decision 0194).
+/// "1 clover" sticker on the Learn header (Figma 629:82550): the Daily Guides
+/// reading streak, shown as clovers (ELIOS 3, decision 0197).
 class LearnTopPills extends ConsumerWidget {
   const LearnTopPills({super.key});
 
@@ -376,50 +377,45 @@ class LearnTopPills extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final p = authPalette(context);
     final streak = ref.watch(guideProgressProvider.select((s) => s.streak));
-    final xp = ref.watch(guideProgressProvider.select((s) => s.totalXp));
-    Widget pill(Widget lead, String text, Color color, String label) =>
-        Semantics(
-          label: label,
-          excludeSemantics: true,
-          child: Container(
-            margin: const EdgeInsets.only(left: 6),
-            padding: const EdgeInsets.fromLTRB(8, 5, 10, 5),
-            decoration: ShapeDecoration(
-              color: p.surface,
-              shape: const StadiumBorder(),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                lead,
-                const SizedBox(width: 4),
-                Text(text, style: ElioTokens.button.copyWith(color: color)),
-              ],
-            ),
-          ),
-        );
     return Padding(
       padding: const EdgeInsets.only(right: 16),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          pill(
-            SvgPicture.asset(
-              'assets/illustrations/home/streak_flame.svg',
-              width: 16,
-              height: 18,
+      child: Semantics(
+        label: l10n.g4StreakDays(streak),
+        excludeSemantics: true,
+        child: Transform.rotate(
+          angle: -0.06,
+          child: DecoratedBox(
+            decoration: ShapeDecoration(
+              color: p.isDark ? p.background : p.surface,
+              shape: const StadiumBorder(),
+              shadows: const [
+                BoxShadow(
+                  color: Color(0x24000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 3),
+                ),
+              ],
             ),
-            '$streak',
-            p.secondaryText,
-            l10n.g4StreakDays(streak),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SvgPicture.asset(
+                    'assets/illustrations/learn/clover.svg',
+                    width: 18,
+                    height: 18,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    l10n.lnClovers(streak),
+                    style: ElioTokens.button.copyWith(color: p.primaryText),
+                  ),
+                ],
+              ),
+            ),
           ),
-          pill(
-            Icon(Icons.emoji_events_outlined, size: 16, color: p.primaryText),
-            '$xp',
-            p.primaryText,
-            l10n.lnTotalXp(xp),
-          ),
-        ],
+        ),
       ),
     );
   }

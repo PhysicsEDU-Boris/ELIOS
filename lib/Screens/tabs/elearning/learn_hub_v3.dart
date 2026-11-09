@@ -55,6 +55,7 @@ class LearnCurvedHeader extends StatelessWidget {
     required this.onOpenProgress,
     this.ticket,
     this.top,
+    this.rewards,
   });
 
   final List<ElearningModule> modules;
@@ -66,6 +67,9 @@ class LearnCurvedHeader extends StatelessWidget {
 
   /// Title row above the ring (Learn tab title and reward pills).
   final Widget? top;
+
+  /// "260 XP · 1 clover · from Daily Guides" under the legend.
+  final String? rewards;
 
   @override
   Widget build(BuildContext context) {
@@ -159,6 +163,16 @@ class LearnCurvedHeader extends StatelessWidget {
                                       ),
                                   ],
                                 ),
+                                if (rewards != null) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    rewards!,
+                                    style: context.text.labelMedium?.copyWith(
+                                      color: on,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),

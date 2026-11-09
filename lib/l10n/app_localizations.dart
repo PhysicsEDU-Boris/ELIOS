@@ -8742,6 +8742,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap the picture to sign in or switch account'**
   String get profileGuestTap;
+
+  /// No description provided for @homeLvShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv {n}'**
+  String homeLvShort(int n);
+
+  /// No description provided for @homeToNextLong.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} trophies to Level {level} · your tree grows with every trophy'**
+  String homeToNextLong(int count, int level);
+
+  /// No description provided for @homeRobotOverline.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS robot'**
+  String get homeRobotOverline;
+
+  /// No description provided for @homeStillConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Still connected'**
+  String get homeStillConnected;
+
+  /// No description provided for @homeResumeControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume robot control'**
+  String get homeResumeControl;
+
+  /// No description provided for @lnClovers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 clover} other{{count} clovers}}'**
+  String lnClovers(int count);
+
+  /// No description provided for @lnGuideRewards.
+  ///
+  /// In en, this message translates to:
+  /// **'{xp} XP · {clovers} · from Daily Guides'**
+  String lnGuideRewards(int xp, String clovers);
 }
 
 class _AppLocalizationsDelegate

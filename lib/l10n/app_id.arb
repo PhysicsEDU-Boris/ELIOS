@@ -1438,5 +1438,12 @@
   "profileSwitchAccount": "Ganti akun",
   "vehicleUse": "Pakai {name}",
   "profileNotSignedIn": "Belum masuk",
-  "profileGuestTap": "Ketuk gambar untuk masuk atau ganti akun"
+  "profileGuestTap": "Ketuk gambar untuk masuk atau ganti akun",
+  "homeLvShort": "Lv {n}",
+  "homeToNextLong": "{count} trofi lagi ke Level {level} · pohonmu tumbuh dengan setiap trofi",
+  "homeRobotOverline": "Robot ELIOS",
+  "homeStillConnected": "Masih terhubung",
+  "homeResumeControl": "Lanjutkan kontrol robot",
+  "lnClovers": "{count} semanggi",
+  "lnGuideRewards": "{xp} XP · {clovers} · dari Panduan Harian"
 }

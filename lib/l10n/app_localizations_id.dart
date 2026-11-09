@@ -5005,4 +5005,33 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get profileGuestTap => 'Ketuk gambar untuk masuk atau ganti akun';
+
+  @override
+  String homeLvShort(int n) {
+    return 'Lv $n';
+  }
+
+  @override
+  String homeToNextLong(int count, int level) {
+    return '$count trofi lagi ke Level $level · pohonmu tumbuh dengan setiap trofi';
+  }
+
+  @override
+  String get homeRobotOverline => 'Robot ELIOS';
+
+  @override
+  String get homeStillConnected => 'Masih terhubung';
+
+  @override
+  String get homeResumeControl => 'Lanjutkan kontrol robot';
+
+  @override
+  String lnClovers(int count) {
+    return '$count semanggi';
+  }
+
+  @override
+  String lnGuideRewards(int xp, String clovers) {
+    return '$xp XP · $clovers · dari Panduan Harian';
+  }
 }

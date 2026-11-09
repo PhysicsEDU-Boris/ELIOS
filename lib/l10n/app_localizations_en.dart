@@ -5104,4 +5104,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileGuestTap => 'Tap the picture to sign in or switch account';
+
+  @override
+  String homeLvShort(int n) {
+    return 'Lv $n';
+  }
+
+  @override
+  String homeToNextLong(int count, int level) {
+    return '$count trophies to Level $level · your tree grows with every trophy';
+  }
+
+  @override
+  String get homeRobotOverline => 'ELIOS robot';
+
+  @override
+  String get homeStillConnected => 'Still connected';
+
+  @override
+  String get homeResumeControl => 'Resume robot control';
+
+  @override
+  String lnClovers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count clovers',
+      one: '1 clover',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lnGuideRewards(int xp, String clovers) {
+    return '$xp XP · $clovers · from Daily Guides';
+  }
 }

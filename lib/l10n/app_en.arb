@@ -3315,5 +3315,16 @@
   "vehicleUse": "Use {name}",
   "@vehicleUse": {"placeholders": {"name": {"type": "String"}}},
   "profileNotSignedIn": "Not signed in",
-  "profileGuestTap": "Tap the picture to sign in or switch account"
+  "profileGuestTap": "Tap the picture to sign in or switch account",
+  "homeLvShort": "Lv {n}",
+  "@homeLvShort": {"placeholders": {"n": {"type": "int"}}},
+  "homeToNextLong": "{count} trophies to Level {level} · your tree grows with every trophy",
+  "@homeToNextLong": {"placeholders": {"count": {"type": "int"}, "level": {"type": "int"}}},
+  "homeRobotOverline": "ELIOS robot",
+  "homeStillConnected": "Still connected",
+  "homeResumeControl": "Resume robot control",
+  "lnClovers": "{count, plural, =1{1 clover} other{{count} clovers}}",
+  "@lnClovers": {"placeholders": {"count": {"type": "int"}}},
+  "lnGuideRewards": "{xp} XP · {clovers} · from Daily Guides",
+  "@lnGuideRewards": {"placeholders": {"xp": {"type": "int"}, "clovers": {"type": "String"}}}
 }
