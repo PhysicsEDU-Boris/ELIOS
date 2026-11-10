@@ -94,8 +94,12 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   void _populateControllersFromConfig(EspConfig config) {
     if (_configPopulated) return;
     _configPopulated = true;
-    _ip.text = config.esp32IpAddress;
-    if (config.port > 0) _port.text = config.port.toString();
+    // A live link (maybe to an unsaved address) wins over the saved default.
+    final ws = WebSocketService();
+    final live = ws.isConnected && ws.ip.isNotEmpty;
+    _ip.text = live ? ws.ip : config.esp32IpAddress;
+    final port = live ? ws.port : config.port;
+    if (port > 0) _port.text = '$port';
   }
 
   Future<void> _openControlScreen() {
