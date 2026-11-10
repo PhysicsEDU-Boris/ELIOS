@@ -272,7 +272,7 @@ class _VehicleTile extends StatelessWidget {
   }
 }
 
-/// ELIOS setup (Figma 629:90894): the old Config tab content as a pushed page.
+/// ELIOS setup (Figma 629:90894, redesign 629:91327): the old Config tab content as a pushed page.
 /// A successful connect opens Control, as before.
 class EliosSetupScreen extends StatelessWidget {
   const EliosSetupScreen({super.key});
@@ -304,7 +304,14 @@ class EliosSetupScreen extends StatelessWidget {
                           shape: const StadiumBorder(),
                           minimumSize: const Size(48, 40),
                         ),
-                        child: Text(l10n.vehicleChange),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(l10n.vehicleChange),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.chevron_right_rounded, size: 18),
+                          ],
+                        ),
                       ),
                     ),
                   ),

@@ -9096,6 +9096,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Medal unlocked'**
   String get celebrateMedal;
+
+  /// No description provided for @setupWsOverWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS WebSocket address over the robot Wi-Fi'**
+  String get setupWsOverWifi;
+
+  /// No description provided for @setupJoinWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the ELIOS Wi-Fi'**
+  String get setupJoinWifi;
+
+  /// No description provided for @setupJoinWifiBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the Wi-Fi QR on the robot so this phone joins its network.'**
+  String get setupJoinWifiBody;
+
+  /// No description provided for @setupShowWifiQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Show robot Wi-Fi QR'**
+  String get setupShowWifiQr;
+
+  /// No description provided for @setupFoundAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Found at {ip}'**
+  String setupFoundAt(String ip);
+
+  /// No description provided for @setupSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for ELIOS'**
+  String get setupSearch;
+
+  /// No description provided for @setupSearchAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Search again'**
+  String get setupSearchAgain;
+
+  /// No description provided for @setupConnectStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get setupConnectStep;
+
+  /// No description provided for @setupSaveDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as default address'**
+  String get setupSaveDefault;
+
+  /// No description provided for @setupSavedDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved as default address'**
+  String get setupSavedDefault;
+
+  /// No description provided for @setupStepState.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {n}, {state}'**
+  String setupStepState(int n, String state);
+
+  /// No description provided for @setupStepDone.
+  ///
+  /// In en, this message translates to:
+  /// **'done'**
+  String get setupStepDone;
+
+  /// No description provided for @setupStepNow.
+  ///
+  /// In en, this message translates to:
+  /// **'current step'**
+  String get setupStepNow;
+
+  /// No description provided for @setupStepTodo.
+  ///
+  /// In en, this message translates to:
+  /// **'not yet'**
+  String get setupStepTodo;
+
+  /// No description provided for @setupStepProblem.
+  ///
+  /// In en, this message translates to:
+  /// **'needs attention'**
+  String get setupStepProblem;
 }
 
 class _AppLocalizationsDelegate

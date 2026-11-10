@@ -1497,5 +1497,20 @@
   "h3TrophiesWord": "trofi",
   "celebrateTap": "Ketuk untuk lanjut",
   "celebrateLevelUp": "Level {level}!",
-  "celebrateMedal": "Medali terbuka"
+  "celebrateMedal": "Medali terbuka",
+  "setupWsOverWifi": "Alamat WebSocket ELIOS lewat Wi-Fi robot",
+  "setupJoinWifi": "Sambung ke Wi-Fi ELIOS",
+  "setupJoinWifiBody": "Pindai QR Wi-Fi di robot agar ponsel ini masuk ke jaringannya.",
+  "setupShowWifiQr": "Tampilkan QR Wi-Fi robot",
+  "setupFoundAt": "Ditemukan di {ip}",
+  "setupSearch": "Cari ELIOS",
+  "setupSearchAgain": "Cari lagi",
+  "setupConnectStep": "Hubungkan",
+  "setupSaveDefault": "Simpan sebagai alamat bawaan",
+  "setupSavedDefault": "Disimpan sebagai alamat bawaan",
+  "setupStepState": "Langkah {n}, {state}",
+  "setupStepDone": "selesai",
+  "setupStepNow": "langkah sekarang",
+  "setupStepTodo": "belum",
+  "setupStepProblem": "perlu dicek"
 }
