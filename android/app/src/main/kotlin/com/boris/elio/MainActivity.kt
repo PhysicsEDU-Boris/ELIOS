@@ -28,9 +28,12 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     }
                     "isSilent" -> {
-                        // ELIOS 3 sound (0201): UI sounds stay quiet on silent / vibrate.
-                        val audio = getSystemService(AUDIO_SERVICE) as android.media.AudioManager
-                        result.success(audio.ringerMode != android.media.AudioManager.RINGER_MODE_NORMAL)
+                        // ELIOS 3 sound (0201): UI sounds stay quiet when the ringer switch is
+                        // on silent / vibrate. AudioManager.ringerMode also says "silent" while
+                        // Do Not Disturb is on, which does not block media, so read the switch.
+                        val mode = Settings.Global.getInt(contentResolver, "mode_ringer",
+                            android.media.AudioManager.RINGER_MODE_NORMAL)
+                        result.success(mode != android.media.AudioManager.RINGER_MODE_NORMAL)
                     }
                     "wifiSettings" -> {
                         // R2 Control: "Wi-Fi settings" on the disconnected state.

@@ -9,8 +9,10 @@ J2jSbARJSyJCStNFeWkWDj section 13 (motion · sound · haptics) and 12 (skeletons
   (leaf tick, seed pop, twig toggle on/off, bloom chime, soft knock, robot blip, shutter, rec
   start/stop, trophy sparkle + short, air) as 44.1 kHz mono WAVs at ≤ −18 dBFS, synthesised by
   `tools/sounds/make_sounds.py` (re-runnable, ~200 KB). Rules: off when Profile → Sound effects is
-  off, scaled by Master volume, silent when Android is on silent/vibrate (new `isSilent` on the
-  existing `elio/device_health` channel, cached 1 s), at most one sound per 120 ms (a clock set
+  off, scaled by Master volume, silent when the ringer switch is on silent/vibrate (new `isSilent` on
+  the existing `elio/device_health` channel reads `Settings.Global` `mode_ringer`, cached 1 s;
+  `AudioManager.ringerMode` was wrong: it reports silent whenever Do Not Disturb is on, which
+  muted every sound on the owner's phone), at most one sound per 120 ms (a clock set
   back never mutes), S10 off by default, never looped, mixes with music/voice
   (`AudioContextConfigFocus.mixWithOthers`). Playback: `audioplayers` `AudioPool` (new dependency:
   there was no audio player in the app).

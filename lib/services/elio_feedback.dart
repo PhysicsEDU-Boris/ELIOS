@@ -57,14 +57,14 @@ class ElioSound {
 
   /// Plays [sfx] at Master volume. False when muted, throttled or silent.
   Future<bool> play(ElioSfx sfx, {double gain = 1}) async {
-    if (!enabled || volume <= 0) return false;
+    if (!enabled || volume <= 0) return _skip(sfx, 'off or volume 0');
     if (sfx == ElioSfx.air && !airEnabled) return false;
     final now = clock();
     final since = now.difference(_last);
     // A clock set back (time zone, manual change) must not mute sounds.
     if (!since.isNegative && since < minGap) return false;
     _last = now;
-    if (await isSilent()) return false;
+    if (await isSilent()) return _skip(sfx, 'phone on silent/vibrate');
     final v = (volume * gain).clamp(0.0, 1.0);
     final s = sink;
     if (s != null) {
@@ -83,6 +83,11 @@ class ElioSound {
       debugPrint('[ElioSound] ${sfx.name} failed: $e');
       return false;
     }
+  }
+
+  bool _skip(ElioSfx sfx, String why) {
+    if (kDebugMode) debugPrint('[ElioSound] ${sfx.name} skipped: $why');
+    return false;
   }
 
   /// UI sounds mix with music and the quiz voice instead of pausing them.
