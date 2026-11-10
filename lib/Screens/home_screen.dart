@@ -29,6 +29,7 @@ import '../providers/navigation_provider.dart';
 import '../providers/robot_provider.dart';
 import '../services/elearning_content_service.dart';
 import '../services/scan_record_store.dart';
+import '../theme/elio_motion.dart';
 import '../theme/elio_theme.dart';
 import '../theme/elio_tokens.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
@@ -65,6 +66,17 @@ ElearningContentService get _contentService =>
 @visibleForTesting
 set homeContentServiceForTest(ElearningContentService? service) =>
     _contentServiceOverride = service;
+
+/// Home's entrance (dial sweep, count-up, pop-ins) plays once per app
+/// session, not on every tab switch (Figma 13 · 11-13).
+bool _homeEntrancePlayed = false;
+
+/// Latched when a HomeScreen is created, so the flag above flipping during
+/// the first visit never cuts that visit's entrance short.
+bool _playEntrance = true;
+
+@visibleForTesting
+void resetHomeEntrance() => _homeEntrancePlayed = false;
 
 /// Test seam for a fixed "now".
 @visibleForTesting
@@ -164,6 +176,15 @@ class HomeResumeControl extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final p = authPalette(context);
+    // Appears whenever a robot connects, so not session-gated.
+    return ElioPopIn(
+      rise: -16,
+      curve: ElioMotion.soft,
+      child: _resume(context, ref, p),
+    );
+  }
+
+  Widget _resume(BuildContext context, WidgetRef ref, ElioPalette p) {
     void open() {
       elioFeedback(ElioSfx.blip, ElioHaptics.medium); // Figma 13 · 15
       ref.read(navigationIndexProvider.notifier).state = _controlTab;
@@ -319,6 +340,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _playEntrance = !_homeEntrancePlayed;
     unawaited(_store.load());
     void listen<T>(Stream<T> stream, void Function(T) onData) => _subs.add(
       stream.listen(
@@ -596,6 +618,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     List<_Medal> medals,
   ) {
     const gap = SizedBox(height: 16);
+    if (!_homeEntrancePlayed) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _homeEntrancePlayed = true,
+      );
+    }
     final day = DateTime.utc(
       stats.today.year,
       stats.today.month,
@@ -954,22 +981,52 @@ class _Hero extends StatelessWidget {
               child: SizedBox(
                 width: 300,
                 height: 150,
-                child: CustomPaint(
-                  painter: _DialPainter(
-                    value: toNext == null ? 1 : stats.levelProgress,
-                    track: p.borderSubtle,
-                    fill: p.primary,
-                    knob: p.surface,
+                // Arc sweeps 0 → progress, the knob rides it (900, delay 200).
+                child: ElioAfterFirstFrame(
+                  builder: (context, ready) => TweenAnimationBuilder<double>(
+                    tween: Tween(
+                      begin: 0,
+                      end:
+                          !ready &&
+                              _playEntrance &&
+                              !ElioMotion.reduced(context)
+                          ? 0
+                          : toNext == null
+                          ? 1
+                          : stats.levelProgress,
+                    ),
+                    duration: ElioMotion.reduced(context)
+                        ? Duration.zero
+                        : ElioMotion.celebrate +
+                              const Duration(milliseconds: 200),
+                    curve: const Interval(
+                      0.18,
+                      1,
+                      curve: ElioMotion.emphasized,
+                    ),
+                    builder: (context, v, _) => CustomPaint(
+                      painter: _DialPainter(
+                        value: v,
+                        track: p.borderSubtle,
+                        fill: p.primary,
+                        knob: p.surface,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
             Positioned(
               top: 52,
-              child: homeArt(
-                level.levelNumber >= 3 ? 'tree_lv3' : 'sprout_lv1',
-                width: 156,
-                height: 161,
+              child: ElioPopIn(
+                play: _playEntrance,
+                rise: 0,
+                curve: ElioMotion.soft,
+                child: homeArt(
+                  level.levelNumber >= 3 ? 'tree_lv3' : 'sprout_lv1',
+                  width: 156,
+                  height: 161,
+                ),
               ),
             ),
             Positioned(
@@ -990,7 +1047,36 @@ class _Hero extends StatelessWidget {
                 ),
               ),
             ),
-            Positioned(top: 44, right: 4, child: sticker),
+            // Sticker drops in rotating (spring/pop, delay 600).
+            Positioned(
+              top: 44,
+              right: 4,
+              child: ElioMotion.reduced(context) || !_playEntrance
+                  ? sticker
+                  : ElioAfterFirstFrame(
+                      builder: (context, ready) =>
+                          TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0, end: ready ? 1 : 0),
+                            duration: const Duration(milliseconds: 1100),
+                            curve: const Interval(
+                              0.55,
+                              1,
+                              curve: ElioMotion.pop,
+                            ),
+                            child: sticker,
+                            builder: (context, v, child) => Opacity(
+                              opacity: v.clamp(0.0, 1.0),
+                              child: Transform.translate(
+                                offset: Offset(0, -16 * (1 - v)),
+                                child: Transform.rotate(
+                                  angle: 0.1 * (1 - v),
+                                  child: child,
+                                ),
+                              ),
+                            ),
+                          ),
+                    ),
+            ),
             Positioned(
               top: 220,
               left: 0,
@@ -1130,38 +1216,44 @@ class _StatsRow extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: EdgeInsets.only(top: s.$5),
-              child: Semantics(
-                label: l10n.a11yLabelValue(
-                  s.$3,
-                  s.$2 == '—' ? l10n.noData : s.$2,
-                ),
-                container: true,
-                excludeSemantics: true,
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: DecoratedBox(
-                    decoration: ShapeDecoration(
-                      color: s.$4,
-                      shape: CircleBorder(
-                        side: BorderSide(color: p.borderSubtle),
+              child: ElioPopIn(
+                play: _playEntrance,
+                index: i,
+                stagger: const Duration(milliseconds: 60),
+                rise: 8,
+                child: Semantics(
+                  label: l10n.a11yLabelValue(
+                    s.$3,
+                    s.$2 == '—' ? l10n.noData : s.$2,
+                  ),
+                  container: true,
+                  excludeSemantics: true,
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: DecoratedBox(
+                      decoration: ShapeDecoration(
+                        color: s.$4,
+                        shape: CircleBorder(
+                          side: BorderSide(color: p.borderSubtle),
+                        ),
                       ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            s.$1,
-                            Text(s.$2, style: homeNumber(p, 28)),
-                            Text(
-                              s.$3,
-                              style: ElioTokens.caption.copyWith(
-                                color: p.textSecondary,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              s.$1,
+                              _CountText(s.$2, style: homeNumber(p, 28)),
+                              Text(
+                                s.$3,
+                                style: ElioTokens.caption.copyWith(
+                                  color: p.textSecondary,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -1172,6 +1264,24 @@ class _StatsRow extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Numbers count up the first time they show (600 ms); "47%" keeps its %.
+class _CountText extends StatelessWidget {
+  const _CountText(this.text, {required this.style});
+  final String text;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final m = RegExp(r'^(\d+)(%?)$').firstMatch(text);
+    if (m == null) return Text(text, style: style);
+    return ElioCountUp(
+      play: _playEntrance,
+      value: int.parse(m.group(1)!),
+      builder: (context, v) => Text('$v${m.group(2)}', style: style),
     );
   }
 }
@@ -1264,13 +1374,18 @@ class _Quests extends StatelessWidget {
               for (final (i, q) in quests.indexed) ...[
                 if (i > 0) const SizedBox(width: 10),
                 Expanded(
-                  child: Transform.rotate(
-                    angle: tilt[i % 3],
-                    child: _QuestCard(
-                      quest: q,
-                      art: art[i % 3].$1,
-                      tone: art[i % 3].$2,
-                      radius: i.isOdd ? _leafFlip : _leaf,
+                  child: ElioPopIn(
+                    play: _playEntrance,
+                    index: i,
+                    stagger: const Duration(milliseconds: 60),
+                    child: Transform.rotate(
+                      angle: tilt[i % 3],
+                      child: _QuestCard(
+                        quest: q,
+                        art: art[i % 3].$1,
+                        tone: art[i % 3].$2,
+                        radius: i.isOdd ? _leafFlip : _leaf,
+                      ),
                     ),
                   ),
                 ),
@@ -1820,45 +1935,26 @@ class _DidYouKnow extends StatelessWidget {
   }
 }
 
-class _LoadingSkeleton extends StatefulWidget {
+/// Home skeleton (Figma 12 · Home 635:23782): the same geometry as the L4
+/// Home (dial, three pebbles, quest cards) under the section 12 shimmer;
+/// static under reduced motion.
+class _LoadingSkeleton extends StatelessWidget {
   const _LoadingSkeleton();
-
-  @override
-  State<_LoadingSkeleton> createState() => _LoadingSkeletonState();
-}
-
-class _LoadingSkeletonState extends State<_LoadingSkeleton>
-    with SingleTickerProviderStateMixin {
-  late final _pulse = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  );
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Static under reduced motion.
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _pulse.value = 1;
-    } else if (!_pulse.isAnimating) {
-      _pulse.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void dispose() {
-    _pulse.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context);
-    Widget block(double h) => Container(
+    Widget block(double h, {double r = homeRadiusL}) => Container(
       height: h,
-      decoration: ShapeDecoration(
-        color: p.borderSubtle,
-        shape: homeShape(homeRadiusL),
+      decoration: ShapeDecoration(color: p.borderSubtle, shape: homeShape(r)),
+    );
+    Widget circle() => AspectRatio(
+      aspectRatio: 1,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: p.borderSubtle,
+          shape: BoxShape.circle,
+        ),
       ),
     );
     return Semantics(
@@ -1874,26 +1970,37 @@ class _LoadingSkeletonState extends State<_LoadingSkeleton>
             style: homeSmall(p),
           ),
           const SizedBox(height: 16),
-          FadeTransition(
-            opacity: Tween(begin: 0.55, end: 1.0).animate(_pulse),
+          ElioShimmer(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                block(150),
+                block(300, r: 150),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: block(58)),
-                    const SizedBox(width: 10),
-                    Expanded(child: block(58)),
-                    const SizedBox(width: 10),
-                    Expanded(child: block(58)),
+                    Expanded(child: circle()),
+                    const SizedBox(width: 8),
+                    Expanded(child: circle()),
+                    const SizedBox(width: 8),
+                    Expanded(child: circle()),
                   ],
                 ),
-                const SizedBox(height: 16),
-                block(190),
-                const SizedBox(height: 16),
-                block(150),
+                const SizedBox(height: 24),
+                FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: 0.5,
+                  child: block(24, r: 12),
+                ),
+                const SizedBox(height: 40),
+                Row(
+                  children: [
+                    Expanded(child: block(150)),
+                    const SizedBox(width: 10),
+                    Expanded(child: block(150)),
+                    const SizedBox(width: 10),
+                    Expanded(child: block(150)),
+                  ],
+                ),
               ],
             ),
           ),

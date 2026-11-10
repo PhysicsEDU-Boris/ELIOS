@@ -71,3 +71,4 @@ their status changed.
 - [0199](0199-elios3-history.md) ELIOS 3 History: compact tab, timeline by device
 - [0200](0200-elios3-login.md) ELIOS 3 login (L4 organic header)
 - [0201](0201-elios3-sound-haptics.md) ELIOS 3 sound service S1–S10, haptic map, loading states
+- [0202](0202-elios3-motion.md) ELIOS 3 motion tokens and micro-interactions

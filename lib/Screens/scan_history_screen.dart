@@ -7,6 +7,7 @@ import '../services/scan_record_store.dart';
 import '../l10n/l10n.dart';
 import '../theme/elio_tokens.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
+import '../theme/elio_motion.dart';
 import '../widgets/elio_page_title.dart';
 import '../widgets/history_ui.dart';
 import 'home/home_parts.dart' show homeArt;
@@ -459,11 +460,21 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
           t.h3NoScansInCategory,
           style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
         ),
-      for (final r in latest) ...[
-        HistoryScanRow(
-          record: r,
-          trailingLabel: historyDay(t, r.time),
-          onTap: () => _openDetail(r),
+      // Rows re-enter on a filter change: rise 8 px + fade, stagger 30.
+      for (final (i, r) in latest.indexed) ...[
+        ElioPopIn(
+          key: ValueKey('${_filter?.id}-${r.id}'),
+          index: i,
+          stagger: const Duration(milliseconds: 30),
+          rise: 8,
+          duration: ElioMotion.base,
+          child: ElioPress(
+            child: HistoryScanRow(
+              record: r,
+              trailingLabel: historyDay(t, r.time),
+              onTap: () => _openDetail(r),
+            ),
+          ),
         ),
         const SizedBox(height: 10),
       ],

@@ -16,6 +16,7 @@ import '../../providers/esp_config_provider.dart';
 import '../../services/ai_quiz_service.dart';
 import '../../services/frame_source/phone_frame_source.dart';
 import '../../services/scan_record_store.dart';
+import '../../theme/elio_motion.dart';
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/learn/learn_ui.dart';
@@ -447,10 +448,19 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
       child: _Sheet(
         child: Column(
           children: [
-            Icon(
-              _matched ? Icons.military_tech_rounded : Icons.replay_rounded,
-              size: 56,
-              color: _matched ? p.secondaryText : p.textSecondary,
+            // Approved: the medal drops in (spring/bounce, Figma 13 · 30).
+            ElioPopIn(
+              rise: _matched ? -40 : 6,
+              scale: _matched ? 0.6 : 0.96,
+              curve: _matched ? ElioMotion.bounce : ElioMotion.standard,
+              duration: _matched
+                  ? const Duration(milliseconds: 700)
+                  : ElioMotion.base,
+              child: Icon(
+                _matched ? Icons.military_tech_rounded : Icons.replay_rounded,
+                size: 56,
+                color: _matched ? p.secondaryText : p.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
             Text(

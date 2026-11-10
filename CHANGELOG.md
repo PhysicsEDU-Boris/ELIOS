@@ -10,6 +10,8 @@ hashes updated after the history rewrite on 2026-10-08. The old-to-new map is
 kept outside the repo.
 
 ## [Unreleased]
+- ELIOS 3 motion (0202): the tab underline slides, icons pop, selector pills slide, Scan hub cards and Home rise in (dial sweeps, numbers count up, trophy sticker drops in), loading placeholders shimmer, the clover sticker bounces and the contribute medal drops in. Reduce motion turns these into simple fades.
+
 - ELIOS 3 sound and haptics (0201): one sound service with the S1–S10 palette (ticks, pops, toggles, chimes, robot blip, shutter, recording, trophy sparkle) that follows Profile → Sound effects and Master volume at once, everywhere (including robot control and quiz answers), and stays silent when the phone is on silent; a haptic map for taps, switches, results and errors.
 
 - ELIOS 3 login (0200): sign in, sign up, forgot password, error and loading now sit under a curved green header with the ELIOS leaf logo, bin buddies and the robot, in light and dark.

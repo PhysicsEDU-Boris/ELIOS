@@ -4,6 +4,7 @@
 // the "open robot control" action used by Home and notifications.
 import 'package:flutter/material.dart';
 
+import '../theme/elio_motion.dart';
 import '../theme/elio_tokens.dart';
 import 'auth/auth_widgets.dart' show authPalette;
 import 'package:elio/l10n/l10n.dart';
@@ -63,49 +64,89 @@ class ElioBottomNav extends StatelessWidget {
           padding: EdgeInsets.only(
             bottom: MediaQuery.paddingOf(context).bottom,
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              Expanded(
-                child: tab(0, l10n.navHome, Icons.home_outlined, Icons.home),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: tab(
+                      0,
+                      l10n.navHome,
+                      Icons.home_outlined,
+                      Icons.home,
+                    ),
+                  ),
+                  Expanded(
+                    child: tab(
+                      1,
+                      l10n.navLearn,
+                      Icons.menu_book_outlined,
+                      Icons.menu_book,
+                    ),
+                  ),
+                  Expanded(
+                    child: _Cell(
+                      label: l10n.navScan,
+                      semantics: l10n.navScanHint,
+                      selected: currentIndex == 2,
+                      // The orb above the bar is the active mark.
+                      showStroke: false,
+                      onTap: () => select(2),
+                      icon: const SizedBox.shrink(),
+                    ),
+                  ),
+                  Expanded(
+                    child: tab(
+                      4,
+                      l10n.navHistory,
+                      Icons.history_rounded,
+                      Icons.history_rounded,
+                    ),
+                  ),
+                  Expanded(
+                    child: _Cell(
+                      label: l10n.navProfile,
+                      semantics: l10n.navProfile,
+                      selected: currentIndex == 5,
+                      onTap: () => select(5),
+                      icon: NavProfileAvatar(
+                        photoUrl: photoUrl,
+                        initials: initials,
+                        active: currentIndex == 5,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              Expanded(
-                child: tab(
-                  1,
-                  l10n.navLearn,
-                  Icons.menu_book_outlined,
-                  Icons.menu_book,
-                ),
-              ),
-              Expanded(
-                child: _Cell(
-                  label: l10n.navScan,
-                  semantics: l10n.navScanHint,
-                  selected: currentIndex == 2,
-                  // The orb above the bar is the active mark.
-                  showStroke: false,
-                  onTap: () => select(2),
-                  icon: const SizedBox.shrink(),
-                ),
-              ),
-              Expanded(
-                child: tab(
-                  4,
-                  l10n.navHistory,
-                  Icons.history_rounded,
-                  Icons.history_rounded,
-                ),
-              ),
-              Expanded(
-                child: _Cell(
-                  label: l10n.navProfile,
-                  semantics: l10n.navProfile,
-                  selected: currentIndex == 5,
-                  onTap: () => select(5),
-                  icon: NavProfileAvatar(
-                    photoUrl: photoUrl,
-                    initials: initials,
-                    active: currentIndex == 5,
+              // One active stroke that slides to the new tab (spring/soft,
+              // Figma 13 · 1); the Scan orb is its own mark.
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedAlign(
+                    alignment: Alignment(_strokeX(currentIndex), -1),
+                    duration: ElioMotion.reduced(context)
+                        ? Duration.zero
+                        : ElioMotion.slow,
+                    curve: ElioMotion.soft,
+                    child: FractionallySizedBox(
+                      widthFactor: 0.2,
+                      child: AnimatedOpacity(
+                        opacity: currentIndex == 2 ? 0 : 1,
+                        duration: ElioMotion.fast,
+                        child: Center(
+                          heightFactor: 1,
+                          child: Container(
+                            width: 24,
+                            height: 3,
+                            decoration: ShapeDecoration(
+                              color: p.primaryText,
+                              shape: const StadiumBorder(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -114,6 +155,19 @@ class ElioBottomNav extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Column of a tab index (Home 0, Learn 1, Scan 2, History 4, Profile 5)
+  /// as an Alignment x over 5 equal columns.
+  static double _strokeX(int index) {
+    final col = switch (index) {
+      0 => 0,
+      1 => 1,
+      4 => 3,
+      5 => 4,
+      _ => 2,
+    };
+    return -1 + col * 0.5;
   }
 }
 
@@ -226,15 +280,6 @@ class _CellState extends State<_Cell> {
           child: Stack(
             alignment: Alignment.topCenter,
             children: [
-              if (widget.selected && widget.showStroke)
-                Container(
-                  width: 24,
-                  height: 3,
-                  decoration: ShapeDecoration(
-                    color: p.primaryText,
-                    shape: const StadiumBorder(),
-                  ),
-                ),
               if (_focused)
                 Positioned.fill(
                   child: Container(
@@ -265,17 +310,31 @@ class _CellState extends State<_Cell> {
                         color: _pressed && !plain ? p.surfaceRaised : null,
                         shape: const StadiumBorder(),
                       ),
-                      child: IconTheme(
-                        data: IconThemeData(color: color),
-                        child: widget.icon,
+                      // Outline → filled cross-fade with a 0.9 → 1 pop (Figma 13 · 1).
+                      child: AnimatedSwitcher(
+                        duration: plain ? Duration.zero : ElioMotion.fast,
+                        switchInCurve: ElioMotion.standard,
+                        transitionBuilder: (child, a) => FadeTransition(
+                          opacity: a,
+                          child: ScaleTransition(
+                            scale: Tween(begin: 0.9, end: 1.0).animate(
+                              CurvedAnimation(parent: a, curve: ElioMotion.pop),
+                            ),
+                            child: child,
+                          ),
+                        ),
+                        child: IconTheme(
+                          key: ValueKey(widget.selected),
+                          data: IconThemeData(color: color),
+                          child: widget.icon,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
                     FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Text(
-                        widget.label,
-                        maxLines: 1,
+                      child: AnimatedDefaultTextStyle(
+                        duration: ElioMotion.fast,
                         style: ElioTokens.caption.copyWith(
                           color: color,
                           height: 16 / 12,
@@ -283,6 +342,7 @@ class _CellState extends State<_Cell> {
                               ? FontWeight.w600
                               : FontWeight.w500,
                         ),
+                        child: Text(widget.label, maxLines: 1),
                       ),
                     ),
                   ],
@@ -328,10 +388,10 @@ class _ScanOrbState extends State<ElioScanOrb> {
         splashFactory: NoSplash.splashFactory,
         highlightColor: Colors.transparent,
         child: AnimatedScale(
-          // Press: 0.94 in 100 ms (motion token "press").
-          scale: _pressed && !plain ? 0.94 : 1,
-          duration: const Duration(milliseconds: 100),
-          curve: Curves.easeOut,
+          // Press 0.92 (90 ms), release spring/pop (Figma 13 · 2).
+          scale: _pressed && !plain ? 0.92 : 1,
+          duration: _pressed ? ElioMotion.instant : ElioMotion.slow,
+          curve: _pressed ? ElioMotion.standard : ElioMotion.pop,
           child: Container(
             width: _controlSize + 2 * _ringGap,
             height: _controlSize + 2 * _ringGap,

@@ -11,6 +11,7 @@ import '../../l10n/l10n.dart';
 import '../../providers/app_locale_provider.dart';
 import '../../providers/app_preferences_provider.dart';
 import '../../providers/elio_theme_mode_provider.dart';
+import '../../theme/elio_motion.dart';
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/learn/learn_ui.dart';
@@ -242,6 +243,13 @@ class _ProfileHeader extends StatelessWidget {
     final guest = user == null || user!.isAnonymous;
     final choice = await showMenu<String>(
       context: context,
+      // Popover from the avatar: 200 ms emphasized, dismiss 150 (Figma 13 · 9).
+      popUpAnimationStyle: AnimationStyle(
+        duration: const Duration(milliseconds: 200),
+        reverseDuration: ElioMotion.fast,
+        curve: ElioMotion.emphasized,
+        reverseCurve: ElioMotion.exit,
+      ),
       color: p.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       position: RelativeRect.fromLTRB(

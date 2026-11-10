@@ -234,6 +234,8 @@ void main() {
         user: _signedIn,
         size: const Size(390, 3200),
       );
+      // Numbers count up on first show (ELIOS 3 motion, 0202).
+      await t.pump(const Duration(seconds: 1));
       expect(t.takeException(), isNull);
       expect(find.text('25'), findsWidgets); // total scans
       expect(find.text('Waste Spotter'), findsOneWidget); // 140 trophies
@@ -470,6 +472,24 @@ void main() {
       expect(find.text('Notifications'), findsOneWidget);
     },
   );
+
+  testWidgets('entrance (count-up) plays once per session, not per tab visit', (
+    t,
+  ) async {
+    resetHomeEntrance();
+    addTearDown(resetHomeEntrance);
+    // "25" is the scans pebble (another "25" elsewhere is not animated).
+    int count() => find.text('25').evaluate().length;
+    await _pump(t, user: _signedIn, size: const Size(390, 3200));
+    final counting = count();
+    await t.pump(const Duration(seconds: 1));
+    final settled = count();
+    expect(settled, counting + 1, reason: 'the pebble counted up to 25');
+    // Back to Home later: a new HomeScreen shows the numbers at once.
+    await t.pumpWidget(const SizedBox());
+    await _pump(t, user: _signedIn, size: const Size(390, 3200));
+    expect(count(), settled);
+  });
 
   testWidgets('resume control shows only while a robot is connected', (
     t,

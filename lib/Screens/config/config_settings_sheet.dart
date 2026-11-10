@@ -3,6 +3,7 @@
 // ELIOS setup, sound and quiz on Profile (decisions 0196, 0198).
 import 'package:flutter/material.dart';
 
+import '../../theme/elio_motion.dart';
 import '../../widgets/learn/learn_ui.dart';
 import 'config_parts.dart';
 import '../../services/elio_feedback.dart';
@@ -35,47 +36,77 @@ class ConfigSegmented extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
+    final at = options.indexOf(selected);
+    final n = options.length;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: ShapeDecoration(
         color: p.surfaceRaised,
         shape: const StadiumBorder(),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          for (final (i, o) in options.indexed)
-            Expanded(
-              child: Semantics(
-                button: true,
-                inMutuallyExclusiveGroup: true,
-                selected: o == selected,
-                label: '$label ${labels?[i] ?? o}',
-                excludeSemantics: true,
-                onTap: () => _pick(o),
-                child: Material(
-                  color: o == selected ? p.primary : Colors.transparent,
-                  shape: const StadiumBorder(),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
+          // The green pill slides behind the labels (spring/soft, Figma 13 · 5).
+          if (at >= 0)
+            Positioned.fill(
+              child: AnimatedAlign(
+                alignment: Alignment(n == 1 ? 0 : -1 + 2 * at / (n - 1), 0),
+                duration: ElioMotion.reduced(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 280),
+                curve: ElioMotion.soft,
+                child: FractionallySizedBox(
+                  widthFactor: 1 / n,
+                  heightFactor: 1,
+                  child: DecoratedBox(
+                    decoration: ShapeDecoration(
+                      color: p.primary,
+                      shape: const StadiumBorder(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          Row(
+            children: [
+              for (final (i, o) in options.indexed)
+                Expanded(
+                  child: Semantics(
+                    button: true,
+                    inMutuallyExclusiveGroup: true,
+                    selected: o == selected,
+                    label: '$label ${labels?[i] ?? o}',
+                    excludeSemantics: true,
                     onTap: () => _pick(o),
-                    child: SizedBox(
-                      height: 44,
-                      child: Center(
-                        child: Text(
-                          labels?[i] ?? o,
-                          style: configStrong(
-                            p,
-                            color: o == selected
-                                ? p.onPrimary
-                                : p.textSecondary,
+                    child: Material(
+                      color: Colors.transparent,
+                      shape: const StadiumBorder(),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => _pick(o),
+                        child: SizedBox(
+                          height: 44,
+                          child: Center(
+                            // Colour swaps 150 ms, 40 ms after the pill moves.
+                            child: AnimatedDefaultTextStyle(
+                              duration: ElioMotion.fast,
+                              curve: const Interval(0.25, 1),
+                              style: configStrong(
+                                p,
+                                color: o == selected
+                                    ? p.onPrimary
+                                    : p.textSecondary,
+                              ),
+                              child: Text(labels?[i] ?? o),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
+            ],
+          ),
         ],
       ),
     );

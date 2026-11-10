@@ -13,6 +13,7 @@ import '../../providers/waste_quiz_provider.dart';
 import '../../services/ai_quiz_service.dart';
 import '../../services/frame_source/phone_frame_source.dart';
 import '../../services/frame_source/viewfinder_crop.dart';
+import '../../theme/elio_motion.dart';
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/learn/learn_ui.dart';
@@ -43,6 +44,7 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
       );
   late final WasteQuizNotifier _quiz = ref.read(wasteQuizProvider.notifier);
   bool _capturing = false;
+  int _shots = 0;
 
   @override
   void initState() {
@@ -59,7 +61,10 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
     if (!_source.isInitialized || _capturing) return;
     elioFeedback(ElioSfx.shutter, ElioHaptics.medium); // Figma 13 · 26
     final screen = MediaQuery.sizeOf(context);
-    setState(() => _capturing = true);
+    setState(() {
+      _capturing = true;
+      _shots++;
+    });
     try {
       final frame = await _source.capture();
       if (frame == null) throw StateError('no photo');
@@ -226,6 +231,20 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
                     ],
                   ),
                 ),
+                // Shutter flash: white 0 → 60 % → 0 over 180 ms.
+                if (_shots > 0 && !ElioMotion.reduced(context))
+                  IgnorePointer(
+                    child: TweenAnimationBuilder<double>(
+                      key: ValueKey(_shots),
+                      tween: Tween(begin: 0, end: 1),
+                      duration: const Duration(milliseconds: 180),
+                      builder: (context, v, _) => ColoredBox(
+                        color: Colors.white.withValues(
+                          alpha: 0.6 * (1 - (2 * v - 1).abs()),
+                        ),
+                      ),
+                    ),
+                  ),
                 if (_capturing)
                   const Positioned.fill(
                     child: ColoredBox(

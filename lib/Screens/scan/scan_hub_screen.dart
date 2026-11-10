@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../l10n/l10n.dart';
 import '../../services/elio_feedback.dart';
+import '../../theme/elio_motion.dart';
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/elio_page_title.dart';
@@ -37,37 +38,58 @@ class ScanHubScreen extends StatelessWidget {
                     subtitle: l10n.scanHubSubtitle,
                   ),
                   const SizedBox(height: 20),
-                  _PhoneCard(
-                    onOpen: () {
-                      elioFeedback(ElioSfx.pop, ElioHaptics.light);
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const PhoneScanScreen(),
-                        ),
-                      );
-                    },
+                  ElioPopIn(
+                    index: 0,
+                    stagger: const Duration(milliseconds: 60),
+                    rise: 24,
+                    child: ElioPress(
+                      child: _PhoneCard(
+                        onOpen: () {
+                          elioFeedback(ElioSfx.pop, ElioHaptics.light);
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const PhoneScanScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
-                  _RobotCard(
-                    onOpen: () {
-                      elioFeedback(ElioSfx.pop, ElioHaptics.light);
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const SelectVehicleScreen(),
-                        ),
-                      );
-                    },
+                  ElioPopIn(
+                    index: 1,
+                    stagger: const Duration(milliseconds: 60),
+                    rise: 24,
+                    child: ElioPress(
+                      child: _RobotCard(
+                        onOpen: () {
+                          elioFeedback(ElioSfx.pop, ElioHaptics.light);
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const SelectVehicleScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
-                  _ContributeCard(
-                    onOpen: () {
-                      elioFeedback(ElioSfx.pop, ElioHaptics.light);
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const ContributeScreen(),
-                        ),
-                      );
-                    },
+                  ElioPopIn(
+                    index: 2,
+                    stagger: const Duration(milliseconds: 60),
+                    rise: 24,
+                    child: ElioPress(
+                      child: _ContributeCard(
+                        onOpen: () {
+                          elioFeedback(ElioSfx.pop, ElioHaptics.light);
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const ContributeScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                 ],
               ),

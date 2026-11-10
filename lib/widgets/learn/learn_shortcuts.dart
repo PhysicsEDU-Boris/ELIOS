@@ -12,6 +12,7 @@ import '../../providers/daily_guide_provider.dart';
 import '../../providers/learn_shortcut_provider.dart';
 import '../../providers/learning_progress_provider.dart';
 import '../../services/guide_progress.dart';
+import '../../theme/elio_motion.dart';
 import '../../theme/elio_tokens.dart';
 import '../../Screens/tabs/elearning/learn_content.dart';
 import '../auth/auth_widgets.dart' show authPalette;
@@ -382,36 +383,47 @@ class LearnTopPills extends ConsumerWidget {
       child: Semantics(
         label: l10n.g4StreakDays(streak),
         excludeSemantics: true,
-        child: Transform.rotate(
-          angle: -0.06,
-          child: DecoratedBox(
-            decoration: ShapeDecoration(
-              color: p.isDark ? p.background : p.surface,
-              shape: const StadiumBorder(),
-              shadows: const [
-                BoxShadow(
-                  color: Color(0x24000000),
-                  blurRadius: 8,
-                  offset: Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SvgPicture.asset(
-                    'assets/illustrations/learn/clover.svg',
-                    width: 18,
-                    height: 18,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    l10n.lnClovers(streak),
-                    style: ElioTokens.button.copyWith(color: p.primaryText),
+        // A new clover bounces the sticker in (spring/bounce, Figma 13 · 20).
+        child: TweenAnimationBuilder<double>(
+          key: ValueKey(streak),
+          tween: Tween(begin: 0.6, end: 1),
+          duration: ElioMotion.reduced(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 600),
+          curve: ElioMotion.bounce,
+          builder: (context, s, child) =>
+              Transform.scale(scale: s, child: child),
+          child: Transform.rotate(
+            angle: -0.06,
+            child: DecoratedBox(
+              decoration: ShapeDecoration(
+                color: p.isDark ? p.background : p.surface,
+                shape: const StadiumBorder(),
+                shadows: const [
+                  BoxShadow(
+                    color: Color(0x24000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 3),
                   ),
                 ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SvgPicture.asset(
+                      'assets/illustrations/learn/clover.svg',
+                      width: 18,
+                      height: 18,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      l10n.lnClovers(streak),
+                      style: ElioTokens.button.copyWith(color: p.primaryText),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
