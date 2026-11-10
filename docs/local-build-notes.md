@@ -1,5 +1,9 @@
 # Local build notes
 
+## 10 Nov 2026 — ELIOS setup phone test (0205, `feat/elios3-setup-screen`)
+- Android only, no Mac bundle/model/signing change. `flutter build apk --debug --target-platform android-arm64` with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION, APP_COMMIT `29cc6e4` → `ba2112c` → final `c36ca60`; `.env.dev`/`.env.prod`/`google-services.json` copied from the main checkout for the build (gitignored, removed after).
+- Motorola Edge 60 Fusion, `com.boris.elio` debug, same signing; `adb install -r` ×3, no uninstall/data clear. Shared phone lock `~/.elios-phone-lock` taken and released. Left light / Bahasa Indonesia on Home.
+
 ## 9 Nov 2026 — Learn L2 v3 phone test (0195, `feat/learn-l2v3`)
 - Source / APP_COMMIT `1e4810f` (first test build `b54a1b6+l2v3`); `flutter build apk --debug --target-platform android-arm64` with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION; Gradle 36 s. `.env*` and `google-services.json` already present (gitignored).
 - Motorola Edge 60 Fusion over USB, `com.boris.elio` debug, same signing; `adb install -r` Success 14:41:23 Jakarta, no uninstall/data clear. App data backed up first (tar in the session scratchpad); the 3 `scan_records.json` files are md5-identical after testing.
