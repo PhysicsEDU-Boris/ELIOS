@@ -5210,4 +5210,124 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get celebrateMedal => 'Medali terbuka';
+
+  @override
+  String get lnArchiveTitle => 'Dari arsip';
+
+  @override
+  String lnArchiveSub(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count panduan terakhirmu · geser fotonya',
+      one: 'Panduan terakhirmu · geser fotonya',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lnArchivePulled => 'Lanjutkan dari terakhir kali';
+
+  @override
+  String lnArchivePhotoLabel(String title) {
+    return '$title. Ketuk untuk menarik keluar, geser untuk panduan berikutnya';
+  }
+
+  @override
+  String lnArchiveXp(int xp, int total) {
+    return '$xp/$total XP';
+  }
+
+  @override
+  String lnArchiveXpDone(int total) {
+    return '✓ $total XP';
+  }
+
+  @override
+  String lnArchiveStops(int done) {
+    return '$done/3 tahap';
+  }
+
+  @override
+  String lnRailSub(String lead, int count, String module) {
+    return '$lead · $count di $module';
+  }
+
+  @override
+  String get lnRailVideosLead => 'Tonton dan pelajari';
+
+  @override
+  String get lnRailGuidesLead => 'Baca dalam semenit';
+
+  @override
+  String get lnRailQuizLead => 'Uji pemahamanmu';
+
+  @override
+  String lnRailSims(int count) {
+    return 'Coba sendiri · $count lab';
+  }
+
+  @override
+  String get lnSimulation => 'Simulasi';
+
+  @override
+  String get lnQuizzes => 'Kuis';
+
+  @override
+  String lnBestShort(int score) {
+    return 'terbaik $score%';
+  }
+
+  @override
+  String lnContinueLessonN(int n) {
+    return 'Lanjutkan pelajaran $n';
+  }
+
+  @override
+  String lnStartLessonN(int n) {
+    return 'Mulai pelajaran $n';
+  }
+
+  @override
+  String lnWhatGoesIn(String module) {
+    String _temp0 = intl.Intl.selectLogic(module, {
+      'organic': 'Yang masuk tong hijau',
+      'inorganic': 'Yang masuk tong kuning',
+      'hazardous': 'Yang masuk tong merah',
+      'other': 'Yang masuk tong ini',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get lnLessons => 'Pelajaran';
+
+  @override
+  String lnModuleProgressDone(int done, int total) {
+    return 'Progres modul · $done dari $total selesai';
+  }
+
+  @override
+  String lnPartN(int n) {
+    return 'Bagian $n';
+  }
+
+  @override
+  String lnPctWatched(int pct) {
+    return '$pct% ditonton';
+  }
+
+  @override
+  String lnLessonNofM(int n, int total) {
+    return 'Pelajaran $n dari $total';
+  }
+
+  @override
+  String get lnPlaying => 'diputar';
+
+  @override
+  String get lnCheckAnswer => 'Periksa jawaban';
+
+  @override
+  String get lnPickToContinue => 'Pilih jawaban untuk lanjut.';
 }

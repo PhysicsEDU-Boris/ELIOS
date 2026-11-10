@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../widgets/learn/learn_l3.dart';
 import '../../../../../widgets/learn/learn_ui.dart';
 
-/// Meta, title and subtitle inside the v2 summary card.
+/// Overline, Headline title with squiggle, and subtitle (Learn L3).
 class SimModuleHeader extends StatelessWidget {
   final String tag;
   final String title;
@@ -21,11 +22,17 @@ class SimModuleHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(tag, style: context.text.labelMedium?.copyWith(color: p.tertiaryText)),
+        L3TitleBlock(
+          overline: tag,
+          title: title,
+          overlineColor: p.tertiaryText,
+          squiggle: 190,
+        ),
         const SizedBox(height: 4),
-        Text(title, style: context.text.headlineSmall),
-        const SizedBox(height: 4),
-        Text(subtitle, style: context.text.bodySmall?.copyWith(color: p.textSecondary)),
+        Text(
+          subtitle,
+          style: context.text.bodyMedium?.copyWith(color: p.textSecondary),
+        ),
       ],
     );
   }

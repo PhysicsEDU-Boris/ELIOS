@@ -855,7 +855,7 @@ class QuizCard extends StatelessWidget {
           const SizedBox(
             width: 48,
             child: LearnIllustration(
-              'assets/illustrations/learn/elio_quiz_mascot.svg',
+              'assets/illustrations/robot/robot_thinking.svg',
               height: 48,
             ),
           ),
@@ -1364,7 +1364,7 @@ class LearnHintCard extends StatelessWidget {
           const SizedBox(
             width: 48,
             child: LearnIllustration(
-              'assets/illustrations/learn/elio_quiz_mascot.svg',
+              'assets/illustrations/robot/robot_thinking.svg',
               height: 40,
             ),
           ),
@@ -1419,8 +1419,9 @@ class QuizProgressHeader extends StatelessWidget {
   }
 }
 
-/// Answer option with the fixed quiz letter colours (A red, B blue,
-/// C green, D yellow with navy text).
+/// QQ / Answer option (Figma 653:35): leaf 22/8/22/8, round letter in the
+/// fixed quiz colours (A red, B blue, C yellow with navy text, D green).
+/// States: Default, Selected (info), Correct (success), Wrong (error).
 class QuizAnswerOption extends StatelessWidget {
   const QuizAnswerOption({
     super.key,
@@ -1430,6 +1431,7 @@ class QuizAnswerOption extends StatelessWidget {
     required this.isCorrect,
     required this.answered,
     required this.onTap,
+    this.minHeight = 56,
   });
 
   final int index;
@@ -1439,17 +1441,20 @@ class QuizAnswerOption extends StatelessWidget {
   final bool answered;
   final VoidCallback onTap;
 
+  /// 64 on full-page quizzes (Kuis fisika); the guide quiz deck keeps 56.
+  final double minHeight;
+
   static const _fills = [
     ElioTokens.answerRed,
     ElioTokens.answerBlue,
-    ElioTokens.answerGreen,
     ElioTokens.answerYellow,
+    ElioTokens.answerGreen,
   ];
   static const _onFills = [
     ElioTokens.onAnswerRed,
     ElioTokens.onAnswerBlue,
-    ElioTokens.onAnswerGreen,
     ElioTokens.onAnswerYellow,
+    ElioTokens.onAnswerGreen,
   ];
 
   @override
@@ -1457,22 +1462,23 @@ class QuizAnswerOption extends StatelessWidget {
     final p = context.elio;
     final revealCorrect = answered && isCorrect;
     final revealWrong = answered && selected && !isCorrect;
-    final edge = revealCorrect
-        ? p.primaryText
+    Color tint(Color c, double a) => Color.alphaBlend(c.withValues(alpha: a), p.surface);
+    final (fill, side) = revealCorrect
+        ? (tint(p.primaryText, 0.10), BorderSide(color: p.primaryText.withValues(alpha: 0.35), width: 2))
         : revealWrong
-        ? p.errorText
+        ? (tint(p.errorText, 0.10), BorderSide(color: p.errorText.withValues(alpha: 0.35), width: 2))
         : selected
-        ? p.textPrimary
-        : p.borderMedium;
-    final fill = revealCorrect
-        ? p.primaryText.withValues(alpha: 0.08)
-        : revealWrong
-        ? p.errorText.withValues(alpha: 0.08)
-        : p.surface;
+        ? (tint(p.tertiaryText, 0.10), BorderSide(color: p.tertiaryText, width: 2.5))
+        : (p.surface, BorderSide(color: p.borderSubtle, width: 1.5));
     final letter = String.fromCharCode(65 + index);
-    final shape = learnShape(
-      learnRadiusL,
-      BorderSide(color: edge, width: selected || revealCorrect ? 2 : 1),
+    final shape = RoundedRectangleBorder(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(22),
+        topRight: Radius.circular(8),
+        bottomRight: Radius.circular(22),
+        bottomLeft: Radius.circular(8),
+      ),
+      side: side,
     );
     final reduced = ElioMotion.reduced(context);
     // Figma 13 · 28: a wrong pick shakes x ±6 × 3; the right answer pulses
@@ -1498,28 +1504,31 @@ class QuizAnswerOption extends StatelessWidget {
                   ? l10n.lnWrongSuffix
                   : ''),
           excludeSemantics: true,
-          child: Material(
-            color: fill,
-            shape: shape,
+          child: AnimatedContainer(
+            duration: ElioMotion.base,
+            curve: ElioMotion.soft,
+            decoration: ShapeDecoration(color: fill, shape: shape),
+            child: Material(
+            type: MaterialType.transparency,
             child: InkWell(
               onTap: answered ? null : onTap,
               customBorder: shape,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 56),
+                constraints: BoxConstraints(minHeight: minHeight),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
+                    horizontal: 14,
                     vertical: 10,
                   ),
                   child: Row(
                     children: [
                       Container(
-                        width: 32,
-                        height: 32,
+                        width: 36,
+                        height: 36,
                         alignment: Alignment.center,
-                        decoration: ShapeDecoration(
+                        decoration: BoxDecoration(
                           color: _fills[index % 4],
-                          shape: learnShape(8),
+                          shape: BoxShape.circle,
                         ),
                         child: Text(
                           letter,
@@ -1540,17 +1549,18 @@ class QuizAnswerOption extends StatelessWidget {
                           builder: (context, s, child) =>
                               Transform.scale(scale: s, child: child),
                           child: Icon(
-                            Icons.check_circle_rounded,
+                            Icons.check_rounded,
                             color: p.primaryText,
                           ),
                         ),
                       if (revealWrong)
-                        Icon(Icons.cancel_rounded, color: p.errorText),
+                        Icon(Icons.close_rounded, color: p.errorText),
                     ],
                   ),
                 ),
               ),
             ),
+          ),
           ),
         ),
       ),

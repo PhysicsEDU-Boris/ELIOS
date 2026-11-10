@@ -98,45 +98,13 @@ class GuidePolaroid extends StatelessWidget {
     final s = width / 86.4;
     final photoW = width - 8.64 * s;
     final photoH = photoW * 110.16 / 77.76;
-    final photo = guide.photo;
-    final dpr = MediaQuery.devicePixelRatioOf(context);
-    final Widget image;
-    if (photo == null) {
-      final art = _topicArt(guide.theme);
-      image = ColoredBox(
-        color: toneText(
-          context,
-          topicTone(guide.theme),
-        ).withValues(alpha: 0.08),
-        child: art.endsWith('.svg')
-            ? Padding(
-                padding: EdgeInsets.all(6 * s),
-                child: LearnIllustration(art),
-              )
-            : Image.asset(
-                art,
-                fit: BoxFit.cover,
-                cacheWidth: (photoW * dpr).round(),
-                excludeFromSemantics: true,
-              ),
-      );
-    } else {
-      // Decode just enough pixels for a sharp cover crop at this size: never blurry, never wasteful.
-      final aspect = photo.width / photo.height;
-      final coverW = math.max(photoW, photoH * aspect);
-      image = CachedNetworkImage(
-        key: const ValueKey('guide-photo'),
-        imageUrl: guide.asset(thumb ? photo.thumb : photo.src).toString(),
-        cacheManager: guideImageCache,
-        memCacheWidth: (coverW * dpr).round(),
-        fit: BoxFit.cover,
-        width: photoW,
-        height: photoH,
-        placeholder: (_, _) => ColoredBox(color: p.borderSubtle),
-        errorWidget: (_, _, _) =>
-            Image.asset(_topicArt(guide.theme), fit: BoxFit.cover),
-      );
-    }
+    final image = GuidePhotoImage(
+      guide: guide,
+      width: photoW,
+      height: photoH,
+      thumb: thumb,
+      artPadding: 6 * s,
+    );
     return Transform.rotate(
       angle: angle * math.pi / 180,
       child: Container(
@@ -177,6 +145,67 @@ class GuidePolaroid extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// The guide's manifest photo (or topic art on the topic tint), decoded at the
+/// shown size x device pixel ratio. Used by [GuidePolaroid] and the archive stack.
+class GuidePhotoImage extends StatelessWidget {
+  const GuidePhotoImage({
+    super.key,
+    required this.guide,
+    required this.width,
+    required this.height,
+    this.thumb = true,
+    this.artPadding = 6,
+  });
+  final DailyGuide guide;
+  final double width, height, artPadding;
+  final bool thumb;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    final photo = guide.photo;
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final Widget image;
+    if (photo == null) {
+      final art = _topicArt(guide.theme);
+      image = ColoredBox(
+        color: toneText(
+          context,
+          topicTone(guide.theme),
+        ).withValues(alpha: 0.08),
+        child: art.endsWith('.svg')
+            ? Padding(
+                padding: EdgeInsets.all(artPadding),
+                child: LearnIllustration(art),
+              )
+            : Image.asset(
+                art,
+                fit: BoxFit.cover,
+                cacheWidth: (width * dpr).round(),
+                excludeFromSemantics: true,
+              ),
+      );
+    } else {
+      // Decode just enough pixels for a sharp cover crop at this size: never blurry, never wasteful.
+      final aspect = photo.width / photo.height;
+      final coverW = math.max(width, height * aspect);
+      image = CachedNetworkImage(
+        key: const ValueKey('guide-photo'),
+        imageUrl: guide.asset(thumb ? photo.thumb : photo.src).toString(),
+        cacheManager: guideImageCache,
+        memCacheWidth: (coverW * dpr).round(),
+        fit: BoxFit.cover,
+        width: width,
+        height: height,
+        placeholder: (_, _) => ColoredBox(color: p.borderSubtle),
+        errorWidget: (_, _, _) =>
+            Image.asset(_topicArt(guide.theme), fit: BoxFit.cover),
+      );
+    }
+    return image;
   }
 }
 

@@ -93,13 +93,9 @@ class _QuizContentState extends ConsumerState<QuizContent> {
           : completed
           ? l10n.lqCompletedBest(score)
           : l10n.lqBest(score);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            l10n.lqUsedAttempt(scoreText),
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.lqUsedAttempt(scoreText))));
       return;
     }
 
@@ -373,7 +369,10 @@ class _QuizContentState extends ConsumerState<QuizContent> {
       builder: (context, snapshot) {
         return LearnListView(
           children: [
-            Text(context.l10n.quizKnowledgeChallenge, style: context.text.headlineLarge),
+            Text(
+              context.l10n.quizKnowledgeChallenge,
+              style: context.text.headlineLarge,
+            ),
             const SizedBox(height: 8),
             Text(
               l10n.lqIntro,
@@ -563,8 +562,12 @@ class _QuizQuestionView extends StatelessWidget {
                   liveRegion: true,
                   child: Text(
                     selectedIsCorrect
-                        ? (question.explanation.isEmpty ? l10n.qzCorrect : l10n.lqCorrectExpl(question.explanation))
-                        : (question.explanation.isEmpty ? l10n.lqNotQuite : l10n.lqNotQuiteExpl(question.explanation)),
+                        ? (question.explanation.isEmpty
+                              ? l10n.qzCorrect
+                              : l10n.lqCorrectExpl(question.explanation))
+                        : (question.explanation.isEmpty
+                              ? l10n.lqNotQuite
+                              : l10n.lqNotQuiteExpl(question.explanation)),
                     style: context.text.titleSmall?.copyWith(
                       color: selectedIsCorrect ? p.primaryText : p.errorText,
                     ),

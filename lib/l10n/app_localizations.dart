@@ -9096,6 +9096,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Medal unlocked'**
   String get celebrateMedal;
+
+  /// No description provided for @lnArchiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'From the archive'**
+  String get lnArchiveTitle;
+
+  /// No description provided for @lnArchiveSub.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Your last guide · swipe the photos} other{Your last {count} guides · swipe the photos}}'**
+  String lnArchiveSub(int count);
+
+  /// No description provided for @lnArchivePulled.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick up where you left off'**
+  String get lnArchivePulled;
+
+  /// No description provided for @lnArchivePhotoLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{title}. Tap to pull out, swipe for the next guide'**
+  String lnArchivePhotoLabel(String title);
+
+  /// No description provided for @lnArchiveXp.
+  ///
+  /// In en, this message translates to:
+  /// **'{xp}/{total} XP'**
+  String lnArchiveXp(int xp, int total);
+
+  /// No description provided for @lnArchiveXpDone.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ {total} XP'**
+  String lnArchiveXpDone(int total);
+
+  /// No description provided for @lnArchiveStops.
+  ///
+  /// In en, this message translates to:
+  /// **'{done}/3 stops'**
+  String lnArchiveStops(int done);
+
+  /// No description provided for @lnRailSub.
+  ///
+  /// In en, this message translates to:
+  /// **'{lead} · {count} in {module}'**
+  String lnRailSub(String lead, int count, String module);
+
+  /// No description provided for @lnRailVideosLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch and learn'**
+  String get lnRailVideosLead;
+
+  /// No description provided for @lnRailGuidesLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read in a minute'**
+  String get lnRailGuidesLead;
+
+  /// No description provided for @lnRailQuizLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Check what you know'**
+  String get lnRailQuizLead;
+
+  /// No description provided for @lnRailSims.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Try it yourself · 1 lab} other{Try it yourself · {count} labs}}'**
+  String lnRailSims(int count);
+
+  /// No description provided for @lnSimulation.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulation'**
+  String get lnSimulation;
+
+  /// No description provided for @lnQuizzes.
+  ///
+  /// In en, this message translates to:
+  /// **'Quizzes'**
+  String get lnQuizzes;
+
+  /// No description provided for @lnBestShort.
+  ///
+  /// In en, this message translates to:
+  /// **'best {score}%'**
+  String lnBestShort(int score);
+
+  /// No description provided for @lnContinueLessonN.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue lesson {n}'**
+  String lnContinueLessonN(int n);
+
+  /// No description provided for @lnStartLessonN.
+  ///
+  /// In en, this message translates to:
+  /// **'Start lesson {n}'**
+  String lnStartLessonN(int n);
+
+  /// No description provided for @lnWhatGoesIn.
+  ///
+  /// In en, this message translates to:
+  /// **'{module, select, organic{What goes in the green bin} inorganic{What goes in the yellow bin} hazardous{What goes in the red bin} other{What goes in this bin}}'**
+  String lnWhatGoesIn(String module);
+
+  /// No description provided for @lnLessons.
+  ///
+  /// In en, this message translates to:
+  /// **'Lessons'**
+  String get lnLessons;
+
+  /// No description provided for @lnModuleProgressDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Module progress · {done} of {total} done'**
+  String lnModuleProgressDone(int done, int total);
+
+  /// No description provided for @lnPartN.
+  ///
+  /// In en, this message translates to:
+  /// **'Part {n}'**
+  String lnPartN(int n);
+
+  /// No description provided for @lnPctWatched.
+  ///
+  /// In en, this message translates to:
+  /// **'{pct}% watched'**
+  String lnPctWatched(int pct);
+
+  /// No description provided for @lnLessonNofM.
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson {n} of {total}'**
+  String lnLessonNofM(int n, int total);
+
+  /// No description provided for @lnPlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'playing'**
+  String get lnPlaying;
+
+  /// No description provided for @lnCheckAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Check answer'**
+  String get lnCheckAnswer;
+
+  /// No description provided for @lnPickToContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an answer to continue.'**
+  String get lnPickToContinue;
 }
 
 class _AppLocalizationsDelegate

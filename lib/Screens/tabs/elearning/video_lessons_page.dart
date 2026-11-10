@@ -10,7 +10,6 @@ import '../../../providers/learning_progress_provider.dart';
 import '../../../widgets/learn/learn_ui.dart';
 import 'package:elio/l10n/l10n.dart';
 
-
 /// Opens the YouTube player for [lesson] (youtubeId, else parsed from
 /// videoUrl) and resumes from the saved position.
 Future<void> openVideoLesson(
@@ -20,9 +19,9 @@ Future<void> openVideoLesson(
 ) async {
   final youtubeId = lesson.resolvedYoutubeId;
   if (youtubeId.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.videoUnavailable)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.videoUnavailable)));
     return;
   }
 

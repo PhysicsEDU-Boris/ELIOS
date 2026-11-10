@@ -13,8 +13,11 @@ import '../../../providers/learn_shortcut_provider.dart';
 import '../../../providers/physics_progress_provider.dart';
 import '../../../services/daily_guide_service.dart';
 import '../../../services/guide_progress.dart';
-import '../../../theme/elio_tokens.dart';
+import '../../../services/elio_feedback.dart';
+import '../../../theme/elio_motion.dart';
+import '../../../widgets/learn/learn_l3.dart';
 import '../../../widgets/learn/learn_ui.dart';
+import 'learn_archive_stack.dart';
 import 'guides/guide_widgets.dart';
 import 'learn_content.dart';
 
@@ -31,14 +34,6 @@ LearnTone moduleTone(String moduleId) => switch (moduleId) {
   'inorganic' => LearnTone.success,
   'hazardous' => LearnTone.error,
   _ => LearnTone.warning,
-};
-
-Color toneFg(ElioPalette p, LearnTone t) => switch (t) {
-  LearnTone.success => p.primaryText,
-  LearnTone.warning => p.secondaryText,
-  LearnTone.error => p.errorText,
-  LearnTone.info => p.tertiaryText,
-  LearnTone.neutral => p.textSecondary,
 };
 
 // ---------------------------------------------------------------- header
@@ -418,143 +413,187 @@ class GuideTicket extends ConsumerWidget {
     return Semantics(
       container: true,
       label: l10n.g4TodayLabel(title, done),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            decoration: ShapeDecoration(
-              color: p.surface,
-              shape: learnShape(26),
-              shadows: [
-                BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.12),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Material(
-              type: MaterialType.transparency,
-              child: InkWell(
-                onTap: onOpen,
-                customBorder: learnShape(26),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(112, 14, 14, 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  guide.issue == null
-                                      ? l10n.g4TodaysGuide
-                                      : l10n.g4TodaysGuideIssue(guide.issue!),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: context.text.labelSmall?.copyWith(
-                                    color: p.primaryText,
-                                    letterSpacing: 1.2,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                              GuideChip(
-                                l10n.g4PlusXp(guide.xp.total),
-                                fill: p.secondaryText,
-                                color: p.surface,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: context.text.titleMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                    _TearLine(notch: p.background, line: p.borderMedium),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 10, 12, 14),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  done == 3
-                                      ? l10n.g4AllStopsDone
-                                      : l10n.g4StopsDoneNext(
-                                          done,
-                                          nextStopLabel(progress),
-                                        ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: context.text.labelMedium?.copyWith(
-                                    color: p.textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                _StopDots(done: done),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          ExcludeSemantics(
-                            child: FilledButton(
-                              onPressed: onOpen,
-                              style: FilledButton.styleFrom(
-                                minimumSize: const Size(48, 44),
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  0,
-                                  10,
-                                  0,
-                                ),
-                                shape: const StadiumBorder(),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(l10n.lnContinue),
-                                  const Icon(
-                                    Icons.chevron_right_rounded,
-                                    size: 20,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+      // Card 17: each new stop chimes and pops its dot; finishing the guide
+      // tears the ticket stub, pops the XP sticker and sways the polaroid.
+      child: RiseWatcher(
+        value: done,
+        onRise: (_, to) => to >= 3
+            ? elioFeedback(ElioSfx.sparkle, ElioHaptics.success)
+            : elioFeedback(ElioSfx.chime, ElioHaptics.select),
+        builder: (context, bump) {
+          final finished = done >= 3 ? bump : 0;
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                decoration: ShapeDecoration(
+                  color: p.surface,
+                  shape: learnShape(26),
+                  shadows: [
+                    BoxShadow(
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.12),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 12,
-            top: -20,
-            child: IgnorePointer(
-              child: ExcludeSemantics(
-                child: GuidePolaroid(
-                  guide: guide,
-                  width: 86,
-                  angle: -7,
-                  thumb: true,
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: InkWell(
+                    onTap: onOpen,
+                    customBorder: learnShape(26),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(112, 14, 14, 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      guide.issue == null
+                                          ? l10n.g4TodaysGuide
+                                          : l10n.g4TodaysGuideIssue(
+                                              guide.issue!,
+                                            ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: context.text.labelSmall?.copyWith(
+                                        color: p.primaryText,
+                                        letterSpacing: 1.2,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  Replay(
+                                    trigger: finished,
+                                    duration: ElioMotion.celebrate,
+                                    curve: ElioMotion.bounce,
+                                    builder: (context, v, child) =>
+                                        Transform.scale(scale: v, child: child),
+                                    child: GuideChip(
+                                      l10n.g4PlusXp(guide.xp.total),
+                                      fill: p.secondaryText,
+                                      color: p.surface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.text.titleMedium,
+                              ),
+                            ],
+                          ),
+                        ),
+                        _TearLine(notch: p.background, line: p.borderMedium),
+                        // The stub below the perforation slides 8 px and turns 2°.
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(end: done >= 3 ? 1 : 0),
+                          duration: finished > 0 && !ElioMotion.reduced(context)
+                              ? ElioMotion.slow
+                              : Duration.zero,
+                          curve: ElioMotion.emphasized,
+                          builder: (context, v, child) => Transform.translate(
+                            offset: Offset(8 * v, 0),
+                            child: Transform.rotate(
+                              angle: 2 * v * math.pi / 180,
+                              alignment: Alignment.topLeft,
+                              child: child,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 10, 12, 14),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        done == 3
+                                            ? l10n.g4AllStopsDone
+                                            : l10n.g4StopsDoneNext(
+                                                done,
+                                                nextStopLabel(progress),
+                                              ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: context.text.labelMedium
+                                            ?.copyWith(color: p.textSecondary),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      _StopDots(done: done, bump: bump),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                ExcludeSemantics(
+                                  child: FilledButton(
+                                    onPressed: onOpen,
+                                    style: FilledButton.styleFrom(
+                                      minimumSize: const Size(48, 44),
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        0,
+                                        10,
+                                        0,
+                                      ),
+                                      shape: const StadiumBorder(),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(l10n.lnContinue),
+                                        const Icon(
+                                          Icons.chevron_right_rounded,
+                                          size: 20,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-        ],
+              Positioned(
+                left: 12,
+                top: -20,
+                child: IgnorePointer(
+                  child: ExcludeSemantics(
+                    child: Replay(
+                      trigger: finished,
+                      duration: ElioMotion.expressive,
+                      builder: (context, v, child) => Transform.rotate(
+                        angle: 3 * math.sin(v * 2 * math.pi) * math.pi / 180,
+                        child: child,
+                      ),
+                      child: GuidePolaroid(
+                        guide: guide,
+                        width: 86,
+                        angle: -7,
+                        thumb: true,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -599,14 +638,14 @@ class _TearPainter extends CustomPainter {
 }
 
 class _StopDots extends StatelessWidget {
-  const _StopDots({required this.done});
-  final int done;
+  const _StopDots({required this.done, this.bump = 0});
+  final int done, bump;
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
     Widget dot(int i) {
       final isDone = i < done, now = i == done;
-      return Container(
+      final d = Container(
         width: 22,
         height: 22,
         decoration: BoxDecoration(
@@ -628,21 +667,49 @@ class _StopDots extends StatelessWidget {
             ? Icon(Icons.check_rounded, size: 14, color: p.onPrimary)
             : null,
       );
+      // The stop that was just done fills with spring/pop.
+      if (i != done - 1) return d;
+      return Replay(
+        trigger: bump,
+        duration: ElioMotion.slow,
+        curve: ElioMotion.pop,
+        builder: (context, v, child) =>
+            Transform.scale(scale: 0.4 + 0.6 * v, child: child),
+        child: d,
+      );
+    }
+
+    Widget line(int i) {
+      final bar = Container(
+        height: 3,
+        color: i <= done ? p.primary : p.borderSubtle,
+      );
+      // The path to the stop just done draws in (ease/standard).
+      return Expanded(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 3),
+          child: i != done
+              ? bar
+              : Stack(
+                  children: [
+                    Container(height: 3, color: p.borderSubtle),
+                    Replay(
+                      trigger: bump,
+                      duration: ElioMotion.expressive,
+                      curve: ElioMotion.standard,
+                      builder: (context, v, child) =>
+                          FractionallySizedBox(widthFactor: v, child: child),
+                      child: bar,
+                    ),
+                  ],
+                ),
+        ),
+      );
     }
 
     return Row(
       children: [
-        for (var i = 0; i < 3; i++) ...[
-          if (i > 0)
-            Expanded(
-              child: Container(
-                height: 3,
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                color: i <= done ? p.primary : p.borderSubtle,
-              ),
-            ),
-          dot(i),
-        ],
+        for (var i = 0; i < 3; i++) ...[if (i > 0) line(i), dot(i)],
       ],
     );
   }
@@ -669,103 +736,127 @@ class LearnBubbles extends StatelessWidget {
   final List<LearnBubble> items;
 
   @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(12, 24, 12, 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [for (final b in items) Expanded(child: _Bubble(b))],
+    ),
+  );
+}
+
+/// Card 18: press scales 0.92 and springs back, the art hops 4 px; S2 + H-light.
+/// A badge count change pops 1.4 → 1.
+class _Bubble extends StatefulWidget {
+  const _Bubble(this.b);
+  final LearnBubble b;
+  @override
+  State<_Bubble> createState() => _BubbleState();
+}
+
+class _BubbleState extends State<_Bubble> {
+  bool _down = false;
+
+  @override
   Widget build(BuildContext context) {
     final p = context.elio;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (final b in items)
-            Expanded(
-              child: Semantics(
-                button: true,
-                label: b.badge == null ? b.label : '${b.label}, ${b.badge}',
-                excludeSemantics: true,
-                onTap: b.onTap,
-                child: InkWell(
-                  onTap: b.onTap,
-                  customBorder: learnShape(20),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Column(
-                      children: [
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Container(
-                              width: 64,
-                              height: 64,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: toneFg(
-                                  p,
-                                  b.tone,
-                                ).withValues(alpha: 0.10),
-                                border: Border.all(
-                                  color: toneFg(
-                                    p,
-                                    b.tone,
-                                  ).withValues(alpha: 0.35),
-                                  width: 2,
-                                ),
-                              ),
-                              child: SvgPicture.asset(
-                                b.asset,
-                                excludeFromSemantics: true,
+    final b = widget.b;
+    final reduced = ElioMotion.reduced(context);
+    void tap() {
+      elioFeedback(ElioSfx.pop, ElioHaptics.light);
+      b.onTap();
+    }
+
+    return Semantics(
+      button: true,
+      label: b.badge == null ? b.label : '${b.label}, ${b.badge}',
+      excludeSemantics: true,
+      onTap: tap,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => setState(() => _down = true),
+        onTapUp: (_) => setState(() => _down = false),
+        onTapCancel: () => setState(() => _down = false),
+        onTap: tap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            children: [
+              AnimatedScale(
+                scale: _down && !reduced ? 0.92 : 1,
+                duration: _down ? ElioMotion.instant : ElioMotion.slow,
+                curve: _down ? Curves.linear : ElioMotion.pop,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: toneBg(p, b.tone),
+                        border: Border.all(
+                          color: toneBorder(p, b.tone),
+                          width: 2,
+                        ),
+                      ),
+                      child: AnimatedSlide(
+                        offset: Offset(0, _down && !reduced ? -0.1 : 0),
+                        duration: _down ? ElioMotion.instant : ElioMotion.slow,
+                        curve: ElioMotion.pop,
+                        child: SvgPicture.asset(
+                          b.asset,
+                          excludeFromSemantics: true,
+                        ),
+                      ),
+                    ),
+                    if (b.badge != null && b.badge! > 0)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: TweenAnimationBuilder<double>(
+                          key: ValueKey(b.badge),
+                          tween: Tween(begin: reduced ? 1 : 1.4, end: 1),
+                          duration: ElioMotion.slow,
+                          curve: ElioMotion.pop,
+                          builder: (context, s, child) =>
+                              Transform.scale(scale: s, child: child),
+                          child: Container(
+                            constraints: const BoxConstraints(minWidth: 22),
+                            height: 22,
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            alignment: Alignment.center,
+                            decoration: ShapeDecoration(
+                              color: p.primary,
+                              shape: StadiumBorder(
+                                side: BorderSide(color: p.surface, width: 2),
                               ),
                             ),
-                            if (b.badge != null && b.badge! > 0)
-                              Positioned(
-                                right: -4,
-                                top: -4,
-                                child: Container(
-                                  constraints: const BoxConstraints(
-                                    minWidth: 22,
-                                  ),
-                                  height: 22,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                  ),
-                                  alignment: Alignment.center,
-                                  decoration: ShapeDecoration(
-                                    color: p.errorText,
-                                    shape: StadiumBorder(
-                                      side: BorderSide(
-                                        color: p.surface,
-                                        width: 2,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '${b.badge}',
-                                    style: context.text.labelSmall?.copyWith(
-                                      color: p.surface,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
+                            child: Text(
+                              '${b.badge}',
+                              style: context.text.labelSmall?.copyWith(
+                                color: p.onPrimary,
+                                fontWeight: FontWeight.w700,
                               ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          b.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.text.labelMedium?.copyWith(
-                            color: p.textPrimary,
+                            ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                  ],
                 ),
               ),
-            ),
-        ],
+              const SizedBox(height: 6),
+              Text(
+                b.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: captionStyle(context, p.textPrimary),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -803,6 +894,8 @@ class ExploreSection extends ConsumerWidget {
     required this.items,
     required this.onSeeAll,
     this.loading = false,
+    this.initialPage = 0,
+    this.onSettled,
   });
 
   final String subtitle;
@@ -810,6 +903,12 @@ class ExploreSection extends ConsumerWidget {
   final List<ExploreItem> items;
   final VoidCallback? onSeeAll;
   final bool loading;
+
+  /// First page for this tab (the open module on the Modules tab).
+  final int initialPage;
+
+  /// The page the carousel settled on after a swipe (card 19 / 20c).
+  final ValueChanged<int>? onSettled;
 
   static String tabLabel(LearnExploreTab t) => switch (t) {
     LearnExploreTab.modules => l10n.lnModules,
@@ -841,11 +940,7 @@ class ExploreSection extends ConsumerWidget {
                         style: context.text.headlineMedium,
                       ),
                     ),
-                    SizedBox(
-                      width: 104,
-                      height: 10,
-                      child: CustomPaint(painter: _SquigglePainter(p.primary)),
-                    ),
+                    const LearnSquiggle(width: 104),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
@@ -859,7 +954,10 @@ class ExploreSection extends ConsumerWidget {
               if (onSeeAll != null)
                 TextButton(
                   onPressed: onSeeAll,
-                  style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(48, 48),
+                    foregroundColor: p.primaryText,
+                  ),
                   child: Text(l10n.lnSeeAll),
                 ),
             ],
@@ -873,7 +971,7 @@ class ExploreSection extends ConsumerWidget {
             children: [
               for (final t in LearnExploreTab.values) ...[
                 if (t != LearnExploreTab.modules) const SizedBox(width: 8),
-                _TabPill(
+                LearnTabPill(
                   label: tabLabel(t),
                   count: counts[t],
                   selected: t == tab,
@@ -896,130 +994,121 @@ class ExploreSection extends ConsumerWidget {
             child: LearnHintCard(text: l10n.lnNothingHere),
           )
         else
-          SingleChildScrollView(
+          _ExploreCarousel(
             key: ValueKey(tab),
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                for (var i = 0; i < items.length; i++) ...[
-                  if (i > 0) const SizedBox(width: 14),
-                  PopCard(item: items[i], large: i == 0),
-                ],
-              ],
-            ),
+            items: items,
+            initialPage: initialPage.clamp(0, items.length - 1),
+            onSettled: onSettled,
           ),
       ],
     );
   }
 }
 
-class _TabPill extends StatelessWidget {
-  const _TabPill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.count,
+/// Card 19: the carousel snaps per card with spring/soft; the card that snaps
+/// to the left is the focused one (the open module on the Modules tab).
+/// Neighbours rest at scale 0.94 and 90 % opacity; dots morph 6 → 18 px.
+class _ExploreCarousel extends StatefulWidget {
+  const _ExploreCarousel({
+    super.key,
+    required this.items,
+    required this.initialPage,
+    this.onSettled,
   });
-  final String label;
-  final int? count;
-  final bool selected;
-  final VoidCallback onTap;
+  final List<ExploreItem> items;
+  final int initialPage;
+  final ValueChanged<int>? onSettled;
+
+  @override
+  State<_ExploreCarousel> createState() => _ExploreCarouselState();
+}
+
+class _ExploreCarouselState extends State<_ExploreCarousel> {
+  static const _pageW = 220.0;
+  PageController? _c;
+  double _width = 0;
+  late int _settled = widget.initialPage;
+
+  PageController _controller(double width) {
+    if (_c == null || width != _width) {
+      final page = _c?.hasClients == true ? _c!.page?.round() : null;
+      _c?.dispose();
+      _width = width;
+      _c = PageController(
+        viewportFraction: (_pageW / width).clamp(0.1, 1.0),
+        initialPage: page ?? _settled,
+      );
+    }
+    return _c!;
+  }
+
+  @override
+  void dispose() {
+    _c?.dispose();
+    super.dispose();
+  }
+
+  bool _onEnd(ScrollEndNotification n) {
+    final page = _c?.page?.round();
+    if (page != null && page != _settled) {
+      setState(() => _settled = page);
+      elioFeedback(ElioSfx.tick, ElioHaptics.select);
+      widget.onSettled?.call(page);
+    }
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final p = context.elio;
-    final fg = selected ? p.onPrimary : p.textSecondary;
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: count == null ? label : '$label, $count',
-      excludeSemantics: true,
-      onTap: onTap,
-      child: Material(
-        color: selected ? p.primary : p.surface,
-        shape: StadiumBorder(
-          side: selected ? BorderSide.none : BorderSide(color: p.borderSubtle),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const StadiumBorder(),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 44),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 6, 8, 6),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    label,
-                    style: context.text.labelLarge?.copyWith(color: fg),
-                  ),
-                  if (count != null) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 1,
-                      ),
-                      decoration: ShapeDecoration(
-                        color: selected ? p.surface : p.surfaceRaised,
-                        shape: const StadiumBorder(),
-                      ),
-                      child: Text(
-                        '$count',
-                        style: context.text.labelSmall?.copyWith(
-                          color: selected ? p.primaryText : p.textSecondary,
+    final items = widget.items;
+    return Column(
+      children: [
+        LayoutBuilder(
+          builder: (context, box) {
+            final c = _controller(box.maxWidth);
+            return SizedBox(
+              height: 276,
+              child: NotificationListener<ScrollEndNotification>(
+                onNotification: _onEnd,
+                child: PageView.builder(
+                  controller: c,
+                  padEnds: false,
+                  itemCount: items.length,
+                  itemBuilder: (context, i) => AnimatedBuilder(
+                    animation: c,
+                    builder: (context, child) {
+                      final page = c.hasClients && c.position.haveDimensions
+                          ? c.page ?? _settled.toDouble()
+                          : _settled.toDouble();
+                      final d = (page - i).abs().clamp(0.0, 1.0);
+                      return Opacity(
+                        opacity: 1 - 0.1 * d,
+                        child: Transform.scale(
+                          scale: 1 - 0.06 * d,
+                          alignment: Alignment.bottomLeft,
+                          child: child,
                         ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 16, top: 8),
+                      child: Align(
+                        alignment: Alignment.bottomLeft,
+                        child: PopCard(item: items[i], large: true),
                       ),
                     ),
-                  ],
-                ],
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
-      ),
+        const SizedBox(height: 12),
+        if (items.length > 1)
+          LearnPageDots(count: items.length, active: _settled),
+      ],
     );
   }
-}
-
-class _SquigglePainter extends CustomPainter {
-  _SquigglePainter(this.color);
-  final Color color;
-  @override
-  void paint(Canvas canvas, Size s) {
-    final path = Path()..moveTo(2, s.height * 0.6);
-    const waves = 4;
-    final w = (s.width - 4) / waves;
-    for (var i = 0; i < waves; i++) {
-      final x = 2 + i * w;
-      path.quadraticBezierTo(
-        x + w / 4,
-        i.isEven ? 0 : s.height,
-        x + w / 2,
-        s.height * 0.6,
-      );
-      path.quadraticBezierTo(
-        x + 3 * w / 4,
-        i.isEven ? s.height : 0,
-        x + w,
-        s.height * 0.6,
-      );
-    }
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..strokeCap = StrokeCap.round,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_SquigglePainter old) => old.color != color;
 }
 
 /// Leaf-shaped card (corners 30/10/30/10) with the art popping out of the top
@@ -1259,3 +1348,10 @@ Set<String> viewedSimulations(WidgetRef ref) =>
     : progress > 0
     ? (text: l10n.lnPctDone((progress * 100).round()), done: false)
     : (text: l10n.lnNew, done: false);
+
+/// Content pop card sticker: Done, 40 %, or New.
+String popSticker(double progress, {bool done = false}) => done || progress >= 1
+    ? l10n.lnDone
+    : progress > 0
+    ? '${(progress * 100).round()}%'
+    : l10n.lnNew;

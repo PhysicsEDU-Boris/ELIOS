@@ -18,9 +18,9 @@ import 'package:elio/l10n/l10n.dart';
 /// Marks [module] viewed and opens its page.
 void openSimulation(BuildContext context, WidgetRef ref, PhysicsModule module) {
   if (!module.isAvailable) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.l10n.simulationComingSoon(module.title))));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.simulationComingSoon(module.title))),
+    );
     return;
   }
 
@@ -28,50 +28,43 @@ void openSimulation(BuildContext context, WidgetRef ref, PhysicsModule module) {
 
   switch (module.id) {
     case PhysicsModuleId.torque:
-      Navigator.of(context).push(
-        learnRoute<void>(const TorqueSimulationPage()),
-      );
+      Navigator.of(
+        context,
+      ).push(learnRoute<void>(const TorqueSimulationPage()));
       break;
     case PhysicsModuleId.density:
-      Navigator.of(context).push(
-        learnRoute<void>(const DensitySimulationPage()),
-      );
+      Navigator.of(
+        context,
+      ).push(learnRoute<void>(const DensitySimulationPage()));
       break;
     case PhysicsModuleId.heat:
-      Navigator.of(context).push(
-        learnRoute<void>(const HeatSimulationPage()),
-      );
+      Navigator.of(context).push(learnRoute<void>(const HeatSimulationPage()));
       break;
     case PhysicsModuleId.workEnergy:
-      Navigator.of(context).push(
-        learnRoute<void>(const WorkEnergySimulationPage()),
-      );
+      Navigator.of(
+        context,
+      ).push(learnRoute<void>(const WorkEnergySimulationPage()));
       break;
     case PhysicsModuleId.kinematics:
-      Navigator.of(context).push(
-        learnRoute<void>(const KinematicsSimulationPage()),
-      );
+      Navigator.of(
+        context,
+      ).push(learnRoute<void>(const KinematicsSimulationPage()));
       break;
     case PhysicsModuleId.pwm:
-      Navigator.of(context).push(
-        learnRoute<void>(const PwmSimulationPage()),
-      );
+      Navigator.of(context).push(learnRoute<void>(const PwmSimulationPage()));
       break;
     case PhysicsModuleId.power:
-      Navigator.of(context).push(
-        learnRoute<void>(const PowerBudgetSimulationPage()),
-      );
+      Navigator.of(
+        context,
+      ).push(learnRoute<void>(const PowerBudgetSimulationPage()));
       break;
     case PhysicsModuleId.deepDive:
-      Navigator.of(context).push(
-        learnRoute<void>(const DeepDiveSimulationPage()),
-      );
+      Navigator.of(
+        context,
+      ).push(learnRoute<void>(const DeepDiveSimulationPage()));
       break;
     case PhysicsModuleId.quiz:
-      Navigator.of(context).push(
-        learnRoute<void>(const PhysicsQuizPage()),
-      );
+      Navigator.of(context).push(learnRoute<void>(const PhysicsQuizPage()));
       break;
   }
 }
-

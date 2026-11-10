@@ -16,7 +16,11 @@ import '../../widgets/learn/learn_ui.dart';
 import 'elearning/guides_page.dart';
 import 'elearning/daily_guides_page.dart';
 import 'elearning/guides/guide_lab_page.dart';
+import 'elearning/learn_archive_stack.dart';
+import 'elearning/learn_discover_more.dart';
 import 'elearning/learn_hub_v3.dart';
+import '../../services/elio_feedback.dart';
+import '../../widgets/learn/learn_l3.dart';
 import '../../providers/daily_guide_provider.dart';
 import '../../providers/learn_shortcut_provider.dart';
 import '../../services/guide_progress.dart' show guideProgressProvider;
@@ -206,6 +210,18 @@ class _HubContent extends ConsumerStatefulWidget {
 class _HubContentState extends ConsumerState<_HubContent> {
   final _exploreKey = GlobalKey();
 
+  /// The Explore module card snapped to the left (drives Discover more).
+  String? _moduleId;
+
+  void _onModuleSettled(String id) {
+    if (id == _moduleId) return;
+    setState(() => _moduleId = id);
+    // S2 once per module change, after the snap's S1 tick (120 ms sound gap).
+    Future<void>.delayed(const Duration(milliseconds: 130), () {
+      if (mounted) ElioSound.instance.play(ElioSfx.pop);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -394,6 +410,9 @@ class _HubContentState extends ConsumerState<_HubContent> {
           lessonItem(l, i, LearnTone.warning),
       ],
     };
+    final openModule =
+        orderedModules.where((m) => m.id == _moduleId).firstOrNull ??
+        orderedModules.first;
     final seeAll = switch (tab) {
       LearnExploreTab.modules => () => _push(const ProgressPage()),
       LearnExploreTab.videos => () => _push(
@@ -431,11 +450,17 @@ class _HubContentState extends ConsumerState<_HubContent> {
                   onOpen: () => openGuideIssue(context, today),
                 ),
         ),
+        if ((feed?.guides.length ?? 0) > 1)
+          ArchiveStack(
+            guides: feed!.guides.skip(1).toList(),
+            onOpen: (g) => openGuideIssue(context, g),
+            onSeeAll: () => _push(const DailyGuidesPage()),
+          ),
         LearnBubbles(
           items: [
             LearnBubble(
               label: l10n.lnQuizShort,
-              asset: LearnArt.mascot,
+              asset: LearnArt.quizPaper,
               tone: LearnTone.info,
               badge: widget.quizSets?.length,
               onTap: () => _push(const QuizPage()),
@@ -443,7 +468,7 @@ class _HubContentState extends ConsumerState<_HubContent> {
             if (today != null)
               LearnBubble(
                 label: l10n.lnMiniLab,
-                asset: 'assets/illustrations/home/bulb_buddy.svg',
+                asset: LearnArt.miniLab,
                 tone: LearnTone.warning,
                 onTap: () => _push(GuideLabPage(guide: today)),
               ),
@@ -456,7 +481,7 @@ class _HubContentState extends ConsumerState<_HubContent> {
             ),
             LearnBubble(
               label: l10n.lnProgressShort,
-              asset: 'assets/illustrations/home/tree_lv3.svg',
+              asset: 'assets/illustrations/home/medal_gold.svg',
               tone: LearnTone.error,
               onTap: () => _push(const ProgressPage()),
             ),
@@ -473,12 +498,124 @@ class _HubContentState extends ConsumerState<_HubContent> {
               if (guides != null) LearnExploreTab.guides: guides.length,
             },
             items: items,
+            initialPage: tab == LearnExploreTab.modules
+                ? orderedModules.indexWhere((m) => m.id == openModule.id)
+                : 0,
+            onSettled: tab == LearnExploreTab.modules
+                ? (i) => _onModuleSettled(orderedModules[i].id)
+                : null,
             loading:
                 !lessonsLoaded &&
                 (tab == LearnExploreTab.videos ||
                     tab == LearnExploreTab.guides),
             onSeeAll: seeAll,
           ),
+        ),
+        _discover(openModule, lessons, progress, viewed),
+      ],
+    );
+  }
+
+  /// Discover more rails for [m] (Figma 684:26930); only real content.
+  Widget _discover(
+    ElearningModule m,
+    List<LearnLesson> lessons,
+    LearningProgress? progress,
+    Set<String> viewed,
+  ) {
+    final name = binLabel(m.id);
+    final mine = lessons.where((l) => l.moduleId == m.id).toList();
+    final videos = mine.where((l) => l.isVideo).toList();
+    final guides = mine.where((l) => !l.isVideo).toList();
+    final related = relatedSimulation(m.id);
+    final sims = [
+      ...physicsModules.where((s) => s.id == related),
+      ...physicsModules.where(
+        (s) => s.id != related && s.id != PhysicsModuleId.quiz,
+      ),
+    ];
+    final quizzes = (widget.quizSets ?? const <QuizSet>[])
+        .where((q) => q.moduleId == m.id)
+        .toList();
+    DiscoverItem lesson(LearnLesson l) => DiscoverItem(
+      tag: l.isVideo ? l10n.lnVideo : l10n.lnGuide,
+      title: l.title,
+      meta: l.lengthLabel,
+      cover: LearnThumbnail(
+        url: l.imageUrl,
+        fallbackAsset: l.isVideo ? l.fallbackArt : LearnArt.guideThumb(m.id),
+      ),
+      progress: l.progress(progress),
+      sticker: popSticker(
+        l.progress(progress),
+        done: l.state(progress) == LessonState.done,
+      ),
+      onTap: () => _push(LessonPage(lesson: l)),
+    );
+    return DiscoverMore(
+      moduleId: m.id,
+      seeAll: l10n.lnSeeAll,
+      rails: [
+        DiscoverRail(
+          kind: PopKind.video,
+          title: l10n.lnVideos,
+          subtitle: l10n.lnRailSub(l10n.lnRailVideosLead, videos.length, name),
+          items: [for (final l in videos) lesson(l)],
+          onSeeAll: () =>
+              _push(LessonListPage(title: l10n.lnVideos, lessons: videos)),
+        ),
+        DiscoverRail(
+          kind: PopKind.guide,
+          title: l10n.lnGuides,
+          subtitle: l10n.lnRailSub(l10n.lnRailGuidesLead, guides.length, name),
+          items: [for (final l in guides) lesson(l)],
+          onSeeAll: () =>
+              _push(LessonListPage(title: l10n.lnGuides, lessons: guides)),
+        ),
+        DiscoverRail(
+          kind: PopKind.simulation,
+          title: l10n.lnSimulations,
+          subtitle: l10n.lnRailSims(sims.length),
+          items: [
+            for (final s in sims)
+              DiscoverItem(
+                tag: l10n.lnSimulation,
+                title: s.title,
+                meta: l10n.lnMinutes(s.durationMinutes),
+                cover: LearnIllustration(
+                  LearnArt.simulation(s.id),
+                  fit: BoxFit.cover,
+                ),
+                progress: viewed.contains(s.id.name) ? 1 : 0,
+                sticker: popSticker(0, done: viewed.contains(s.id.name)),
+                onTap: () => openSimulation(context, ref, s),
+              ),
+          ],
+          onSeeAll: () => _push(const SimulationListPage()),
+        ),
+        DiscoverRail(
+          kind: PopKind.quiz,
+          title: l10n.lnQuizzes,
+          subtitle: l10n.lnRailSub(l10n.lnRailQuizLead, quizzes.length, name),
+          items: [
+            for (final q in quizzes)
+              DiscoverItem(
+                tag: l10n.lnQuizShort,
+                title: q.title,
+                meta: [
+                  l10n.lqQuestions(q.questionCount),
+                  if (progress?.quizScores[q.moduleId] case final best?)
+                    l10n.lnBestShort(best),
+                ].join(' · '),
+                cover: const LearnIllustration(
+                  LearnArt.quizThumb,
+                  fit: BoxFit.cover,
+                ),
+                progress: (progress?.quizScores[q.moduleId] ?? 0) / 100,
+                onTap: () => _push(QuizPage(moduleId: q.moduleId)),
+              ),
+          ],
+          onSeeAll: () => _push(QuizPage(moduleId: m.id)),
         ),
       ],
     );

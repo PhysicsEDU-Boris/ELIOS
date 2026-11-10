@@ -5314,4 +5314,130 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get celebrateMedal => 'Medal unlocked';
+
+  @override
+  String get lnArchiveTitle => 'From the archive';
+
+  @override
+  String lnArchiveSub(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Your last $count guides · swipe the photos',
+      one: 'Your last guide · swipe the photos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lnArchivePulled => 'Pick up where you left off';
+
+  @override
+  String lnArchivePhotoLabel(String title) {
+    return '$title. Tap to pull out, swipe for the next guide';
+  }
+
+  @override
+  String lnArchiveXp(int xp, int total) {
+    return '$xp/$total XP';
+  }
+
+  @override
+  String lnArchiveXpDone(int total) {
+    return '✓ $total XP';
+  }
+
+  @override
+  String lnArchiveStops(int done) {
+    return '$done/3 stops';
+  }
+
+  @override
+  String lnRailSub(String lead, int count, String module) {
+    return '$lead · $count in $module';
+  }
+
+  @override
+  String get lnRailVideosLead => 'Watch and learn';
+
+  @override
+  String get lnRailGuidesLead => 'Read in a minute';
+
+  @override
+  String get lnRailQuizLead => 'Check what you know';
+
+  @override
+  String lnRailSims(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Try it yourself · $count labs',
+      one: 'Try it yourself · 1 lab',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lnSimulation => 'Simulation';
+
+  @override
+  String get lnQuizzes => 'Quizzes';
+
+  @override
+  String lnBestShort(int score) {
+    return 'best $score%';
+  }
+
+  @override
+  String lnContinueLessonN(int n) {
+    return 'Continue lesson $n';
+  }
+
+  @override
+  String lnStartLessonN(int n) {
+    return 'Start lesson $n';
+  }
+
+  @override
+  String lnWhatGoesIn(String module) {
+    String _temp0 = intl.Intl.selectLogic(module, {
+      'organic': 'What goes in the green bin',
+      'inorganic': 'What goes in the yellow bin',
+      'hazardous': 'What goes in the red bin',
+      'other': 'What goes in this bin',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get lnLessons => 'Lessons';
+
+  @override
+  String lnModuleProgressDone(int done, int total) {
+    return 'Module progress · $done of $total done';
+  }
+
+  @override
+  String lnPartN(int n) {
+    return 'Part $n';
+  }
+
+  @override
+  String lnPctWatched(int pct) {
+    return '$pct% watched';
+  }
+
+  @override
+  String lnLessonNofM(int n, int total) {
+    return 'Lesson $n of $total';
+  }
+
+  @override
+  String get lnPlaying => 'playing';
+
+  @override
+  String get lnCheckAnswer => 'Check answer';
+
+  @override
+  String get lnPickToContinue => 'Pick an answer to continue.';
 }

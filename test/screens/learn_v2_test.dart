@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:elio/Screens/tabs/elearning/learn_content.dart';
+import 'package:elio/Screens/tabs/elearning/learn_hub_v3.dart' show ExploreSection;
 import 'package:elio/Screens/tabs/elearning/lesson_page.dart';
 import 'package:elio/Screens/tabs/elearning/module_page.dart';
 import 'package:elio/Screens/tabs/elearning/progress_page.dart';
@@ -197,6 +198,9 @@ Future<void> _pump(
   }
 }
 
+Finder _inExplore(String text) =>
+    find.descendant(of: find.byType(ExploreSection), matching: find.text(text));
+
 Finder _svg(String asset) => find.byWidgetPredicate(
   (w) => w is SvgPicture && (w.bytesLoader as SvgAssetLoader).assetName == asset,
 );
@@ -246,7 +250,8 @@ void main() {
         await t.ensureVisible(find.bySemanticsLabel(RegExp(r'^Videos, 1$')));
         await t.tap(find.bySemanticsLabel(RegExp(r'^Videos, 1$')));
         await t.pump();
-        expect(find.text('Composting fundamentals'), findsOneWidget);
+        // Also in Discover more (L3), so look inside Explore only.
+        expect(_inExplore('Composting fundamentals'), findsOneWidget);
         // Failing Cloudinary URL falls back to the module illustration.
         expect(_svg(LearnArt.coverBiogas), findsWidgets);
         await t.ensureVisible(find.bySemanticsLabel(RegExp(r'^Simulations, 9$')));
@@ -256,7 +261,7 @@ void main() {
         await t.ensureVisible(find.bySemanticsLabel(RegExp(r'^PDF guides, 1$')));
         await t.tap(find.bySemanticsLabel(RegExp(r'^PDF guides, 1$')));
         await t.pump();
-        expect(find.text('Introduction & definitions of waste'), findsOneWidget);
+        expect(_inExplore('Introduction & definitions of waste'), findsOneWidget);
       });
 
       testWidgets('hub first launch', (t) async {
@@ -307,10 +312,10 @@ void main() {
         expect(find.text('Learn shortcuts'), findsOneWidget);
         expect(find.text('Dark mode'), findsOneWidget);
         // Videos row selects the Videos tab in the hub.
-        expect(find.text('Composting fundamentals'), findsNothing);
+        expect(_inExplore('Composting fundamentals'), findsNothing);
         await t.tap(find.bySemanticsLabel(RegExp(r'^Videos, 1$')).first);
         await t.pumpAndSettle();
-        expect(find.text('Composting fundamentals'), findsOneWidget);
+        expect(_inExplore('Composting fundamentals'), findsOneWidget);
         // Continue is a dropdown holding Jump back in.
         expect(find.text('Jump back in'), findsWidgets);
         await t.tap(find.bySemanticsLabel(RegExp(r'^Continue, 1$')));
@@ -360,15 +365,14 @@ void main() {
       testWidgets('module page lists lessons, simulation and quiz', (t) async {
         await _pump(t, const ModulePage(module: _organic), brightness: b);
         expect(t.takeException(), isNull);
+        // Learn L3 (decision 0206): ticket, tags, lesson grid, sim, quiz.
         expect(find.text('Organic waste management'), findsOneWidget);
-        expect(find.text('Read again'), findsOneWidget);
-        expect(find.text('Continue'), findsOneWidget);
+        expect(find.text('Module progress · 1 of 2 done'), findsOneWidget);
         expect(find.text('Food scraps'), findsOneWidget);
-        expect(find.text('Videos'), findsOneWidget);
-        expect(find.text('1 video'), findsOneWidget);
-        expect(find.text('Guides'), findsOneWidget);
-        expect(find.text('1 guide'), findsOneWidget);
-        expect(find.text('Simulation for this module'), findsOneWidget);
+        expect(find.text('Lessons'), findsOneWidget);
+        expect(find.text('2 lessons'), findsWidgets); // hero meta + section
+        expect(find.text('Composting fundamentals'), findsOneWidget);
+        expect(find.text('Simulation'), findsWidgets);
         expect(find.text('Organic waste management quiz'), findsOneWidget);
       });
 

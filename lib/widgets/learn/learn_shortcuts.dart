@@ -1,5 +1,6 @@
 // Learn shortcuts: the sidebar body on the Learn tab (Figma 571:5567,
 // decision 0195). Rows are features of the Learn screen, not app navigation.
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -11,11 +12,13 @@ import '../../models/video_lesson.dart';
 import '../../providers/daily_guide_provider.dart';
 import '../../providers/learn_shortcut_provider.dart';
 import '../../providers/learning_progress_provider.dart';
+import '../../services/elio_feedback.dart';
 import '../../services/guide_progress.dart';
 import '../../theme/elio_motion.dart';
 import '../../theme/elio_tokens.dart';
 import '../../Screens/tabs/elearning/learn_content.dart';
 import '../auth/auth_widgets.dart' show authPalette;
+import 'learn_l3.dart';
 
 const _minTap = 48.0;
 
@@ -383,49 +386,98 @@ class LearnTopPills extends ConsumerWidget {
       child: Semantics(
         label: l10n.g4StreakDays(streak),
         excludeSemantics: true,
-        // A new clover bounces the sticker in (spring/bounce, Figma 13 · 20).
-        child: TweenAnimationBuilder<double>(
-          key: ValueKey(streak),
-          tween: Tween(begin: 0.6, end: 1),
-          duration: ElioMotion.reduced(context)
-              ? Duration.zero
-              : const Duration(milliseconds: 600),
-          curve: ElioMotion.bounce,
-          builder: (context, s, child) =>
-              Transform.scale(scale: s, child: child),
-          child: Transform.rotate(
-            angle: -0.06,
-            child: DecoratedBox(
-              decoration: ShapeDecoration(
-                color: p.isDark ? p.background : p.surface,
-                shape: const StadiumBorder(),
-                shadows: const [
-                  BoxShadow(
-                    color: Color(0x24000000),
-                    blurRadius: 8,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+        // Card 20: a new clover spins in (0 → 360°, 0.6 → 1.1 → 1), the
+        // count flips up, three leaves float off and the sticker wiggles.
+        child: RiseWatcher(
+          value: streak,
+          onRise: (_, _) =>
+              elioFeedback(ElioSfx.sparkleShort, ElioHaptics.success),
+          builder: (context, bump) => Replay(
+            trigger: bump,
+            duration: const Duration(milliseconds: 700),
+            builder: (context, t, _) {
+              final spin = ElioMotion.bounce.transform(t.clamp(0.0, 1.0));
+              final wiggle = 4 * math.sin(t * 2 * math.pi) * (1 - t);
+              return Transform.rotate(
+                angle: -0.06 + wiggle * math.pi / 180,
+                child: Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    SvgPicture.asset(
-                      'assets/illustrations/learn/clover.svg',
-                      width: 18,
-                      height: 18,
+                    DecoratedBox(
+                      decoration: ShapeDecoration(
+                        color: p.isDark ? p.background : p.surface,
+                        shape: const StadiumBorder(),
+                        shadows: const [
+                          BoxShadow(
+                            color: Color(0x24000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Transform.rotate(
+                              angle: t * 2 * math.pi,
+                              child: Transform.scale(
+                                scale: 0.6 + 0.4 * spin,
+                                child: SvgPicture.asset(
+                                  'assets/illustrations/learn/clover.svg',
+                                  width: 18,
+                                  height: 18,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            AnimatedSwitcher(
+                              duration: ElioMotion.base,
+                              transitionBuilder: (child, a) => SlideTransition(
+                                position: Tween(
+                                  begin: const Offset(0, 0.6),
+                                  end: Offset.zero,
+                                ).animate(a),
+                                child: FadeTransition(opacity: a, child: child),
+                              ),
+                              child: Text(
+                                l10n.lnClovers(streak),
+                                key: ValueKey(streak),
+                                style: ElioTokens.button.copyWith(
+                                  color: p.primaryText,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      l10n.lnClovers(streak),
-                      style: ElioTokens.button.copyWith(color: p.primaryText),
-                    ),
+                    if (bump > 0 && t < 1)
+                      for (var i = 0; i < 3; i++)
+                        Positioned(
+                          left: 6.0 + i * 8,
+                          top:
+                              -24 *
+                              ((t * 1.3 - i * 0.11).clamp(0.0, 1.0).toDouble()),
+                          child: Opacity(
+                            opacity:
+                                1 -
+                                (t * 1.3 - i * 0.11).clamp(0.0, 1.0).toDouble(),
+                            child: SvgPicture.asset(
+                              'assets/illustrations/learn/clover.svg',
+                              width: 8,
+                              height: 8,
+                            ),
+                          ),
+                        ),
                   ],
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ),
       ),

@@ -16,6 +16,7 @@ Future<void> openGuideLesson({
   required BuildContext context,
   required WidgetRef ref,
   required GuideLesson lesson,
+
   /// Daily guides keep their page in the guide progress store (0194): start page and page callback.
   int? dailyInitialPage,
   ValueChanged<int>? onDailyPage,
@@ -30,7 +31,11 @@ Future<void> openGuideLesson({
 
   if (!context.mounted) return;
   final initialPage = onDailyPage == null
-      ? ref.read(learningProgressProvider).valueOrNull?.guideReadProgress[lesson.id] ?? 0
+      ? ref
+                .read(learningProgressProvider)
+                .valueOrNull
+                ?.guideReadProgress[lesson.id] ??
+            0
       : dailyInitialPage ?? 0;
   await Navigator.of(context).push(
     learnRoute<void>(
@@ -49,9 +54,9 @@ Future<void> openGuideLesson({
 }
 
 void _showGuideUnavailableMessage(BuildContext context) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(context.l10n.guidePdfUnavailable)),
-  );
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(context.l10n.guidePdfUnavailable)));
 }
 
 class _GuidePdfPage extends ConsumerStatefulWidget {
@@ -252,18 +257,26 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
               child: SafeArea(
                 top: false,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   child: Row(
                     children: [
                       IconButton(
                         tooltip: l10n.lnPrevPage,
-                        onPressed: _latestPageReached > 1 ? _controller.previousPage : null,
+                        onPressed: _latestPageReached > 1
+                            ? _controller.previousPage
+                            : null,
                         icon: const Icon(Icons.chevron_left_rounded),
                       ),
                       Expanded(
                         child: Text(
                           _effectivePageCount > 0
-                              ? l10n.lnPageOf(_latestPageReached, _effectivePageCount)
+                              ? l10n.lnPageOf(
+                                  _latestPageReached,
+                                  _effectivePageCount,
+                                )
                               : l10n.lnPage(_latestPageReached),
                           textAlign: TextAlign.center,
                           style: context.text.labelLarge,
@@ -271,7 +284,9 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
                       ),
                       IconButton(
                         tooltip: l10n.lnNextPage,
-                        onPressed: _effectivePageCount == 0 || _latestPageReached < _effectivePageCount
+                        onPressed:
+                            _effectivePageCount == 0 ||
+                                _latestPageReached < _effectivePageCount
                             ? _controller.nextPage
                             : null,
                         icon: const Icon(Icons.chevron_right_rounded),

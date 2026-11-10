@@ -10,6 +10,8 @@ hashes updated after the history rewrite on 2026-10-08. The old-to-new map is
 kept outside the repo.
 
 ## [Unreleased]
+- Learn L3 (0206): under Today's Guide your last 3 guides sit as a polaroid stack you swipe through or pull out to continue; Explore's module cards snap, and the one on the left picks what Discover more shows (videos, guides, simulations and quizzes pop in when you swipe). The module, lesson, simulation and physics quiz pages have the new curved-header look, the new ELIO robot buddy replaces the old quiz mascot, and every card has its sounds and vibrations. Light and dark, English and Bahasa Indonesia.
+
 - ELIOS 3 motion part 2 (0203): circular dark-mode reveal, quiz answer shake/check, level-up and medal celebration with leaves, activity grid stagger, page fade-through and photo/robot morphs, idle hints, bin buddies jump.
 
 - ELIOS 3 motion (0202): the tab underline slides, icons pop, selector pills slide, Scan hub cards and Home rise in (dial sweeps, numbers count up, trophy sticker drops in), loading placeholders shimmer, the clover sticker bounces and the contribute medal drops in. Reduce motion turns these into simple fades.

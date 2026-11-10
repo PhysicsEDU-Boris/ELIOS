@@ -22,16 +22,22 @@ class FormulaBox extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: context.text.labelSmall?.copyWith(color: p.primaryText)),
+        Text(
+          title,
+          style: context.text.labelSmall?.copyWith(color: p.primaryText),
+        ),
         const SizedBox(height: 8),
         Text.rich(
           TextSpan(
-            style: ElioTokens.subhead.copyWith(color: p.textPrimary),
+            style: ElioTokens.code.copyWith(fontSize: 20, color: p.textPrimary),
             children: [formulaText],
           ),
         ),
         const SizedBox(height: 8),
-        Text(subtitle, style: context.text.bodySmall?.copyWith(color: p.textSecondary)),
+        Text(
+          subtitle,
+          style: context.text.bodySmall?.copyWith(color: p.textSecondary),
+        ),
       ],
     );
   }
