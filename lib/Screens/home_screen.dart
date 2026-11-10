@@ -14,6 +14,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/guide_lesson.dart';
 import '../models/home_stats.dart';
@@ -33,6 +34,7 @@ import '../theme/elio_motion.dart';
 import '../theme/elio_theme.dart';
 import '../theme/elio_tokens.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
+import '../widgets/elio_celebration.dart';
 import '../widgets/home_notifications_sheet.dart';
 import '../widgets/splash/elio_leaf.dart' show ElioMark;
 import 'home/home_activity.dart';
@@ -48,6 +50,20 @@ const _controlTab = 3;
 const _historyTab = 4;
 const _maxContentWidth = 720.0;
 const _trackedLearningModuleIds = ['organic', 'inorganic', 'hazardous'];
+
+/// What to celebrate now, given what was last seen. A null last value is a
+/// first run on this phone/account: nothing is celebrated, only recorded.
+({bool levelUp, List<int> newMedals}) celebrationsDue({
+  required int? lastLevel,
+  required int level,
+  required Set<int>? lastMedals,
+  required Set<int>? medals,
+}) => (
+  levelUp: lastLevel != null && level > lastLevel,
+  newMedals: lastMedals == null || medals == null
+      ? const []
+      : ([...medals.difference(lastMedals)]..sort()),
+);
 
 /// Rotated by day. The first one is the Figma sample.
 List<String> get homeFacts => [
@@ -218,9 +234,14 @@ class HomeResumeControl extends ConsumerWidget {
                       color: p.isDark ? p.background : p.surface,
                       shape: BoxShape.circle,
                     ),
-                    child: SvgPicture.asset(
-                      'assets/illustrations/scan/elios_robot.svg',
-                      excludeFromSemantics: true,
+                    // The robot breathes 1 → 1.04 (2 s, pauses after 8 s).
+                    child: ElioIdleLoop(
+                      builder: (context, w, child) =>
+                          Transform.scale(scale: 1 + 0.04 * w, child: child),
+                      child: SvgPicture.asset(
+                        'assets/illustrations/scan/elios_robot.svg',
+                        excludeFromSemantics: true,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -610,6 +631,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  String? _celebrationChecked;
+
+  /// Level up / medal unlocked (Figma 13 · 38), compared with what this
+  /// account last saw; the first check only records the current state.
+  void _scheduleCelebrations(
+    int level,
+    String levelTitle,
+    Set<int>? medalIds,
+    List<_Medal> medals,
+  ) {
+    final uid = (ref.read(currentUserProvider) ?? widget.auth.currentUser)?.uid;
+    if (uid == null) return;
+    final key = '$uid|$level|${medalIds?.toList()?..sort()}';
+    if (key == _celebrationChecked) return;
+    _celebrationChecked = key;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      final levelKey = 'elio_seen_level_$uid',
+          medalKey = 'elio_seen_medals_$uid';
+      final due = celebrationsDue(
+        lastLevel: prefs.getInt(levelKey),
+        level: level,
+        lastMedals: prefs.getStringList(medalKey)?.map(int.parse).toSet(),
+        medals: medalIds,
+      );
+      await prefs.setInt(levelKey, level);
+      if (medalIds != null) {
+        await prefs.setStringList(medalKey, [for (final m in medalIds) '$m']);
+      }
+      if (!mounted) return;
+      if (due.levelUp) {
+        ElioCelebration.show(
+          context,
+          art: homeArt(level >= 3 ? 'tree_lv3' : 'sprout_lv1'),
+          title: l10n.celebrateLevelUp(level),
+          subtitle: levelTitle,
+        );
+      }
+      for (final i in due.newMedals) {
+        ElioCelebration.show(
+          context,
+          art: homeArt('medal_gold'),
+          title: l10n.celebrateMedal,
+          subtitle: medals[i].name,
+        );
+      }
+    });
+  }
+
   List<Widget> _sections(
     BuildContext context,
     ElioPalette p,
@@ -618,6 +688,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     List<_Medal> medals,
   ) {
     const gap = SizedBox(height: 16);
+    final progress = ref.read(learningProgressProvider).valueOrNull;
+    _scheduleCelebrations(
+      stats.level.levelNumber,
+      stats.level.title,
+      // Medals are only known once learning progress has loaded.
+      progress == null
+          ? null
+          : {
+              for (final (i, m) in medals.indexed)
+                if (m.unlocked) i,
+            },
+      medals,
+    );
     if (!_homeEntrancePlayed) {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _homeEntrancePlayed = true,

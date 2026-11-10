@@ -138,7 +138,13 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
                 Center(
                   child: SizedBox.fromSize(
                     size: phoneScanBox,
-                    child: CustomPaint(painter: _Corners(p.primary)),
+                    // Searching: the brackets breathe 1 ↔ 1.02 (1.6 s).
+                    child: ElioIdleLoop(
+                      period: const Duration(milliseconds: 1600),
+                      builder: (context, w, child) =>
+                          Transform.scale(scale: 1 + 0.02 * w, child: child),
+                      child: CustomPaint(painter: _Corners(p.primary)),
+                    ),
                   ),
                 ),
                 SafeArea(

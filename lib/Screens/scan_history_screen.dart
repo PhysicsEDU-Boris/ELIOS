@@ -42,6 +42,7 @@ class ScanHistoryScreen extends StatefulWidget {
 class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
   late final ScanRecordStore _store = widget.store ?? ScanRecordStore.instance;
   ScanCategory? _filter;
+  int _jump = 0;
   String? _selected;
   bool _failed = false;
   int _loadEpoch = 0;
@@ -382,7 +383,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
   void _openDetail(ScanRecord r) {
     final theme = Theme.of(context);
     Navigator.of(context).push(
-      MaterialPageRoute(
+      ElioPageRoute(
         builder: (_) => Theme(
           data: theme,
           child: ScanDetailScreen(record: r, store: _store),
@@ -392,7 +393,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
   }
 
   void _openTimeline({HistoryDevice? device}) => Navigator.of(context).push(
-    MaterialPageRoute<void>(
+    ElioPageRoute<void>(
       builder: (_) =>
           ScanTimelineScreen(store: _store, device: device, category: _filter),
     ),
@@ -606,11 +607,12 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
         count: c == null
             ? all.length
             : all.where((r) => r.category == c).length,
-        art: historyBinArt(c),
+        art: historyBinArt(c, jump: _filter == c ? _jump : null),
         selected: _filter == c,
         onTap: () => setState(() {
           _filter = c;
           _selected = null;
+          _jump++;
         }),
       ),
     );

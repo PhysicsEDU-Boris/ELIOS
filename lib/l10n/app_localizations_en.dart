@@ -5303,4 +5303,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get h3TrophiesWord => 'trophies';
+
+  @override
+  String get celebrateTap => 'Tap to continue';
+
+  @override
+  String celebrateLevelUp(int level) {
+    return 'Level $level!';
+  }
+
+  @override
+  String get celebrateMedal => 'Medal unlocked';
 }

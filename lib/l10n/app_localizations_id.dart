@@ -5199,4 +5199,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get h3TrophiesWord => 'trofi';
+
+  @override
+  String get celebrateTap => 'Ketuk untuk lanjut';
+
+  @override
+  String celebrateLevelUp(int level) {
+    return 'Level $level!';
+  }
+
+  @override
+  String get celebrateMedal => 'Medali terbuka';
 }

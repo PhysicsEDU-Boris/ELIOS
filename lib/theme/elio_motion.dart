@@ -301,3 +301,210 @@ class _ElioAfterFirstFrameState extends State<ElioAfterFirstFrame> {
   @override
   Widget build(BuildContext context) => widget.builder(context, _ready);
 }
+
+/// Shakes x ±[distance] × 3 over 300 ms whenever [trigger] changes to a new
+/// non-null value (wrong answer, locked item). Still under reduced motion.
+class ElioShake extends StatefulWidget {
+  const ElioShake({
+    super.key,
+    required this.trigger,
+    required this.child,
+    this.distance = 6,
+  });
+  final Object? trigger;
+  final Widget child;
+  final double distance;
+
+  @override
+  State<ElioShake> createState() => _ElioShakeState();
+}
+
+class _ElioShakeState extends State<ElioShake>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 300),
+  );
+
+  @override
+  void didUpdateWidget(ElioShake old) {
+    super.didUpdateWidget(old);
+    if (widget.trigger != null &&
+        widget.trigger != old.trigger &&
+        !ElioMotion.reduced(context)) {
+      _c.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _c,
+    child: widget.child,
+    builder: (context, child) => Transform.translate(
+      offset: Offset(
+        math.sin(_c.value * math.pi * 6) * widget.distance * (1 - _c.value),
+        0,
+      ),
+      child: child,
+    ),
+  );
+}
+
+/// A short idle hint (Figma "idle hints, stop after 8 s"): [builder] gets a
+/// 0..1..0 wave with [period] for [length], then rests at 0. One finite
+/// animation, no timers; nothing under reduced motion.
+class ElioIdleLoop extends StatefulWidget {
+  const ElioIdleLoop({
+    super.key,
+    required this.builder,
+    this.period = const Duration(seconds: 2),
+    this.length = const Duration(seconds: 8),
+    this.child,
+  });
+  final Duration period, length;
+  final Widget? child;
+  final Widget Function(BuildContext context, double wave, Widget? child)
+  builder;
+
+  @override
+  State<ElioIdleLoop> createState() => _ElioIdleLoopState();
+}
+
+class _ElioIdleLoopState extends State<ElioIdleLoop>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: widget.length,
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!ElioMotion.reduced(context) &&
+        _c.status == AnimationStatus.dismissed) {
+      _c.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _c,
+    child: widget.child,
+    builder: (context, child) {
+      final cycles =
+          widget.length.inMilliseconds / widget.period.inMilliseconds;
+      final wave = _c.isCompleted
+          ? 0.0
+          : (1 - math.cos(_c.value * cycles * 2 * math.pi)) / 2;
+      return widget.builder(context, wave, child);
+    },
+  );
+}
+
+/// A one-off jump (y −[height] → 0, spring/bounce) each time [trigger]
+/// becomes a new value, after [delay] (the 40 ms "wave" of several buddies).
+class ElioJump extends StatefulWidget {
+  const ElioJump({
+    super.key,
+    required this.trigger,
+    required this.child,
+    this.height = 8,
+    this.delay = Duration.zero,
+  });
+  final Object? trigger;
+  final Widget child;
+  final double height;
+  final Duration delay;
+
+  @override
+  State<ElioJump> createState() => _ElioJumpState();
+}
+
+class _ElioJumpState extends State<ElioJump>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    value: 1,
+    duration: const Duration(milliseconds: 600) + widget.delay,
+  );
+
+  @override
+  void didUpdateWidget(ElioJump old) {
+    super.didUpdateWidget(old);
+    if (widget.trigger != old.trigger &&
+        widget.trigger != null &&
+        !ElioMotion.reduced(context)) {
+      _c.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final total = _c.duration!.inMicroseconds;
+    final start = widget.delay.inMicroseconds / total;
+    return AnimatedBuilder(
+      animation: _c,
+      child: widget.child,
+      builder: (context, child) {
+        final local = Interval(start, 1).transform(_c.value);
+        // Up quickly, then land with the bounce spring.
+        final up = local < 0.25 ? local / 0.25 : 0.0;
+        final down = local < 0.25
+            ? 0.0
+            : ElioMotion.bounce.transform((local - 0.25) / 0.75);
+        final y = local < 0.25
+            ? -widget.height * up
+            : -widget.height * (1 - down);
+        return Transform.translate(offset: Offset(0, y), child: child);
+      },
+    );
+  }
+}
+
+/// Fade-through push (Figma rule 10): the new page fades in and rises 24 px
+/// (220 ms emphasized), the old one fades out. Reduced motion: a cut.
+class ElioPageRoute<T> extends PageRouteBuilder<T> {
+  ElioPageRoute({required WidgetBuilder builder})
+    : super(
+        transitionDuration: ElioMotion.base,
+        reverseTransitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (context, _, _) => builder(context),
+        transitionsBuilder: (context, a, _, child) {
+          if (ElioMotion.reduced(context)) return child;
+          final t = CurvedAnimation(
+            parent: a,
+            curve: ElioMotion.emphasized,
+            reverseCurve: ElioMotion.exit,
+          );
+          return FadeTransition(
+            opacity: t,
+            child: AnimatedBuilder(
+              animation: t,
+              child: child,
+              builder: (context, child) => Transform.translate(
+                offset: Offset(0, 24 * (1 - t.value)),
+                child: child,
+              ),
+            ),
+          );
+        },
+      );
+}

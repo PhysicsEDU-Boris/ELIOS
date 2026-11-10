@@ -1494,5 +1494,8 @@
   "histPhoneCamera": "ponsel",
   "histNoDevice": "Pindaian sebelum pembaruan ini tidak punya perangkat; lihat di Semua.",
   "histAllScans": "Semua",
-  "h3TrophiesWord": "trofi"
+  "h3TrophiesWord": "trofi",
+  "celebrateTap": "Ketuk untuk lanjut",
+  "celebrateLevelUp": "Level {level}!",
+  "celebrateMedal": "Medali terbuka"
 }

@@ -47,7 +47,7 @@ class ScanHubScreen extends StatelessWidget {
                         onOpen: () {
                           elioFeedback(ElioSfx.pop, ElioHaptics.light);
                           Navigator.of(context).push(
-                            MaterialPageRoute<void>(
+                            ElioPageRoute<void>(
                               builder: (_) => const PhoneScanScreen(),
                             ),
                           );
@@ -65,7 +65,7 @@ class ScanHubScreen extends StatelessWidget {
                         onOpen: () {
                           elioFeedback(ElioSfx.pop, ElioHaptics.light);
                           Navigator.of(context).push(
-                            MaterialPageRoute<void>(
+                            ElioPageRoute<void>(
                               builder: (_) => const SelectVehicleScreen(),
                             ),
                           );
@@ -83,7 +83,7 @@ class ScanHubScreen extends StatelessWidget {
                         onOpen: () {
                           elioFeedback(ElioSfx.pop, ElioHaptics.light);
                           Navigator.of(context).push(
-                            MaterialPageRoute<void>(
+                            ElioPageRoute<void>(
                               builder: (_) => const ContributeScreen(),
                             ),
                           );
@@ -293,8 +293,10 @@ class _PhoneCard extends StatelessWidget {
             Positioned(
               right: 30,
               top: 46,
-              child: Transform.rotate(
-                angle: 0.14,
+              // Idle hint: the phone tilts 8° ↔ 5° (2 s, stops after 8 s).
+              child: ElioIdleLoop(
+                builder: (context, w, child) =>
+                    Transform.rotate(angle: 0.14 - 0.05 * w, child: child),
                 child: Container(
                   width: 96,
                   height: 150,
@@ -366,22 +368,30 @@ class _RobotCard extends StatelessWidget {
             Positioned(
               right: 4,
               top: 39,
-              child: Container(
-                width: 160,
-                height: 160,
-                decoration: BoxDecoration(
-                  color: p.surface,
-                  shape: BoxShape.circle,
+              // Idle hint: the ELIOS spotlight breathes.
+              child: ElioIdleLoop(
+                builder: (context, w, child) =>
+                    Transform.scale(scale: 1 + 0.04 * w, child: child),
+                child: Container(
+                  width: 160,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    color: p.surface,
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ),
             ),
             Positioned(
               right: 4,
               top: 55,
-              child: SvgPicture.asset(
-                '$scanArt/elios_robot.svg',
-                width: 160,
-                height: 136,
+              child: Hero(
+                tag: 'elios-robot',
+                child: SvgPicture.asset(
+                  '$scanArt/elios_robot.svg',
+                  width: 160,
+                  height: 136,
+                ),
               ),
             ),
             Positioned(
@@ -497,7 +507,13 @@ class _ContributeCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Icon(Icons.circle, size: 22, color: p.error),
+                // Idle hint: the REC dot blinks (1 s).
+                child: ElioIdleLoop(
+                  period: const Duration(seconds: 1),
+                  builder: (context, w, child) =>
+                      Opacity(opacity: 1 - 0.7 * w, child: child),
+                  child: Icon(Icons.circle, size: 22, color: p.error),
+                ),
               ),
             ),
           ],

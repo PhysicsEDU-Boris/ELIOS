@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../l10n/l10n.dart';
 import '../models/scan_record.dart';
 import '../services/ai_quiz_service.dart';
+import '../theme/elio_motion.dart';
 import '../theme/elio_tokens.dart';
 import 'auth/auth_widgets.dart' show authPalette;
 
@@ -236,14 +237,24 @@ class HistoryCategoryTile extends StatelessWidget {
                   Positioned(
                     top: 10,
                     right: 10,
-                    child: Container(
-                      width: 20,
-                      height: 20,
-                      decoration: ShapeDecoration(
-                        color: p.primary,
-                        shape: const CircleBorder(),
+                    // The check badge pops in (spring/pop).
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.4, end: 1),
+                      duration: ElioMotion.reduced(context)
+                          ? Duration.zero
+                          : ElioMotion.slow,
+                      curve: ElioMotion.pop,
+                      builder: (context, s, child) =>
+                          Transform.scale(scale: s, child: child),
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        decoration: ShapeDecoration(
+                          color: p.primary,
+                          shape: const CircleBorder(),
+                        ),
+                        child: Icon(Icons.check, size: 14, color: p.onPrimary),
                       ),
-                      child: Icon(Icons.check, size: 14, color: p.onPrimary),
                     ),
                   ),
               ],
@@ -256,12 +267,19 @@ class HistoryCategoryTile extends StatelessWidget {
 }
 
 /// Bin buddy art of a category tile; "all" (null) shows the three bins.
-Widget historyBinArt(ScanCategory? c) {
-  Widget bin(String name, double w, double h) => SvgPicture.asset(
-    'assets/illustrations/home/bin_$name.svg',
-    width: w,
-    height: h,
-    excludeFromSemantics: true,
+/// A new [jump] value makes the buddies jump (ELIOS 3 motion, Figma 13 · 31);
+/// the three of "all" jump in a 40 ms wave.
+Widget historyBinArt(ScanCategory? c, {Object? jump}) {
+  var wave = 0;
+  Widget bin(String name, double w, double h) => ElioJump(
+    trigger: jump,
+    delay: Duration(milliseconds: 40 * wave++),
+    child: SvgPicture.asset(
+      'assets/illustrations/home/bin_$name.svg',
+      width: w,
+      height: h,
+      excludeFromSemantics: true,
+    ),
   );
   if (c != null) {
     return bin(
@@ -2462,7 +2480,12 @@ class HistoryScanRow extends StatelessWidget {
         onTap: onTap,
         child: Row(
           children: [
-            HistoryPolaroid(r, width: 52, height: 44, degrees: -3),
+            // Morphs into the scan detail photo (Figma 13 · 32, container
+            // transform 320 ms).
+            Hero(
+              tag: 'history-photo-${r.id}',
+              child: HistoryPolaroid(r, width: 52, height: 44, degrees: -3),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

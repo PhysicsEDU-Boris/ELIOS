@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../l10n/l10n.dart';
 import '../../services/elio_feedback.dart';
+import '../../theme/elio_motion.dart';
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/elio_page_title.dart';
@@ -24,7 +25,7 @@ class SelectVehicleScreen extends StatelessWidget {
           void useElios() {
             elioFeedback(ElioSfx.blip, ElioHaptics.medium);
             Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const EliosSetupScreen()),
+              ElioPageRoute<void>(builder: (_) => const EliosSetupScreen()),
             );
           }
 
@@ -57,10 +58,14 @@ class SelectVehicleScreen extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                           alignment: Alignment.center,
-                          child: SvgPicture.asset(
-                            '$scanArt/elios_robot.svg',
-                            width: 200,
-                            height: 170,
+                          // The hub robot morphs into this one.
+                          child: Hero(
+                            tag: 'elios-robot',
+                            child: SvgPicture.asset(
+                              '$scanArt/elios_robot.svg',
+                              width: 200,
+                              height: 170,
+                            ),
                           ),
                         ),
                       ),

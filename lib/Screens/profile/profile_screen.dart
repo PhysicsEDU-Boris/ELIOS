@@ -14,6 +14,7 @@ import '../../providers/elio_theme_mode_provider.dart';
 import '../../theme/elio_motion.dart';
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
+import '../../widgets/elio_theme_reveal.dart';
 import '../../widgets/learn/learn_ui.dart';
 import '../config/config_settings_sheet.dart' show ConfigSegmented;
 import '../../services/elio_feedback.dart';
@@ -74,13 +75,32 @@ class ProfileScreen extends ConsumerWidget {
                     tone: p.primaryText,
                     title: l10n.profileAppearance,
                   ),
-                  _SwitchRow(
-                    title: l10n.sidebarDarkMode,
-                    subtitle: l10n.profileDarkModeSub,
-                    value: dark,
-                    onChanged: (v) => ref
-                        .read(elioThemeModeProvider.notifier)
-                        .setMode(v ? ElioThemeMode.dark : ElioThemeMode.light),
+                  // The new theme grows out of the switch (Figma 13 · 36).
+                  Builder(
+                    builder: (row) => _SwitchRow(
+                      title: l10n.sidebarDarkMode,
+                      subtitle: l10n.profileDarkModeSub,
+                      value: dark,
+                      onChanged: (v) {
+                        final box = row.findRenderObject() as RenderBox?;
+                        final at = box == null
+                            ? Offset.zero
+                            : box.localToGlobal(
+                                Offset(
+                                  box.size.width - 40,
+                                  box.size.height / 2,
+                                ),
+                              );
+                        ThemeSwitchReveal.run(
+                          at,
+                          () => ref
+                              .read(elioThemeModeProvider.notifier)
+                              .setMode(
+                                v ? ElioThemeMode.dark : ElioThemeMode.light,
+                              ),
+                        );
+                      },
+                    ),
                   ),
                   const _Rule(),
                   _RowTitle(

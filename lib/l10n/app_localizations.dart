@@ -9078,6 +9078,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'trophies'**
   String get h3TrophiesWord;
+
+  /// No description provided for @celebrateTap.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to continue'**
+  String get celebrateTap;
+
+  /// No description provided for @celebrateLevelUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Level {level}!'**
+  String celebrateLevelUp(int level);
+
+  /// No description provided for @celebrateMedal.
+  ///
+  /// In en, this message translates to:
+  /// **'Medal unlocked'**
+  String get celebrateMedal;
 }
 
 class _AppLocalizationsDelegate

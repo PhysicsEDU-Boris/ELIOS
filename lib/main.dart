@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'firebase_options_loader.dart';
 import 'l10n/l10n.dart';
+import 'widgets/elio_theme_reveal.dart';
 import 'providers/app_locale_provider.dart';
 import 'providers/app_preferences_provider.dart' show testerBuild;
 import 'services/tester_log.dart';
@@ -161,7 +162,7 @@ class _ElioAppState extends State<ElioApp> with WidgetsBindingObserver {
           ),
           builder: (context, child) {
             updateCurrentL10n(context);
-            return DesktopViewport(child: child!);
+            return ThemeSwitchReveal(child: DesktopViewport(child: child!));
           },
           home: SplashScreen(auth: _auth),
         ),

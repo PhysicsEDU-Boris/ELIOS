@@ -3381,5 +3381,9 @@
   "histPhoneCamera": "phone",
   "histNoDevice": "Scans saved before this update have no device; they are under All.",
   "histAllScans": "All",
-  "h3TrophiesWord": "trophies"
+  "h3TrophiesWord": "trophies",
+  "celebrateTap": "Tap to continue",
+  "celebrateLevelUp": "Level {level}!",
+  "@celebrateLevelUp": {"placeholders": {"level": {"type": "int"}}},
+  "celebrateMedal": "Medal unlocked"
 }

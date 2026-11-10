@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../l10n/l10n.dart';
 import '../../models/scan_record.dart';
 import '../../services/scan_record_store.dart';
+import '../../theme/elio_motion.dart';
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/elio_page_title.dart';
@@ -58,7 +59,7 @@ class _ScanTimelineScreenState extends State<ScanTimelineScreen> {
   void _open(ScanRecord r) {
     final theme = Theme.of(context);
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      ElioPageRoute<void>(
         builder: (_) => Theme(
           data: theme,
           child: ScanDetailScreen(record: r, store: widget.store),

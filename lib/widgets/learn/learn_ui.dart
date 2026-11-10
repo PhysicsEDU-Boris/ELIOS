@@ -1,9 +1,11 @@
+import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../theme/elio_theme.dart';
+import '../../theme/elio_motion.dart';
 import '../../theme/elio_tokens.dart';
 import 'package:elio/l10n/l10n.dart';
 
@@ -18,8 +20,9 @@ extension LearnTheme on BuildContext {
 }
 
 /// Pushes a Learn page inside the ELIO theme (routes do not inherit it).
+/// Learn sub-pages slide in 24 px and fade (ELIOS 3 motion, Figma 13 · 10).
 Route<T> learnRoute<T>(Widget page) =>
-    MaterialPageRoute<T>(builder: (_) => ElioTheme.wrap(page));
+    ElioPageRoute<T>(builder: (_) => ElioTheme.wrap(page));
 
 // M3 shape scale with continuous corners.
 const learnRadiusM = 12.0;
@@ -1471,51 +1474,81 @@ class QuizAnswerOption extends StatelessWidget {
       learnRadiusL,
       BorderSide(color: edge, width: selected || revealCorrect ? 2 : 1),
     );
-    return Semantics(
-      button: true,
-      selected: selected,
-      label:
-          l10n.lnAnswerLabel(letter, label) +
-          (revealCorrect
-              ? l10n.lnCorrectSuffix
-              : revealWrong
-              ? l10n.lnWrongSuffix
-              : ''),
-      excludeSemantics: true,
-      child: Material(
-        color: fill,
-        shape: shape,
-        child: InkWell(
-          onTap: answered ? null : onTap,
-          customBorder: shape,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 56),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    alignment: Alignment.center,
-                    decoration: ShapeDecoration(
-                      color: _fills[index % 4],
-                      shape: learnShape(8),
-                    ),
-                    child: Text(
-                      letter,
-                      style: context.text.labelLarge?.copyWith(
-                        color: _onFills[index % 4],
-                      ),
-                    ),
+    final reduced = ElioMotion.reduced(context);
+    // Figma 13 · 28: a wrong pick shakes x ±6 × 3; the right answer pulses
+    // once (1.04) when it was not the one chosen; the check pops in.
+    final pulse = revealCorrect && !selected && !reduced;
+    return ElioShake(
+      trigger: revealWrong ? label : null,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: pulse ? 1 : 0),
+        duration: ElioMotion.slow,
+        builder: (context, v, child) => Transform.scale(
+          scale: 1 + 0.04 * math.sin(v * math.pi),
+          child: child,
+        ),
+        child: Semantics(
+          button: true,
+          selected: selected,
+          label:
+              l10n.lnAnswerLabel(letter, label) +
+              (revealCorrect
+                  ? l10n.lnCorrectSuffix
+                  : revealWrong
+                  ? l10n.lnWrongSuffix
+                  : ''),
+          excludeSemantics: true,
+          child: Material(
+            color: fill,
+            shape: shape,
+            child: InkWell(
+              onTap: answered ? null : onTap,
+              customBorder: shape,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 56),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(label, style: context.text.bodyMedium)),
-                  if (revealCorrect)
-                    Icon(Icons.check_circle_rounded, color: p.primaryText),
-                  if (revealWrong)
-                    Icon(Icons.cancel_rounded, color: p.errorText),
-                ],
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        alignment: Alignment.center,
+                        decoration: ShapeDecoration(
+                          color: _fills[index % 4],
+                          shape: learnShape(8),
+                        ),
+                        child: Text(
+                          letter,
+                          style: context.text.labelLarge?.copyWith(
+                            color: _onFills[index % 4],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(label, style: context.text.bodyMedium),
+                      ),
+                      if (revealCorrect)
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.4, end: 1),
+                          duration: reduced ? Duration.zero : ElioMotion.slow,
+                          curve: ElioMotion.pop,
+                          builder: (context, s, child) =>
+                              Transform.scale(scale: s, child: child),
+                          child: Icon(
+                            Icons.check_circle_rounded,
+                            color: p.primaryText,
+                          ),
+                        ),
+                      if (revealWrong)
+                        Icon(Icons.cancel_rounded, color: p.errorText),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
