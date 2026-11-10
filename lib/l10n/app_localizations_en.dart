@@ -5139,4 +5139,103 @@ class AppLocalizationsEn extends AppLocalizations {
   String lnGuideRewards(int xp, String clovers) {
     return '$xp XP · $clovers · from Daily Guides';
   }
+
+  @override
+  String get wqSavedNoQuiz =>
+      'Saved to History. The quiz is off for robot scans.';
+
+  @override
+  String get setupQuizAfterScan => 'Quiz after each scan';
+
+  @override
+  String get setupCameraAuto => 'Camera: MaixCAM2';
+
+  @override
+  String get setupAutomatic => 'Automatic';
+
+  @override
+  String get setupOpenControl => 'Open control';
+
+  @override
+  String get setupVideoStream => 'Video stream';
+
+  @override
+  String get vehicleChange => 'Change';
+
+  @override
+  String get scanHoldSteady => 'Hold steady · one item in the frame';
+
+  @override
+  String get scanTakePhoto => 'Take photo and identify';
+
+  @override
+  String get scanAiQuiz => 'AI quiz';
+
+  @override
+  String get contributeTitle => 'Scan to contribute';
+
+  @override
+  String get contributePickBin => 'Which bin are you using?';
+
+  @override
+  String get contributeDrop => 'Drop the item into the bin while recording.';
+
+  @override
+  String get contributeKeepLabel =>
+      'Keep the bin label in view so we can check it.';
+
+  @override
+  String get contributeChecking => 'ELIOS AI is checking your video…';
+
+  @override
+  String get contributeStart => 'Start recording';
+
+  @override
+  String get contributeStop => 'Stop recording';
+
+  @override
+  String get contributeNice => 'Nice sorting!';
+
+  @override
+  String get contributeNotQuite => 'Not quite';
+
+  @override
+  String get contributeNotChecked => 'Couldn\'t check';
+
+  @override
+  String get contributeNoItem =>
+      'ELIOS AI couldn\'t see an item. Try again closer, with good light.';
+
+  @override
+  String contributeWentInto(String item, String bin) {
+    return '$item went into the $bin bin.';
+  }
+
+  @override
+  String contributeBelongs(String item, String bin) {
+    return '$item belongs in the $bin bin. Try again!';
+  }
+
+  @override
+  String contributeTrophies(int count) {
+    return '+$count trophies';
+  }
+
+  @override
+  String get contributeSaved => 'Saved to History as a contribution';
+
+  @override
+  String get contributeAgain => 'Contribute again';
+
+  @override
+  String get scanContributeOverline => 'Earn trophies';
+
+  @override
+  String get scanContributeBody =>
+      'Film yourself putting waste in the right bin. Keep the bin label in view.';
+
+  @override
+  String contributeRec(String time) {
+    return 'REC $time';
+  }
 }

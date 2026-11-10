@@ -67,3 +67,4 @@ their status changed.
 - [0194](0194-g4-daily-guides.md) G4 Daily Guides in the app
 - [0196](0196-elios3-nav-shell.md) ELIOS 3 navigation: Scan hub, Profile tab, no top bar or sidebar
 - [0197](0197-elios3-home-learn.md) ELIOS 3 Home (L4) with resume control, Learn clovers
+- [0198](0198-elios3-scan-flows.md) ELIOS 3 scan flows: phone Scan & quiz, contribute, ELIOS setup quiz card

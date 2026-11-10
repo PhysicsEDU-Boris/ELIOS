@@ -9,7 +9,6 @@ import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/elio_page_title.dart';
 import '../../widgets/learn/learn_ui.dart';
-import '../config/config_settings_sheet.dart' show ConfigSettingsButton;
 import '../config_screen.dart';
 import 'scan_hub_screen.dart' show scanArt;
 
@@ -289,8 +288,19 @@ class EliosSetupScreen extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                     child: ElioPageTitle(
                       title: l10n.setupTitle,
+                      subtitle: l10n.vehicleEliosDesc,
                       onBack: () => Navigator.of(context).maybePop(),
-                      trailing: const ConfigSettingsButton(),
+                      // Back to Select vehicle (Figma "Change").
+                      trailing: TextButton(
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        style: TextButton.styleFrom(
+                          foregroundColor: p.primaryText,
+                          backgroundColor: p.primary.withValues(alpha: 0.12),
+                          shape: const StadiumBorder(),
+                          minimumSize: const Size(48, 40),
+                        ),
+                        child: Text(l10n.vehicleChange),
+                      ),
                     ),
                   ),
                   const Expanded(child: ConfigScreen()),

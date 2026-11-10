@@ -503,10 +503,11 @@ class QuizPopupSkeleton extends StatelessWidget {
             height: 36,
             child: Row(
               children: [
-                block(170, 26, 13),
+                // Flexible so a portrait phone (ELIOS 3 Scan & quiz) fits.
+                Flexible(flex: 170, child: block(170, 26, 13)),
                 const SizedBox(width: 8),
-                block(162, 26, 13),
-                const Spacer(),
+                Flexible(flex: 162, child: block(162, 26, 13)),
+                const Spacer(flex: 40),
                 block(70, 30, 15),
                 if (onStop != null) ...[
                   const SizedBox(width: 8),
@@ -532,7 +533,10 @@ class QuizPopupSkeleton extends StatelessWidget {
                     const SizedBox(height: 8),
                     block(null, 20, 10),
                     const SizedBox(height: 8),
-                    block(420, 20, 10),
+                    FractionallySizedBox(
+                      widthFactor: 0.8,
+                      child: block(null, 20, 10),
+                    ),
                   ],
                 ),
               ),
@@ -1089,23 +1093,33 @@ class _QuestionView extends ConsumerWidget {
                 child: SizedBox.expand(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18),
-                    child: Row(
-                      children: [
-                        Icon(shapes[i], color: onFills[i], size: 20),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Text(
-                            q.options[i],
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: onFills[i],
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
+                    // Tall portrait tiles (ELIOS 3) show more of the answer.
+                    child: LayoutBuilder(
+                      builder: (context, box) => Row(
+                        children: [
+                          Icon(shapes[i], color: onFills[i], size: 20),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Text(
+                              q.options[i],
+                              maxLines:
+                                  (box.maxHeight /
+                                          (24 *
+                                              MediaQuery.textScalerOf(
+                                                context,
+                                              ).scale(1)))
+                                      .floor()
+                                      .clamp(2, 6),
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: onFills[i],
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -1226,9 +1240,18 @@ class _QuestionFooter extends ConsumerWidget {
     final skip =
         ref.watch(appPreferencesProvider).skipAllowed && !state.answered;
     // Config Settings → Quiz → Timer: multiple choice only (an essay needs typing time).
-    final seconds = int.tryParse(ref.watch(appPreferencesProvider).quizTimer.replaceAll('s', ''));
-    final timer = seconds != null && !state.answered && state.question?.type == QuizQuestionType.multipleChoice
-        ? QuizCountdown(key: ValueKey('quiz_timer_${state.questionIndex}'), seconds: seconds, onTimeUp: n.timeUp)
+    final seconds = int.tryParse(
+      ref.watch(appPreferencesProvider).quizTimer.replaceAll('s', ''),
+    );
+    final timer =
+        seconds != null &&
+            !state.answered &&
+            state.question?.type == QuizQuestionType.multipleChoice
+        ? QuizCountdown(
+            key: ValueKey('quiz_timer_${state.questionIndex}'),
+            seconds: seconds,
+            onTimeUp: n.timeUp,
+          )
         : null;
     final read = _Pill(
       key: const ValueKey('quiz_read'),
@@ -2924,7 +2947,11 @@ Future<void> _pickCorrectItem(
 /// Seconds left on a question; calls [onTimeUp] once at zero.
 // ponytail: the count lives in the widget, so minimizing the popup restarts it; move it to the provider if that matters.
 class QuizCountdown extends StatefulWidget {
-  const QuizCountdown({super.key, required this.seconds, required this.onTimeUp});
+  const QuizCountdown({
+    super.key,
+    required this.seconds,
+    required this.onTimeUp,
+  });
   final int seconds;
   final VoidCallback onTimeUp;
 
@@ -2962,12 +2989,25 @@ class _QuizCountdownState extends State<QuizCountdown> {
       liveRegion: low,
       label: l10n.qzTimeLeft(_left),
       excludeSemantics: true,
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(Icons.schedule_rounded, size: 18, color: low ? p.errorText : p.textSecondary),
-        const SizedBox(width: 4),
-        Text('${_left}s',
-            style: TextStyle(color: low ? p.errorText : p.textSecondary, fontSize: 14, fontWeight: FontWeight.w800)),
-      ]),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.schedule_rounded,
+            size: 18,
+            color: low ? p.errorText : p.textSecondary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '${_left}s',
+            style: TextStyle(
+              color: low ? p.errorText : p.textSecondary,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

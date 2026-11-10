@@ -29,6 +29,11 @@ class AppPreferences {
   /// the bank, and says so.
   final QuestionSource questionSource;
 
+  /// ELIOS setup quiz card (ELIOS 3, decision 0198): robot scans have their
+  /// own on/off and question source; [questionSource] is for phone scans.
+  final bool robotQuizEnabled;
+  final QuestionSource robotQuestionSource;
+
   const AppPreferences({
     this.soundEffects = true,
     this.masterVolume = 0.75,
@@ -36,6 +41,8 @@ class AppPreferences {
     this.quizTimer = '60s',
     this.skipAllowed = false,
     this.questionSource = defaultQuestionSource,
+    this.robotQuizEnabled = true,
+    this.robotQuestionSource = defaultQuestionSource,
   });
 
   AppPreferences copyWith({
@@ -45,6 +52,8 @@ class AppPreferences {
     String? quizTimer,
     bool? skipAllowed,
     QuestionSource? questionSource,
+    bool? robotQuizEnabled,
+    QuestionSource? robotQuestionSource,
   }) {
     return AppPreferences(
       soundEffects: soundEffects ?? this.soundEffects,
@@ -53,23 +62,31 @@ class AppPreferences {
       quizTimer: quizTimer ?? this.quizTimer,
       skipAllowed: skipAllowed ?? this.skipAllowed,
       questionSource: questionSource ?? this.questionSource,
+      robotQuizEnabled: robotQuizEnabled ?? this.robotQuizEnabled,
+      robotQuestionSource: robotQuestionSource ?? this.robotQuestionSource,
     );
   }
 
   Map<String, dynamic> toMap() => {
-        'soundEffects': soundEffects,
-        'masterVolume': masterVolume,
-        'quizDifficulty': quizDifficulty,
-        'quizTimer': quizTimer,
-        'skipAllowed': skipAllowed,
-        'questionSource': questionSource.name,
-      };
+    'soundEffects': soundEffects,
+    'masterVolume': masterVolume,
+    'quizDifficulty': quizDifficulty,
+    'quizTimer': quizTimer,
+    'skipAllowed': skipAllowed,
+    'questionSource': questionSource.name,
+    'robotQuizEnabled': robotQuizEnabled,
+    'robotQuestionSource': robotQuestionSource.name,
+  };
 
   factory AppPreferences.fromMap(Map<String, dynamic> map) {
     const d = AppPreferences();
     return AppPreferences(
-      soundEffects: map['soundEffects'] is bool ? map['soundEffects'] as bool : d.soundEffects,
-      masterVolume: map['masterVolume'] is num ? (map['masterVolume'] as num).toDouble() : d.masterVolume,
+      soundEffects: map['soundEffects'] is bool
+          ? map['soundEffects'] as bool
+          : d.soundEffects,
+      masterVolume: map['masterVolume'] is num
+          ? (map['masterVolume'] as num).toDouble()
+          : d.masterVolume,
       // Older builds saved the Indonesian label; the quiz only reads the English value.
       quizDifficulty: switch (map['quizDifficulty']) {
         'Mudah' => 'Easy',
@@ -78,17 +95,31 @@ class AppPreferences {
         final String v => v,
         _ => d.quizDifficulty,
       },
-      quizTimer: map['quizTimer'] is String ? map['quizTimer'] as String : d.quizTimer,
-      skipAllowed: map['skipAllowed'] is bool ? map['skipAllowed'] as bool : d.skipAllowed,
-      questionSource: QuestionSource.values.asNameMap()[map['questionSource']] ?? d.questionSource,
+      quizTimer: map['quizTimer'] is String
+          ? map['quizTimer'] as String
+          : d.quizTimer,
+      skipAllowed: map['skipAllowed'] is bool
+          ? map['skipAllowed'] as bool
+          : d.skipAllowed,
+      questionSource:
+          QuestionSource.values.asNameMap()[map['questionSource']] ??
+          d.questionSource,
+      robotQuizEnabled: map['robotQuizEnabled'] is bool
+          ? map['robotQuizEnabled'] as bool
+          : d.robotQuizEnabled,
+      // Before 0198 one source served both; robots keep the saved choice.
+      robotQuestionSource:
+          QuestionSource.values.asNameMap()[map['robotQuestionSource'] ??
+              map['questionSource']] ??
+          d.robotQuestionSource,
     );
   }
 }
 
 final appPreferencesProvider =
     NotifierProvider<AppPreferencesNotifier, AppPreferences>(
-  AppPreferencesNotifier.new,
-);
+      AppPreferencesNotifier.new,
+    );
 
 /// Config → Settings → Sound effects, kept current by [AppPreferencesNotifier].
 bool soundEffectsOn = true;
@@ -124,8 +155,8 @@ class AppPreferencesNotifier extends Notifier<AppPreferences> {
     SharedPreferences.getInstance()
         .then((p) => p.setString(_key, jsonEncode(snapshot.toMap())))
         .catchError((Object e) {
-      debugPrint('AppPreferences save failed: $e');
-      return false;
-    });
+          debugPrint('AppPreferences save failed: $e');
+          return false;
+        });
   }
 }

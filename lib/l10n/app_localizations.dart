@@ -8784,6 +8784,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{xp} XP · {clovers} · from Daily Guides'**
   String lnGuideRewards(int xp, String clovers);
+
+  /// No description provided for @wqSavedNoQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to History. The quiz is off for robot scans.'**
+  String get wqSavedNoQuiz;
+
+  /// No description provided for @setupQuizAfterScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz after each scan'**
+  String get setupQuizAfterScan;
+
+  /// No description provided for @setupCameraAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera: MaixCAM2'**
+  String get setupCameraAuto;
+
+  /// No description provided for @setupAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get setupAutomatic;
+
+  /// No description provided for @setupOpenControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Open control'**
+  String get setupOpenControl;
+
+  /// No description provided for @setupVideoStream.
+  ///
+  /// In en, this message translates to:
+  /// **'Video stream'**
+  String get setupVideoStream;
+
+  /// No description provided for @vehicleChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get vehicleChange;
+
+  /// No description provided for @scanHoldSteady.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold steady · one item in the frame'**
+  String get scanHoldSteady;
+
+  /// No description provided for @scanTakePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo and identify'**
+  String get scanTakePhoto;
+
+  /// No description provided for @scanAiQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'AI quiz'**
+  String get scanAiQuiz;
+
+  /// No description provided for @contributeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to contribute'**
+  String get contributeTitle;
+
+  /// No description provided for @contributePickBin.
+  ///
+  /// In en, this message translates to:
+  /// **'Which bin are you using?'**
+  String get contributePickBin;
+
+  /// No description provided for @contributeDrop.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop the item into the bin while recording.'**
+  String get contributeDrop;
+
+  /// No description provided for @contributeKeepLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the bin label in view so we can check it.'**
+  String get contributeKeepLabel;
+
+  /// No description provided for @contributeChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI is checking your video…'**
+  String get contributeChecking;
+
+  /// No description provided for @contributeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start recording'**
+  String get contributeStart;
+
+  /// No description provided for @contributeStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop recording'**
+  String get contributeStop;
+
+  /// No description provided for @contributeNice.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice sorting!'**
+  String get contributeNice;
+
+  /// No description provided for @contributeNotQuite.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite'**
+  String get contributeNotQuite;
+
+  /// No description provided for @contributeNotChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t check'**
+  String get contributeNotChecked;
+
+  /// No description provided for @contributeNoItem.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI couldn\'t see an item. Try again closer, with good light.'**
+  String get contributeNoItem;
+
+  /// No description provided for @contributeWentInto.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} went into the {bin} bin.'**
+  String contributeWentInto(String item, String bin);
+
+  /// No description provided for @contributeBelongs.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} belongs in the {bin} bin. Try again!'**
+  String contributeBelongs(String item, String bin);
+
+  /// No description provided for @contributeTrophies.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} trophies'**
+  String contributeTrophies(int count);
+
+  /// No description provided for @contributeSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to History as a contribution'**
+  String get contributeSaved;
+
+  /// No description provided for @contributeAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribute again'**
+  String get contributeAgain;
+
+  /// No description provided for @scanContributeOverline.
+  ///
+  /// In en, this message translates to:
+  /// **'Earn trophies'**
+  String get scanContributeOverline;
+
+  /// No description provided for @scanContributeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Film yourself putting waste in the right bin. Keep the bin label in view.'**
+  String get scanContributeBody;
+
+  /// No description provided for @contributeRec.
+  ///
+  /// In en, this message translates to:
+  /// **'REC {time}'**
+  String contributeRec(String time);
 }
 
 class _AppLocalizationsDelegate

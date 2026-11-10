@@ -5034,4 +5034,104 @@ class AppLocalizationsId extends AppLocalizations {
   String lnGuideRewards(int xp, String clovers) {
     return '$xp XP · $clovers · dari Panduan Harian';
   }
+
+  @override
+  String get wqSavedNoQuiz =>
+      'Tersimpan di Riwayat. Kuis dimatikan untuk pindai robot.';
+
+  @override
+  String get setupQuizAfterScan => 'Kuis setelah tiap pindai';
+
+  @override
+  String get setupCameraAuto => 'Kamera: MaixCAM2';
+
+  @override
+  String get setupAutomatic => 'Otomatis';
+
+  @override
+  String get setupOpenControl => 'Buka kontrol';
+
+  @override
+  String get setupVideoStream => 'Aliran video';
+
+  @override
+  String get vehicleChange => 'Ganti';
+
+  @override
+  String get scanHoldSteady => 'Tahan · satu benda di dalam bingkai';
+
+  @override
+  String get scanTakePhoto => 'Ambil foto dan kenali';
+
+  @override
+  String get scanAiQuiz => 'Kuis AI';
+
+  @override
+  String get contributeTitle => 'Pindai untuk berkontribusi';
+
+  @override
+  String get contributePickBin => 'Tempat sampah mana yang kamu pakai?';
+
+  @override
+  String get contributeDrop =>
+      'Masukkan benda ke tempat sampah selagi merekam.';
+
+  @override
+  String get contributeKeepLabel =>
+      'Jaga label tempat sampah tetap terlihat agar bisa dicek.';
+
+  @override
+  String get contributeChecking => 'ELIOS AI sedang mengecek videomu…';
+
+  @override
+  String get contributeStart => 'Mulai merekam';
+
+  @override
+  String get contributeStop => 'Berhenti merekam';
+
+  @override
+  String get contributeNice => 'Pemilahan yang bagus!';
+
+  @override
+  String get contributeNotQuite => 'Belum tepat';
+
+  @override
+  String get contributeNotChecked => 'Tidak bisa dicek';
+
+  @override
+  String get contributeNoItem =>
+      'ELIOS AI tidak melihat benda. Coba lagi lebih dekat, dengan cahaya yang cukup.';
+
+  @override
+  String contributeWentInto(String item, String bin) {
+    return '$item masuk ke tempat sampah $bin.';
+  }
+
+  @override
+  String contributeBelongs(String item, String bin) {
+    return '$item seharusnya masuk tempat sampah $bin. Coba lagi!';
+  }
+
+  @override
+  String contributeTrophies(int count) {
+    return '+$count trofi';
+  }
+
+  @override
+  String get contributeSaved => 'Tersimpan di Riwayat sebagai kontribusi';
+
+  @override
+  String get contributeAgain => 'Kontribusi lagi';
+
+  @override
+  String get scanContributeOverline => 'Dapatkan trofi';
+
+  @override
+  String get scanContributeBody =>
+      'Rekam dirimu memasukkan sampah ke tempat yang benar. Jaga label tempat sampah tetap terlihat.';
+
+  @override
+  String contributeRec(String time) {
+    return 'REK $time';
+  }
 }

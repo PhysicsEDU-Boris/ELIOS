@@ -2,7 +2,6 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'dart:ui' show ImageByteFormat;
 
-import 'package:elio/Screens/config/config_settings_sheet.dart';
 import 'package:elio/Screens/login_screen.dart';
 import 'package:elio/Screens/splash_screen.dart';
 import 'package:elio/Screens/scan_history_screen.dart';
@@ -150,21 +149,6 @@ void main() {
       },
     );
   }
-
-  testWidgets('the robot settings sheet has no theme row: theme lives in Profile (0196)', (
-    t,
-  ) async {
-    await t.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(home: Scaffold(body: Center(child: ConfigSettingsButton()))),
-      ),
-    );
-    await t.tap(find.byTooltip('Settings'));
-    await t.pumpAndSettle();
-    expect(find.text('Connection and video'), findsOneWidget);
-    expect(find.text('Mode tampilan'), findsNothing);
-    expect(find.text('Tampilan'), findsNothing);
-  });
 
   testWidgets(
     'legacy Scan History light render is unchanged by scoped mode (fallback)',

@@ -1,5 +1,6 @@
 // ELIOS 3 Scan hub, the centre tab (Figma 629:90675): Scan & quiz with the
-// phone, Robot scan (Select vehicle → ELIOS setup → Control).
+// phone, Robot scan (Select vehicle → ELIOS setup → Control), Scan to
+// contribute.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_svg/flutter_svg.dart';
@@ -7,10 +8,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
-import '../../utils/system_ui.dart';
 import '../../widgets/elio_page_title.dart';
 import '../../widgets/learn/learn_ui.dart';
-import '../device_scan_screen.dart';
+import 'contribute_screen.dart';
+import 'phone_scan_screen.dart';
 import 'select_vehicle_screen.dart';
 
 const scanArt = 'assets/illustrations/scan';
@@ -39,7 +40,11 @@ class ScanHubScreen extends StatelessWidget {
                   _PhoneCard(
                     onOpen: () {
                       HapticFeedback.selectionClick();
-                      pushLandscapeScreen(context, const DeviceScanScreen());
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const PhoneScanScreen(),
+                        ),
+                      );
                     },
                   ),
                   const SizedBox(height: 24),
@@ -49,6 +54,17 @@ class ScanHubScreen extends StatelessWidget {
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => const SelectVehicleScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  _ContributeCard(
+                    onOpen: () {
+                      HapticFeedback.selectionClick();
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const ContributeScreen(),
                         ),
                       );
                     },
@@ -147,10 +163,14 @@ class _HubCard extends StatelessWidget {
                         style: _overline(overlineColor),
                       ),
                       const SizedBox(height: 6),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(title, style: _headline(titleColor)),
+                      // Clear of the art on the right, long titles shrink.
+                      FractionallySizedBox(
+                        widthFactor: 0.72,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(title, style: _headline(titleColor)),
+                        ),
                       ),
                       const SizedBox(height: 6),
                       FractionallySizedBox(
@@ -366,6 +386,96 @@ class _RobotCard extends StatelessWidget {
                   size: 12,
                   color: Colors.white,
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ContributeCard extends StatelessWidget {
+  const _ContributeCard({required this.onOpen});
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    return _HubCard(
+      color: p.secondaryText.withValues(alpha: p.isDark ? 0.10 : 0.04),
+      border: p.secondaryText.withValues(alpha: 0.35),
+      radius: leafRadius(),
+      overline: l10n.scanContributeOverline,
+      overlineColor: p.secondaryText,
+      title: l10n.contributeTitle,
+      titleColor: p.textPrimary,
+      body: l10n.scanContributeBody,
+      bodyColor: p.textSecondary,
+      onTap: onOpen,
+      button: _Pill(
+        label: l10n.contributeStart,
+        lead: Icons.fiber_manual_record_rounded,
+        bg: p.error,
+        fg: p.onError,
+      ),
+      art: ExcludeSemantics(
+        child: Stack(
+          children: [
+            Positioned(
+              right: 28,
+              top: 95,
+              child: SvgPicture.asset(
+                '$scanArt/bin_with_label.svg',
+                width: 80,
+                height: 95,
+              ),
+            ),
+            Positioned(
+              right: 8,
+              top: 74,
+              child: Transform.rotate(
+                angle: 0.07,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: p.surface,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: p.textPrimary, width: 1.5),
+                  ),
+                  child: Text(
+                    l10n.h3CatRecyclable.toUpperCase(),
+                    style: ElioTokens.label.copyWith(
+                      fontSize: 11,
+                      letterSpacing: 1.1,
+                      color: p.textPrimary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 22,
+              top: 23,
+              child: Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: p.surface,
+                  shape: BoxShape.circle,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x24000000),
+                      blurRadius: 4,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Icon(Icons.circle, size: 22, color: p.error),
               ),
             ),
           ],
