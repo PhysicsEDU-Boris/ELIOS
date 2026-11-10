@@ -156,7 +156,7 @@ void main() {
         expect(find.text('Connect'), findsOneWidget);
         expect(find.text('Save as default address'), findsOneWidget);
         expect(_enabled(t, 'Connect now'), isTrue);
-        expect(_enabled(t, 'Disconnect'), isFalse);
+        expect(find.text('Disconnect'), findsNothing, reason: 'nothing to disconnect');
         expect(find.text('Gemini · needs internet'), findsOneWidget);
       });
 
@@ -198,7 +198,7 @@ void main() {
         _expectSteps(SetupStep.current, SetupStep.todo, SetupStep.problem);
         expect(find.text(_timeoutReason), findsOneWidget, reason: 'the real reason and timeout');
         expect(_enabled(t, 'Try again'), isTrue);
-        expect(_enabled(t, 'Disconnect'), isFalse);
+        expect(find.text('Disconnect'), findsNothing, reason: 'nothing to disconnect');
         expect(find.byType(SnackBar), findsNothing, reason: 'the inline alert is on screen');
       });
 

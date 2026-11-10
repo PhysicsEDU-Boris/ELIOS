@@ -271,20 +271,15 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     // Connected means ELIOS answered at the address in the fields.
     final foundAt = _foundIp ?? (connected ? _ip.text.trim() : null);
     final steps = setupSteps(view, found: foundAt != null);
-    final (Widget first, Widget second) = switch (view) {
+    // No link to cut: Disconnect is left out so Connect gets the full width.
+    final (Widget first, Widget? second) = switch (view) {
       LinkView.notConnected => (
         ConfigButton(
           label: l10n.cfgConnectNow,
           icon: Icons.power_outlined,
           onPressed: _connect,
         ),
-        ConfigButton(
-          label: l10n.cfgDisconnect,
-          icon: Icons.link_off_rounded,
-          primary: false,
-          destructive: true,
-          onPressed: null,
-        ),
+        null,
       ),
       LinkView.connecting => (
         ConfigButton(label: l10n.cfgConnecting, busy: true, onPressed: null),
@@ -317,13 +312,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
           icon: Icons.refresh_rounded,
           onPressed: _connect,
         ),
-        ConfigButton(
-          label: l10n.cfgDisconnect,
-          icon: Icons.link_off_rounded,
-          primary: false,
-          destructive: true,
-          onPressed: null,
-        ),
+        null,
       ),
     };
     final saved =
@@ -587,8 +576,10 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
         Row(
           children: [
             Expanded(child: first),
-            const SizedBox(width: 8),
-            Expanded(child: second),
+            if (second != null) ...[
+              const SizedBox(width: 8),
+              Expanded(child: second),
+            ],
           ],
         ),
       ],
