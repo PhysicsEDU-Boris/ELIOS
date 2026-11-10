@@ -10,6 +10,8 @@ hashes updated after the history rewrite on 2026-10-08. The old-to-new map is
 kept outside the repo.
 
 ## [Unreleased]
+- ELIOS 3 Robot Wi-Fi QR sheet (0204): new look from Figma (drag handle, QR badge, subtitle, round close, labels above the fields, QR on a white card in light and dark). The QR the robot reads is unchanged.
+
 - ELIOS 3 motion part 2 (0203): circular dark-mode reveal, quiz answer shake/check, level-up and medal celebration with leaves, activity grid stagger, page fade-through and photo/robot morphs, idle hints, bin buddies jump.
 
 - ELIOS 3 motion (0202): the tab underline slides, icons pop, selector pills slide, Scan hub cards and Home rise in (dial sweeps, numbers count up, trophy sticker drops in), loading placeholders shimmer, the clover sticker bounces and the contribute medal drops in. Reduce motion turns these into simple fades.

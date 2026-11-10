@@ -349,6 +349,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get robotWifiQr => 'Robot Wi-Fi QR';
 
   @override
+  String get robotWifiQrSubtitle => 'Join ELIOS to a hotspot or Wi-Fi';
+
+  @override
   String get robotQrHint =>
       'Robot not reading it? Lower the screen brightness or tilt the phone a little.';
 
@@ -1084,7 +1087,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get qrIntro =>
-      'Turn on this phone\'s hotspot (2.4 GHz) and type its name and password. On the robot screen tap Wi-Fi setup, then hold this QR in front of the camera.';
+      'Turn on this phone\'s hotspot (2.4 GHz), or use your home Wi-Fi, and type its name and password. On the robot screen tap Wi-Fi setup, then hold this QR in front of the camera.';
 
   @override
   String get qrSsid => 'Hotspot name (SSID)';

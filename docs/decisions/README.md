@@ -73,3 +73,4 @@ their status changed.
 - [0201](0201-elios3-sound-haptics.md) ELIOS 3 sound service S1–S10, haptic map, loading states
 - [0202](0202-elios3-motion.md) ELIOS 3 motion tokens and micro-interactions
 - [0203](0203-elios3-motion-2.md) ELIOS 3 motion part 2
+- [0204](0204-elios3-wifi-qr-sheet.md) ELIOS 3 Robot Wi-Fi QR sheet
