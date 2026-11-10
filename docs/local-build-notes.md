@@ -1,5 +1,9 @@
 # Local build notes
 
+## 10 Nov 2026 — Robot Wi-Fi QR sheet phone check (0204, `feat/elios3-wifi-qr-sheet`)
+- APP_COMMIT `1567368`; `flutter build apk --debug --target-platform android-arm64` with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION; Gradle 196 s, APK 165 MB, no `.litertlm` in it. `.env.dev`, `.env.prod`, `google-services.json` copied from the main checkout into the worktree (gitignored).
+- Edge 60 Fusion, `adb install -r` Success, no data clear; History md5 unchanged; left Indonesian/light. No Mac bundle, model, firmware or signing change.
+
 ## 9 Nov 2026 — Learn L2 v3 phone test (0195, `feat/learn-l2v3`)
 - Source / APP_COMMIT `1e4810f` (first test build `b54a1b6+l2v3`); `flutter build apk --debug --target-platform android-arm64` with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION; Gradle 36 s. `.env*` and `google-services.json` already present (gitignored).
 - Motorola Edge 60 Fusion over USB, `com.boris.elio` debug, same signing; `adb install -r` Success 14:41:23 Jakarta, no uninstall/data clear. App data backed up first (tar in the session scratchpad); the 3 `scan_records.json` files are md5-identical after testing.
