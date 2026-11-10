@@ -5,7 +5,6 @@
 // (AppPreferences, theme mode and locale in shared preferences).
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/l10n.dart';
@@ -16,6 +15,7 @@ import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/learn/learn_ui.dart';
 import '../config/config_settings_sheet.dart' show ConfigSegmented;
+import '../../services/elio_feedback.dart';
 
 /// "b•••@gmail.com": the first letter and the domain only.
 String maskEmail(String email) {
@@ -141,8 +141,17 @@ class ProfileScreen extends ConsumerWidget {
                           inactiveColor: p.surfaceRaised,
                           semanticFormatterCallback: (v) =>
                               l10n.setMasterVolumeValue((v * 100).round()),
-                          onChanged: (v) =>
-                              patch((s) => s.copyWith(masterVolume: v)),
+                          onChanged: (v) {
+                            // H-select on each 10 % detent, no sound while dragging.
+                            if ((v * 10).round() !=
+                                (prefs.masterVolume * 10).round()) {
+                              ElioHaptics.select();
+                            }
+                            patch((s) => s.copyWith(masterVolume: v));
+                          },
+                          // Preview at the new volume on release (Figma 13 · 6).
+                          onChangeEnd: (_) =>
+                              ElioSound.instance.play(ElioSfx.pop),
                         ),
                       ),
                       Icon(
@@ -224,7 +233,7 @@ class _ProfileHeader extends StatelessWidget {
   final VoidCallback onSignOut;
 
   Future<void> _openMenu(BuildContext context) async {
-    HapticFeedback.selectionClick();
+    elioFeedback(ElioSfx.pop, ElioHaptics.light); // Figma 13 · 35
     final p = context.elio;
     final box = context.findRenderObject()! as RenderBox;
     final overlay =
@@ -511,7 +520,10 @@ class _SwitchRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     void flip(bool v) {
-      HapticFeedback.selectionClick();
+      elioFeedback(
+        v ? ElioSfx.toggleOn : ElioSfx.toggleOff,
+        ElioHaptics.select,
+      );
       onChanged(v);
     }
 
@@ -522,7 +534,9 @@ class _SwitchRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: Row(
           children: [
-            Expanded(child: _RowTitle(title: title, subtitle: subtitle)),
+            Expanded(
+              child: _RowTitle(title: title, subtitle: subtitle),
+            ),
             Switch(value: value, onChanged: flip),
           ],
         ),

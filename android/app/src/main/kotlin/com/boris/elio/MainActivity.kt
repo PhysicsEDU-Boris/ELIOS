@@ -27,6 +27,11 @@ class MainActivity : FlutterActivity() {
                         startActivity(Intent.createChooser(send, "Bagikan log ELIOS"))
                         result.success(null)
                     }
+                    "isSilent" -> {
+                        // ELIOS 3 sound (0201): UI sounds stay quiet on silent / vibrate.
+                        val audio = getSystemService(AUDIO_SERVICE) as android.media.AudioManager
+                        result.success(audio.ringerMode != android.media.AudioManager.RINGER_MODE_NORMAL)
+                    }
                     "wifiSettings" -> {
                         // R2 Control: "Wi-Fi settings" on the disconnected state.
                         startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))

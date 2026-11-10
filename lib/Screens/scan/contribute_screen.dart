@@ -7,7 +7,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/l10n.dart';
@@ -20,6 +19,7 @@ import '../../services/scan_record_store.dart';
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/learn/learn_ui.dart';
+import '../../services/elio_feedback.dart';
 
 const _shots = 3;
 const _shotEvery = Duration(seconds: 3);
@@ -60,8 +60,7 @@ ContributionCheck pickContribution(List<PhotoIdentification> results) {
   return named.firstWhere((n) => n.category == best);
 }
 
-String _upper(String s) =>
-    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+String _upper(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
 String binName(ScanCategory c) => switch (c) {
   ScanCategory.organic => l10n.h3CatOrganic,
@@ -129,8 +128,11 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
   }
 
   void _start() {
-    if (_bin == null || !_source.isInitialized) return;
-    HapticFeedback.mediumImpact();
+    if (_bin == null || !_source.isInitialized) {
+      ElioHaptics.warning(); // no bin picked yet
+      return;
+    }
+    elioFeedback(ElioSfx.recStart, ElioHaptics.medium); // Figma 13 · 29
     _photos.clear();
     setState(() {
       _step = _Step.recording;
@@ -147,7 +149,7 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
   Future<void> _stop() async {
     _timer?.cancel();
     if (_step != _Step.recording) return;
-    HapticFeedback.selectionClick();
+    elioFeedback(ElioSfx.recStop, ElioHaptics.select);
     // Stopped before the first photo: take one now.
     if (_photos.isEmpty) await _shoot();
     if (!mounted) return;
@@ -163,7 +165,10 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
     final matched = found != null && contributionMatches(found.category, _bin!);
     if (matched) await _save(found);
     if (!mounted) return;
-    matched ? HapticFeedback.heavyImpact() : HapticFeedback.vibrate();
+    // Figma 13 · 30: approved = S9 short + H-success; otherwise S5 + H-error.
+    matched
+        ? elioFeedback(ElioSfx.sparkleShort, ElioHaptics.success)
+        : elioFeedback(ElioSfx.knock, ElioHaptics.error);
     setState(() {
       _found = found;
       _matched = matched;
@@ -343,7 +348,10 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
                                                     : p.textPrimary,
                                               ),
                                           onSelected: (_) {
-                                            HapticFeedback.selectionClick();
+                                            elioFeedback(
+                                              ElioSfx.tick,
+                                              ElioHaptics.select,
+                                            );
                                             setState(() => _bin = b);
                                           },
                                         ),

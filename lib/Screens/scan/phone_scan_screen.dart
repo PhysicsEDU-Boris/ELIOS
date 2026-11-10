@@ -4,7 +4,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/l10n.dart';
@@ -18,6 +17,7 @@ import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/learn/learn_ui.dart';
 import '../../widgets/waste_quiz_popup.dart';
+import '../../services/elio_feedback.dart';
 
 /// The square viewfinder; the AI and History get only what is inside it.
 const phoneScanBox = Size(260, 260);
@@ -57,7 +57,7 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
 
   Future<void> _capture() async {
     if (!_source.isInitialized || _capturing) return;
-    HapticFeedback.mediumImpact();
+    elioFeedback(ElioSfx.shutter, ElioHaptics.medium); // Figma 13 · 26
     final screen = MediaQuery.sizeOf(context);
     setState(() => _capturing = true);
     try {

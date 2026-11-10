@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/learn/learn_ui.dart';
 import 'config_parts.dart';
+import '../../services/elio_feedback.dart';
 
 /// Segment 349:4444: green pill on the chosen value.
 class ConfigSegmented extends StatelessWidget {
@@ -25,6 +26,12 @@ class ConfigSegmented extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onSelected;
 
+  /// S1 + H-select on a new value (Figma 13 · 5).
+  void _pick(String o) {
+    if (o != selected) elioFeedback(ElioSfx.tick, ElioHaptics.select);
+    onSelected(o);
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
@@ -44,13 +51,13 @@ class ConfigSegmented extends StatelessWidget {
                 selected: o == selected,
                 label: '$label ${labels?[i] ?? o}',
                 excludeSemantics: true,
-                onTap: () => onSelected(o),
+                onTap: () => _pick(o),
                 child: Material(
                   color: o == selected ? p.primary : Colors.transparent,
                   shape: const StadiumBorder(),
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
-                    onTap: () => onSelected(o),
+                    onTap: () => _pick(o),
                     child: SizedBox(
                       height: 44,
                       child: Center(

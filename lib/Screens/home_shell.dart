@@ -27,6 +27,7 @@ import 'control_screen.dart';
 import 'profile/profile_screen.dart';
 import 'scan/scan_hub_screen.dart';
 import 'package:elio/l10n/l10n.dart';
+import '../services/elio_feedback.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   final FirebaseAuth auth;
@@ -144,6 +145,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     final notifications = ref.read(appNotificationProvider.notifier);
 
     if (!wasConnected && isConnected) {
+      // S6 + H-success: the result of the user's connect.
+      elioFeedback(ElioSfx.blip, ElioHaptics.success);
       notifications.push(
         type: AppNotificationType.robot,
         title: l10n.shellConnected,

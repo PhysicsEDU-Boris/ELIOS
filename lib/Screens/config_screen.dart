@@ -23,6 +23,7 @@ import 'config/config_settings_sheet.dart' show ConfigSegmented;
 import 'config/robot_wifi_qr_sheet.dart';
 import 'control_screen.dart';
 import 'package:elio/l10n/l10n.dart';
+import '../services/elio_feedback.dart';
 
 /// "Enter an IP like 192.168.4.1", or null when [value] is a dotted IPv4.
 String? validateIp(String? value) {
@@ -68,8 +69,10 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     if (config.port > 0) _port.text = config.port.toString();
   }
 
-  Future<void> _openControlScreen() =>
-      pushLandscapeScreen(context, const ControlScreen());
+  Future<void> _openControlScreen() {
+    elioFeedback(ElioSfx.blip, ElioHaptics.medium); // Figma 13 · 25
+    return pushLandscapeScreen(context, const ControlScreen());
+  }
 
   Future<void> _connect() async {
     if (!(_form.currentState?.validate() ?? false)) return;
@@ -92,7 +95,10 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     if (ok && mounted) await _openControlScreen();
   }
 
-  void _disconnect() => ref.read(configLinkProvider.notifier).disconnect();
+  void _disconnect() {
+    ElioHaptics.heavy(); // H-heavy: Disconnect
+    ref.read(configLinkProvider.notifier).disconnect();
+  }
 
   /// The phone hotspot gives the robot a new IP after a restart; look for it.
   Future<void> _find() async {
@@ -914,9 +920,17 @@ class _SwitchLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
+    void flip(bool v) {
+      elioFeedback(
+        v ? ElioSfx.toggleOn : ElioSfx.toggleOff,
+        ElioHaptics.select,
+      );
+      onChanged(v);
+    }
+
     return MergeSemantics(
       child: InkWell(
-        onTap: () => onChanged(!value),
+        onTap: () => flip(!value),
         borderRadius: BorderRadius.circular(12),
         child: Row(
           children: [
@@ -930,7 +944,7 @@ class _SwitchLine extends StatelessWidget {
                 ],
               ),
             ),
-            Switch(value: value, onChanged: onChanged),
+            Switch(value: value, onChanged: flip),
           ],
         ),
       ),

@@ -2,10 +2,10 @@
 // phone, Robot scan (Select vehicle → ELIOS setup → Control), Scan to
 // contribute.
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../l10n/l10n.dart';
+import '../../services/elio_feedback.dart';
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/elio_page_title.dart';
@@ -39,7 +39,7 @@ class ScanHubScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   _PhoneCard(
                     onOpen: () {
-                      HapticFeedback.selectionClick();
+                      elioFeedback(ElioSfx.pop, ElioHaptics.light);
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => const PhoneScanScreen(),
@@ -50,7 +50,7 @@ class ScanHubScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   _RobotCard(
                     onOpen: () {
-                      HapticFeedback.selectionClick();
+                      elioFeedback(ElioSfx.pop, ElioHaptics.light);
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => const SelectVehicleScreen(),
@@ -61,7 +61,7 @@ class ScanHubScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   _ContributeCard(
                     onOpen: () {
-                      HapticFeedback.selectionClick();
+                      elioFeedback(ElioSfx.pop, ElioHaptics.light);
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => const ContributeScreen(),

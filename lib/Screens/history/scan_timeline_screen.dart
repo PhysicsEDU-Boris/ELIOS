@@ -119,7 +119,13 @@ class _ScanTimelineScreenState extends State<ScanTimelineScreen> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  if (records.isEmpty)
+                  // Section 12 skeleton while History is still loading.
+                  if (!widget.store.isLoaded)
+                    const SizedBox(
+                      height: 480,
+                      child: HistorySkeleton(HistoryLoadingLayout.list),
+                    )
+                  else if (records.isEmpty)
                     Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(

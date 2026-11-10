@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../theme/elio_tokens.dart';
 import 'auth/auth_widgets.dart' show authPalette;
 import 'package:elio/l10n/l10n.dart';
+import '../services/elio_feedback.dart';
 
 const _barHeight = 64.0;
 const _ringGap = 4.0; // surface-coloured ring round the Control button
@@ -34,11 +35,17 @@ class ElioBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context);
+    // S1 + H-select on a new tab only (silent on re-tap), Figma 13 · 1.
+    void select(int i) {
+      if (i != currentIndex) elioFeedback(ElioSfx.tick, ElioHaptics.select);
+      onSelectTab(i);
+    }
+
     Widget tab(int i, String label, IconData off, IconData on) => _Cell(
       label: label,
       semantics: label,
       selected: currentIndex == i,
-      onTap: () => onSelectTab(i),
+      onTap: () => select(i),
       icon: Icon(currentIndex == i ? on : off, size: 24),
     );
     return Semantics(
@@ -77,7 +84,7 @@ class ElioBottomNav extends StatelessWidget {
                   selected: currentIndex == 2,
                   // The orb above the bar is the active mark.
                   showStroke: false,
-                  onTap: () => onSelectTab(2),
+                  onTap: () => select(2),
                   icon: const SizedBox.shrink(),
                 ),
               ),
@@ -94,7 +101,7 @@ class ElioBottomNav extends StatelessWidget {
                   label: l10n.navProfile,
                   semantics: l10n.navProfile,
                   selected: currentIndex == 5,
-                  onTap: () => onSelectTab(5),
+                  onTap: () => select(5),
                   icon: NavProfileAvatar(
                     photoUrl: photoUrl,
                     initials: initials,
@@ -310,7 +317,10 @@ class _ScanOrbState extends State<ElioScanOrb> {
     final plain = MediaQuery.disableAnimationsOf(context);
     return ExcludeSemantics(
       child: InkResponse(
-        onTap: widget.onTap,
+        onTap: () {
+          elioFeedback(ElioSfx.pop, ElioHaptics.medium); // Figma 13 · 2
+          widget.onTap();
+        },
         onFocusChange: (f) => setState(() => _focused = f),
         onHighlightChanged: (v) => setState(() => _pressed = v),
         highlightShape: BoxShape.circle,

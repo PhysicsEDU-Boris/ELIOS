@@ -25,6 +25,7 @@ import '../services/tester_log.dart';
 import '../services/websocket_service.dart';
 import 'app_preferences_provider.dart';
 import 'package:elio/l10n/l10n.dart';
+import '../services/elio_feedback.dart';
 
 enum WasteQuizPhase {
   idle,
@@ -1127,6 +1128,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       return;
     }
     final correct = index == q.correctIndex;
+    // Figma 13 · 28: correct S4 + H-success, wrong S5 + H-error.
+    correct
+        ? elioFeedback(ElioSfx.chime, ElioHaptics.success)
+        : elioFeedback(ElioSfx.knock, ElioHaptics.error);
     _recordedQuestions.add(
       RecordQuestion(
         question: q.question,

@@ -1,10 +1,10 @@
 // ELIOS 3 Select vehicle (Figma 629:90849): ELIOS is ready; the drone is
 // shown in colour but locked ("Coming soon"). Use ELIOS opens ELIOS setup.
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../l10n/l10n.dart';
+import '../../services/elio_feedback.dart';
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/elio_page_title.dart';
@@ -22,7 +22,7 @@ class SelectVehicleScreen extends StatelessWidget {
         builder: (context) {
           final p = context.elio;
           void useElios() {
-            HapticFeedback.selectionClick();
+            elioFeedback(ElioSfx.blip, ElioHaptics.medium);
             Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const EliosSetupScreen()),
             );

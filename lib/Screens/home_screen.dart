@@ -40,6 +40,7 @@ import 'home/home_search.dart';
 import 'login_screen.dart';
 import 'package:elio/l10n/l10n.dart';
 import 'tabs/elearning/simulations/simulations_page.dart' show openSimulation;
+import '../services/elio_feedback.dart';
 
 const _scanTab = 2;
 const _controlTab = 3;
@@ -163,8 +164,11 @@ class HomeResumeControl extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final p = authPalette(context);
-    void open() =>
-        ref.read(navigationIndexProvider.notifier).state = _controlTab;
+    void open() {
+      elioFeedback(ElioSfx.blip, ElioHaptics.medium); // Figma 13 · 15
+      ref.read(navigationIndexProvider.notifier).state = _controlTab;
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Semantics(
