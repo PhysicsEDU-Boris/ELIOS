@@ -197,6 +197,7 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
           trophies: contributionTrophies,
           lang: AiQuizService.replyLang,
           kind: ScanRecord.contributionKind,
+          device: 'phone',
         ),
       );
     } catch (e) {

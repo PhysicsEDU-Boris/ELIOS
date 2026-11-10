@@ -5134,4 +5134,69 @@ class AppLocalizationsId extends AppLocalizations {
   String contributeRec(String time) {
     return 'REK $time';
   }
+
+  @override
+  String get histSubtitle3 => 'Pindaian, kuis, dan kontribusi';
+
+  @override
+  String get histSeeTimeline => 'Lihat linimasa';
+
+  @override
+  String get histByDevice => 'Per perangkat';
+
+  @override
+  String get histByDeviceSub => 'Buka perangkat untuk melihat linimasanya';
+
+  @override
+  String get histToReview => 'Soal untuk diulas';
+
+  @override
+  String get histReview => 'Ulas';
+
+  @override
+  String histQuiz(int correct, int total) {
+    return 'Kuis $correct/$total';
+  }
+
+  @override
+  String get histScanOnly => 'Pindai saja';
+
+  @override
+  String get histContribution => 'Kontribusi';
+
+  @override
+  String get histPhone => 'Ponsel';
+
+  @override
+  String get histNoScansYet => 'Belum ada pindaian';
+
+  @override
+  String get histTimeline => 'Linimasa pindai';
+
+  @override
+  String get histTimelineSub => 'Pindaian terbaru per perangkat';
+
+  @override
+  String get histPhoneTitle => 'Ponsel ini';
+
+  @override
+  String get histEliosTitle => 'Robot ELIOS';
+
+  @override
+  String histDeviceScans(int count, String camera) {
+    return '$count pindaian · kamera $camera';
+  }
+
+  @override
+  String get histPhoneCamera => 'ponsel';
+
+  @override
+  String get histNoDevice =>
+      'Pindaian sebelum pembaruan ini tidak punya perangkat; lihat di Semua.';
+
+  @override
+  String get histAllScans => 'Semua';
+
+  @override
+  String get h3TrophiesWord => 'trofi';
 }

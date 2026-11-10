@@ -19,7 +19,6 @@ import '../theme/elio_theme.dart';
 import '../theme/elio_tokens.dart';
 import '../widgets/app_notification_banner.dart';
 import '../widgets/elio_bottom_nav.dart';
-import '../widgets/elio_page_title.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
 import 'scan_history_screen.dart';
@@ -108,6 +107,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           onClose: () => _onBottomNavigationTap(0),
           onStartScan: () => _onBottomNavigationTap(2),
           showHeader: false,
+          compact: true,
         ),
       ),
       _profileIndex => ProfileScreen(
@@ -267,23 +267,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                 .background,
         // ELIOS 3: no top bar and no sidebar; each tab draws its own title.
         body: _currentIndex == _historyIndex
-            ? SafeArea(
-                bottom: false,
-                child: Column(
-                  children: [
-                    ElioTheme.wrap(
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                        child: ElioPageTitle(
-                          title: l10n.navHistory,
-                          subtitle: l10n.h3Subtitle,
-                        ),
-                      ),
-                    ),
-                    Expanded(child: _buildCurrentScreen()),
-                  ],
-                ),
-              )
+            ? SafeArea(bottom: false, child: _buildCurrentScreen())
             : _buildCurrentScreen(),
         floatingActionButtonLocation: const ElioControlFabLocation(),
         floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,

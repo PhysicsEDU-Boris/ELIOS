@@ -1522,6 +1522,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
           questions: const [],
           trophies: 0,
           lang: _recordLang,
+          device: 'elios',
         ),
       );
     } catch (e) {
@@ -1561,6 +1562,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         trophies: sessionTrophies,
         lang: _recordLang,
         translations: _recordTwins(scan?.displayName),
+        device: _robotSession ? 'elios' : 'phone',
       );
       try {
         _savedExplanationRecordId = record.id;

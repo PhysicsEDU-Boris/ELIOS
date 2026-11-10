@@ -10,6 +10,8 @@ hashes updated after the history rewrite on 2026-10-08. The old-to-new map is
 kept outside the repo.
 
 ## [Unreleased]
+- ELIOS 3 History (0199): the History tab is now compact (trophy strip, bin tiles, latest 3 scans, By device, Questions to review) with a new Scan timeline by device (All, Phone, ELIOS; drone coming soon). New scans remember whether the phone or ELIOS made them; older scans stay under All. Contributions are labelled.
+
 - ELIOS 3 scan flows (0198): Scan & quiz with the phone is now a portrait camera with a viewfinder; new Scan to contribute (pick the bin, record, ELIOS AI checks it, +10 trophies saved to History when the bin is right); ELIOS setup gets Open control, inline video settings and its own quiz card (Quiz after each scan on/off, Question bank or ELIOS AI for robot scans). With the robot quiz off, scans are saved to History without a quiz.
 
 - ELIOS 3 Home and Learn (0197): Home has the leaf logo and bell, a "Still connected · Continue" card while a robot is connected (leaving Control now keeps the robot connected; disconnect from ELIOS setup), a level dial hero with the trophy sticker, stat pebbles and pop-card daily quests. Learn shows the Daily Guides streak as clovers and the guide XP under the progress legend.

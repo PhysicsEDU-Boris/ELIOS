@@ -155,6 +155,10 @@ class ScanRecord {
   bool get isContribution => kind == contributionKind;
   static const contributionKind = 'contribution';
 
+  /// Which device made the scan: 'phone' or 'elios' (ELIOS 3, decision 0199).
+  /// Null for records saved before then; they are never guessed.
+  final String? device;
+
   ScanRecord({
     required this.id,
     required this.time,
@@ -168,6 +172,7 @@ class ScanRecord {
     this.translations = const {},
     this.schemaVersion = 5, // v5: language + translation cache (0185)
     this.kind = 'scan',
+    this.device,
   }) : trophies = trophies ?? trophiesFor(questions);
 
   ScanRecord copyWith({
@@ -186,6 +191,7 @@ class ScanRecord {
     lang: lang,
     translations: translations ?? this.translations,
     kind: kind,
+    device: device,
   );
 
   /// Language of the saved explanation of question [i].
@@ -250,6 +256,8 @@ class ScanRecord {
       trophies: trophies,
       lang: lang,
       translations: translations,
+      kind: kind,
+      device: device,
     );
   }
 
@@ -294,6 +302,7 @@ class ScanRecord {
     'trophies': trophies,
     'lang': lang,
     if (kind != 'scan') 'kind': kind,
+    if (device != null) 'device': device,
     if (translations.isNotEmpty)
       'translations': {
         for (final e in translations.entries) e.key: e.value.toJson(),
@@ -358,6 +367,7 @@ class ScanRecord {
       questions: questionsList,
       trophies: (json['trophies'] as num?)?.toInt(),
       kind: json['kind'] as String? ?? 'scan',
+      device: json['device'] as String?,
     );
   }
 }

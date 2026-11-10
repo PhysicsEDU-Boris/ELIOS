@@ -5238,4 +5238,69 @@ class AppLocalizationsEn extends AppLocalizations {
   String contributeRec(String time) {
     return 'REC $time';
   }
+
+  @override
+  String get histSubtitle3 => 'Scans, quizzes and contributions';
+
+  @override
+  String get histSeeTimeline => 'See timeline';
+
+  @override
+  String get histByDevice => 'By device';
+
+  @override
+  String get histByDeviceSub => 'Open a device to see its own timeline';
+
+  @override
+  String get histToReview => 'Questions to review';
+
+  @override
+  String get histReview => 'Review';
+
+  @override
+  String histQuiz(int correct, int total) {
+    return 'Quiz $correct/$total';
+  }
+
+  @override
+  String get histScanOnly => 'Scan only';
+
+  @override
+  String get histContribution => 'Contribution';
+
+  @override
+  String get histPhone => 'Phone';
+
+  @override
+  String get histNoScansYet => 'No scans yet';
+
+  @override
+  String get histTimeline => 'Scan timeline';
+
+  @override
+  String get histTimelineSub => 'Recent scans by device';
+
+  @override
+  String get histPhoneTitle => 'This phone';
+
+  @override
+  String get histEliosTitle => 'ELIOS robot';
+
+  @override
+  String histDeviceScans(int count, String camera) {
+    return '$count scans · camera $camera';
+  }
+
+  @override
+  String get histPhoneCamera => 'phone';
+
+  @override
+  String get histNoDevice =>
+      'Scans saved before this update have no device; they are under All.';
+
+  @override
+  String get histAllScans => 'All';
+
+  @override
+  String get h3TrophiesWord => 'trophies';
 }

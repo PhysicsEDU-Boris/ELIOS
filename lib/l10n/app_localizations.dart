@@ -8958,6 +8958,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'REC {time}'**
   String contributeRec(String time);
+
+  /// No description provided for @histSubtitle3.
+  ///
+  /// In en, this message translates to:
+  /// **'Scans, quizzes and contributions'**
+  String get histSubtitle3;
+
+  /// No description provided for @histSeeTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'See timeline'**
+  String get histSeeTimeline;
+
+  /// No description provided for @histByDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'By device'**
+  String get histByDevice;
+
+  /// No description provided for @histByDeviceSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a device to see its own timeline'**
+  String get histByDeviceSub;
+
+  /// No description provided for @histToReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions to review'**
+  String get histToReview;
+
+  /// No description provided for @histReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get histReview;
+
+  /// No description provided for @histQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz {correct}/{total}'**
+  String histQuiz(int correct, int total);
+
+  /// No description provided for @histScanOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan only'**
+  String get histScanOnly;
+
+  /// No description provided for @histContribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribution'**
+  String get histContribution;
+
+  /// No description provided for @histPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get histPhone;
+
+  /// No description provided for @histNoScansYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No scans yet'**
+  String get histNoScansYet;
+
+  /// No description provided for @histTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan timeline'**
+  String get histTimeline;
+
+  /// No description provided for @histTimelineSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent scans by device'**
+  String get histTimelineSub;
+
+  /// No description provided for @histPhoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone'**
+  String get histPhoneTitle;
+
+  /// No description provided for @histEliosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS robot'**
+  String get histEliosTitle;
+
+  /// No description provided for @histDeviceScans.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} scans · camera {camera}'**
+  String histDeviceScans(int count, String camera);
+
+  /// No description provided for @histPhoneCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'phone'**
+  String get histPhoneCamera;
+
+  /// No description provided for @histNoDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Scans saved before this update have no device; they are under All.'**
+  String get histNoDevice;
+
+  /// No description provided for @histAllScans.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get histAllScans;
+
+  /// No description provided for @h3TrophiesWord.
+  ///
+  /// In en, this message translates to:
+  /// **'trophies'**
+  String get h3TrophiesWord;
 }
 
 class _AppLocalizationsDelegate

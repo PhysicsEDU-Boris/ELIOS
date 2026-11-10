@@ -7,9 +7,11 @@ import '../services/scan_record_store.dart';
 import '../l10n/l10n.dart';
 import '../theme/elio_tokens.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
+import '../widgets/elio_page_title.dart';
 import '../widgets/history_ui.dart';
 import 'home/home_parts.dart' show homeArt;
 import 'device_scan_screen.dart';
+import 'history/scan_timeline_screen.dart';
 import 'history_photo_viewer.dart';
 import 'question_explanation_screen.dart';
 
@@ -20,9 +22,15 @@ class ScanHistoryScreen extends StatefulWidget {
     this.onClose,
     this.onStartScan,
     this.showHeader = true,
+    this.compact = false,
     this.loadTimeout = const Duration(seconds: 15),
   });
   final bool showHeader;
+
+  /// ELIOS 3 History tab (Figma 629:99388, decision 0199): its own title and
+  /// sync chip, trophy strip, tiles, the latest 3 scans, By device and
+  /// Questions to review. The full list lives on the timeline.
+  final bool compact;
   final ScanRecordStore? store;
   final VoidCallback? onClose, onStartScan;
   final Duration loadTimeout;
@@ -148,7 +156,16 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
         bottom: widget.showHeader,
         child: Column(
           children: [
-            if (_store.cloud != null)
+            if (widget.compact)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: ElioPageTitle(
+                  title: context.l10n.navHistory,
+                  subtitle: context.l10n.histSubtitle3,
+                  trailing: _store.cloud == null ? null : _syncChip(p),
+                ),
+              ),
+            if (_store.cloud != null && !widget.compact)
               ListTile(
                 dense: true,
                 leading: Icon(
@@ -201,6 +218,13 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
                     return HistoryEmpty(
                       art: homeArt('history_empty', width: 240, height: 180),
                       onScan: _scan,
+                    );
+                  }
+                  if (widget.compact) {
+                    return ListView(
+                      key: const ValueKey('history_list'),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      children: _compact(records),
                     );
                   }
                   final list = ListView(
@@ -313,6 +337,233 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
       }
     }
     return groups;
+  }
+
+  Widget _syncChip(ElioPalette p) {
+    final ok =
+        !_store.syncing &&
+        _store.syncError == null &&
+        _store.lastSynced != null &&
+        _store.pendingCount == 0;
+    final label = _store.syncing
+        ? context.l10n.historySyncing
+        : ok
+        ? context.l10n.historySynced
+        : context.l10n.historyLocalOnly;
+    return Tooltip(
+      message: context.l10n.historySyncRetry,
+      child: ActionChip(
+        onPressed: _store.syncing ? null : _store.sync,
+        avatar: Icon(
+          _store.syncing
+              ? Icons.cloud_sync_outlined
+              : ok
+              ? Icons.cloud_done_outlined
+              : Icons.cloud_off_outlined,
+          size: 18,
+          color: ok ? p.primaryText : p.textSecondary,
+        ),
+        label: Text(
+          label,
+          style: ElioTokens.button.copyWith(
+            color: ok ? p.primaryText : p.textSecondary,
+          ),
+        ),
+        backgroundColor: ok
+            ? p.primary.withValues(alpha: 0.12)
+            : p.surfaceRaised,
+        side: BorderSide.none,
+        shape: const StadiumBorder(),
+      ),
+    );
+  }
+
+  void _openDetail(ScanRecord r) {
+    final theme = Theme.of(context);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Theme(
+          data: theme,
+          child: ScanDetailScreen(record: r, store: _store),
+        ),
+      ),
+    );
+  }
+
+  void _openTimeline({HistoryDevice? device}) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) =>
+          ScanTimelineScreen(store: _store, device: device, category: _filter),
+    ),
+  );
+
+  List<Widget> _compact(List<ScanRecord> records) {
+    final t = context.l10n;
+    final p = authPalette(context);
+    final level = _store.userLevel, total = _store.totalTrophies;
+    final latest = [for (final r in records.take(3)) r.localized(t.localeName)];
+    final toReview = [
+      for (final r in _store.records)
+        if (r.questions.isNotEmpty && r.correctCount < r.totalQuestions)
+          r.localized(t.localeName),
+    ];
+    ScanRecord? lastOf(HistoryDevice d) =>
+        _store.records.where((r) => historyDeviceOf(r) == d).firstOrNull;
+    return [
+      HistoryTrophyStrip(
+        total: total,
+        levelNumber: level.levelNumber,
+        level: level.levelAndTitle,
+        progress: _store.levelProgress,
+        next: level.nextLevelThreshold == null
+            ? t.h3TopLevel
+            : t.h3ToNextLevel(
+                level.nextLevelThreshold! - total,
+                level.levelNumber + 1,
+              ),
+      ),
+      const SizedBox(height: 16),
+      _tiles(),
+      const SizedBox(height: 24),
+      Row(
+        children: [
+          Expanded(
+            child: Semantics(
+              header: true,
+              child: Text(
+                t.h3RecentScans,
+                style: ElioTokens.subhead.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: p.textPrimary,
+                ),
+              ),
+            ),
+          ),
+          OutlinedButton.icon(
+            onPressed: () => _openTimeline(),
+            icon: const Icon(Icons.timeline_rounded, size: 18),
+            label: Text(t.histSeeTimeline),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: p.primaryText,
+              backgroundColor: p.primary.withValues(alpha: 0.08),
+              side: BorderSide(color: p.primary.withValues(alpha: 0.5)),
+              shape: const StadiumBorder(),
+              minimumSize: const Size(48, 44),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      if (latest.isEmpty)
+        Text(
+          t.h3NoScansInCategory,
+          style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
+        ),
+      for (final r in latest) ...[
+        HistoryScanRow(
+          record: r,
+          trailingLabel: historyDay(t, r.time),
+          onTap: () => _openDetail(r),
+        ),
+        const SizedBox(height: 10),
+      ],
+      const SizedBox(height: 16),
+      Semantics(
+        header: true,
+        child: Text(
+          t.histByDevice,
+          style: ElioTokens.subhead.copyWith(
+            fontWeight: FontWeight.w700,
+            color: p.textPrimary,
+          ),
+        ),
+      ),
+      Text(
+        t.histByDeviceSub,
+        style: ElioTokens.caption.copyWith(color: p.textSecondary),
+      ),
+      const SizedBox(height: 12),
+      IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final d in HistoryDevice.values) ...[
+              Expanded(
+                child: HistoryDeviceCard(
+                  name: historyDeviceName(t, d),
+                  icon: historyDeviceIcon(d),
+                  last: lastOf(d) == null
+                      ? t.histNoScansYet
+                      : historyDay(t, lastOf(d)!.time),
+                  onTap: () => _openTimeline(device: d),
+                ),
+              ),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: HistoryDeviceCard(
+                name: t.vehicleDrone,
+                icon: Icons.toys_outlined,
+                last: t.vehicleComingSoon,
+              ),
+            ),
+          ],
+        ),
+      ),
+      if (toReview.isNotEmpty) ...[
+        const SizedBox(height: 20),
+        HistoryCard(
+          tone: HistoryTone.warning,
+          onTap: () => _openDetail(toReview.first),
+          child: Row(
+            children: [
+              Icon(Icons.fact_check_outlined, size: 40, color: p.secondaryText),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t.histToReview,
+                      style: ElioTokens.body.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: p.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      [
+                        for (final r in toReview.take(2))
+                          '${r.itemName} ${r.correctCount}/${r.totalQuestions}',
+                      ].join(' · '),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: ElioTokens.caption.copyWith(
+                        color: p.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: ShapeDecoration(
+                  color: p.surface,
+                  shape: const StadiumBorder(),
+                ),
+                child: Text(
+                  t.histReview,
+                  style: ElioTokens.button.copyWith(color: p.secondaryText),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ];
   }
 
   Widget _summary() {
