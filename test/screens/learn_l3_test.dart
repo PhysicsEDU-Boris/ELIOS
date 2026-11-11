@@ -24,6 +24,8 @@ import 'package:elio/services/elio_feedback.dart';
 import 'package:elio/services/progress_service.dart';
 import 'package:elio/theme/elio_theme.dart';
 import 'package:elio/widgets/learn/learn_l3.dart';
+import 'package:elio/Screens/tabs/elearning/daily_guides_page.dart' show GuidesHubSection;
+import 'package:elio/widgets/learn/learn_ui.dart' show LearnHubSkeleton;
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -419,6 +421,29 @@ void main() {
     await t.pump();
     expect(rises, [(0, 2)]);
     expect(find.text('1'), findsOneWidget);
+  });
+
+  testWidgets('returning to Learn shows the hub at once, no loading frame', (
+    t,
+  ) async {
+    final show = ValueNotifier(true);
+    await _pump(
+      t,
+      ValueListenableBuilder<bool>(
+        valueListenable: show,
+        builder: (_, on, _) => on ? const ElearningTab() : const SizedBox(),
+      ),
+      size: const Size(390, 3400),
+    );
+    expect(find.byType(ArchiveStack), findsOneWidget);
+    show.value = false;
+    await t.pump();
+    show.value = true;
+    await t.pump(); // the very first frame back on Learn
+    expect(find.byType(LearnHubSkeleton), findsNothing);
+    expect(find.byType(GuidesHubSection), findsNothing);
+    expect(find.byType(ArchiveStack), findsOneWidget);
+    expect(find.text('1 of 3 modules in progress'), findsOneWidget);
   });
 
   testWidgets('reduce motion still renders the hub', (t) async {

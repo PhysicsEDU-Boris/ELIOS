@@ -40,7 +40,11 @@ class ArchiveStack extends ConsumerStatefulWidget {
 
 enum _Phase { rest, drag, flick, tuck, pulled }
 
+/// The fan-in plays once per app session, not on every return to Learn.
+bool _fanShown = false;
+
 class _ArchiveStackState extends ConsumerState<ArchiveStack> {
+  final bool _fanIn = !_fanShown;
   late List<int> _order = _initial();
   double _dx = 0;
   bool _armed = false; // drag is past the flick threshold
@@ -51,6 +55,12 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
 
   List<int> _initial() =>
       List.generate(math.min(3, widget.guides.length), (i) => i);
+
+  @override
+  void initState() {
+    super.initState();
+    _fanShown = true;
+  }
 
   @override
   void didUpdateWidget(ArchiveStack old) {
@@ -273,6 +283,7 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
       top: 0,
       child: IgnorePointer(
         child: ElioPopIn(
+          play: _fanIn,
           index: 2 - slot,
           child: AnimatedOpacity(
             opacity: _phase == _Phase.pulled ? 0.5 : 1,
@@ -308,6 +319,7 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
     final p = _place(slot);
     // Entrance: rule 7, back photo first, 40 ms apart.
     final photo = ElioPopIn(
+      play: _fanIn,
       index: 2 - slot,
       child: AnimatedOpacity(
         opacity: p.opacity,

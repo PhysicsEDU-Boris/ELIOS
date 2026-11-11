@@ -53,17 +53,12 @@ class ElearningTab extends ConsumerStatefulWidget {
 }
 
 class _ElearningTabState extends ConsumerState<ElearningTab> {
-  late LearnStreams _streams;
-
-  @override
-  void initState() {
-    super.initState();
-    _streams = LearnStreams(ref.read(elearningContentServiceProvider));
+  void _retry() {
+    ref.invalidate(learnModulesProvider);
+    ref.invalidate(learnVideosProvider);
+    ref.invalidate(learnGuidesProvider);
+    ref.invalidate(learnQuizSetsProvider);
   }
-
-  void _retry() => setState(
-    () => _streams = LearnStreams(ref.read(elearningContentServiceProvider)),
-  );
 
   Future<void> _handleResumeIntent(LearningResumeIntent intent) async {
     final service = ref.read(elearningContentServiceProvider);
@@ -117,7 +112,7 @@ class _ElearningTabState extends ConsumerState<ElearningTab> {
       Builder(
         builder: (context) => ColoredBox(
           color: context.elio.background,
-          child: LearnHub(streams: _streams, onRetry: _retry),
+          child: LearnHub(onRetry: _retry),
         ),
       ),
     );
@@ -139,52 +134,80 @@ class LearnStreams {
 }
 
 /// Hub body with its states: skeleton, error, no modules, first launch.
+/// Without [streams] it reads the app-wide content providers, which keep the
+/// last data, so reopening the Learn tab shows it at once instead of a
+/// loading frame and half-loaded numbers.
 class LearnHub extends ConsumerWidget {
-  const LearnHub({super.key, required this.streams, required this.onRetry});
+  const LearnHub({super.key, this.streams, required this.onRetry});
 
-  final LearnStreams streams;
+  final LearnStreams? streams;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = streams;
+    if (s == null) {
+      return _states(
+        ref.watch(learnModulesProvider),
+        ref.watch(learnVideosProvider).valueOrNull,
+        ref.watch(learnGuidesProvider).valueOrNull,
+        ref.watch(learnQuizSetsProvider).valueOrNull,
+      );
+    }
     return StreamBuilder<List<ElearningModule>>(
-      stream: streams.modules,
-      builder: (context, modulesSnap) {
-        if (modulesSnap.hasError) {
-          return LearnListView(
-            children: [
-              const GuidesHubSection(),
-              LearnModulesError(onRetry: onRetry),
-            ],
-          );
-        }
-        if (!modulesSnap.hasData) {
-          return const LearnListView(
-            children: [GuidesHubSection(), LearnHubSkeleton()],
-          );
-        }
-        final modules = modulesSnap.data!;
-        if (modules.isEmpty) {
-          return const LearnListView(
-            children: [GuidesHubSection(), LearnNoModules()],
-          );
-        }
-        return StreamBuilder<List<VideoLesson>>(
-          stream: streams.videos,
-          builder: (context, videosSnap) => StreamBuilder<List<GuideLesson>>(
-            stream: streams.guides,
-            builder: (context, guidesSnap) => StreamBuilder<List<QuizSet>>(
-              stream: streams.quizSets,
-              builder: (context, quizSnap) => _HubContent(
-                modules: modules,
-                videos: videosSnap.data,
-                guides: guidesSnap.data,
-                quizSets: quizSnap.data,
-              ),
+      stream: s.modules,
+      builder: (context, m) => StreamBuilder<List<VideoLesson>>(
+        stream: s.videos,
+        builder: (context, v) => StreamBuilder<List<GuideLesson>>(
+          stream: s.guides,
+          builder: (context, g) => StreamBuilder<List<QuizSet>>(
+            stream: s.quizSets,
+            builder: (context, q) => _states(
+              m.hasError
+                  ? AsyncValue.error(m.error!, m.stackTrace ?? StackTrace.empty)
+                  : m.hasData
+                  ? AsyncValue.data(m.data!)
+                  : const AsyncValue.loading(),
+              v.data,
+              g.data,
+              q.data,
             ),
           ),
-        );
-      },
+        ),
+      ),
+    );
+  }
+
+  Widget _states(
+    AsyncValue<List<ElearningModule>> modules,
+    List<VideoLesson>? videos,
+    List<GuideLesson>? guides,
+    List<QuizSet>? quizSets,
+  ) {
+    final list = modules.valueOrNull;
+    if (list == null && modules.hasError) {
+      return LearnListView(
+        children: [
+          const GuidesHubSection(),
+          LearnModulesError(onRetry: onRetry),
+        ],
+      );
+    }
+    if (list == null) {
+      return const LearnListView(
+        children: [GuidesHubSection(), LearnHubSkeleton()],
+      );
+    }
+    if (list.isEmpty) {
+      return const LearnListView(
+        children: [GuidesHubSection(), LearnNoModules()],
+      );
+    }
+    return _HubContent(
+      modules: list,
+      videos: videos,
+      guides: guides,
+      quizSets: quizSets,
     );
   }
 }

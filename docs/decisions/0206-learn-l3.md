@@ -43,6 +43,13 @@ sound and haptics from section 13 row Cards · Learn (`640:24201`), cards 17–2
   still missing (they hold no content and stay at the back).
 - Debug builds log `[ElioSound] <sfx> played` so sounds can be checked over adb.
 
+- Opening the Learn tab no longer glitches: the hub reads the app-wide content providers
+  (`learnModulesProvider` and friends, already used by the sidebar), which keep the last data,
+  instead of starting four new Firestore streams per visit. That removes the one-frame old
+  guide layout, the header jumping from "20 % · no module started" to the real numbers, and the
+  archive fading in from blank. The archive fan-in plays once per app session. A cold start
+  still loads once.
+
 ## Data rules
 
 Only real app data. Rails come from the module's own videos, guide lessons and quiz sets.
