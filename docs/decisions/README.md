@@ -75,3 +75,4 @@ their status changed.
 - [0203](0203-elios3-motion-2.md) ELIOS 3 motion part 2
 - [0206](0206-learn-l3.md) Learn L3: archive stack, Discover more synced with Explore, L3 sub-pages, robot buddy
 - [0207](0207-daily-guides-l3-motion.md) Daily Guides L3 style, motion, sound and haptics
+- [0208](0208-guide-polaroid-hero-cast.md) Guide polaroid hero flight cast fix
