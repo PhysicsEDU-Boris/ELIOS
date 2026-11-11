@@ -271,14 +271,26 @@ void main() {
     // Today's guide is not in the archive; the newest archive guide is on top.
     expect(find.text('Why haze hangs over our cities'), findsOneWidget);
     final top = find.bySemanticsLabel(RegExp('^Why haze hangs'));
+    // A swipe to the right does not flick.
     await t.drag(top, const Offset(220, 0));
+    await _settle(t);
+    expect(find.text('Why haze hangs over our cities'), findsOneWidget);
+    // Swiped left, the top photo goes to the back and the next comes up.
+    await t.drag(top, const Offset(-220, 0));
     await _settle(t);
     expect(find.text('Floods: a metre of rain'), findsOneWidget);
     expect(sounds, contains(ElioSfx.tick));
     // A short drag springs back.
-    await t.drag(find.bySemanticsLabel(RegExp('^Floods')), const Offset(30, 0));
+    final floods = find.bySemanticsLabel(RegExp('^Floods'));
+    await t.drag(floods, const Offset(-30, 0));
     await _settle(t);
     expect(find.text('Floods: a metre of rain'), findsOneWidget);
+    // Two more swipes bring the first photo back to the top.
+    await t.drag(floods, const Offset(-220, 0));
+    await _settle(t);
+    await t.drag(find.bySemanticsLabel(RegExp('^Hot city')), const Offset(-220, 0));
+    await _settle(t);
+    expect(find.text('Why haze hangs over our cities'), findsOneWidget);
   });
 
   testWidgets('archive stack: tap pulls the photo out and shows Continue', (

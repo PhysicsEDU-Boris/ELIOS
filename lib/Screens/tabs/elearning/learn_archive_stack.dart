@@ -38,7 +38,7 @@ class ArchiveStack extends ConsumerStatefulWidget {
   ConsumerState<ArchiveStack> createState() => _ArchiveStackState();
 }
 
-enum _Phase { rest, drag, flick, pulled }
+enum _Phase { rest, drag, flick, tuck, pulled }
 
 class _ArchiveStackState extends ConsumerState<ArchiveStack> {
   late List<int> _order = _initial();
@@ -61,14 +61,16 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
     }
   }
 
-  double _threshold(double width) => width * 0.4;
+  // 40 % of the photo's width: the thumb only travels across the card.
+  double _threshold(double width) => _photoW * 0.4;
 
+  /// Only a swipe to the left flicks; a pull to the right gives a little.
   void _onDragUpdate(DragUpdateDetails d, double width) {
     if (_phase == _Phase.pulled || _order.length < 2) return;
     setState(() {
       _phase = _Phase.drag;
-      _dx += d.delta.dx;
-      final armed = _dx.abs() > _threshold(width);
+      _dx = math.min(24, _dx + d.delta.dx);
+      final armed = _dx < -_threshold(width);
       if (armed != _armed) {
         _armed = armed;
         if (armed) ElioHaptics.select();
@@ -79,8 +81,8 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
   void _onDragEnd(DragEndDetails d, double width) {
     if (_phase != _Phase.drag) return;
     final v = d.velocity.pixelsPerSecond.dx;
-    if (_dx.abs() > _threshold(width) || v.abs() > 600) {
-      _flick(_dx == 0 ? v.sign : _dx.sign);
+    if (_dx < -_threshold(width) || v < -600) {
+      _flick();
     } else {
       setState(() {
         _phase = _Phase.rest;
@@ -90,27 +92,33 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
     }
   }
 
-  Future<void> _flick(double dir) async {
+  /// The top photo flies out to the left (base, exit), then tucks in under
+  /// the stack as the bottom card (spring/soft) while the next one comes up.
+  Future<void> _flick() async {
     setState(() {
       _phase = _Phase.flick;
-      _dx = dir * 360;
+      _dx = -(_photoW + 40);
     });
     await Future<void>.delayed(ElioMotion.base);
     if (!mounted) return;
     setState(() {
+      // Out beside the stack the card can change layer unseen: it is now
+      // painted first and slides back in behind the others.
       _order = [..._order.skip(1), _order.first];
       _top = _order.first;
-      _phase = _Phase.rest;
+      _phase = _Phase.tuck;
       _dx = 0;
       _armed = false;
     });
     elioFeedback(ElioSfx.tick, ElioHaptics.select);
+    await Future<void>.delayed(ElioMotion.expressive);
+    if (mounted && _phase == _Phase.tuck) setState(() => _phase = _Phase.rest);
   }
 
   void _togglePull() {
     if (_phase == _Phase.pulled) {
       _push(false);
-    } else if (_phase == _Phase.rest) {
+    } else if (_phase == _Phase.rest || _phase == _Phase.tuck) {
       _push(true);
     }
   }
@@ -134,8 +142,8 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
         if (slot == 0) {
           x += _dx;
           y -= 6;
-          // Tilts up to +17° (x ÷ 120 × 17°) toward the swipe.
-          a = _dx >= 0 ? -8 + 25 * t : -8 - 9 * t;
+          // Tilts toward the swipe, up to −17° (x ÷ 120).
+          a = _dx >= 0 ? -8 + 2 * t : -8 - 9 * t;
           if (_phase == _Phase.flick) {
             d = ElioMotion.base;
             c = ElioMotion.exit;
@@ -173,6 +181,9 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
           x = slot == 1 ? 17 : 2;
           y = slot == 1 ? 46 : 66;
         }
+      case _Phase.tuck:
+        // The card that went out slides under the stack to the back slot.
+        if (slot == _order.length - 1) d = ElioMotion.expressive;
       case _Phase.rest:
         break;
     }
@@ -223,6 +234,7 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
                       // Back photo first; keys keep each photo's animation state.
                       for (var slot = _order.length - 1; slot >= 0; slot--)
                         _photo(guides[_order[slot]], slot, box.maxWidth),
+                      _touch(top, box.maxWidth),
                       Positioned(
                         left: 200,
                         right: 0,
@@ -315,25 +327,33 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
       key: ValueKey(g.date),
       left: 0,
       top: 0,
-      child: slot != 0
-          ? IgnorePointer(child: photo)
-          : Semantics(
-              container: true,
-              button: true,
-              excludeSemantics: true,
-              label: l10n.lnArchivePhotoLabel(
-                g.title[g.lang(guideLangOf(ref))] ?? '',
-              ),
-              onTap: _togglePull,
-              child: GestureDetector(
-                onTap: _togglePull,
-                onHorizontalDragUpdate: (d) => _onDragUpdate(d, width),
-                onHorizontalDragEnd: (d) => _onDragEnd(d, width),
-                child: photo,
-              ),
-            ),
+      child: IgnorePointer(child: photo),
     );
   }
+
+  /// The swipe / tap target: the whole photo area left of the info, so the
+  /// thumb hits wherever the tilted top photo is drawn.
+  Widget _touch(DailyGuide top, double width) => Positioned(
+    left: 0,
+    top: 0,
+    width: 196,
+    height: 204,
+    child: Semantics(
+      container: true,
+      button: true,
+      excludeSemantics: true,
+      label: l10n.lnArchivePhotoLabel(
+        top.title[top.lang(guideLangOf(ref))] ?? '',
+      ),
+      onTap: _togglePull,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _togglePull,
+        onHorizontalDragUpdate: (d) => _onDragUpdate(d, width),
+        onHorizontalDragEnd: (d) => _onDragEnd(d, width),
+      ),
+    ),
+  );
 }
 
 /// L3 / Archive polaroid (695:29529): photo, caption, 1 px subtle edge.

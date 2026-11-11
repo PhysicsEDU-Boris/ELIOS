@@ -34,8 +34,13 @@ sound and haptics from section 13 row Cards · Learn (`640:24201`), cards 17–2
   left (module 3 / B3 and the last rail cards were unreachable), S1 + H-select fire only when the
   snapped card changes. Explore is a true skyline: the focused card at the Large size,
   neighbours shrink to the Small size (152 / 204), 90 % opacity. Explore title is Headline 28.
-- Archive: photos fan in (rule 7, 40 ms). While the feed has fewer than 3 older guides (today
-  it has 1), empty polaroid frames fill the fan; they show no content and can't be swiped.
+- Archive: photos fan in (rule 7, 40 ms). Swipe left like re-stacking cards: the top photo
+  tilts to −17°, flies out left (base, exit), then slides in under the stack as the bottom card
+  (expressive, spring/soft) while the next photo comes up; S1 + H-select when it lands. A pull to
+  the right only gives 24 dp. Flick threshold is 40 % of the photo width; the whole photo area
+  is the touch target (the tilted photo is drawn away from its layout box). While the feed has
+  fewer than 3 older guides, today's guide joins at the back, and empty frames fill any slot
+  still missing (they hold no content and stay at the back).
 - Debug builds log `[ElioSound] <sfx> played` so sounds can be checked over adb.
 
 ## Data rules

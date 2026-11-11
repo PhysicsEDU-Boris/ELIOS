@@ -452,7 +452,12 @@ class _HubContentState extends ConsumerState<_HubContent> {
         ),
         if ((feed?.guides.length ?? 0) > 1)
           ArchiveStack(
-            guides: feed!.guides.skip(1).toList(),
+            // Last 3 guides, newest older one on top; today's joins at the
+            // back while the feed has fewer than 3 older guides.
+            guides: [
+              ...feed!.guides.skip(1).take(3),
+              if (feed.guides.length < 4) feed.guides.first,
+            ],
             onOpen: (g) => openGuideIssue(context, g),
             onSeeAll: () => _push(const DailyGuidesPage()),
           ),
