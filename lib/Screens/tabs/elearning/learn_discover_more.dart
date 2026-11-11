@@ -4,10 +4,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart';
 
 import '../../../theme/elio_motion.dart';
-import '../../../services/elio_feedback.dart';
 import '../../../widgets/learn/learn_l3.dart';
 
 class DiscoverItem {
@@ -151,91 +149,36 @@ class _Rail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = rail.items;
-    return SizedBox(
+    return SnapRail(
+      itemCount: items.length,
+      first: _largeW + _gap,
+      extent: _smallW + _gap,
       height: 265,
-      child: NotificationListener<ScrollEndNotification>(
-        onNotification: (_) {
-          elioFeedback(ElioSfx.tick, ElioHaptics.select);
-          return false;
-        },
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-          physics: const _SnapPhysics(
-            first: _largeW + _gap,
-            rest: _smallW + _gap,
+      itemBuilder: (context, i, _) {
+        final it = items[i];
+        // Cards 60 ms apart, rails 40 ms apart, max 6 waits.
+        final wait = Duration(
+          milliseconds: math.min(railIndex * 40 + i * 60, 6 * 60),
+        );
+        return Padding(
+          padding: const EdgeInsets.only(top: 4, bottom: 4),
+          child: Align(
+            alignment: Alignment.bottomLeft,
+            child: ContentPopCard(
+              kind: rail.kind,
+              tag: it.tag,
+              title: it.title,
+              meta: it.meta,
+              cover: it.cover,
+              progress: it.progress,
+              sticker: it.sticker,
+              large: i == 0,
+              entrance: animate ? wait : null,
+              onTap: it.onTap,
+            ),
           ),
-          itemCount: items.length,
-          separatorBuilder: (_, _) => const SizedBox(width: _gap),
-          itemBuilder: (context, i) {
-            final it = items[i];
-            // Cards 60 ms apart, rails 40 ms apart, max 6 waits.
-            final wait = Duration(
-              milliseconds: math.min(railIndex * 40 + i * 60, 6 * 60),
-            );
-            return Align(
-              alignment: Alignment.bottomLeft,
-              child: ContentPopCard(
-                kind: rail.kind,
-                tag: it.tag,
-                title: it.title,
-                meta: it.meta,
-                cover: it.cover,
-                progress: it.progress,
-                sticker: it.sticker,
-                large: i == 0,
-                entrance: animate ? wait : null,
-                onTap: it.onTap,
-              ),
-            );
-          },
-        ),
-      ),
+        );
+      },
     );
   }
-}
-
-/// Snaps a rail to card edges: the first card is [first] wide (with gap),
-/// the others [rest]. Settles with spring/soft.
-class _SnapPhysics extends ScrollPhysics {
-  const _SnapPhysics({required this.first, required this.rest, super.parent});
-  final double first, rest;
-
-  @override
-  _SnapPhysics applyTo(ScrollPhysics? ancestor) =>
-      _SnapPhysics(first: first, rest: rest, parent: buildParent(ancestor));
-
-  double _snap(double offset, double velocity, double max) {
-    double edge(int i) => i == 0 ? 0 : first + (i - 1) * rest;
-    var i = offset < first ? 0 : 1 + ((offset - first) / rest).floor();
-    final lo = edge(i), hi = edge(i + 1);
-    final pick = velocity > 300
-        ? hi
-        : velocity < -300
-        ? lo
-        : (offset - lo < hi - offset ? lo : hi);
-    return pick.clamp(0.0, max);
-  }
-
-  @override
-  Simulation? createBallisticSimulation(
-    ScrollMetrics position,
-    double velocity,
-  ) {
-    if (position.outOfRange) {
-      return super.createBallisticSimulation(position, velocity);
-    }
-    final target = _snap(position.pixels, velocity, position.maxScrollExtent);
-    if ((target - position.pixels).abs() < 0.5) return null;
-    return SpringSimulation(
-      const SpringDescription(mass: 1, stiffness: 380, damping: 30),
-      position.pixels,
-      target,
-      velocity,
-      tolerance: toleranceFor(position),
-    );
-  }
-
-  @override
-  bool get allowImplicitScrolling => false;
 }

@@ -8,6 +8,7 @@ import 'dart:ui' as ui;
 import 'package:elio/Screens/tabs/elearning/learn_archive_stack.dart';
 import 'package:elio/Screens/tabs/elearning/learn_content.dart';
 import 'package:elio/Screens/tabs/elearning/learn_discover_more.dart';
+import 'package:elio/Screens/tabs/elearning/learn_hub_v3.dart' show ExploreSection;
 import 'package:elio/Screens/tabs/elearning/lesson_page.dart';
 import 'package:elio/Screens/tabs/elearning/module_page.dart';
 import 'package:elio/Screens/tabs/elearning/quiz/physics_quiz_page.dart';
@@ -308,12 +309,20 @@ void main() {
     expect(find.text('Video about inorganic'), findsNothing);
     // No module chip or header: only the rails.
     expect(find.text('Discover more'), findsNothing);
-    final carousel = find.byType(PageView);
-    await t.fling(carousel, const Offset(-300, 0), 1200);
+    final carousel = find.descendant(
+      of: find.byType(ExploreSection),
+      matching: find.byType(SnapRail),
+    );
+    await t.fling(carousel, const Offset(-120, 0), 1000);
     await _settle(t);
     expect(find.text('Watch and learn · 1 in Anorganik'), findsOneWidget);
     expect(find.text('Video about inorganic'), findsOneWidget);
     expect(sounds, containsAllInOrder([ElioSfx.tick, ElioSfx.pop]));
+    // The far-right card can snap to the left too (B3 was unreachable).
+    await t.fling(carousel, const Offset(-120, 0), 1000);
+    await _settle(t);
+    expect(find.text('Watch and learn · 1 in B3'), findsOneWidget);
+    expect(sounds.where((s) => s == ElioSfx.tick).length, 2);
   });
 
   testWidgets('module page: hero, ticket, tags, lesson grid, quiz ticket', (

@@ -937,7 +937,7 @@ class ExploreSection extends ConsumerWidget {
                       header: true,
                       child: Text(
                         l10n.lnExplore,
-                        style: context.text.headlineMedium,
+                        style: context.text.displaySmall,
                       ),
                     ),
                     const LearnSquiggle(width: 104),
@@ -1005,9 +1005,10 @@ class ExploreSection extends ConsumerWidget {
   }
 }
 
-/// Card 19: the carousel snaps per card with spring/soft; the card that snaps
-/// to the left is the focused one (the open module on the Modules tab).
-/// Neighbours rest at scale 0.94 and 90 % opacity; dots morph 6 → 18 px.
+/// Card 19: the skyline carousel snaps per card with spring/soft; the card
+/// snapped to the left is the focused one (the open module on Modules) and
+/// shows at the Large size, neighbours at the Small size (152 / 204) and 90 %
+/// opacity, bottom-aligned like Figma. Dots morph 6 → 18 px.
 class _ExploreCarousel extends StatefulWidget {
   const _ExploreCarousel({
     super.key,
@@ -1024,79 +1025,36 @@ class _ExploreCarousel extends StatefulWidget {
 }
 
 class _ExploreCarouselState extends State<_ExploreCarousel> {
-  static const _pageW = 220.0;
-  PageController? _c;
-  double _width = 0;
+  static const _small = 152 / 204;
   late int _settled = widget.initialPage;
-
-  PageController _controller(double width) {
-    if (_c == null || width != _width) {
-      final page = _c?.hasClients == true ? _c!.page?.round() : null;
-      _c?.dispose();
-      _width = width;
-      _c = PageController(
-        viewportFraction: (_pageW / width).clamp(0.1, 1.0),
-        initialPage: page ?? _settled,
-      );
-    }
-    return _c!;
-  }
-
-  @override
-  void dispose() {
-    _c?.dispose();
-    super.dispose();
-  }
-
-  bool _onEnd(ScrollEndNotification n) {
-    final page = _c?.page?.round();
-    if (page != null && page != _settled) {
-      setState(() => _settled = page);
-      elioFeedback(ElioSfx.tick, ElioHaptics.select);
-      widget.onSettled?.call(page);
-    }
-    return false;
-  }
 
   @override
   Widget build(BuildContext context) {
     final items = widget.items;
     return Column(
       children: [
-        LayoutBuilder(
-          builder: (context, box) {
-            final c = _controller(box.maxWidth);
-            return SizedBox(
-              height: 276,
-              child: NotificationListener<ScrollEndNotification>(
-                onNotification: _onEnd,
-                child: PageView.builder(
-                  controller: c,
-                  padEnds: false,
-                  itemCount: items.length,
-                  itemBuilder: (context, i) => AnimatedBuilder(
-                    animation: c,
-                    builder: (context, child) {
-                      final page = c.hasClients && c.position.haveDimensions
-                          ? c.page ?? _settled.toDouble()
-                          : _settled.toDouble();
-                      final d = (page - i).abs().clamp(0.0, 1.0);
-                      return Opacity(
-                        opacity: 1 - 0.1 * d,
-                        child: Transform.scale(
-                          scale: 1 - 0.06 * d,
-                          alignment: Alignment.bottomLeft,
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 16, top: 8),
-                      child: Align(
-                        alignment: Alignment.bottomLeft,
-                        child: PopCard(item: items[i], large: true),
-                      ),
-                    ),
+        SnapRail(
+          itemCount: items.length,
+          first: 218,
+          extent: 218,
+          height: 276,
+          initialIndex: _settled,
+          onSnap: (i) {
+            setState(() => _settled = i);
+            widget.onSettled?.call(i);
+          },
+          itemBuilder: (context, i, d) {
+            final t = d.clamp(0.0, 1.0);
+            return Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Opacity(
+                  opacity: 1 - 0.1 * t,
+                  child: Transform.scale(
+                    scale: 1 - (1 - _small) * t,
+                    alignment: Alignment.bottomLeft,
+                    child: PopCard(item: items[i], large: true),
                   ),
                 ),
               ),

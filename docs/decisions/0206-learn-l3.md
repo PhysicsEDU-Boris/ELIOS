@@ -28,6 +28,16 @@ sound and haptics from section 13 row Cards · Learn (`640:24201`), cards 17–2
 - Cards 17 (ticket stop pop + path draw, finished tear/XP pop/polaroid sway) and 20 (clover spin,
   count flip, leaves, wiggle) fire only when the value rises, never on first show.
 
+## Phone fixes (11 Nov, after the owner's check)
+
+- Explore and the Discover rails share `SnapRail`: a tail pad lets the far-right card snap to the
+  left (module 3 / B3 and the last rail cards were unreachable), S1 + H-select fire only when the
+  snapped card changes. Explore is a true skyline: the focused card at the Large size,
+  neighbours shrink to the Small size (152 / 204), 90 % opacity. Explore title is Headline 28.
+- Archive: photos fan in (rule 7, 40 ms). While the feed has fewer than 3 older guides (today
+  it has 1), empty polaroid frames fill the fan; they show no content and can't be swiped.
+- Debug builds log `[ElioSound] <sfx> played` so sounds can be checked over adb.
+
 ## Data rules
 
 Only real app data. Rails come from the module's own videos, guide lessons and quiz sets.
@@ -38,7 +48,6 @@ then the others. Guide polaroid captions are the guide's topic; covers are the f
 
 - Container transform on open (20d/20e) uses the existing fade-through route (`ElioPageRoute`):
   no `animations` package in the app.
-- Explore neighbours scale to 0.94 (motion spec 19) instead of the static Small card size.
 - No Search (module) or Share (lesson) button: the app has neither feature.
 - Lesson Play opens the existing YouTube / PDF page; the polaroid straightens and the play
   button shrinks before it opens, there is no inline player.

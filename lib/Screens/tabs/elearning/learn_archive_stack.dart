@@ -216,6 +216,10 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
+                      // While the feed has fewer than 3 older guides, empty
+                      // frames keep the Figma fan; they hold no content.
+                      for (var slot = 2; slot >= _order.length; slot--)
+                        _blank(slot),
                       // Back photo first; keys keep each photo's animation state.
                       for (var slot = _order.length - 1; slot >= 0; slot--)
                         _photo(guides[_order[slot]], slot, box.maxWidth),
@@ -248,19 +252,63 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
     );
   }
 
+  Widget _blank(int slot) {
+    final p = _place(slot);
+    final pal = context.elio;
+    return Positioned(
+      key: ValueKey('blank-$slot'),
+      left: 0,
+      top: 0,
+      child: IgnorePointer(
+        child: ElioPopIn(
+          index: 2 - slot,
+          child: AnimatedOpacity(
+            opacity: _phase == _Phase.pulled ? 0.5 : 1,
+            duration: ElioMotion.base,
+            child: AnimatedContainer(
+              duration: p.d,
+              curve: p.c,
+              transform: p.m,
+              transformAlignment: Alignment.center,
+              width: _photoW,
+              height: _photoH,
+              padding: const EdgeInsets.fromLTRB(6, 6, 6, 32),
+              decoration: BoxDecoration(
+                color: pal.surface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: pal.borderSubtle),
+                boxShadow: l3Shadow,
+              ),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: pal.surfaceRaised,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _photo(DailyGuide g, int slot, double width) {
     final p = _place(slot);
-    final photo = AnimatedOpacity(
-      opacity: p.opacity,
-      duration: p.d,
-      child: AnimatedContainer(
+    // Entrance: rule 7, back photo first, 40 ms apart.
+    final photo = ElioPopIn(
+      index: 2 - slot,
+      child: AnimatedOpacity(
+        opacity: p.opacity,
         duration: p.d,
-        curve: p.c,
-        transform: p.m,
-        transformAlignment: Alignment.center,
-        width: _photoW,
-        height: _photoH,
-        child: _Polaroid(guide: g),
+        child: AnimatedContainer(
+          duration: p.d,
+          curve: p.c,
+          transform: p.m,
+          transformAlignment: Alignment.center,
+          width: _photoW,
+          height: _photoH,
+          child: _Polaroid(guide: g),
+        ),
       ),
     );
     return Positioned(

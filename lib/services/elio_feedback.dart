@@ -78,6 +78,8 @@ class ElioSound {
         maxPlayers: 2,
       ));
       await pool.start(volume: v);
+      // Debug builds log each sound so phone checks can read it over adb.
+      if (kDebugMode) debugPrint('[ElioSound] ${sfx.name} played');
       return true;
     } catch (e) {
       debugPrint('[ElioSound] ${sfx.name} failed: $e');

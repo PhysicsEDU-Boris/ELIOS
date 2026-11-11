@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../services/elio_feedback.dart';
@@ -1129,4 +1130,143 @@ class Replay extends StatelessWidget {
       child: child,
     );
   }
+}
+
+// ---------------------------------------------------------------- snap rail
+
+/// Horizontal card rail that snaps a card to the left edge with spring/soft.
+/// The first card is [first] wide (gap included), the rest [extent]; a tail
+/// pad lets the last card reach the left too. A new snapped card plays S1 +
+/// H-select once and calls [onSnap]. [itemBuilder] gets the card's distance
+/// in cards from the left slot (0 = snapped), for skyline scaling.
+class SnapRail extends StatefulWidget {
+  const SnapRail({
+    super.key,
+    required this.itemCount,
+    required this.first,
+    required this.extent,
+    required this.height,
+    required this.itemBuilder,
+    this.initialIndex = 0,
+    this.onSnap,
+    this.left = 16,
+  });
+  final int itemCount, initialIndex;
+  final double first, extent, height, left;
+  final Widget Function(BuildContext context, int index, double distance)
+  itemBuilder;
+  final ValueChanged<int>? onSnap;
+
+  @override
+  State<SnapRail> createState() => _SnapRailState();
+}
+
+class _SnapRailState extends State<SnapRail> {
+  late int _index = widget.initialIndex;
+  late final ScrollController _c = ScrollController(
+    initialScrollOffset: _edge(widget.initialIndex),
+  );
+
+  double _edge(int i) => i <= 0 ? 0 : widget.first + (i - 1) * widget.extent;
+
+  int _nearest(double offset) {
+    var best = 0;
+    for (var i = 1; i < widget.itemCount; i++) {
+      if ((_edge(i) - offset).abs() < (_edge(best) - offset).abs()) best = i;
+    }
+    return best;
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  bool _onEnd(ScrollEndNotification n) {
+    if (n.depth != 0 || !_c.hasClients) return false;
+    final i = _nearest(_c.offset);
+    if (i != _index) {
+      setState(() => _index = i);
+      elioFeedback(ElioSfx.tick, ElioHaptics.select);
+      widget.onSnap?.call(i);
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final n = widget.itemCount;
+      final last = n <= 1 ? widget.first : widget.extent;
+      final tail = math.max(0.0, box.maxWidth - widget.left - last);
+      return SizedBox(
+        height: widget.height,
+        child: NotificationListener<ScrollEndNotification>(
+          onNotification: _onEnd,
+          child: ListView.builder(
+            controller: _c,
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.only(left: widget.left, right: tail),
+            physics: _SnapPhysics(edge: _edge, count: n),
+            itemCount: n,
+            itemBuilder: (context, i) => SizedBox(
+              width: i == 0 ? widget.first : widget.extent,
+              child: AnimatedBuilder(
+                animation: _c,
+                builder: (context, _) {
+                  final off = _c.hasClients ? _c.offset : _edge(_index);
+                  final d = ((_edge(i) - off) / widget.extent).abs();
+                  return widget.itemBuilder(context, i, d);
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _SnapPhysics extends ScrollPhysics {
+  const _SnapPhysics({required this.edge, required this.count, super.parent});
+  final double Function(int) edge;
+  final int count;
+
+  @override
+  _SnapPhysics applyTo(ScrollPhysics? ancestor) =>
+      _SnapPhysics(edge: edge, count: count, parent: buildParent(ancestor));
+
+  @override
+  Simulation? createBallisticSimulation(
+    ScrollMetrics position,
+    double velocity,
+  ) {
+    if (position.outOfRange || count == 0) {
+      return super.createBallisticSimulation(position, velocity);
+    }
+    final x = position.pixels;
+    var lo = 0;
+    for (var i = 0; i < count; i++) {
+      if (edge(i) <= x) lo = i;
+    }
+    final hi = math.min(lo + 1, count - 1);
+    final pick = velocity > 300
+        ? hi
+        : velocity < -300
+        ? lo
+        : (x - edge(lo) < edge(hi) - x ? lo : hi);
+    final target = edge(pick).clamp(0.0, position.maxScrollExtent);
+    if ((target - x).abs() < 0.5) return null;
+    return SpringSimulation(
+      const SpringDescription(mass: 1, stiffness: 380, damping: 30),
+      x,
+      target,
+      velocity,
+      tolerance: toleranceFor(position),
+    );
+  }
+
+  @override
+  bool get allowImplicitScrolling => false;
 }
