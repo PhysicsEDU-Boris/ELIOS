@@ -301,6 +301,8 @@ class _PhysicsQuestionViewState extends State<_PhysicsQuestionView> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   L3Button(
+                    // Check plays its own chime / knock.
+                    feedback: _checked,
                     label: !_checked
                         ? l10n.lnCheckAnswer
                         : widget.isLast

@@ -10,6 +10,8 @@ hashes updated after the history rewrite on 2026-10-08. The old-to-new map is
 kept outside the repo.
 
 ## [Unreleased]
+- Daily Guides in the new style (0207): the guide feed, guide page, Quick quiz and Mini lab get the curved green header, leaf cards and the ELIO robot buddy. Continue squeezes and the guide photo flies into the guide page; quest stops, quiz cards, answers, results, recording, photos and the lab verdict all animate with their own sounds and vibrations.
+
 - Learn L3 (0206): under Today's Guide your last 3 guides sit as a polaroid stack you swipe through or pull out to continue; Explore's module cards snap, and the one on the left picks what Discover more shows (videos, guides, simulations and quizzes pop in when you swipe). The module, lesson, simulation and physics quiz pages have the new curved-header look, the new ELIO robot buddy replaces the old quiz mascot, and every card has its sounds and vibrations. Light and dark, English and Bahasa Indonesia. Opening Learn again no longer flashes a loading layout or jumping numbers. Each time you open Learn the screen plays a short entrance: the progress ring sweeps and counts up, the clover drops in, Today's Guide rises and fills its stops, the archive photos are dealt out and the bubbles pop in, with three soft sounds.
 
 - ELIOS 3 motion part 2 (0203): circular dark-mode reveal, quiz answer shake/check, level-up and medal celebration with leaves, activity grid stagger, page fade-through and photo/robot morphs, idle hints, bin buddies jump.

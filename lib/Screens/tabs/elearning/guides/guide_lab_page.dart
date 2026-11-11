@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,10 @@ import '../../../../services/frame_source/phone_frame_source.dart';
 import '../../../../services/frame_source/viewfinder_crop.dart';
 import '../../../../services/guide_progress.dart';
 import '../../../../services/history_cloud.dart';
+import '../../../../services/elio_feedback.dart';
+import '../../../../theme/elio_motion.dart';
+import '../../../../widgets/elio_celebration.dart';
+import '../../../../widgets/learn/learn_l3.dart';
 import '../../../../widgets/learn/learn_ui.dart';
 import '../learn_content.dart';
 import 'guide_widgets.dart';
@@ -54,6 +59,9 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
   int _seconds = 0;
   Map<String, dynamic>? _result;
 
+  /// Bumped per photo: the white shutter flash replays.
+  int _flash = 0;
+
   @override
   void dispose() {
     _tick?.cancel();
@@ -69,6 +77,10 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
     final cam = widget.camera ?? PhoneFrameSource();
     _camera = cam;
     setState(() => _step = step);
+    // Record: S8 start + H-medium; photos: the camera just opens (S2 + light).
+    step == _Step.recording
+        ? elioFeedback(ElioSfx.recStart, ElioHaptics.medium)
+        : elioFeedback(ElioSfx.pop, ElioHaptics.light);
     await cam.initialize();
     if (step == _Step.recording && mounted) {
       _tick = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -110,6 +122,9 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
     // One stop per clip: overlapping timer ticks used to stop again and replace the frames with none.
     if (_stopping) return;
     _stopping = true;
+    if (_step == _Step.recording) {
+      elioFeedback(ElioSfx.recStop, ElioHaptics.light);
+    }
     _tick?.cancel();
     _tick = null;
     await Future.wait(List.of(_pending));
@@ -138,6 +153,9 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
   }
 
   Future<void> _photo() async {
+    // S7 shutter + light tap, and a white flash over the preview.
+    setState(() => _flash++);
+    elioFeedback(ElioSfx.shutter, ElioHaptics.light);
     await _sample();
     if (_samples.length >= 3) {
       await _stop();
@@ -169,6 +187,7 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
           _result = reply;
           _step = _Step.result;
         });
+        _resultFeedback(reply);
       }
     } on CloudHttpException catch (e) {
       message = e.status == 429 ? l10n.g4LabLimit : l10n.g4LabBusy;
@@ -195,6 +214,30 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
     }
   }
 
+  /// Approved: the badge celebration (S9 + H-celebrate, leaves). Otherwise a
+  /// soft knock and the warning pattern; the card shakes on its own.
+  void _resultFeedback(Map<String, dynamic> reply) {
+    if (reply['verdict'] == 'approved') {
+      final c = ref
+          .read(
+            guideContentProvider((
+              widget.guide,
+              widget.guide.lang(guideLangOf(ref)),
+            )),
+          )
+          .valueOrNull;
+      ElioCelebration.show(
+        context,
+        art: const _BadgeArt(size: 120),
+        title: c?.text('badge.name') ?? l10n.g4BadgeUnlocked,
+        subtitle: l10n.g4BadgeUnlocked,
+      );
+    } else {
+      unawaited(ElioSound.instance.play(ElioSfx.knock));
+      unawaited(ElioHaptics.warning());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final g = widget.guide;
@@ -209,6 +252,13 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
         subtitle: _step == _Step.result
             ? content?.text('lab.title')
             : l10n.g4StopMissionSub,
+        action: _step == _Step.brief
+            ? L3Sticker(
+                label: l10n.g4PlusXp(g.xp.lab),
+                color: p.secondaryText,
+                angle: 0,
+              )
+            : null,
       ),
       body: SafeArea(
         top: false,
@@ -216,32 +266,7 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
           _Step.brief => _brief(content),
           _Step.recording || _Step.photos => _capture(),
           _Step.review => _review(),
-          _Step.checking => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const LearnIllustration(LearnArt.mascot, height: 96),
-                  const SizedBox(height: 24),
-                  Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      l10n.g4LabChecking,
-                      style: context.text.titleMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  LinearProgressIndicator(
-                    value: context.reduceMotion ? null : null,
-                    color: p.primary,
-                    backgroundColor: p.borderSubtle,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _Step.checking => const _Checking(),
           _Step.result =>
             verdict == 'approved'
                 ? _approved(content)
@@ -250,56 +275,64 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
       ),
       bottomNavigationBar: switch (_step) {
         _Step.brief => _bottom([
-          FilledButton.icon(
+          L3Button(
+            label: l10n.g4Record,
+            height: 52,
+            feedback: false,
             onPressed: content == null || content.mustShow.isEmpty
                 ? null
                 : () => _openCamera(_Step.recording),
-            icon: const Icon(Icons.videocam_outlined),
-            label: Text(l10n.g4Record),
-            style: _big(context, filled: true),
           ),
-          OutlinedButton(
+          L3Button(
+            label: l10n.g4ThreePhotos,
+            secondary: true,
+            chevron: false,
+            height: 52,
+            feedback: false,
             onPressed: content == null || content.mustShow.isEmpty
                 ? null
                 : () => _openCamera(_Step.photos),
-            style: _big(context),
-            child: Text(l10n.g4ThreePhotos),
           ),
         ]),
         _Step.review => _bottom([
-          FilledButton.icon(
+          L3Button(
+            label: l10n.g4Send,
+            height: 52,
             onPressed: _frames.isEmpty ? null : () => _send(lang),
-            icon: const Icon(Icons.send_rounded),
-            label: Text(l10n.g4Send),
-            style: _big(context, filled: true),
           ),
-          OutlinedButton(
+          L3Button(
+            label: l10n.g4Retake,
+            secondary: true,
+            chevron: false,
+            height: 52,
             onPressed: _discard,
-            style: _big(context),
-            child: Text(l10n.g4Retake),
           ),
         ]),
         _Step.result => _bottom(
           verdict == 'approved'
               ? [
-                  FilledButton(
+                  L3Button(
+                    label: l10n.lnDone,
+                    height: 52,
+                    chevron: false,
                     onPressed: () => Navigator.of(context).maybePop(),
-                    style: _big(context, filled: true),
-                    child: Text(l10n.lnDone),
                   ),
                 ]
               : [
-                  FilledButton.icon(
+                  L3Button(
+                    label: l10n.g4TryAgain,
+                    height: 52,
                     onPressed: () => setState(() {
                       _result = null;
                       _step = _Step.brief;
                     }),
-                    icon: const Icon(Icons.videocam_outlined),
-                    label: Text(l10n.g4TryAgain),
-                    style: _big(context, filled: true),
                   ),
                   if (verdict != 'teacher')
-                    OutlinedButton(
+                    L3Button(
+                      label: l10n.g4AskTeacher,
+                      secondary: true,
+                      chevron: false,
+                      height: 52,
                       onPressed: () async {
                         await ref
                             .read(guideProgressProvider.notifier)
@@ -310,8 +343,6 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
                           );
                         }
                       },
-                      style: _big(context),
-                      child: Text(l10n.g4AskTeacher),
                     ),
                 ],
         ),
@@ -320,30 +351,30 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
     );
   }
 
-  ButtonStyle _big(BuildContext context, {bool filled = false}) =>
-      (filled ? FilledButton.styleFrom : OutlinedButton.styleFrom)(
-        minimumSize: const Size.fromHeight(52),
-        shape: const StadiumBorder(),
-        foregroundColor: filled ? null : context.elio.textPrimary,
-      );
-
-  Widget _bottom(List<Widget> buttons) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: context.elio.surface,
-      border: Border(top: BorderSide(color: context.elio.borderSubtle)),
-    ),
-    child: SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final (i, b) in buttons.indexed) ...[
-              if (i > 0) const SizedBox(height: 10),
-              SizedBox(width: double.infinity, child: b),
+  Widget _bottom(List<Widget> buttons) => ElioPopIn(
+    key: ValueKey(_step),
+    rise: 80,
+    scale: 1,
+    duration: ElioMotion.base,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.elio.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        boxShadow: l3Shadow,
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final (i, b) in buttons.indexed) ...[
+                if (i > 0) const SizedBox(height: 10),
+                SizedBox(width: double.infinity, child: b),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     ),
@@ -355,62 +386,85 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
       return Center(child: LearnSpinner(label: l10n.lnLoadingGuide));
     }
     final xp = widget.guide.xp.lab;
+    Widget rise(int i, Widget child) => ElioPopIn(index: i, child: child);
     return LearnListView(
       children: [
-        LearnCard(
-          color: p.surfaceRaised,
-          child: Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: ShapeDecoration(
-                  color: p.surface,
-                  shape: learnShape(14),
-                ),
-                child: Icon(
-                  Icons.science_outlined,
-                  color: p.tertiaryText,
-                  size: 28,
-                ),
+        // Hero: the thermometer hops in its bubble (8 s idle hint).
+        rise(
+          0,
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            decoration: ShapeDecoration(
+              color: toneBg(p, LearnTone.warning),
+              shape: RoundedRectangleBorder(
+                borderRadius: leafL,
+                side: BorderSide(color: toneBorder(p, LearnTone.warning)),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      c.text('lab.title') ?? l10n.g4MiniLab,
-                      style: context.text.titleLarge,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: p.surface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: ElioIdleLoop(
+                    builder: (context, w, child) => Transform.translate(
+                      offset: Offset(0, -4 * w),
+                      child: child,
                     ),
-                    Text(
-                      l10n.g4LabMeta(xp),
-                      style: context.text.labelMedium?.copyWith(
-                        color: p.textSecondary,
-                      ),
-                    ),
-                  ],
+                    child: const LearnIllustration(LearnArt.miniLab),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        LearnCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _label(l10n.g4WhatToDo, p.textSecondary),
-              const SizedBox(height: 8),
-              for (final (i, s) in c.labSteps.indexed)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 26,
-                        height: 26,
+                      Text(
+                        c.text('lab.title') ?? l10n.g4MiniLab,
+                        style: context.text.titleLarge,
+                      ),
+                      Text(l10n.g4LabMeta(xp), style: captionStyle(context)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        rise(1, _label(l10n.g4WhatToDo, p.textSecondary)),
+        const SizedBox(height: 10),
+        // Steps: each number bubble pops in turn (spring/pop, 60 ms apart).
+        for (final (i, step) in c.labSteps.indexed)
+          ElioPopIn(
+            index: i + 2,
+            stagger: const Duration(milliseconds: 60),
+            curve: ElioMotion.pop,
+            scale: 0.8,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: ShapeDecoration(
+                  color: p.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: leafS,
+                    side: BorderSide(color: p.borderSubtle),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Transform.rotate(
+                      angle: (i.isEven ? -6 : 6) * 0.0175,
+                      child: Container(
+                        width: 30,
+                        height: 30,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: p.primary,
@@ -418,74 +472,108 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
                         ),
                         child: Text(
                           '${i + 1}',
-                          style: context.text.labelMedium?.copyWith(
+                          style: context.text.labelLarge?.copyWith(
                             color: p.onPrimary,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(s, style: context.text.bodyLarge)),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(step, style: context.text.bodyLarge)),
+                  ],
                 ),
-              if (c.text('lab.question') case final q?)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: ShapeDecoration(
-                    color: p.surfaceRaised,
-                    shape: learnShape(learnRadiusM),
-                  ),
-                  child: Text(
-                    l10n.g4YourQuestion(q),
-                    style: context.text.bodyMedium,
-                  ),
-                ),
-            ],
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        LearnCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _label('✦ ${l10n.g4AiLooksFor}', p.primaryText),
-              const SizedBox(height: 6),
-              for (final m in c.mustShow) _check(m, null),
-            ],
+        if (c.text('lab.question') case final q?)
+          rise(
+            c.labSteps.length + 2,
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: ShapeDecoration(
+                color: toneBg(p, LearnTone.info),
+                shape: const RoundedRectangleBorder(borderRadius: leafS),
+              ),
+              child: Text(
+                l10n.g4YourQuestion(q),
+                style: context.text.bodyMedium,
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        LearnCard(
-          color: p.surfaceRaised,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.back_hand_outlined, color: p.secondaryText),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 20),
+        rise(
+          c.labSteps.length + 3,
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: ShapeDecoration(
+              color: p.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: leafL,
+                side: BorderSide(color: p.borderSubtle),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(l10n.g4SafetyTitle, style: context.text.titleSmall),
-                    const SizedBox(height: 4),
-                    Text(
-                      [
-                        // Published safety items often have no full stop; keep them as sentences.
-                        for (final x in c.safety)
-                          RegExp(r'[.!?]$').hasMatch(x.trim())
-                              ? x.trim()
-                              : '${x.trim()}.',
-                        l10n.g4PrivacyNote,
-                      ].join(' '),
-                      style: context.text.bodySmall?.copyWith(
-                        color: p.textSecondary,
+                    Expanded(
+                      child: _label('✦ ${l10n.g4AiLooksFor}', p.primaryText),
+                    ),
+                    Transform.rotate(
+                      angle: -0.1,
+                      child: const RobotBuddy(
+                        mood: RobotMood.searching,
+                        height: 44,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                for (final m in c.mustShow) _check(m, null),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        rise(
+          c.labSteps.length + 4,
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: ShapeDecoration(
+              color: p.surfaceRaised,
+              shape: const RoundedRectangleBorder(borderRadius: leafS),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.back_hand_outlined, color: p.secondaryText),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.g4SafetyTitle, style: context.text.titleSmall),
+                      const SizedBox(height: 4),
+                      Text(
+                        [
+                          // Published safety items often have no full stop; keep them as sentences.
+                          for (final x in c.safety)
+                            RegExp(r'[.!?]$').hasMatch(x.trim())
+                                ? x.trim()
+                                : '${x.trim()}.',
+                          l10n.g4PrivacyNote,
+                        ].join(' '),
+                        style: context.text.bodySmall?.copyWith(
+                          color: p.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -502,7 +590,7 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
   );
 
   /// Checklist row 537:2521: empty (brief), pass or missing.
-  Widget _check(String text, bool? pass) {
+  Widget _check(String text, bool? pass, [int i = 0]) {
     final p = context.elio;
     return Semantics(
       label: pass == null
@@ -513,27 +601,35 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
           children: [
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: pass == null
+            // Results: each verdict ticks in turn (spring/pop, 120 ms apart).
+            ElioPopIn(
+              play: pass != null,
+              delay: Duration(milliseconds: 380 + 120 * i),
+              curve: ElioMotion.pop,
+              scale: 0.3,
+              rise: 0,
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: pass == null
+                      ? null
+                      : pass
+                      ? p.primary
+                      : p.errorText.withValues(alpha: 0.1),
+                  border: pass == null
+                      ? Border.all(color: p.formBorder, width: 1.5)
+                      : null,
+                ),
+                child: pass == null
                     ? null
-                    : pass
-                    ? p.primary
-                    : p.errorText.withValues(alpha: 0.1),
-                border: pass == null
-                    ? Border.all(color: p.formBorder, width: 1.5)
-                    : null,
+                    : Icon(
+                        pass ? Icons.check_rounded : Icons.close_rounded,
+                        size: 16,
+                        color: pass ? p.onPrimary : p.errorText,
+                      ),
               ),
-              child: pass == null
-                  ? null
-                  : Icon(
-                      pass ? Icons.check_rounded : Icons.close_rounded,
-                      size: 16,
-                      color: pass ? p.onPrimary : p.errorText,
-                    ),
             ),
             const SizedBox(width: 12),
             Expanded(child: Text(text, style: context.text.bodyMedium)),
@@ -556,13 +652,36 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
               borderRadius: BorderRadius.circular(learnRadiusXl),
               child: ColoredBox(
                 color: p.tooltipBg,
-                child: cam == null
-                    ? const SizedBox.expand()
-                    : ListenableBuilder(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (cam != null)
+                      ListenableBuilder(
                         listenable: cam,
                         builder: (_, _) =>
                             SizedBox.expand(child: cam.buildPreview()),
                       ),
+                    // Shutter: a white flash, 0.7 → 0 (fast).
+                    IgnorePointer(
+                      child: Replay(
+                        trigger: _flash,
+                        duration: ElioMotion.base,
+                        curve: ElioMotion.exit,
+                        builder: (context, v, _) => ColoredBox(
+                          color: Colors.white.withValues(
+                            alpha: _flash == 0 ? 0 : 0.7 * (1 - v),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (recording)
+                      Positioned(
+                        left: 14,
+                        top: 14,
+                        child: _RecPill(seconds: _seconds),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -590,17 +709,19 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
               SizedBox(
                 width: double.infinity,
                 child: recording
-                    ? FilledButton.icon(
+                    ? L3Button(
+                        label: l10n.g4StopRecording,
+                        height: 52,
+                        chevron: false,
+                        feedback: false,
                         onPressed: _seconds >= labMinSeconds ? _stop : null,
-                        icon: const Icon(Icons.stop_rounded),
-                        label: Text(l10n.g4StopRecording),
-                        style: _big(context, filled: true),
                       )
-                    : FilledButton.icon(
+                    : L3Button(
+                        label: l10n.g4TakePhoto,
+                        height: 52,
+                        chevron: false,
+                        feedback: false,
                         onPressed: _photo,
-                        icon: const Icon(Icons.photo_camera_outlined),
-                        label: Text(l10n.g4TakePhoto),
-                        style: _big(context, filled: true),
                       ),
               ),
               TextButton(
@@ -637,15 +758,20 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
           crossAxisSpacing: 8,
           children: [
             for (final (i, f) in _frames.indexed)
-              Semantics(
-                image: true,
-                label: l10n.g4FrameN(i + 1),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.memory(
-                    f,
-                    fit: BoxFit.cover,
-                    gaplessPlayback: true,
+              ElioPopIn(
+                index: i,
+                curve: ElioMotion.pop,
+                scale: 0.7,
+                child: Semantics(
+                  image: true,
+                  label: l10n.g4FrameN(i + 1),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(
+                      f,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                    ),
                   ),
                 ),
               ),
@@ -677,45 +803,51 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
     final must = c?.mustShow ?? const <String>[];
     return LearnListView(
       children: [
+        // Badge card: the badge drops in turning (spring/bounce), the rays
+        // turn slowly behind it for 8 s, the XP sticker bounces on last.
         Container(
           padding: const EdgeInsets.all(24),
           decoration: ShapeDecoration(
             color: p.primary,
-            shape: learnShape(learnRadiusXl),
+            shape: const RoundedRectangleBorder(borderRadius: leafL),
           ),
           child: Column(
             children: [
               Text(
-                l10n.g4BadgeUnlocked,
-                style: context.text.labelMedium?.copyWith(
-                  color: p.onPrimary,
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.w700,
+                l10n.g4BadgeUnlocked.toUpperCase(),
+                style: context.text.labelSmall?.copyWith(color: p.onPrimary),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: 150,
+                height: 150,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    ElioIdleLoop(
+                      period: const Duration(seconds: 4),
+                      builder: (context, w, child) =>
+                          Transform.rotate(angle: w * 0.6, child: child),
+                      child: CustomPaint(
+                        size: const Size.square(150),
+                        painter: _Rays(p.onPrimary.withValues(alpha: 0.18)),
+                      ),
+                    ),
+                    ElioPopIn(
+                      curve: ElioMotion.bounce,
+                      scale: 0.3,
+                      rise: -30,
+                      duration: ElioMotion.celebrate,
+                      child: const _BadgeArt(size: 112),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              Container(
-                width: 112,
-                height: 112,
-                decoration: BoxDecoration(
-                  color: p.surface,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: p.secondaryText.withValues(alpha: 0.3),
-                    width: 8,
-                  ),
-                ),
-                child: Icon(
-                  Icons.emoji_events_outlined,
-                  size: 48,
-                  color: p.secondaryText,
-                ),
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Text(
                 c?.text('badge.name') ?? l10n.g4LabApproved,
                 textAlign: TextAlign.center,
-                style: context.text.headlineSmall?.copyWith(color: p.onPrimary),
+                style: context.text.displaySmall?.copyWith(color: p.onPrimary),
               ),
               if (c?.text('badge.text') case final t?) ...[
                 const SizedBox(height: 8),
@@ -726,19 +858,24 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
                 ),
               ],
               const SizedBox(height: 14),
-              GuideChip(
-                [
-                  if (xp > 0) l10n.g4PlusXp(xp),
-                  l10n.g4XpOf(total, widget.guide.xp.total),
-                ].join(' · '),
-                fill: p.surface,
-                color: p.secondaryText,
+              ElioPopIn(
+                delay: const Duration(milliseconds: 600),
+                curve: ElioMotion.bounce,
+                scale: 0.3,
+                child: L3Sticker(
+                  label: [
+                    if (xp > 0) l10n.g4PlusXp(xp),
+                    l10n.g4XpOf(total, widget.guide.xp.total),
+                  ].join(' · '),
+                  color: p.secondaryText,
+                  angle: -4,
+                ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 12),
-        LearnCard(
+        _Leaf(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -747,7 +884,7 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
               Text(_reason(), style: context.text.bodyLarge),
               const SizedBox(height: 6),
               for (final (i, m) in must.indexed)
-                _check(m, _checklist(must.length)[i]),
+                _check(m, _checklist(must.length)[i], i),
             ],
           ),
         ),
@@ -765,39 +902,56 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
     final must = c?.mustShow ?? const <String>[];
     return LearnListView(
       children: [
-        LearnCard(
-          color: p.errorText.withValues(alpha: 0.08),
-          borderColor: p.errorText.withValues(alpha: 0.3),
-          child: Row(
-            children: [
-              const SizedBox(
-                width: 72,
-                child: LearnIllustration(LearnArt.mascot, height: 64),
+        // Almost: the card shakes once and ELIO droops (Sad), then perks up
+        // to Thinking for the teacher-review case.
+        _ShakeOnce(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: ShapeDecoration(
+              color: toneBg(p, LearnTone.error),
+              shape: RoundedRectangleBorder(
+                borderRadius: leafL,
+                side: BorderSide(color: toneBorder(p, LearnTone.error)),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      teacher ? l10n.g4TeacherTitle : l10n.g4AlmostTitle,
-                      style: context.text.titleLarge,
+            ),
+            child: Row(
+              children: [
+                ElioPopIn(
+                  curve: ElioMotion.pop,
+                  scale: 0.5,
+                  child: Transform.rotate(
+                    angle: -0.12,
+                    child: RobotBuddy(
+                      mood: teacher ? RobotMood.thinking : RobotMood.sad,
+                      height: 68,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      teacher ? l10n.g4TeacherBody : l10n.g4AlmostBody,
-                      style: context.text.bodySmall?.copyWith(
-                        color: p.textSecondary,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        teacher ? l10n.g4TeacherTitle : l10n.g4AlmostTitle,
+                        style: context.text.titleLarge,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        teacher ? l10n.g4TeacherBody : l10n.g4AlmostBody,
+                        style: context.text.bodySmall?.copyWith(
+                          color: p.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 12),
-        LearnCard(
+        _Leaf(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -806,7 +960,7 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
               Text(_reason(), style: context.text.bodyLarge),
               const SizedBox(height: 6),
               for (final (i, m) in must.indexed)
-                _check(m, _checklist(must.length)[i]),
+                _check(m, _checklist(must.length)[i], i),
             ],
           ),
         ),
@@ -833,4 +987,197 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
       ],
     );
   }
+}
+
+/// Checking: ELIO searches (bobbing, 4 s loops while it waits) above a soft
+/// scanning bar and a dot-dot-dot line.
+class _Checking extends StatelessWidget {
+  const _Checking();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ElioIdleLoop(
+              length: const Duration(minutes: 2),
+              period: const Duration(milliseconds: 1400),
+              builder: (context, w, child) => Transform.translate(
+                offset: Offset(0, -8 * w),
+                child: Transform.rotate(angle: (w - 0.5) * 0.12, child: child),
+              ),
+              child: const RobotBuddy(mood: RobotMood.searching, height: 110),
+            ),
+            const SizedBox(height: 24),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                l10n.g4LabChecking,
+                style: context.text.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                minHeight: 6,
+                color: p.primary,
+                backgroundColor: p.borderSubtle,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// REC pill over the camera: a red dot that pulses and the seconds.
+class _RecPill extends StatelessWidget {
+  const _RecPill({required this.seconds});
+  final int seconds;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 4, 10, 4),
+      decoration: ShapeDecoration(
+        color: p.surface,
+        shape: const StadiumBorder(),
+        shadows: l3Shadow,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ElioIdleLoop(
+            length: const Duration(minutes: 1),
+            period: const Duration(milliseconds: 900),
+            builder: (context, w, child) =>
+                Opacity(opacity: 0.35 + 0.65 * (1 - w), child: child),
+            child: Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: p.errorText,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '0:${seconds.toString().padLeft(2, '0')}',
+            style: context.text.labelLarge,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The lab badge: trophy in a ring.
+class _BadgeArt extends StatelessWidget {
+  const _BadgeArt({required this.size});
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: p.surface,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: p.secondaryText.withValues(alpha: 0.3),
+          width: size * 0.07,
+        ),
+        boxShadow: l3Shadow,
+      ),
+      child: Icon(
+        Icons.emoji_events_outlined,
+        size: size * 0.45,
+        color: p.secondaryText,
+      ),
+    );
+  }
+}
+
+/// Sun rays behind the badge.
+class _Rays extends CustomPainter {
+  _Rays(this.color);
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    final c = s.center(Offset.zero);
+    final paint = Paint()..color = color;
+    for (var i = 0; i < 12; i++) {
+      final a = i * math.pi / 6;
+      final path = Path()
+        ..moveTo(c.dx, c.dy)
+        ..lineTo(
+          c.dx + math.cos(a - 0.12) * s.width / 2,
+          c.dy + math.sin(a - 0.12) * s.width / 2,
+        )
+        ..lineTo(
+          c.dx + math.cos(a + 0.12) * s.width / 2,
+          c.dy + math.sin(a + 0.12) * s.width / 2,
+        )
+        ..close();
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_Rays old) => old.color != color;
+}
+
+/// Shakes its child once, 3 × 6 px, right after it shows.
+class _ShakeOnce extends StatefulWidget {
+  const _ShakeOnce({required this.child});
+  final Widget child;
+  @override
+  State<_ShakeOnce> createState() => _ShakeOnceState();
+}
+
+class _ShakeOnceState extends State<_ShakeOnce> {
+  Object? _trigger;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _trigger = 1);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      ElioShake(trigger: _trigger, child: widget.child);
+}
+
+/// Surface card with leaf corners 22/8/22/8 and a subtle edge.
+class _Leaf extends StatelessWidget {
+  const _Leaf({required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: ShapeDecoration(
+      color: context.elio.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: leafS,
+        side: BorderSide(color: context.elio.borderSubtle),
+      ),
+    ),
+    child: child,
+  );
 }

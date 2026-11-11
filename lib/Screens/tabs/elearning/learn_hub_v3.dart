@@ -513,7 +513,7 @@ class GuideTicket extends ConsumerWidget {
                   child: Material(
                     type: MaterialType.transparency,
                     child: InkWell(
-                      onTap: onOpen,
+                      onTap: guideContinue(onOpen),
                       customBorder: learnShape(26),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -637,27 +637,32 @@ class GuideTicket extends ConsumerWidget {
                                   ),
                                   const SizedBox(width: 12),
                                   ExcludeSemantics(
-                                    child: FilledButton(
-                                      onPressed: onOpen,
-                                      style: FilledButton.styleFrom(
-                                        minimumSize: const Size(48, 44),
-                                        padding: const EdgeInsets.fromLTRB(
-                                          16,
-                                          0,
-                                          10,
-                                          0,
-                                        ),
-                                        shape: const StadiumBorder(),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(l10n.lnContinue),
-                                          const Icon(
-                                            Icons.chevron_right_rounded,
-                                            size: 20,
+                                    // Continue: squeeze (ElioPress), S2 + H-medium,
+                                    // then the polaroid flies into the issue.
+                                    child: ElioPress(
+                                      pressed: 0.94,
+                                      child: FilledButton(
+                                        onPressed: guideContinue(onOpen),
+                                        style: FilledButton.styleFrom(
+                                          minimumSize: const Size(48, 44),
+                                          padding: const EdgeInsets.fromLTRB(
+                                            16,
+                                            0,
+                                            10,
+                                            0,
                                           ),
-                                        ],
+                                          shape: const StadiumBorder(),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(l10n.lnContinue),
+                                            const Icon(
+                                              Icons.chevron_right_rounded,
+                                              size: 20,
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -693,11 +698,13 @@ class GuideTicket extends ConsumerWidget {
                               child: child,
                             ),
                           ),
-                          child: GuidePolaroid(
-                            guide: guide,
-                            width: 86,
-                            angle: -7,
-                            thumb: true,
+                          child: GuidePolaroidHero(
+                            polaroid: GuidePolaroid(
+                              guide: guide,
+                              width: 86,
+                              angle: -7,
+                              thumb: true,
+                            ),
                           ),
                         ),
                       ),
@@ -855,6 +862,12 @@ class _StopDots extends StatelessWidget {
     );
   }
 }
+
+/// Continue into a guide: S2 seed pop and a firm tap, then [open].
+VoidCallback guideContinue(VoidCallback open) => () {
+  elioFeedback(ElioSfx.pop, ElioHaptics.medium);
+  open();
+};
 
 // ---------------------------------------------------------------- bubbles
 

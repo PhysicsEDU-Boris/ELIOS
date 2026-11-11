@@ -9,6 +9,9 @@ import 'package:intl/intl.dart';
 import '../../../../l10n/l10n.dart';
 import '../../../../services/daily_guide_service.dart';
 import '../../../../services/guide_progress.dart';
+import '../../../../services/elio_feedback.dart';
+import '../../../../theme/elio_motion.dart';
+import '../../../../widgets/learn/learn_l3.dart';
 import '../../../../widgets/learn/learn_ui.dart';
 import '../learn_content.dart';
 
@@ -146,6 +149,53 @@ class GuidePolaroid extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Continue (decision 0207): the guide's polaroid flies from the ticket into
+/// the issue page hero, turning from one tilt to the other on the way
+/// (expressive, emphasized, the page route's own timing). Use it in one
+/// place per screen only; tags must be unique on a route.
+class GuidePolaroidHero extends StatelessWidget {
+  const GuidePolaroidHero({super.key, required this.polaroid});
+  final GuidePolaroid polaroid;
+
+  static Object tag(DailyGuide g) => 'guide-polaroid-${g.date}';
+
+  @override
+  Widget build(BuildContext context) => Hero(
+    tag: tag(polaroid.guide),
+    flightShuttleBuilder: (_, animation, direction, fromCtx, toCtx) {
+      GuidePolaroid of(BuildContext c) =>
+          ((c.widget as Hero).child as GuidePolaroidHero).polaroid;
+      final from = of(fromCtx), to = of(toCtx);
+      final a = CurvedAnimation(
+        parent: animation,
+        curve: ElioMotion.emphasized,
+        reverseCurve: ElioMotion.exit,
+      );
+      return AnimatedBuilder(
+        animation: a,
+        builder: (context, _) {
+          final t = a.value;
+          // Push: from → to as t goes 0 → 1; pop runs the same tween back.
+          final (begin, end) = direction == HeroFlightDirection.push
+              ? (from, to)
+              : (to, from);
+          final angle = begin.angle + (end.angle - begin.angle) * t;
+          return FittedBox(
+            child: GuidePolaroid(
+              guide: end.guide,
+              width: end.width,
+              angle: angle,
+              caption: end.caption,
+              thumb: end.thumb,
+            ),
+          );
+        },
+      );
+    },
+    child: polaroid,
+  );
 }
 
 /// The guide's manifest photo (or topic art on the topic tint), decoded at the
@@ -338,12 +388,14 @@ class GuideTodayCard extends ConsumerWidget {
                 ExcludeSemantics(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 6, left: 4, right: 12),
-                    child: GuidePolaroid(
-                      guide: guide,
-                      width: 118,
-                      caption:
-                          content?.text('cover.image_caption') ??
-                          guide.photo?.caption[lang],
+                    child: GuidePolaroidHero(
+                      polaroid: GuidePolaroid(
+                        guide: guide,
+                        width: 118,
+                        caption:
+                            content?.text('cover.image_caption') ??
+                            guide.photo?.caption[lang],
+                      ),
                     ),
                   ),
                 ),
@@ -406,21 +458,29 @@ class GuideTodayCard extends ConsumerWidget {
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              child: FilledButton(
-                onPressed: onOpen,
-                style: FilledButton.styleFrom(
-                  backgroundColor: p.surface,
-                  foregroundColor: p.primaryText,
-                  minimumSize: const Size.fromHeight(52),
-                  shape: const StadiumBorder(),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(done == 0 ? l10n.g4StartGuide : l10n.g4ContinueGuide),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.chevron_right_rounded),
-                  ],
+              child: ElioPress(
+                pressed: 0.96,
+                child: FilledButton(
+                  onPressed: () {
+                    elioFeedback(ElioSfx.pop, ElioHaptics.medium);
+                    onOpen();
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: p.surface,
+                    foregroundColor: p.primaryText,
+                    minimumSize: const Size.fromHeight(52),
+                    shape: const StadiumBorder(),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        done == 0 ? l10n.g4StartGuide : l10n.g4ContinueGuide,
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right_rounded),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -631,11 +691,20 @@ class GuideStreakCard extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // The week's days pop in left to right (spring/pop, 50 ms).
                 for (final (i, (date, status)) in s.week.indexed)
-                  _WeekDay(
-                    letter: letters.length == 7 ? letters[i] : '',
-                    status: status,
-                    date: date,
+                  ElioPopIn(
+                    index: i,
+                    stagger: const Duration(milliseconds: 50),
+                    delay: const Duration(milliseconds: 120),
+                    curve: ElioMotion.pop,
+                    scale: 0.5,
+                    rise: 6,
+                    child: _WeekDay(
+                      letter: letters.length == 7 ? letters[i] : '',
+                      status: status,
+                      date: date,
+                    ),
                   ),
               ],
             ),
@@ -738,6 +807,9 @@ class GuideMiniStack extends StatelessWidget {
 }
 
 /// Top bar 537:2540: back, title + subtitle, optional action.
+/// Daily Guides header in the Learn L3 style (decision 0207): curved green
+/// band, round back / close button, title with a squiggle that draws in,
+/// subtitle, and an optional tilted sticker on the right.
 class GuideTopBar extends StatelessWidget implements PreferredSizeWidget {
   const GuideTopBar({
     super.key,
@@ -751,44 +823,79 @@ class GuideTopBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? action;
   final IconData leadingIcon;
 
+  static const _height = 104.0;
+
   @override
-  Size get preferredSize => const Size.fromHeight(64);
+  Size get preferredSize => const Size.fromHeight(_height);
 
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
-    return AppBar(
-      backgroundColor: p.background,
-      surfaceTintColor: Colors.transparent,
-      toolbarHeight: 64,
-      titleSpacing: 0,
-      leading: IconButton(
-        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-        icon: Icon(leadingIcon, color: p.textPrimary),
-        onPressed: () => Navigator.of(context).maybePop(),
-      ),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.text.titleMedium,
+    final top = MediaQuery.paddingOf(context).top;
+    final on = p.onPrimary;
+    return SizedBox(
+      height: top + _height,
+      child: L3Hero(
+        curveBottom: top + _height,
+        radiusY: 260,
+        bubble: 140,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16, top + 8, 16, 0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              L3RoundButton(
+                icon: leadingIcon,
+                tooltip: leadingIcon == Icons.close_rounded
+                    ? MaterialLocalizations.of(context).closeButtonTooltip
+                    : MaterialLocalizations.of(context).backButtonTooltip,
+                onTap: () => Navigator.of(context).maybePop(),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.text.titleLarge?.copyWith(color: on),
+                      ),
+                      ElioPopIn(
+                        rise: 0,
+                        scale: 1,
+                        child: LearnSquiggle(width: 96, color: on),
+                      ),
+                      if (subtitle != null)
+                        Text(
+                          subtitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: captionStyle(context, on),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              if (action != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, top: 8),
+                  // The sticker drops in with a little spin (spring/bounce).
+                  child: ElioPopIn(
+                    delay: const Duration(milliseconds: 160),
+                    curve: ElioMotion.bounce,
+                    scale: 0.4,
+                    rise: -16,
+                    child: Transform.rotate(angle: -0.09, child: action),
+                  ),
+                ),
+            ],
           ),
-          if (subtitle != null)
-            Text(
-              subtitle!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: context.text.labelMedium?.copyWith(color: p.textSecondary),
-            ),
-        ],
+        ),
       ),
-      actions: [
-        if (action != null)
-          Padding(padding: const EdgeInsets.only(right: 12), child: action),
-      ],
     );
   }
 }

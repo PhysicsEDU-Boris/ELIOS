@@ -8,6 +8,9 @@ import '../../../../l10n/l10n.dart';
 import '../../../../services/daily_guide_service.dart';
 import '../../../../services/guide_progress.dart';
 import '../../../../services/quiz_tts_service.dart';
+import '../../../../services/elio_feedback.dart';
+import '../../../../theme/elio_motion.dart';
+import '../../../../widgets/learn/learn_l3.dart';
 import '../../../../widgets/learn/learn_ui.dart';
 import '../learn_content.dart';
 import 'guide_lab_page.dart';
@@ -145,7 +148,11 @@ class _GuideQuizPageState extends ConsumerState<GuideQuizPage> {
         // XP on offer only before the first pass (a retry earns none).
         action: _wasPassed
             ? null
-            : GuideChip(l10n.g4PlusXp(g.xp.quiz), tone: LearnTone.warning),
+            : L3Sticker(
+                label: l10n.g4PlusXp(g.xp.quiz),
+                color: p.secondaryText,
+                angle: 0,
+              ),
       ),
       body: SafeArea(
         top: false,
@@ -200,7 +207,15 @@ class _GuideQuizPageState extends ConsumerState<GuideQuizPage> {
               ? () => setState(() => deck.review(null))
               : () {
                   setState(deck.next);
-                  if (deck.finished) unawaited(_finish(lang));
+                  if (deck.finished) {
+                    // Result: a pass sparkles, a miss gets a soft warning.
+                    deck.score >= 2
+                        ? elioFeedback(ElioSfx.sparkle, ElioHaptics.celebrate)
+                        : unawaited(ElioHaptics.warning());
+                    unawaited(_finish(lang));
+                  } else {
+                    elioFeedback(ElioSfx.tick, ElioHaptics.select);
+                  }
                 },
         );
         final result = _ResultCard(
@@ -246,11 +261,14 @@ class _GuideQuizPageState extends ConsumerState<GuideQuizPage> {
                   i: i,
                   deck: deck,
                   // Only the front card is tappable and read by screen readers.
-                  child: IgnorePointer(
-                    ignoring: i != deck.current,
-                    child: ExcludeSemantics(
-                      excluding: i != deck.current,
-                      child: card(i),
+                  child: _DealIn(
+                    index: n - 1 - i,
+                    child: IgnorePointer(
+                      ignoring: i != deck.current,
+                      child: ExcludeSemantics(
+                        excluding: i != deck.current,
+                        child: card(i),
+                      ),
                     ),
                   ),
                 ),
@@ -310,15 +328,15 @@ class _GuideQuizPageState extends ConsumerState<GuideQuizPage> {
       key: key,
       offset: Offset(x, deck.finished ? -0.04 : 0),
       duration: d,
-      curve: Curves.easeOut,
+      curve: ElioMotion.emphasized,
       child: AnimatedRotation(
         turns: rot / 360,
         duration: d,
-        curve: Curves.easeOut,
+        curve: ElioMotion.soft,
         child: AnimatedScale(
           scale: scale,
           duration: d,
-          curve: Curves.easeOut,
+          curve: ElioMotion.soft,
           child: child,
         ),
       ),
@@ -326,6 +344,8 @@ class _GuideQuizPageState extends ConsumerState<GuideQuizPage> {
   }
 }
 
+/// Q1–Q3 chips. The current one is green; a checked one flips to ✓ / ✗
+/// with a pop (spring/pop).
 class _Dots extends StatelessWidget {
   const _Dots({required this.deck});
   final QuizDeck deck;
@@ -333,23 +353,75 @@ class _Dots extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
+    Widget chip(int i) {
+      if (deck.checked.contains(i)) {
+        return GuideChip(
+          deck.correct(i) ? '✓ Q${i + 1}' : '✗ Q${i + 1}',
+          tone: deck.correct(i) ? LearnTone.success : LearnTone.error,
+        );
+      }
+      if (i == deck.current) {
+        return GuideChip('Q${i + 1}', fill: p.primary, color: p.onPrimary);
+      }
+      return GuideChip('Q${i + 1}');
+    }
+
+    String state(int i) => deck.checked.contains(i)
+        ? 'c${deck.correct(i)}'
+        : i == deck.current
+        ? 'now'
+        : 'next';
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(top: 12, bottom: 8),
       child: Wrap(
         alignment: WrapAlignment.center,
         spacing: 8,
         children: [
           for (var i = 0; i < deck.questions.length; i++)
-            if (deck.checked.contains(i))
-              GuideChip(
-                deck.correct(i) ? '✓ Q${i + 1}' : '✗ Q${i + 1}',
-                tone: deck.correct(i) ? LearnTone.success : LearnTone.error,
-              )
-            else if (i == deck.current)
-              GuideChip('Q${i + 1}', fill: p.primary, color: p.onPrimary)
-            else
-              GuideChip('Q${i + 1}'),
+            AnimatedSwitcher(
+              duration: ElioMotion.slow,
+              switchInCurve: ElioMotion.pop,
+              transitionBuilder: (child, a) =>
+                  ScaleTransition(scale: a, child: child),
+              child: KeyedSubtree(
+                key: ValueKey('$i-${state(i)}'),
+                child: chip(i),
+              ),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+/// Cards are dealt in from the right on open, back card first (spring/soft,
+/// 80 ms apart). Reduced motion: at rest.
+class _DealIn extends StatelessWidget {
+  const _DealIn({required this.index, required this.child});
+  final int index;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (context.reduceMotion) return child;
+    final start = index * 0.12;
+    return ElioAfterFirstFrame(
+      builder: (context, ready) => TweenAnimationBuilder<double>(
+        tween: Tween(end: ready ? 1 : 0),
+        duration: const Duration(milliseconds: 620),
+        builder: (context, v, child) {
+          final t = ElioMotion.soft.transform(
+            Interval(start, math.min(1, start + 0.7)).transform(v),
+          );
+          return Opacity(
+            opacity: t.clamp(0.0, 1.0),
+            child: Transform.translate(
+              offset: Offset(260 * (1 - t), 0),
+              child: Transform.rotate(angle: 0.35 * (1 - t), child: child),
+            ),
+          );
+        },
+        child: child,
       ),
     );
   }
@@ -391,6 +463,23 @@ class _QuizCard extends StatelessWidget {
         : l10n.g4NotQuite;
     return _CardShell(
       width: width,
+      // Front card only: Thinking while you answer, Excited or Sad once
+      // checked (cross-fade).
+      buddy: index != deck.current && !readOnly
+          ? null
+          : ElioPopIn(
+              delay: const Duration(milliseconds: 300),
+              curve: ElioMotion.pop,
+              scale: 0.4,
+              child: RobotBuddy(
+                mood: !checked
+                    ? RobotMood.thinking
+                    : right
+                    ? RobotMood.excited
+                    : RobotMood.sad,
+                height: 56,
+              ),
+            ),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -400,6 +489,7 @@ class _QuizCard extends StatelessWidget {
               children: [
                 GuideChip('Q${index + 1}', fill: p.primary, color: p.onPrimary),
                 const Spacer(),
+                const SizedBox(width: 48),
                 IconButton.outlined(
                   tooltip: l10n.g4Listen,
                   onPressed: () => QuizTtsService.instance.speak(
@@ -428,76 +518,87 @@ class _QuizCard extends StatelessWidget {
                   answered: checked,
                   onTap: () {
                     deck.select(i);
+                    elioFeedback(ElioSfx.tick, ElioHaptics.select);
                     onChanged();
                   },
                 ),
               ),
             if (feedback != null)
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(12),
-                decoration: ShapeDecoration(
-                  color: (right ? p.primaryText : p.errorText).withValues(
-                    alpha: 0.08,
-                  ),
-                  shape: learnShape(learnRadiusM),
-                ),
-                child: Semantics(
-                  liveRegion: true,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        feedback,
-                        style: context.text.titleSmall?.copyWith(
-                          color: right ? p.primaryText : p.errorText,
+              ElioPopIn(
+                key: ValueKey('fb-$index-$right'),
+                curve: ElioMotion.pop,
+                scale: 0.9,
+                rise: 8,
+                child: Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: ShapeDecoration(
+                    color: toneBg(
+                      p,
+                      right ? LearnTone.success : LearnTone.error,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: leafS,
+                      side: BorderSide(
+                        color: toneBorder(
+                          p,
+                          right ? LearnTone.success : LearnTone.error,
                         ),
+                        width: 1.5,
                       ),
-                      if (q.explanation != null) ...[
-                        const SizedBox(height: 4),
-                        Text(q.explanation!, style: context.text.bodyMedium),
+                    ),
+                  ),
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          feedback,
+                          style: context.text.titleSmall?.copyWith(
+                            color: right ? p.primaryText : p.errorText,
+                          ),
+                        ),
+                        if (q.explanation != null) ...[
+                          const SizedBox(height: 4),
+                          Text(q.explanation!, style: context.text.bodyMedium),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
             if (readOnly)
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: onNext,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(52),
-                    shape: const StadiumBorder(),
-                  ),
-                  child: Text(l10n.g4BackToResult),
-                ),
+              L3Button(
+                label: l10n.g4BackToResult,
+                secondary: true,
+                chevron: false,
+                height: 52,
+                onPressed: onNext,
               )
             else
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: checked
-                      ? onNext
-                      : deck.canCheck
-                      ? () {
-                          deck.check();
-                          onChanged();
-                        }
-                      : null,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(52),
-                    shape: const StadiumBorder(),
-                  ),
-                  child: Text(
-                    !checked
-                        ? l10n.g4Check
-                        : last
-                        ? l10n.g4SeeResult
-                        : l10n.g4NextCard,
-                  ),
-                ),
+              L3Button(
+                label: !checked
+                    ? l10n.g4Check
+                    : last
+                    ? l10n.g4SeeResult
+                    : l10n.g4NextCard,
+                height: 52,
+                chevron: checked,
+                feedback: false,
+                onPressed: checked
+                    ? onNext
+                    : deck.canCheck
+                    ? () {
+                        deck.check();
+                        // Right: S4 + success; wrong: S5 + error (the option shakes).
+                        deck.correct(index)
+                            ? elioFeedback(ElioSfx.chime, ElioHaptics.success)
+                            : elioFeedback(ElioSfx.knock, ElioHaptics.error);
+                        onChanged();
+                      }
+                    : null,
               ),
           ],
         ),
@@ -506,15 +607,18 @@ class _QuizCard extends StatelessWidget {
   }
 }
 
+/// Quiz card: leaf 30/10/30/10 on the surface. [buddy] peeks over the top
+/// right corner (the ELIO robot buddy, tilted −8°).
 class _CardShell extends StatelessWidget {
-  const _CardShell({required this.width, required this.child});
+  const _CardShell({required this.width, required this.child, this.buddy});
   final double width;
   final Widget child;
+  final Widget? buddy;
 
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
-    return Container(
+    final card = Container(
       width: width,
       constraints: BoxConstraints(
         maxHeight: MediaQuery.sizeOf(context).height * 0.72,
@@ -522,7 +626,10 @@ class _CardShell extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: ShapeDecoration(
         color: p.surface,
-        shape: learnShape(28, BorderSide(color: p.borderSubtle)),
+        shape: RoundedRectangleBorder(
+          borderRadius: leafL,
+          side: BorderSide(color: p.borderSubtle),
+        ),
         shadows: p.isDark
             ? null
             : const [
@@ -534,6 +641,20 @@ class _CardShell extends StatelessWidget {
               ],
       ),
       child: child,
+    );
+    if (buddy == null) return card;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        card,
+        Positioned(
+          right: -6,
+          top: -34,
+          child: IgnorePointer(
+            child: Transform.rotate(angle: -0.14, child: buddy),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -568,21 +689,43 @@ class _ResultCard extends StatelessWidget {
     final xp = server?['xp_awarded'] is int
         ? server!['xp_awarded'] as int
         : (passed && firstPass ? guide.xp.quiz : 0);
+    Widget pop(int ms, Widget child, {Curve curve = ElioMotion.pop}) =>
+        ElioPopIn(
+          delay: Duration(milliseconds: ms),
+          curve: curve,
+          scale: 0.5,
+          rise: 0,
+          child: child,
+        );
     return _CardShell(
       width: width,
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const LearnIllustration(LearnArt.mascot, height: 72),
+            // ELIO jumps up happy for a pass, droops for a miss.
+            pop(
+              120,
+              curve: ElioMotion.bounce,
+              RobotBuddy(
+                mood: passed ? RobotMood.excited : RobotMood.sad,
+                height: 84,
+              ),
+            ),
             const SizedBox(height: 8),
             Semantics(
               liveRegion: true,
-              child: Text(
-                l10n.g4ScoreOf(score, deck.questions.length),
-                style: context.text.headlineSmall,
+              label: l10n.g4ScoreOf(score, deck.questions.length),
+              excludeSemantics: true,
+              child: ElioCountUp(
+                value: score,
+                builder: (context, v) => Text(
+                  l10n.g4ScoreOf(v, deck.questions.length),
+                  style: context.text.displaySmall,
+                ),
               ),
             ),
+            const SquiggleDraw(width: 120),
             const SizedBox(height: 4),
             Text(
               passed ? l10n.g4QuizNice : l10n.g4QuizAlmost,
@@ -590,7 +733,17 @@ class _ResultCard extends StatelessWidget {
               style: context.text.bodyMedium?.copyWith(color: p.textSecondary),
             ),
             const SizedBox(height: 12),
-            if (xp > 0) GuideChip(l10n.g4PlusXp(xp), tone: LearnTone.warning),
+            if (xp > 0)
+              pop(
+                340,
+                curve: ElioMotion.bounce,
+                L3Sticker(
+                  label: l10n.g4PlusXp(xp),
+                  color: p.secondaryText,
+                  angle: -4,
+                  border: true,
+                ),
+              ),
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -624,25 +777,32 @@ class _ResultCard extends StatelessWidget {
               spacing: 8,
               children: [
                 for (var i = 0; i < deck.questions.length; i++)
-                  Semantics(
-                    button: true,
-                    label: l10n.g4ReviewQuestion(i + 1),
-                    excludeSemantics: true,
-                    child: InkWell(
-                      customBorder: const StadiumBorder(),
-                      onTap: () => onReview(i),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          minHeight: 48,
-                          minWidth: 48,
-                        ),
-                        child: Center(
-                          widthFactor: 1,
-                          child: GuideChip(
-                            deck.correct(i) ? '✓ Q${i + 1}' : '✗ Q${i + 1}',
-                            tone: deck.correct(i)
-                                ? LearnTone.success
-                                : LearnTone.error,
+                  pop(
+                    260 + 60 * i,
+                    Semantics(
+                      container: true,
+                      button: true,
+                      label: l10n.g4ReviewQuestion(i + 1),
+                      excludeSemantics: true,
+                      child: InkWell(
+                        customBorder: const StadiumBorder(),
+                        onTap: () {
+                          elioFeedback(ElioSfx.tick, ElioHaptics.select);
+                          onReview(i);
+                        },
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            minHeight: 48,
+                            minWidth: 48,
+                          ),
+                          child: Center(
+                            widthFactor: 1,
+                            child: GuideChip(
+                              deck.correct(i) ? '✓ Q${i + 1}' : '✗ Q${i + 1}',
+                              tone: deck.correct(i)
+                                  ? LearnTone.success
+                                  : LearnTone.error,
+                            ),
                           ),
                         ),
                       ),
@@ -651,38 +811,20 @@ class _ResultCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.of(
-                  context,
-                ).pushReplacement(learnRoute<void>(GuideLabPage(guide: guide))),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  shape: const StadiumBorder(),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(l10n.g4StartLab),
-                    const Icon(Icons.chevron_right_rounded),
-                  ],
-                ),
-              ),
+            L3Button(
+              label: l10n.g4StartLab,
+              height: 52,
+              onPressed: () => Navigator.of(
+                context,
+              ).pushReplacement(learnRoute<void>(GuideLabPage(guide: guide))),
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: onRetry,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  shape: const StadiumBorder(),
-                  foregroundColor: p.textPrimary,
-                  side: BorderSide(color: p.borderMedium),
-                ),
-                child: Text(l10n.g4TryQuizAgain),
-              ),
+            L3Button(
+              label: l10n.g4TryQuizAgain,
+              secondary: true,
+              chevron: false,
+              height: 52,
+              onPressed: onRetry,
             ),
           ],
         ),

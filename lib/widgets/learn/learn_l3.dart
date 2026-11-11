@@ -227,6 +227,26 @@ class LearnSquiggle extends StatelessWidget {
   );
 }
 
+/// A squiggle that draws itself once when it first shows (standard, 420 ms).
+class SquiggleDraw extends StatelessWidget {
+  const SquiggleDraw({super.key, this.width = 120, this.color});
+  final double width;
+  final Color? color;
+  @override
+  Widget build(BuildContext context) => ElioAfterFirstFrame(
+    builder: (context, ready) => TweenAnimationBuilder<double>(
+      tween: Tween(
+        begin: ElioMotion.reduced(context) ? 1 : 0,
+        end: ready ? 1 : 0,
+      ),
+      duration: const Duration(milliseconds: 420),
+      curve: ElioMotion.standard,
+      builder: (context, t, _) =>
+          LearnSquiggle(width: width, color: color, progress: t),
+    ),
+  );
+}
+
 /// A squiggle that draws itself in during the Learn intro.
 class LearnIntroSquiggle extends StatelessWidget {
   const LearnIntroSquiggle({
@@ -673,11 +693,16 @@ class L3Button extends StatelessWidget {
     this.secondary = false,
     this.chevron = true,
     this.height = 56,
+    this.feedback = true,
   });
   final String label;
   final VoidCallback? onPressed;
   final bool secondary, chevron;
   final double height;
+
+  /// False when [onPressed] plays its own sound (a check chime, a shutter),
+  /// so the press pop does not swallow it.
+  final bool feedback;
 
   @override
   Widget build(BuildContext context) {
@@ -700,7 +725,7 @@ class L3Button extends StatelessWidget {
             customBorder: const StadiumBorder(),
             onTap: enabled
                 ? () {
-                    elioFeedback(ElioSfx.pop, ElioHaptics.medium);
+                    if (feedback) elioFeedback(ElioSfx.pop, ElioHaptics.medium);
                     onPressed!();
                   }
                 : null,

@@ -13,7 +13,9 @@ import 'package:elio/services/frame_source/frame_source.dart';
 import 'package:elio/services/frame_source/phone_frame_source.dart';
 import 'package:elio/services/quiz_tts_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
-import 'package:elio/widgets/learn/learn_l3.dart' show LearnIntroHost;
+import 'package:elio/services/elio_feedback.dart';
+import 'package:elio/widgets/learn/learn_l3.dart'
+    show LearnIntroHost, L3Button, LearnTabPill;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -58,7 +60,16 @@ void main() {
   late FakeGuidesServer server;
   late ValueNotifier<Locale> locale;
 
+  final sounds = <ElioSfx>[];
   setUp(() {
+    // Sounds go to a sink (the test VM has no audio plugin); a fake clock,
+    // 1 s per call, so the 120 ms gap never drops one.
+    sounds.clear();
+    var now = DateTime(2026);
+    ElioSound.instance
+      ..sink = ((s, _) => sounds.add(s))
+      ..isSilent = (() async => false)
+      ..clock = () => now = now.add(const Duration(seconds: 1));
     SharedPreferences.setMockInitialValues({
       'daily-guide-notified': '2099-01-01',
     });
@@ -166,8 +177,8 @@ void main() {
     expect(find.textContaining('✓'), findsNothing);
     expect(
       t
-          .widget<FilledButton>(
-            find.widgetWithText(FilledButton, 'Check').hitTestable(),
+          .widget<L3Button>(
+            find.widgetWithText(L3Button, 'Check').hitTestable(),
           )
           .onPressed,
       isNull,
@@ -179,12 +190,12 @@ void main() {
     ]) {
       await t.tap(find.text(choice).hitTestable());
       await t.pump();
-      await t.tap(find.widgetWithText(FilledButton, 'Check').hitTestable());
+      await t.tap(find.widgetWithText(L3Button, 'Check').hitTestable());
       await t.pump();
       if (choice == '2,400 m/s') {
         expect(find.text('Not quite. You multiplied.'), findsOneWidget);
       }
-      await t.tap(find.widgetWithText(FilledButton, next).hitTestable());
+      await t.tap(find.widgetWithText(L3Button, next).hitTestable());
       await t.pump(const Duration(milliseconds: 400));
     }
     for (var i = 0; i < 4; i++) {
@@ -203,6 +214,8 @@ void main() {
     expect(chips.map((c) => c.dy).toSet().length, 1);
     expect(find.text('Saved to your account'), findsOneWidget);
     expect(server.calls.where((c) => c['op'] == 'quiz').length, 1);
+    // L3 (0207): the Q chips pop in one after another; let them land.
+    await t.pump(const Duration(milliseconds: 800));
     await t.tap(find.bySemanticsLabel('Look at question 2 again'));
     await t.pump(const Duration(milliseconds: 400));
     expect(find.text('Back to result'), findsOneWidget);
@@ -217,7 +230,6 @@ void main() {
     'quiz: reduced motion shows one card at a time (cross-fade, no stack)',
     (t) async {
       await pump(t, GuideQuizPage(guide: await guide()), reduceMotion: true);
-      expect(find.byType(AnimatedSwitcher), findsOneWidget);
       expect(find.byType(AnimatedRotation), findsNothing);
       expect(find.text('What equation calculates speed?'), findsOneWidget);
       expect(
@@ -301,11 +313,11 @@ void main() {
       expect(find.text('How fast rivers carve deep rocks'), findsWidgets);
       expect(find.text('2 issues'), findsOneWidget);
       await t.scrollUntilVisible(
-        find.widgetWithText(ChoiceChip, 'Heat'),
+        find.widgetWithText(LearnTabPill, 'Heat'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      await t.tap(find.widgetWithText(ChoiceChip, 'Heat'));
+      await t.tap(find.widgetWithText(LearnTabPill, 'Heat'));
       await t.pump();
       expect(
         find.byType(GuideArchiveCard),
@@ -324,10 +336,10 @@ void main() {
     'issue: EN | ID switch changes only the guide; Continue goes to the next unfinished stop',
     (t) async {
       await pump(t, GuideIssuePage(guide: await guide()));
-      expect(find.text('Your quest map'), findsOneWidget);
       expect(find.text('Continue · Stop 1'), findsOneWidget);
       // Multi-placeholder strings keep their argument order (phone bug: "60 / 0 XP", "English-page PDF").
-      expect(find.text('0 / 60 XP'), findsOneWidget);
+      // L3 (0207): the XP shows in the header sticker and by the quest map.
+      expect(find.text('0 / 60 XP'), findsWidgets);
       expect(
         find.text('4-page PDF · English · saved for offline'),
         findsOneWidget,
@@ -340,6 +352,11 @@ void main() {
         await t.pump(const Duration(milliseconds: 100));
       }
       expect(find.text('Secepat apa sungai mengikis batu'), findsOneWidget);
+      await t.scrollUntilVisible(
+        find.text('Your quest map'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(
         find.text('Your quest map'),
         findsOneWidget,
@@ -427,6 +444,60 @@ void main() {
       expect(find.byType(GuideTodayCard), findsOneWidget);
     },
   );
+
+  testWidgets('L3 feedback: quiz pick ticks, right chimes, wrong knocks', (
+    t,
+  ) async {
+    await pump(t, GuideQuizPage(guide: await guide()));
+    await t.pump(const Duration(milliseconds: 700)); // cards dealt in
+    await t.tap(find.text('v = s ÷ t').hitTestable());
+    await t.pump();
+    expect(sounds, [ElioSfx.tick]);
+    await t.tap(find.widgetWithText(L3Button, 'Check').hitTestable());
+    await t.pump();
+    expect(sounds.last, ElioSfx.chime, reason: 'Check plays only its chime');
+    await t.tap(find.widgetWithText(L3Button, 'Next card').hitTestable());
+    await t.pump(const Duration(milliseconds: 400));
+    await t.tap(find.text('2,400 m/s').hitTestable());
+    await t.pump();
+    await t.tap(find.widgetWithText(L3Button, 'Check').hitTestable());
+    await t.pump();
+    expect(sounds.last, ElioSfx.knock);
+  });
+
+  testWidgets('L3 feedback: lab record and photos play their sounds', (
+    t,
+  ) async {
+    final cam = SlowCamera();
+    await pump(t, GuideLabPage(guide: await guide(), camera: cam));
+    await t.tap(find.text('Take 3 photos instead'));
+    await t.pump();
+    await t.tap(find.text('Take photo'));
+    await t.pump();
+    expect(sounds, containsAllInOrder([ElioSfx.pop, ElioSfx.shutter]));
+    for (final c in cam.waiting) {
+      c.complete();
+    }
+    await t.pump();
+    await t.tap(find.text('Cancel'));
+    await t.pump();
+    sounds.clear();
+    await t.tap(find.text('Record 15–30 s'));
+    await t.pump();
+    expect(sounds, [ElioSfx.recStart]);
+    await t.tap(find.text('Cancel'));
+    await t.pump();
+  });
+
+  testWidgets('L3 feedback: Continue on Today\'s Guide pops', (t) async {
+    await pump(t, const DailyGuidesPage());
+    await t.pump(const Duration(milliseconds: 600));
+    await t.tap(find.text('Start guide'));
+    await t.pump();
+    expect(sounds, contains(ElioSfx.pop));
+    await t.pump(const Duration(seconds: 1));
+    expect(find.byType(GuideIssuePage), findsOneWidget);
+  });
 
   for (final (name, build) in <(String, Widget Function(DailyGuide))>[
     ('feed', (_) => const DailyGuidesPage()),

@@ -19,7 +19,8 @@ import 'package:elio/services/frame_source/frame_source.dart';
 import 'package:elio/services/frame_source/phone_frame_source.dart';
 import 'package:elio/services/quiz_tts_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
-import 'package:elio/widgets/learn/learn_l3.dart' show LearnIntroHost;
+import 'package:elio/services/elio_feedback.dart';
+import 'package:elio/widgets/learn/learn_l3.dart' show LearnIntroHost, L3Button;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -52,7 +53,12 @@ class FakeCamera extends PhoneFrameSource {
 
 void main() {
   setUpAll(loadElioFonts);
-  setUp(() => LearnIntroHost.played = true);
+  setUp(() {
+    LearnIntroHost.played = true;
+    ElioSound.instance
+      ..sink = ((_, _) {})
+      ..isSilent = (() async => false);
+  });
 
   for (final dark in [false, true]) {
     for (final lang in ['en', 'id']) {
@@ -152,13 +158,13 @@ void main() {
         await t.tap(find.text(option).hitTestable());
         await t.pump();
         await t.tap(
-          find.widgetWithText(FilledButton, l10n.g4Check).hitTestable(),
+          find.widgetWithText(L3Button, l10n.g4Check).hitTestable(),
         );
         await t.pump(const Duration(milliseconds: 400));
       }
 
       Future<void> next(WidgetTester t, String label) async {
-        await t.tap(find.widgetWithText(FilledButton, label).hitTestable());
+        await t.tap(find.widgetWithText(L3Button, label).hitTestable());
         await t.pump(const Duration(milliseconds: 500));
       }
 

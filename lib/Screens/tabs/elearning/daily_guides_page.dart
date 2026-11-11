@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../services/elio_feedback.dart';
+import '../../../theme/elio_motion.dart';
+import '../../../widgets/learn/learn_l3.dart';
 import '../../../l10n/l10n.dart';
 import '../../../providers/daily_guide_provider.dart';
 import '../../../services/daily_guide_service.dart';
@@ -30,9 +34,12 @@ class GuidesHubSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (guides.isNotEmpty) ...[
-          GuideTodayCard(
-            guide: guides.first,
-            onOpen: () => openGuideIssue(context, guides.first),
+          ElioPopIn(
+            index: 2,
+            child: GuideTodayCard(
+              guide: guides.first,
+              onOpen: () => openGuideIssue(context, guides.first),
+            ),
           ),
           const SizedBox(height: 12),
         ],
@@ -113,13 +120,16 @@ class _DailyGuidesPageState extends ConsumerState<DailyGuidesPage> {
           button: true,
           label: l10n.g4GuideLanguage,
           excludeSemantics: true,
-          child: OutlinedButton(
-            onPressed: () => showGuideLanguageSheet(context, ref),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(48, 44),
+          child: FilledButton(
+            onPressed: () {
+              elioFeedback(ElioSfx.pop, ElioHaptics.light);
+              showGuideLanguageSheet(context, ref);
+            },
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(48, 40),
               shape: const StadiumBorder(),
-              side: BorderSide(color: p.borderSubtle),
-              foregroundColor: p.textPrimary,
+              backgroundColor: p.surface,
+              foregroundColor: p.primaryText,
             ),
             child: Text(
               ref.watch(guideProgressProvider.select((s) => s.guideLang)) ==
@@ -212,7 +222,7 @@ class _DailyGuidesPageState extends ConsumerState<DailyGuidesPage> {
             onPrimary: _refresh,
           )
         else ...[
-          const GuideStreakCard(),
+          const ElioPopIn(child: GuideStreakCard()),
           const SizedBox(height: 18),
           Text(
             l10n.g4TodayDate(
@@ -228,9 +238,12 @@ class _DailyGuidesPageState extends ConsumerState<DailyGuidesPage> {
             ),
           ),
           const SizedBox(height: 12),
-          GuideTodayCard(
-            guide: guides.first,
-            onOpen: () => openGuideIssue(context, guides.first),
+          ElioPopIn(
+            index: 2,
+            child: GuideTodayCard(
+              guide: guides.first,
+              onOpen: () => openGuideIssue(context, guides.first),
+            ),
           ),
           Row(
             children: [
@@ -254,21 +267,10 @@ class _DailyGuidesPageState extends ConsumerState<DailyGuidesPage> {
                   for (final t in [null, ...themes])
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(t == null ? l10n.g4All : topicName(t)),
+                      child: LearnTabPill(
+                        label: t == null ? l10n.g4All : topicName(t),
                         selected: _topic == t,
-                        showCheckmark: false,
-                        selectedColor: p.primary,
-                        backgroundColor: p.surface,
-                        shape: StadiumBorder(
-                          side: BorderSide(
-                            color: _topic == t ? p.primary : p.borderSubtle,
-                          ),
-                        ),
-                        labelStyle: context.text.labelLarge?.copyWith(
-                          color: _topic == t ? p.onPrimary : p.textPrimary,
-                        ),
-                        onSelected: (_) => setState(() => _topic = t),
+                        onTap: () => setState(() => _topic = t),
                       ),
                     ),
                 ],
@@ -283,13 +285,23 @@ class _DailyGuidesPageState extends ConsumerState<DailyGuidesPage> {
                 spacing: 16,
                 runSpacing: 16,
                 children: [
+                  // Cards rise in two by two; a topic change deals them again.
                   for (final (i, g) in archive.indexed)
                     SizedBox(
                       width: width,
-                      child: GuideArchiveCard(
-                        guide: g,
-                        tiltLeft: i % columns == 0,
-                        onTap: () => openGuideIssue(context, g),
+                      child: ElioPopIn(
+                        key: ValueKey('${_topic ?? 'all'}-${g.date}'),
+                        index: i ~/ columns + 3,
+                        curve: ElioMotion.pop,
+                        scale: 0.9,
+                        child: GuideArchiveCard(
+                          guide: g,
+                          tiltLeft: i % columns == 0,
+                          onTap: () {
+                            elioFeedback(ElioSfx.pop, ElioHaptics.light);
+                            openGuideIssue(context, g);
+                          },
+                        ),
                       ),
                     ),
                 ],
