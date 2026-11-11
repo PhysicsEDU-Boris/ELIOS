@@ -13,6 +13,7 @@ import 'package:elio/services/frame_source/frame_source.dart';
 import 'package:elio/services/frame_source/phone_frame_source.dart';
 import 'package:elio/services/quiz_tts_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:elio/widgets/learn/learn_l3.dart' show LearnIntroHost;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -53,6 +54,7 @@ class SlowCamera extends PhoneFrameSource {
 
 void main() {
   setUpAll(loadElioFonts);
+  setUp(() => LearnIntroHost.played = true);
   late FakeGuidesServer server;
   late ValueNotifier<Locale> locale;
 

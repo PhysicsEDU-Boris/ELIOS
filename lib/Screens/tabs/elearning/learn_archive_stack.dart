@@ -40,11 +40,7 @@ class ArchiveStack extends ConsumerStatefulWidget {
 
 enum _Phase { rest, drag, flick, tuck, pulled }
 
-/// The fan-in plays once per app session, not on every return to Learn.
-bool _fanShown = false;
-
 class _ArchiveStackState extends ConsumerState<ArchiveStack> {
-  final bool _fanIn = !_fanShown;
   late List<int> _order = _initial();
   double _dx = 0;
   bool _armed = false; // drag is past the flick threshold
@@ -55,12 +51,6 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
 
   List<int> _initial() =>
       List.generate(math.min(3, widget.guides.length), (i) => i);
-
-  @override
-  void initState() {
-    super.initState();
-    _fanShown = true;
-  }
 
   @override
   void didUpdateWidget(ArchiveStack old) {
@@ -249,13 +239,19 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
                         left: 200,
                         right: 0,
                         top: pulled ? 28 : 34,
-                        child: _Info(
-                          guide: top,
-                          pulled: pulled,
-                          onContinue: () {
-                            ElioHaptics.medium();
-                            widget.onOpen(top);
-                          },
+                        child: LearnIntroRise(
+                          from: 720,
+                          to: 1120,
+                          rise: 0,
+                          dx: 20,
+                          child: _Info(
+                            guide: top,
+                            pulled: pulled,
+                            onContinue: () {
+                              ElioHaptics.medium();
+                              widget.onOpen(top);
+                            },
+                          ),
                         ),
                       ),
                       Positioned(
@@ -282,10 +278,9 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
       left: 0,
       top: 0,
       child: IgnorePointer(
-        child: ElioPopIn(
-          play: _fanIn,
-          index: 2 - slot,
-          child: AnimatedOpacity(
+        child: _deal(
+          slot,
+          AnimatedOpacity(
             opacity: _phase == _Phase.pulled ? 0.5 : 1,
             duration: ElioMotion.base,
             child: AnimatedContainer(
@@ -315,13 +310,35 @@ class _ArchiveStackState extends ConsumerState<ArchiveStack> {
     );
   }
 
+  /// Intro: the photos start as one pile in the top slot and are dealt out
+  /// to their fan places, back photo last (Learn intro 650–1150 ms).
+  Widget _deal(int slot, Widget child) {
+    final (x0, y0, a0) = _rest[0];
+    final (x, y, a) = _rest[math.min(slot, 2)];
+    final start = 650 + 70 * slot;
+    return LearnIntroSlice(
+      from: start,
+      to: start + 450,
+      curve: ElioMotion.soft,
+      child: child,
+      builder: (context, t, child) => Opacity(
+        opacity: (t * 3).clamp(0.0, 1.0),
+        child: Transform.translate(
+          offset: Offset((x0 - x) * (1 - t), (y0 - y) * (1 - t) + 24 * (1 - t)),
+          child: Transform.rotate(
+            angle: (a0 - a) * (1 - t) * _deg,
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _photo(DailyGuide g, int slot, double width) {
     final p = _place(slot);
-    // Entrance: rule 7, back photo first, 40 ms apart.
-    final photo = ElioPopIn(
-      play: _fanIn,
-      index: 2 - slot,
-      child: AnimatedOpacity(
+    final photo = _deal(
+      slot,
+      AnimatedOpacity(
         opacity: p.opacity,
         duration: p.d,
         child: AnimatedContainer(

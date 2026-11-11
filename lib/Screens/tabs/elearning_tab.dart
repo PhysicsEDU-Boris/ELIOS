@@ -147,11 +147,15 @@ class LearnHub extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = streams;
     if (s == null) {
+      final v = ref.watch(learnVideosProvider);
+      final g = ref.watch(learnGuidesProvider);
+      bool waiting(AsyncValue<Object?> a) => !a.hasValue && !a.hasError;
       return _states(
         ref.watch(learnModulesProvider),
-        ref.watch(learnVideosProvider).valueOrNull,
-        ref.watch(learnGuidesProvider).valueOrNull,
+        v.valueOrNull,
+        g.valueOrNull,
         ref.watch(learnQuizSetsProvider).valueOrNull,
+        lessonsPending: waiting(v) || waiting(g),
       );
     }
     return StreamBuilder<List<ElearningModule>>(
@@ -171,6 +175,9 @@ class LearnHub extends ConsumerWidget {
               v.data,
               g.data,
               q.data,
+              lessonsPending:
+                  v.connectionState == ConnectionState.waiting ||
+                  g.connectionState == ConnectionState.waiting,
             ),
           ),
         ),
@@ -182,8 +189,9 @@ class LearnHub extends ConsumerWidget {
     AsyncValue<List<ElearningModule>> modules,
     List<VideoLesson>? videos,
     List<GuideLesson>? guides,
-    List<QuizSet>? quizSets,
-  ) {
+    List<QuizSet>? quizSets, {
+    bool lessonsPending = false,
+  }) {
     final list = modules.valueOrNull;
     if (list == null && modules.hasError) {
       return LearnListView(
@@ -193,9 +201,15 @@ class LearnHub extends ConsumerWidget {
         ],
       );
     }
-    if (list == null) {
-      return const LearnListView(
-        children: [GuidesHubSection(), LearnHubSkeleton()],
+    // Wait for the lessons too, so the header never shows half-loaded
+    // numbers (a lesson stream error falls through with what it has).
+    if (list == null || (list.isNotEmpty && lessonsPending)) {
+      return ListView(
+        padding: EdgeInsets.zero,
+        children: const [
+          LearnHeaderShell(top: LearnTabTitle()),
+          Padding(padding: EdgeInsets.all(16), child: LearnHubSkeleton()),
+        ],
       );
     }
     if (list.isEmpty) {
@@ -447,100 +461,103 @@ class _HubContentState extends ConsumerState<_HubContent> {
       ),
     };
 
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 32),
-      children: [
-        LearnCurvedHeader(
-          modules: modules,
-          moduleValues: values,
-          overall: overall,
-          title: firstLaunch ? l10n.lnWelcome : l10n.lnYourProgress,
-          subtitle: started == 0
-              ? l10n.lnNoModulesStarted
-              : l10n.lnModulesInProgress(started, modules.length),
-          onOpenProgress: () => _push(const ProgressPage()),
-          top: const LearnTabTitle(),
-          rewards: l10n.lnGuideRewards(
-            ref.watch(guideProgressProvider.select((s) => s.totalXp)),
-            l10n.lnClovers(
-              ref.watch(guideProgressProvider.select((s) => s.streak)),
-            ),
-          ),
-          ticket: today == null
-              ? null
-              : GuideTicket(
-                  guide: today,
-                  onOpen: () => openGuideIssue(context, today),
-                ),
-        ),
-        if ((feed?.guides.length ?? 0) > 1)
-          ArchiveStack(
-            // Last 3 guides, newest older one on top; today's joins at the
-            // back while the feed has fewer than 3 older guides.
-            guides: [
-              ...feed!.guides.skip(1).take(3),
-              if (feed.guides.length < 4) feed.guides.first,
-            ],
-            onOpen: (g) => openGuideIssue(context, g),
-            onSeeAll: () => _push(const DailyGuidesPage()),
-          ),
-        LearnBubbles(
-          items: [
-            LearnBubble(
-              label: l10n.lnQuizShort,
-              asset: LearnArt.quizPaper,
-              tone: LearnTone.info,
-              badge: widget.quizSets?.length,
-              onTap: () => _push(const QuizPage()),
-            ),
-            if (today != null)
-              LearnBubble(
-                label: l10n.lnMiniLab,
-                asset: LearnArt.miniLab,
-                tone: LearnTone.warning,
-                onTap: () => _push(GuideLabPage(guide: today)),
+    // The Learn entrance plays once per session, when the hub has its data.
+    return LearnIntroHost(
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 32),
+        children: [
+          LearnCurvedHeader(
+            modules: modules,
+            moduleValues: values,
+            overall: overall,
+            title: firstLaunch ? l10n.lnWelcome : l10n.lnYourProgress,
+            subtitle: started == 0
+                ? l10n.lnNoModulesStarted
+                : l10n.lnModulesInProgress(started, modules.length),
+            onOpenProgress: () => _push(const ProgressPage()),
+            top: const LearnTabTitle(),
+            rewards: l10n.lnGuideRewards(
+              ref.watch(guideProgressProvider.select((s) => s.totalXp)),
+              l10n.lnClovers(
+                ref.watch(guideProgressProvider.select((s) => s.streak)),
               ),
-            LearnBubble(
-              label: l10n.lnArchive,
-              asset: 'assets/illustrations/learn/clover.svg',
-              tone: LearnTone.success,
-              badge: feed?.guides.length,
-              onTap: () => _push(const DailyGuidesPage()),
             ),
-            LearnBubble(
-              label: l10n.lnProgressShort,
-              asset: 'assets/illustrations/home/medal_gold.svg',
-              tone: LearnTone.error,
-              onTap: () => _push(const ProgressPage()),
-            ),
-          ],
-        ),
-        KeyedSubtree(
-          key: _exploreKey,
-          child: ExploreSection(
-            subtitle: l10n.lnExploreSub(lessons.length, modules.length),
-            counts: {
-              LearnExploreTab.modules: modules.length,
-              if (videos != null) LearnExploreTab.videos: videos.length,
-              LearnExploreTab.simulations: physicsModules.length,
-              if (guides != null) LearnExploreTab.guides: guides.length,
-            },
-            items: items,
-            initialPage: tab == LearnExploreTab.modules
-                ? orderedModules.indexWhere((m) => m.id == openModule.id)
-                : 0,
-            onSettled: tab == LearnExploreTab.modules
-                ? (i) => _onModuleSettled(orderedModules[i].id)
-                : null,
-            loading:
-                !lessonsLoaded &&
-                (tab == LearnExploreTab.videos ||
-                    tab == LearnExploreTab.guides),
-            onSeeAll: seeAll,
+            ticket: today == null
+                ? null
+                : GuideTicket(
+                    guide: today,
+                    onOpen: () => openGuideIssue(context, today),
+                  ),
           ),
-        ),
-        _discover(openModule, lessons, progress, viewed),
-      ],
+          if ((feed?.guides.length ?? 0) > 1)
+            ArchiveStack(
+              // Last 3 guides, newest older one on top; today's joins at the
+              // back while the feed has fewer than 3 older guides.
+              guides: [
+                ...feed!.guides.skip(1).take(3),
+                if (feed.guides.length < 4) feed.guides.first,
+              ],
+              onOpen: (g) => openGuideIssue(context, g),
+              onSeeAll: () => _push(const DailyGuidesPage()),
+            ),
+          LearnBubbles(
+            items: [
+              LearnBubble(
+                label: l10n.lnQuizShort,
+                asset: LearnArt.quizPaper,
+                tone: LearnTone.info,
+                badge: widget.quizSets?.length,
+                onTap: () => _push(const QuizPage()),
+              ),
+              if (today != null)
+                LearnBubble(
+                  label: l10n.lnMiniLab,
+                  asset: LearnArt.miniLab,
+                  tone: LearnTone.warning,
+                  onTap: () => _push(GuideLabPage(guide: today)),
+                ),
+              LearnBubble(
+                label: l10n.lnArchive,
+                asset: 'assets/illustrations/learn/clover.svg',
+                tone: LearnTone.success,
+                badge: feed?.guides.length,
+                onTap: () => _push(const DailyGuidesPage()),
+              ),
+              LearnBubble(
+                label: l10n.lnProgressShort,
+                asset: 'assets/illustrations/home/medal_gold.svg',
+                tone: LearnTone.error,
+                onTap: () => _push(const ProgressPage()),
+              ),
+            ],
+          ),
+          KeyedSubtree(
+            key: _exploreKey,
+            child: ExploreSection(
+              subtitle: l10n.lnExploreSub(lessons.length, modules.length),
+              counts: {
+                LearnExploreTab.modules: modules.length,
+                if (videos != null) LearnExploreTab.videos: videos.length,
+                LearnExploreTab.simulations: physicsModules.length,
+                if (guides != null) LearnExploreTab.guides: guides.length,
+              },
+              items: items,
+              initialPage: tab == LearnExploreTab.modules
+                  ? orderedModules.indexWhere((m) => m.id == openModule.id)
+                  : 0,
+              onSettled: tab == LearnExploreTab.modules
+                  ? (i) => _onModuleSettled(orderedModules[i].id)
+                  : null,
+              loading:
+                  !lessonsLoaded &&
+                  (tab == LearnExploreTab.videos ||
+                      tab == LearnExploreTab.guides),
+              onSeeAll: seeAll,
+            ),
+          ),
+          _discover(openModule, lessons, progress, viewed),
+        ],
+      ),
     );
   }
 

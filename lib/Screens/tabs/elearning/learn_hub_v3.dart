@@ -79,12 +79,26 @@ class LearnCurvedHeader extends StatelessWidget {
             Positioned(
               right: -60,
               top: -80,
-              child: _Blob(size: 190, color: p.primaryHover),
+              child: LearnIntroRise(
+                from: 0,
+                to: 500,
+                rise: 0,
+                scale: 0.4,
+                curve: ElioMotion.pop,
+                child: _Blob(size: 190, color: p.primaryHover),
+              ),
             ),
             Positioned(
               left: -24,
               bottom: 30,
-              child: _Blob(size: 64, color: p.primaryHover),
+              child: LearnIntroRise(
+                from: 80,
+                to: 580,
+                rise: 0,
+                scale: 0.4,
+                curve: ElioMotion.pop,
+                child: _Blob(size: 64, color: p.primaryHover),
+              ),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -117,10 +131,19 @@ class LearnCurvedHeader extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          _ModuleRing(
-                            values: moduleValues,
-                            tones: [for (final m in modules) moduleTone(m.id)],
-                            overall: overall,
+                          LearnIntroRise(
+                            from: 0,
+                            to: 420,
+                            rise: 0,
+                            scale: 0.8,
+                            curve: ElioMotion.pop,
+                            child: _ModuleRing(
+                              values: moduleValues,
+                              tones: [
+                                for (final m in modules) moduleTone(m.id),
+                              ],
+                              overall: overall,
+                            ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
@@ -148,13 +171,20 @@ class LearnCurvedHeader extends StatelessWidget {
                                   runSpacing: 4,
                                   children: [
                                     for (var i = 0; i < modules.length; i++)
-                                      _LegendDot(
-                                        color: toneFg(
-                                          p,
-                                          moduleTone(modules[i].id),
+                                      LearnIntroRise(
+                                        from: 420 + i * 70,
+                                        to: 720 + i * 70,
+                                        rise: 6,
+                                        scale: 0.6,
+                                        curve: ElioMotion.pop,
+                                        child: _LegendDot(
+                                          color: toneFg(
+                                            p,
+                                            moduleTone(modules[i].id),
+                                          ),
+                                          label:
+                                              '${binLabel(modules[i].id)} ${(moduleValues[i] * 100).round()}',
                                         ),
-                                        label:
-                                            '${binLabel(modules[i].id)} ${(moduleValues[i] * 100).round()}',
                                       ),
                                   ],
                                 ),
@@ -240,6 +270,33 @@ class _LegendDot extends StatelessWidget {
   }
 }
 
+/// Loading state of the hub: the empty curved header with the title, so the
+/// Learn intro grows out of it instead of a different layout.
+class LearnHeaderShell extends StatelessWidget {
+  const LearnHeaderShell({super.key, required this.top});
+  final Widget top;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    return ClipPath(
+      clipper: _CurveClipper(),
+      child: ColoredBox(
+        color: p.primary,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            MediaQuery.paddingOf(context).top + 8,
+            0,
+            180,
+          ),
+          child: top,
+        ),
+      ),
+    );
+  }
+}
+
 class _CurveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size s) => Path()
@@ -279,17 +336,23 @@ class _ModuleRing extends StatelessWidget {
           ),
         ],
       ),
-      child: CustomPaint(
-        painter: _RingPainter(
-          values: values,
-          colors: [for (final t in tones) toneFg(p, t)],
-        ),
-        child: Center(
-          child: Text(
-            '${(overall * 100).round()}%',
-            style: context.text.headlineSmall?.copyWith(
-              color: p.textPrimary,
-              fontWeight: FontWeight.w700,
+      // Intro: each module arc sweeps in turn and the % counts up.
+      child: LearnIntroSlice(
+        from: 120,
+        to: 760,
+        builder: (context, t, _) => CustomPaint(
+          painter: _RingPainter(
+            values: values,
+            colors: [for (final tone in tones) toneFg(p, tone)],
+            sweep: t,
+          ),
+          child: Center(
+            child: Text(
+              '${(overall * 100 * t.clamp(0.0, 1.0)).round()}%',
+              style: context.text.headlineSmall?.copyWith(
+                color: p.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),
@@ -299,9 +362,12 @@ class _ModuleRing extends StatelessWidget {
 }
 
 class _RingPainter extends CustomPainter {
-  _RingPainter({required this.values, required this.colors});
+  _RingPainter({required this.values, required this.colors, this.sweep = 1});
   final List<double> values;
   final List<Color> colors;
+
+  /// Intro 0..1: arc i fills during its own slice, one after another.
+  final double sweep;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -327,7 +393,8 @@ class _RingPainter extends CustomPainter {
         false,
         paint..color = colors[i].withValues(alpha: 0.18),
       );
-      final v = values[i].clamp(0.0, 1.0);
+      final own = ((sweep * (n + 1) - i) / 2).clamp(0.0, 1.0);
+      final v = values[i].clamp(0.0, 1.0) * own;
       if (v > 0) {
         canvas.drawArc(rect, start, sweep * v, false, paint..color = colors[i]);
       }
@@ -336,7 +403,7 @@ class _RingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RingPainter old) =>
-      old.values != values || old.colors != colors;
+      old.values != values || old.colors != colors || old.sweep != sweep;
 }
 
 /// Lays the child out normally but lifts it [dy] up over the previous sibling
@@ -422,176 +489,223 @@ class GuideTicket extends ConsumerWidget {
             : elioFeedback(ElioSfx.chime, ElioHaptics.select),
         builder: (context, bump) {
           final finished = done >= 3 ? bump : 0;
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                decoration: ShapeDecoration(
-                  color: p.surface,
-                  shape: learnShape(26),
-                  shadows: [
-                    BoxShadow(
-                      color: const Color(0xFF0F172A).withValues(alpha: 0.12),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: InkWell(
-                    onTap: onOpen,
-                    customBorder: learnShape(26),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(112, 14, 14, 12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      guide.issue == null
-                                          ? l10n.g4TodaysGuide
-                                          : l10n.g4TodaysGuideIssue(
-                                              guide.issue!,
-                                            ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: context.text.labelSmall?.copyWith(
-                                        color: p.primaryText,
-                                        letterSpacing: 1.2,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                  Replay(
-                                    trigger: finished,
-                                    duration: ElioMotion.celebrate,
-                                    curve: ElioMotion.bounce,
-                                    builder: (context, v, child) =>
-                                        Transform.scale(scale: v, child: child),
-                                    child: GuideChip(
-                                      l10n.g4PlusXp(guide.xp.total),
-                                      fill: p.secondaryText,
-                                      color: p.surface,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: context.text.titleMedium,
-                              ),
-                            ],
-                          ),
-                        ),
-                        _TearLine(notch: p.background, line: p.borderMedium),
-                        // The stub below the perforation slides 8 px and turns 2°.
-                        TweenAnimationBuilder<double>(
-                          tween: Tween(end: done >= 3 ? 1 : 0),
-                          duration: finished > 0 && !ElioMotion.reduced(context)
-                              ? ElioMotion.slow
-                              : Duration.zero,
-                          curve: ElioMotion.emphasized,
-                          builder: (context, v, child) => Transform.translate(
-                            offset: Offset(8 * v, 0),
-                            child: Transform.rotate(
-                              angle: 2 * v * math.pi / 180,
-                              alignment: Alignment.topLeft,
-                              child: child,
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 10, 12, 14),
-                            child: Row(
+          // Intro: the ticket rises in, then its polaroid swings into place.
+          return LearnIntroRise(
+            from: 250,
+            to: 650,
+            rise: 32,
+            scale: 0.96,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  decoration: ShapeDecoration(
+                    color: p.surface,
+                    shape: learnShape(26),
+                    shadows: [
+                      BoxShadow(
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.12),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: InkWell(
+                      onTap: onOpen,
+                      customBorder: learnShape(26),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(112, 14, 14, 12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        done == 3
-                                            ? l10n.g4AllStopsDone
-                                            : l10n.g4StopsDoneNext(
-                                                done,
-                                                nextStopLabel(progress),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        guide.issue == null
+                                            ? l10n.g4TodaysGuide
+                                            : l10n.g4TodaysGuideIssue(
+                                                guide.issue!,
                                               ),
-                                        maxLines: 2,
+                                        maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: context.text.labelMedium
-                                            ?.copyWith(color: p.textSecondary),
+                                        style: context.text.labelSmall
+                                            ?.copyWith(
+                                              color: p.primaryText,
+                                              letterSpacing: 1.2,
+                                              fontWeight: FontWeight.w700,
+                                            ),
                                       ),
-                                      const SizedBox(height: 6),
-                                      _StopDots(done: done, bump: bump),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                ExcludeSemantics(
-                                  child: FilledButton(
-                                    onPressed: onOpen,
-                                    style: FilledButton.styleFrom(
-                                      minimumSize: const Size(48, 44),
-                                      padding: const EdgeInsets.fromLTRB(
-                                        16,
-                                        0,
-                                        10,
-                                        0,
-                                      ),
-                                      shape: const StadiumBorder(),
                                     ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(l10n.lnContinue),
-                                        const Icon(
-                                          Icons.chevron_right_rounded,
-                                          size: 20,
+                                    Replay(
+                                      trigger: finished,
+                                      duration: ElioMotion.celebrate,
+                                      curve: ElioMotion.bounce,
+                                      builder: (context, v, child) =>
+                                          Transform.scale(
+                                            scale: v,
+                                            child: child,
+                                          ),
+                                      child: LearnIntroRise(
+                                        from: 900,
+                                        to: 1350,
+                                        rise: 0,
+                                        scale: 0,
+                                        curve: ElioMotion.bounce,
+                                        child: GuideChip(
+                                          l10n.g4PlusXp(guide.xp.total),
+                                          fill: p.secondaryText,
+                                          color: p.surface,
                                         ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: context.text.titleMedium,
                                 ),
                               ],
                             ),
                           ),
+                          _TearLine(notch: p.background, line: p.borderMedium),
+                          // The stub below the perforation slides 8 px and turns 2°.
+                          TweenAnimationBuilder<double>(
+                            tween: Tween(end: done >= 3 ? 1 : 0),
+                            duration:
+                                finished > 0 && !ElioMotion.reduced(context)
+                                ? ElioMotion.slow
+                                : Duration.zero,
+                            curve: ElioMotion.emphasized,
+                            builder: (context, v, child) => Transform.translate(
+                              offset: Offset(8 * v, 0),
+                              child: Transform.rotate(
+                                angle: 2 * v * math.pi / 180,
+                                alignment: Alignment.topLeft,
+                                child: child,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                10,
+                                12,
+                                14,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          done == 3
+                                              ? l10n.g4AllStopsDone
+                                              : l10n.g4StopsDoneNext(
+                                                  done,
+                                                  nextStopLabel(progress),
+                                                ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: context.text.labelMedium
+                                              ?.copyWith(
+                                                color: p.textSecondary,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        LearnIntroSlice(
+                                          from: 620,
+                                          to: 1080,
+                                          curve: Curves.linear,
+                                          builder: (context, t, _) => _StopDots(
+                                            done: done,
+                                            bump: bump,
+                                            reveal: t,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  ExcludeSemantics(
+                                    child: FilledButton(
+                                      onPressed: onOpen,
+                                      style: FilledButton.styleFrom(
+                                        minimumSize: const Size(48, 44),
+                                        padding: const EdgeInsets.fromLTRB(
+                                          16,
+                                          0,
+                                          10,
+                                          0,
+                                        ),
+                                        shape: const StadiumBorder(),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(l10n.lnContinue),
+                                          const Icon(
+                                            Icons.chevron_right_rounded,
+                                            size: 20,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 12,
+                  top: -20,
+                  child: IgnorePointer(
+                    child: ExcludeSemantics(
+                      child: Replay(
+                        trigger: finished,
+                        duration: ElioMotion.expressive,
+                        builder: (context, v, child) => Transform.rotate(
+                          angle: 3 * math.sin(v * 2 * math.pi) * math.pi / 180,
+                          child: child,
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 12,
-                top: -20,
-                child: IgnorePointer(
-                  child: ExcludeSemantics(
-                    child: Replay(
-                      trigger: finished,
-                      duration: ElioMotion.expressive,
-                      builder: (context, v, child) => Transform.rotate(
-                        angle: 3 * math.sin(v * 2 * math.pi) * math.pi / 180,
-                        child: child,
-                      ),
-                      child: GuidePolaroid(
-                        guide: guide,
-                        width: 86,
-                        angle: -7,
-                        thumb: true,
+                        child: LearnIntroSlice(
+                          from: 400,
+                          to: 950,
+                          curve: ElioMotion.pop,
+                          builder: (context, t, child) => Transform.translate(
+                            offset: Offset(-12 * (1 - t), -24 * (1 - t)),
+                            child: Transform.rotate(
+                              angle: -16 * (1 - t) * math.pi / 180,
+                              child: child,
+                            ),
+                          ),
+                          child: GuidePolaroid(
+                            guide: guide,
+                            width: 86,
+                            angle: -7,
+                            thumb: true,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -638,13 +752,18 @@ class _TearPainter extends CustomPainter {
 }
 
 class _StopDots extends StatelessWidget {
-  const _StopDots({required this.done, this.bump = 0});
+  const _StopDots({required this.done, this.bump = 0, this.reveal = 1});
   final int done, bump;
+
+  /// Intro 0..1: the done stops fill one after another along the path.
+  final double reveal;
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
+    final lit = done * reveal;
     Widget dot(int i) {
-      final isDone = i < done, now = i == done;
+      final fill = (lit - i).clamp(0.0, 1.0);
+      final isDone = i < done && fill > 0, now = i == done && reveal >= 1;
       final d = Container(
         width: 22,
         height: 22,
@@ -667,6 +786,12 @@ class _StopDots extends StatelessWidget {
             ? Icon(Icons.check_rounded, size: 14, color: p.onPrimary)
             : null,
       );
+      if (isDone && fill < 1) {
+        return Transform.scale(
+          scale: 0.4 + 0.6 * ElioMotion.pop.transform(fill),
+          child: d,
+        );
+      }
       // The stop that was just done fills with spring/pop.
       if (i != done - 1) return d;
       return Replay(
@@ -684,6 +809,22 @@ class _StopDots extends StatelessWidget {
         height: 3,
         color: i <= done ? p.primary : p.borderSubtle,
       );
+      if (reveal < 1 && i <= done) {
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: Stack(
+              children: [
+                Container(height: 3, color: p.borderSubtle),
+                FractionallySizedBox(
+                  widthFactor: (lit - i + 1).clamp(0.0, 1.0),
+                  child: bar,
+                ),
+              ],
+            ),
+          ),
+        );
+      }
       // The path to the stop just done draws in (ease/standard).
       return Expanded(
         child: Padding(
@@ -741,7 +882,20 @@ class LearnBubbles extends StatelessWidget {
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [for (final b in items) Expanded(child: _Bubble(b))],
+      children: [
+        for (final (i, b) in items.indexed)
+          Expanded(
+            // Intro: bubbles pop in left to right (spring/pop).
+            child: LearnIntroRise(
+              from: 800 + 60 * i,
+              to: 1200 + 60 * i,
+              rise: 14,
+              scale: 0.4,
+              curve: ElioMotion.pop,
+              child: _Bubble(b),
+            ),
+          ),
+      ],
     ),
   );
 }
@@ -816,29 +970,38 @@ class _BubbleState extends State<_Bubble> {
                       Positioned(
                         right: -4,
                         top: -4,
-                        child: TweenAnimationBuilder<double>(
-                          key: ValueKey(b.badge),
-                          tween: Tween(begin: reduced ? 1 : 1.4, end: 1),
-                          duration: ElioMotion.slow,
-                          curve: ElioMotion.pop,
-                          builder: (context, s, child) =>
-                              Transform.scale(scale: s, child: child),
-                          child: Container(
-                            constraints: const BoxConstraints(minWidth: 22),
-                            height: 22,
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
-                            alignment: Alignment.center,
-                            decoration: ShapeDecoration(
-                              color: p.primary,
-                              shape: StadiumBorder(
-                                side: BorderSide(color: p.surface, width: 2),
+                        child: LearnIntroRise(
+                          from: 1100,
+                          to: 1400,
+                          rise: 0,
+                          scale: 0,
+                          curve: ElioMotion.bounce,
+                          child: TweenAnimationBuilder<double>(
+                            key: ValueKey(b.badge),
+                            tween: Tween(begin: reduced ? 1 : 1.4, end: 1),
+                            duration: ElioMotion.slow,
+                            curve: ElioMotion.pop,
+                            builder: (context, s, child) =>
+                                Transform.scale(scale: s, child: child),
+                            child: Container(
+                              constraints: const BoxConstraints(minWidth: 22),
+                              height: 22,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
                               ),
-                            ),
-                            child: Text(
-                              '${b.badge}',
-                              style: context.text.labelSmall?.copyWith(
-                                color: p.onPrimary,
-                                fontWeight: FontWeight.w700,
+                              alignment: Alignment.center,
+                              decoration: ShapeDecoration(
+                                color: p.primary,
+                                shape: StadiumBorder(
+                                  side: BorderSide(color: p.surface, width: 2),
+                                ),
+                              ),
+                              child: Text(
+                                '${b.badge}',
+                                style: context.text.labelSmall?.copyWith(
+                                  color: p.onPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
@@ -940,7 +1103,7 @@ class ExploreSection extends ConsumerWidget {
                         style: context.text.displaySmall,
                       ),
                     ),
-                    const LearnSquiggle(width: 104),
+                    const LearnIntroSquiggle(from: 900, to: 1300, width: 104),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
@@ -971,12 +1134,18 @@ class ExploreSection extends ConsumerWidget {
             children: [
               for (final t in LearnExploreTab.values) ...[
                 if (t != LearnExploreTab.modules) const SizedBox(width: 8),
-                LearnTabPill(
-                  label: tabLabel(t),
-                  count: counts[t],
-                  selected: t == tab,
-                  onTap: () =>
-                      ref.read(learnExploreTabProvider.notifier).state = t,
+                LearnIntroRise(
+                  from: 900 + 40 * t.index,
+                  to: 1250 + 40 * t.index,
+                  rise: 0,
+                  dx: 24,
+                  child: LearnTabPill(
+                    label: tabLabel(t),
+                    count: counts[t],
+                    selected: t == tab,
+                    onTap: () =>
+                        ref.read(learnExploreTabProvider.notifier).state = t,
+                  ),
                 ),
               ],
             ],
@@ -1054,7 +1223,15 @@ class _ExploreCarouselState extends State<_ExploreCarousel> {
                   child: Transform.scale(
                     scale: 1 - (1 - _small) * t,
                     alignment: Alignment.bottomLeft,
-                    child: PopCard(item: items[i], large: true),
+                    child: LearnIntroRise(
+                      from: 950 + 80 * i,
+                      to: 1400,
+                      rise: 40,
+                      scale: 0.9,
+                      curve: ElioMotion.pop,
+                      alignment: Alignment.bottomLeft,
+                      child: PopCard(item: items[i], large: true),
+                    ),
                   ),
                 ),
               ),

@@ -206,22 +206,53 @@ class L3BackButton extends StatelessWidget {
 
 /// QQ / Squiggle under headings.
 class LearnSquiggle extends StatelessWidget {
-  const LearnSquiggle({super.key, this.width = 120, this.color});
+  const LearnSquiggle({
+    super.key,
+    this.width = 120,
+    this.color,
+    this.progress = 1,
+  });
   final double width;
   final Color? color;
+
+  /// 0..1 of the line drawn, left to right.
+  final double progress;
   @override
   Widget build(BuildContext context) => SizedBox(
     width: width,
     height: 9,
     child: CustomPaint(
-      painter: _SquigglePainter(color ?? context.elio.primary),
+      painter: _SquigglePainter(color ?? context.elio.primary, progress),
     ),
   );
 }
 
+/// A squiggle that draws itself in during the Learn intro.
+class LearnIntroSquiggle extends StatelessWidget {
+  const LearnIntroSquiggle({
+    super.key,
+    required this.from,
+    required this.to,
+    this.width = 120,
+    this.color,
+  });
+  final int from, to;
+  final double width;
+  final Color? color;
+  @override
+  Widget build(BuildContext context) => LearnIntroSlice(
+    from: from,
+    to: to,
+    curve: ElioMotion.standard,
+    builder: (context, t, _) =>
+        LearnSquiggle(width: width, color: color, progress: t),
+  );
+}
+
 class _SquigglePainter extends CustomPainter {
-  _SquigglePainter(this.color);
+  _SquigglePainter(this.color, [this.progress = 1]);
   final Color color;
+  final double progress;
   @override
   void paint(Canvas canvas, Size s) {
     final path = Path()..moveTo(2, s.height * 0.6);
@@ -232,8 +263,18 @@ class _SquigglePainter extends CustomPainter {
       path.quadraticBezierTo(x + w / 4, 0, x + w / 2, s.height * 0.6);
       path.quadraticBezierTo(x + 3 * w / 4, s.height, x + w, s.height * 0.6);
     }
+    if (progress <= 0) return;
+    final shown = progress >= 1
+        ? path
+        : (Path()..addPath(
+            path.computeMetrics().first.extractPath(
+              0,
+              path.computeMetrics().first.length * progress,
+            ),
+            Offset.zero,
+          ));
     canvas.drawPath(
-      path,
+      shown,
       Paint()
         ..color = color
         ..style = PaintingStyle.stroke
@@ -243,7 +284,8 @@ class _SquigglePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_SquigglePainter old) => old.color != color;
+  bool shouldRepaint(_SquigglePainter old) =>
+      old.color != color || old.progress != progress;
 }
 
 /// Overline, Headline title and squiggle (module, lesson, simulation).
@@ -1269,4 +1311,158 @@ class _SnapPhysics extends ScrollPhysics {
 
   @override
   bool get allowImplicitScrolling => false;
+}
+
+// ---------------------------------------------------------------- intro
+
+/// True once the Learn entrance has played in this app session.
+bool _learnIntroPlayed = false;
+
+/// One shared 1.4 s timeline for the Learn hub entrance (decision 0206):
+/// every element reads its own slice with [LearnIntroSlice], so the reveal
+/// lands as one choreography. Plays on the first Learn open per session;
+/// later opens and Reduce Motion show everything at rest. Three quiet
+/// sounds mark the beats: S2 as Today's Guide lands, S4 as the module ring
+/// closes, S9-short as the clover lands.
+class LearnIntroHost extends StatefulWidget {
+  const LearnIntroHost({super.key, required this.child});
+  final Widget child;
+
+  static const total = Duration(milliseconds: 1400);
+
+  /// Tests: false plays the intro on the next hub, true skips it.
+  @visibleForTesting
+  static set played(bool v) => _learnIntroPlayed = v;
+
+  @override
+  State<LearnIntroHost> createState() => _LearnIntroHostState();
+}
+
+class _LearnIntroHostState extends State<LearnIntroHost>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _c;
+  final _beats = <(int, ElioSfx, double)>[
+    (560, ElioSfx.pop, 0.6),
+    (760, ElioSfx.chime, 0.7),
+    (1000, ElioSfx.sparkleShort, 0.5),
+  ];
+  int _next = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_learnIntroPlayed) return;
+    _learnIntroPlayed = true;
+    if (ElioMotion.reduced(context)) return;
+    final c = _c = AnimationController(
+      vsync: this,
+      duration: LearnIntroHost.total,
+    )..addListener(_beat);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) c.forward();
+    });
+  }
+
+  void _beat() {
+    final ms = _c!.value * LearnIntroHost.total.inMilliseconds;
+    while (_next < _beats.length && ms >= _beats[_next].$1) {
+      final (_, sfx, gain) = _beats[_next++];
+      unawaited(ElioSound.instance.play(sfx, gain: gain));
+    }
+  }
+
+  @override
+  void dispose() {
+    _c?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      _LearnIntro(animation: _c, child: widget.child);
+}
+
+class _LearnIntro extends InheritedWidget {
+  const _LearnIntro({required this.animation, required super.child});
+  final Animation<double>? animation;
+
+  @override
+  bool updateShouldNotify(_LearnIntro old) => old.animation != animation;
+}
+
+/// Builds [child] with t = 0..1 over [from]..[to] ms of the Learn intro,
+/// shaped by [curve]. Outside an intro (or after it) t is 1.
+class LearnIntroSlice extends StatelessWidget {
+  const LearnIntroSlice({
+    super.key,
+    required this.from,
+    required this.to,
+    required this.builder,
+    this.curve = ElioMotion.emphasized,
+    this.child,
+  });
+  final int from, to;
+  final Curve curve;
+  final Widget? child;
+  final Widget Function(BuildContext context, double t, Widget? child) builder;
+
+  /// True while an intro is running above [context].
+  static bool playing(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_LearnIntro>()?.animation !=
+      null;
+
+  @override
+  Widget build(BuildContext context) {
+    final a = context
+        .dependOnInheritedWidgetOfExactType<_LearnIntro>()
+        ?.animation;
+    if (a == null) return builder(context, 1, child);
+    final total = LearnIntroHost.total.inMilliseconds;
+    final interval = Interval(from / total, to / total);
+    return AnimatedBuilder(
+      animation: a,
+      child: child,
+      builder: (context, child) =>
+          builder(context, curve.transform(interval.transform(a.value)), child),
+    );
+  }
+}
+
+/// Common intro move: fade in, rise [rise] px and scale from [scale].
+class LearnIntroRise extends StatelessWidget {
+  const LearnIntroRise({
+    super.key,
+    required this.from,
+    required this.to,
+    required this.child,
+    this.rise = 24,
+    this.scale = 1,
+    this.dx = 0,
+    this.curve = ElioMotion.emphasized,
+    this.alignment = Alignment.center,
+  });
+  final int from, to;
+  final double rise, scale, dx;
+  final Curve curve;
+  final Alignment alignment;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LearnIntroSlice(
+    from: from,
+    to: to,
+    curve: curve,
+    child: child,
+    builder: (context, t, child) => Opacity(
+      opacity: t.clamp(0.0, 1.0),
+      child: Transform.translate(
+        offset: Offset(dx * (1 - t), rise * (1 - t)),
+        child: Transform.scale(
+          scale: scale + (1 - scale) * t,
+          alignment: alignment,
+          child: child,
+        ),
+      ),
+    ),
+  );
 }

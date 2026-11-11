@@ -354,15 +354,28 @@ class LearnTabTitle extends StatelessWidget {
         Expanded(
           child: Semantics(
             header: true,
-            child: Text(
-              l10n.navLearn,
-              style: ElioTokens.body.copyWith(
-                fontSize: 32,
-                fontWeight: FontWeight.w700,
-                height: 1.2,
-                letterSpacing: -0.64,
-                color: p.onPrimary,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.navLearn,
+                  style: ElioTokens.body.copyWith(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                    letterSpacing: -0.64,
+                    color: p.onPrimary,
+                  ),
+                ),
+                // Figma 629:82489: the squiggle under "Learn" draws itself in.
+                LearnIntroSquiggle(
+                  from: 100,
+                  to: 500,
+                  width: 72,
+                  color: p.onPrimary,
+                ),
+              ],
             ),
           ),
         ),
@@ -381,6 +394,26 @@ class LearnTopPills extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final p = authPalette(context);
     final streak = ref.watch(guideProgressProvider.select((s) => s.streak));
+    // Intro: drops in from above, turning and bouncing (spring/bounce).
+    return LearnIntroSlice(
+      from: 200,
+      to: 1000,
+      curve: ElioMotion.bounce,
+      builder: (context, t, child) => Opacity(
+        opacity: t.clamp(0.0, 1.0),
+        child: Transform.translate(
+          offset: Offset(0, -36 * (1 - t)),
+          child: Transform.rotate(
+            angle: -0.45 * (1 - t),
+            child: Transform.scale(scale: 0.6 + 0.4 * t, child: child),
+          ),
+        ),
+      ),
+      child: _cloverSticker(context, p, streak),
+    );
+  }
+
+  Widget _cloverSticker(BuildContext context, ElioPalette p, int streak) {
     return Padding(
       padding: const EdgeInsets.only(right: 16),
       child: Semantics(

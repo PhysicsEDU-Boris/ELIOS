@@ -251,6 +251,8 @@ void main() {
   // A fake clock, 1 s per call across all tests, so the 120 ms gap never drops a sound.
   var now = DateTime(2026);
   setUpAll(loadElioFonts);
+  // The Learn intro has its own test; the rest see the hub at rest.
+  setUp(() => LearnIntroHost.played = true);
   setUp(() {
     SharedPreferences.setMockInitialValues({
       'daily-guide-notified': '2099-01-01',
@@ -444,6 +446,34 @@ void main() {
     expect(find.byType(GuidesHubSection), findsNothing);
     expect(find.byType(ArchiveStack), findsOneWidget);
     expect(find.text('1 of 3 modules in progress'), findsOneWidget);
+  });
+
+  testWidgets('Learn intro: ring sweeps, sounds mark the beats, once a session', (
+    t,
+  ) async {
+    LearnIntroHost.played = false;
+    final show = ValueNotifier(true);
+    await _pump(
+      t,
+      ValueListenableBuilder<bool>(
+        valueListenable: show,
+        builder: (_, on, _) => on ? const ElearningTab() : const SizedBox(),
+      ),
+      size: const Size(390, 3400),
+    );
+    // _pump settles about 1.2 s; finish the 1.4 s timeline.
+    await t.pump(const Duration(milliseconds: 400));
+    await t.pump(const Duration(milliseconds: 100));
+    expect(t.takeException(), isNull);
+    expect(sounds, containsAllInOrder([ElioSfx.pop, ElioSfx.chime, ElioSfx.sparkleShort]));
+    expect(find.text('20%'), findsOneWidget); // the ring counted up to its value
+    // Coming back to Learn in the same session: no replay, no sounds.
+    sounds.clear();
+    show.value = false;
+    await t.pump();
+    show.value = true;
+    await _settle(t);
+    expect(sounds, isEmpty);
   });
 
   testWidgets('reduce motion still renders the hub', (t) async {

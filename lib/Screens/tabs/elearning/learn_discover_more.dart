@@ -59,10 +59,29 @@ class DiscoverMore extends StatefulWidget {
 class _DiscoverMoreState extends State<DiscoverMore> {
   bool _animate = false;
 
+  /// Extra wait before the first pop-in: during the Learn intro the rails
+  /// pop in after Explore (1100 ms); on a module change, at once.
+  Duration _base = Duration.zero;
+  bool _checked = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_checked) return;
+    _checked = true;
+    if (LearnIntroSlice.playing(context)) {
+      _animate = true;
+      _base = const Duration(milliseconds: 1100);
+    }
+  }
+
   @override
   void didUpdateWidget(DiscoverMore old) {
     super.didUpdateWidget(old);
-    if (old.moduleId != widget.moduleId) _animate = true;
+    if (old.moduleId != widget.moduleId) {
+      _animate = true;
+      _base = Duration.zero;
+    }
   }
 
   @override
@@ -122,6 +141,7 @@ class _DiscoverMoreState extends State<DiscoverMore> {
                     rail: rail,
                     railIndex: r,
                     animate: _animate,
+                    base: _base,
                   ),
                 ),
               ],
@@ -138,10 +158,12 @@ class _Rail extends StatelessWidget {
     required this.rail,
     required this.railIndex,
     required this.animate,
+    this.base = Duration.zero,
   });
   final DiscoverRail rail;
   final int railIndex;
   final bool animate;
+  final Duration base;
 
   static const _gap = 14.0;
   static const _largeW = 212.0, _smallW = 164.0;
@@ -157,9 +179,9 @@ class _Rail extends StatelessWidget {
       itemBuilder: (context, i, _) {
         final it = items[i];
         // Cards 60 ms apart, rails 40 ms apart, max 6 waits.
-        final wait = Duration(
-          milliseconds: math.min(railIndex * 40 + i * 60, 6 * 60),
-        );
+        final wait =
+            base +
+            Duration(milliseconds: math.min(railIndex * 40 + i * 60, 6 * 60));
         return Padding(
           padding: const EdgeInsets.only(top: 4, bottom: 4),
           child: Align(

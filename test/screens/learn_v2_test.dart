@@ -35,6 +35,7 @@ import 'package:elio/providers/physics_progress_provider.dart';
 import 'package:elio/services/elearning_content_service.dart';
 import 'package:elio/services/progress_service.dart';
 import 'package:elio/theme/elio_theme.dart';
+import 'package:elio/widgets/learn/learn_l3.dart';
 import 'package:elio/widgets/learn/learn_ui.dart';
 import 'package:elio/widgets/learn/learn_shortcuts.dart';
 import 'package:elio/widgets/elio_sidebar.dart';
@@ -230,6 +231,8 @@ const _organic = ElearningModule(
 
 void main() {
   setUpAll(loadElioFonts);
+  // The Learn intro has its own test; the rest see the hub at rest.
+  setUp(() => LearnIntroHost.played = true);
 
   for (final b in Brightness.values) {
     group(b.name, () {

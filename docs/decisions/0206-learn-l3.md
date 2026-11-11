@@ -50,6 +50,25 @@ sound and haptics from section 13 row Cards · Learn (`640:24201`), cards 17–2
   archive fading in from blank. The archive fan-in plays once per app session. A cold start
   still loads once.
 
+## Learn entrance (owner request, 11 Nov)
+
+One shared 1.4 s timeline (`LearnIntroHost` + `LearnIntroSlice` in `learn_l3.dart`), first Learn
+open per app session, when the hub has its modules and lessons (until then the empty green
+header shell shows, never the old guide layout). Later opens and Reduce Motion show it at rest.
+
+| ms | Element | Motion | Sound |
+|---|---|---|---|
+| 0–580 | header bubbles, "Learn" squiggle | grow (pop), squiggle draws | |
+| 0–760 | module ring | ring pops 0.8→1, arcs sweep one after another, % counts up, legend dots pop | S4 at 760 |
+| 200–1000 | clover sticker | drops 36 px, turns −26°→0, bounce | S9-short at 1000 |
+| 250–1350 | Today's Guide | ticket rises 32 px, polaroid swings −23°→−7°, done stops fill in turn, +XP bounces | S2 at 560 |
+| 650–1290 | archive | photos dealt from the top slot to the fan, info slides in | |
+| 800–1400 | quick bubbles | pop in left→right (60 ms), badges bounce | |
+| 900–1400 | Explore / Discover | squiggle draws, pills slide in, skyline cards rise; Discover cards pop in from 1100 | |
+
+Sounds are quiet (gain 0.5–0.7) and 200 ms apart (the 120 ms gap never drops one). No haptics:
+the tab tap already gives one.
+
 ## Data rules
 
 Only real app data. Rails come from the module's own videos, guide lessons and quiz sets.

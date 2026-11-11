@@ -19,6 +19,7 @@ import 'package:elio/services/frame_source/frame_source.dart';
 import 'package:elio/services/frame_source/phone_frame_source.dart';
 import 'package:elio/services/quiz_tts_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:elio/widgets/learn/learn_l3.dart' show LearnIntroHost;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,6 +52,7 @@ class FakeCamera extends PhoneFrameSource {
 
 void main() {
   setUpAll(loadElioFonts);
+  setUp(() => LearnIntroHost.played = true);
 
   for (final dark in [false, true]) {
     for (final lang in ['en', 'id']) {
