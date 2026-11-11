@@ -1,7 +1,6 @@
 // Learn L3 (decision 0206): hub archive stack, Discover more synced with the
 // Explore module, module / lesson / simulation / Kuis fisika pages, in light
 // and dark, English and Indonesian. LEARN_RENDER=<dir> also writes PNGs.
-import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
