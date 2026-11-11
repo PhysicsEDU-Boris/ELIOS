@@ -461,7 +461,7 @@ class _HubContentState extends ConsumerState<_HubContent> {
       ),
     };
 
-    // The Learn entrance plays once per session, when the hub has its data.
+    // The Learn entrance plays on every open, once the hub has its data.
     return LearnIntroHost(
       child: ListView(
         padding: const EdgeInsets.only(bottom: 32),

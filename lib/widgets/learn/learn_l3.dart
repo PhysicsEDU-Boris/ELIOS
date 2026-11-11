@@ -1315,15 +1315,14 @@ class _SnapPhysics extends ScrollPhysics {
 
 // ---------------------------------------------------------------- intro
 
-/// True once the Learn entrance has played in this app session.
+/// Tests only: true skips the Learn entrance.
 bool _learnIntroPlayed = false;
 
 /// One shared 1.4 s timeline for the Learn hub entrance (decision 0206):
 /// every element reads its own slice with [LearnIntroSlice], so the reveal
-/// lands as one choreography. Plays on the first Learn open per session;
-/// later opens and Reduce Motion show everything at rest. Three quiet
-/// sounds mark the beats: S2 as Today's Guide lands, S4 as the module ring
-/// closes, S9-short as the clover lands.
+/// lands as one choreography. Three quiet sounds mark the beats: S2 as Today's Guide lands, S4 as the module ring
+/// closes, S9-short as the clover lands. Replays on every Learn open
+/// (owner choice, 11 Nov); Reduce Motion shows everything at rest.
 class LearnIntroHost extends StatefulWidget {
   const LearnIntroHost({super.key, required this.child});
   final Widget child;
@@ -1351,9 +1350,9 @@ class _LearnIntroHostState extends State<LearnIntroHost>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_learnIntroPlayed) return;
-    _learnIntroPlayed = true;
-    if (ElioMotion.reduced(context)) return;
+    if (_c != null || _learnIntroPlayed || ElioMotion.reduced(context)) {
+      return;
+    }
     final c = _c = AnimationController(
       vsync: this,
       duration: LearnIntroHost.total,

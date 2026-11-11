@@ -448,7 +448,7 @@ void main() {
     expect(find.text('1 of 3 modules in progress'), findsOneWidget);
   });
 
-  testWidgets('Learn intro: ring sweeps, sounds mark the beats, once a session', (
+  testWidgets('Learn intro: ring sweeps, sounds mark the beats, replays on every open', (
     t,
   ) async {
     LearnIntroHost.played = false;
@@ -467,13 +467,17 @@ void main() {
     expect(t.takeException(), isNull);
     expect(sounds, containsAllInOrder([ElioSfx.pop, ElioSfx.chime, ElioSfx.sparkleShort]));
     expect(find.text('20%'), findsOneWidget); // the ring counted up to its value
-    // Coming back to Learn in the same session: no replay, no sounds.
+    // Coming back to Learn plays it again, beats and all.
     sounds.clear();
     show.value = false;
     await t.pump();
     show.value = true;
     await _settle(t);
-    expect(sounds, isEmpty);
+    await t.pump(const Duration(milliseconds: 400));
+    expect(
+      sounds,
+      containsAllInOrder([ElioSfx.pop, ElioSfx.chime, ElioSfx.sparkleShort]),
+    );
   });
 
   testWidgets('reduce motion still renders the hub', (t) async {

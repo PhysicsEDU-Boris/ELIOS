@@ -52,9 +52,10 @@ sound and haptics from section 13 row Cards · Learn (`640:24201`), cards 17–2
 
 ## Learn entrance (owner request, 11 Nov)
 
-One shared 1.4 s timeline (`LearnIntroHost` + `LearnIntroSlice` in `learn_l3.dart`), first Learn
-open per app session, when the hub has its modules and lessons (until then the empty green
-header shell shows, never the old guide layout). Later opens and Reduce Motion show it at rest.
+One shared 1.4 s timeline (`LearnIntroHost` + `LearnIntroSlice` in `learn_l3.dart`), on every
+Learn open (owner choice), once the hub has its modules and lessons (until then the empty green
+header shell shows, never the old guide layout). Reduce Motion shows it at rest. Returning from
+a Learn sub-page does not replay it (the hub stays mounted).
 
 | ms | Element | Motion | Sound |
 |---|---|---|---|
