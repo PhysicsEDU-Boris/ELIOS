@@ -184,7 +184,7 @@
   "activityOpenInHistory": "Open in History",
   "activityNoScans": "No scans on this day.",
   "settingsTitle": "Settings",
-  "settingsSubtitle": "Connection, video, sound and quiz",
+  "settingsSubtitle": "Connection and video",
   "aiNeedsInternet": "Gemini · needs internet",
   "aiOffHint": "Identifies scans and writes new quiz questions, about 2 to 4 s each.",
   "aiActiveHint": "Identifying scans and writing quiz questions.",
@@ -2945,5 +2945,486 @@
   "historySyncRetry": "Sync now",
   "historyImport": "Import previous device history",
   "historyImportBody": "These older scans have no account owner. Import them into your current account? The original device history will be kept.",
-  "historyImportFailed": "Could not import previous history. The original files are kept."
+  "historyImportFailed": "Could not import previous history. The original files are kept.",
+  "dailyGuidesTitle": "Daily Guide",
+  "dailyGuidesDescription": "Explore the physics behind environmental news.",
+  "dailyGuidesRefresh": "Refresh guides",
+  "dailyGuidesOffline": "Showing saved guides. Connect to check for new issues.",
+  "dailyGuidesEmpty": "The first daily guide is on its way.",
+  "dailyGuidesLatest": "Latest issue",
+  "dailyGuidesArchive": "Previous issues",
+  "g4AiLooksFor": "ELIOS AI will look for",
+  "g4All": "All",
+  "g4AllStopsDone": "All 3 stops done",
+  "g4AlmostBody": "No XP yet. You can try as many times as you like.",
+  "g4AlmostTitle": "Almost! Try one more time",
+  "g4Archive": "Archive",
+  "g4ArchiveLabel": "{title}, {date}, {stops} of 3 stops, {xp} XP",
+  "@g4ArchiveLabel": {
+    "placeholders": {
+      "title": {},
+      "date": {},
+      "stops": {},
+      "xp": {}
+    }
+  },
+  "g4AskTeacher": "Ask teacher to review",
+  "g4AskTeacherHint": "Think the check is wrong? Ask your teacher to review it. They see the AI reason, not your photos.",
+  "g4BackToResult": "Back to result",
+  "g4BadgeUnlocked": "Badge unlocked",
+  "g4Cancel": "Cancel",
+  "g4Check": "Check",
+  "g4CheckAgain": "Check again",
+  "g4ContinueGuide": "Continue guide",
+  "g4ContinueStop": "Continue · Stop {n}",
+  "@g4ContinueStop": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4CopyLink": "Copy link",
+  "g4DayFuture": "coming up",
+  "g4DayMissed": "missed",
+  "g4DayRead": "read",
+  "g4DayToday": "today, not read yet",
+  "g4DidYouKnow": "Did you know?",
+  "g4EmptyBody": "A new physics story arrives every morning around 06:00. Pull down to check again.",
+  "g4EmptyTitle": "The first guide is on its way",
+  "g4FeedError": "Guides couldn't load",
+  "g4FeedSubtitle": "Physics behind real news",
+  "g4FinishStop2": "Finish Stop 2 to unlock",
+  "g4FollowApp": "Same as the app",
+  "g4FrameN": "Frame {n}",
+  "@g4FrameN": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4GuideArchive": "Guide archive",
+  "g4GuideLanguage": "Guide language",
+  "g4GuideXp": "guide XP",
+  "g4Import": "Import",
+  "g4ImportBody": "This phone has {xp} guide XP from a guest session.",
+  "@g4ImportBody": {
+    "placeholders": {
+      "xp": {}
+    }
+  },
+  "g4ImportConfirm": "Add the guest's guide progress ({xp} XP, stops and streak days) to this account? Nothing is merged without your OK.",
+  "@g4ImportConfirm": {
+    "placeholders": {
+      "xp": {}
+    }
+  },
+  "g4ImportFailed": "Couldn't import now. Try again when you're online.",
+  "g4ImportTitle": "Import guest guide progress",
+  "g4IssueCount": "{count, plural, =1{1 issue} other{{count} issues}}",
+  "@g4IssueCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "g4IssueN": "Issue #{n}",
+  "@g4IssueN": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4IssuesStreak": "{count, plural, =1{1 issue} other{{count} issues}} · {days}-day streak",
+  "@g4IssuesStreak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {}
+    }
+  },
+  "g4LabApproved": "Lab approved",
+  "g4LabApprovedBy": "Lab approved by ELIOS AI",
+  "g4LabBusy": "The lab check is busy. Your photos stayed on your phone; try again in a minute.",
+  "g4LabChecking": "ELIOS AI is checking your photos…",
+  "g4LabLimit": "That's 5 lab checks for this guide today. Try again tomorrow.",
+  "g4LabMeta": "About 10 minutes · +{xp} XP · badge",
+  "@g4LabMeta": {
+    "placeholders": {
+      "xp": {}
+    }
+  },
+  "g4LabOffline": "The lab check needs internet. Connect and try again; nothing was sent.",
+  "g4LabResult": "Mini lab result",
+  "g4LangEn": "English",
+  "g4LangId": "Bahasa Indonesia",
+  "g4LangMissing": "This issue isn't in your language yet, so it's shown in the other one.",
+  "g4LangPill": "EN · ID",
+  "g4Listen": "Listen",
+  "g4MiniLab": "Mini lab",
+  "g4Missing": "missing",
+  "g4New": "NEW",
+  "g4NewGuide": "New guide",
+  "g4NextCard": "Next card",
+  "g4NotNow": "Not now",
+  "g4NotQuite": "Not quite.",
+  "g4OfflineBanner": "Offline. Showing saved guides. Connect to check for new issues.",
+  "g4Ok": "OK",
+  "g4Pass": "seen",
+  "g4Pdf": "PDF",
+  "g4PdfMeta": "{pages}-page PDF · {language} · saved for offline",
+  "@g4PdfMeta": {
+    "placeholders": {
+      "pages": {},
+      "language": {}
+    }
+  },
+  "g4PhotoCredit": "Photo credit",
+  "g4PhotoHint": "Take 3 photos: the start, the middle and the end of your experiment.",
+  "g4PhotosTaken": "{n} of 3 photos",
+  "@g4PhotosTaken": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4PlusXp": "+{xp} XP",
+  "@g4PlusXp": {
+    "placeholders": {
+      "xp": {}
+    }
+  },
+  "g4PrivacyNote": "ELIOS checks 8 still photos from your clip, then deletes them. Only the result is saved.",
+  "g4QuestMap": "Your quest map",
+  "g4QuickQuiz": "Quick quiz",
+  "g4QuizAlmost": "2 correct answers pass. Try the quiz again with new questions.",
+  "g4QuizNice": "Nice work!",
+  "g4QuizParkedHint": "Answered cards stay on the left. Tap Q1–Q3 on the result to look again.",
+  "g4QuizPassed": "Quiz passed",
+  "g4QuizResultHint": "Tap Q1–Q3 to flip back to any answer.",
+  "g4QuizUnavailable": "The quiz couldn't load",
+  "g4ReadAgain": "Read the guide again",
+  "g4ReadFullGuide": "Read the full guide",
+  "g4ReadPage": "Read page {page}",
+  "@g4ReadPage": {
+    "placeholders": {
+      "page": {}
+    }
+  },
+  "g4Record": "Record 15–30 s",
+  "g4RecordHint": "Film only your hands and the experiment. Stop after {min} s; recording ends at 30 s.",
+  "@g4RecordHint": {
+    "placeholders": {
+      "min": {}
+    }
+  },
+  "g4RecordingSeconds": "Recording {s} / {max} s",
+  "@g4RecordingSeconds": {
+    "placeholders": {
+      "s": {},
+      "max": {}
+    }
+  },
+  "g4Retake": "Record again",
+  "g4Retry": "Retry",
+  "g4ReviewBody": "These are the only pictures that will be sent. Nothing leaves your phone until you tap Send.",
+  "g4ReviewQuestion": "Look at question {n} again",
+  "@g4ReviewQuestion": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4ReviewSent": "Sent to your teacher.",
+  "g4ReviewTitle": "{n} photos ready",
+  "@g4ReviewTitle": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4SafetyTitle": "Film only your hands and the experiment",
+  "g4SavedAccount": "Saved to your account",
+  "g4SavedPhone": "Saved on this phone. It syncs when you're online.",
+  "g4Saving": "Saving…",
+  "g4ScoreOf": "{score} of {total} correct",
+  "@g4ScoreOf": {
+    "placeholders": {
+      "score": {},
+      "total": {}
+    }
+  },
+  "g4SeeResult": "See result",
+  "g4Send": "Send to ELIOS AI",
+  "g4Sources": "Sources",
+  "g4SourcesCount": "{count, plural, =1{1 source} other{{count} sources}}",
+  "@g4SourcesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "g4StartGuide": "Start guide",
+  "g4StartLab": "Start mini lab",
+  "g4StopDone": "done",
+  "g4StopLocked": "locked",
+  "g4StopMission": "Your mission",
+  "g4StopMissionSub": "Stop 3 · Your mission",
+  "g4StopN": "Stop {n}",
+  "@g4StopN": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4StopOpen": "open",
+  "g4StopPage": "STOP {n} · P.{page}",
+  "@g4StopPage": {
+    "placeholders": {
+      "n": {},
+      "page": {}
+    }
+  },
+  "g4StopPhysics": "The physics",
+  "g4StopRecording": "Stop recording",
+  "g4StopStory": "The story",
+  "g4StopsDoneNext": "{done} of 3 stops done · Next: {next}",
+  "@g4StopsDoneNext": {
+    "placeholders": {
+      "done": {},
+      "next": {}
+    }
+  },
+  "g4StopsOf": "{done}/3 stops",
+  "@g4StopsOf": {
+    "placeholders": {
+      "done": {}
+    }
+  },
+  "g4StreakDays": "{days}-day reading streak",
+  "@g4StreakDays": {
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "g4StreakHint": "Read today's guide to keep it going",
+  "g4TakePhoto": "Take photo",
+  "g4TeacherBody": "ELIOS AI wasn't sure, so your teacher will look at the result. No photos are kept.",
+  "g4TeacherNote": "Your teacher can see this result and change it. Photos were deleted after the check.",
+  "g4TeacherTitle": "Your teacher will check this",
+  "g4ThreePhotos": "Take 3 photos instead",
+  "g4TodayDate": "TODAY · {date}",
+  "@g4TodayDate": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "g4TodayLabel": "Today's guide: {title}, {done} of 3 stops done",
+  "@g4TodayLabel": {
+    "placeholders": {
+      "title": {},
+      "done": {}
+    }
+  },
+  "g4TodaysGuide": "TODAY'S GUIDE",
+  "g4TodaysGuideIssue": "TODAY'S GUIDE · #{n}",
+  "@g4TodaysGuideIssue": {
+    "placeholders": {
+      "n": {}
+    }
+  },
+  "g4TopicAir": "Air",
+  "g4TopicEnergy": "Energy",
+  "g4TopicHeat": "Heat",
+  "g4TopicOther": "Science",
+  "g4TopicStorm": "Storm",
+  "g4TopicWaste": "Waste",
+  "g4TopicWater": "Water",
+  "g4TryAgain": "Try again",
+  "g4TryQuizAgain": "Try the quiz again",
+  "g4WeekLetters": "M,T,W,T,F,S,S",
+  "g4WhatAiSaw": "What ELIOS AI saw",
+  "g4WhatToDo": "What to do",
+  "g4XpDone": "✓ {xp} XP",
+  "@g4XpDone": {
+    "placeholders": {
+      "xp": {}
+    }
+  },
+  "g4XpOf": "{xp} / {total} XP",
+  "@g4XpOf": {
+    "placeholders": {
+      "xp": {},
+      "total": {}
+    }
+  },
+  "g4YourQuestion": "Your question: {q}",
+  "@g4YourQuestion": {
+    "placeholders": {
+      "q": {}
+    }
+  },
+  "g4FeedTitle": "ELIOS Guides",
+  "lnShortcuts": "Learn shortcuts",
+  "lnJumpBackIn": "Jump back in",
+  "lnExplore": "Explore",
+  "lnExploreSub": "{lessons} lessons across {modules} modules",
+  "@lnExploreSub": {"placeholders": {"lessons": {"type": "int"}, "modules": {"type": "int"}}},
+  "lnModules": "Modules",
+  "lnPdfGuides": "PDF guides",
+  "lnPractice": "Practice",
+  "lnYou": "You",
+  "lnQuizShort": "Quiz",
+  "lnMiniLab": "Mini lab",
+  "lnTodaysLab": "Today's experiment",
+  "lnArchive": "Archive",
+  "lnProgressShort": "Progress",
+  "lnStartHere": "Start here",
+  "lnQuizCount": "{count, plural, =1{1 quiz} other{{count} quizzes}}",
+  "@lnQuizCount": {"placeholders": {"count": {"type": "num"}}},
+  "lnTotalXp": "{xp} XP total",
+  "@lnTotalXp": {"placeholders": {"xp": {"type": "int"}}},
+  "lnGuideStops": "#{issue} · {done} of 3 stops",
+  "@lnGuideStops": {"placeholders": {"issue": {"type": "String"}, "done": {"type": "int"}}},
+  "lnPctDone": "{pct}%",
+  "@lnPctDone": {"placeholders": {"pct": {"type": "int"}}},
+  "lnTodaysGuide": "Today's Guide",
+  "navScan": "Scan",
+  "navScanHint": "Scan, opens the scan hub",
+  "navProfile": "Profile",
+  "scanHubSubtitle": "Pick how you want to scan today",
+  "scanPhoneOverline": "With your phone",
+  "scanPhoneTitle": "Scan & quiz",
+  "scanPhoneBody": "Point the camera at an item. ELIOS names it and makes a quiz for you.",
+  "scanOpenCamera": "Open camera",
+  "scanRobotOverline": "With a robot",
+  "scanRobotTitle": "Robot scan",
+  "scanRobotBody": "Choose a vehicle. ELIOS is ready; the drone is coming soon.",
+  "scanSelectVehicle": "Select vehicle",
+  "vehicleEliosDesc": "Ground robot · camera MaixCAM2",
+  "vehicleDrone": "Drone",
+  "vehicleComingSoon": "Coming soon",
+  "vehicleReady": "Ready",
+  "vehicleMaixNote": "Robots use the MaixCAM2 camera automatically",
+  "setupTitle": "ELIOS setup",
+  "profileTapPicture": "Tap your picture for account options",
+  "profileSynced": "Google account · history synced",
+  "profileGuestChip": "Guest · history saved on this phone only",
+  "profileAppearance": "Appearance",
+  "profileDarkModeSub": "Switch the whole app to the dark theme",
+  "profileLanguageSub": "App text and voice",
+  "profileQuestionSource": "Question source",
+  "profileQuestionSourceSub": "Where the scan quiz gets its questions",
+  "profileAccountMenu": "Account options",
+  "profileSwitchAccount": "Switch account",
+  "vehicleUse": "Use {name}",
+  "@vehicleUse": {"placeholders": {"name": {"type": "String"}}},
+  "profileNotSignedIn": "Not signed in",
+  "profileGuestTap": "Tap the picture to sign in or switch account",
+  "homeLvShort": "Lv {n}",
+  "@homeLvShort": {"placeholders": {"n": {"type": "int"}}},
+  "homeToNextLong": "{count} trophies to Level {level} · your tree grows with every trophy",
+  "@homeToNextLong": {"placeholders": {"count": {"type": "int"}, "level": {"type": "int"}}},
+  "homeRobotOverline": "ELIOS robot",
+  "homeStillConnected": "Still connected",
+  "homeResumeControl": "Resume robot control",
+  "lnClovers": "{count, plural, =1{1 clover} other{{count} clovers}}",
+  "@lnClovers": {"placeholders": {"count": {"type": "int"}}},
+  "lnGuideRewards": "{xp} XP · {clovers} · from Daily Guides",
+  "@lnGuideRewards": {"placeholders": {"xp": {"type": "int"}, "clovers": {"type": "String"}}},
+  "wqSavedNoQuiz": "Saved to History. The quiz is off for robot scans.",
+  "setupQuizAfterScan": "Quiz after each scan",
+  "setupCameraAuto": "Camera: MaixCAM2",
+  "setupAutomatic": "Automatic",
+  "setupOpenControl": "Open control",
+  "setupVideoStream": "Video stream",
+  "vehicleChange": "Change",
+  "scanHoldSteady": "Hold steady · one item in the frame",
+  "scanTakePhoto": "Take photo and identify",
+  "scanAiQuiz": "AI quiz",
+  "contributeTitle": "Scan to contribute",
+  "contributePickBin": "Which bin are you using?",
+  "contributeDrop": "Drop the item into the bin while recording.",
+  "contributeKeepLabel": "Keep the bin label in view so we can check it.",
+  "contributeChecking": "ELIOS AI is checking your video…",
+  "contributeStart": "Start recording",
+  "contributeStop": "Stop recording",
+  "contributeNice": "Nice sorting!",
+  "contributeNotQuite": "Not quite",
+  "contributeNotChecked": "Couldn't check",
+  "contributeNoItem": "ELIOS AI couldn't see an item. Try again closer, with good light.",
+  "contributeWentInto": "{item} went into the {bin} bin.",
+  "@contributeWentInto": {"placeholders": {"item": {"type": "String"}, "bin": {"type": "String"}}},
+  "contributeBelongs": "{item} belongs in the {bin} bin. Try again!",
+  "@contributeBelongs": {"placeholders": {"item": {"type": "String"}, "bin": {"type": "String"}}},
+  "contributeTrophies": "+{count} trophies",
+  "@contributeTrophies": {"placeholders": {"count": {"type": "int"}}},
+  "contributeSaved": "Saved to History as a contribution",
+  "contributeAgain": "Contribute again",
+  "scanContributeOverline": "Earn trophies",
+  "scanContributeBody": "Film yourself putting waste in the right bin. Keep the bin label in view.",
+  "contributeRec": "REC {time}",
+  "@contributeRec": {"placeholders": {"time": {"type": "String"}}},
+  "histSubtitle3": "Scans, quizzes and contributions",
+  "histSeeTimeline": "See timeline",
+  "histByDevice": "By device",
+  "histByDeviceSub": "Open a device to see its own timeline",
+  "histToReview": "Questions to review",
+  "histReview": "Review",
+  "histQuiz": "Quiz {correct}/{total}",
+  "@histQuiz": {"placeholders": {"correct": {"type": "int"}, "total": {"type": "int"}}},
+  "histScanOnly": "Scan only",
+  "histContribution": "Contribution",
+  "histPhone": "Phone",
+  "histNoScansYet": "No scans yet",
+  "histTimeline": "Scan timeline",
+  "histTimelineSub": "Recent scans by device",
+  "histPhoneTitle": "This phone",
+  "histEliosTitle": "ELIOS robot",
+  "histDeviceScans": "{count} scans · camera {camera}",
+  "@histDeviceScans": {"placeholders": {"count": {"type": "int"}, "camera": {"type": "String"}}},
+  "histPhoneCamera": "phone",
+  "histNoDevice": "Scans saved before this update have no device; they are under All.",
+  "histAllScans": "All",
+  "h3TrophiesWord": "trophies",
+  "celebrateTap": "Tap to continue",
+  "celebrateLevelUp": "Level {level}!",
+  "@celebrateLevelUp": {"placeholders": {"level": {"type": "int"}}},
+  "celebrateMedal": "Medal unlocked",
+  "lnArchiveTitle": "From the archive",
+  "lnArchiveSub": "{count, plural, =1{Your last guide · swipe the photos} other{Your last {count} guides · swipe the photos}}",
+  "@lnArchiveSub": {"placeholders": {"count": {"type": "int"}}},
+  "lnArchivePulled": "Pick up where you left off",
+  "lnArchivePhotoLabel": "{title}. Tap to pull out, swipe for the next guide",
+  "@lnArchivePhotoLabel": {"placeholders": {"title": {"type": "String"}}},
+  "lnArchiveXp": "{xp}/{total} XP",
+  "@lnArchiveXp": {"placeholders": {"xp": {"type": "int"}, "total": {"type": "int"}}},
+  "lnArchiveXpDone": "✓ {total} XP",
+  "@lnArchiveXpDone": {"placeholders": {"total": {"type": "int"}}},
+  "lnArchiveStops": "{done}/3 stops",
+  "@lnArchiveStops": {"placeholders": {"done": {"type": "int"}}},
+  "lnRailSub": "{lead} · {count} in {module}",
+  "@lnRailSub": {"placeholders": {"lead": {"type": "String"}, "count": {"type": "int"}, "module": {"type": "String"}}},
+  "lnRailVideosLead": "Watch and learn",
+  "lnRailGuidesLead": "Read in a minute",
+  "lnRailQuizLead": "Check what you know",
+  "lnRailSims": "{count, plural, =1{Try it yourself · 1 lab} other{Try it yourself · {count} labs}}",
+  "@lnRailSims": {"placeholders": {"count": {"type": "int"}}},
+  "lnSimulation": "Simulation",
+  "lnQuizzes": "Quizzes",
+  "lnBestShort": "best {score}%",
+  "@lnBestShort": {"placeholders": {"score": {"type": "int"}}},
+  "lnContinueLessonN": "Continue lesson {n}",
+  "@lnContinueLessonN": {"placeholders": {"n": {"type": "int"}}},
+  "lnStartLessonN": "Start lesson {n}",
+  "@lnStartLessonN": {"placeholders": {"n": {"type": "int"}}},
+  "lnWhatGoesIn": "{module, select, organic{What goes in the green bin} inorganic{What goes in the yellow bin} hazardous{What goes in the red bin} other{What goes in this bin}}",
+  "@lnWhatGoesIn": {"placeholders": {"module": {"type": "String"}}},
+  "lnLessons": "Lessons",
+  "lnModuleProgressDone": "Module progress · {done} of {total} done",
+  "@lnModuleProgressDone": {"placeholders": {"done": {"type": "int"}, "total": {"type": "int"}}},
+  "lnPartN": "Part {n}",
+  "@lnPartN": {"placeholders": {"n": {"type": "int"}}},
+  "lnPctWatched": "{pct}% watched",
+  "@lnPctWatched": {"placeholders": {"pct": {"type": "int"}}},
+  "lnLessonNofM": "Lesson {n} of {total}",
+  "@lnLessonNofM": {"placeholders": {"n": {"type": "int"}, "total": {"type": "int"}}},
+  "lnPlaying": "playing",
+  "lnCheckAnswer": "Check answer",
+  "lnPickToContinue": "Pick an answer to continue."
 }

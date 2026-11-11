@@ -1,16 +1,14 @@
-// Bottom navigation (Figma page "N3 Bottom nav", component set 270:5746, spec
-// 270:8626): Home, Learn, Control (raised round button), Config, History.
-// Tab indices are the app's provider indices (Home 0, Learn 1, Config 2,
-// History 4); only the on-screen order differs. Control (3) is an action and
-// is never selected.
-import 'dart:async';
-
+// Bottom navigation, ELIOS 3 (Figma "ELIOS BottomNav" 270:5746): Home, Learn,
+// Scan (raised orb), History, Profile picture. Tab indices are the app's
+// provider indices (Home 0, Learn 1, Scan 2, History 4, Profile 5); 3 stays
+// the "open robot control" action used by Home and notifications.
 import 'package:flutter/material.dart';
-import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 
+import '../theme/elio_motion.dart';
 import '../theme/elio_tokens.dart';
 import 'auth/auth_widgets.dart' show authPalette;
 import 'package:elio/l10n/l10n.dart';
+import '../services/elio_feedback.dart';
 
 const _barHeight = 64.0;
 const _ringGap = 4.0; // surface-coloured ring round the Control button
@@ -22,22 +20,33 @@ class ElioBottomNav extends StatelessWidget {
     super.key,
     required this.currentIndex,
     required this.onSelectTab,
-    required this.onControl,
+    this.photoUrl,
+    this.initials,
   });
 
-  /// Active tab: Home 0, Learn 1, Config 2, History 4.
+  /// Active tab: Home 0, Learn 1, Scan 2, History 4, Profile 5.
   final int currentIndex;
   final ValueChanged<int> onSelectTab;
-  final VoidCallback onControl;
+
+  /// Profile avatar (Figma "Nav / Profile avatar" 582:3957): the photo, else
+  /// the initials, else the guest icon.
+  final String? photoUrl;
+  final String? initials;
 
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context);
+    // S1 + H-select on a new tab only (silent on re-tap), Figma 13 · 1.
+    void select(int i) {
+      if (i != currentIndex) elioFeedback(ElioSfx.tick, ElioHaptics.select);
+      onSelectTab(i);
+    }
+
     Widget tab(int i, String label, IconData off, IconData on) => _Cell(
       label: label,
       semantics: label,
       selected: currentIndex == i,
-      onTap: () => onSelectTab(i),
+      onTap: () => select(i),
       icon: Icon(currentIndex == i ? on : off, size: 24),
     );
     return Semantics(
@@ -55,41 +64,170 @@ class ElioBottomNav extends StatelessWidget {
           padding: EdgeInsets.only(
             bottom: MediaQuery.paddingOf(context).bottom,
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              Expanded(child: tab(0, l10n.navHome, Icons.home_outlined, Icons.home)),
-              Expanded(
-                child: tab(
-                  1,
-                  l10n.navLearn,
-                  Icons.menu_book_outlined,
-                  Icons.menu_book,
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: tab(
+                      0,
+                      l10n.navHome,
+                      Icons.home_outlined,
+                      Icons.home,
+                    ),
+                  ),
+                  Expanded(
+                    child: tab(
+                      1,
+                      l10n.navLearn,
+                      Icons.menu_book_outlined,
+                      Icons.menu_book,
+                    ),
+                  ),
+                  Expanded(
+                    child: _Cell(
+                      label: l10n.navScan,
+                      semantics: l10n.navScanHint,
+                      selected: currentIndex == 2,
+                      // The orb above the bar is the active mark.
+                      showStroke: false,
+                      onTap: () => select(2),
+                      icon: const SizedBox.shrink(),
+                    ),
+                  ),
+                  Expanded(
+                    child: tab(
+                      4,
+                      l10n.navHistory,
+                      Icons.history_rounded,
+                      Icons.history_rounded,
+                    ),
+                  ),
+                  Expanded(
+                    child: _Cell(
+                      label: l10n.navProfile,
+                      semantics: l10n.navProfile,
+                      selected: currentIndex == 5,
+                      onTap: () => select(5),
+                      icon: NavProfileAvatar(
+                        photoUrl: photoUrl,
+                        initials: initials,
+                        active: currentIndex == 5,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              Expanded(
-                child: _Cell(
-                  label: l10n.navControl,
-                  semantics: l10n.navControlHint,
-                  selected: false,
-                  onTap: onControl,
-                  icon: const SizedBox.shrink(),
-                ),
-              ),
-              Expanded(
-                child: tab(2, l10n.navConfig, Icons.wifi_outlined, Icons.wifi),
-              ),
-              Expanded(
-                child: tab(
-                  4,
-                  l10n.navHistory,
-                  Icons.history_rounded,
-                  Icons.history_rounded,
+              // One active stroke that slides to the new tab (spring/soft,
+              // Figma 13 · 1); the Scan orb is its own mark.
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedAlign(
+                    alignment: Alignment(_strokeX(currentIndex), -1),
+                    duration: ElioMotion.reduced(context)
+                        ? Duration.zero
+                        : ElioMotion.slow,
+                    curve: ElioMotion.soft,
+                    child: FractionallySizedBox(
+                      widthFactor: 0.2,
+                      child: AnimatedOpacity(
+                        opacity: currentIndex == 2 ? 0 : 1,
+                        duration: ElioMotion.fast,
+                        child: Center(
+                          heightFactor: 1,
+                          child: Container(
+                            width: 24,
+                            height: 3,
+                            decoration: ShapeDecoration(
+                              color: p.primaryText,
+                              shape: const StadiumBorder(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// Column of a tab index (Home 0, Learn 1, Scan 2, History 4, Profile 5)
+  /// as an Alignment x over 5 equal columns.
+  static double _strokeX(int index) {
+    final col = switch (index) {
+      0 => 0,
+      1 => 1,
+      4 => 3,
+      5 => 4,
+      _ => 2,
+    };
+    return -1 + col * 0.5;
+  }
+}
+
+/// 28 dp avatar in a 32 dp slot; Active adds a 2 dp primary ring.
+class NavProfileAvatar extends StatelessWidget {
+  const NavProfileAvatar({
+    super.key,
+    this.photoUrl,
+    this.initials,
+    this.active = false,
+  });
+
+  final String? photoUrl;
+  final String? initials;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
+    final url = photoUrl;
+    final letters = initials?.trim() ?? '';
+    final Widget fallback = letters.isNotEmpty
+        ? Center(
+            child: Text(
+              letters,
+              style: ElioTokens.caption.copyWith(
+                color: p.primaryText,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          )
+        : Icon(Icons.person_outline_rounded, size: 18, color: p.textSecondary);
+    return Container(
+      width: 32,
+      height: 32,
+      padding: const EdgeInsets.all(2),
+      decoration: active
+          ? ShapeDecoration(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: p.primary, width: 2),
+              ),
+            )
+          : null,
+      child: Container(
+        decoration: ShapeDecoration(
+          color: p.surfaceRaised,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: p.borderMedium),
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: url != null && url.isNotEmpty
+            ? Image.network(
+                url,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => fallback,
+              )
+            : fallback,
       ),
     );
   }
@@ -103,10 +241,11 @@ class _Cell extends StatefulWidget {
     required this.selected,
     required this.onTap,
     required this.icon,
+    this.showStroke = true,
   });
 
   final String label, semantics;
-  final bool selected;
+  final bool selected, showStroke;
   final VoidCallback onTap;
   final Widget icon;
 
@@ -141,15 +280,6 @@ class _CellState extends State<_Cell> {
           child: Stack(
             alignment: Alignment.topCenter,
             children: [
-              if (widget.selected)
-                Container(
-                  width: 24,
-                  height: 3,
-                  decoration: ShapeDecoration(
-                    color: p.primaryText,
-                    shape: const StadiumBorder(),
-                  ),
-                ),
               if (_focused)
                 Positioned.fill(
                   child: Container(
@@ -180,17 +310,31 @@ class _CellState extends State<_Cell> {
                         color: _pressed && !plain ? p.surfaceRaised : null,
                         shape: const StadiumBorder(),
                       ),
-                      child: IconTheme(
-                        data: IconThemeData(color: color),
-                        child: widget.icon,
+                      // Outline → filled cross-fade with a 0.9 → 1 pop (Figma 13 · 1).
+                      child: AnimatedSwitcher(
+                        duration: plain ? Duration.zero : ElioMotion.fast,
+                        switchInCurve: ElioMotion.standard,
+                        transitionBuilder: (child, a) => FadeTransition(
+                          opacity: a,
+                          child: ScaleTransition(
+                            scale: Tween(begin: 0.9, end: 1.0).animate(
+                              CurvedAnimation(parent: a, curve: ElioMotion.pop),
+                            ),
+                            child: child,
+                          ),
+                        ),
+                        child: IconTheme(
+                          key: ValueKey(widget.selected),
+                          data: IconThemeData(color: color),
+                          child: widget.icon,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
                     FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Text(
-                        widget.label,
-                        maxLines: 1,
+                      child: AnimatedDefaultTextStyle(
+                        duration: ElioMotion.fast,
                         style: ElioTokens.caption.copyWith(
                           color: color,
                           height: 16 / 12,
@@ -198,6 +342,7 @@ class _CellState extends State<_Cell> {
                               ? FontWeight.w600
                               : FontWeight.w500,
                         ),
+                        child: Text(widget.label, maxLines: 1),
                       ),
                     ),
                   ],
@@ -211,167 +356,76 @@ class _CellState extends State<_Cell> {
   }
 }
 
-/// The raised Control circle. Put it in `Scaffold.floatingActionButton` with
+/// The raised Scan orb. Put it in `Scaffold.floatingActionButton` with
 /// [ElioControlFabLocation]: it then overlaps the page, not the bar's layout
-/// box, and the page above the bar is not shortened. The Control cell in the bar
-/// carries the semantics.
-///
-/// With [modelAsset] the robot icon is a 3D model the user can spin by dragging
-/// on it; a tap still opens Control. The icon shows until the model has loaded
-/// and stays if it fails (the bar never waits on it).
-class ElioControlButton extends StatefulWidget {
-  const ElioControlButton({super.key, required this.onTap, this.modelAsset});
+/// box. The Scan cell in the bar carries the semantics.
+class ElioScanOrb extends StatefulWidget {
+  const ElioScanOrb({super.key, required this.onTap});
   final VoidCallback onTap;
-  final String? modelAsset;
 
   @override
-  State<ElioControlButton> createState() => _ControlButtonState();
+  State<ElioScanOrb> createState() => _ScanOrbState();
 }
 
-class _ControlButtonState extends State<ElioControlButton> {
-  bool _focused = false, _loaded = false, _failed = false;
-  Offset? _down;
-  Timer? _showTimer;
-  DateTime _lastTap = DateTime(0);
-
-  @override
-  void initState() {
-    super.initState();
-    // onLoad is not always delivered by the web view; show the model anyway.
-    _showTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) setState(() => _loaded = true);
-    });
-  }
-
-  @override
-  void dispose() {
-    _showTimer?.cancel();
-    super.dispose();
-  }
-
-  void _tap() {
-    final now = DateTime.now();
-    if (now.difference(_lastTap) < const Duration(milliseconds: 500)) return;
-    _lastTap = now;
-    widget.onTap();
-  }
+class _ScanOrbState extends State<ElioScanOrb> {
+  bool _focused = false, _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context);
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final has3d = widget.modelAsset != null && !_failed;
+    final plain = MediaQuery.disableAnimationsOf(context);
     return ExcludeSemantics(
       child: InkResponse(
-        onTap: _tap,
+        onTap: () {
+          elioFeedback(ElioSfx.pop, ElioHaptics.medium); // Figma 13 · 2
+          widget.onTap();
+        },
         onFocusChange: (f) => setState(() => _focused = f),
+        onHighlightChanged: (v) => setState(() => _pressed = v),
         highlightShape: BoxShape.circle,
         radius: _controlSize / 2 + _ringGap,
         splashFactory: NoSplash.splashFactory,
         highlightColor: Colors.transparent,
-        child: Container(
-          width: _controlSize + 2 * _ringGap,
-          height: _controlSize + 2 * _ringGap,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: p.surface,
-            shape: BoxShape.circle,
-            boxShadow: _focused
-                ? [
-                    BoxShadow(color: p.primaryText, spreadRadius: 2),
-                    BoxShadow(
-                      color: p.primary.withValues(alpha: 0.25),
-                      spreadRadius: 6,
-                    ),
-                  ]
-                : null,
-          ),
+        child: AnimatedScale(
+          // Press 0.92 (90 ms), release spring/pop (Figma 13 · 2).
+          scale: _pressed && !plain ? 0.92 : 1,
+          duration: _pressed ? ElioMotion.instant : ElioMotion.slow,
+          curve: _pressed ? ElioMotion.standard : ElioMotion.pop,
           child: Container(
-            width: _controlSize,
-            height: _controlSize,
+            width: _controlSize + 2 * _ringGap,
+            height: _controlSize + 2 * _ringGap,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              // A sphere: light from the top left, darker towards the rim.
-              gradient: RadialGradient(
-                center: const Alignment(-0.35, -0.4),
-                radius: 0.95,
-                colors: [
-                  Color.lerp(p.primary, Colors.white, 0.45)!,
-                  p.primary,
-                  p.primaryActive,
-                ],
-                stops: const [0, 0.55, 1],
-              ),
+              color: p.surface,
               shape: BoxShape.circle,
-              // 1.5 px stroke keeps the circle at 3:1 on white.
-              border: Border.all(color: p.primaryText, width: 1.5),
-              boxShadow: dark ? ElioGlow.control : ElioLightEffects.card,
-            ),
-            child: !has3d
-                ? Icon(Icons.smart_toy, size: 28, color: p.onPrimary)
-                : ClipOval(
-                    // The web view turns the robot with its own touch handling;
-                    // a short still press is read here as a tap.
-                    child: Listener(
-                      onPointerDown: (e) => _down = e.position,
-                      onPointerUp: (e) {
-                        final d = _down;
-                        _down = null;
-                        if (d != null && (e.position - d).distance < 10) {
-                          _tap();
-                        }
-                      },
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Flutter3DViewer(
-                            src: widget.modelAsset!,
-                            progressBarColor: Colors.transparent,
-                            onProgress: (v) {
-                              if (v >= 1 && mounted) {
-                                setState(() => _loaded = true);
-                              }
-                            },
-                            onLoad: (_) {
-                              if (mounted) setState(() => _loaded = true);
-                            },
-                            onError: (_) {
-                              if (mounted) setState(() => _failed = true);
-                            },
-                          ),
-                          if (!_loaded)
-                            IgnorePointer(
-                              child: Icon(
-                                Icons.smart_toy,
-                                size: 28,
-                                color: p.onPrimary,
-                              ),
-                            ),
-                          // Glossy highlight; the touches pass through.
-                          IgnorePointer(
-                            child: Align(
-                              alignment: const Alignment(-0.35, -0.6),
-                              child: Container(
-                                width: 22,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.white.withValues(alpha: 0.55),
-                                      Colors.white.withValues(alpha: 0),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+              boxShadow: _focused
+                  ? [
+                      BoxShadow(color: p.primaryText, spreadRadius: 2),
+                      BoxShadow(
+                        color: p.primary.withValues(alpha: 0.25),
+                        spreadRadius: 6,
                       ),
-                    ),
-                  ),
+                    ]
+                  : null,
+            ),
+            child: Container(
+              width: _controlSize,
+              height: _controlSize,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: _pressed ? p.primaryHover : p.primary,
+                shape: BoxShape.circle,
+                // 1.5 px stroke keeps the circle at 3:1 on white.
+                border: Border.all(color: p.primaryText, width: 1.5),
+                boxShadow: dark ? ElioGlow.control : ElioLightEffects.card,
+              ),
+              child: Icon(
+                Icons.crop_free_rounded,
+                size: 28,
+                color: p.onPrimary,
+              ),
+            ),
           ),
         ),
       ),

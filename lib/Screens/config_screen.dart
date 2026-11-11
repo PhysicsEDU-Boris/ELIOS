@@ -19,10 +19,11 @@ import '../utils/system_ui.dart';
 import '../widgets/learn/learn_ui.dart';
 import '../widgets/tester_panel.dart';
 import 'config/config_parts.dart';
+import 'config/config_settings_sheet.dart' show ConfigSegmented;
 import 'config/robot_wifi_qr_sheet.dart';
 import 'control_screen.dart';
-import 'device_scan_screen.dart';
 import 'package:elio/l10n/l10n.dart';
+import '../services/elio_feedback.dart';
 
 /// "Enter an IP like 192.168.4.1", or null when [value] is a dotted IPv4.
 String? validateIp(String? value) {
@@ -68,27 +69,9 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     if (config.port > 0) _port.text = config.port.toString();
   }
 
-  Future<void> _openControlScreen() =>
-      _openLandscapeScreen(const ControlScreen());
-
-  Future<void> _openDeviceScan() =>
-      _openLandscapeScreen(const DeviceScanScreen());
-
-  Future<void> _openLandscapeScreen(Widget screen) async {
-    try {
-      await Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
-    } finally {
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      try {
-        await SystemChrome.setPreferredOrientations(const [
-          DeviceOrientation.portraitUp,
-        ]);
-        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-        applyTransparentSystemBars();
-      } catch (error) {
-        debugPrint('Unable to restore portrait mode: $error');
-      }
-    }
+  Future<void> _openControlScreen() {
+    elioFeedback(ElioSfx.blip, ElioHaptics.medium); // Figma 13 · 25
+    return pushLandscapeScreen(context, const ControlScreen());
   }
 
   Future<void> _connect() async {
@@ -112,7 +95,10 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     if (ok && mounted) await _openControlScreen();
   }
 
-  void _disconnect() => ref.read(configLinkProvider.notifier).disconnect();
+  void _disconnect() {
+    ElioHaptics.heavy(); // H-heavy: Disconnect
+    ref.read(configLinkProvider.notifier).disconnect();
+  }
 
   /// The phone hotspot gives the robot a new IP after a restart; look for it.
   Future<void> _find() async {
@@ -176,9 +162,6 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   Widget build(BuildContext context) {
     final espConfigAsync = ref.watch(espConfigProvider);
     espConfigAsync.whenData(_populateControllersFromConfig);
-    final cameraSource =
-        espConfigAsync.valueOrNull?.cameraSource ?? CameraSource.maixCam2;
-    final deviceMode = cameraSource == CameraSource.device;
     final status = ref.watch(robotStatusProvider).valueOrNull ?? 'Disconnected';
     final link = ref.watch(configLinkProvider);
     final view = linkView(status, link);
@@ -218,40 +201,19 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                       children: [
                         _RobotHero(
                           view: view,
-                          deviceMode: deviceMode,
                           endpoint: '${_ip.text} : ${_port.text}',
                         ),
                         const SizedBox(height: 16),
-                        const EliosAiCard(),
-                        if (testerBuild) const TesterPanel(),
+                        const _CameraRow(),
+                        const SizedBox(height: 16),
+                        _connectionCardFor(p, view, link),
                         const SizedBox(height: 24),
                         ConfigSectionHeader(
-                          l10n.cfgCameraSource,
-                          l10n.cfgCameraSourceSub,
+                          l10n.setupVideoStream,
+                          l10n.setResolutionSub,
                         ),
                         const SizedBox(height: 12),
-                        _TilePair(
-                          left: ChoiceTile(
-                            icon: Icons.photo_camera_outlined,
-                            title: 'MaixCAM2',
-                            description: l10n.cfgMaixDesc,
-                            selected: !deviceMode,
-                            onTap: () =>
-                                _setCameraSource(CameraSource.maixCam2),
-                          ),
-                          right: ChoiceTile(
-                            icon: Icons.smartphone_outlined,
-                            title: l10n.cfgPhoneCamera,
-                            description: l10n.cfgPhoneCameraDesc,
-                            selected: deviceMode,
-                            onTap: () => _setCameraSource(CameraSource.device),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        if (deviceMode)
-                          _startScanCard(p)
-                        else
-                          _connectionCardFor(p, view, link),
+                        const _VideoCard(),
                         const SizedBox(height: 24),
                         ConfigSectionHeader(
                           l10n.cfgQuizQuestions,
@@ -259,6 +221,9 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                         ),
                         const SizedBox(height: 12),
                         const _QuizSourceTiles(),
+                        const SizedBox(height: 16),
+                        const EliosAiCard(),
+                        if (testerBuild) const TesterPanel(),
                       ],
                     ),
                   ),
@@ -271,26 +236,8 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     );
   }
 
-  void _setCameraSource(CameraSource source) => ref
-      .read(espConfigProvider.notifier)
-      .patch((c) => c.copyWith(cameraSource: source));
-
-  Widget _startScanCard(ElioPalette p) => ConfigCard(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(context.l10n.configPhoneOnlyHint, style: configBody(p)),
-        const SizedBox(height: 12),
-        ConfigButton(
-          label: l10n.cfgStartScan,
-          icon: Icons.center_focus_strong_outlined,
-          onPressed: _openDeviceScan,
-        ),
-      ],
-    ),
-  );
-
   Widget _connectionCardFor(ElioPalette p, LinkView view, ConfigLink link) {
+    final esp = ref.read(espConfigProvider).valueOrNull ?? const EspConfig();
     final connecting = view == LinkView.connecting;
     final failed = view == LinkView.failed;
     final (Widget first, Widget second) = switch (view) {
@@ -319,10 +266,11 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
         ),
       ),
       LinkView.connected => (
+        // ELIOS 3: reopen Control while the robot stays connected.
         ConfigButton(
-          label: l10n.cfgConnected,
-          icon: Icons.check_rounded,
-          onPressed: null,
+          label: l10n.setupOpenControl,
+          icon: Icons.sports_esports_outlined,
+          onPressed: _openControlScreen,
         ),
         ConfigButton(
           label: l10n.cfgDisconnect,
@@ -525,6 +473,15 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 8),
+            _SwitchLine(
+              title: l10n.setAutoReconnect,
+              subtitle: l10n.setAutoReconnectSub,
+              value: esp.autoReconnect,
+              onChanged: (v) => ref
+                  .read(espConfigProvider.notifier)
+                  .patch((c) => c.copyWith(autoReconnect: v)),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Divider(color: configDivider(p)),
@@ -625,36 +582,28 @@ class _AddressField extends StatelessWidget {
 
 /// Robot hero: name, address line, the real 3D model and status tiles.
 class _RobotHero extends StatelessWidget {
-  const _RobotHero({
-    required this.view,
-    required this.deviceMode,
-    required this.endpoint,
-  });
+  const _RobotHero({required this.view, required this.endpoint});
   final LinkView view;
-  final bool deviceMode;
   final String endpoint;
 
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
-    final connected = !deviceMode && view == LinkView.connected;
+    final connected = view == LinkView.connected;
     final onHero = connected ? p.onPrimary : p.textPrimary;
-    final subtitle = deviceMode
-        ? l10n.cfgRobotNotUsed
-        : switch (view) {
-            LinkView.connected => '$endpoint · MaixCAM2',
-            LinkView.connecting => l10n.cfgConnectingTo(endpoint),
-            LinkView.failed => l10n.cfgLastTryFailed,
-            LinkView.notConnected => l10n.cfgNotConnectedYet,
-          };
-    final (statusText, dot) = deviceMode
-        ? (l10n.cfgNotUsed, p.textTertiary)
-        : switch (view) {
-            LinkView.connected => (l10n.cfgOnline, p.primaryText),
-            LinkView.connecting => (l10n.cfgConnectingShort, p.secondaryText),
-            LinkView.failed => (l10n.cfgOffline, p.errorText),
-            LinkView.notConnected => (l10n.cfgOffline, p.textTertiary),
-          };
+    // Robots always use MaixCAM2 (ELIOS 3); the phone scans from the Scan hub.
+    final subtitle = switch (view) {
+      LinkView.connected => '$endpoint · MaixCAM2',
+      LinkView.connecting => l10n.cfgConnectingTo(endpoint),
+      LinkView.failed => l10n.cfgLastTryFailed,
+      LinkView.notConnected => l10n.cfgNotConnectedYet,
+    };
+    final (statusText, dot) = switch (view) {
+      LinkView.connected => (l10n.cfgOnline, p.primaryText),
+      LinkView.connecting => (l10n.cfgConnectingShort, p.secondaryText),
+      LinkView.failed => (l10n.cfgOffline, p.errorText),
+      LinkView.notConnected => (l10n.cfgOffline, p.textTertiary),
+    };
     return DecoratedBox(
       decoration: ShapeDecoration(
         color: connected ? p.primary : p.surfaceRaised,
@@ -738,7 +687,7 @@ class _RobotHero extends StatelessWidget {
               child: Stack(
                 children: [
                   const Positioned.fill(child: _ElioModelViewer()),
-                  if (view == LinkView.connecting && !deviceMode)
+                  if (view == LinkView.connecting)
                     Positioned(
                       left: 0,
                       right: 0,
@@ -817,10 +766,7 @@ class _RobotHero extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: StatusTile(
-                    label: l10n.cfgCamera,
-                    value: deviceMode ? l10n.cfgPhone : 'MaixCAM2',
-                  ),
+                  child: StatusTile(label: l10n.cfgCamera, value: 'MaixCAM2'),
                 ),
               ],
             ),
@@ -892,8 +838,12 @@ class _QuizSourceTiles extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Robot scans only (0198); phone scans use Profile → Quiz.
     final shown = ref.watch(
-      appPreferencesProvider.select((p) => p.questionSource),
+      appPreferencesProvider.select((p) => p.robotQuestionSource),
+    );
+    final on = ref.watch(
+      appPreferencesProvider.select((p) => p.robotQuizEnabled),
     );
     return ValueListenableBuilder<AiStatus>(
       valueListenable: AiQuizService.instance.status,
@@ -901,8 +851,8 @@ class _QuizSourceTiles extends ConsumerWidget {
         final p = context.elio;
         void choose(QuestionSource s) => ref
             .read(appPreferencesProvider.notifier)
-            .update((prefs) => prefs.copyWith(questionSource: s));
-        return _TilePair(
+            .update((prefs) => prefs.copyWith(robotQuestionSource: s));
+        final tiles = _TilePair(
           left: ChoiceTile(
             icon: Icons.storage_rounded,
             title: l10n.questionBank,
@@ -929,7 +879,134 @@ class _QuizSourceTiles extends ConsumerWidget {
             onTap: () => choose(QuestionSource.ai),
           ),
         );
+        return ConfigCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _SwitchLine(
+                title: l10n.setupQuizAfterScan,
+                subtitle: on ? null : l10n.wqSavedNoQuiz,
+                value: on,
+                onChanged: (v) => ref
+                    .read(appPreferencesProvider.notifier)
+                    .update((prefs) => prefs.copyWith(robotQuizEnabled: v)),
+              ),
+              const SizedBox(height: 12),
+              IgnorePointer(
+                ignoring: !on,
+                child: Opacity(opacity: on ? 1 : 0.45, child: tiles),
+              ),
+            ],
+          ),
+        );
       },
+    );
+  }
+}
+
+class _SwitchLine extends StatelessWidget {
+  const _SwitchLine({
+    required this.title,
+    required this.value,
+    required this.onChanged,
+    this.subtitle,
+  });
+
+  final String title;
+  final String? subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    void flip(bool v) {
+      elioFeedback(
+        v ? ElioSfx.toggleOn : ElioSfx.toggleOff,
+        ElioHaptics.select,
+      );
+      onChanged(v);
+    }
+
+    return MergeSemantics(
+      child: InkWell(
+        onTap: () => flip(!value),
+        borderRadius: BorderRadius.circular(12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: configStrong(p)),
+                  if (subtitle != null)
+                    Text(subtitle!, style: configCaption(p)),
+                ],
+              ),
+            ),
+            Switch(value: value, onChanged: flip),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Camera: MaixCAM2 · Automatic": robots always use MaixCAM2 (0196).
+class _CameraRow extends StatelessWidget {
+  const _CameraRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: ShapeDecoration(
+        color: p.surfaceRaised,
+        shape: learnShape(learnRadiusM),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.photo_camera_outlined, size: 20, color: p.textPrimary),
+          const SizedBox(width: 10),
+          Expanded(child: Text(l10n.setupCameraAuto, style: configStrong(p))),
+          Text(l10n.setupAutomatic, style: configCaption(p)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Video stream (moved from the settings sheet): resolution and FPS overlay.
+class _VideoCard extends ConsumerWidget {
+  const _VideoCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final esp = ref.watch(espConfigProvider).valueOrNull ?? const EspConfig();
+    void patch(EspConfig Function(EspConfig) f) =>
+        ref.read(espConfigProvider.notifier).patch(f);
+    return ConfigCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(l10n.setResolution, style: configStrong(context.elio)),
+          const SizedBox(height: 10),
+          ConfigSegmented(
+            label: l10n.setResolution,
+            options: const ['480p', '720p'],
+            selected: esp.resolutionPreset,
+            onSelected: (v) => patch((c) => c.copyWith(resolutionPreset: v)),
+          ),
+          const SizedBox(height: 12),
+          _SwitchLine(
+            title: l10n.setShowFps,
+            subtitle: l10n.setShowFpsSub,
+            value: esp.showFpsOverlay,
+            onChanged: (v) => patch((c) => c.copyWith(showFpsOverlay: v)),
+          ),
+        ],
+      ),
     );
   }
 }

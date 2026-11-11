@@ -97,7 +97,6 @@ void main() {
             bottomNavigationBar: ElioBottomNav(
               currentIndex: 4,
               onSelectTab: (_) {},
-              onControl: () {},
             ),
           ),
         ),
@@ -326,7 +325,6 @@ void main() {
             bottomNavigationBar: ElioBottomNav(
               currentIndex: 4,
               onSelectTab: (_) {},
-              onControl: () {},
             ),
           ),
           mode,
@@ -336,16 +334,19 @@ void main() {
         );
         expect(selected, findsOneWidget);
         expect(t.widget<Semantics>(selected).properties.label, 'Riwayat');
-        final history = t.widget<Text>(find.text('Riwayat')),
-            home = t.widget<Text>(find.text('Beranda'));
+        // Label colours animate (0202): read the effective style.
+        await t.pumpAndSettle();
+        TextStyle styleOf(String s) =>
+            DefaultTextStyle.of(t.element(find.text(s))).style;
+        final history = styleOf('Riwayat'), home = styleOf('Beranda');
         expect(
-          history.style!.color,
+          history.color,
           mode == Brightness.dark
               ? ElioTokens.dark.primaryText
               : ElioTokens.light.primaryText,
         );
         expect(
-          home.style!.color,
+          home.color,
           mode == Brightness.dark
               ? ElioTokens.dark.textSecondary
               : ElioTokens.light.textSecondary,

@@ -23,13 +23,9 @@ class DeepExplainCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            bodyText,
-                        style: context.text.bodySmall,
-          ),
+          Text(bodyText, style: context.text.bodySmall),
           const SizedBox(height: 10),
-          for (final point in bulletPoints)
-            _bullet(context, point),
+          for (final point in bulletPoints) _bullet(context, point),
         ],
       ),
     );
@@ -49,14 +45,17 @@ class DeepExplainCard extends StatelessWidget {
               border: Border.all(color: p.primaryText.withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Text('▸', style: TextStyle(color: p.primaryText, fontWeight: FontWeight.bold, fontSize: 10, height: 1.0)),
-          ),
-          Expanded(
             child: Text(
-              text,
-                            style: context.text.bodySmall,
+              '▸',
+              style: TextStyle(
+                color: p.primaryText,
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+                height: 1.0,
+              ),
             ),
           ),
+          Expanded(child: Text(text, style: context.text.bodySmall)),
         ],
       ),
     );

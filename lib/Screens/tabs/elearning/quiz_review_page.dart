@@ -5,7 +5,6 @@ import '../../../models/learning_progress.dart';
 import '../../../widgets/learn/learn_ui.dart';
 import 'package:elio/l10n/l10n.dart';
 
-
 class QuizReviewPage extends StatelessWidget {
   final QuizReview review;
 
@@ -41,7 +40,9 @@ class _QuizReviewHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = review.passed ? context.elio.primaryText : context.elio.errorText;
+    final statusColor = review.passed
+        ? context.elio.primaryText
+        : context.elio.errorText;
 
     return Container(
       width: double.infinity,
@@ -49,7 +50,9 @@ class _QuizReviewHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.elio.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.elio.borderSubtle.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: context.elio.borderSubtle.withValues(alpha: 0.5),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,7 +75,10 @@ class _QuizReviewHeader extends StatelessWidget {
                 label: l10n.rvScore,
                 value: '${review.score}/${review.totalQuestions}',
               ),
-              _QuizReviewMetric(label: l10n.rvPercent, value: '${review.percent}%'),
+              _QuizReviewMetric(
+                label: l10n.rvPercent,
+                value: '${review.percent}%',
+              ),
               _QuizReviewMetric(
                 label: review.passed ? l10n.rvPassed : l10n.lqAttemptUsed,
                 value: _reviewDateLabel(review.completedAt),
@@ -162,7 +168,9 @@ class _QuizReviewAnswerCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.elio.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: context.elio.borderSubtle.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: context.elio.borderSubtle.withValues(alpha: 0.5),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,7 +227,11 @@ class _QuizReviewAnswerCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               answer.explanation,
-              style: GoogleFonts.inter(color: context.elio.textPrimary, fontSize: 13, height: 1.45),
+              style: GoogleFonts.inter(
+                color: context.elio.textPrimary,
+                fontSize: 13,
+                height: 1.45,
+              ),
             ),
           ],
         ],

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 // Scan activity (decision 0144): 17-week year grid (Figma 333:4383) and the
 // month calendar with the selected day's scans (Figma 329:3836).
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:intl/intl.dart' show DateFormat;
 
 import '../../models/home_stats.dart';
 import '../../models/scan_record.dart';
+import '../../theme/elio_motion.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/auth/auth_widgets.dart' show authPalette;
 import 'home_parts.dart';
@@ -80,19 +82,28 @@ class YearGrid extends StatelessWidget {
               final day = dayAt(d.localPosition);
               if (day != null) onSelectDay(day);
             },
-            child: CustomPaint(
-              size: Size(c.maxWidth, height),
-              painter: _YearGridPainter(
-                stats: stats,
-                cell: cell,
-                gap: _gap,
-                labelW: labelW,
-                topH: topH,
-                labelStyle: labelStyle,
-                scaler: scaler,
-                empty: p.borderSubtle,
-                fill: p.primary,
-                todayRing: p.textTertiary,
+            // Cells fade in with a diagonal stagger (8 ms per column,
+            // 220 ms each) and today pulses once (Figma 13 · 14).
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 1),
+              duration: ElioMotion.reduced(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 16 * 8 + 6 * 8 + 220 + 300),
+              builder: (context, ms, _) => CustomPaint(
+                size: Size(c.maxWidth, height),
+                painter: _YearGridPainter(
+                  progressMs: ms * (16 * 8 + 6 * 8 + 220 + 300),
+                  stats: stats,
+                  cell: cell,
+                  gap: _gap,
+                  labelW: labelW,
+                  topH: topH,
+                  labelStyle: labelStyle,
+                  scaler: scaler,
+                  empty: p.borderSubtle,
+                  fill: p.primary,
+                  todayRing: p.textTertiary,
+                ),
               ),
             ),
           ),
@@ -104,6 +115,7 @@ class YearGrid extends StatelessWidget {
 
 class _YearGridPainter extends CustomPainter {
   _YearGridPainter({
+    this.progressMs = double.infinity,
     required this.stats,
     required this.cell,
     required this.gap,
@@ -118,6 +130,13 @@ class _YearGridPainter extends CustomPainter {
 
   final HomeStats stats;
   final double cell, gap, labelW, topH;
+
+  /// Time since the grid appeared, for the entrance (infinity = at rest).
+  final double progressMs;
+
+  /// Cell opacity 0 → 1 over 220 ms after a diagonal delay of 8 ms per step.
+  double _fade(int col, int row) =>
+      ((progressMs - (col + row) * 8) / 220).clamp(0.0, 1.0);
   final TextStyle labelStyle;
   final TextScaler scaler;
   final Color empty, fill, todayRing;
@@ -169,14 +188,20 @@ class _YearGridPainter extends CustomPainter {
           Radius.circular(cell * 0.22),
         );
         final n = stats.scansOn(day);
+        final f = _fade(col, row);
+        final base = n == 0 ? empty : fill.withValues(alpha: activityAlpha(n));
+        // Today pulses once after the sweep: scale 1 → 1.15 → 1.
+        final pulse = day == stats.today
+            ? math.sin(((progressMs - 396) / 300).clamp(0.0, 1.0) * math.pi)
+            : 0.0;
+        final r = pulse == 0 ? rect : rect.inflate(cell * 0.075 * pulse);
         canvas.drawRRect(
-          rect,
-          Paint()
-            ..color = n == 0 ? empty : fill.withValues(alpha: activityAlpha(n)),
+          r,
+          Paint()..color = base.withValues(alpha: base.a * f),
         );
         if (day == stats.today) {
           canvas.drawRRect(
-            rect.deflate(0.75),
+            r.deflate(0.75),
             Paint()
               ..color = todayRing
               ..style = PaintingStyle.stroke
@@ -189,6 +214,7 @@ class _YearGridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_YearGridPainter old) =>
+      old.progressMs != progressMs ||
       old.stats != stats ||
       old.cell != cell ||
       old.fill != fill ||

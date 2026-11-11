@@ -2,33 +2,32 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/services.dart'
-    show DeviceOrientation, SystemChannels, SystemChrome, SystemUiMode;
+import 'package:flutter/services.dart' show SystemChannels;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../utils/system_ui.dart';
+import '../providers/auth_provider.dart';
 
 import '../models/app_notification.dart';
 import '../providers/app_notification_provider.dart';
+import '../providers/daily_guide_provider.dart';
+import '../services/guide_progress.dart';
 import '../providers/elio_theme_mode_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/robot_provider.dart';
 import '../theme/elio_theme.dart';
 import '../theme/elio_tokens.dart';
 import '../widgets/app_notification_banner.dart';
-import '../widgets/auth/auth_widgets.dart' show authPalette;
 import '../widgets/elio_bottom_nav.dart';
-import '../widgets/elio_drawer_host.dart';
-import '../widgets/elio_sidebar.dart';
-import '../widgets/elio_top_bar.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
 import 'scan_history_screen.dart';
 import 'tabs/elearning_tab.dart';
-import 'config/config_settings_sheet.dart' show ConfigSettingsButton;
-import 'config_screen.dart';
 import 'control_screen.dart';
+import 'profile/profile_screen.dart';
+import 'scan/scan_hub_screen.dart';
 import 'package:elio/l10n/l10n.dart';
+import '../services/elio_feedback.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   final FirebaseAuth auth;
@@ -40,12 +39,11 @@ class HomeShell extends ConsumerStatefulWidget {
 }
 
 class _HomeShellState extends ConsumerState<HomeShell> {
+  // ELIOS 3 tabs: Home 0, Learn 1, Scan 2, History 4, Profile 5. Index 3 is
+  // not a tab: setting it opens robot Control (Home quests, notifications).
   static const int _controlIndex = 3;
-  // Added by N3; the other indices are unchanged.
   static const int _historyIndex = 4;
-
-  final _drawerKey = GlobalKey<ElioDrawerHostState>();
-  final _avatarFocus = FocusNode(debugLabel: 'profile avatar');
+  static const int _profileIndex = 5;
   int _currentIndex = 0;
   bool _quizInProgress = false;
   int _quizResetGeneration = 0;
@@ -65,9 +63,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     });
 
     final initialNavigationIndex = ref.read(navigationIndexProvider);
-    if ((initialNavigationIndex >= 0 &&
-            initialNavigationIndex < _controlIndex) ||
-        initialNavigationIndex == _historyIndex) {
+    if (initialNavigationIndex >= 0 &&
+        initialNavigationIndex <= _profileIndex &&
+        initialNavigationIndex != _controlIndex) {
       _currentIndex = initialNavigationIndex;
     } else if (initialNavigationIndex == _controlIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -82,20 +80,14 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     );
   }
 
-  String get _pageTitle => switch (_currentIndex) {
-    0 => l10n.navHome,
-    1 => l10n.navLearn,
-    2 => l10n.shellConnectElio,
-    _ => l10n.navHistory,
-  };
-
   Widget _buildCurrentScreen() {
     if (_loggedTabBuilds.add(_currentIndex)) {
       final label = switch (_currentIndex) {
         0 => 'Home/Dashboard',
         1 => 'Learn',
-        2 => 'Config',
+        2 => 'Scan',
         _historyIndex => 'History',
+        _profileIndex => 'Profile',
         _ => 'Control placeholder',
       };
       debugPrint('[StartupDiag] building $label');
@@ -110,12 +102,19 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           setState(() => _quizInProgress = active);
         },
       ),
-      2 => const ConfigScreen(),
-      _historyIndex => ElioTheme.wrap(ScanHistoryScreen(
-        onClose: () => _onBottomNavigationTap(0),
-        onStartScan: () => _onBottomNavigationTap(_controlIndex),
-        showHeader: false,
-      )),
+      2 => const ScanHubScreen(),
+      _historyIndex => ElioTheme.wrap(
+        ScanHistoryScreen(
+          onClose: () => _onBottomNavigationTap(0),
+          onStartScan: () => _onBottomNavigationTap(2),
+          showHeader: false,
+          compact: true,
+        ),
+      ),
+      _profileIndex => ProfileScreen(
+        user: widget.auth.currentUser,
+        onSignOut: _signOut,
+      ),
       _ => const SizedBox.shrink(),
     };
   }
@@ -129,7 +128,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   }
 
   void _handleNavigationProviderChange(int index) {
-    if (_syncingNavigationProvider || index < 0 || index > _historyIndex) {
+    if (_syncingNavigationProvider || index < 0 || index > _profileIndex) {
       return;
     }
 
@@ -146,6 +145,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     final notifications = ref.read(appNotificationProvider.notifier);
 
     if (!wasConnected && isConnected) {
+      // S6 + H-success: the result of the user's connect.
+      elioFeedback(ElioSfx.blip, ElioHaptics.success);
       notifications.push(
         type: AppNotificationType.robot,
         title: l10n.shellConnected,
@@ -168,28 +169,20 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   Future<void> _openControlScreen() async {
     if (!mounted || _controlScreenOpen) return;
-
     _controlScreenOpen = true;
     try {
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const ControlScreen(),
-          fullscreenDialog: true,
-        ),
-      );
+      await pushLandscapeScreen(context, const ControlScreen());
     } finally {
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      try {
-        await SystemChrome.setPreferredOrientations(const [
-          DeviceOrientation.portraitUp,
-        ]);
-        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-        applyTransparentSystemBars();
-      } catch (error) {
-        debugPrint('Unable to restore portrait mode: $error');
-      }
       _controlScreenOpen = false;
     }
+  }
+
+  Future<void> _signOut() async {
+    await widget.auth.signOut();
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => LoginScreen(auth: widget.auth)),
+    );
   }
 
   /// True when no quiz is running, or the user chose to leave it (progress reset).
@@ -224,7 +217,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     int index, {
     bool updateProvider = true,
   }) async {
-    if (index < 0 || index > _historyIndex) return;
+    if (index < 0 || index > _profileIndex) return;
 
     if (index == _currentIndex && index != _controlIndex) return;
 
@@ -244,21 +237,16 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
     setState(() => _currentIndex = index);
     if (updateProvider) _syncNavigationProvider(index);
-  }
-
-  @override
-  void dispose() {
-    _avatarFocus.dispose();
-    super.dispose();
-  }
-
-  Future<void> _onDrawerTap(int index) async {
-    _drawerKey.currentState?.close();
-    await _onBottomNavigationTap(index);
+    if (index == 1) {
+      unawaited(ref.read(dailyGuideFeedProvider.notifier).refresh());
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Guide catalogue and progress sync from app start (Home shows the "New guide" notification).
+    ref.listen(dailyGuideFeedProvider, (_, _) {});
+    ref.listen(guideProgressProvider, (_, _) {});
     ref.listen<int>(
       navigationIndexProvider,
       (_, next) => _handleNavigationProviderChange(next),
@@ -269,101 +257,32 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       _handleRobotStatusChange(previous?.valueOrNull, nextStatus);
     });
 
-    final user = widget.auth.currentUser;
+    final user = ref.watch(currentUserProvider) ?? widget.auth.currentUser;
+    final guest = user == null || user.isAnonymous;
 
     return AppNotificationBannerHost(
-      child: ElioDrawerHost(
-        key: _drawerKey,
-        onClosed: _avatarFocus.requestFocus,
-        drawer: ElioTheme.wrap(
-          Builder(
-            builder: (context) => Material(
-              color: authPalette(context).surface,
-              child: ElioSidebar(
-                user: user,
-                currentIndex: _currentIndex,
-                onSelect: _onDrawerTap,
-                onClose: () => _drawerKey.currentState?.close(),
-                onSignOut: () async {
-                  _drawerKey.currentState?.close();
-                  await widget.auth.signOut();
-                  if (!mounted) return;
-                  Navigator.of(this.context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => LoginScreen(auth: widget.auth),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
+      child: Scaffold(
+        // Shows behind the bar's rounded corners; the shell is outside ElioTheme.
+        backgroundColor:
+            (ref.watch(elioThemeModeProvider) == ElioThemeMode.dark
+                    ? ElioTokens.dark
+                    : ElioTokens.light)
+                .background,
+        // ELIOS 3: no top bar and no sidebar; each tab draws its own title.
+        body: _currentIndex == _historyIndex
+            ? SafeArea(bottom: false, child: _buildCurrentScreen())
+            : _buildCurrentScreen(),
+        floatingActionButtonLocation: const ElioControlFabLocation(),
+        floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
+        floatingActionButton: ElioTheme.wrap(
+          ElioScanOrb(onTap: () => _onBottomNavigationTap(2)),
         ),
-        child: Scaffold(
-          // Shows behind the bar's rounded corners; the shell is outside ElioTheme.
-          backgroundColor:
-              (ref.watch(elioThemeModeProvider) == ElioThemeMode.dark
-                      ? ElioTokens.dark
-                      : ElioTokens.light)
-                  .background,
-          body: Column(
-            children: [
-              ElioTheme.wrap(
-                Builder(
-                  builder: (context) => ColoredBox(
-                    color: authPalette(context).background,
-                    child: SafeArea(
-                      bottom: false,
-                      child: ElioTopBar(
-                        title: _currentIndex == 0
-                            ? l10n.homeHello(homeDisplayName(user))
-                            : _pageTitle,
-                        subtitle: switch (_currentIndex) {
-                          0 => l10n.homeReady,
-                          2 => l10n.configTopSubtitle,
-                          _historyIndex => l10n.h3Subtitle,
-                          _ => null,
-                        },
-                        trailing: switch (_currentIndex) {
-                          0 => HomeHeaderActions(
-                            onOpenLearning: () => _onBottomNavigationTap(1),
-                          ),
-                          2 => const ConfigSettingsButton(),
-                          _ => null,
-                        },
-                        photoUrl: user?.photoURL,
-                        avatarFocusNode: _avatarFocus,
-                        onOpenProfile: () => _drawerKey.currentState?.open(),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                // The top bar already took the status bar inset.
-                child: MediaQuery.removePadding(
-                  context: context,
-                  removeTop: true,
-                  child: _buildCurrentScreen(),
-                ),
-              ),
-            ],
-          ),
-          floatingActionButtonLocation: const ElioControlFabLocation(),
-          floatingActionButtonAnimator:
-              FloatingActionButtonAnimator.noAnimation,
-          floatingActionButton: ElioTheme.wrap(
-            ElioControlButton(
-              onTap: () => _onBottomNavigationTap(_controlIndex),
-              modelAsset: 'assets/models/mobilElios5.glb',
-            ),
-          ),
-          bottomNavigationBar: ElioTheme.wrap(
-            ElioBottomNav(
-              // Control (3) is an action, never the active tab.
-              currentIndex: _currentIndex,
-              onSelectTab: _onBottomNavigationTap,
-              onControl: () => _onBottomNavigationTap(_controlIndex),
-            ),
+        bottomNavigationBar: ElioTheme.wrap(
+          ElioBottomNav(
+            currentIndex: _currentIndex,
+            onSelectTab: _onBottomNavigationTap,
+            photoUrl: guest ? null : user.photoURL,
+            initials: guest ? null : initialsOf(user),
           ),
         ),
       ),

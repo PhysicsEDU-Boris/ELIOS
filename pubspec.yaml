@@ -57,6 +57,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: any
+  audioplayers: ^6.8.1
 
 dev_dependencies:
   flutter_test:
@@ -79,12 +80,16 @@ flutter:
     - .env.example
     - assets/icon/
     - assets/illustrations/learn/
+    - assets/illustrations/robot/
+    - assets/illustrations/guides/
     - assets/models/robot-elio.glb
     - assets/models/mobilElios5.glb
     - assets/module/
     - assets/quiz/
     - assets/illustrations/home/
     - assets/illustrations/control/
+    - assets/illustrations/scan/
+    - assets/sounds/
 
   fonts:
     - family: Google Sans Code

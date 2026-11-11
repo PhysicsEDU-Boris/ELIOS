@@ -20,6 +20,7 @@ class ElioTopBar extends StatelessWidget {
     this.photoUrl,
     this.avatarFocusNode,
     this.trailing,
+    this.foreground,
   });
 
   final String title;
@@ -32,6 +33,9 @@ class ElioTopBar extends StatelessWidget {
 
   /// Optional actions after the title (Home: trophy pill and bell).
   final Widget? trailing;
+
+  /// Title and subtitle colour on a coloured bar (Learn: on the green header).
+  final Color? foreground;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +63,7 @@ class ElioTopBar extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: ElioTokens.body.copyWith(
-                      color: p.textPrimary,
+                      color: foreground ?? p.textPrimary,
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                       height: 1.25,
@@ -71,7 +75,7 @@ class ElioTopBar extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: ElioTokens.bodySmall.copyWith(
-                        color: p.textSecondary,
+                        color: foreground?.withValues(alpha: 0.8) ?? p.textSecondary,
                       ),
                     ),
                 ],

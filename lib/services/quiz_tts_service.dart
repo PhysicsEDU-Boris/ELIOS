@@ -95,7 +95,7 @@ class QuizTtsService {
   @visibleForTesting
   Future<void> Function(String text)? mockSpeak;
 
-  /// Config → Settings → Master volume (0..1), set at each quiz start.
+  /// Profile → Master volume (0..1), kept current by applySoundPrefs (0201).
   double volume = 1.0;
 
   /// Speaks [text]. Always stops whatever was playing first (one slot: the

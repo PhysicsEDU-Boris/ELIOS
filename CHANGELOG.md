@@ -10,6 +10,31 @@ hashes updated after the history rewrite on 2026-10-08. The old-to-new map is
 kept outside the repo.
 
 ## [Unreleased]
+- Daily Guides in the new style (0207): the guide feed, guide page, Quick quiz and Mini lab get the curved green header, leaf cards and the ELIO robot buddy. Continue squeezes and the guide photo flies into the guide page; quest stops, quiz cards, answers, results, recording, photos and the lab verdict all animate with their own sounds and vibrations.
+
+- Learn L3 (0206): under Today's Guide your last 3 guides sit as a polaroid stack you swipe through or pull out to continue; Explore's module cards snap, and the one on the left picks what Discover more shows (videos, guides, simulations and quizzes pop in when you swipe). The module, lesson, simulation and physics quiz pages have the new curved-header look, the new ELIO robot buddy replaces the old quiz mascot, and every card has its sounds and vibrations. Light and dark, English and Bahasa Indonesia. Opening Learn again no longer flashes a loading layout or jumping numbers. Each time you open Learn the screen plays a short entrance: the progress ring sweeps and counts up, the clover drops in, Today's Guide rises and fills its stops, the archive photos are dealt out and the bubbles pop in, with three soft sounds.
+
+- ELIOS 3 motion part 2 (0203): circular dark-mode reveal, quiz answer shake/check, level-up and medal celebration with leaves, activity grid stagger, page fade-through and photo/robot morphs, idle hints, bin buddies jump.
+
+- ELIOS 3 motion (0202): the tab underline slides, icons pop, selector pills slide, Scan hub cards and Home rise in (dial sweeps, numbers count up, trophy sticker drops in), loading placeholders shimmer, the clover sticker bounces and the contribute medal drops in. Reduce motion turns these into simple fades.
+
+- ELIOS 3 sound and haptics (0201): one sound service with the S1–S10 palette (ticks, pops, toggles, chimes, robot blip, shutter, recording, trophy sparkle) that follows Profile → Sound effects and Master volume at once, everywhere (including robot control and quiz answers), and stays silent when the phone is on silent; a haptic map for taps, switches, results and errors.
+
+- ELIOS 3 login (0200): sign in, sign up, forgot password, error and loading now sit under a curved green header with the ELIOS leaf logo, bin buddies and the robot, in light and dark.
+
+- ELIOS 3 History (0199): the History tab is now compact (trophy strip, bin tiles, latest 3 scans, By device, Questions to review) with a new Scan timeline by device (All, Phone, ELIOS; drone coming soon). New scans remember whether the phone or ELIOS made them; older scans stay under All. Contributions are labelled.
+
+- ELIOS 3 scan flows (0198): Scan & quiz with the phone is now a portrait camera with a viewfinder; new Scan to contribute (pick the bin, record, ELIOS AI checks it, +10 trophies saved to History when the bin is right); ELIOS setup gets Open control, inline video settings and its own quiz card (Quiz after each scan on/off, Question bank or ELIOS AI for robot scans). With the robot quiz off, scans are saved to History without a quiz.
+
+- ELIOS 3 Home and Learn (0197): Home has the leaf logo and bell, a "Still connected · Continue" card while a robot is connected (leaving Control now keeps the robot connected; disconnect from ELIOS setup), a level dial hero with the trophy sticker, stat pebbles and pop-card daily quests. Learn shows the Daily Guides streak as clovers and the guide XP under the progress legend.
+
+- ELIOS 3 navigation (0196): the bottom bar is now Home · Learn · Scan · History · Profile. Scan opens a hub with Scan & quiz (phone) and Robot scan (Select vehicle, ELIOS ready and the drone coming soon, then ELIOS setup, which connects and opens Control). Profile holds dark mode, language, sound and quiz settings and the account menu (switch account, sign out). The top bar and sidebar are gone; each page shows its own title. Robots always use MaixCAM2.
+
+- Learn hub redesign L2 v3 (0195): curved green header with a module progress ring, Today's Guide as a ticket, Quiz / Mini lab / Archive / Progress bubbles, and Explore tabs (Modules, Videos, Simulations, PDF guides) with leaf-shaped cards. On Learn the sidebar shows Learn shortcuts (Continue dropdown, Explore, Practice, You) instead of app navigation; the top bar shows the guide streak and XP.
+
+- G4 Daily Guides (0194): Today card, guides feed, issue page, quiz deck, mini lab, server-side guide XP and streaks (`/api/guides`), manifest v2 support.
+
+- Learn: Daily Guide opens the bilingual elios-guides feed, newest issue and archive, with refresh, offline catalogue fallback and per-account reading position. Daily guides stay separate from course completion (decision 0193).
 
 - Account-owned history: separate local records/photos per Firebase UID, durable Supabase sync through the existing backend, authenticated Cloudinary scan photos, bilingual sync status and explicit legacy import. Guide PDFs can select an English or Indonesian URL (decision 0191).
 

@@ -13,6 +13,7 @@ import 'package:elio/models/video_lesson.dart';
 import 'package:elio/providers/auth_provider.dart';
 import 'package:elio/providers/learning_progress_provider.dart';
 import 'package:elio/providers/navigation_provider.dart';
+import 'package:elio/providers/robot_provider.dart';
 import 'package:elio/services/elearning_content_service.dart';
 import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/scan_record_store.dart';
@@ -233,11 +234,25 @@ void main() {
         user: _signedIn,
         size: const Size(390, 3200),
       );
+      // Numbers count up on first show (ELIOS 3 motion, 0202).
+      await t.pump(const Duration(seconds: 1));
       expect(t.takeException(), isNull);
       expect(find.text('25'), findsWidgets); // total scans
       expect(find.text('Waste Spotter'), findsOneWidget); // 140 trophies
       expect(find.text('140 trophies'), findsOneWidget);
-      expect(find.text('110 to Lv3'), findsOneWidget);
+      expect(
+        find.text(
+          '110 trophies to Level 3 · your tree grows with every trophy',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Lv 2'), findsOneWidget);
+      expect(find.text('Lv 3'), findsOneWidget);
+      expect(
+        find.text('ELIOS robot'.toUpperCase()),
+        findsNothing,
+        reason: 'no robot connected',
+      );
       expect(find.text('Scan activity'), findsOneWidget);
       expect(find.text('Bin buddies'), findsOneWidget);
       expect(
@@ -307,7 +322,7 @@ void main() {
         t.element(find.byType(HomeScreen)),
       );
       await t.tap(find.text('Scan an item'));
-      expect(container.read(navigationIndexProvider), 3);
+      expect(container.read(navigationIndexProvider), 2, reason: 'Scan hub');
     },
   );
 
@@ -439,23 +454,65 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('header actions: trophy total and bell are 48 dp', (t) async {
-    final store = _FakeStore(_sample());
+  testWidgets(
+    'header actions: only the 48 dp bell (trophies are on the hero)',
+    (t) async {
+      await pumpAt(
+        t,
+        Scaffold(
+          body: Center(child: HomeHeaderActions(onOpenLearning: () {})),
+        ),
+        overrides: [currentUserProvider.overrideWithValue(null)],
+      );
+      expect(find.byIcon(Icons.emoji_events_outlined), findsNothing);
+      final bell = t.getSize(find.byTooltip('Open notifications'));
+      expect(bell.width, greaterThanOrEqualTo(48));
+      await t.tap(find.byTooltip('Open notifications'));
+      await t.pump(const Duration(milliseconds: 400));
+      expect(find.text('Notifications'), findsOneWidget);
+    },
+  );
+
+  testWidgets('entrance (count-up) plays once per session, not per tab visit', (
+    t,
+  ) async {
+    resetHomeEntrance();
+    addTearDown(resetHomeEntrance);
+    // "25" is the scans pebble (another "25" elsewhere is not animated).
+    int count() => find.text('25').evaluate().length;
+    await _pump(t, user: _signedIn, size: const Size(390, 3200));
+    final counting = count();
+    await t.pump(const Duration(seconds: 1));
+    final settled = count();
+    expect(settled, counting + 1, reason: 'the pebble counted up to 25');
+    // Back to Home later: a new HomeScreen shows the numbers at once.
+    await t.pumpWidget(const SizedBox());
+    await _pump(t, user: _signedIn, size: const Size(390, 3200));
+    expect(count(), settled);
+  });
+
+  testWidgets('resume control shows only while a robot is connected', (
+    t,
+  ) async {
+    final status = StreamController<String>.broadcast();
+    addTearDown(status.close);
     await pumpAt(
       t,
-      Scaffold(
-        body: Center(
-          child: HomeHeaderActions(onOpenLearning: () {}, store: store),
-        ),
-      ),
-      overrides: [currentUserProvider.overrideWithValue(null)],
+      const Scaffold(body: Center(child: HomeResumeControl())),
+      overrides: [robotStatusProvider.overrideWith((ref) => status.stream)],
     );
-    expect(find.text('${store.totalTrophies}'), findsOneWidget);
-    final bell = t.getSize(find.byTooltip('Open notifications'));
-    expect(bell.width, greaterThanOrEqualTo(48));
-    await t.tap(find.byTooltip('Open notifications'));
-    await t.pump(const Duration(milliseconds: 400));
-    expect(find.text('Notifications'), findsOneWidget);
+    expect(find.text('Still connected'), findsNothing);
+    status.add('Connected');
+    await t.pump();
+    expect(find.text('Still connected'), findsOneWidget);
+    final container = ProviderScope.containerOf(
+      t.element(find.byType(HomeResumeControl)),
+    );
+    await t.tap(find.text('Continue'));
+    expect(container.read(navigationIndexProvider), 3, reason: 'opens Control');
+    status.add('Disconnected');
+    await t.pump();
+    expect(find.text('Still connected'), findsNothing);
   });
 
   const shots = [

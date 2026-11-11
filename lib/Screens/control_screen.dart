@@ -466,19 +466,24 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     WidgetsBinding.instance.removeObserver(this);
     _gate.dispose(); // motor 0,0, heartbeat off
 
-    // Disconnect when leaving the control screen (not a quiz pause: the
-    // stream stays up for the whole visit, M2b).
+    // Leaving Control stops the stream (motors are already 0 via the gate)
+    // but keeps a live link, so Home can offer "Resume robot control" (ELIOS 3,
+    // decision 0197). ELIOS setup's Disconnect ends the session.
     debugPrint('[Control] Stopping MaixCAM2 stream');
     _robotNotifier.stopStream();
-
-    debugPrint('[Control] Leaving robot control, disconnecting WebSocket');
-    unawaited(_robotNotifier.disconnect());
+    if (WebSocketService().isConnected) {
+      debugPrint('[Control] Leaving robot control, robot stays connected');
+    } else {
+      // Not connected: stop any reconnect loop, as before.
+      debugPrint('[Control] Leaving robot control, disconnecting WebSocket');
+      unawaited(_robotNotifier.disconnect());
+    }
     unawaited(AiQuizService.instance.cancel());
     setDesktopLandscape(false);
     _liveScan?.dispose();
 
     // Riverpod refuses provider writes while the tree unmounts, and the throw
-    // used to skip the disconnect above: clear the drop flag and any open quiz
+    // used to skip the rest of dispose: clear the drop flag and any open quiz
     // (so it doesn't block future scans) once the tree is unlocked.
     final quiz = _quizNotifier;
     final dropPending = _dropPending;

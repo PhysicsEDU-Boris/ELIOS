@@ -25,6 +25,7 @@ import '../services/tester_log.dart';
 import '../services/websocket_service.dart';
 import 'app_preferences_provider.dart';
 import 'package:elio/l10n/l10n.dart';
+import '../services/elio_feedback.dart';
 
 enum WasteQuizPhase {
   idle,
@@ -226,6 +227,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// Test overrides: a fixed question source, and the essay build flag.
   @visibleForTesting
   static QuestionSource? sourceOverride;
+
+  /// True for MaixCAM2 scans (LOCK and live scan), false for the phone.
+  bool _robotSession = false;
   @visibleForTesting
   static bool essayQuestions = essayQuestionsEnabled;
 
@@ -286,7 +290,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   WasteQuizUiState _freshSession({
     ScannedWaste? scan,
     required WasteQuizPhase phase,
+    bool robot = false,
   }) {
+    _robotSession = robot;
     _sessionStore = ScanRecordStore.instance;
     final difficulty = QuizDifficulty.fromSetting(
       ref.read(appPreferencesProvider).quizDifficulty,
@@ -296,8 +302,11 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         .masterVolume;
     _diagnostics = null;
     _lastAutoSpokenText = null; // a new object/quiz: nothing spoken for it yet
+    final prefs = ref.read(appPreferencesProvider);
+    // Robot scans use the ELIOS setup quiz card, phone scans Profile (0198).
     _sessionSource =
-        sourceOverride ?? ref.read(appPreferencesProvider).questionSource;
+        sourceOverride ??
+        (robot ? prefs.robotQuestionSource : prefs.questionSource);
     _scanClock = scan == null ? null : (Stopwatch()..start());
     _recordedQuestions.clear();
     _recordedTwins.clear();
@@ -372,7 +381,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final generation = ++_generation;
     AiQuizService.instance.cancel();
     loadingSince = DateTime.now();
-    state = _freshSession(phase: WasteQuizPhase.identifying);
+    state = _freshSession(phase: WasteQuizPhase.identifying, robot: true);
     final diagnostics = kDebugMode ? ScanDiagnostics() : null;
     _diagnostics = diagnostics;
     diagnostics?.event('lock', {
@@ -429,7 +438,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _cancelPrefetch();
     final generation = ++_generation;
     loadingSince = DateTime.now();
-    state = _freshSession(phase: WasteQuizPhase.identifying);
+    state = _freshSession(phase: WasteQuizPhase.identifying, robot: true);
     final diagnostics = kDebugMode ? ScanDiagnostics() : null;
     _diagnostics = diagnostics;
     diagnostics?.event('scan_locked', {
@@ -712,6 +721,12 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// wait, owner's M2b part 3 decision). Later questions go through
   /// [_consumeQuestion], served from the background prefetch started below.
   Future<void> _loadQuestion(int index) async {
+    if (index == 0 &&
+        _robotSession &&
+        !ref.read(appPreferencesProvider).robotQuizEnabled) {
+      await _saveScanOnly();
+      return;
+    }
     // The question is changing: any voice still reading out the previous
     // question's verdict/chat/essay-grading reply must not play over it.
     unawaited(QuizTtsService.instance.stop());
@@ -1113,6 +1128,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       return;
     }
     final correct = index == q.correctIndex;
+    // Figma 13 · 28: correct S4 + H-success, wrong S5 + H-error.
+    correct
+        ? elioFeedback(ElioSfx.chime, ElioHaptics.success)
+        : elioFeedback(ElioSfx.knock, ElioHaptics.error);
     _recordedQuestions.add(
       RecordQuestion(
         question: q.question,
@@ -1472,6 +1491,60 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _consumeQuestion(state.questionIndex + 1);
   }
 
+  Future<String?> _savePhoto(ScanRecordStore store) async {
+    final photoBytes = _historyPhotoBytes ?? _cropBytes;
+    // ponytail: legacy/device crops lack a paired clean frame; keep their bytes until recaptured.
+    if (photoBytes == null) return null;
+    try {
+      final scansDir = await store.photoDirectory();
+      if (!scansDir.existsSync()) scansDir.createSync(recursive: true);
+      final file = File(
+        '${scansDir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
+      file.writeAsBytesSync(photoBytes, flush: true);
+      return file.path;
+    } catch (e) {
+      debugPrint('[WasteQuiz] Failed to save crop photo: $e');
+      return null;
+    }
+  }
+
+  /// Robot quiz switched off on ELIOS setup (0198): the identified item is
+  /// saved to History with its bin and photo, without questions or trophies.
+  Future<void> _saveScanOnly() async {
+    final store = _sessionStore ?? ScanRecordStore.instance;
+    final scan = state.scan;
+    final photoPath = await _savePhoto(store);
+    try {
+      await store.addRecord(
+        ScanRecord(
+          id: 'scan-${DateTime.now().microsecondsSinceEpoch}-${_recordNonce()}',
+          time: DateTime.now(),
+          itemName: scan?.displayName ?? l10n.wasteGeneric,
+          category: ScanCategory.fromString(scan?.category?.id),
+          cropPhotoPath: photoPath,
+          difficulty: state.difficulty,
+          questions: const [],
+          trophies: 0,
+          lang: _recordLang,
+          device: 'elios',
+        ),
+      );
+    } catch (e) {
+      debugPrint('[WasteQuiz] Failed to add record to store: $e');
+    }
+    if (!store.active) return;
+    state = state.copyWith(
+      phase: WasteQuizPhase.finished,
+      historyPhotoPath: photoPath,
+      notice: l10n.wqSavedNoQuiz,
+      messages: [
+        ...state.messages,
+        ChatMessage(isUser: false, text: l10n.wqSavedNoQuiz),
+      ],
+    );
+  }
+
   Future<void> _finish() async {
     final store = _sessionStore ?? ScanRecordStore.instance;
     final sessionTrophies = _recordedQuestions.fold<int>(
@@ -1479,22 +1552,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       (sum, q) => sum + q.trophies,
     );
 
-    String? photoPath;
-    final photoBytes = _historyPhotoBytes ?? _cropBytes;
-    // ponytail: legacy/device crops lack a paired clean frame; keep their bytes until recaptured.
-    if (photoBytes != null) {
-      try {
-        final scansDir = await store.photoDirectory();
-        if (!scansDir.existsSync()) scansDir.createSync(recursive: true);
-        final file = File(
-          '${scansDir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        );
-        file.writeAsBytesSync(photoBytes, flush: true);
-        photoPath = file.path;
-      } catch (e) {
-        debugPrint('[WasteQuiz] Failed to save crop photo: $e');
-      }
-    }
+    final photoPath = await _savePhoto(store);
 
     if (_recordedQuestions.isNotEmpty) {
       final scan = state.scan;
@@ -1509,6 +1567,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         trophies: sessionTrophies,
         lang: _recordLang,
         translations: _recordTwins(scan?.displayName),
+        device: _robotSession ? 'elios' : 'phone',
       );
       try {
         _savedExplanationRecordId = record.id;

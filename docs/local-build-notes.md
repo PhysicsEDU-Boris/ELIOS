@@ -1,5 +1,10 @@
 # Local build notes
 
+## 9 Nov 2026 — Learn L2 v3 phone test (0195, `feat/learn-l2v3`)
+- Source / APP_COMMIT `1e4810f` (first test build `b54a1b6+l2v3`); `flutter build apk --debug --target-platform android-arm64` with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION; Gradle 36 s. `.env*` and `google-services.json` already present (gitignored).
+- Motorola Edge 60 Fusion over USB, `com.boris.elio` debug, same signing; `adb install -r` Success 14:41:23 Jakarta, no uninstall/data clear. App data backed up first (tar in the session scratchpad); the 3 `scan_records.json` files are md5-identical after testing.
+- Tested every Learn hub control and sidebar shortcut, EN/ID live switch and light/dark; left the phone in English, light. Results: `docs/test-results/0195-learn-l2v3/README.md`. No Mac bundle, model, firmware or signing change.
+
 ## 8 Nov 2026 — Account history cloud setup (0191, PR #101)
 - Source / APP_COMMIT `8cdfac1`; Android arm64 debug APK, LIVE_SCAN=true, Flutter 3.44.2. Final clean packaging 7.8 s; APK 156.6 MB at `build/app/outputs/flutter-apk/app-debug.apk`.
 - Existing debug signing retained. No USB device connected: APK built, not installed or robot-tested. No Mac bundle, LaunchServices registration, Keychain, firmware or runtime model changes.

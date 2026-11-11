@@ -689,7 +689,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Connection, video, sound and quiz'**
+  /// **'Connection and video'**
   String get settingsSubtitle;
 
   /// No description provided for @aiNeedsInternet.
@@ -7560,6 +7560,1698 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not import previous history. The original files are kept.'**
   String get historyImportFailed;
+
+  /// No description provided for @dailyGuidesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Guide'**
+  String get dailyGuidesTitle;
+
+  /// No description provided for @dailyGuidesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore the physics behind environmental news.'**
+  String get dailyGuidesDescription;
+
+  /// No description provided for @dailyGuidesRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh guides'**
+  String get dailyGuidesRefresh;
+
+  /// No description provided for @dailyGuidesOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing saved guides. Connect to check for new issues.'**
+  String get dailyGuidesOffline;
+
+  /// No description provided for @dailyGuidesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'The first daily guide is on its way.'**
+  String get dailyGuidesEmpty;
+
+  /// No description provided for @dailyGuidesLatest.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest issue'**
+  String get dailyGuidesLatest;
+
+  /// No description provided for @dailyGuidesArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous issues'**
+  String get dailyGuidesArchive;
+
+  /// No description provided for @g4AiLooksFor.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI will look for'**
+  String get g4AiLooksFor;
+
+  /// No description provided for @g4All.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get g4All;
+
+  /// No description provided for @g4AllStopsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'All 3 stops done'**
+  String get g4AllStopsDone;
+
+  /// No description provided for @g4AlmostBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No XP yet. You can try as many times as you like.'**
+  String get g4AlmostBody;
+
+  /// No description provided for @g4AlmostTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Almost! Try one more time'**
+  String get g4AlmostTitle;
+
+  /// No description provided for @g4Archive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get g4Archive;
+
+  /// No description provided for @g4ArchiveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{title}, {date}, {stops} of 3 stops, {xp} XP'**
+  String g4ArchiveLabel(Object title, Object date, Object stops, Object xp);
+
+  /// No description provided for @g4AskTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask teacher to review'**
+  String get g4AskTeacher;
+
+  /// No description provided for @g4AskTeacherHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Think the check is wrong? Ask your teacher to review it. They see the AI reason, not your photos.'**
+  String get g4AskTeacherHint;
+
+  /// No description provided for @g4BackToResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to result'**
+  String get g4BackToResult;
+
+  /// No description provided for @g4BadgeUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Badge unlocked'**
+  String get g4BadgeUnlocked;
+
+  /// No description provided for @g4Cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get g4Cancel;
+
+  /// No description provided for @g4Check.
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get g4Check;
+
+  /// No description provided for @g4CheckAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get g4CheckAgain;
+
+  /// No description provided for @g4ContinueGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue guide'**
+  String get g4ContinueGuide;
+
+  /// No description provided for @g4ContinueStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue · Stop {n}'**
+  String g4ContinueStop(Object n);
+
+  /// No description provided for @g4CopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get g4CopyLink;
+
+  /// No description provided for @g4DayFuture.
+  ///
+  /// In en, this message translates to:
+  /// **'coming up'**
+  String get g4DayFuture;
+
+  /// No description provided for @g4DayMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'missed'**
+  String get g4DayMissed;
+
+  /// No description provided for @g4DayRead.
+  ///
+  /// In en, this message translates to:
+  /// **'read'**
+  String get g4DayRead;
+
+  /// No description provided for @g4DayToday.
+  ///
+  /// In en, this message translates to:
+  /// **'today, not read yet'**
+  String get g4DayToday;
+
+  /// No description provided for @g4DidYouKnow.
+  ///
+  /// In en, this message translates to:
+  /// **'Did you know?'**
+  String get g4DidYouKnow;
+
+  /// No description provided for @g4EmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A new physics story arrives every morning around 06:00. Pull down to check again.'**
+  String get g4EmptyBody;
+
+  /// No description provided for @g4EmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The first guide is on its way'**
+  String get g4EmptyTitle;
+
+  /// No description provided for @g4FeedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Guides couldn\'t load'**
+  String get g4FeedError;
+
+  /// No description provided for @g4FeedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Physics behind real news'**
+  String get g4FeedSubtitle;
+
+  /// No description provided for @g4FinishStop2.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish Stop 2 to unlock'**
+  String get g4FinishStop2;
+
+  /// No description provided for @g4FollowApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as the app'**
+  String get g4FollowApp;
+
+  /// No description provided for @g4FrameN.
+  ///
+  /// In en, this message translates to:
+  /// **'Frame {n}'**
+  String g4FrameN(Object n);
+
+  /// No description provided for @g4GuideArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Guide archive'**
+  String get g4GuideArchive;
+
+  /// No description provided for @g4GuideLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Guide language'**
+  String get g4GuideLanguage;
+
+  /// No description provided for @g4GuideXp.
+  ///
+  /// In en, this message translates to:
+  /// **'guide XP'**
+  String get g4GuideXp;
+
+  /// No description provided for @g4Import.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get g4Import;
+
+  /// No description provided for @g4ImportBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone has {xp} guide XP from a guest session.'**
+  String g4ImportBody(Object xp);
+
+  /// No description provided for @g4ImportConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the guest\'s guide progress ({xp} XP, stops and streak days) to this account? Nothing is merged without your OK.'**
+  String g4ImportConfirm(Object xp);
+
+  /// No description provided for @g4ImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t import now. Try again when you\'re online.'**
+  String get g4ImportFailed;
+
+  /// No description provided for @g4ImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import guest guide progress'**
+  String get g4ImportTitle;
+
+  /// No description provided for @g4IssueCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 issue} other{{count} issues}}'**
+  String g4IssueCount(int count);
+
+  /// No description provided for @g4IssueN.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue #{n}'**
+  String g4IssueN(Object n);
+
+  /// No description provided for @g4IssuesStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 issue} other{{count} issues}} · {days}-day streak'**
+  String g4IssuesStreak(int count, Object days);
+
+  /// No description provided for @g4LabApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Lab approved'**
+  String get g4LabApproved;
+
+  /// No description provided for @g4LabApprovedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Lab approved by ELIOS AI'**
+  String get g4LabApprovedBy;
+
+  /// No description provided for @g4LabBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'The lab check is busy. Your photos stayed on your phone; try again in a minute.'**
+  String get g4LabBusy;
+
+  /// No description provided for @g4LabChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI is checking your photos…'**
+  String get g4LabChecking;
+
+  /// No description provided for @g4LabLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s 5 lab checks for this guide today. Try again tomorrow.'**
+  String get g4LabLimit;
+
+  /// No description provided for @g4LabMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'About 10 minutes · +{xp} XP · badge'**
+  String g4LabMeta(Object xp);
+
+  /// No description provided for @g4LabOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'The lab check needs internet. Connect and try again; nothing was sent.'**
+  String get g4LabOffline;
+
+  /// No description provided for @g4LabResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Mini lab result'**
+  String get g4LabResult;
+
+  /// No description provided for @g4LangEn.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get g4LangEn;
+
+  /// No description provided for @g4LangId.
+  ///
+  /// In en, this message translates to:
+  /// **'Bahasa Indonesia'**
+  String get g4LangId;
+
+  /// No description provided for @g4LangMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This issue isn\'t in your language yet, so it\'s shown in the other one.'**
+  String get g4LangMissing;
+
+  /// No description provided for @g4LangPill.
+  ///
+  /// In en, this message translates to:
+  /// **'EN · ID'**
+  String get g4LangPill;
+
+  /// No description provided for @g4Listen.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get g4Listen;
+
+  /// No description provided for @g4MiniLab.
+  ///
+  /// In en, this message translates to:
+  /// **'Mini lab'**
+  String get g4MiniLab;
+
+  /// No description provided for @g4Missing.
+  ///
+  /// In en, this message translates to:
+  /// **'missing'**
+  String get g4Missing;
+
+  /// No description provided for @g4New.
+  ///
+  /// In en, this message translates to:
+  /// **'NEW'**
+  String get g4New;
+
+  /// No description provided for @g4NewGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'New guide'**
+  String get g4NewGuide;
+
+  /// No description provided for @g4NextCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Next card'**
+  String get g4NextCard;
+
+  /// No description provided for @g4NotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get g4NotNow;
+
+  /// No description provided for @g4NotQuite.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite.'**
+  String get g4NotQuite;
+
+  /// No description provided for @g4OfflineBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline. Showing saved guides. Connect to check for new issues.'**
+  String get g4OfflineBanner;
+
+  /// No description provided for @g4Ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get g4Ok;
+
+  /// No description provided for @g4Pass.
+  ///
+  /// In en, this message translates to:
+  /// **'seen'**
+  String get g4Pass;
+
+  /// No description provided for @g4Pdf.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF'**
+  String get g4Pdf;
+
+  /// No description provided for @g4PdfMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'{pages}-page PDF · {language} · saved for offline'**
+  String g4PdfMeta(Object pages, Object language);
+
+  /// No description provided for @g4PhotoCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo credit'**
+  String get g4PhotoCredit;
+
+  /// No description provided for @g4PhotoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Take 3 photos: the start, the middle and the end of your experiment.'**
+  String get g4PhotoHint;
+
+  /// No description provided for @g4PhotosTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} of 3 photos'**
+  String g4PhotosTaken(Object n);
+
+  /// No description provided for @g4PlusXp.
+  ///
+  /// In en, this message translates to:
+  /// **'+{xp} XP'**
+  String g4PlusXp(Object xp);
+
+  /// No description provided for @g4PrivacyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS checks 8 still photos from your clip, then deletes them. Only the result is saved.'**
+  String get g4PrivacyNote;
+
+  /// No description provided for @g4QuestMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Your quest map'**
+  String get g4QuestMap;
+
+  /// No description provided for @g4QuickQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick quiz'**
+  String get g4QuickQuiz;
+
+  /// No description provided for @g4QuizAlmost.
+  ///
+  /// In en, this message translates to:
+  /// **'2 correct answers pass. Try the quiz again with new questions.'**
+  String get g4QuizAlmost;
+
+  /// No description provided for @g4QuizNice.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice work!'**
+  String get g4QuizNice;
+
+  /// No description provided for @g4QuizParkedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered cards stay on the left. Tap Q1–Q3 on the result to look again.'**
+  String get g4QuizParkedHint;
+
+  /// No description provided for @g4QuizPassed.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz passed'**
+  String get g4QuizPassed;
+
+  /// No description provided for @g4QuizResultHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Q1–Q3 to flip back to any answer.'**
+  String get g4QuizResultHint;
+
+  /// No description provided for @g4QuizUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The quiz couldn\'t load'**
+  String get g4QuizUnavailable;
+
+  /// No description provided for @g4ReadAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the guide again'**
+  String get g4ReadAgain;
+
+  /// No description provided for @g4ReadFullGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the full guide'**
+  String get g4ReadFullGuide;
+
+  /// No description provided for @g4ReadPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Read page {page}'**
+  String g4ReadPage(Object page);
+
+  /// No description provided for @g4Record.
+  ///
+  /// In en, this message translates to:
+  /// **'Record 15–30 s'**
+  String get g4Record;
+
+  /// No description provided for @g4RecordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Film only your hands and the experiment. Stop after {min} s; recording ends at 30 s.'**
+  String g4RecordHint(Object min);
+
+  /// No description provided for @g4RecordingSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording {s} / {max} s'**
+  String g4RecordingSeconds(Object s, Object max);
+
+  /// No description provided for @g4Retake.
+  ///
+  /// In en, this message translates to:
+  /// **'Record again'**
+  String get g4Retake;
+
+  /// No description provided for @g4Retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get g4Retry;
+
+  /// No description provided for @g4ReviewBody.
+  ///
+  /// In en, this message translates to:
+  /// **'These are the only pictures that will be sent. Nothing leaves your phone until you tap Send.'**
+  String get g4ReviewBody;
+
+  /// No description provided for @g4ReviewQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Look at question {n} again'**
+  String g4ReviewQuestion(Object n);
+
+  /// No description provided for @g4ReviewSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent to your teacher.'**
+  String get g4ReviewSent;
+
+  /// No description provided for @g4ReviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} photos ready'**
+  String g4ReviewTitle(Object n);
+
+  /// No description provided for @g4SafetyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Film only your hands and the experiment'**
+  String get g4SafetyTitle;
+
+  /// No description provided for @g4SavedAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your account'**
+  String get g4SavedAccount;
+
+  /// No description provided for @g4SavedPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this phone. It syncs when you\'re online.'**
+  String get g4SavedPhone;
+
+  /// No description provided for @g4Saving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get g4Saving;
+
+  /// No description provided for @g4ScoreOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{score} of {total} correct'**
+  String g4ScoreOf(Object score, Object total);
+
+  /// No description provided for @g4SeeResult.
+  ///
+  /// In en, this message translates to:
+  /// **'See result'**
+  String get g4SeeResult;
+
+  /// No description provided for @g4Send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to ELIOS AI'**
+  String get g4Send;
+
+  /// No description provided for @g4Sources.
+  ///
+  /// In en, this message translates to:
+  /// **'Sources'**
+  String get g4Sources;
+
+  /// No description provided for @g4SourcesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 source} other{{count} sources}}'**
+  String g4SourcesCount(int count);
+
+  /// No description provided for @g4StartGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Start guide'**
+  String get g4StartGuide;
+
+  /// No description provided for @g4StartLab.
+  ///
+  /// In en, this message translates to:
+  /// **'Start mini lab'**
+  String get g4StartLab;
+
+  /// No description provided for @g4StopDone.
+  ///
+  /// In en, this message translates to:
+  /// **'done'**
+  String get g4StopDone;
+
+  /// No description provided for @g4StopLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'locked'**
+  String get g4StopLocked;
+
+  /// No description provided for @g4StopMission.
+  ///
+  /// In en, this message translates to:
+  /// **'Your mission'**
+  String get g4StopMission;
+
+  /// No description provided for @g4StopMissionSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop 3 · Your mission'**
+  String get g4StopMissionSub;
+
+  /// No description provided for @g4StopN.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop {n}'**
+  String g4StopN(Object n);
+
+  /// No description provided for @g4StopOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'open'**
+  String get g4StopOpen;
+
+  /// No description provided for @g4StopPage.
+  ///
+  /// In en, this message translates to:
+  /// **'STOP {n} · P.{page}'**
+  String g4StopPage(Object n, Object page);
+
+  /// No description provided for @g4StopPhysics.
+  ///
+  /// In en, this message translates to:
+  /// **'The physics'**
+  String get g4StopPhysics;
+
+  /// No description provided for @g4StopRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop recording'**
+  String get g4StopRecording;
+
+  /// No description provided for @g4StopStory.
+  ///
+  /// In en, this message translates to:
+  /// **'The story'**
+  String get g4StopStory;
+
+  /// No description provided for @g4StopsDoneNext.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of 3 stops done · Next: {next}'**
+  String g4StopsDoneNext(Object done, Object next);
+
+  /// No description provided for @g4StopsOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{done}/3 stops'**
+  String g4StopsOf(Object done);
+
+  /// No description provided for @g4StreakDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}-day reading streak'**
+  String g4StreakDays(Object days);
+
+  /// No description provided for @g4StreakHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Read today\'s guide to keep it going'**
+  String get g4StreakHint;
+
+  /// No description provided for @g4TakePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get g4TakePhoto;
+
+  /// No description provided for @g4TeacherBody.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI wasn\'t sure, so your teacher will look at the result. No photos are kept.'**
+  String get g4TeacherBody;
+
+  /// No description provided for @g4TeacherNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your teacher can see this result and change it. Photos were deleted after the check.'**
+  String get g4TeacherNote;
+
+  /// No description provided for @g4TeacherTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your teacher will check this'**
+  String get g4TeacherTitle;
+
+  /// No description provided for @g4ThreePhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Take 3 photos instead'**
+  String get g4ThreePhotos;
+
+  /// No description provided for @g4TodayDate.
+  ///
+  /// In en, this message translates to:
+  /// **'TODAY · {date}'**
+  String g4TodayDate(Object date);
+
+  /// No description provided for @g4TodayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s guide: {title}, {done} of 3 stops done'**
+  String g4TodayLabel(Object title, Object done);
+
+  /// No description provided for @g4TodaysGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'TODAY\'S GUIDE'**
+  String get g4TodaysGuide;
+
+  /// No description provided for @g4TodaysGuideIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'TODAY\'S GUIDE · #{n}'**
+  String g4TodaysGuideIssue(Object n);
+
+  /// No description provided for @g4TopicAir.
+  ///
+  /// In en, this message translates to:
+  /// **'Air'**
+  String get g4TopicAir;
+
+  /// No description provided for @g4TopicEnergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy'**
+  String get g4TopicEnergy;
+
+  /// No description provided for @g4TopicHeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Heat'**
+  String get g4TopicHeat;
+
+  /// No description provided for @g4TopicOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Science'**
+  String get g4TopicOther;
+
+  /// No description provided for @g4TopicStorm.
+  ///
+  /// In en, this message translates to:
+  /// **'Storm'**
+  String get g4TopicStorm;
+
+  /// No description provided for @g4TopicWaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Waste'**
+  String get g4TopicWaste;
+
+  /// No description provided for @g4TopicWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Water'**
+  String get g4TopicWater;
+
+  /// No description provided for @g4TryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get g4TryAgain;
+
+  /// No description provided for @g4TryQuizAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try the quiz again'**
+  String get g4TryQuizAgain;
+
+  /// No description provided for @g4WeekLetters.
+  ///
+  /// In en, this message translates to:
+  /// **'M,T,W,T,F,S,S'**
+  String get g4WeekLetters;
+
+  /// No description provided for @g4WhatAiSaw.
+  ///
+  /// In en, this message translates to:
+  /// **'What ELIOS AI saw'**
+  String get g4WhatAiSaw;
+
+  /// No description provided for @g4WhatToDo.
+  ///
+  /// In en, this message translates to:
+  /// **'What to do'**
+  String get g4WhatToDo;
+
+  /// No description provided for @g4XpDone.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ {xp} XP'**
+  String g4XpDone(Object xp);
+
+  /// No description provided for @g4XpOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{xp} / {total} XP'**
+  String g4XpOf(Object xp, Object total);
+
+  /// No description provided for @g4YourQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Your question: {q}'**
+  String g4YourQuestion(Object q);
+
+  /// No description provided for @g4FeedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS Guides'**
+  String get g4FeedTitle;
+
+  /// No description provided for @lnShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn shortcuts'**
+  String get lnShortcuts;
+
+  /// No description provided for @lnJumpBackIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump back in'**
+  String get lnJumpBackIn;
+
+  /// No description provided for @lnExplore.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore'**
+  String get lnExplore;
+
+  /// No description provided for @lnExploreSub.
+  ///
+  /// In en, this message translates to:
+  /// **'{lessons} lessons across {modules} modules'**
+  String lnExploreSub(int lessons, int modules);
+
+  /// No description provided for @lnModules.
+  ///
+  /// In en, this message translates to:
+  /// **'Modules'**
+  String get lnModules;
+
+  /// No description provided for @lnPdfGuides.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF guides'**
+  String get lnPdfGuides;
+
+  /// No description provided for @lnPractice.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice'**
+  String get lnPractice;
+
+  /// No description provided for @lnYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get lnYou;
+
+  /// No description provided for @lnQuizShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz'**
+  String get lnQuizShort;
+
+  /// No description provided for @lnMiniLab.
+  ///
+  /// In en, this message translates to:
+  /// **'Mini lab'**
+  String get lnMiniLab;
+
+  /// No description provided for @lnTodaysLab.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s experiment'**
+  String get lnTodaysLab;
+
+  /// No description provided for @lnArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get lnArchive;
+
+  /// No description provided for @lnProgressShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get lnProgressShort;
+
+  /// No description provided for @lnStartHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Start here'**
+  String get lnStartHere;
+
+  /// No description provided for @lnQuizCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 quiz} other{{count} quizzes}}'**
+  String lnQuizCount(num count);
+
+  /// No description provided for @lnTotalXp.
+  ///
+  /// In en, this message translates to:
+  /// **'{xp} XP total'**
+  String lnTotalXp(int xp);
+
+  /// No description provided for @lnGuideStops.
+  ///
+  /// In en, this message translates to:
+  /// **'#{issue} · {done} of 3 stops'**
+  String lnGuideStops(String issue, int done);
+
+  /// No description provided for @lnPctDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{pct}%'**
+  String lnPctDone(int pct);
+
+  /// No description provided for @lnTodaysGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Guide'**
+  String get lnTodaysGuide;
+
+  /// No description provided for @navScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan'**
+  String get navScan;
+
+  /// No description provided for @navScanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan, opens the scan hub'**
+  String get navScanHint;
+
+  /// No description provided for @navProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get navProfile;
+
+  /// No description provided for @scanHubSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick how you want to scan today'**
+  String get scanHubSubtitle;
+
+  /// No description provided for @scanPhoneOverline.
+  ///
+  /// In en, this message translates to:
+  /// **'With your phone'**
+  String get scanPhoneOverline;
+
+  /// No description provided for @scanPhoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan & quiz'**
+  String get scanPhoneTitle;
+
+  /// No description provided for @scanPhoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at an item. ELIOS names it and makes a quiz for you.'**
+  String get scanPhoneBody;
+
+  /// No description provided for @scanOpenCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Open camera'**
+  String get scanOpenCamera;
+
+  /// No description provided for @scanRobotOverline.
+  ///
+  /// In en, this message translates to:
+  /// **'With a robot'**
+  String get scanRobotOverline;
+
+  /// No description provided for @scanRobotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot scan'**
+  String get scanRobotTitle;
+
+  /// No description provided for @scanRobotBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a vehicle. ELIOS is ready; the drone is coming soon.'**
+  String get scanRobotBody;
+
+  /// No description provided for @scanSelectVehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select vehicle'**
+  String get scanSelectVehicle;
+
+  /// No description provided for @vehicleEliosDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Ground robot · camera MaixCAM2'**
+  String get vehicleEliosDesc;
+
+  /// No description provided for @vehicleDrone.
+  ///
+  /// In en, this message translates to:
+  /// **'Drone'**
+  String get vehicleDrone;
+
+  /// No description provided for @vehicleComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get vehicleComingSoon;
+
+  /// No description provided for @vehicleReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get vehicleReady;
+
+  /// No description provided for @vehicleMaixNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Robots use the MaixCAM2 camera automatically'**
+  String get vehicleMaixNote;
+
+  /// No description provided for @setupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS setup'**
+  String get setupTitle;
+
+  /// No description provided for @profileTapPicture.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap your picture for account options'**
+  String get profileTapPicture;
+
+  /// No description provided for @profileSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Google account · history synced'**
+  String get profileSynced;
+
+  /// No description provided for @profileGuestChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest · history saved on this phone only'**
+  String get profileGuestChip;
+
+  /// No description provided for @profileAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get profileAppearance;
+
+  /// No description provided for @profileDarkModeSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch the whole app to the dark theme'**
+  String get profileDarkModeSub;
+
+  /// No description provided for @profileLanguageSub.
+  ///
+  /// In en, this message translates to:
+  /// **'App text and voice'**
+  String get profileLanguageSub;
+
+  /// No description provided for @profileQuestionSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Question source'**
+  String get profileQuestionSource;
+
+  /// No description provided for @profileQuestionSourceSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Where the scan quiz gets its questions'**
+  String get profileQuestionSourceSub;
+
+  /// No description provided for @profileAccountMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Account options'**
+  String get profileAccountMenu;
+
+  /// No description provided for @profileSwitchAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch account'**
+  String get profileSwitchAccount;
+
+  /// No description provided for @vehicleUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {name}'**
+  String vehicleUse(String name);
+
+  /// No description provided for @profileNotSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in'**
+  String get profileNotSignedIn;
+
+  /// No description provided for @profileGuestTap.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the picture to sign in or switch account'**
+  String get profileGuestTap;
+
+  /// No description provided for @homeLvShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv {n}'**
+  String homeLvShort(int n);
+
+  /// No description provided for @homeToNextLong.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} trophies to Level {level} · your tree grows with every trophy'**
+  String homeToNextLong(int count, int level);
+
+  /// No description provided for @homeRobotOverline.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS robot'**
+  String get homeRobotOverline;
+
+  /// No description provided for @homeStillConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Still connected'**
+  String get homeStillConnected;
+
+  /// No description provided for @homeResumeControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume robot control'**
+  String get homeResumeControl;
+
+  /// No description provided for @lnClovers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 clover} other{{count} clovers}}'**
+  String lnClovers(int count);
+
+  /// No description provided for @lnGuideRewards.
+  ///
+  /// In en, this message translates to:
+  /// **'{xp} XP · {clovers} · from Daily Guides'**
+  String lnGuideRewards(int xp, String clovers);
+
+  /// No description provided for @wqSavedNoQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to History. The quiz is off for robot scans.'**
+  String get wqSavedNoQuiz;
+
+  /// No description provided for @setupQuizAfterScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz after each scan'**
+  String get setupQuizAfterScan;
+
+  /// No description provided for @setupCameraAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera: MaixCAM2'**
+  String get setupCameraAuto;
+
+  /// No description provided for @setupAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get setupAutomatic;
+
+  /// No description provided for @setupOpenControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Open control'**
+  String get setupOpenControl;
+
+  /// No description provided for @setupVideoStream.
+  ///
+  /// In en, this message translates to:
+  /// **'Video stream'**
+  String get setupVideoStream;
+
+  /// No description provided for @vehicleChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get vehicleChange;
+
+  /// No description provided for @scanHoldSteady.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold steady · one item in the frame'**
+  String get scanHoldSteady;
+
+  /// No description provided for @scanTakePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo and identify'**
+  String get scanTakePhoto;
+
+  /// No description provided for @scanAiQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'AI quiz'**
+  String get scanAiQuiz;
+
+  /// No description provided for @contributeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to contribute'**
+  String get contributeTitle;
+
+  /// No description provided for @contributePickBin.
+  ///
+  /// In en, this message translates to:
+  /// **'Which bin are you using?'**
+  String get contributePickBin;
+
+  /// No description provided for @contributeDrop.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop the item into the bin while recording.'**
+  String get contributeDrop;
+
+  /// No description provided for @contributeKeepLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the bin label in view so we can check it.'**
+  String get contributeKeepLabel;
+
+  /// No description provided for @contributeChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI is checking your video…'**
+  String get contributeChecking;
+
+  /// No description provided for @contributeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start recording'**
+  String get contributeStart;
+
+  /// No description provided for @contributeStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop recording'**
+  String get contributeStop;
+
+  /// No description provided for @contributeNice.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice sorting!'**
+  String get contributeNice;
+
+  /// No description provided for @contributeNotQuite.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite'**
+  String get contributeNotQuite;
+
+  /// No description provided for @contributeNotChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t check'**
+  String get contributeNotChecked;
+
+  /// No description provided for @contributeNoItem.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI couldn\'t see an item. Try again closer, with good light.'**
+  String get contributeNoItem;
+
+  /// No description provided for @contributeWentInto.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} went into the {bin} bin.'**
+  String contributeWentInto(String item, String bin);
+
+  /// No description provided for @contributeBelongs.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} belongs in the {bin} bin. Try again!'**
+  String contributeBelongs(String item, String bin);
+
+  /// No description provided for @contributeTrophies.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} trophies'**
+  String contributeTrophies(int count);
+
+  /// No description provided for @contributeSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to History as a contribution'**
+  String get contributeSaved;
+
+  /// No description provided for @contributeAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribute again'**
+  String get contributeAgain;
+
+  /// No description provided for @scanContributeOverline.
+  ///
+  /// In en, this message translates to:
+  /// **'Earn trophies'**
+  String get scanContributeOverline;
+
+  /// No description provided for @scanContributeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Film yourself putting waste in the right bin. Keep the bin label in view.'**
+  String get scanContributeBody;
+
+  /// No description provided for @contributeRec.
+  ///
+  /// In en, this message translates to:
+  /// **'REC {time}'**
+  String contributeRec(String time);
+
+  /// No description provided for @histSubtitle3.
+  ///
+  /// In en, this message translates to:
+  /// **'Scans, quizzes and contributions'**
+  String get histSubtitle3;
+
+  /// No description provided for @histSeeTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'See timeline'**
+  String get histSeeTimeline;
+
+  /// No description provided for @histByDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'By device'**
+  String get histByDevice;
+
+  /// No description provided for @histByDeviceSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a device to see its own timeline'**
+  String get histByDeviceSub;
+
+  /// No description provided for @histToReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions to review'**
+  String get histToReview;
+
+  /// No description provided for @histReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get histReview;
+
+  /// No description provided for @histQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz {correct}/{total}'**
+  String histQuiz(int correct, int total);
+
+  /// No description provided for @histScanOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan only'**
+  String get histScanOnly;
+
+  /// No description provided for @histContribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribution'**
+  String get histContribution;
+
+  /// No description provided for @histPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get histPhone;
+
+  /// No description provided for @histNoScansYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No scans yet'**
+  String get histNoScansYet;
+
+  /// No description provided for @histTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan timeline'**
+  String get histTimeline;
+
+  /// No description provided for @histTimelineSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent scans by device'**
+  String get histTimelineSub;
+
+  /// No description provided for @histPhoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone'**
+  String get histPhoneTitle;
+
+  /// No description provided for @histEliosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS robot'**
+  String get histEliosTitle;
+
+  /// No description provided for @histDeviceScans.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} scans · camera {camera}'**
+  String histDeviceScans(int count, String camera);
+
+  /// No description provided for @histPhoneCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'phone'**
+  String get histPhoneCamera;
+
+  /// No description provided for @histNoDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Scans saved before this update have no device; they are under All.'**
+  String get histNoDevice;
+
+  /// No description provided for @histAllScans.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get histAllScans;
+
+  /// No description provided for @h3TrophiesWord.
+  ///
+  /// In en, this message translates to:
+  /// **'trophies'**
+  String get h3TrophiesWord;
+
+  /// No description provided for @celebrateTap.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to continue'**
+  String get celebrateTap;
+
+  /// No description provided for @celebrateLevelUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Level {level}!'**
+  String celebrateLevelUp(int level);
+
+  /// No description provided for @celebrateMedal.
+  ///
+  /// In en, this message translates to:
+  /// **'Medal unlocked'**
+  String get celebrateMedal;
+
+  /// No description provided for @lnArchiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'From the archive'**
+  String get lnArchiveTitle;
+
+  /// No description provided for @lnArchiveSub.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Your last guide · swipe the photos} other{Your last {count} guides · swipe the photos}}'**
+  String lnArchiveSub(int count);
+
+  /// No description provided for @lnArchivePulled.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick up where you left off'**
+  String get lnArchivePulled;
+
+  /// No description provided for @lnArchivePhotoLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{title}. Tap to pull out, swipe for the next guide'**
+  String lnArchivePhotoLabel(String title);
+
+  /// No description provided for @lnArchiveXp.
+  ///
+  /// In en, this message translates to:
+  /// **'{xp}/{total} XP'**
+  String lnArchiveXp(int xp, int total);
+
+  /// No description provided for @lnArchiveXpDone.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ {total} XP'**
+  String lnArchiveXpDone(int total);
+
+  /// No description provided for @lnArchiveStops.
+  ///
+  /// In en, this message translates to:
+  /// **'{done}/3 stops'**
+  String lnArchiveStops(int done);
+
+  /// No description provided for @lnRailSub.
+  ///
+  /// In en, this message translates to:
+  /// **'{lead} · {count} in {module}'**
+  String lnRailSub(String lead, int count, String module);
+
+  /// No description provided for @lnRailVideosLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch and learn'**
+  String get lnRailVideosLead;
+
+  /// No description provided for @lnRailGuidesLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read in a minute'**
+  String get lnRailGuidesLead;
+
+  /// No description provided for @lnRailQuizLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Check what you know'**
+  String get lnRailQuizLead;
+
+  /// No description provided for @lnRailSims.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Try it yourself · 1 lab} other{Try it yourself · {count} labs}}'**
+  String lnRailSims(int count);
+
+  /// No description provided for @lnSimulation.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulation'**
+  String get lnSimulation;
+
+  /// No description provided for @lnQuizzes.
+  ///
+  /// In en, this message translates to:
+  /// **'Quizzes'**
+  String get lnQuizzes;
+
+  /// No description provided for @lnBestShort.
+  ///
+  /// In en, this message translates to:
+  /// **'best {score}%'**
+  String lnBestShort(int score);
+
+  /// No description provided for @lnContinueLessonN.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue lesson {n}'**
+  String lnContinueLessonN(int n);
+
+  /// No description provided for @lnStartLessonN.
+  ///
+  /// In en, this message translates to:
+  /// **'Start lesson {n}'**
+  String lnStartLessonN(int n);
+
+  /// No description provided for @lnWhatGoesIn.
+  ///
+  /// In en, this message translates to:
+  /// **'{module, select, organic{What goes in the green bin} inorganic{What goes in the yellow bin} hazardous{What goes in the red bin} other{What goes in this bin}}'**
+  String lnWhatGoesIn(String module);
+
+  /// No description provided for @lnLessons.
+  ///
+  /// In en, this message translates to:
+  /// **'Lessons'**
+  String get lnLessons;
+
+  /// No description provided for @lnModuleProgressDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Module progress · {done} of {total} done'**
+  String lnModuleProgressDone(int done, int total);
+
+  /// No description provided for @lnPartN.
+  ///
+  /// In en, this message translates to:
+  /// **'Part {n}'**
+  String lnPartN(int n);
+
+  /// No description provided for @lnPctWatched.
+  ///
+  /// In en, this message translates to:
+  /// **'{pct}% watched'**
+  String lnPctWatched(int pct);
+
+  /// No description provided for @lnLessonNofM.
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson {n} of {total}'**
+  String lnLessonNofM(int n, int total);
+
+  /// No description provided for @lnPlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'playing'**
+  String get lnPlaying;
+
+  /// No description provided for @lnCheckAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Check answer'**
+  String get lnCheckAnswer;
+
+  /// No description provided for @lnPickToContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an answer to continue.'**
+  String get lnPickToContinue;
 }
 
 class _AppLocalizationsDelegate

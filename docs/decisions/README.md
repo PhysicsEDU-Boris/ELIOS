@@ -63,3 +63,15 @@ their status changed.
 | [0184](0184-history-h3-ai-explanations.md) | H3 History: scan list/detail, per-question explanation route with saved ELIOS AI explanations, TTS and per-question PDF | Accepted |
 | [0185](0185-ui-localization-gen-l10n.md) | UI languages: gen-l10n with English ARB as source, Gemini script fills other ARB files, language picker under Dark mode in the sidebar; L2 live switch of all content and ELIO→ELIOS rename | Proposed |
 | [0187](0187-h3-history-redesign.md) | H3 History redesign from Figma: trophy hero, category tiles, day groups, result stats, difficulty tabs, gamified explanation (result hero, answer tiles, learn/key idea/mission cards), all strings via ARB | Proposed |
+| [0193](0193-daily-guide-feed.md) | Daily bilingual guide feed from GitHub Pages, separate from course totals | Accepted |
+- [0194](0194-g4-daily-guides.md) G4 Daily Guides in the app
+- [0196](0196-elios3-nav-shell.md) ELIOS 3 navigation: Scan hub, Profile tab, no top bar or sidebar
+- [0197](0197-elios3-home-learn.md) ELIOS 3 Home (L4) with resume control, Learn clovers
+- [0198](0198-elios3-scan-flows.md) ELIOS 3 scan flows: phone Scan & quiz, contribute, ELIOS setup quiz card
+- [0199](0199-elios3-history.md) ELIOS 3 History: compact tab, timeline by device
+- [0200](0200-elios3-login.md) ELIOS 3 login (L4 organic header)
+- [0201](0201-elios3-sound-haptics.md) ELIOS 3 sound service S1–S10, haptic map, loading states
+- [0202](0202-elios3-motion.md) ELIOS 3 motion tokens and micro-interactions
+- [0203](0203-elios3-motion-2.md) ELIOS 3 motion part 2
+- [0206](0206-learn-l3.md) Learn L3: archive stack, Discover more synced with Explore, L3 sub-pages, robot buddy
+- [0207](0207-daily-guides-l3-motion.md) Daily Guides L3 style, motion, sound and haptics

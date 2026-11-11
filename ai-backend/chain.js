@@ -51,11 +51,11 @@ function isJson(text) {
  * Tries each chain model in order. Returns {text, model, ms, tried} from the first good reply,
  * or null when every model is resting, failing or capped (the app then uses the question bank).
  */
-export async function generate({ key, prompt, system, image, json }, { fetch = globalThis.fetch, now = Date.now, log = console.log } = {}) {
+export async function generate({ key, prompt, system, image, images = [], json, timeoutMs = TIMEOUT_MS }, { fetch = globalThis.fetch, now = Date.now, log = console.log } = {}) {
   const body = JSON.stringify({
     contents: [{
       role: 'user',
-      parts: [...(image ? [{ inlineData: { mimeType: 'image/jpeg', data: image } }] : []), { text: prompt }],
+      parts: [...[image, ...images].filter(Boolean).map((data) => ({ inlineData: { mimeType: 'image/jpeg', data } })), { text: prompt }],
     }],
     generationConfig: {
       thinkingConfig: { thinkingLevel: 'minimal' }, // every chain model accepted it in the 0176 run
@@ -76,7 +76,7 @@ export async function generate({ key, prompt, system, image, json }, { fetch = g
           method: 'POST',
           headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' },
           body,
-          signal: AbortSignal.timeout(TIMEOUT_MS),
+          signal: AbortSignal.timeout(timeoutMs),
         });
         status = res.status;
         text = await res.text();

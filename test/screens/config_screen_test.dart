@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:ui' show Tristate;
 
 import 'package:elio/Screens/config/config_parts.dart';
-import 'package:elio/Screens/config/config_settings_sheet.dart';
 import 'package:elio/Screens/config_screen.dart';
 import 'package:elio/models/config_model.dart';
 import 'package:elio/providers/app_preferences_provider.dart';
@@ -159,7 +158,7 @@ void main() {
         _expectPalette(t, dark);
         expect(find.text('192.168.4.1 : 8765 · MaixCAM2'), findsOneWidget);
         expect(find.text('Online'), findsOneWidget);
-        expect(_enabled(t, 'Connected'), isFalse);
+        expect(_enabled(t, 'Open control'), isTrue, reason: 'ELIOS 3: reopen Control while connected');
         expect(_enabled(t, 'Disconnect'), isTrue);
         await t.tap(find.text('Disconnect'));
         expect(_link.calls, ['disconnect']);
@@ -176,17 +175,17 @@ void main() {
         expect(find.byType(SnackBar), findsNothing, reason: 'the inline alert is on screen');
       });
 
-      testWidgets('phone camera, AI offline', (t) async {
+      testWidgets('a saved phone camera is ignored: robots use MaixCAM2 (ELIOS 3)', (t) async {
         await _pumpConfig(t,
             dark: dark,
             esp: const EspConfig(cameraSource: CameraSource.device),
             ai: AiStatus.offline);
         _expectPalette(t, dark);
-        expect(find.text('Robot not used'), findsOneWidget);
-        expect(find.text('Not used'), findsOneWidget);
-        expect(find.text('Phone'), findsOneWidget);
-        expect(find.text('Start scan'), findsOneWidget);
-        expect(find.text('Connection'), findsNothing, reason: 'phone mode hides the connection card');
+        expect(find.text('MaixCAM2'), findsOneWidget);
+        expect(find.text('Phone camera'), findsNothing);
+        expect(find.text('Start scan'), findsNothing);
+        expect(find.text('Robot not used'), findsNothing);
+        expect(find.text('Connection'), findsOneWidget);
         expect(find.text('ELIOS AI is not reachable'), findsOneWidget);
       });
     });
@@ -257,7 +256,7 @@ void main() {
   });
 
   testWidgets('failure snackbar only when the connection card is scrolled away', (t) async {
-    await _pumpConfig(t, dark: false, size: const Size(400, 700));
+    await _pumpConfig(t, dark: false, size: const Size(400, 480));
     _link.fail('first');
     await t.pump();
     expect(find.byType(SnackBar), findsOneWidget, reason: 'card below the fold');
@@ -271,61 +270,41 @@ void main() {
     expect(find.byType(SnackBar), findsNothing, reason: 'the inline alert says it already');
   });
 
-  testWidgets('camera tiles save the source; phone mode shows Start scan', (t) async {
-    await _pumpConfig(t, dark: false);
-    await t.tap(find.text('Phone camera'));
-    await t.pump();
-    final container = ProviderScope.containerOf(t.element(find.byType(ConfigScreen)));
-    expect(container.read(espConfigProvider).valueOrNull?.cameraSource, CameraSource.device);
-    expect(find.text('Start scan'), findsOneWidget);
-  });
-
-  testWidgets('ELIOS AI quiz tile can be chosen any time, offline included (decision 0179)', (t) async {
+  testWidgets('robot quiz card: own source and on/off; phone source untouched (0198)', (t) async {
     await _pumpConfig(t, dark: false, ai: AiStatus.offline);
     expect(find.text('New questions each scan, needs internet'), findsOneWidget);
+    final container = ProviderScope.containerOf(t.element(find.byType(ConfigScreen)));
+    final phone = container.read(appPreferencesProvider).questionSource;
     await t.tap(find.text('Question bank'));
     await t.pump();
-    final container = ProviderScope.containerOf(t.element(find.byType(ConfigScreen)));
-    expect(container.read(appPreferencesProvider).questionSource, QuestionSource.bank);
-    await t.tap(find.text('ELIOS AI').last);
+    expect(container.read(appPreferencesProvider).robotQuestionSource, QuestionSource.bank);
+    await t.tap(find.widgetWithText(ChoiceTile, 'ELIOS AI'));
     await t.pump();
-    expect(container.read(appPreferencesProvider).questionSource, QuestionSource.ai);
+    expect(container.read(appPreferencesProvider).robotQuestionSource, QuestionSource.ai);
+    expect(container.read(appPreferencesProvider).questionSource, phone);
     expect(t.getSemantics(find.text('Question bank')).flagsCollection.isSelected, Tristate.isFalse);
+
+    await t.tap(find.text('Quiz after each scan'));
+    await t.pump();
+    expect(container.read(appPreferencesProvider).robotQuizEnabled, isFalse);
+    expect(find.text('Saved to History. The quiz is off for robot scans.'), findsOneWidget);
+    await t.tap(find.text('Question bank'));
+    await t.pump();
+    expect(container.read(appPreferencesProvider).robotQuestionSource, QuestionSource.ai, reason: 'tiles are off');
   });
 
-  testWidgets('settings sheet saves every value and they load after a restart', (t) async {
-    t.view.physicalSize = const Size(800, 4400);
-    t.view.devicePixelRatio = 2;
-    addTearDown(t.view.reset);
-    await t.pumpWidget(const ProviderScope(
-      child: MaterialApp(home: Scaffold(body: Center(child: ConfigSettingsButton()))),
-    ));
-    await t.tap(find.byTooltip('Settings'));
-    await t.pumpAndSettle();
-    expect(find.text('Tampilan'), findsNothing);
-    Future<void> toggle(String title) async {
-      final row = find.ancestor(of: find.text(title), matching: find.byType(MergeSemantics));
-      await t.tap(find.descendant(of: row, matching: find.byType(Switch)));
-      await t.pumpAndSettle();
+  testWidgets('ELIOS setup saves connection and video inline; no settings sheet (0198)', (t) async {
+    await _pumpConfig(t, dark: false, size: const Size(400, 3200));
+    expect(find.byTooltip('Settings'), findsNothing);
+    for (final moved in ['Sound effects', 'Hard', '90s', 'Allow skipping']) {
+      expect(find.text(moved), findsNothing, reason: '$moved is on Profile');
     }
-
-    await toggle('Auto-reconnect'); // on → off
+    expect(find.text('Camera: MaixCAM2'), findsOneWidget);
+    await t.tap(find.text('Auto-reconnect')); // on → off
     await t.tap(find.text('720p'));
-    await toggle('Show FPS overlay');
-    await toggle('Sound effects'); // on → off
-    await t.tap(find.text('Hard'));
-    await t.tap(find.text('90s'));
-    await toggle('Allow skipping');
+    await t.tap(find.text('Show FPS overlay'));
     await t.pumpAndSettle();
-    await t.tap(find.text('Done'));
-    await t.pumpAndSettle();
-    expect(find.text('Connection, video, sound and quiz'), findsNothing);
 
-    final prefs = jsonDecode((await SharedPreferences.getInstance()).getString('app_preferences_v1')!);
-    expect(prefs, containsPair('quizDifficulty', 'Hard'));
-    expect(prefs, containsPair('quizTimer', '90s'));
-    expect(prefs, containsPair('skipAllowed', true));
-    expect(prefs, containsPair('soundEffects', false));
     final esp = jsonDecode((await const FlutterSecureStorage().read(key: 'elio_esp_config'))!);
     expect(esp, containsPair('resolutionPreset', '720p'));
     expect(esp, containsPair('showFpsOverlay', true));
@@ -336,8 +315,5 @@ void main() {
     final config = await restarted.read(espConfigProvider.future);
     expect(config.resolutionPreset, '720p');
     expect(config.autoReconnect, isFalse);
-    restarted.read(appPreferencesProvider);
-    await t.pump();
-    expect(restarted.read(appPreferencesProvider).quizTimer, '90s');
   });
 }

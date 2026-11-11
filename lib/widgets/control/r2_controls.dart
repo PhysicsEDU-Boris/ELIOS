@@ -1,3 +1,4 @@
+import 'dart:async';
 // R2 gamified Control components (Figma 358:2358): joystick 358:2400,
 // faders 358:2360 / 358:2380, rocker toggle 358:2429, glow button 358:2446,
 // transport key 358:2495. Colours come only from the active ElioPalette; the
@@ -9,17 +10,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../models/control_session.dart';
-import '../../providers/app_preferences_provider.dart' show soundEffectsOn;
+import '../../services/elio_feedback.dart';
 import '../../theme/elio_tokens.dart';
 import '../learn/learn_ui.dart' show LearnTheme;
 import 'package:elio/l10n/l10n.dart';
 
 /// Feel for every Control input (decision 0188): a light haptic tick plus the
-/// platform click sound (silent when the device has touch sounds off, or when
-/// Config → Settings → Sound effects is off).
+/// S1 tick through the one audio service (0201): off with Profile → Sound
+/// effects, scaled by Master volume, silent when the phone is on silent.
 void controlFeedback() {
   HapticFeedback.selectionClick();
-  if (soundEffectsOn) SystemSound.play(SystemSoundType.click);
+  unawaited(ElioSound.instance.play(ElioSfx.tick));
 }
 
 /// [onTap] with [controlFeedback] first; null stays null (disabled).

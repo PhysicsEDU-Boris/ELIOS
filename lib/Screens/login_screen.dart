@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
@@ -9,7 +10,6 @@ import 'package:elio/providers/auth_provider.dart';
 import 'package:elio/theme/elio_theme.dart';
 import 'package:elio/theme/elio_tokens.dart';
 import 'package:elio/widgets/auth/auth_widgets.dart';
-import 'package:elio/widgets/splash/elio_leaf.dart';
 
 import 'home_shell.dart';
 import 'package:elio/l10n/l10n.dart';
@@ -239,8 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (googleAuth.idToken == null) {
         throw FirebaseAuthException(
           code: 'missing-google-id-token',
-          message:
-              l10n.authNoIdToken,
+          message: l10n.authNoIdToken,
         );
       }
 
@@ -385,15 +384,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                   )
-                : SafeArea(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        24,
-                        32,
-                        24,
-                        24,
-                      ),
-                      child: form,
+                // ELIOS 3 (L4): the curved green header scrolls with the form.
+                : SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      bottom: 24 + MediaQuery.paddingOf(context).bottom,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const AuthOrganicHeader(),
+                        Padding(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                            24,
+                            8,
+                            24,
+                            0,
+                          ),
+                          child: form,
+                        ),
+                      ],
                     ),
                   ),
           );
@@ -418,14 +427,6 @@ class _LoginScreenState extends State<LoginScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: ElioTokens.space24,
         children: [
-          if (!wide)
-            Row(
-              spacing: 12,
-              children: [
-                ElioMark(size: 48, color: p.primaryText),
-                Text('ELIOS', style: authBrandStyle(p, large: false)),
-              ],
-            ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: ElioTokens.space4,
@@ -436,6 +437,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   title,
                   style: ElioTokens.headline.copyWith(color: p.textPrimary),
                 ),
+              ),
+              SvgPicture.asset(
+                'assets/illustrations/scan/squiggle.svg',
+                width: 72,
+                height: 10,
+                excludeFromSemantics: true,
+                colorFilter: ColorFilter.mode(p.primary, BlendMode.srcIn),
               ),
               if (subtitle != null)
                 Text(
@@ -471,9 +479,7 @@ class _LoginScreenState extends State<LoginScreen> {
     controller: _emailController,
     validator: _isForgot ? null : _emailValidator,
     label: _isSignUp || _isForgot ? l10n.authEmail : l10n.authEmailOrUser,
-    hint: _isSignUp || _isForgot
-        ? 'you@example.com'
-        : l10n.authEmailOrUserHint,
+    hint: _isSignUp || _isForgot ? 'you@example.com' : l10n.authEmailOrUserHint,
     icon: Icons.mail_outline,
     keyboardType: TextInputType.emailAddress,
     focusNode: _emailFocusNode,
@@ -494,10 +500,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_errorMessage != null)
       AuthBanner(kind: AuthBannerKind.error, message: _errorMessage!)
     else if (_resetSent)
-      AuthBanner(
-        kind: AuthBannerKind.success,
-        message: l10n.authResetSent,
-      ),
+      AuthBanner(kind: AuthBannerKind.success, message: l10n.authResetSent),
     _emailField(),
   ]);
 
@@ -507,7 +510,10 @@ class _LoginScreenState extends State<LoginScreen> {
       onPressed: _resetSent ? null : _resetPassword,
     ),
     Center(
-      child: AuthLink(label: l10n.authSignIn, onPressed: () => _setForgot(false)),
+      child: AuthLink(
+        label: l10n.authSignIn,
+        onPressed: () => _setForgot(false),
+      ),
     ),
   ];
 

@@ -149,6 +149,16 @@ class ScanRecord {
   /// Cached translations by language code, each made once by ELIOS AI.
   final Map<String, RecordTranslation> translations;
 
+  /// 'scan' (a quiz scan) or 'contribution' (Scan to contribute, 0198:
+  /// no questions, a fixed reward).
+  final String kind;
+  bool get isContribution => kind == contributionKind;
+  static const contributionKind = 'contribution';
+
+  /// Which device made the scan: 'phone' or 'elios' (ELIOS 3, decision 0199).
+  /// Null for records saved before then; they are never guessed.
+  final String? device;
+
   ScanRecord({
     required this.id,
     required this.time,
@@ -161,6 +171,8 @@ class ScanRecord {
     this.lang = 'id',
     this.translations = const {},
     this.schemaVersion = 5, // v5: language + translation cache (0185)
+    this.kind = 'scan',
+    this.device,
   }) : trophies = trophies ?? trophiesFor(questions);
 
   ScanRecord copyWith({
@@ -178,6 +190,8 @@ class ScanRecord {
     trophies: trophies,
     lang: lang,
     translations: translations ?? this.translations,
+    kind: kind,
+    device: device,
   );
 
   /// Language of the saved explanation of question [i].
@@ -242,6 +256,8 @@ class ScanRecord {
       trophies: trophies,
       lang: lang,
       translations: translations,
+      kind: kind,
+      device: device,
     );
   }
 
@@ -285,6 +301,8 @@ class ScanRecord {
     'questions': questions.map((q) => q.toJson()).toList(),
     'trophies': trophies,
     'lang': lang,
+    if (kind != 'scan') 'kind': kind,
+    if (device != null) 'device': device,
     if (translations.isNotEmpty)
       'translations': {
         for (final e in translations.entries) e.key: e.value.toJson(),
@@ -348,6 +366,17 @@ class ScanRecord {
       difficulty: difficulty,
       questions: questionsList,
       trophies: (json['trophies'] as num?)?.toInt(),
+      kind: json['kind'] as String? ?? 'scan',
+      device: json['device'] as String?,
     );
   }
 }
+
+/// Trophies for a correct Scan to contribute (0198).
+const contributionTrophies = 10;
+
+/// Whether an item of [item]'s bin was put in [bin]. Residu goes in the
+/// Anorganik (recyclable) bin, as everywhere in the app.
+bool contributionMatches(ScanCategory item, ScanCategory bin) =>
+    item == bin ||
+    (item == ScanCategory.residu && bin == ScanCategory.recyclable);

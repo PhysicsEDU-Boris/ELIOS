@@ -321,7 +321,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
-  String get settingsSubtitle => 'Connection, video, sound and quiz';
+  String get settingsSubtitle => 'Connection and video';
 
   @override
   String get aiNeedsInternet => 'Gemini · needs internet';
@@ -4395,4 +4395,1049 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get historyImportFailed =>
       'Could not import previous history. The original files are kept.';
+
+  @override
+  String get dailyGuidesTitle => 'Daily Guide';
+
+  @override
+  String get dailyGuidesDescription =>
+      'Explore the physics behind environmental news.';
+
+  @override
+  String get dailyGuidesRefresh => 'Refresh guides';
+
+  @override
+  String get dailyGuidesOffline =>
+      'Showing saved guides. Connect to check for new issues.';
+
+  @override
+  String get dailyGuidesEmpty => 'The first daily guide is on its way.';
+
+  @override
+  String get dailyGuidesLatest => 'Latest issue';
+
+  @override
+  String get dailyGuidesArchive => 'Previous issues';
+
+  @override
+  String get g4AiLooksFor => 'ELIOS AI will look for';
+
+  @override
+  String get g4All => 'All';
+
+  @override
+  String get g4AllStopsDone => 'All 3 stops done';
+
+  @override
+  String get g4AlmostBody =>
+      'No XP yet. You can try as many times as you like.';
+
+  @override
+  String get g4AlmostTitle => 'Almost! Try one more time';
+
+  @override
+  String get g4Archive => 'Archive';
+
+  @override
+  String g4ArchiveLabel(Object title, Object date, Object stops, Object xp) {
+    return '$title, $date, $stops of 3 stops, $xp XP';
+  }
+
+  @override
+  String get g4AskTeacher => 'Ask teacher to review';
+
+  @override
+  String get g4AskTeacherHint =>
+      'Think the check is wrong? Ask your teacher to review it. They see the AI reason, not your photos.';
+
+  @override
+  String get g4BackToResult => 'Back to result';
+
+  @override
+  String get g4BadgeUnlocked => 'Badge unlocked';
+
+  @override
+  String get g4Cancel => 'Cancel';
+
+  @override
+  String get g4Check => 'Check';
+
+  @override
+  String get g4CheckAgain => 'Check again';
+
+  @override
+  String get g4ContinueGuide => 'Continue guide';
+
+  @override
+  String g4ContinueStop(Object n) {
+    return 'Continue · Stop $n';
+  }
+
+  @override
+  String get g4CopyLink => 'Copy link';
+
+  @override
+  String get g4DayFuture => 'coming up';
+
+  @override
+  String get g4DayMissed => 'missed';
+
+  @override
+  String get g4DayRead => 'read';
+
+  @override
+  String get g4DayToday => 'today, not read yet';
+
+  @override
+  String get g4DidYouKnow => 'Did you know?';
+
+  @override
+  String get g4EmptyBody =>
+      'A new physics story arrives every morning around 06:00. Pull down to check again.';
+
+  @override
+  String get g4EmptyTitle => 'The first guide is on its way';
+
+  @override
+  String get g4FeedError => 'Guides couldn\'t load';
+
+  @override
+  String get g4FeedSubtitle => 'Physics behind real news';
+
+  @override
+  String get g4FinishStop2 => 'Finish Stop 2 to unlock';
+
+  @override
+  String get g4FollowApp => 'Same as the app';
+
+  @override
+  String g4FrameN(Object n) {
+    return 'Frame $n';
+  }
+
+  @override
+  String get g4GuideArchive => 'Guide archive';
+
+  @override
+  String get g4GuideLanguage => 'Guide language';
+
+  @override
+  String get g4GuideXp => 'guide XP';
+
+  @override
+  String get g4Import => 'Import';
+
+  @override
+  String g4ImportBody(Object xp) {
+    return 'This phone has $xp guide XP from a guest session.';
+  }
+
+  @override
+  String g4ImportConfirm(Object xp) {
+    return 'Add the guest\'s guide progress ($xp XP, stops and streak days) to this account? Nothing is merged without your OK.';
+  }
+
+  @override
+  String get g4ImportFailed =>
+      'Couldn\'t import now. Try again when you\'re online.';
+
+  @override
+  String get g4ImportTitle => 'Import guest guide progress';
+
+  @override
+  String g4IssueCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count issues',
+      one: '1 issue',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String g4IssueN(Object n) {
+    return 'Issue #$n';
+  }
+
+  @override
+  String g4IssuesStreak(int count, Object days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count issues',
+      one: '1 issue',
+    );
+    return '$_temp0 · $days-day streak';
+  }
+
+  @override
+  String get g4LabApproved => 'Lab approved';
+
+  @override
+  String get g4LabApprovedBy => 'Lab approved by ELIOS AI';
+
+  @override
+  String get g4LabBusy =>
+      'The lab check is busy. Your photos stayed on your phone; try again in a minute.';
+
+  @override
+  String get g4LabChecking => 'ELIOS AI is checking your photos…';
+
+  @override
+  String get g4LabLimit =>
+      'That\'s 5 lab checks for this guide today. Try again tomorrow.';
+
+  @override
+  String g4LabMeta(Object xp) {
+    return 'About 10 minutes · +$xp XP · badge';
+  }
+
+  @override
+  String get g4LabOffline =>
+      'The lab check needs internet. Connect and try again; nothing was sent.';
+
+  @override
+  String get g4LabResult => 'Mini lab result';
+
+  @override
+  String get g4LangEn => 'English';
+
+  @override
+  String get g4LangId => 'Bahasa Indonesia';
+
+  @override
+  String get g4LangMissing =>
+      'This issue isn\'t in your language yet, so it\'s shown in the other one.';
+
+  @override
+  String get g4LangPill => 'EN · ID';
+
+  @override
+  String get g4Listen => 'Listen';
+
+  @override
+  String get g4MiniLab => 'Mini lab';
+
+  @override
+  String get g4Missing => 'missing';
+
+  @override
+  String get g4New => 'NEW';
+
+  @override
+  String get g4NewGuide => 'New guide';
+
+  @override
+  String get g4NextCard => 'Next card';
+
+  @override
+  String get g4NotNow => 'Not now';
+
+  @override
+  String get g4NotQuite => 'Not quite.';
+
+  @override
+  String get g4OfflineBanner =>
+      'Offline. Showing saved guides. Connect to check for new issues.';
+
+  @override
+  String get g4Ok => 'OK';
+
+  @override
+  String get g4Pass => 'seen';
+
+  @override
+  String get g4Pdf => 'PDF';
+
+  @override
+  String g4PdfMeta(Object pages, Object language) {
+    return '$pages-page PDF · $language · saved for offline';
+  }
+
+  @override
+  String get g4PhotoCredit => 'Photo credit';
+
+  @override
+  String get g4PhotoHint =>
+      'Take 3 photos: the start, the middle and the end of your experiment.';
+
+  @override
+  String g4PhotosTaken(Object n) {
+    return '$n of 3 photos';
+  }
+
+  @override
+  String g4PlusXp(Object xp) {
+    return '+$xp XP';
+  }
+
+  @override
+  String get g4PrivacyNote =>
+      'ELIOS checks 8 still photos from your clip, then deletes them. Only the result is saved.';
+
+  @override
+  String get g4QuestMap => 'Your quest map';
+
+  @override
+  String get g4QuickQuiz => 'Quick quiz';
+
+  @override
+  String get g4QuizAlmost =>
+      '2 correct answers pass. Try the quiz again with new questions.';
+
+  @override
+  String get g4QuizNice => 'Nice work!';
+
+  @override
+  String get g4QuizParkedHint =>
+      'Answered cards stay on the left. Tap Q1–Q3 on the result to look again.';
+
+  @override
+  String get g4QuizPassed => 'Quiz passed';
+
+  @override
+  String get g4QuizResultHint => 'Tap Q1–Q3 to flip back to any answer.';
+
+  @override
+  String get g4QuizUnavailable => 'The quiz couldn\'t load';
+
+  @override
+  String get g4ReadAgain => 'Read the guide again';
+
+  @override
+  String get g4ReadFullGuide => 'Read the full guide';
+
+  @override
+  String g4ReadPage(Object page) {
+    return 'Read page $page';
+  }
+
+  @override
+  String get g4Record => 'Record 15–30 s';
+
+  @override
+  String g4RecordHint(Object min) {
+    return 'Film only your hands and the experiment. Stop after $min s; recording ends at 30 s.';
+  }
+
+  @override
+  String g4RecordingSeconds(Object s, Object max) {
+    return 'Recording $s / $max s';
+  }
+
+  @override
+  String get g4Retake => 'Record again';
+
+  @override
+  String get g4Retry => 'Retry';
+
+  @override
+  String get g4ReviewBody =>
+      'These are the only pictures that will be sent. Nothing leaves your phone until you tap Send.';
+
+  @override
+  String g4ReviewQuestion(Object n) {
+    return 'Look at question $n again';
+  }
+
+  @override
+  String get g4ReviewSent => 'Sent to your teacher.';
+
+  @override
+  String g4ReviewTitle(Object n) {
+    return '$n photos ready';
+  }
+
+  @override
+  String get g4SafetyTitle => 'Film only your hands and the experiment';
+
+  @override
+  String get g4SavedAccount => 'Saved to your account';
+
+  @override
+  String get g4SavedPhone =>
+      'Saved on this phone. It syncs when you\'re online.';
+
+  @override
+  String get g4Saving => 'Saving…';
+
+  @override
+  String g4ScoreOf(Object score, Object total) {
+    return '$score of $total correct';
+  }
+
+  @override
+  String get g4SeeResult => 'See result';
+
+  @override
+  String get g4Send => 'Send to ELIOS AI';
+
+  @override
+  String get g4Sources => 'Sources';
+
+  @override
+  String g4SourcesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sources',
+      one: '1 source',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get g4StartGuide => 'Start guide';
+
+  @override
+  String get g4StartLab => 'Start mini lab';
+
+  @override
+  String get g4StopDone => 'done';
+
+  @override
+  String get g4StopLocked => 'locked';
+
+  @override
+  String get g4StopMission => 'Your mission';
+
+  @override
+  String get g4StopMissionSub => 'Stop 3 · Your mission';
+
+  @override
+  String g4StopN(Object n) {
+    return 'Stop $n';
+  }
+
+  @override
+  String get g4StopOpen => 'open';
+
+  @override
+  String g4StopPage(Object n, Object page) {
+    return 'STOP $n · P.$page';
+  }
+
+  @override
+  String get g4StopPhysics => 'The physics';
+
+  @override
+  String get g4StopRecording => 'Stop recording';
+
+  @override
+  String get g4StopStory => 'The story';
+
+  @override
+  String g4StopsDoneNext(Object done, Object next) {
+    return '$done of 3 stops done · Next: $next';
+  }
+
+  @override
+  String g4StopsOf(Object done) {
+    return '$done/3 stops';
+  }
+
+  @override
+  String g4StreakDays(Object days) {
+    return '$days-day reading streak';
+  }
+
+  @override
+  String get g4StreakHint => 'Read today\'s guide to keep it going';
+
+  @override
+  String get g4TakePhoto => 'Take photo';
+
+  @override
+  String get g4TeacherBody =>
+      'ELIOS AI wasn\'t sure, so your teacher will look at the result. No photos are kept.';
+
+  @override
+  String get g4TeacherNote =>
+      'Your teacher can see this result and change it. Photos were deleted after the check.';
+
+  @override
+  String get g4TeacherTitle => 'Your teacher will check this';
+
+  @override
+  String get g4ThreePhotos => 'Take 3 photos instead';
+
+  @override
+  String g4TodayDate(Object date) {
+    return 'TODAY · $date';
+  }
+
+  @override
+  String g4TodayLabel(Object title, Object done) {
+    return 'Today\'s guide: $title, $done of 3 stops done';
+  }
+
+  @override
+  String get g4TodaysGuide => 'TODAY\'S GUIDE';
+
+  @override
+  String g4TodaysGuideIssue(Object n) {
+    return 'TODAY\'S GUIDE · #$n';
+  }
+
+  @override
+  String get g4TopicAir => 'Air';
+
+  @override
+  String get g4TopicEnergy => 'Energy';
+
+  @override
+  String get g4TopicHeat => 'Heat';
+
+  @override
+  String get g4TopicOther => 'Science';
+
+  @override
+  String get g4TopicStorm => 'Storm';
+
+  @override
+  String get g4TopicWaste => 'Waste';
+
+  @override
+  String get g4TopicWater => 'Water';
+
+  @override
+  String get g4TryAgain => 'Try again';
+
+  @override
+  String get g4TryQuizAgain => 'Try the quiz again';
+
+  @override
+  String get g4WeekLetters => 'M,T,W,T,F,S,S';
+
+  @override
+  String get g4WhatAiSaw => 'What ELIOS AI saw';
+
+  @override
+  String get g4WhatToDo => 'What to do';
+
+  @override
+  String g4XpDone(Object xp) {
+    return '✓ $xp XP';
+  }
+
+  @override
+  String g4XpOf(Object xp, Object total) {
+    return '$xp / $total XP';
+  }
+
+  @override
+  String g4YourQuestion(Object q) {
+    return 'Your question: $q';
+  }
+
+  @override
+  String get g4FeedTitle => 'ELIOS Guides';
+
+  @override
+  String get lnShortcuts => 'Learn shortcuts';
+
+  @override
+  String get lnJumpBackIn => 'Jump back in';
+
+  @override
+  String get lnExplore => 'Explore';
+
+  @override
+  String lnExploreSub(int lessons, int modules) {
+    return '$lessons lessons across $modules modules';
+  }
+
+  @override
+  String get lnModules => 'Modules';
+
+  @override
+  String get lnPdfGuides => 'PDF guides';
+
+  @override
+  String get lnPractice => 'Practice';
+
+  @override
+  String get lnYou => 'You';
+
+  @override
+  String get lnQuizShort => 'Quiz';
+
+  @override
+  String get lnMiniLab => 'Mini lab';
+
+  @override
+  String get lnTodaysLab => 'Today\'s experiment';
+
+  @override
+  String get lnArchive => 'Archive';
+
+  @override
+  String get lnProgressShort => 'Progress';
+
+  @override
+  String get lnStartHere => 'Start here';
+
+  @override
+  String lnQuizCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count quizzes',
+      one: '1 quiz',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lnTotalXp(int xp) {
+    return '$xp XP total';
+  }
+
+  @override
+  String lnGuideStops(String issue, int done) {
+    return '#$issue · $done of 3 stops';
+  }
+
+  @override
+  String lnPctDone(int pct) {
+    return '$pct%';
+  }
+
+  @override
+  String get lnTodaysGuide => 'Today\'s Guide';
+
+  @override
+  String get navScan => 'Scan';
+
+  @override
+  String get navScanHint => 'Scan, opens the scan hub';
+
+  @override
+  String get navProfile => 'Profile';
+
+  @override
+  String get scanHubSubtitle => 'Pick how you want to scan today';
+
+  @override
+  String get scanPhoneOverline => 'With your phone';
+
+  @override
+  String get scanPhoneTitle => 'Scan & quiz';
+
+  @override
+  String get scanPhoneBody =>
+      'Point the camera at an item. ELIOS names it and makes a quiz for you.';
+
+  @override
+  String get scanOpenCamera => 'Open camera';
+
+  @override
+  String get scanRobotOverline => 'With a robot';
+
+  @override
+  String get scanRobotTitle => 'Robot scan';
+
+  @override
+  String get scanRobotBody =>
+      'Choose a vehicle. ELIOS is ready; the drone is coming soon.';
+
+  @override
+  String get scanSelectVehicle => 'Select vehicle';
+
+  @override
+  String get vehicleEliosDesc => 'Ground robot · camera MaixCAM2';
+
+  @override
+  String get vehicleDrone => 'Drone';
+
+  @override
+  String get vehicleComingSoon => 'Coming soon';
+
+  @override
+  String get vehicleReady => 'Ready';
+
+  @override
+  String get vehicleMaixNote => 'Robots use the MaixCAM2 camera automatically';
+
+  @override
+  String get setupTitle => 'ELIOS setup';
+
+  @override
+  String get profileTapPicture => 'Tap your picture for account options';
+
+  @override
+  String get profileSynced => 'Google account · history synced';
+
+  @override
+  String get profileGuestChip => 'Guest · history saved on this phone only';
+
+  @override
+  String get profileAppearance => 'Appearance';
+
+  @override
+  String get profileDarkModeSub => 'Switch the whole app to the dark theme';
+
+  @override
+  String get profileLanguageSub => 'App text and voice';
+
+  @override
+  String get profileQuestionSource => 'Question source';
+
+  @override
+  String get profileQuestionSourceSub =>
+      'Where the scan quiz gets its questions';
+
+  @override
+  String get profileAccountMenu => 'Account options';
+
+  @override
+  String get profileSwitchAccount => 'Switch account';
+
+  @override
+  String vehicleUse(String name) {
+    return 'Use $name';
+  }
+
+  @override
+  String get profileNotSignedIn => 'Not signed in';
+
+  @override
+  String get profileGuestTap => 'Tap the picture to sign in or switch account';
+
+  @override
+  String homeLvShort(int n) {
+    return 'Lv $n';
+  }
+
+  @override
+  String homeToNextLong(int count, int level) {
+    return '$count trophies to Level $level · your tree grows with every trophy';
+  }
+
+  @override
+  String get homeRobotOverline => 'ELIOS robot';
+
+  @override
+  String get homeStillConnected => 'Still connected';
+
+  @override
+  String get homeResumeControl => 'Resume robot control';
+
+  @override
+  String lnClovers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count clovers',
+      one: '1 clover',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lnGuideRewards(int xp, String clovers) {
+    return '$xp XP · $clovers · from Daily Guides';
+  }
+
+  @override
+  String get wqSavedNoQuiz =>
+      'Saved to History. The quiz is off for robot scans.';
+
+  @override
+  String get setupQuizAfterScan => 'Quiz after each scan';
+
+  @override
+  String get setupCameraAuto => 'Camera: MaixCAM2';
+
+  @override
+  String get setupAutomatic => 'Automatic';
+
+  @override
+  String get setupOpenControl => 'Open control';
+
+  @override
+  String get setupVideoStream => 'Video stream';
+
+  @override
+  String get vehicleChange => 'Change';
+
+  @override
+  String get scanHoldSteady => 'Hold steady · one item in the frame';
+
+  @override
+  String get scanTakePhoto => 'Take photo and identify';
+
+  @override
+  String get scanAiQuiz => 'AI quiz';
+
+  @override
+  String get contributeTitle => 'Scan to contribute';
+
+  @override
+  String get contributePickBin => 'Which bin are you using?';
+
+  @override
+  String get contributeDrop => 'Drop the item into the bin while recording.';
+
+  @override
+  String get contributeKeepLabel =>
+      'Keep the bin label in view so we can check it.';
+
+  @override
+  String get contributeChecking => 'ELIOS AI is checking your video…';
+
+  @override
+  String get contributeStart => 'Start recording';
+
+  @override
+  String get contributeStop => 'Stop recording';
+
+  @override
+  String get contributeNice => 'Nice sorting!';
+
+  @override
+  String get contributeNotQuite => 'Not quite';
+
+  @override
+  String get contributeNotChecked => 'Couldn\'t check';
+
+  @override
+  String get contributeNoItem =>
+      'ELIOS AI couldn\'t see an item. Try again closer, with good light.';
+
+  @override
+  String contributeWentInto(String item, String bin) {
+    return '$item went into the $bin bin.';
+  }
+
+  @override
+  String contributeBelongs(String item, String bin) {
+    return '$item belongs in the $bin bin. Try again!';
+  }
+
+  @override
+  String contributeTrophies(int count) {
+    return '+$count trophies';
+  }
+
+  @override
+  String get contributeSaved => 'Saved to History as a contribution';
+
+  @override
+  String get contributeAgain => 'Contribute again';
+
+  @override
+  String get scanContributeOverline => 'Earn trophies';
+
+  @override
+  String get scanContributeBody =>
+      'Film yourself putting waste in the right bin. Keep the bin label in view.';
+
+  @override
+  String contributeRec(String time) {
+    return 'REC $time';
+  }
+
+  @override
+  String get histSubtitle3 => 'Scans, quizzes and contributions';
+
+  @override
+  String get histSeeTimeline => 'See timeline';
+
+  @override
+  String get histByDevice => 'By device';
+
+  @override
+  String get histByDeviceSub => 'Open a device to see its own timeline';
+
+  @override
+  String get histToReview => 'Questions to review';
+
+  @override
+  String get histReview => 'Review';
+
+  @override
+  String histQuiz(int correct, int total) {
+    return 'Quiz $correct/$total';
+  }
+
+  @override
+  String get histScanOnly => 'Scan only';
+
+  @override
+  String get histContribution => 'Contribution';
+
+  @override
+  String get histPhone => 'Phone';
+
+  @override
+  String get histNoScansYet => 'No scans yet';
+
+  @override
+  String get histTimeline => 'Scan timeline';
+
+  @override
+  String get histTimelineSub => 'Recent scans by device';
+
+  @override
+  String get histPhoneTitle => 'This phone';
+
+  @override
+  String get histEliosTitle => 'ELIOS robot';
+
+  @override
+  String histDeviceScans(int count, String camera) {
+    return '$count scans · camera $camera';
+  }
+
+  @override
+  String get histPhoneCamera => 'phone';
+
+  @override
+  String get histNoDevice =>
+      'Scans saved before this update have no device; they are under All.';
+
+  @override
+  String get histAllScans => 'All';
+
+  @override
+  String get h3TrophiesWord => 'trophies';
+
+  @override
+  String get celebrateTap => 'Tap to continue';
+
+  @override
+  String celebrateLevelUp(int level) {
+    return 'Level $level!';
+  }
+
+  @override
+  String get celebrateMedal => 'Medal unlocked';
+
+  @override
+  String get lnArchiveTitle => 'From the archive';
+
+  @override
+  String lnArchiveSub(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Your last $count guides · swipe the photos',
+      one: 'Your last guide · swipe the photos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lnArchivePulled => 'Pick up where you left off';
+
+  @override
+  String lnArchivePhotoLabel(String title) {
+    return '$title. Tap to pull out, swipe for the next guide';
+  }
+
+  @override
+  String lnArchiveXp(int xp, int total) {
+    return '$xp/$total XP';
+  }
+
+  @override
+  String lnArchiveXpDone(int total) {
+    return '✓ $total XP';
+  }
+
+  @override
+  String lnArchiveStops(int done) {
+    return '$done/3 stops';
+  }
+
+  @override
+  String lnRailSub(String lead, int count, String module) {
+    return '$lead · $count in $module';
+  }
+
+  @override
+  String get lnRailVideosLead => 'Watch and learn';
+
+  @override
+  String get lnRailGuidesLead => 'Read in a minute';
+
+  @override
+  String get lnRailQuizLead => 'Check what you know';
+
+  @override
+  String lnRailSims(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Try it yourself · $count labs',
+      one: 'Try it yourself · 1 lab',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lnSimulation => 'Simulation';
+
+  @override
+  String get lnQuizzes => 'Quizzes';
+
+  @override
+  String lnBestShort(int score) {
+    return 'best $score%';
+  }
+
+  @override
+  String lnContinueLessonN(int n) {
+    return 'Continue lesson $n';
+  }
+
+  @override
+  String lnStartLessonN(int n) {
+    return 'Start lesson $n';
+  }
+
+  @override
+  String lnWhatGoesIn(String module) {
+    String _temp0 = intl.Intl.selectLogic(module, {
+      'organic': 'What goes in the green bin',
+      'inorganic': 'What goes in the yellow bin',
+      'hazardous': 'What goes in the red bin',
+      'other': 'What goes in this bin',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get lnLessons => 'Lessons';
+
+  @override
+  String lnModuleProgressDone(int done, int total) {
+    return 'Module progress · $done of $total done';
+  }
+
+  @override
+  String lnPartN(int n) {
+    return 'Part $n';
+  }
+
+  @override
+  String lnPctWatched(int pct) {
+    return '$pct% watched';
+  }
+
+  @override
+  String lnLessonNofM(int n, int total) {
+    return 'Lesson $n of $total';
+  }
+
+  @override
+  String get lnPlaying => 'playing';
+
+  @override
+  String get lnCheckAnswer => 'Check answer';
+
+  @override
+  String get lnPickToContinue => 'Pick an answer to continue.';
 }

@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui' show Rect;
 import 'package:elio/services/scan_record_store.dart';
 import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';

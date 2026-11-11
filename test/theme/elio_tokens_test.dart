@@ -73,16 +73,18 @@ void main() {
     });
   });
 
-  test('spacing scale and radii match the tables', () {
+  test('spacing scale matches the table', () {
     final scale = RegExp(r'\| Scale\s*\|\s*([\d, ]+)\|').firstMatch(doc)!.group(1)!;
     expect(ElioTokens.spaceScale, scale.split(',').map((e) => double.parse(e.trim())).toList());
-    double radius(String n) =>
-        double.parse(RegExp('\\|\\s*$n\\s*\\|\\s*(\\d+)px').firstMatch(doc)!.group(1)!);
-    expect(ElioTokens.radiusNone, radius('None'));
-    expect(ElioTokens.radiusSmall, radius('Small'));
-    expect(ElioTokens.radiusMedium, radius('Medium'));
-    expect(ElioTokens.radiusLarge, radius('Large'));
-    expect(ElioTokens.radiusXl, radius('XL'));
+  });
+
+  test('legacy radius tokens stay stable until the Material 3 migration', () {
+    // docs/design.md now specifies the new scale; these shared tokens still use DevLog values.
+    expect(ElioTokens.radiusNone, 0);
+    expect(ElioTokens.radiusSmall, 4);
+    expect(ElioTokens.radiusMedium, 6);
+    expect(ElioTokens.radiusLarge, 8);
+    expect(ElioTokens.radiusXl, 12);
     expect(ElioTokens.radiusFull, 9999);
   });
 
