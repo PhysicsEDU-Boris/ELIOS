@@ -57,10 +57,11 @@ class DiscoverMore extends StatefulWidget {
 }
 
 class _DiscoverMoreState extends State<DiscoverMore> {
-  bool _animate = false;
-
-  /// Extra wait before the first pop-in: during the Learn intro the rails
-  /// pop in after Explore (1100 ms); on a module change, at once.
+  /// When the current pop-in started, and the extra wait before its first
+  /// card; null = show cards at rest. Cards built after their moment (the
+  /// list builds Discover lazily as it scrolls into view) also rest, so
+  /// scrolling down never shows empty rails waiting to pop in.
+  DateTime? _popAt;
   Duration _base = Duration.zero;
   bool _checked = false;
 
@@ -69,9 +70,11 @@ class _DiscoverMoreState extends State<DiscoverMore> {
     super.didChangeDependencies();
     if (_checked) return;
     _checked = true;
-    if (LearnIntroSlice.playing(context)) {
-      _animate = true;
-      _base = const Duration(milliseconds: 1100);
+    // During the Learn intro the rails pop in after Explore, at 1100 ms.
+    final e = LearnIntroSlice.elapsedMs(context);
+    if (e != null && e < 1100) {
+      _popAt = DateTime.now();
+      _base = Duration(milliseconds: 1100 - e);
     }
   }
 
@@ -79,7 +82,7 @@ class _DiscoverMoreState extends State<DiscoverMore> {
   void didUpdateWidget(DiscoverMore old) {
     super.didUpdateWidget(old);
     if (old.moduleId != widget.moduleId) {
-      _animate = true;
+      _popAt = DateTime.now();
       _base = Duration.zero;
     }
   }
@@ -140,7 +143,7 @@ class _DiscoverMoreState extends State<DiscoverMore> {
                     key: ValueKey('${widget.moduleId}-$r'),
                     rail: rail,
                     railIndex: r,
-                    animate: _animate,
+                    popAt: _popAt,
                     base: _base,
                   ),
                 ),
@@ -157,12 +160,12 @@ class _Rail extends StatelessWidget {
     super.key,
     required this.rail,
     required this.railIndex,
-    required this.animate,
+    required this.popAt,
     this.base = Duration.zero,
   });
   final DiscoverRail rail;
   final int railIndex;
-  final bool animate;
+  final DateTime? popAt;
   final Duration base;
 
   static const _gap = 14.0;
@@ -178,10 +181,17 @@ class _Rail extends StatelessWidget {
       height: 265,
       itemBuilder: (context, i, _) {
         final it = items[i];
-        // Cards 60 ms apart, rails 40 ms apart, max 6 waits.
-        final wait =
+        // Cards 60 ms apart, rails 40 ms apart, max 6 waits, counted from
+        // the pop-in start; a card built after its slot just shows.
+        final slot =
             base +
             Duration(milliseconds: math.min(railIndex * 40 + i * 60, 6 * 60));
+        final late = popAt == null
+            ? null
+            : DateTime.now().difference(popAt!);
+        final wait = late == null || late > slot + ElioMotion.base
+            ? null
+            : (late >= slot ? Duration.zero : slot - late);
         return Padding(
           padding: const EdgeInsets.only(top: 4, bottom: 4),
           child: Align(
@@ -195,7 +205,7 @@ class _Rail extends StatelessWidget {
               progress: it.progress,
               sticker: it.sticker,
               large: i == 0,
-              entrance: animate ? wait : null,
+              entrance: wait,
               onTap: it.onTap,
             ),
           ),

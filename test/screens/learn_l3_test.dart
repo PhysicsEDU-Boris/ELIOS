@@ -29,7 +29,6 @@ import 'package:elio/widgets/learn/learn_ui.dart' show LearnHubSkeleton;
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -478,6 +477,27 @@ void main() {
       sounds,
       containsAllInOrder([ElioSfx.pop, ElioSfx.chime, ElioSfx.sparkleShort]),
     );
+  });
+
+  testWidgets('Discover cards show at once when scrolled to after the intro', (
+    t,
+  ) async {
+    LearnIntroHost.played = false;
+    // Phone height: Discover more starts below the fold.
+    await _pump(t, const ElearningTab());
+    await t.pump(const Duration(milliseconds: 600)); // intro finishes
+    expect(find.byType(DiscoverMore), findsNothing);
+    await t.scrollUntilVisible(
+      find.text('Watch and learn · 2 in Organik'),
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await t.pump(); // first frame with Discover on screen
+    final card = find.byType(ContentPopCard).first;
+    final fade = t.widget<Opacity>(
+      find.descendant(of: card, matching: find.byType(Opacity)).first,
+    );
+    expect(fade.opacity, 1, reason: 'no hidden card waiting to pop in');
   });
 
   testWidgets('reduce motion still renders the hub', (t) async {

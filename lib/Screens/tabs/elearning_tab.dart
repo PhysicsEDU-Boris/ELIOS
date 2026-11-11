@@ -555,7 +555,7 @@ class _HubContentState extends ConsumerState<_HubContent> {
               onSeeAll: seeAll,
             ),
           ),
-          _discover(openModule, lessons, progress, viewed),
+          _KeepAlive(child: _discover(openModule, lessons, progress, viewed)),
         ],
       ),
     );
@@ -1044,5 +1044,26 @@ class _OfflineLessonsPageState extends ConsumerState<OfflineLessonsPage> {
         },
       ),
     );
+  }
+}
+
+/// Keeps a heavy hub section (Discover more) built while it is scrolled off
+/// screen, so coming back to it never rebuilds its rails.
+class _KeepAlive extends StatefulWidget {
+  const _KeepAlive({required this.child});
+  final Widget child;
+  @override
+  State<_KeepAlive> createState() => _KeepAliveState();
+}
+
+class _KeepAliveState extends State<_KeepAlive>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

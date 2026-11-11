@@ -1405,10 +1405,13 @@ class LearnIntroSlice extends StatelessWidget {
   final Widget? child;
   final Widget Function(BuildContext context, double t, Widget? child) builder;
 
-  /// True while an intro is running above [context].
-  static bool playing(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<_LearnIntro>()?.animation !=
-      null;
+  /// Ms into the Learn intro, or null when none is running (none started,
+  /// or it already finished). Widgets built later read null and rest.
+  static int? elapsedMs(BuildContext context) {
+    final a = context.getInheritedWidgetOfExactType<_LearnIntro>()?.animation;
+    if (a == null || a.isCompleted) return null;
+    return (a.value * LearnIntroHost.total.inMilliseconds).round();
+  }
 
   @override
   Widget build(BuildContext context) {

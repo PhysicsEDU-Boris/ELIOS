@@ -67,6 +67,10 @@ a Learn sub-page does not replay it (the hub stays mounted).
 | 800–1400 | quick bubbles | pop in left→right (60 ms), badges bounce | |
 | 900–1400 | Explore / Discover | squiggle draws, pills slide in, skyline cards rise; Discover cards pop in from 1100 | |
 
+Discover more is kept alive once built, and its pop-in is timed from the real intro clock: cards
+built after their slot (scrolled to later, or rails below the fold on a module change) show at
+rest at once, never as empty space waiting to pop in.
+
 Sounds are quiet (gain 0.5–0.7) and 200 ms apart (the 120 ms gap never drops one). No haptics:
 the tab tap already gives one.
 
