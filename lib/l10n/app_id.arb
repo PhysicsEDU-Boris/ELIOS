@@ -1535,5 +1535,20 @@
   "lnLessonNofM": "Pelajaran {n} dari {total}",
   "lnPlaying": "diputar",
   "lnCheckAnswer": "Periksa jawaban",
-  "lnPickToContinue": "Pilih jawaban untuk lanjut."
+  "lnPickToContinue": "Pilih jawaban untuk lanjut.",
+  "setupWsOverWifi": "Alamat WebSocket ELIOS lewat Wi-Fi robot",
+  "setupJoinWifi": "Sambung ke Wi-Fi ELIOS",
+  "setupJoinWifiBody": "Pindai QR Wi-Fi di robot agar ponsel ini masuk ke jaringannya.",
+  "setupShowWifiQr": "Tampilkan QR Wi-Fi robot",
+  "setupFoundAt": "Ditemukan di {ip}",
+  "setupSearch": "Cari ELIOS",
+  "setupSearchAgain": "Cari lagi",
+  "setupConnectStep": "Hubungkan",
+  "setupSaveDefault": "Simpan sebagai alamat bawaan",
+  "setupSavedDefault": "Disimpan sebagai alamat bawaan",
+  "setupStepState": "Langkah {n}, {state}",
+  "setupStepDone": "selesai",
+  "setupStepNow": "langkah sekarang",
+  "setupStepTodo": "belum",
+  "setupStepProblem": "perlu dicek"
 }

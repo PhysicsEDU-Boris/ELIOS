@@ -5438,4 +5438,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lnPickToContinue => 'Pick an answer to continue.';
+
+  @override
+  String get setupWsOverWifi => 'ELIOS WebSocket address over the robot Wi-Fi';
+
+  @override
+  String get setupJoinWifi => 'Join the ELIOS Wi-Fi';
+
+  @override
+  String get setupJoinWifiBody =>
+      'Scan the Wi-Fi QR on the robot so this phone joins its network.';
+
+  @override
+  String get setupShowWifiQr => 'Show robot Wi-Fi QR';
+
+  @override
+  String setupFoundAt(String ip) {
+    return 'Found at $ip';
+  }
+
+  @override
+  String get setupSearch => 'Search for ELIOS';
+
+  @override
+  String get setupSearchAgain => 'Search again';
+
+  @override
+  String get setupConnectStep => 'Connect';
+
+  @override
+  String get setupSaveDefault => 'Save as default address';
+
+  @override
+  String get setupSavedDefault => 'Saved as default address';
+
+  @override
+  String setupStepState(int n, String state) {
+    return 'Step $n, $state';
+  }
+
+  @override
+  String get setupStepDone => 'done';
+
+  @override
+  String get setupStepNow => 'current step';
+
+  @override
+  String get setupStepTodo => 'not yet';
+
+  @override
+  String get setupStepProblem => 'needs attention';
 }

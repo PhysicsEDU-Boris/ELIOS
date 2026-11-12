@@ -5343,4 +5343,54 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get lnPickToContinue => 'Pilih jawaban untuk lanjut.';
+
+  @override
+  String get setupWsOverWifi => 'Alamat WebSocket ELIOS lewat Wi-Fi robot';
+
+  @override
+  String get setupJoinWifi => 'Sambung ke Wi-Fi ELIOS';
+
+  @override
+  String get setupJoinWifiBody =>
+      'Pindai QR Wi-Fi di robot agar ponsel ini masuk ke jaringannya.';
+
+  @override
+  String get setupShowWifiQr => 'Tampilkan QR Wi-Fi robot';
+
+  @override
+  String setupFoundAt(String ip) {
+    return 'Ditemukan di $ip';
+  }
+
+  @override
+  String get setupSearch => 'Cari ELIOS';
+
+  @override
+  String get setupSearchAgain => 'Cari lagi';
+
+  @override
+  String get setupConnectStep => 'Hubungkan';
+
+  @override
+  String get setupSaveDefault => 'Simpan sebagai alamat bawaan';
+
+  @override
+  String get setupSavedDefault => 'Disimpan sebagai alamat bawaan';
+
+  @override
+  String setupStepState(int n, String state) {
+    return 'Langkah $n, $state';
+  }
+
+  @override
+  String get setupStepDone => 'selesai';
+
+  @override
+  String get setupStepNow => 'langkah sekarang';
+
+  @override
+  String get setupStepTodo => 'belum';
+
+  @override
+  String get setupStepProblem => 'perlu dicek';
 }

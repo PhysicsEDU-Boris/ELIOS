@@ -1,8 +1,9 @@
-// C1 Config screen and Settings sheet (decision 0145, Figma page 337:2358).
+// ELIOS setup (decisions 0145, 0205; Figma 337:2358, 629:91327).
 import 'dart:convert';
 import 'dart:ui' show Tristate;
 
 import 'package:elio/Screens/config/config_parts.dart';
+import 'package:elio/Screens/config/config_settings_sheet.dart';
 import 'package:elio/Screens/config_screen.dart';
 import 'package:elio/models/config_model.dart';
 import 'package:elio/providers/app_preferences_provider.dart';
@@ -96,6 +97,12 @@ void _expectPalette(WidgetTester t, bool dark) {
   expect(scaffold.backgroundColor, (dark ? ElioTokens.dark : ElioTokens.light).background);
 }
 
+void _expectSteps(SetupStep a, SetupStep b, SetupStep c) {
+  for (final (i, s) in [a, b, c].indexed) {
+    expect(find.byKey(ValueKey('setup-step-${i + 1}-${s.name}')), findsOneWidget, reason: 'step ${i + 1}');
+  }
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -115,6 +122,16 @@ void main() {
     }
   });
 
+  test('cable stepper states (0205)', () {
+    const d = SetupStep.done, c = SetupStep.current, t = SetupStep.todo, x = SetupStep.problem;
+    expect(setupSteps(LinkView.notConnected, found: false), [c, t, t]);
+    expect(setupSteps(LinkView.notConnected, found: true), [d, d, c], reason: 'found: connect is next');
+    expect(setupSteps(LinkView.connecting, found: false), [d, d, c]);
+    expect(setupSteps(LinkView.connected, found: true), [d, d, c]);
+    expect(setupSteps(LinkView.failed, found: false), [c, t, x]);
+    expect(setupSteps(LinkView.failed, found: true), [d, d, x]);
+  });
+
   test('AiStatus → ELIOS AI card state', () {
     expect({for (final s in AiStatus.values) s: aiCardState(s)}, {
       AiStatus.idle: AiCardState.off,
@@ -132,12 +149,15 @@ void main() {
         _expectPalette(t, dark);
         expect(find.text('Not connected yet'), findsOneWidget);
         expect(find.text('Offline'), findsOneWidget);
-        expect(find.text('—'), findsOneWidget, reason: 'no robot battery value: never a fake one');
-        expect(find.text('Put ELIOS and this phone on the same Wi-Fi or hotspot, then tap Connect now.'), findsOneWidget);
+        expect(find.text('Battery'), findsNothing, reason: 'the robot reports no battery: never a fake one');
+        _expectSteps(SetupStep.current, SetupStep.todo, SetupStep.todo);
+        expect(find.text('Join the ELIOS Wi-Fi'), findsOneWidget);
+        expect(find.text('Search for ELIOS'), findsOneWidget);
+        expect(find.text('Connect'), findsOneWidget);
+        expect(find.text('Save as default address'), findsOneWidget);
         expect(_enabled(t, 'Connect now'), isTrue);
-        expect(_enabled(t, 'Disconnect'), isFalse);
+        expect(find.text('Disconnect'), findsNothing, reason: 'nothing to disconnect');
         expect(find.text('Gemini · needs internet'), findsOneWidget);
-        expect(find.text('New questions each scan, needs internet'), findsOneWidget);
       });
 
       testWidgets('connecting', (t) async {
@@ -145,7 +165,8 @@ void main() {
         _expectPalette(t, dark);
         expect(find.text('Looking for ELIOS…'), findsOneWidget);
         expect(find.text('Connecting'), findsOneWidget);
-        expect(_enabled(t, 'Connecting…'), isFalse);
+        _expectSteps(SetupStep.done, SetupStep.done, SetupStep.current);
+        expect(_enabled(t, 'Search for ELIOS'), isFalse, reason: 'no search during an attempt');
         expect(_enabled(t, 'Cancel'), isTrue);
         final fields = t.widgetList<TextField>(find.byType(TextField));
         expect(fields.every((f) => f.enabled == false), isTrue, reason: 'fields locked while connecting');
@@ -157,7 +178,12 @@ void main() {
         await _pumpConfig(t, dark: dark, status: 'Connected');
         _expectPalette(t, dark);
         expect(find.text('192.168.4.1 : 8765 · MaixCAM2'), findsOneWidget);
-        expect(find.text('Online'), findsOneWidget);
+        expect(find.text('Online'), findsNWidgets(2), reason: 'Status bubble and the step 3 pill');
+        _expectSteps(SetupStep.done, SetupStep.done, SetupStep.current);
+        expect(find.text('Connected'), findsOneWidget);
+        expect(find.text('Found at 192.168.4.1'), findsOneWidget);
+        expect(find.text('Search again'), findsOneWidget);
+        expect(find.text('Saved as default address'), findsOneWidget);
         expect(_enabled(t, 'Open control'), isTrue, reason: 'ELIOS 3: reopen Control while connected');
         expect(_enabled(t, 'Disconnect'), isTrue);
         await t.tap(find.text('Disconnect'));
@@ -169,9 +195,10 @@ void main() {
         _expectPalette(t, dark);
         expect(find.text('Last try failed'), findsOneWidget);
         expect(find.text("Couldn't reach ELIOS"), findsOneWidget);
+        _expectSteps(SetupStep.current, SetupStep.todo, SetupStep.problem);
         expect(find.text(_timeoutReason), findsOneWidget, reason: 'the real reason and timeout');
         expect(_enabled(t, 'Try again'), isTrue);
-        expect(_enabled(t, 'Disconnect'), isFalse);
+        expect(find.text('Disconnect'), findsNothing, reason: 'nothing to disconnect');
         expect(find.byType(SnackBar), findsNothing, reason: 'the inline alert is on screen');
       });
 
@@ -255,6 +282,13 @@ void main() {
     expect(_link.calls, ['10.0.0.5:8765 auto=false']);
   });
 
+  testWidgets('Show robot Wi-Fi QR opens the QR sheet', (t) async {
+    await _pumpConfig(t, dark: true);
+    await t.tap(find.text('Show robot Wi-Fi QR'));
+    await t.pumpAndSettle();
+    expect(find.text('Robot Wi-Fi QR'), findsOneWidget);
+  });
+
   testWidgets('failure snackbar only when the connection card is scrolled away', (t) async {
     await _pumpConfig(t, dark: false, size: const Size(400, 480));
     _link.fail('first');
@@ -272,13 +306,12 @@ void main() {
 
   testWidgets('robot quiz card: own source and on/off; phone source untouched (0198)', (t) async {
     await _pumpConfig(t, dark: false, ai: AiStatus.offline);
-    expect(find.text('New questions each scan, needs internet'), findsOneWidget);
     final container = ProviderScope.containerOf(t.element(find.byType(ConfigScreen)));
     final phone = container.read(appPreferencesProvider).questionSource;
     await t.tap(find.text('Question bank'));
     await t.pump();
     expect(container.read(appPreferencesProvider).robotQuestionSource, QuestionSource.bank);
-    await t.tap(find.widgetWithText(ChoiceTile, 'ELIOS AI'));
+    await t.tap(find.descendant(of: find.byType(ConfigSegmented), matching: find.text('ELIOS AI')));
     await t.pump();
     expect(container.read(appPreferencesProvider).robotQuestionSource, QuestionSource.ai);
     expect(container.read(appPreferencesProvider).questionSource, phone);

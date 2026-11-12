@@ -3426,5 +3426,22 @@
   "@lnLessonNofM": {"placeholders": {"n": {"type": "int"}, "total": {"type": "int"}}},
   "lnPlaying": "playing",
   "lnCheckAnswer": "Check answer",
-  "lnPickToContinue": "Pick an answer to continue."
+  "lnPickToContinue": "Pick an answer to continue.",
+  "setupWsOverWifi": "ELIOS WebSocket address over the robot Wi-Fi",
+  "setupJoinWifi": "Join the ELIOS Wi-Fi",
+  "setupJoinWifiBody": "Scan the Wi-Fi QR on the robot so this phone joins its network.",
+  "setupShowWifiQr": "Show robot Wi-Fi QR",
+  "setupFoundAt": "Found at {ip}",
+  "@setupFoundAt": {"placeholders": {"ip": {"type": "String"}}},
+  "setupSearch": "Search for ELIOS",
+  "setupSearchAgain": "Search again",
+  "setupConnectStep": "Connect",
+  "setupSaveDefault": "Save as default address",
+  "setupSavedDefault": "Saved as default address",
+  "setupStepState": "Step {n}, {state}",
+  "@setupStepState": {"placeholders": {"n": {"type": "int"}, "state": {"type": "String"}}},
+  "setupStepDone": "done",
+  "setupStepNow": "current step",
+  "setupStepTodo": "not yet",
+  "setupStepProblem": "needs attention"
 }
