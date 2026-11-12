@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../models/quiz_explanation.dart';
 import '../models/scan_record.dart';
 import '../services/elio_feedback.dart';
@@ -14,7 +15,6 @@ import '../theme/elio_motion.dart';
 import '../theme/elio_tokens.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
 import '../widgets/history_ui.dart';
-import 'home/home_parts.dart' show homeArt;
 
 class QuestionExplanationScreen extends StatefulWidget {
   const QuestionExplanationScreen({
@@ -227,23 +227,16 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
   }
 
   /// Bulb buddy on the warning tint; "why wrong" shows the item's bin buddy.
-  Widget _learnArt(ElioPalette p, String id) => id == 'wrong'
-      ? historyArtTile(
-          historyTint(p, HistoryTone.error).bg,
-          homeArt(
-            switch (_record.category) {
-              ScanCategory.b3 => 'bin_b3',
-              ScanCategory.organic => 'bin_organik',
-              _ => 'bin_anorganik',
-            },
-            width: 36,
-            height: 40,
-          ),
-        )
-      : historyArtTile(
-          historyTint(p, HistoryTone.warning).bg,
-          homeArt('bulb_buddy', width: 40, height: 40),
-        );
+  // ELIO robot buddy on a tone tile (Figma 629:99756).
+  Widget _learnArt(ElioPalette p, String id) => historyArtTile(
+    id == 'wrong' ? historyTint(p, HistoryTone.error).bg : p.surfaceRaised,
+    SvgPicture.asset(
+      'assets/illustrations/robot/robot_${id == 'wrong' ? 'sad' : 'happy'}.svg',
+      width: 35,
+      height: 40,
+      excludeFromSemantics: true,
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {

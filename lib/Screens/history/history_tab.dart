@@ -1093,24 +1093,26 @@ class _SeeTimeline extends StatelessWidget {
   }
 }
 
-Widget _chip(Color bg, Color fg, String text, {Widget? icon}) => Container(
-  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-  decoration: ShapeDecoration(color: bg, shape: const StadiumBorder()),
-  child: Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      if (icon != null) ...[icon, const SizedBox(width: 4)],
-      Flexible(
-        child: Text(
-          text,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: homeWeight(ElioTokens.caption, 700).copyWith(color: fg),
-        ),
+/// Borderless bold chip of a scan row (629:99454).
+Widget historyPill(Color bg, Color fg, String text, {Widget? icon}) =>
+    Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: ShapeDecoration(color: bg, shape: const StadiumBorder()),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[icon, const SizedBox(width: 4)],
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: homeWeight(ElioTokens.caption, 700).copyWith(color: fg),
+            ),
+          ),
+        ],
       ),
-    ],
-  ),
-);
+    );
 
 /// One recent scan (629:99448): leaf thumbnail, name, device and kind chips,
 /// then the day and the XP. No card: the row sits on the page.
@@ -1133,8 +1135,6 @@ class _RecentRow extends StatelessWidget {
     final p = authPalette(context), t = context.l10n;
     final r = record;
     final device = historyDeviceOf(r);
-    final info = historyTint(p, HistoryTone.info);
-    final warn = historyTint(p, HistoryTone.warning);
     return Semantics(
       button: true,
       label:
@@ -1157,52 +1157,7 @@ class _RecentRow extends StatelessWidget {
                 scale: 0,
                 turn: -0.4,
                 curve: ElioMotion.pop,
-                child: SizedBox(
-                  width: 54,
-                  height: 54,
-                  child: Stack(
-                    children: [
-                      Hero(
-                        tag: 'history-photo-${r.id}',
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(19.44),
-                            topRight: Radius.circular(6.48),
-                            bottomRight: Radius.circular(19.44),
-                            bottomLeft: Radius.circular(6.48),
-                          ),
-                          child: Container(
-                            width: 54,
-                            height: 54,
-                            color: p.surfaceRaised,
-                            child: historyHasPhoto(r)
-                                ? Image.file(
-                                    File(r.cropPhotoPath!),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, e, s) =>
-                                        historyPhotoImage(r),
-                                  )
-                                : historyPhotoImage(r),
-                          ),
-                        ),
-                      ),
-                      if (r.isContribution)
-                        Positioned(
-                          left: 36,
-                          top: 36,
-                          child: Container(
-                            width: 14,
-                            height: 14,
-                            decoration: BoxDecoration(
-                              color: p.error,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: p.surface, width: 2),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                child: HistoryLeafThumb(r),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1223,38 +1178,8 @@ class _RecentRow extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 4,
                       children: [
-                        if (device != null)
-                          _chip(
-                            p.surface,
-                            p.textSecondary,
-                            historyDeviceName(t, device),
-                            icon: historyIcon(
-                              device == HistoryDevice.phone
-                                  ? 'chip_phone'
-                                  : 'chip_robot',
-                              12,
-                              p.textSecondary,
-                            ),
-                          ),
-                        if (r.isContribution)
-                          _chip(
-                            warn.bg,
-                            warn.fg,
-                            t.histContribution,
-                            icon: Icon(Icons.circle, size: 6, color: warn.fg),
-                          )
-                        else if (r.questions.isEmpty)
-                          _chip(
-                            p.surfaceRaised,
-                            p.textSecondary,
-                            t.histScanOnly,
-                          )
-                        else
-                          _chip(
-                            info.bg,
-                            info.fg,
-                            t.histQuiz(r.correctCount, r.totalQuestions),
-                          ),
+                        if (device != null) historyDevicePill(context, device),
+                        historyKindPill(context, r),
                       ],
                     ),
                   ],
@@ -1617,4 +1542,98 @@ class _Review extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Leaf thumbnail of a scan (629:99449): the photo covers it and morphs into
+/// the detail photo; a red dot marks a contribution.
+class HistoryLeafThumb extends StatelessWidget {
+  const HistoryLeafThumb(this.record, {super.key, this.size = 54});
+  final ScanRecord record;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context), r = record, k = size / 54;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        children: [
+          Hero(
+            tag: 'history-photo-${r.id}',
+            child: ClipRRect(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(19.44 * k),
+                topRight: Radius.circular(6.48 * k),
+                bottomRight: Radius.circular(19.44 * k),
+                bottomLeft: Radius.circular(6.48 * k),
+              ),
+              child: Container(
+                width: size,
+                height: size,
+                color: p.surfaceRaised,
+                child: historyHasPhoto(r)
+                    ? Image.file(
+                        File(r.cropPhotoPath!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, e, s) => historyPhotoImage(r),
+                      )
+                    : historyPhotoImage(r),
+              ),
+            ),
+          ),
+          if (r.isContribution)
+            Positioned(
+              left: 36 * k,
+              top: 36 * k,
+              child: Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: p.error,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: p.surface, width: 2),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Phone" / "ELIOS" chip with its Figma icon.
+Widget historyDevicePill(BuildContext context, HistoryDevice device) {
+  final p = authPalette(context);
+  return historyPill(
+    p.surface,
+    p.textSecondary,
+    historyDeviceName(context.l10n, device),
+    icon: historyIcon(
+      device == HistoryDevice.phone ? 'chip_phone' : 'chip_robot',
+      12,
+      p.textSecondary,
+    ),
+  );
+}
+
+/// "Contribution", "Quiz 2/3" or "Scan only" for a record.
+Widget historyKindPill(BuildContext context, ScanRecord r) {
+  final p = authPalette(context), t = context.l10n;
+  final info = historyTint(p, HistoryTone.info);
+  final warn = historyTint(p, HistoryTone.warning);
+  return r.isContribution
+      ? historyPill(
+          warn.bg,
+          warn.fg,
+          t.histContribution,
+          icon: Icon(Icons.circle, size: 6, color: warn.fg),
+        )
+      : r.questions.isEmpty
+      ? historyPill(p.surfaceRaised, p.textSecondary, t.histScanOnly)
+      : historyPill(
+          info.bg,
+          info.fg,
+          t.histQuiz(r.correctCount, r.totalQuestions),
+        );
 }

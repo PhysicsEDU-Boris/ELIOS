@@ -1565,7 +1565,12 @@ class HistoryTrophyPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.emoji_events_outlined, size: 18, color: t.fg),
+          SvgPicture.asset(
+            'assets/illustrations/history/icon_xp.svg',
+            width: 18,
+            height: 18,
+            excludeFromSemantics: true,
+          ),
           const SizedBox(width: 6),
           Text(label, style: historyButtonText.copyWith(color: t.fg)),
         ],
@@ -1638,14 +1643,15 @@ class HistoryResultHero extends StatelessWidget {
             children: [
               Positioned(right: -42, top: -40, child: _circle(200, hover)),
               Positioned(
-                right: 22,
-                top: 46,
+                right: 18,
+                top: 50,
+                // ELIO robot buddy (Figma 629:99756), as on Learn.
                 child: SvgPicture.asset(
                   correct
-                      ? 'assets/illustrations/control/bottle_buddy_happy.svg'
-                      : 'assets/illustrations/control/bottle_buddy_sad.svg',
-                  width: 90,
-                  height: 122,
+                      ? 'assets/illustrations/robot/robot_happy.svg'
+                      : 'assets/illustrations/robot/robot_sad.svg',
+                  width: 98,
+                  height: 112,
                   excludeFromSemantics: true,
                 ),
               ),
@@ -1697,10 +1703,11 @@ class HistoryResultHero extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.emoji_events_outlined,
-                            size: 16,
-                            color: on,
+                          SvgPicture.asset(
+                            'assets/illustrations/history/icon_xp.svg',
+                            width: 16,
+                            height: 16,
+                            excludeFromSemantics: true,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -2569,290 +2576,3 @@ IconData historyDeviceIcon(HistoryDevice d) => switch (d) {
 
 String historyDeviceName(AppLocalizations t, HistoryDevice d) =>
     d == HistoryDevice.phone ? t.histPhone : 'ELIOS';
-
-/// "Contribution", "Quiz 2/3" or "Scan only" for a record.
-Widget historyKindChip(AppLocalizations t, ScanRecord r) => r.isContribution
-    ? HistoryChip(
-        t.histContribution,
-        tone: HistoryTone.warning,
-        icon: Icons.circle,
-      )
-    : r.questions.isEmpty
-    ? HistoryChip(t.histScanOnly)
-    : HistoryChip(
-        t.histQuiz(r.correctCount, r.totalQuestions),
-        tone: HistoryTone.info,
-      );
-
-/// One compact scan row (Figma 629:99388 "Recent scans", 629:99557 timeline):
-/// polaroid, name, device + kind chips, then the day/time and trophies.
-class HistoryScanRow extends StatelessWidget {
-  const HistoryScanRow({
-    super.key,
-    required this.record,
-    required this.onTap,
-    this.trailingLabel,
-    this.highlighted = false,
-    this.showDevice = true,
-  });
-
-  final ScanRecord record;
-  final VoidCallback onTap;
-
-  /// Day ("Yesterday") on the tab, time on the timeline.
-  final String? trailingLabel;
-  final bool highlighted, showDevice;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = authPalette(context);
-    final t = context.l10n;
-    final r = record;
-    final device = historyDeviceOf(r);
-    return Semantics(
-      button: true,
-      label:
-          '${r.itemName}, ${historyCategory(t, r.category)}, '
-          '${trailingLabel ?? ''}, +${r.trophies}',
-      excludeSemantics: true,
-      child: HistoryCard(
-        tone: highlighted ? HistoryTone.success : null,
-        padding: const EdgeInsets.fromLTRB(10, 10, 12, 10),
-        onTap: onTap,
-        child: Row(
-          children: [
-            // Morphs into the scan detail photo (Figma 13 · 32, container
-            // transform 320 ms).
-            Hero(
-              tag: 'history-photo-${r.id}',
-              child: HistoryPolaroid(r, width: 52, height: 44, degrees: -3),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    r.itemName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: ElioTokens.body.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: p.textPrimary,
-                      height: 1.3,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: [
-                      if (showDevice && device != null)
-                        HistoryChip(
-                          historyDeviceName(t, device),
-                          icon: historyDeviceIcon(device),
-                        ),
-                      historyKindChip(t, r),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (trailingLabel != null)
-                  Text(
-                    trailingLabel!,
-                    style: ElioTokens.caption.copyWith(color: p.textSecondary),
-                  ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.emoji_events_outlined,
-                      size: 16,
-                      color: p.secondaryText,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      '+${r.trophies}',
-                      style: ElioTokens.button.copyWith(color: p.secondaryText),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Slim trophy strip at the top of the History tab (Figma 629:99388).
-class HistoryTrophyStrip extends StatelessWidget {
-  const HistoryTrophyStrip({
-    super.key,
-    required this.total,
-    required this.levelNumber,
-    required this.level,
-    required this.progress,
-    required this.next,
-  });
-  final int total, levelNumber;
-  final String level, next;
-  final double progress;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = authPalette(context);
-    final t = context.l10n;
-    return Semantics(
-      container: true,
-      label: '${t.h3Trophies(total)}, $level. $next',
-      excludeSemantics: true,
-      child: HistoryCard(
-        padding: const EdgeInsets.fromLTRB(10, 10, 14, 10),
-        child: Row(
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: p.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: SvgPicture.asset(
-                'assets/illustrations/home/${levelNumber >= 3 ? 'tree_lv3' : 'sprout_lv1'}.svg',
-                excludeFromSemantics: true,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '$total ',
-                          style: ElioTokens.subhead.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: p.textPrimary,
-                          ),
-                        ),
-                        TextSpan(
-                          text: '${t.h3TrophiesWord} · $level',
-                          style: ElioTokens.caption.copyWith(
-                            color: p.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: progress.clamp(0, 1),
-                      minHeight: 8,
-                      color: p.primary,
-                      backgroundColor: p.surfaceRaised,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    next,
-                    style: ElioTokens.caption.copyWith(color: p.textSecondary),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A "By device" card; without [onTap] it is locked ("Coming soon").
-class HistoryDeviceCard extends StatelessWidget {
-  const HistoryDeviceCard({
-    super.key,
-    required this.name,
-    required this.icon,
-    required this.last,
-    this.onTap,
-  });
-  final String name, last;
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = authPalette(context);
-    final locked = onTap == null;
-    return Semantics(
-      button: !locked,
-      enabled: !locked,
-      label: '$name, $last',
-      excludeSemantics: true,
-      child: HistoryCard(
-        tone: locked ? HistoryTone.neutral : HistoryTone.success,
-        radius: 20,
-        padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: p.surface,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    icon,
-                    color: locked ? p.textTertiary : p.primaryText,
-                  ),
-                ),
-                const Spacer(),
-                Icon(
-                  locked ? Icons.lock_rounded : Icons.chevron_right_rounded,
-                  size: 18,
-                  color: p.textTertiary,
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: ElioTokens.body.copyWith(
-                fontWeight: FontWeight.w700,
-                color: p.textPrimary,
-              ),
-            ),
-            Text(
-              last,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: ElioTokens.caption.copyWith(color: p.textSecondary),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

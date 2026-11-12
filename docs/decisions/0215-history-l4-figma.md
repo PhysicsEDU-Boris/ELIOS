@@ -49,8 +49,7 @@ on the tap sound. Reduce Motion shows everything at rest with no entrance sounds
 - "· saved locally" shows only while History is not synced (Figma shows it next to "Synced").
 - Chevrons, the check and the not-synced / syncing cloud icons are Material look-alikes.
 - The new XP icon is used on the History tab only; other screens keep the trophy icon.
-- Scan timeline and Explanation keep their current layout: only motion, sound and haptics
-  were added there.
+- Scan timeline and Explanation: see the follow-up section at the end.
 
 ## Scan detail (follow-up, same day)
 
@@ -66,3 +65,22 @@ tilted one by one, the squiggle draws, questions rise.
 Not 1:1: a wrong multiple-choice answer keeps a red Q badge and shows the correct answer in the
 same quote (Figma shows no wrong answer); the label on the photo keeps the app's time/day text;
 the calendar, check and chevron icons are Material look-alikes.
+
+## Scan timeline and Explanation (follow-up, same day)
+
+- Scan timeline (629:99557): round Back with the 28 px title and the subtitle under it; 40 px
+  tab segments with the Figma phone / robot / lock icons; items are leaf cards (24 / 8 corners)
+  with a 58 px leaf photo, the time above the name, kind chip, XP and a chevron; the newest is
+  tinted with a 2 px green edge and is the only filled dot on the rail.
+- Explanation (629:99756): the layout already matched; the ELIO robot buddy (happy / sad)
+  replaces the bottle buddy in the result hero and the bulb / bin art on the learn cards, and
+  the new XP icon replaces the trophy in the top pill and the hero pill.
+- Removed the now unused `HistoryScanRow`, `HistoryTrophyStrip`, `HistoryDeviceCard` and
+  `historyKindChip`.
+
+Not 1:1: the timeline keeps the "All" tab and the device chip under it (Figma has only Phone /
+ELIOS / Drone, but older scans have no device and must stay reachable); the rail restarts at
+each day pill; the timeline XP keeps the trophy outline as drawn in that Figma frame; the
+drone tab icon and chevrons are Material look-alikes; the explanation keeps the label
+"Correct answer" (Figma: "Right answer").
+

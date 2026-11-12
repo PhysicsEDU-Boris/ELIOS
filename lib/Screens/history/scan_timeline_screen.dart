@@ -12,11 +12,12 @@ import '../../services/scan_record_store.dart';
 import '../../theme/elio_motion.dart';
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
-import '../../widgets/elio_page_title.dart';
 import '../../widgets/history_ui.dart';
 import '../../widgets/learn/learn_ui.dart';
 import '../scan/scan_hub_screen.dart' show scanArt;
+import '../home/home_parts.dart';
 import '../scan_history_screen.dart' show ScanDetailScreen;
+import 'history_tab.dart';
 
 class ScanTimelineScreen extends StatefulWidget {
   const ScanTimelineScreen({
@@ -112,10 +113,63 @@ class _ScanTimelineScreenState extends State<ScanTimelineScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                 children: [
-                  ElioPageTitle(
-                    title: t.histTimeline,
-                    subtitle: t.histTimelineSub,
-                    onBack: () => Navigator.of(context).maybePop(),
+                  // Header (629:99559-64): round Back, title, subtitle under it.
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: ElioPress(
+                          child: Material(
+                            color: p.surface,
+                            shape: CircleBorder(
+                              side: BorderSide(color: p.borderSubtle),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: IconButton(
+                              tooltip: t.h3Back,
+                              constraints: const BoxConstraints.tightFor(
+                                width: 44,
+                                height: 44,
+                              ),
+                              padding: EdgeInsets.zero,
+                              onPressed: () {
+                                elioFeedback(ElioSfx.tick, ElioHaptics.select);
+                                Navigator.of(context).maybePop();
+                              },
+                              icon: Icon(
+                                Icons.arrow_back_rounded,
+                                size: 22,
+                                color: p.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Semantics(
+                              header: true,
+                              child: Text(
+                                t.histTimeline,
+                                style: ElioTokens.headline.copyWith(
+                                  color: p.textPrimary,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              t.histTimelineSub,
+                              style: ElioTokens.bodySmall.copyWith(
+                                color: p.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   _Tabs(
@@ -180,13 +234,13 @@ class _ScanTimelineScreenState extends State<ScanTimelineScreen> {
                         index: n++,
                         child: ElioPress(
                           child: _RailRow(
-                            first: i == 0,
+                            first: identical(r, records.first),
                             last: i == group.length - 1,
-                            child: HistoryScanRow(
+                            child: _Item(
                               record: r,
                               highlighted: identical(r, records.first),
                               showDevice: _device == null,
-                              trailingLabel: DateFormat.Hm(
+                              time: DateFormat.Hm(
                                 dateLocaleOf(t),
                               ).format(r.time),
                               onTap: () => _open(r),
@@ -215,7 +269,12 @@ class _Tabs extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.elio;
     final t = context.l10n;
-    Widget tab(String label, IconData? icon, bool on, VoidCallback? tap) =>
+    Color fg(bool on, VoidCallback? tap) => on
+        ? p.onPrimary
+        : tap == null
+        ? p.textTertiary
+        : p.textSecondary;
+    Widget tab(String label, Object? icon, bool on, VoidCallback? tap) =>
         Expanded(
           child: Semantics(
             button: true,
@@ -230,42 +289,30 @@ class _Tabs extends StatelessWidget {
               child: InkWell(
                 onTap: tap,
                 child: SizedBox(
-                  height: 44,
+                  height: 40,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       if (icon != null) ...[
-                        Icon(
-                          icon,
-                          size: 16,
-                          color: on
-                              ? p.onPrimary
-                              : tap == null
-                              ? p.textTertiary
-                              : p.textSecondary,
-                        ),
-                        const SizedBox(width: 4),
+                        if (icon is String)
+                          historyIcon(icon, 16, fg(on, tap))
+                        else
+                          Icon(icon as IconData, size: 16, color: fg(on, tap)),
+                        const SizedBox(width: 6),
                       ],
                       Flexible(
                         child: Text(
                           label,
                           overflow: TextOverflow.ellipsis,
-                          style: ElioTokens.button.copyWith(
-                            color: on
-                                ? p.onPrimary
-                                : tap == null
-                                ? p.textTertiary
-                                : p.textSecondary,
-                          ),
+                          style: homeWeight(
+                            ElioTokens.button,
+                            600,
+                          ).copyWith(color: fg(on, tap)),
                         ),
                       ),
                       if (tap == null) ...[
                         const SizedBox(width: 4),
-                        Icon(
-                          Icons.lock_rounded,
-                          size: 14,
-                          color: p.textTertiary,
-                        ),
+                        historyIcon('icon_lock', 12, p.textTertiary),
                       ],
                     ],
                   ),
@@ -286,7 +333,7 @@ class _Tabs extends StatelessWidget {
           for (final d in HistoryDevice.values)
             tab(
               historyDeviceName(t, d),
-              historyDeviceIcon(d),
+              d == HistoryDevice.phone ? 'chip_phone' : 'chip_robot',
               selected == d,
               () => onSelect(d),
             ),
@@ -315,7 +362,7 @@ class _DeviceHero extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(color: p.primary, shape: BoxShape.circle),
           child: phone
-              ? Icon(Icons.smartphone_rounded, size: 48, color: p.onPrimary)
+              ? historyIcon('icon_phone', 48, p.onPrimary)
               : SvgPicture.asset(
                   '$scanArt/elios_robot.svg',
                   excludeFromSemantics: true,
@@ -328,11 +375,9 @@ class _DeviceHero extends StatelessWidget {
             children: [
               Text(
                 phone ? t.histPhoneTitle : t.histEliosTitle,
-                style: ElioTokens.subhead.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: p.textPrimary,
-                ),
+                style: homeTitle(p),
               ),
+              const SizedBox(height: 4),
               ElioCountUp(
                 value: count,
                 builder: (context, v) => Text(
@@ -359,14 +404,14 @@ class _DayPill extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: ShapeDecoration(
           color: p.primary,
           shape: const StadiumBorder(),
         ),
         child: Text(
           label,
-          style: ElioTokens.label.copyWith(color: p.onPrimary),
+          style: homeCaption(p, color: p.onPrimary, weight: 700),
         ),
       ),
     );
@@ -421,6 +466,118 @@ class _RailRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Timeline item (629:99603): leaf card with a leaf photo, the time above the
+/// name, kind chip and XP, then a chevron. The newest is tinted with a green
+/// edge.
+class _Item extends StatelessWidget {
+  const _Item({
+    required this.record,
+    required this.time,
+    required this.highlighted,
+    required this.showDevice,
+    required this.onTap,
+  });
+  final ScanRecord record;
+  final String time;
+  final bool highlighted, showDevice;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio, t = context.l10n, r = record;
+    final device = historyDeviceOf(r);
+    final shape = RoundedRectangleBorder(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(24),
+        topRight: Radius.circular(8),
+        bottomRight: Radius.circular(24),
+        bottomLeft: Radius.circular(8),
+      ),
+      side: highlighted
+          ? BorderSide(color: p.primary, width: 2)
+          : BorderSide(color: p.borderSubtle),
+    );
+    return Semantics(
+      button: true,
+      label:
+          '${r.itemName}, ${historyCategory(t, r.category)}, $time, '
+          '+${r.trophies}',
+      excludeSemantics: true,
+      child: Material(
+        color: highlighted ? historyTint(p, HistoryTone.success).bg : p.surface,
+        shape: shape,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 10, 12, 10),
+            child: Row(
+              children: [
+                HistoryLeafThumb(r, size: 58),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(time, style: homeCaption(p, color: p.textTertiary)),
+                      Text(
+                        r.itemName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: homeWeight(
+                          ElioTokens.body,
+                          600,
+                        ).copyWith(color: p.textPrimary, height: 1.5),
+                      ),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          if (showDevice && device != null)
+                            historyDevicePill(context, device),
+                          historyKindPill(context, r),
+                          if (r.isContribution || r.questions.isNotEmpty)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.emoji_events_outlined,
+                                  size: 14,
+                                  color: p.secondaryText,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  '+${r.trophies}',
+                                  style: homeCaption(
+                                    p,
+                                    color: p.secondaryText,
+                                    weight: 700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: p.textPrimary,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
