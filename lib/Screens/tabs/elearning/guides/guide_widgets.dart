@@ -165,8 +165,9 @@ class GuidePolaroidHero extends StatelessWidget {
   Widget build(BuildContext context) => Hero(
     tag: tag(polaroid.guide),
     flightShuttleBuilder: (_, animation, direction, fromCtx, toCtx) {
+      // The Hero's child is the polaroid itself (see `child:` below).
       GuidePolaroid of(BuildContext c) =>
-          ((c.widget as Hero).child as GuidePolaroidHero).polaroid;
+          (c.widget as Hero).child as GuidePolaroid;
       final from = of(fromCtx), to = of(toCtx);
       final a = CurvedAnimation(
         parent: animation,

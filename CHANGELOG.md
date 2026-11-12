@@ -10,7 +10,8 @@ hashes updated after the history rewrite on 2026-10-08. The old-to-new map is
 kept outside the repo.
 
 ## [Unreleased]
-- Home in the new style (0208): Home now matches the newest design in light and dark: bolder titles, a Scan activity leaf panel, a new Recent scans card with your 3 latest scans and Open History, bins standing on a shelf, leaf cards for This week and Quiz accuracy, and medals hanging from a ribbon (tap "1 of 3" to see how to earn them). Every time you open Home the tree grows, the dial sweeps and the numbers count up with three quiet sounds; lower sections animate as you scroll to them. The tree, trophy sticker, pebbles, quest cards, bins and medals react when tapped. Search results and the selected day's scans show a small picture. "Did you know?" is gone from Home.
+- Home in the new style (0209): Home now matches the newest design in light and dark: bolder titles, a Scan activity leaf panel, a new Recent scans card with your 3 latest scans and Open History, bins standing on a shelf, leaf cards for This week and Quiz accuracy, and medals hanging from a ribbon (tap "1 of 3" to see how to earn them). Every time you open Home the tree grows, the dial sweeps and the numbers count up with three quiet sounds; lower sections animate as you scroll to them. The tree, trophy sticker, pebbles, quest cards, bins and medals react when tapped. Search results and the selected day's scans show a small picture. "Did you know?" is gone from Home.
+- Fix (0208): going back from a Daily Guide page to Learn no longer shows a red error screen; the guide photo flies back as intended.
 
 - Daily Guides in the new style (0207): the guide feed, guide page, Quick quiz and Mini lab get the curved green header, leaf cards and the ELIO robot buddy. Continue squeezes and the guide photo flies into the guide page; quest stops, quiz cards, answers, results, recording, photos and the lab verdict all animate with their own sounds and vibrations.
 

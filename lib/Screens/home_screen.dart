@@ -5,7 +5,7 @@
 //   329:3722 Search results   329:3836 Calendar month
 // Every number comes from the local scan records (HomeStats) or learning
 // progress (medals). ELIOS 3 L3 Home (629:80377 light, 629:81350 dark,
-// decision 0208): leaf logo + greeting + bell, resume-control card while a
+// decision 0209): leaf logo + greeting + bell, resume-control card while a
 // robot is connected, level dial hero with the trophy sticker, stat pebbles,
 // pop quest cards, Scan activity leaf panel, Recent scans polaroid fan, Bin
 // shelf, This week / Quiz accuracy leaves and the Medal ribbon. Opening Home
