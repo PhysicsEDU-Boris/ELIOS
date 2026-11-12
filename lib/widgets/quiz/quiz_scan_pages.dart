@@ -103,6 +103,9 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
               : ElioMotion.base,
           switchInCurve: ElioMotion.emphasized,
           switchOutCurve: ElioMotion.exit,
+          // Pages fill the screen from the top (the default centres them).
+          layoutBuilder: (current, previous) =>
+              Stack(fit: StackFit.expand, children: [...previous, ?current]),
           child: KeyedSubtree(key: ValueKey(kind), child: page),
         ),
       ),

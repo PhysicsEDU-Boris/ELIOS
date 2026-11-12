@@ -11,6 +11,7 @@ import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/elio_page_title.dart';
 import '../../widgets/learn/learn_ui.dart';
+import '../home/home_parts.dart' show homeWeight;
 import 'contribute_screen.dart';
 import 'phone_scan_screen.dart';
 import 'select_vehicle_screen.dart';
@@ -123,13 +124,10 @@ TextStyle _overline(Color c) => ElioTokens.label.copyWith(
   color: c,
 );
 
-TextStyle _headline(Color c) => ElioTokens.body.copyWith(
-  fontSize: 28,
-  fontWeight: FontWeight.w700,
-  height: 1.3,
-  letterSpacing: -0.28,
-  color: c,
-);
+TextStyle _headline(Color c) => homeWeight(
+  ElioTokens.body,
+  700,
+).copyWith(fontSize: 28, height: 1.3, letterSpacing: -0.28, color: c);
 
 class _HubCard extends StatelessWidget {
   const _HubCard({
@@ -243,7 +241,10 @@ class _Pill extends StatelessWidget {
           Icon(lead, size: 18, color: fg),
           const SizedBox(width: 6),
         ],
-        Text(label, style: ElioTokens.button.copyWith(color: fg)),
+        Text(
+          label,
+          style: homeWeight(ElioTokens.button, 600).copyWith(color: fg),
+        ),
         const SizedBox(width: 6),
         Icon(Icons.chevron_right_rounded, size: 18, color: fg),
       ],

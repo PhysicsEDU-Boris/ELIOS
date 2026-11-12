@@ -81,7 +81,8 @@ Future<_Quiz> _pump(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: (dark ? ElioDarkTheme.wrap : ElioLightTheme.wrap)(
-            const Scaffold(body: ScanQuizPages()),
+            // Filled like on the camera screen (Positioned.fill).
+            const Scaffold(body: SizedBox.expand(child: ScanQuizPages())),
           ),
         ),
       ),
@@ -121,6 +122,8 @@ void main() {
     final quiz = await _pump(t, _writing);
     expect(find.text(_scan.displayName), findsOneWidget);
     expect(find.text('Recyclable bin (Anorganik)'), findsOneWidget);
+    // The page starts at the top of the screen, not centred.
+    expect(t.getTopLeft(find.text('Scan result')).dy, lessThan(40));
     expect(find.text('Writing your quiz…'), findsOneWidget);
     final start = find.byKey(const ValueKey('scan_start_quiz'));
     expect(t.widget<FilledButton>(start).onPressed, isNull);

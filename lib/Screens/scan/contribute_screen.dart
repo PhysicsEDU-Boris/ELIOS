@@ -536,6 +536,7 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
                 backgroundColor: primary ? p.primary : p.surfaceRaised,
                 foregroundColor: primary ? p.onPrimary : p.textPrimary,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
+                side: BorderSide.none,
                 shape: const StadiumBorder(),
               ),
               child: FittedBox(
