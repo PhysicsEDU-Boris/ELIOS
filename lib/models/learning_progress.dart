@@ -253,7 +253,7 @@ class LearningProgress {
     return total / categories.length;
   }
 
-  /// XP from lessons (decision 0206): 15 per video finished, 10 per module guide
+  /// XP from lessons (decision 0212): 15 per video finished, 10 per module guide
   /// finished, 10 per correct answer of each quiz's best try, so a retake only
   /// adds its improvement. Derived, so nothing extra is stored.
   int get lessonXp =>

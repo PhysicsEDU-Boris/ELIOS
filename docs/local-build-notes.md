@@ -1,6 +1,6 @@
 # Local build notes
 
-## 12 Nov 2026 — XP/clovers phone test (0204–0206, `feat/lesson-xp`)
+## 12 Nov 2026 — XP/clovers phone test (0210–0212, `feat/lesson-xp`)
 - Source / APP_COMMIT `e68ff7f` (first build `45139a7`); arm64 debug APK with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION; Gradle ~38 s. adb from `~/Library/Android/sdk/platform-tools` (not on PATH).
 - Motorola Edge 60 Fusion over USB, `com.boris.elio` debug, same signing; `adb install -r` Success, no uninstall/data clear. App data tar backup in the session scratchpad first; all 5 `scan_records*.json` md5-identical after testing.
 - Found on `45139a7`: Level-2 celebration on every cold start (seen level saved from the scans-only level before learning XP loaded). Fixed in `e68ff7f`; two cold starts after: no celebration.

@@ -1,6 +1,6 @@
-# 0204 — One XP total for the level, thresholds retuned
+# 0210 — One XP total for the level, thresholds retuned
 
-Date: 12 November 2026. Stacked on `feat/elios3-motion-more` (0203).
+Date: 12 November 2026. Based on `feature/live-scan` (after 0209).
 
 ## Problem
 

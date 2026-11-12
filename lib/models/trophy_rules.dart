@@ -43,7 +43,7 @@ enum QuizGrade {
 /// - Lv4 Eco Sorter      : 750 - 1499
 /// - Lv5 Planet Guardian : 1500+
 /// Counts scan trophies + quest rewards + guide XP; ×1.5 of the old
-/// scan-only thresholds so adding guide XP does not lift everyone (decision 0204).
+/// scan-only thresholds so adding guide XP does not lift everyone (decision 0210).
 enum StudentLevel {
   ecoStarter(1, 0, 149, 150),
   wasteSpotter(2, 150, 374, 375),

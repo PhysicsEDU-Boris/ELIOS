@@ -58,7 +58,7 @@ void main() {
     );
   });
 
-  test('a brief lower level at launch does not re-celebrate (0206)', () {
+  test('a brief lower level at launch does not re-celebrate (0212)', () {
     // Cold start: scans-only Lv1 before learning XP loads; Lv2 was seen before.
     final start = celebrationsDue(
       lastLevel: 2,

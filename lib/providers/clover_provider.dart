@@ -8,7 +8,7 @@ import 'learn_shortcut_provider.dart';
 import 'learning_progress_provider.dart';
 import 'physics_progress_provider.dart';
 
-/// Clovers earned / possible across all learning content (decision 0205).
+/// Clovers earned / possible across all learning content (decision 0211).
 final cloverTallyProvider = Provider<CloverTally>((ref) {
   List<T> list<T>(AsyncValue<List<T>> v) => v.valueOrNull ?? const [];
   final progress = ref.watch(learningProgressProvider).valueOrNull;

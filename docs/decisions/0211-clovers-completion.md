@@ -1,6 +1,6 @@
-# 0205 — Clovers count finished learning
+# 0211 — Clovers count finished learning
 
-Date: 12 November 2026. Stacked on `feat/xp-level-retune` (0204). Plan agreed in 0204.
+Date: 12 November 2026. Stacked on `feat/xp-level-retune` (0210). Plan agreed in 0210.
 
 ## Problem
 
@@ -30,7 +30,7 @@ Clovers = finished items. Every item offers a fixed number, so "12 of 40 clovers
 
 ## Not done (next)
 
-- Video and lesson-quiz XP into the level total (0204 plan, step 1).
+- Video and lesson-quiz XP into the level total (0210 plan, step 1).
 - Per-module % from clovers (module cards still use `moduleProgress`).
 - One streak: the Daily Guide streak is still kept beside the scan streak.
 - Clovers are computed on the phone from local progress; backend-written awards come with the XP log.

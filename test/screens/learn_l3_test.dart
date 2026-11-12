@@ -465,7 +465,8 @@ void main() {
     await t.pump(const Duration(milliseconds: 100));
     expect(t.takeException(), isNull);
     expect(sounds, containsAllInOrder([ElioSfx.pop, ElioSfx.chime, ElioSfx.sparkleShort]));
-    expect(find.text('20%'), findsOneWidget); // the ring counted up to its value
+    // The ring counted up to its value: 2 of 32 clovers (0211).
+    expect(find.text('6%'), findsOneWidget);
     // Coming back to Learn plays it again, beats and all.
     sounds.clear();
     show.value = false;

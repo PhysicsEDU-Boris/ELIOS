@@ -1,4 +1,4 @@
-// Clovers = finished learning (decision 0205). Every item has a fixed number to
+// Clovers = finished learning (decision 0211). Every item has a fixed number to
 // collect, so "12 of 40" means something. Derived from stored completions; nothing extra is saved.
 
 /// Daily Guide issue state needed for clovers.

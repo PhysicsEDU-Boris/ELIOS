@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
-    'lesson XP: 15 per video, 10 per guide, 10 per best correct answer (0206)',
+    'lesson XP: 15 per video, 10 per guide, 10 per best correct answer (0212)',
     () {
       final p = LearningProgress(
         userId: 'u',

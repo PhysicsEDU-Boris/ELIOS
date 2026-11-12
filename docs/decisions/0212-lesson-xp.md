@@ -1,6 +1,6 @@
-# 0206 — Videos, module guides and lesson quizzes give XP
+# 0212 — Videos, module guides and lesson quizzes give XP
 
-Date: 12 November 2026. Stacked on `feat/clovers-completion` (0205). Step 1 of the 0204 plan.
+Date: 12 November 2026. Stacked on `feat/clovers-completion` (0211). Step 1 of the 0210 plan.
 
 ## Decision
 
@@ -21,7 +21,7 @@ Lesson XP is added to the level total (scan trophies + quests + Daily Guide XP +
 
 Lessons are a finite catalogue (≈10 videos, 4 guides, 3 quiz modules ≈ 500 XP at most), so a
 student who already did them all gains up to ~500 XP once and may go up a level or two. That
-is earned work, so thresholds stay at 0204's values.
+is earned work, so thresholds stay at 0210's values.
 
 ## Not done
 

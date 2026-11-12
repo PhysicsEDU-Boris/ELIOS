@@ -76,3 +76,6 @@ their status changed.
 - [0206](0206-learn-l3.md) Learn L3: archive stack, Discover more synced with Explore, L3 sub-pages, robot buddy
 - [0207](0207-daily-guides-l3-motion.md) Daily Guides L3 style, motion, sound and haptics
 - [0208](0208-guide-polaroid-hero-cast.md) Guide polaroid hero flight cast fix
+- [0210](0210-xp-level-retune.md) One XP total for the level, thresholds retuned
+- [0211](0211-clovers-completion.md) Clovers count finished learning
+- [0212](0212-lesson-xp.md) Videos, module guides and lesson quizzes give XP

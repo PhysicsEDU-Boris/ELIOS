@@ -28,7 +28,7 @@ final learningProgressProvider =
       LearningProgressNotifier.new,
     );
 
-/// Daily Guide XP + lesson XP, added to the level total (decisions 0204, 0206).
+/// Daily Guide XP + lesson XP, added to the level total (decisions 0210, 0212).
 final learnXpProvider = Provider<int>(
   (ref) =>
       ref.watch(guideProgressProvider.select((s) => s.totalXp)) +

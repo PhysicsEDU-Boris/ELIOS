@@ -385,7 +385,7 @@ class LearnTabTitle extends StatelessWidget {
 }
 
 /// "12 clovers" sticker on the Learn header (Figma 629:82550): clovers earned
-/// across all learning content (decision 0205; was the guide streak, 0197).
+/// across all learning content (decision 0211; was the guide streak, 0197).
 class LearnTopPills extends ConsumerWidget {
   const LearnTopPills({super.key});
 

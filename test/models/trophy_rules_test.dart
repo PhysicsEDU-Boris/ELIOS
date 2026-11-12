@@ -58,7 +58,7 @@ void main() {
     });
   });
 
-  group('StudentLevel boundary tests (decision 0204 thresholds)', () {
+  group('StudentLevel boundary tests (decision 0210 thresholds)', () {
     test('149 -> Lv1 Eco Starter', () {
       final level = StudentLevel.forTotal(149);
       expect(level, StudentLevel.ecoStarter);

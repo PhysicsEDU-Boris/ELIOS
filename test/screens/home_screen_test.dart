@@ -246,7 +246,7 @@ void main() {
       await t.pump(const Duration(seconds: 1));
       expect(t.takeException(), isNull);
       expect(find.text('25'), findsWidgets); // total scans
-      expect(find.text('Eco Starter'), findsOneWidget); // 140 < 150 (0204)
+      expect(find.text('Eco Starter'), findsOneWidget); // 140 < 150 (0210)
       expect(find.text('140 trophies'), findsOneWidget);
       expect(
         find.text(

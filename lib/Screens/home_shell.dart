@@ -246,7 +246,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   Widget build(BuildContext context) {
     // Guide catalogue and progress sync from app start (Home shows the "New guide" notification).
     ref.listen(dailyGuideFeedProvider, (_, _) {});
-    // Starts at 0 XP and emits once loaded, so no fireImmediately; the level counts it (0204, 0206).
+    // Starts at 0 XP and emits once loaded, so no fireImmediately; the level counts it (0210, 0212).
     ref.listen(
       learnXpProvider,
       (_, xp) => ScanRecordStore.instance.learnXp = xp,

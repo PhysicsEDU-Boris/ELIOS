@@ -67,7 +67,7 @@ const _trackedLearningModuleIds = ['organic', 'inorganic', 'hazardous'];
 /// What to celebrate now, given what was last seen. A null last value is a
 /// first run on this phone/account: nothing is celebrated, only recorded.
 /// [seenLevel] never goes down: learning XP arrives after the first frame, and
-/// a brief lower level must not make the real one celebrate again (0206).
+/// a brief lower level must not make the real one celebrate again (0212).
 ({bool levelUp, List<int> newMedals, int seenLevel}) celebrationsDue({
   required int? lastLevel,
   required int level,

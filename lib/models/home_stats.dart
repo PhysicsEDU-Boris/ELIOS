@@ -93,7 +93,7 @@ class HomeStats {
     required this.residuCount,
   });
 
-  /// [learnXp]: Daily Guide + lesson XP, counted in the level total (0204, 0206).
+  /// [learnXp]: Daily Guide + lesson XP, counted in the level total (0210, 0212).
   factory HomeStats.from(
     List<ScanRecord> records,
     DateTime now, {
