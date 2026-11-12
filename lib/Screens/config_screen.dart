@@ -22,7 +22,8 @@ import '../utils/system_ui.dart';
 import '../widgets/learn/learn_ui.dart';
 import '../widgets/tester_panel.dart';
 import 'config/config_parts.dart';
-import 'home/home_parts.dart' show homeArt;
+import '../widgets/waste_quiz_popup.dart' show EliosAiBadge;
+import 'home/home_parts.dart' show homeArt, homeWeight;
 import 'config/config_settings_sheet.dart' show ConfigSegmented;
 import 'config/robot_wifi_qr_sheet.dart';
 import 'control_screen.dart';
@@ -202,10 +203,10 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     final view = linkView(status, link);
 
     ref.listen(configLinkProvider, (prev, next) {
-      if (next.failure != null &&
-          next.failure != prev?.failure &&
-          !_connectionCardOnScreen()) {
-        _showFailureSnack();
+      if (next.failure != null && next.failure != prev?.failure) {
+        // Figma 13 · 23: failed = S5 + H-error.
+        elioFeedback(ElioSfx.knock, ElioHaptics.error);
+        if (!_connectionCardOnScreen()) _showFailureSnack();
       }
     });
     // The settings switch applies to a live link straight away.
@@ -250,9 +251,9 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                             child: _connectionSection(p, view, link),
                           ),
                           const SizedBox(height: 28),
-                          const _VideoSection(),
+                          const ElioPopIn(index: 3, child: _VideoSection()),
                           const SizedBox(height: 28),
-                          const _QuizSection(),
+                          const ElioPopIn(index: 4, child: _QuizSection()),
                           if (testerBuild) const TesterPanel(),
                         ],
                       ),
@@ -600,7 +601,14 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
           Text(l10n.setupWsOverWifi, style: configCaption(p)),
           const SizedBox(height: 16),
           for (final (i, body) in [step1, step2, step3].indexed)
-            _CableStep(n: i + 1, state: steps[i], last: i == 2, child: body),
+            _CableStep(
+              n: i + 1,
+              state: steps[i],
+              last: i == 2,
+              // Searching (step 2) or connecting (step 3): the node pulses.
+              busy: (i == 1 && _finding) || (i == 2 && connecting),
+              child: body,
+            ),
         ],
       ),
     );
@@ -608,12 +616,10 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
 }
 
 /// Step titles in the cable stepper and the video rows.
-TextStyle setupStepTitle(ElioPalette p) => ElioTokens.body.copyWith(
-  fontSize: 18,
-  fontWeight: FontWeight.w600,
-  height: 1.5,
-  color: p.textPrimary,
-);
+TextStyle setupStepTitle(ElioPalette p) => homeWeight(
+  ElioTokens.body,
+  600,
+).copyWith(fontSize: 18, height: 1.5, color: p.textPrimary);
 
 /// "Connection", "Video stream", "Quiz" (optionally with the green squiggle).
 class SetupSectionTitle extends StatelessWidget {
@@ -631,12 +637,10 @@ class SetupSectionTitle extends StatelessWidget {
         children: [
           Text(
             title,
-            style: ElioTokens.body.copyWith(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              height: 1.25,
-              color: p.textPrimary,
-            ),
+            style: homeWeight(
+              ElioTokens.body,
+              700,
+            ).copyWith(fontSize: 22, height: 1.25, color: p.textPrimary),
           ),
           if (squiggle)
             ExcludeSemantics(
@@ -661,11 +665,12 @@ class _CableStep extends StatelessWidget {
     required this.state,
     required this.last,
     required this.child,
+    this.busy = false,
   });
 
   final int n;
   final SetupStep state;
-  final bool last;
+  final bool last, busy;
   final Widget child;
 
   static const _rail = 56.0;
@@ -682,22 +687,40 @@ class _CableStep extends StatelessWidget {
             bottom: 0,
             width: 48,
             child: ExcludeSemantics(
-              child: TweenAnimationBuilder<Color?>(
-                tween: ColorTween(
-                  end: state == SetupStep.done ? p.primary : p.borderMedium,
-                ),
+              // Step done: the wire "charges" down to the next node like
+              // current (400 ms). Failed: it flickers to error twice.
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(end: state == SetupStep.done ? 1 : 0),
                 duration: ElioMotion.reduced(context)
                     ? Duration.zero
-                    : ElioMotion.slow,
-                builder: (context, c, _) =>
-                    CustomPaint(painter: _WirePainter(c ?? p.borderMedium)),
+                    : const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+                builder: (context, charge, _) => TweenAnimationBuilder<double>(
+                  key: ValueKey(state == SetupStep.problem),
+                  tween: Tween(
+                    begin:
+                        state == SetupStep.problem &&
+                            !ElioMotion.reduced(context)
+                        ? 0
+                        : 1,
+                    end: 1,
+                  ),
+                  duration: const Duration(milliseconds: 300),
+                  builder: (context, f, _) => CustomPaint(
+                    painter: _WirePainter(
+                      f < 1 && (f * 2) % 1 < 0.5 ? p.error : p.borderMedium,
+                      p.primary,
+                      charge,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
         Positioned(
           left: 8,
           top: 0,
-          child: _StepNode(n: n, state: state),
+          child: _StepNode(n: n, state: state, busy: busy),
         ),
         Padding(
           padding: EdgeInsets.only(left: _rail, top: 2, bottom: last ? 0 : 28),
@@ -710,8 +733,11 @@ class _CableStep extends StatelessWidget {
 
 /// The gently wavy cable between two nodes.
 class _WirePainter extends CustomPainter {
-  _WirePainter(this.color);
-  final Color color;
+  _WirePainter(this.color, this.live, this.charge);
+  final Color color, live;
+
+  /// 0..1: how far down the live colour has run.
+  final double charge;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -720,24 +746,27 @@ class _WirePainter extends CustomPainter {
     for (var y = 4.0; y <= size.height; y += 4) {
       path.lineTo(x + 3 * math.sin(y / 48 * math.pi), y);
     }
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 5
-        ..strokeCap = StrokeCap.round,
-    );
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(path, paint);
+    if (charge <= 0) return;
+    final m = path.computeMetrics().first;
+    canvas.drawPath(m.extractPath(0, m.length * charge), paint..color = live);
   }
 
   @override
-  bool shouldRepaint(_WirePainter old) => old.color != color;
+  bool shouldRepaint(_WirePainter old) =>
+      old.color != color || old.charge != charge || old.live != live;
 }
 
 class _StepNode extends StatelessWidget {
-  const _StepNode({required this.n, required this.state});
+  const _StepNode({required this.n, required this.state, this.busy = false});
   final int n;
   final SetupStep state;
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
@@ -753,7 +782,19 @@ class _StepNode extends StatelessWidget {
         width: 32,
         height: 32,
         decoration: BoxDecoration(color: p.primary, shape: BoxShape.circle),
-        child: Icon(Icons.check_rounded, size: 20, color: p.onPrimary),
+        // The check draws left to right (220 ms).
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: ElioMotion.reduced(context) ? 1 : 0, end: 1),
+          duration: ElioMotion.base,
+          builder: (context, v, child) => ClipRect(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              widthFactor: v,
+              child: child,
+            ),
+          ),
+          child: Icon(Icons.check_rounded, size: 20, color: p.onPrimary),
+        ),
       ),
       SetupStep.current => Container(
         width: 32,
@@ -792,12 +833,43 @@ class _StepNode extends StatelessWidget {
       key: ValueKey('setup-step-$n-${state.name}'),
       label: l10n.setupStepState(n, stateText),
       excludeSemantics: true,
-      child: AnimatedSwitcher(
-        duration: ElioMotion.reduced(context) ? Duration.zero : ElioMotion.slow,
-        switchInCurve: ElioMotion.pop,
-        transitionBuilder: (child, a) =>
-            ScaleTransition(scale: a, child: child),
-        child: KeyedSubtree(key: ValueKey(state), child: node),
+      // Failed: the node shakes x ±4.
+      child: ElioShake(
+        trigger: state == SetupStep.problem ? state : null,
+        distance: 4,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            // Searching / connecting: pulse ring 1 → 1.6 + fade (1200 loop).
+            if (busy)
+              ElioIdleLoop(
+                period: const Duration(milliseconds: 1200),
+                length: const Duration(minutes: 2),
+                builder: (context, w, child) => Transform.scale(
+                  scale: 1 + 0.6 * w,
+                  child: Opacity(opacity: 0.5 * (1 - w), child: child),
+                ),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: p.primary, width: 3),
+                  ),
+                ),
+              ),
+            AnimatedSwitcher(
+              duration: ElioMotion.reduced(context)
+                  ? Duration.zero
+                  : ElioMotion.slow,
+              switchInCurve: ElioMotion.pop,
+              transitionBuilder: (child, a) =>
+                  ScaleTransition(scale: a, child: child),
+              child: KeyedSubtree(key: ValueKey(state), child: node),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -939,9 +1011,15 @@ class _RobotStage extends StatelessWidget {
           Positioned(
             left: 30,
             top: 6,
-            child: _Disc(
-              330,
-              p.primary.withValues(alpha: p.isDark ? 0.16 : 0.12),
+            // Orbit motion: the glow breathes while the page is idle.
+            child: ElioIdleLoop(
+              period: const Duration(milliseconds: 2400),
+              builder: (context, w, child) =>
+                  Transform.scale(scale: 1 + 0.03 * w, child: child),
+              child: _Disc(
+                330,
+                p.primary.withValues(alpha: p.isDark ? 0.16 : 0.12),
+              ),
             ),
           ),
           Positioned(
@@ -965,12 +1043,19 @@ class _RobotStage extends StatelessWidget {
           Positioned(
             left: 115,
             top: 266,
-            child: Container(
-              width: 160,
-              height: 22,
-              decoration: ShapeDecoration(
-                color: Colors.black.withValues(alpha: p.isDark ? 0.35 : 0.14),
-                shape: const OvalBorder(),
+            // Pedestal: bounces once when ELIOS comes online.
+            child: ElioJump(
+              trigger: connected ? view : null,
+              height: 4,
+              child: Container(
+                width: 160,
+                height: 22,
+                decoration: ShapeDecoration(
+                  color: p.primaryActive.withValues(
+                    alpha: connected ? 1 : 0.45,
+                  ),
+                  shape: const OvalBorder(),
+                ),
               ),
             ),
           ),
@@ -1021,8 +1106,10 @@ class _RobotStage extends StatelessWidget {
           Positioned(
             left: 18,
             top: 20,
-            child: Transform.rotate(
-              angle: 0.14,
+            // The hint tag rocks a little, then rests.
+            child: ElioIdleLoop(
+              builder: (context, w, child) =>
+                  Transform.rotate(angle: 0.14 - 0.08 * w, child: child),
               child: DecoratedBox(
                 decoration: ShapeDecoration(
                   color: p.surface,
@@ -1060,6 +1147,8 @@ class _RobotStage extends StatelessWidget {
               label: '${l10n.cfgStatus}: $statusText',
               excludeSemantics: true,
               child: _OrbitBubble(
+                // Pops again whenever the link state changes ("Online").
+                bump: view,
                 size: 92,
                 label: l10n.cfgStatus,
                 value: Row(
@@ -1097,6 +1186,7 @@ class _RobotStage extends StatelessWidget {
               label: l10n.setupCameraAuto,
               excludeSemantics: true,
               child: _OrbitBubble(
+                phase: 1,
                 size: 108,
                 label: l10n.cfgCamera,
                 value: Text('MaixCAM2', style: configStrong(p)),
@@ -1113,20 +1203,25 @@ class _RobotStage extends StatelessWidget {
                   header: true,
                   child: Text(
                     'ELIOS',
-                    style: ElioTokens.bodyLarge.copyWith(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      height: 1.25,
-                      color: p.textPrimary,
-                    ),
+                    style: homeWeight(
+                      ElioTokens.headline,
+                      700,
+                    ).copyWith(height: 1.25, color: p.textPrimary),
                   ),
                 ),
-                Text(
-                  subtitle,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: configCaption(p),
+                // Nametag line cross-fades with the link state.
+                AnimatedSwitcher(
+                  duration: ElioMotion.reduced(context)
+                      ? Duration.zero
+                      : ElioMotion.base,
+                  child: Text(
+                    subtitle,
+                    key: ValueKey(subtitle),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: configCaption(p),
+                  ),
                 ),
               ],
             ),
@@ -1167,14 +1262,40 @@ class _OrbitBubble extends StatelessWidget {
     required this.size,
     required this.label,
     required this.value,
+    this.phase = 0,
+    this.bump,
   });
   final double size;
   final String label;
   final Widget value;
 
+  /// 0 or 1: the two bubbles float out of step.
+  final int phase;
+
+  /// A new value makes the bubble hop (status changed).
+  final Object? bump;
+
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
+    // Orbit bubbles pop in, then float ±3 px for a few seconds.
+    return ElioPopIn(
+      rise: 0,
+      scale: 0.6,
+      curve: ElioMotion.pop,
+      delay: Duration(milliseconds: 180 + 120 * phase),
+      child: ElioIdleLoop(
+        period: Duration(milliseconds: 2200 + 500 * phase),
+        builder: (context, w, child) => Transform.translate(
+          offset: Offset(0, (phase == 0 ? -3 : 3) * w),
+          child: child,
+        ),
+        child: ElioJump(trigger: bump, height: 10, child: _bubble(p)),
+      ),
+    );
+  }
+
+  Widget _bubble(ElioPalette p) {
     return Container(
       width: size,
       height: size,
@@ -1338,27 +1459,82 @@ class _QuizSection extends ConsumerWidget {
                         .read(appPreferencesProvider.notifier)
                         .update((prefs) => prefs.copyWith(robotQuizEnabled: v)),
                   ),
-                  const SizedBox(height: 12),
-                  IgnorePointer(
-                    ignoring: !on,
-                    child: Opacity(
-                      opacity: on ? 1 : 0.45,
-                      child: ConfigSegmented(
-                        label: l10n.cfgQuizQuestions,
-                        options: [
-                          for (final s in QuestionSource.values) s.name,
-                        ],
-                        labels: [l10n.questionBank, 'ELIOS AI'],
-                        selected: shown.name,
-                        onSelected: (v) => ref
-                            .read(appPreferencesProvider.notifier)
-                            .update(
-                              (prefs) => prefs.copyWith(
-                                robotQuestionSource: QuestionSource.values
-                                    .byName(v),
+                  // Quiz off: the source switch collapses (height 220 ms,
+                  // fade 150 ms) and the note above fades in.
+                  AnimatedSize(
+                    duration: ElioMotion.reduced(context)
+                        ? Duration.zero
+                        : ElioMotion.base,
+                    curve: ElioMotion.standard,
+                    alignment: Alignment.topCenter,
+                    child: AnimatedOpacity(
+                      opacity: on ? 1 : 0,
+                      duration: ElioMotion.fast,
+                      child: !on
+                          ? const SizedBox(width: double.infinity)
+                          : Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: ConfigSegmented(
+                                label: l10n.cfgQuizQuestions,
+                                neutral: true,
+                                leading: [
+                                  // Bank chosen: the database icon drops 2 px.
+                                  ElioJump(
+                                    trigger: shown == QuestionSource.bank
+                                        ? shown
+                                        : null,
+                                    height: -2,
+                                    child: Icon(
+                                      Icons.storage_rounded,
+                                      size: 18,
+                                      color: shown == QuestionSource.bank
+                                          ? (context.elio.isDark
+                                                ? context.elio.background
+                                                : context.elio.textPrimary)
+                                          : context.elio.textSecondary,
+                                    ),
+                                  ),
+                                  // AI chosen: the badge leaf spins 0 → 20° → 0.
+                                  TweenAnimationBuilder<double>(
+                                    key: ValueKey(shown),
+                                    tween: Tween(
+                                      begin:
+                                          shown == QuestionSource.ai &&
+                                              !ElioMotion.reduced(context)
+                                          ? 0
+                                          : 1,
+                                      end: 1,
+                                    ),
+                                    duration: ElioMotion.expressive,
+                                    curve: ElioMotion.pop,
+                                    builder: (context, v, child) =>
+                                        Transform.rotate(
+                                          angle:
+                                              math.sin(v * math.pi) *
+                                              20 *
+                                              math.pi /
+                                              180,
+                                          child: child,
+                                        ),
+                                    child: const EliosAiBadge(size: 20),
+                                  ),
+                                ],
+                                options: [
+                                  for (final s in QuestionSource.values) s.name,
+                                ],
+                                labels: [l10n.questionBank, 'ELIOS AI'],
+                                selected: shown.name,
+                                onSelected: (v) => ref
+                                    .read(appPreferencesProvider.notifier)
+                                    .update(
+                                      (prefs) => prefs.copyWith(
+                                        robotQuestionSource: QuestionSource
+                                            .values
+                                            .byName(v),
+                                      ),
+                                    ),
                               ),
                             ),
-                      ),
                     ),
                   ),
                 ],

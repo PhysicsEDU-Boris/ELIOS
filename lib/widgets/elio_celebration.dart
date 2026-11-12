@@ -132,7 +132,7 @@ class _CelebrationViewState extends State<_CelebrationView>
                     Positioned.fill(
                       child: IgnorePointer(
                         child: CustomPaint(
-                          painter: _LeafConfetti(
+                          painter: ElioLeafConfetti(
                             t: (ms / 900).clamp(0.0, 1.0),
                             colors: [
                               p.primary,
@@ -213,9 +213,10 @@ class _CelebrationViewState extends State<_CelebrationView>
   }
 }
 
-/// 24 leaves falling with gravity and a little sway (seeded, so stable).
-class _LeafConfetti extends CustomPainter {
-  _LeafConfetti({required this.t, required this.colors});
+/// [count] leaves falling with gravity and a little sway (seeded, so stable).
+class ElioLeafConfetti extends CustomPainter {
+  ElioLeafConfetti({required this.t, required this.colors, this.count = 24});
+  final int count;
   final double t;
   final List<Color> colors;
 
@@ -223,7 +224,7 @@ class _LeafConfetti extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (t >= 1) return;
     final rnd = math.Random(7);
-    for (var i = 0; i < 24; i++) {
+    for (var i = 0; i < count; i++) {
       final x0 = rnd.nextDouble() * size.width;
       final y0 = -20 - rnd.nextDouble() * size.height * 0.2;
       final vy = size.height * (0.5 + rnd.nextDouble() * 0.5);
@@ -248,5 +249,5 @@ class _LeafConfetti extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_LeafConfetti old) => old.t != t;
+  bool shouldRepaint(ElioLeafConfetti old) => old.t != t;
 }

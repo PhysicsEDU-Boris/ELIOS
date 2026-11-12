@@ -7,10 +7,13 @@ import '../../theme/elio_motion.dart';
 import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/learn/learn_ui.dart';
+import '../../services/elio_feedback.dart';
+import '../home/home_parts.dart' show homeWeight;
 import 'config_parts.dart';
 import 'package:elio/l10n/l10n.dart';
 
-Future<void> showRobotWifiQrSheet(BuildContext context) => showModalBottomSheet<void>(
+Future<void> showRobotWifiQrSheet(BuildContext context) =>
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -35,6 +38,8 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
   bool _hidePass = true;
   String? _qr;
 
+  int _invalid = 0;
+
   @override
   void dispose() {
     _ssid.dispose();
@@ -43,22 +48,31 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
   }
 
   void _show() {
-    if (!(_form.currentState?.validate() ?? false)) return;
+    if (!(_form.currentState?.validate() ?? false)) {
+      // Missing name or short password: the form shakes (S5 + H-warning).
+      elioFeedback(ElioSfx.knock, ElioHaptics.warning);
+      setState(() => _invalid++);
+      return;
+    }
     FocusScope.of(context).unfocus();
+    elioFeedback(ElioSfx.chime, ElioHaptics.light); // the QR pops in
     setState(() => _qr = wifiQrPayload(_ssid.text, _pass.text));
   }
 
   /// Figma "Config / Input field" 337:2481: caption label above a 48 dp field.
   Widget _field(ElioPalette p, String label, Widget field) => MergeSemantics(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: configCaption(p).copyWith(fontWeight: FontWeight.w500)),
-            const SizedBox(height: 6),
-            field,
-          ],
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: configCaption(p).copyWith(fontWeight: FontWeight.w500),
         ),
-      );
+        const SizedBox(height: 6),
+        field,
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +83,9 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: p.background,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(learnRadiusXl)),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(learnRadiusXl),
+          ),
         ),
         child: SingleChildScrollView(
           child: Form(
@@ -84,7 +100,10 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                     child: Container(
                       width: 36,
                       height: 4,
-                      decoration: ShapeDecoration(color: p.borderMedium, shape: const StadiumBorder()),
+                      decoration: ShapeDecoration(
+                        color: p.borderMedium,
+                        shape: const StadiumBorder(),
+                      ),
                     ),
                   ),
                 ),
@@ -107,8 +126,13 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(l10n.robotWifiQr,
-                                  style: ElioTokens.headline.copyWith(color: p.textPrimary)),
+                              Text(
+                                l10n.robotWifiQr,
+                                style: homeWeight(
+                                  ElioTokens.headline,
+                                  700,
+                                ).copyWith(color: p.textPrimary),
+                              ),
                               Text(l10n.robotWifiQrSubtitle, style: caption),
                             ],
                           ),
@@ -124,7 +148,11 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                             minimumSize: const Size.square(48),
                             side: BorderSide(color: p.borderSubtle),
                           ),
-                          icon: Icon(Icons.close_rounded, size: 22, color: p.textPrimary),
+                          icon: Icon(
+                            Icons.close_rounded,
+                            size: 22,
+                            color: p.textPrimary,
+                          ),
                         ),
                       ),
                     ],
@@ -137,19 +165,24 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                     children: [
                       Text(l10n.qrIntro, style: caption),
                       const SizedBox(height: 20),
-                      _field(
-                        p,
-                        l10n.qrSsid,
-                        TextFormField(
-                          controller: _ssid,
-                          validator: validateWifiName,
-                          textInputAction: TextInputAction.next,
-                          autocorrect: false,
-                          style: ElioTokens.body.copyWith(color: p.textPrimary),
-                          decoration: const InputDecoration(
-                            prefixIcon: Icon(Icons.wifi_rounded, size: 20),
+                      ElioShake(
+                        trigger: _invalid == 0 ? null : _invalid,
+                        child: _field(
+                          p,
+                          l10n.qrSsid,
+                          TextFormField(
+                            controller: _ssid,
+                            validator: validateWifiName,
+                            textInputAction: TextInputAction.next,
+                            autocorrect: false,
+                            style: ElioTokens.body.copyWith(
+                              color: p.textPrimary,
+                            ),
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.wifi_rounded, size: 20),
+                            ),
+                            onChanged: (_) => setState(() => _qr = null),
                           ),
-                          onChanged: (_) => setState(() => _qr = null),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -165,11 +198,23 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                           onFieldSubmitted: (_) => _show(),
                           style: ElioTokens.body.copyWith(color: p.textPrimary),
                           decoration: InputDecoration(
-                            prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                            prefixIcon: const Icon(
+                              Icons.lock_outline_rounded,
+                              size: 20,
+                            ),
                             suffixIcon: IconButton(
-                              tooltip: _hidePass ? l10n.qrShowPassword : l10n.qrHidePassword,
-                              onPressed: () => setState(() => _hidePass = !_hidePass),
-                              icon: Icon(_hidePass ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                              tooltip: _hidePass
+                                  ? l10n.qrShowPassword
+                                  : l10n.qrHidePassword,
+                              onPressed: () {
+                                elioFeedback(ElioSfx.tick, ElioHaptics.select);
+                                setState(() => _hidePass = !_hidePass);
+                              },
+                              icon: Icon(
+                                _hidePass
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                              ),
                             ),
                           ),
                           onChanged: (_) => setState(() => _qr = null),
@@ -177,7 +222,11 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                       ),
                       const SizedBox(height: 20),
                       ElioPress(
-                        child: ConfigButton(label: l10n.qrShow, icon: Icons.qr_code_2_rounded, onPressed: _show),
+                        child: ConfigButton(
+                          label: l10n.qrShow,
+                          icon: Icons.qr_code_2_rounded,
+                          onPressed: _show,
+                        ),
                       ),
                       if (_qr != null) ...[
                         const SizedBox(height: 20),
@@ -194,12 +243,22 @@ class _RobotWifiQrSheetState extends State<RobotWifiQrSheet> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               alignment: Alignment.center,
-                              child: SvgPicture.string(Barcode.qrCode().toSvg(_qr!, width: 260, height: 260)),
+                              child: SvgPicture.string(
+                                Barcode.qrCode().toSvg(
+                                  _qr!,
+                                  width: 260,
+                                  height: 260,
+                                ),
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 20),
-                        Text(l10n.robotQrHint, textAlign: TextAlign.center, style: caption),
+                        Text(
+                          l10n.robotQrHint,
+                          textAlign: TextAlign.center,
+                          style: caption,
+                        ),
                       ],
                     ],
                   ),

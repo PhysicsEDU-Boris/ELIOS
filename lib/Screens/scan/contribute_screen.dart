@@ -4,10 +4,12 @@
 // identify, and a match is saved to History as a contribution (+10).
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../l10n/l10n.dart';
 import '../../models/scan_record.dart';
@@ -21,6 +23,9 @@ import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/learn/learn_ui.dart';
 import '../../services/elio_feedback.dart';
+import '../../widgets/elio_celebration.dart' show ElioLeafConfetti;
+import '../config/config_parts.dart' show AiCardState, EliosAiLogo;
+import '../home/home_parts.dart' show homeArt, homeWeight;
 
 const _shots = 3;
 const _shotEvery = Duration(seconds: 3);
@@ -96,6 +101,7 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
   final _photos = <Uint8List>[];
   Timer? _timer;
   int _seconds = 0;
+  int _nudge = 0;
   ContributionCheck _found;
   bool _matched = false;
 
@@ -130,7 +136,8 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
 
   void _start() {
     if (_bin == null || !_source.isInitialized) {
-      ElioHaptics.warning(); // no bin picked yet
+      ElioHaptics.warning(); // no bin picked yet: the bin question shakes
+      setState(() => _nudge++);
       return;
     }
     elioFeedback(ElioSfx.recStart, ElioHaptics.medium); // Figma 13 · 29
@@ -150,7 +157,7 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
   Future<void> _stop() async {
     _timer?.cancel();
     if (_step != _Step.recording) return;
-    elioFeedback(ElioSfx.recStop, ElioHaptics.select);
+    elioFeedback(ElioSfx.recStop, ElioHaptics.light); // Figma 13 · 29
     // Stopped before the first photo: take one now.
     if (_photos.isEmpty) await _shoot();
     if (!mounted) return;
@@ -166,10 +173,10 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
     final matched = found != null && contributionMatches(found.category, _bin!);
     if (matched) await _save(found);
     if (!mounted) return;
-    // Figma 13 · 30: approved = S9 short + H-success; otherwise S5 + H-error.
+    // Figma 13 · 30: approved = S9 + H-celebrate; try again = S5 + H-warning.
     matched
-        ? elioFeedback(ElioSfx.sparkleShort, ElioHaptics.success)
-        : elioFeedback(ElioSfx.knock, ElioHaptics.error);
+        ? elioFeedback(ElioSfx.sparkleShort, ElioHaptics.celebrate)
+        : elioFeedback(ElioSfx.knock, ElioHaptics.warning);
     setState(() {
       _found = found;
       _matched = matched;
@@ -262,40 +269,60 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
                                 child: Text(
                                   l10n.contributeTitle,
                                   overflow: TextOverflow.ellipsis,
-                                  style: ElioTokens.subhead.copyWith(
-                                    color: Colors.white,
-                                  ),
+                                  style: homeWeight(
+                                    ElioTokens.subhead,
+                                    700,
+                                  ).copyWith(color: Colors.white),
                                 ),
                               ),
                             ),
                             if (_step == _Step.recording)
                               Semantics(
                                 liveRegion: true,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: const ShapeDecoration(
-                                    color: scrim,
-                                    shape: StadiumBorder(),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.circle,
-                                        size: 10,
-                                        color: p.error,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        l10n.contributeRec('$mm:$ss'),
-                                        style: ElioTokens.button.copyWith(
-                                          color: Colors.white,
+                                child: _SlideIn(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    decoration: const ShapeDecoration(
+                                      color: scrim,
+                                      shape: StadiumBorder(),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // The REC dot blinks once a second.
+                                        ElioIdleLoop(
+                                          period: const Duration(seconds: 1),
+                                          length: const Duration(minutes: 3),
+                                          builder: (context, w, child) =>
+                                              Opacity(
+                                                opacity: 1 - 0.75 * w,
+                                                child: child,
+                                              ),
+                                          child: Icon(
+                                            Icons.circle,
+                                            size: 10,
+                                            color: p.error,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          l10n.contributeRec('$mm:$ss'),
+                                          style:
+                                              homeWeight(
+                                                ElioTokens.button,
+                                                600,
+                                              ).copyWith(
+                                                color: Colors.white,
+                                                fontFeatures: const [
+                                                  FontFeature.tabularFigures(),
+                                                ],
+                                              ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -306,60 +333,67 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
                       if (_step == _Step.pick || _step == _Step.recording)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: scrim,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _step == _Step.pick
-                                      ? l10n.contributePickBin
-                                      : l10n.contributeDrop,
-                                  style: ElioTokens.bodySmall.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                          child: ElioPopIn(
+                            child: ElioShake(
+                              trigger: _nudge == 0 ? null : _nudge,
+                              child: Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: scrim,
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
-                                Text(
-                                  l10n.contributeKeepLabel,
-                                  style: ElioTokens.caption.copyWith(
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                                if (_step == _Step.pick) ...[
-                                  const SizedBox(height: 10),
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: [
-                                      for (final b in contributeBins)
-                                        ChoiceChip(
-                                          label: Text(binName(b)),
-                                          selected: _bin == b,
-                                          selectedColor: b.fg,
-                                          labelStyle: ElioTokens.caption
-                                              .copyWith(
-                                                fontWeight: FontWeight.w600,
-                                                color: _bin == b
-                                                    ? Colors.white
-                                                    : p.textPrimary,
-                                              ),
-                                          onSelected: (_) {
-                                            elioFeedback(
-                                              ElioSfx.tick,
-                                              ElioHaptics.select,
-                                            );
-                                            setState(() => _bin = b);
-                                          },
-                                        ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _step == _Step.pick
+                                          ? l10n.contributePickBin
+                                          : l10n.contributeDrop,
+                                      style: homeWeight(
+                                        ElioTokens.bodySmall,
+                                        600,
+                                      ).copyWith(color: Colors.white),
+                                    ),
+                                    Text(
+                                      l10n.contributeKeepLabel,
+                                      style: ElioTokens.caption.copyWith(
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                    if (_step == _Step.pick) ...[
+                                      const SizedBox(height: 10),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: [
+                                          for (final b in contributeBins)
+                                            ChoiceChip(
+                                              label: Text(binName(b)),
+                                              selected: _bin == b,
+                                              selectedColor: b.fg,
+                                              labelStyle:
+                                                  homeWeight(
+                                                    ElioTokens.caption,
+                                                    600,
+                                                  ).copyWith(
+                                                    color: _bin == b
+                                                        ? Colors.white
+                                                        : p.textPrimary,
+                                                  ),
+                                              onSelected: (_) {
+                                                elioFeedback(
+                                                  ElioSfx.tick,
+                                                  ElioHaptics.select,
+                                                );
+                                                setState(() => _bin = b);
+                                              },
+                                            ),
+                                        ],
+                                      ),
                                     ],
-                                  ),
-                                ],
-                              ],
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -369,12 +403,47 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
                           child: _Sheet(
                             child: Column(
                               children: [
-                                const LinearProgressIndicator(),
-                                const SizedBox(height: 16),
+                                // Slow "checking" leaf spinner over the
+                                // result skeleton (Figma 635:25912).
+                                const EliosAiLogo(
+                                  state: AiCardState.active,
+                                  size: 56,
+                                ),
+                                const SizedBox(height: 12),
                                 Text(
                                   l10n.contributeChecking,
-                                  style: ElioTokens.body.copyWith(
-                                    color: p.textPrimary,
+                                  textAlign: TextAlign.center,
+                                  style: homeWeight(
+                                    ElioTokens.body,
+                                    600,
+                                  ).copyWith(color: p.textPrimary),
+                                ),
+                                const SizedBox(height: 14),
+                                ElioShimmer(
+                                  child: Column(
+                                    children: [
+                                      for (final w in const [260.0, 120.0])
+                                        Container(
+                                          width: w,
+                                          height: 14,
+                                          margin: const EdgeInsets.only(
+                                            bottom: 10,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: p.surfaceRaised,
+                                            borderRadius: BorderRadius.circular(
+                                              7,
+                                            ),
+                                          ),
+                                        ),
+                                      Container(
+                                        height: 52,
+                                        decoration: ShapeDecoration(
+                                          color: p.surfaceRaised,
+                                          shape: const StadiumBorder(),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -394,25 +463,34 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
                             onTap: _step == _Step.pick ? _start : _stop,
                             child: GestureDetector(
                               onTap: _step == _Step.pick ? _start : _stop,
-                              child: Container(
-                                width: 76,
-                                height: 76,
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 4,
-                                  ),
-                                ),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
+                              child: ElioPress(
+                                pressed: 0.92,
+                                child: Container(
+                                  width: 76,
+                                  height: 76,
+                                  padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: _bin == null || !ready
-                                        ? p.error.withValues(alpha: 0.4)
-                                        : p.error,
-                                    borderRadius: BorderRadius.circular(
-                                      _step == _Step.recording ? 8 : 30,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 4,
+                                    ),
+                                  ),
+                                  // Record: the circle morphs to a rounded
+                                  // square (200 ms, emphasized) and back.
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    curve: ElioMotion.emphasized,
+                                    margin: EdgeInsets.all(
+                                      _step == _Step.recording ? 6 : 0,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _bin == null || !ready
+                                          ? p.error.withValues(alpha: 0.4)
+                                          : p.error,
+                                      borderRadius: BorderRadius.circular(
+                                        _step == _Step.recording ? 8 : 30,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -443,88 +521,183 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
         : _matched
         ? l10n.contributeWentInto(_upper(found.item), binName(_bin!))
         : l10n.contributeBelongs(_upper(found.item), binName(found.category));
+    final reduced = ElioMotion.reduced(context);
+    Widget pill(String label, VoidCallback onTap, {required bool primary}) =>
+        Expanded(
+          child: ElioPress(
+            pressed: 0.96,
+            child: FilledButton(
+              onPressed: () {
+                elioFeedback(ElioSfx.pop, ElioHaptics.light);
+                onTap();
+              },
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+                backgroundColor: primary ? p.primary : p.surfaceRaised,
+                foregroundColor: primary ? p.onPrimary : p.textPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                shape: const StadiumBorder(),
+              ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  style: homeWeight(
+                    ElioTokens.button,
+                    600,
+                  ).copyWith(color: primary ? p.onPrimary : p.textPrimary),
+                ),
+              ),
+            ),
+          ),
+        );
     return Semantics(
       liveRegion: true,
       child: _Sheet(
-        child: Column(
+        nudge: !_matched,
+        child: Stack(
           children: [
-            // Approved: the medal drops in (spring/bounce, Figma 13 · 30).
-            ElioPopIn(
-              rise: _matched ? -40 : 6,
-              scale: _matched ? 0.6 : 0.96,
-              curve: _matched ? ElioMotion.bounce : ElioMotion.standard,
-              duration: _matched
-                  ? const Duration(milliseconds: 700)
-                  : ElioMotion.base,
-              child: Icon(
-                _matched ? Icons.military_tech_rounded : Icons.replay_rounded,
-                size: 56,
-                color: _matched ? p.secondaryText : p.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: ElioTokens.body.copyWith(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                color: p.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              body,
-              textAlign: TextAlign.center,
-              style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
-            ),
-            if (_matched) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: ShapeDecoration(
-                  color: p.secondaryText.withValues(alpha: 0.08),
-                  shape: const StadiumBorder(),
-                ),
-                child: Text(
-                  l10n.contributeTrophies(contributionTrophies),
-                  style: ElioTokens.button.copyWith(color: p.secondaryText),
+            // Approved: 12 leaves fall over the sheet (900 ms).
+            if (_matched && !reduced)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: ElioMotion.celebrate,
+                    builder: (context, t, _) => CustomPaint(
+                      painter: ElioLeafConfetti(
+                        t: t,
+                        count: 12,
+                        colors: [p.primary, p.secondaryText, p.tertiaryText],
+                      ),
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.contributeSaved,
-                style: ElioTokens.caption.copyWith(color: p.textSecondary),
-              ),
-            ],
-            const SizedBox(height: 16),
-            Row(
+            Column(
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _again,
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
-                      shape: const StadiumBorder(),
+                // Approved: the medal drops and swings 12° → −6° → 0
+                // (spring/bounce, ~700 ms). Try again: it stays grey.
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: reduced ? 1 : 0, end: 1),
+                  duration: const Duration(milliseconds: 700),
+                  builder: (context, v, child) => Transform.translate(
+                    offset: Offset(
+                      0,
+                      _matched ? -40 * (1 - ElioMotion.bounce.transform(v)) : 0,
                     ),
-                    child: Text(l10n.contributeAgain),
+                    child: Transform.rotate(
+                      alignment: Alignment.topCenter,
+                      angle: _matched
+                          ? math.cos(v * math.pi * 1.5) *
+                                (1 - v) *
+                                12 *
+                                math.pi /
+                                180
+                          : 0,
+                      child: Opacity(
+                        opacity: (v * 3).clamp(0.0, 1.0),
+                        child: child,
+                      ),
+                    ),
+                  ),
+                  child: homeArt(
+                    _matched ? 'medal_gold' : 'medal_locked',
+                    height: 76,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
-                      backgroundColor: p.primary,
-                      foregroundColor: p.onPrimary,
-                      shape: const StadiumBorder(),
-                    ),
-                    child: Text(l10n.notifDone),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: homeWeight(
+                    ElioTokens.headline,
+                    700,
+                  ).copyWith(color: p.textPrimary),
+                ),
+                const SizedBox(height: 6),
+                // Try again: the hint line is highlighted.
+                Container(
+                  padding: _matched
+                      ? EdgeInsets.zero
+                      : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _matched
+                        ? null
+                        : p.secondaryText.withValues(
+                            alpha: p.isDark ? 0.14 : 0.08,
+                          ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: Text(
+                    body,
+                    textAlign: TextAlign.center,
+                    style: ElioTokens.bodySmall.copyWith(
+                      color: _matched ? p.textSecondary : p.textPrimary,
+                    ),
+                  ),
+                ),
+                if (_matched) ...[
+                  const SizedBox(height: 14),
+                  ElioPopIn(
+                    rise: 0,
+                    scale: 0.7,
+                    curve: ElioMotion.pop,
+                    delay: const Duration(milliseconds: 300),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: ShapeDecoration(
+                        color: p.secondaryText.withValues(
+                          alpha: p.isDark ? 0.14 : 0.06,
+                        ),
+                        shape: const StadiumBorder(),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SvgPicture.asset(
+                            'assets/illustrations/history/icon_xp.svg',
+                            width: 18,
+                            height: 18,
+                            excludeFromSemantics: true,
+                          ),
+                          const SizedBox(width: 6),
+                          // XP counts up (600 ms).
+                          ElioCountUp(
+                            value: contributionTrophies,
+                            builder: (context, v) => Text(
+                              l10n.contributeTrophies(v),
+                              style: homeWeight(
+                                ElioTokens.button,
+                                700,
+                              ).copyWith(color: p.secondaryText),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    l10n.contributeSaved,
+                    textAlign: TextAlign.center,
+                    style: ElioTokens.caption.copyWith(color: p.textSecondary),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    pill(l10n.contributeAgain, _again, primary: false),
+                    const SizedBox(width: 12),
+                    pill(
+                      l10n.notifDone,
+                      () => Navigator.of(context).maybePop(),
+                      primary: true,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -535,18 +708,67 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
   }
 }
 
-class _Sheet extends StatelessWidget {
-  const _Sheet({required this.child});
+/// A chip that slides in from the right (220 ms).
+class _SlideIn extends StatelessWidget {
+  const _SlideIn({required this.child});
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-    decoration: BoxDecoration(
-      color: context.elio.surface,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween(begin: ElioMotion.reduced(context) ? 1 : 0, end: 1),
+    duration: ElioMotion.base,
+    curve: ElioMotion.emphasized,
+    builder: (context, v, child) => Opacity(
+      opacity: v,
+      child: Transform.translate(offset: Offset(40 * (1 - v), 0), child: child),
     ),
     child: child,
   );
+}
+
+/// Result sheet (629:91074): handle, rounded top; slides up when it opens
+/// and nudges 6 px up and back for "try again".
+class _Sheet extends StatelessWidget {
+  const _Sheet({required this.child, this.nudge = false});
+  final Widget child;
+  final bool nudge;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    final sheet = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+      decoration: BoxDecoration(
+        color: p.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 14),
+            decoration: ShapeDecoration(
+              color: p.borderMedium,
+              shape: const StadiumBorder(),
+            ),
+          ),
+          child,
+        ],
+      ),
+    );
+    if (ElioMotion.reduced(context)) return sheet;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: nudge ? ElioMotion.base : ElioMotion.slow,
+      curve: nudge ? Curves.linear : ElioMotion.emphasized,
+      builder: (context, v, child) => Transform.translate(
+        offset: Offset(0, nudge ? -6 * math.sin(v * math.pi) : 80 * (1 - v)),
+        child: child,
+      ),
+      child: sheet,
+    );
+  }
 }
