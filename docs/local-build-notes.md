@@ -1,5 +1,9 @@
 # Local build notes
 
+## 12 Nov 2026 — Setup + Wi-Fi QR merged into base, phone check (`feat/elios3-setup-wifi`)
+- APP_COMMIT `e85c30e` (`feature/live-scan` b0ea1fa + setup 0205 + Wi-Fi QR 0204), arm64 debug APK; `adb install -r` on the Edge 60 Fusion, no data clear; History md5 unchanged; no Flutter errors.
+- Checked: Scan hub → Pilih kendaraan → Pakai ELIOS → new ELIOS setup (robot stage, Offline/MaixCAM2 pills, 3-step stepper) → "Tampilkan QR Wi-Fi robot" opens the ELIOS 3 QR sheet. Robot itself not connected. Left on Home.
+
 ## 12 Nov 2026 — Scoring finish phone check (0214, `feat/scoring-finish`)
 - APP_COMMIT `33d2dd7`, arm64 debug APK (LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION); `adb install -r` on the Edge 60 Fusion, no data clear; all 5 History files md5-identical; no Flutter errors in logcat.
 - Learn (phone in dark mode): Organic card 22 % (2 of 9 clovers; was 33 % with the old rule). Daily Guides: "Bacaanmu minggu ini", "80 XP panduan", week days, archive "2 edisi" (no streak). Left on Home.
