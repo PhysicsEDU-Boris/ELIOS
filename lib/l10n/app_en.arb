@@ -3470,5 +3470,11 @@
   "scanStartQuiz": "Start quiz",
   "scanSkipQuestion": "Skip question",
   "scanJustNowPhone": "Just now · Phone",
-  "scanFlash": "Flash"
+  "scanFlash": "Flash",
+  "scanWhyWorks": "Why it works this way",
+  "scanBinFits": "Where each bin fits the scanned item",
+  "scanAskCoach": "Ask ELIOS AI coach",
+  "scanAskCoachSub": "Ask why, get a hint, hear it aloud",
+  "scanBinYes": "Yes",
+  "scanBinNo": "No"
 }

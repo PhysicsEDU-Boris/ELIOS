@@ -5556,4 +5556,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scanFlash => 'Flash';
+
+  @override
+  String get scanWhyWorks => 'Why it works this way';
+
+  @override
+  String get scanBinFits => 'Where each bin fits the scanned item';
+
+  @override
+  String get scanAskCoach => 'Ask ELIOS AI coach';
+
+  @override
+  String get scanAskCoachSub => 'Ask why, get a hint, hear it aloud';
+
+  @override
+  String get scanBinYes => 'Yes';
+
+  @override
+  String get scanBinNo => 'No';
 }

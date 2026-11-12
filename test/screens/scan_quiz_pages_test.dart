@@ -162,7 +162,13 @@ void main() {
     expect(find.byKey(const ValueKey('scan_question_card')), findsOneWidget);
     await _settle(t);
     expect(find.byKey(const ValueKey('scan_question_card')), findsNothing);
-    expect(find.byKey(const ValueKey('quiz_popup')), findsOneWidget);
+    // The answer review is a full page with the coach behind one tap.
+    expect(find.byKey(const ValueKey('scan_review')), findsOneWidget);
+    expect(find.byKey(const ValueKey('quiz_popup')), findsNothing);
+    expect(find.text('Not quite'.toUpperCase()), findsOneWidget);
+    await t.tap(find.byKey(const ValueKey('scan_coach_entry')));
+    await _settle(t);
+    expect(find.byKey(const ValueKey('scan_coach')), findsOneWidget);
   });
 
   testWidgets('a failed scan offers Retake', (t) async {
@@ -179,10 +185,33 @@ void main() {
     expect(quiz.state.phase, WasteQuizPhase.idle);
   });
 
+  testWidgets('the finished quiz is a full page with score and XP', (t) async {
+    final quiz = await _pump(
+      t,
+      WasteQuizUiState(
+        phase: WasteQuizPhase.finished,
+        scan: _scan,
+        correctCount: 2,
+      ),
+    );
+    expect(find.byKey(const ValueKey('scan_done')), findsOneWidget);
+    expect(find.byKey(const ValueKey('quiz_popup')), findsNothing);
+    expect(find.text('2 of 3 correct'), findsOneWidget);
+    expect(find.text('+20 XP'), findsOneWidget);
+    await t.tap(find.byKey(const Key('result_card_rescan_button')));
+    await _settle(t);
+    expect(quiz.state.phase, WasteQuizPhase.idle);
+  });
+
   final states = {
     'identifying': _identifying,
     'writing': _writing,
     'identified': _ready,
+    'done': WasteQuizUiState(
+      phase: WasteQuizPhase.finished,
+      scan: _scan,
+      correctCount: 2,
+    ),
   };
   for (final (size, shape) in const [
     (Size(390, 844), 'portrait'),
@@ -216,6 +245,8 @@ void main() {
           expect(t.takeException(), isNull);
           if (_png.isNotEmpty) await savePng(t, _png, 'answered-$tag');
           await _settle(t);
+          expect(t.takeException(), isNull);
+          if (_png.isNotEmpty) await savePng(t, _png, 'review-$tag');
         });
       }
     }

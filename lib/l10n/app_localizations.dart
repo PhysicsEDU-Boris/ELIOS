@@ -9474,6 +9474,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Flash'**
   String get scanFlash;
+
+  /// No description provided for @scanWhyWorks.
+  ///
+  /// In en, this message translates to:
+  /// **'Why it works this way'**
+  String get scanWhyWorks;
+
+  /// No description provided for @scanBinFits.
+  ///
+  /// In en, this message translates to:
+  /// **'Where each bin fits the scanned item'**
+  String get scanBinFits;
+
+  /// No description provided for @scanAskCoach.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask ELIOS AI coach'**
+  String get scanAskCoach;
+
+  /// No description provided for @scanAskCoachSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask why, get a hint, hear it aloud'**
+  String get scanAskCoachSub;
+
+  /// No description provided for @scanBinYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get scanBinYes;
+
+  /// No description provided for @scanBinNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get scanBinNo;
 }
 
 class _AppLocalizationsDelegate

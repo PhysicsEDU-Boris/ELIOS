@@ -29,6 +29,7 @@ import '../theme/elio_learning_colors.dart';
 import '../theme/elio_motion.dart';
 import '../theme/elio_tokens.dart';
 import 'history_ui.dart' show HistoryTone, historyTint;
+import 'learn/learn_l3.dart' show L3Hero, RobotBuddy, RobotMood;
 import 'learn/learn_ui.dart' show LearnTheme;
 import 'package:elio/l10n/l10n.dart';
 

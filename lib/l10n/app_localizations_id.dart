@@ -5460,4 +5460,22 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get scanFlash => 'Lampu kilat';
+
+  @override
+  String get scanWhyWorks => 'Mengapa begitu';
+
+  @override
+  String get scanBinFits => 'Tempat sampah mana yang cocok untuk benda ini';
+
+  @override
+  String get scanAskCoach => 'Tanya pelatih ELIOS AI';
+
+  @override
+  String get scanAskCoachSub => 'Tanya alasannya, minta petunjuk, dengarkan';
+
+  @override
+  String get scanBinYes => 'Ya';
+
+  @override
+  String get scanBinNo => 'Bukan';
 }

@@ -1570,5 +1570,11 @@
   "scanStartQuiz": "Mulai kuis",
   "scanSkipQuestion": "Lewati soal",
   "scanJustNowPhone": "Baru saja · Ponsel",
-  "scanFlash": "Lampu kilat"
+  "scanFlash": "Lampu kilat",
+  "scanWhyWorks": "Mengapa begitu",
+  "scanBinFits": "Tempat sampah mana yang cocok untuk benda ini",
+  "scanAskCoach": "Tanya pelatih ELIOS AI",
+  "scanAskCoachSub": "Tanya alasannya, minta petunjuk, dengarkan",
+  "scanBinYes": "Ya",
+  "scanBinNo": "Bukan"
 }
