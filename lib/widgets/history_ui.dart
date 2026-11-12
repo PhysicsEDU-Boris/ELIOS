@@ -895,9 +895,16 @@ class HistoryScanGrid extends StatelessWidget {
 /// Scan detail photo frame: category tint, blobs, sparkles, the polaroid
 /// (contain), time pill and a 48 dp fullscreen button when [onOpen] is set.
 class HistoryPhotoFrame extends StatelessWidget {
-  const HistoryPhotoFrame(this.record, {super.key, this.onOpen});
+  const HistoryPhotoFrame(
+    this.record, {
+    super.key,
+    this.onOpen,
+    this.height = 184,
+    this.radius = 20,
+  });
   final ScanRecord record;
   final VoidCallback? onOpen;
+  final double height, radius;
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context), t = context.l10n;
@@ -906,8 +913,8 @@ class HistoryPhotoFrame extends StatelessWidget {
     ];
     return _TintCover(
       category: record.category,
-      height: 184,
-      radius: 20,
+      height: height,
+      radius: radius,
       circles: const [(150, -50, null, null, -70), (120, null, -50, -30, null)],
       sparkles: const [
         (14, 92, 40, null, null),
@@ -1165,64 +1172,140 @@ class HistoryResultStats extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context), t = context.l10n;
-    Widget stat(IconData icon, Color color, String value, String label) =>
-        Expanded(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+    // Figma 629:99682-99: three tilted leaf blobs (XP, Correct, Scanned).
+    Widget stat(
+      int i,
+      Widget icon,
+      Color bg,
+      double degrees,
+      double drop,
+      String value,
+      String label,
+    ) => Expanded(
+      child: Padding(
+        padding: EdgeInsets.only(top: drop),
+        // Pops in tilted, one after another.
+        child: ElioPopIn(
+          index: i,
+          stagger: const Duration(milliseconds: 70),
+          delay: const Duration(milliseconds: 120),
+          scale: 0.6,
+          curve: ElioMotion.pop,
+          child: Transform.rotate(
+            angle: degrees * math.pi / 180,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(26),
+                  topRight: Radius.circular(8),
+                  bottomRight: Radius.circular(26),
+                  bottomLeft: Radius.circular(8),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(icon, size: 18, color: color),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      value,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: ElioTokens.subhead.copyWith(color: p.textPrimary),
-                    ),
+                  Row(
+                    children: [
+                      icon,
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          value,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: _bold(
+                            ElioTokens.subhead,
+                          ).copyWith(color: p.textPrimary),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: ElioTokens.caption.copyWith(color: p.textSecondary),
                   ),
                 ],
               ),
-              Text(
-                label,
-                style: ElioTokens.caption.copyWith(color: p.textSecondary),
-              ),
-            ],
+            ),
           ),
-        );
-    final line = Container(width: 1, height: 40, color: p.borderSubtle);
-    return HistoryCard(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-      child: Row(
-        children: [
-          stat(
-            Icons.emoji_events_outlined,
-            p.secondaryText,
-            '+${record.trophies}',
-            t.h3StatTrophies,
-          ),
-          line,
-          stat(
-            Icons.check,
-            p.primaryText,
-            '${record.correctCount}/${record.totalQuestions}',
-            t.h3Correct,
-          ),
-          line,
-          stat(
-            Icons.schedule_outlined,
-            p.tertiaryText,
-            historyTime(t, record.time),
-            t.h3StatScanned,
-          ),
-        ],
+        ),
       ),
+    );
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        stat(
+          0,
+          SvgPicture.asset(
+            'assets/illustrations/history/icon_xp.svg',
+            width: 18,
+            height: 18,
+            excludeFromSemantics: true,
+          ),
+          historyTint(p, HistoryTone.warning).bg,
+          3,
+          2,
+          '+${record.trophies}',
+          t.h3StatTrophies,
+        ),
+        const SizedBox(width: 14),
+        stat(
+          1,
+          Icon(Icons.check_rounded, size: 18, color: p.primaryText),
+          historyTint(p, HistoryTone.success).bg,
+          -2,
+          6,
+          '${record.correctCount}/${record.totalQuestions}',
+          t.h3Correct,
+        ),
+        const SizedBox(width: 14),
+        stat(
+          2,
+          Icon(Icons.calendar_today_outlined, size: 16, color: p.textSecondary),
+          p.surfaceRaised,
+          2,
+          0,
+          historyDay(t, record.time),
+          t.h3StatScanned,
+        ),
+      ],
     );
   }
 }
 
-/// Question card: Q badge + question, chips, answers panel, explanation link.
+/// Bold on the variable font ('wght' axis as well as fontWeight).
+TextStyle _bold(TextStyle s, [int weight = 700]) => s.copyWith(
+  fontWeight: FontWeight.values[weight ~/ 100 - 1],
+  fontVariations: [FontVariation('wght', weight.toDouble())],
+);
+
+class _DashPainter extends CustomPainter {
+  _DashPainter(this.color);
+  final Color color;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
+    for (var x = 0.0; x < size.width; x += 8) {
+      canvas.drawLine(Offset(x, 0.75), Offset(x + 4, 0.75), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashPainter old) => old.color != color;
+}
+
+/// Question (Figma 629:99713): round Q badge, question, one result chip with
+/// the XP, the answer as a leaf quote and "See explanation". No card; a
+/// dashed line separates it from the question above.
 class HistoryQuestionCard extends StatelessWidget {
   const HistoryQuestionCard(
     this.q,
@@ -1235,102 +1318,160 @@ class HistoryQuestionCard extends StatelessWidget {
   final VoidCallback onExplain;
   @override
   Widget build(BuildContext context) {
-    final p = authPalette(context);
-    final yours = q.isEssay
-        ? p.textPrimary
-        : q.isCorrect
-        ? p.primaryText
-        : p.errorText;
+    final p = authPalette(context), t = context.l10n;
+    final wrong = !q.isCorrect && !q.isEssay;
+    final tint = historyTint(
+      p,
+      q.isEssay
+          ? HistoryTone.warning
+          : wrong
+          ? HistoryTone.error
+          : HistoryTone.success,
+    );
+    final result = q.isEssay
+        ? (q.gradingPending
+              ? t.h3AwaitingGrading
+              : t.h3EssayScore(q.essayScore ?? 0))
+        : wrong
+        ? t.h3Incorrect
+        : '✓ ${t.h3Correct}';
     Widget answer(String label, String text, Color color) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label.toUpperCase(),
-          style: ElioTokens.overline.copyWith(color: p.textTertiary),
+          style: _bold(
+            ElioTokens.overline,
+            600,
+          ).copyWith(color: p.textTertiary, letterSpacing: 1.1),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(text, style: ElioTokens.bodySmall.copyWith(color: color)),
       ],
     );
-    return HistoryCard(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Column(
+      children: [
+        if (index > 0)
+          CustomPaint(
+            size: const Size(double.infinity, 1.5),
+            painter: _DashPainter(p.borderMedium),
+          ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              HistoryQuestionBadge(
-                index + 1,
-                correct: q.isCorrect,
-                essay: q.isEssay,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                decoration: ShapeDecoration(
+                  color: wrong ? p.error : p.primary,
+                  shape: const StadiumBorder(),
+                ),
+                child: Text(
+                  'Q${index + 1}',
+                  style: _bold(
+                    ElioTokens.caption,
+                  ).copyWith(color: wrong ? p.onError : p.onPrimary),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  q.question,
-                  style: ElioTokens.body.copyWith(color: p.textPrimary),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [HistoryResultChip(q), HistoryTrophyChip(q.trophies)],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: ShapeDecoration(
-              color: p.surfaceRaised,
-              shape: _shape(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                answer(context.l10n.h3YourAnswer, q.yourAnswer, yours),
-                if (!q.isCorrect && !q.isEssay) ...[
-                  const SizedBox(height: 12),
-                  answer(
-                    context.l10n.h3CorrectAnswer,
-                    q.rightAnswer,
-                    p.primaryText,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Semantics(
-            button: true,
-            child: InkWell(
-              onTap: onExplain,
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.menu_book_outlined,
-                      size: 18,
-                      color: p.primaryText,
-                    ),
-                    const SizedBox(width: 8),
                     Text(
-                      context.l10n.h3SeeExplanation,
-                      style: historyButtonText.copyWith(color: p.primaryText),
+                      q.question,
+                      style: _bold(
+                        ElioTokens.body,
+                        600,
+                      ).copyWith(color: p.textPrimary),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: ShapeDecoration(
+                        color: tint.bg,
+                        shape: const StadiumBorder(),
+                      ),
+                      child: Text(
+                        // No XP yet while an essay waits for its grade.
+                        q.isEssay && q.gradingPending
+                            ? result
+                            : '$result · +${q.trophies}',
+                        style: _bold(
+                          ElioTokens.caption,
+                        ).copyWith(color: tint.fg),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: p.surfaceRaised,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(4),
+                          bottomRight: Radius.circular(16),
+                          bottomLeft: Radius.circular(4),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          answer(t.h3YourAnswer, q.yourAnswer, p.textPrimary),
+                          if (wrong) ...[
+                            const SizedBox(height: 10),
+                            answer(
+                              t.h3CorrectAnswer,
+                              q.rightAnswer,
+                              p.primaryText,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Semantics(
+                      button: true,
+                      child: InkWell(
+                        onTap: onExplain,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                t.h3SeeExplanation,
+                                style: historyButtonText.copyWith(
+                                  color: p.primaryText,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                size: 18,
+                                color: p.primaryText,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/scan_record.dart';
 import '../services/elio_feedback.dart';
@@ -11,7 +12,7 @@ import '../widgets/auth/auth_widgets.dart' show authPalette;
 import '../theme/elio_motion.dart';
 import '../widgets/elio_page_title.dart';
 import '../widgets/history_ui.dart';
-import 'home/home_parts.dart' show homeArt;
+import 'home/home_parts.dart';
 import 'device_scan_screen.dart';
 import 'history/history_tab.dart';
 import 'history/scan_timeline_screen.dart';
@@ -535,20 +536,48 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
     }
   }
 
+  /// Category chip (629:99679): tone tint and edge, dot, bold caption.
+  Widget _categoryChip(ElioPalette p, AppLocalizations t) {
+    final c = record.category;
+    final tint = historyTint(p, switch (c) {
+      ScanCategory.b3 => HistoryTone.error,
+      ScanCategory.organic => HistoryTone.success,
+      ScanCategory.recyclable => HistoryTone.info,
+      _ => HistoryTone.neutral,
+    });
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: ShapeDecoration(
+        color: tint.bg,
+        shape: StadiumBorder(
+          side: BorderSide(color: tint.border ?? p.borderSubtle),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.circle, size: 8, color: tint.fg),
+          const SizedBox(width: 4),
+          Text(
+            c == ScanCategory.b3 ? t.h3CatB3Long : historyCategory(t, c),
+            style: homeCaption(p, color: tint.fg, weight: 700),
+          ),
+        ],
+      ),
+    );
+  }
+
+  final _seen = <Object>{};
+
   @override
   Widget build(BuildContext context) {
-    final p = authPalette(context);
-    final bar = HistoryTopBar(
-      title: context.l10n.h3DetailTitle,
+    final p = authPalette(context), t = context.l10n;
+    final bar = _DetailBar(
       showBack: !embedded,
-      trailing: IconButton(
-        tooltip: context.l10n.h3ExportPdf,
-        icon: Icon(Icons.description_outlined, color: p.textPrimary),
-        onPressed: () {
-          elioFeedback(ElioSfx.pop, ElioHaptics.light);
-          _export(context);
-        },
-      ),
+      onExport: () {
+        elioFeedback(ElioSfx.pop, ElioHaptics.light);
+        _export(context);
+      },
     );
     if (!_ready || _failed || store.loadError != null || _translating) {
       return Scaffold(
@@ -582,64 +611,159 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
               lang: _saved.lang,
               onRetry: () => unawaited(_translate()),
             ),
-          HistoryPhotoFrame(
-            record,
-            onOpen: historyHasPhoto(record)
-                ? () {
-                    elioFeedback(ElioSfx.pop, ElioHaptics.light);
-                    HistoryPhotoViewer.open(context, record);
-                  }
-                : null,
+          // Polaroid (629:99667): tilted 2°, the photo morphs in (Hero), the
+          // date sticker drops onto its top edge.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 22, 4, 0),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Transform.rotate(
+                  angle: 2 * math.pi / 180,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 2),
+                    decoration: BoxDecoration(
+                      color: p.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x29000000),
+                          blurRadius: 8,
+                          offset: Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        HistoryPhotoFrame(
+                          record,
+                          height: 163,
+                          radius: 18,
+                          onOpen: historyHasPhoto(record)
+                              ? () {
+                                  elioFeedback(ElioSfx.pop, ElioHaptics.light);
+                                  HistoryPhotoViewer.open(context, record);
+                                }
+                              : null,
+                        ),
+                        const SizedBox(height: 55),
+                        Text(
+                          '${record.itemName} · ${historyDay(t, record.time)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: homeCaption(p),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 44,
+                  top: -22,
+                  child: ElioPopIn(
+                    delay: const Duration(milliseconds: 320),
+                    rise: -24,
+                    scale: 0.4,
+                    curve: ElioMotion.pop,
+                    child: HomeBoing(
+                      turn: 0.12,
+                      sfx: ElioSfx.tick,
+                      haptic: ElioHaptics.select,
+                      child: Transform.rotate(
+                        angle: -8 * math.pi / 180,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: ShapeDecoration(
+                            color: p.secondaryText,
+                            shape: const StadiumBorder(),
+                            shadows: const [
+                              BoxShadow(
+                                color: Color(0x24000000),
+                                blurRadius: 4,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                size: 13,
+                                color: p.onPrimary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                historyDay(t, record.time),
+                                style: homeCaption(
+                                  p,
+                                  color: p.onPrimary,
+                                  weight: 700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          // The photo morphs in (Hero); the rest rises in one after another.
+          const SizedBox(height: 18),
           enter(
             Row(
               children: [
-                Expanded(
+                Flexible(
                   child: Text(
                     record.itemName,
                     style: ElioTokens.headline.copyWith(color: p.textPrimary),
                   ),
                 ),
-                const SizedBox(width: 12),
-                HistoryCategoryChip(record.category),
+                const SizedBox(width: 10),
+                _categoryChip(p, t),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          enter(HistoryResultStats(record), pop: true),
+          const SizedBox(height: 18),
+          HistoryResultStats(record),
           const SizedBox(height: 16),
           enter(HistoryDifficultyTabs(record)),
-          const SizedBox(height: 16),
-          enter(HistorySectionHeader(context.l10n.h3Questions)),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
+          HomeReveal(
+            id: 'questions',
+            seen: _seen,
+            delay: const Duration(milliseconds: 300),
+            builder: (context, a) =>
+                HomeHead(a: a, title: t.h3Questions, squiggle: 84),
+          ),
+          const SizedBox(height: 6),
           for (var i = 0; i < record.questions.length; i++)
             enter(
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: ElioPress(
-                  child: HistoryQuestionCard(
-                    record.questions[i],
-                    i,
-                    onExplain: () {
-                      elioFeedback(ElioSfx.pop, ElioHaptics.light);
-                      final theme = Theme.of(context);
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => Theme(
-                            data: theme,
-                            child: QuestionExplanationScreen(
-                              record: _saved,
-                              questionIndex: i,
-                              store: store,
-                            ),
-                          ),
+              HistoryQuestionCard(
+                record.questions[i],
+                i,
+                onExplain: () {
+                  elioFeedback(ElioSfx.pop, ElioHaptics.light);
+                  final theme = Theme.of(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => Theme(
+                        data: theme,
+                        child: QuestionExplanationScreen(
+                          record: _saved,
+                          questionIndex: i,
+                          store: store,
                         ),
-                      );
-                    },
-                  ),
-                ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
         ],
@@ -658,5 +782,110 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
         ).showSnackBar(SnackBar(content: Text(context.l10n.h3PdfFailed)));
       }
     }
+  }
+}
+
+/// Scan detail top bar (629:99655-66): round Back, title, Export PDF pill.
+class _DetailBar extends StatelessWidget implements PreferredSizeWidget {
+  const _DetailBar({required this.showBack, required this.onExport});
+  final bool showBack;
+  final VoidCallback onExport;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(60);
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context), t = context.l10n;
+    final edge = BorderSide(color: p.borderSubtle);
+    return ColoredBox(
+      color: p.background,
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: 60,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                if (showBack) ...[
+                  ElioPress(
+                    child: Material(
+                      color: p.surface,
+                      shape: CircleBorder(side: edge),
+                      clipBehavior: Clip.antiAlias,
+                      child: IconButton(
+                        tooltip: t.h3Back,
+                        constraints: const BoxConstraints.tightFor(
+                          width: 44,
+                          height: 44,
+                        ),
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          elioFeedback(ElioSfx.tick, ElioHaptics.select);
+                          Navigator.of(context).maybePop();
+                        },
+                        icon: Icon(
+                          Icons.arrow_back_rounded,
+                          size: 22,
+                          color: p.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Text(
+                    t.h3DetailTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: homeTitle(p),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElioPress(
+                  child: Tooltip(
+                    message: t.h3ExportPdf,
+                    child: Material(
+                      color: p.surface,
+                      shape: StadiumBorder(side: edge),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: onExport,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 11,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.description_outlined,
+                                size: 18,
+                                color: p.textPrimary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                t.h3ExportPdf,
+                                style: homeWeight(
+                                  ElioTokens.button,
+                                  600,
+                                ).copyWith(color: p.textPrimary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

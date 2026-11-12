@@ -49,5 +49,20 @@ on the tap sound. Reduce Motion shows everything at rest with no entrance sounds
 - "· saved locally" shows only while History is not synced (Figma shows it next to "Synced").
 - Chevrons, the check and the not-synced / syncing cloud icons are Material look-alikes.
 - The new XP icon is used on the History tab only; other screens keep the trophy icon.
-- Scan timeline, Scan detail (Figma L3, 629:99653) and Explanation keep their current layout:
-  only motion, sound and haptics were added there.
+- Scan timeline and Explanation keep their current layout: only motion, sound and haptics
+  were added there.
+
+## Scan detail (follow-up, same day)
+
+Scan detail now matches Figma L3 (629:99653 light, 629:100362 dark): round Back, "Scan detail"
+and an Export PDF pill; the photo frame inside a polaroid tilted 2° with "name · day" under it
+and a tilted date sticker on its top edge; name (28 bold) with a dotted category chip; three
+tilted leaf stats (XP with the new icon, Correct, Scanned day); "Questions" with a squiggle;
+questions without cards, split by dashed lines, each with a round Q badge, one result chip
+("✓ Correct · +10", "Score 7/10 · +7", "Incorrect · +0"), the answer as a leaf quote and
+"See explanation ›". Motion: date sticker drops in (tap wobbles it: S1 + select), stats pop in
+tilted one by one, the squiggle draws, questions rise.
+
+Not 1:1: a wrong multiple-choice answer keeps a red Q badge and shows the correct answer in the
+same quote (Figma shows no wrong answer); the label on the photo keeps the app's time/day text;
+the calendar, check and chevron icons are Material look-alikes.
