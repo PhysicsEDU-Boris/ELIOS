@@ -1,5 +1,10 @@
 # Local build notes
 
+## 12 Nov 2026 — Trophies → XP phone check (0213, `feat/xp-rename`)
+- APP_COMMIT `2b8cdcb`, arm64 debug APK (LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION); `adb install -r` on the Edge 60 Fusion, no data clear; all 5 History files md5-identical.
+- Home: "220 XP", "155 XP lagi ke Level 3 · pohonmu tumbuh setiap kamu dapat XP". History: "220 XP · Level 2", "155 XP lagi ke Level 3", rows "+10" beside the trophy icon (art kept).
+- Pre-existing on `feature/live-scan` (not from this change): History title "Riwayat" wraps one letter per line while the "Tersimpan di perangkat · menunggu sinkronisasi" chip shows. Left on Home.
+
 ## 12 Nov 2026 — XP/clovers rebuilt on feature/live-scan (0210–0212, `feat/lesson-xp`)
 - The first builds below (`45139a7`, `e68ff7f`) were based on `feat/elios3-motion-more`, not `feature/live-scan`, so they replaced the phone's newer Learn L3 / Home L3 / Daily Guides motion build. Rebased onto `origin/feature/live-scan` 93b98cd and reinstalled APP_COMMIT `59f5b19` (`adb install -r`, no data clear).
 - Checked: Home L3 (Lv2, 220, no re-firing celebration), Learn L3 (archive polaroid stack, new bubbles, 8 of 36 clovers, 22 %). All 5 History files md5-identical. Left on Home.
