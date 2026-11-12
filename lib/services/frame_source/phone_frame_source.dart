@@ -1,7 +1,7 @@
 import 'package:elio/l10n/l10n.dart';
 import 'dart:async';
 import 'package:camera/camera.dart';
-import 'package:camera_macos/camera_macos.dart';
+import 'package:camera_macos/camera_macos.dart' hide FlashMode;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show DeviceOrientation;
@@ -58,6 +58,20 @@ class PhoneFrameSource extends FrameSource {
 
   @override
   String? get error => _errorMsg;
+
+  /// The phone's light, for dim rooms (Scan & quiz flash button).
+  bool torch = false;
+  Future<void> toggleTorch() async {
+    final c = _controller;
+    if (c == null || !c.value.isInitialized) return;
+    try {
+      await c.setFlashMode(torch ? FlashMode.off : FlashMode.torch);
+      torch = !torch;
+    } catch (_) {
+      torch = false; // no flash unit (front camera, some tablets)
+    }
+    notifyListeners();
+  }
 
   @override
   Stream<CapturedFrame> get frames => _frameController.stream;

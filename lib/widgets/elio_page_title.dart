@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../Screens/home/home_parts.dart' show homeWeight;
 import '../theme/elio_tokens.dart';
 import 'learn/learn_ui.dart';
 
@@ -29,9 +30,9 @@ class ElioPageTitle extends StatelessWidget {
       header: true,
       child: Text(
         title,
-        style: ElioTokens.body.copyWith(
+        // homeWeight: copyWith(fontWeight:) alone leaves the variable font regular.
+        style: homeWeight(ElioTokens.body, 700).copyWith(
           fontSize: onBack == null ? 36 : 28,
-          fontWeight: FontWeight.w700,
           height: 1.2,
           letterSpacing: onBack == null ? -0.72 : -0.28,
           color: p.textPrimary,

@@ -5503,4 +5503,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get histNotSyncedShort => 'Not synced';
+
+  @override
+  String get scanResultTitle => 'Scan result';
+
+  @override
+  String get scanIdentified => 'Identified';
+
+  @override
+  String get scanIdentifying => 'Identifying…';
+
+  @override
+  String get scanBinRecyclable => 'Recyclable bin (Anorganik)';
+
+  @override
+  String get scanBinOrganic => 'Organic bin (Organik)';
+
+  @override
+  String get scanBinB3 => 'Hazardous bin (B3)';
+
+  @override
+  String get scanBinResidu => 'Residual bin (Residu)';
+
+  @override
+  String get scanQuizReady => 'Your quiz is ready';
+
+  @override
+  String get scanQuizWriting => 'Writing your quiz…';
+
+  @override
+  String scanQuizQuestions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count questions',
+      one: '1 question',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanRetake => 'Retake';
+
+  @override
+  String get scanStartQuiz => 'Start quiz';
+
+  @override
+  String get scanSkipQuestion => 'Skip question';
+
+  @override
+  String get scanJustNowPhone => 'Just now · Phone';
+
+  @override
+  String get scanFlash => 'Flash';
 }

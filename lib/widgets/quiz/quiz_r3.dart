@@ -2951,9 +2951,13 @@ class QuizCountdown extends StatefulWidget {
     super.key,
     required this.seconds,
     required this.onTimeUp,
+    this.chip = false,
   });
   final int seconds;
   final VoidCallback onTimeUp;
+
+  /// The warning-tinted m:ss chip of the full-screen question (629:90826).
+  final bool chip;
 
   @override
   State<QuizCountdown> createState() => _QuizCountdownState();
@@ -2968,6 +2972,10 @@ class _QuizCountdownState extends State<QuizCountdown> {
     super.initState();
     _tick = Timer.periodic(const Duration(seconds: 1), (t) {
       setState(() => _left--);
+      // Figma 13 · 28: a tick per second in the last 3 s, no haptics.
+      if (_left > 0 && _left <= 3) {
+        unawaited(ElioSound.instance.play(ElioSfx.tick));
+      }
       if (_left <= 0) {
         t.cancel();
         widget.onTimeUp();
@@ -2985,6 +2993,50 @@ class _QuizCountdownState extends State<QuizCountdown> {
   Widget build(BuildContext context) {
     final p = context.elio;
     final low = _left <= 10;
+    if (widget.chip) {
+      final tint = historyTint(
+        p,
+        low ? HistoryTone.error : HistoryTone.warning,
+      );
+      return Semantics(
+        liveRegion: low,
+        label: l10n.qzTimeLeft(_left),
+        excludeSemantics: true,
+        // Last 10 s: the chip pulses once per second.
+        child: TweenAnimationBuilder<double>(
+          key: ValueKey(low ? _left : -1),
+          tween: Tween(
+            begin: low && !ElioMotion.reduced(context) ? 1.12 : 1,
+            end: 1,
+          ),
+          duration: ElioMotion.slow,
+          curve: ElioMotion.standard,
+          builder: (context, v, child) =>
+              Transform.scale(scale: v, child: child),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: ShapeDecoration(
+              color: tint.bg,
+              shape: const StadiumBorder(),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.schedule_rounded, size: 14, color: tint.fg),
+                const SizedBox(width: 4),
+                Text(
+                  '${_left ~/ 60}:${(_left % 60).toString().padLeft(2, '0')}',
+                  style: _sq(ElioTokens.bodySmall, 600, tint.fg).copyWith(
+                    height: 1.4,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return Semantics(
       liveRegion: low,
       label: l10n.qzTimeLeft(_left),

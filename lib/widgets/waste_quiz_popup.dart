@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -21,12 +23,17 @@ import '../services/quiz_explanation_service.dart';
 import '../services/quiz_pdf_service.dart';
 import '../services/quiz_tts_service.dart';
 import '../services/scan_record_store.dart';
+import '../Screens/home/home_parts.dart' show homeArt, homeWeight;
+import '../services/elio_feedback.dart';
 import '../theme/elio_learning_colors.dart';
+import '../theme/elio_motion.dart';
 import '../theme/elio_tokens.dart';
+import 'history_ui.dart' show HistoryTone, historyTint;
 import 'learn/learn_ui.dart' show LearnTheme;
 import 'package:elio/l10n/l10n.dart';
 
 part 'quiz/quiz_r3.dart';
+part 'quiz/quiz_scan_pages.dart';
 
 /// Scan-triggered quiz popup (Figma: "Android Compact · Quiz Popup").
 ///

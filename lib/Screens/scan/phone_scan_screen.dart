@@ -1,6 +1,6 @@
 // ELIOS 3 Scan & quiz with the phone, portrait (Figma 629:90736): full-screen
 // camera, viewfinder corners, shutter and the question-source chip. The
-// identify → quiz steps are the existing quiz popup (decision 0198).
+// identify → quiz steps are the full-screen ScanQuizPages (decision 0216).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -45,6 +45,7 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
   late final WasteQuizNotifier _quiz = ref.read(wasteQuizProvider.notifier);
   bool _capturing = false;
   int _shots = 0;
+  bool _down = false;
 
   @override
   void initState() {
@@ -176,11 +177,55 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
                                 ),
                               ),
                             ),
+                            const Spacer(),
+                            // Flash (629:90736): lights dim rooms, glows when on.
+                            IconButton(
+                              key: const ValueKey('scan_flash'),
+                              tooltip: l10n.scanFlash,
+                              isSelected: _source.torch,
+                              onPressed: ready
+                                  ? () {
+                                      _source.torch
+                                          ? elioFeedback(
+                                              ElioSfx.toggleOff,
+                                              ElioHaptics.select,
+                                            )
+                                          : elioFeedback(
+                                              ElioSfx.toggleOn,
+                                              ElioHaptics.select,
+                                            );
+                                      _source.toggleTorch();
+                                    }
+                                  : null,
+                              style: IconButton.styleFrom(
+                                backgroundColor: _source.torch
+                                    ? p.primary
+                                    : scrim,
+                                minimumSize: const Size.square(48),
+                              ),
+                              icon: AnimatedRotation(
+                                turns: _source.torch ? 0.04 : 0,
+                                duration: ElioMotion.base,
+                                curve: ElioMotion.pop,
+                                child: Icon(
+                                  _source.torch
+                                      ? Icons.flash_on_rounded
+                                      : Icons.flash_off_rounded,
+                                  color: _source.torch
+                                      ? p.onPrimary
+                                      : Colors.white,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       const Spacer(),
-                      _Pill(text: l10n.scanHoldSteady, color: scrim),
+                      ElioPopIn(
+                        rise: 12,
+                        delay: const Duration(milliseconds: 120),
+                        child: _Pill(text: l10n.scanHoldSteady, color: scrim),
+                      ),
                       SizedBox(height: phoneScanBox.height + 48),
                       const Spacer(),
                       Padding(
@@ -195,6 +240,10 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
                               onTap: ready ? _capture : null,
                               child: GestureDetector(
                                 onTap: ready ? _capture : null,
+                                onTapDown: (_) => setState(() => _down = true),
+                                onTapUp: (_) => setState(() => _down = false),
+                                onTapCancel: () =>
+                                    setState(() => _down = false),
                                 child: Container(
                                   width: 76,
                                   height: 76,
@@ -206,12 +255,17 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
                                       width: 4,
                                     ),
                                   ),
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      color: _capturing || !ready
-                                          ? p.primary.withValues(alpha: 0.5)
-                                          : p.primary,
-                                      shape: BoxShape.circle,
+                                  // Shutter: the inner circle scales 0.85 (90 ms).
+                                  child: AnimatedScale(
+                                    scale: _down || _capturing ? 0.85 : 1,
+                                    duration: ElioMotion.instant,
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        color: _capturing || !ready
+                                            ? p.primary.withValues(alpha: 0.5)
+                                            : p.primary,
+                                        shape: BoxShape.circle,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -220,14 +274,21 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
                             Expanded(
                               child: Align(
                                 alignment: Alignment.centerRight,
-                                child: _Pill(
-                                  text: source == QuestionSource.ai
-                                      ? l10n.scanAiQuiz
-                                      : l10n.questionBank,
-                                  color: scrim,
-                                  icon: source == QuestionSource.ai
-                                      ? Icons.auto_awesome_rounded
-                                      : Icons.storage_rounded,
+                                child: ElioPopIn(
+                                  rise: 12,
+                                  delay: const Duration(milliseconds: 180),
+                                  child: _Pill(
+                                    text: source == QuestionSource.ai
+                                        ? l10n.scanAiQuiz
+                                        : l10n.questionBank,
+                                    color: scrim,
+                                    icon: source == QuestionSource.ai
+                                        ? null
+                                        : Icons.storage_rounded,
+                                    leading: source == QuestionSource.ai
+                                        ? const EliosAiBadge(size: 20)
+                                        : null,
+                                  ),
                                 ),
                               ),
                             ),
@@ -253,17 +314,10 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
                   ),
                 if (_capturing)
                   const Positioned.fill(
-                    child: ColoredBox(
-                      color: Color(0x59000000),
-                      child: SafeArea(
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(12, 8, 12, 8),
-                          child: QuizPopupSkeleton(),
-                        ),
-                      ),
-                    ),
+                    child: ColoredBox(color: Color(0x59000000)),
                   ),
-                const WasteQuizPopup(showLauncher: false),
+                // Result, question and review fill the screen (decision 0216).
+                const Positioned.fill(child: ScanQuizPages()),
               ],
             ),
           );
@@ -274,18 +328,25 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
 }
 
 class _Pill extends StatelessWidget {
-  const _Pill({required this.text, required this.color, this.icon});
+  const _Pill({
+    required this.text,
+    required this.color,
+    this.icon,
+    this.leading,
+  });
+  final Widget? leading;
   final String text;
   final Color color;
   final IconData? icon;
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+    padding: EdgeInsets.fromLTRB(leading == null ? 12 : 6, 7, 12, 7),
     decoration: ShapeDecoration(color: color, shape: const StadiumBorder()),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (leading != null) ...[leading!, const SizedBox(width: 6)],
         if (icon != null) ...[
           Icon(icon, size: 16, color: Colors.white),
           const SizedBox(width: 6),
