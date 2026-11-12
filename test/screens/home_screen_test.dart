@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' show ImageByteFormat;
 
 import 'package:elio/Screens/home/home_activity.dart';
+import 'package:elio/Screens/home/home_parts.dart';
 import 'package:elio/Screens/home_screen.dart';
 import 'package:elio/models/guide_lesson.dart';
 import 'package:elio/models/home_stats.dart';
@@ -520,6 +521,59 @@ void main() {
     expect(count(), greaterThanOrEqualTo(2), reason: 'at rest at once');
     expect(t.binding.hasScheduledFrame, isFalse);
     expect(sounds, isEmpty);
+  });
+
+  testWidgets('tree, sticker, pebbles and quest cards react to a tap', (
+    t,
+  ) async {
+    final sounds = <ElioSfx>[];
+    var now = DateTime(2026);
+    ElioSound.instance
+      ..sink = ((sfx, _) => sounds.add(sfx))
+      ..isSilent = (() async => false)
+      ..clock = (() => now);
+    addTearDown(() => ElioSound.instance.sink = null);
+    await _pump(t, user: _signedIn, size: const Size(390, 1200));
+    sounds.clear();
+    for (final target in [
+      find.byType(HomeBoing).first, // the eco tree
+      find.text('140 trophies'),
+      find.text('Day streak'),
+      find.text('Scan 3 items today'),
+    ]) {
+      now = now.add(const Duration(seconds: 1));
+      await t.tap(target, warnIfMissed: false);
+      await t.pump(const Duration(milliseconds: 100));
+      expect(t.binding.hasScheduledFrame, isTrue, reason: 'springing');
+      await t.pump(const Duration(seconds: 1));
+    }
+    expect(sounds, [
+      ElioSfx.pop,
+      ElioSfx.sparkleShort,
+      ElioSfx.tick,
+      ElioSfx.pop,
+    ]);
+    expect(find.byType(HomeBoing), findsNWidgets(8));
+  });
+
+  testWidgets('search results and the selected day show thumbnails', (t) async {
+    await _pump(t, user: _signedIn, disableAnimations: true);
+    await t.enterText(find.byType(TextField), 'plas');
+    await t.pump(const Duration(milliseconds: 300));
+    expect(find.byType(HomeThumb), findsNWidgets(4)); // every result row
+    expect(t.getSize(find.byType(HomeThumb).first), const Size(70, 44));
+    await t.pumpWidget(const SizedBox());
+    await _pump(
+      t,
+      user: _signedIn,
+      size: const Size(390, 2300),
+      disableAnimations: true,
+    );
+    await t.tap(find.text('Month'));
+    await t.pump();
+    await t.tap(find.bySemanticsLabel('30 October, 2 scans'));
+    await t.pump();
+    expect(find.byType(HomeThumb), findsNWidgets(2));
   });
 
   testWidgets('lower sections play when scrolled into view', (t) async {

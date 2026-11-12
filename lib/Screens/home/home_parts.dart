@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../models/home_stats.dart';
+import '../../services/elio_feedback.dart';
 import '../../theme/elio_motion.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/auth/auth_widgets.dart' show authPalette;
@@ -532,4 +533,103 @@ class _HomeRevealState extends State<HomeReveal>
 
   @override
   Widget build(BuildContext context) => widget.builder(context, _a);
+}
+
+/// Row thumbnail (Figma 739:30806): 70 × 44 surface frame, the cover inset 3
+/// with radius 7. Search results and the selected day's scans.
+class HomeThumb extends StatelessWidget {
+  const HomeThumb({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
+    return Container(
+      width: 70,
+      height: 44,
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: p.surface,
+        border: Border.all(color: p.borderSubtle),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(7),
+        child: ColoredBox(
+          color: p.surfaceRaised,
+          child: SizedBox.expand(child: ExcludeSemantics(child: child)),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tap reaction: the child springs (scale ±[amp], wobble ±[turn] radians,
+/// 500 ms) with [sfx] and [haptic]. Reduced motion keeps only the feedback.
+class HomeBoing extends StatefulWidget {
+  const HomeBoing({
+    super.key,
+    required this.child,
+    this.amp = 0.1,
+    this.turn = 0,
+    this.sfx = ElioSfx.pop,
+    this.haptic = ElioHaptics.light,
+    this.alignment = Alignment.center,
+  });
+  final Widget child;
+  final double amp, turn;
+  final ElioSfx sfx;
+  final void Function() haptic;
+  final Alignment alignment;
+
+  @override
+  State<HomeBoing> createState() => _HomeBoingState();
+}
+
+class _HomeBoingState extends State<HomeBoing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+      vsync: this,
+      value: 1,
+      duration: const Duration(milliseconds: 500),
+    );
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  void _tap() {
+    elioFeedback(widget.sfx, widget.haptic);
+    if (!ElioMotion.reduced(context)) _c.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: _tap,
+    child: AnimatedBuilder(
+      animation: _c,
+      child: widget.child,
+      builder: (context, child) {
+        final t = _c.value, fade = 1 - t;
+        return Transform.rotate(
+          angle: widget.turn * math.sin(t * math.pi * 4) * fade,
+          alignment: widget.alignment,
+          child: Transform.scale(
+            scale: 1 + widget.amp * math.sin(t * math.pi * 3) * fade,
+            alignment: widget.alignment,
+            child: child,
+          ),
+        );
+      },
+    ),
+  );
 }

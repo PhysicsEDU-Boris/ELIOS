@@ -40,7 +40,14 @@ import '../theme/elio_tokens.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
 import '../widgets/elio_celebration.dart';
 import '../widgets/history_ui.dart'
-    show HistoryScanCard, HistoryTone, historyDay, historyTint;
+    show
+        HistoryScanCard,
+        HistoryTone,
+        historyDay,
+        historyPhotoImage,
+        historyTint;
+import '../widgets/learn/learn_ui.dart' show LearnIllustration, LearnThumbnail;
+import 'tabs/elearning/learn_content.dart' show LearnArt;
 import '../widgets/home_notifications_sheet.dart';
 import '../widgets/splash/elio_leaf.dart' show ElioMark;
 import 'home/home_activity.dart';
@@ -526,6 +533,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               v.durationLabel,
             ].where((s) => s.isNotEmpty).join(' · '),
             icon: Icons.play_circle_outline_rounded,
+            thumb: LearnThumbnail(
+              url: v.thumbnailUrl,
+              fallbackAsset: LearnArt.cover(v.moduleId),
+            ),
             onTap: () => _resume(LearningResumeType.video, v.id, v.moduleId),
           ),
       for (final g in _guides ?? const <GuideLesson>[])
@@ -538,6 +549,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               g.moduleTitle,
             ].where((s) => s.isNotEmpty).join(' · '),
             icon: Icons.description_outlined,
+            thumb: LearnThumbnail(
+              url: g.coverUrl,
+              fallbackAsset: LearnArt.guideThumb(g.moduleId),
+            ),
             onTap: () => _resume(LearningResumeType.guide, g.id, g.moduleId),
           ),
       for (final s in physicsModules)
@@ -547,6 +562,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             title: s.title,
             subtitle: s.tag,
             icon: s.icon,
+            thumb: LearnIllustration(
+              LearnArt.simulation(s.id),
+              fit: BoxFit.cover,
+            ),
             onTap: () => openSimulation(context, ref, s),
           ),
       for (final s in _quizSets)
@@ -560,6 +579,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 'best $best%',
             ].join(' · '),
             icon: Icons.help_outline_rounded,
+            thumb: const LearnIllustration(
+              LearnArt.quizThumb,
+              fit: BoxFit.cover,
+            ),
             onTap: () => _resume(LearningResumeType.quiz, s.id, s.moduleId),
           ),
       for (final r in [
@@ -574,6 +597,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               r.trophies,
             ),
             bin: HomeBin.of(r.category),
+            thumb: historyPhotoImage(r),
             onTap: () => _goTab(_historyTab),
           ),
     ];
@@ -1392,10 +1416,16 @@ class _Hero extends StatelessWidget {
                     alignment: Alignment.bottomCenter,
                     child: child,
                   ),
-                  child: homeArt(
-                    level.levelNumber >= 3 ? 'tree_lv3' : 'sprout_lv1',
-                    width: 156,
-                    height: 161,
+                  // Tap: the tree springs and rustles.
+                  child: HomeBoing(
+                    amp: 0.12,
+                    turn: 0.07,
+                    alignment: Alignment.bottomCenter,
+                    child: homeArt(
+                      level.levelNumber >= 3 ? 'tree_lv3' : 'sprout_lv1',
+                      width: 156,
+                      height: 161,
+                    ),
                   ),
                 ),
               ),
@@ -1436,7 +1466,13 @@ class _Hero extends StatelessWidget {
                 turn: 0.35,
                 scale: 0.7,
                 curve: ElioMotion.pop,
-                child: sticker,
+                // Tap: the sticker wobbles with a trophy sparkle.
+                child: HomeBoing(
+                  amp: 0.14,
+                  turn: 0.18,
+                  sfx: ElioSfx.sparkleShort,
+                  child: sticker,
+                ),
               ),
             ),
             Positioned(
@@ -1613,39 +1649,45 @@ class _StatsRow extends StatelessWidget {
                   rise: 28,
                   scale: 0.4,
                   curve: ElioMotion.pop,
-                  child: Semantics(
-                    label: l10n.a11yLabelValue(
-                      s.$3,
-                      s.$2 == '—' ? l10n.noData : s.$2,
-                    ),
-                    container: true,
-                    excludeSemantics: true,
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: DecoratedBox(
-                        decoration: ShapeDecoration(
-                          color: s.$4,
-                          shape: CircleBorder(
-                            side: BorderSide(color: p.borderSubtle),
+                  // Tap: the pebble bounces.
+                  child: HomeBoing(
+                    amp: 0.1,
+                    sfx: ElioSfx.tick,
+                    haptic: ElioHaptics.select,
+                    child: Semantics(
+                      label: l10n.a11yLabelValue(
+                        s.$3,
+                        s.$2 == '—' ? l10n.noData : s.$2,
+                      ),
+                      container: true,
+                      excludeSemantics: true,
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: DecoratedBox(
+                          decoration: ShapeDecoration(
+                            color: s.$4,
+                            shape: CircleBorder(
+                              side: BorderSide(color: p.borderSubtle),
+                            ),
                           ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                s.$1,
-                                _Count(
-                                  a,
-                                  _ms(860 + i * 110),
-                                  1,
-                                  s.$2,
-                                  style: homeNumber(p, 28),
-                                ),
-                                Text(s.$3, style: homeCaption(p)),
-                              ],
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  s.$1,
+                                  _Count(
+                                    a,
+                                    _ms(860 + i * 110),
+                                    1,
+                                    s.$2,
+                                    style: homeNumber(p, 28),
+                                  ),
+                                  Text(s.$3, style: homeCaption(p)),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -1874,13 +1916,19 @@ class _Quests extends StatelessWidget {
                       offset: Offset(0, i % 3 == 1 ? 0 : 16),
                       child: Transform.rotate(
                         angle: tilt[i % 3],
-                        child: _QuestCard(
-                          quest: q,
-                          art: art[i % 3].$1,
-                          tone: art[i % 3].$2,
-                          radius: i.isOdd ? _leafFlip : _leaf,
-                          a: a,
-                          at: 0.34 + 0.12 * i,
+                        // Tap: the card wobbles; a finished quest chimes.
+                        child: HomeBoing(
+                          amp: 0.06,
+                          turn: 0.05,
+                          sfx: q.done ? ElioSfx.chime : ElioSfx.pop,
+                          child: _QuestCard(
+                            quest: q,
+                            art: art[i % 3].$1,
+                            tone: art[i % 3].$2,
+                            radius: i.isOdd ? _leafFlip : _leaf,
+                            a: a,
+                            at: 0.34 + 0.12 * i,
+                          ),
                         ),
                       ),
                     ),

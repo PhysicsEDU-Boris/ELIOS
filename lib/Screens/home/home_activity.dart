@@ -9,7 +9,8 @@ import '../../models/scan_record.dart';
 import '../../theme/elio_motion.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/auth/auth_widgets.dart' show authPalette;
-import '../../widgets/history_ui.dart' show HistoryTone, historyTint;
+import '../../widgets/history_ui.dart'
+    show HistoryTone, historyPhotoImage, historyTint;
 import 'home_parts.dart';
 import 'package:elio/l10n/l10n.dart';
 
@@ -428,15 +429,18 @@ class DayScans extends StatelessWidget {
   }
 
   Widget _row(ElioPalette p, ScanRecord r) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
     child: Row(
       children: [
+        HomeThumb(child: historyPhotoImage(r)),
+        const SizedBox(width: 12),
         Expanded(
           child: Text(
             r.itemName,
             style: ElioTokens.body.copyWith(color: p.textPrimary),
           ),
         ),
+        const SizedBox(width: 8),
         BinChip(HomeBin.of(r.category)),
         const SizedBox(width: 12),
         TrophyAmount('+${r.trophies}'),
