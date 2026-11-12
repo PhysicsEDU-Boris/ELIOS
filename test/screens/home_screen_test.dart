@@ -247,10 +247,10 @@ void main() {
       expect(t.takeException(), isNull);
       expect(find.text('25'), findsWidgets); // total scans
       expect(find.text('Eco Starter'), findsOneWidget); // 140 < 150 (0210)
-      expect(find.text('140 trophies'), findsOneWidget);
+      expect(find.text('140 XP'), findsOneWidget);
       expect(
         find.text(
-          '10 trophies to Level 2 · your tree grows with every trophy',
+          '10 XP to Level 2 · your tree grows as you earn XP',
         ),
         findsOneWidget,
       );
@@ -304,7 +304,7 @@ void main() {
       );
       expect(find.text('Eco Starter'), findsOneWidget);
       expect(
-        find.text('Plant your first trophy: scan an item.'),
+        find.text('Earn your first XP: scan an item.'),
         findsOneWidget,
       );
       expect(find.text('No scans in the last 17 weeks'), findsOneWidget);
@@ -537,7 +537,7 @@ void main() {
     sounds.clear();
     for (final target in [
       find.byType(HomeBoing).first, // the eco tree
-      find.text('140 trophies'),
+      find.text('140 XP'),
       find.text('Day streak'),
       find.text('Scan 3 items today'),
     ]) {

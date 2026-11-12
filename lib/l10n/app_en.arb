@@ -39,7 +39,7 @@
   "homeScanActivity": "Scan activity",
   "homeFirstScanToday": "Your first scan lights up today",
   "homeScanItem": "Scan an item",
-  "homeTrophies": "{count} trophies",
+  "homeTrophies": "{count} XP",
   "@homeTrophies": {
     "placeholders": {
       "count": {
@@ -335,7 +335,7 @@
     }
   },
   "homeGuestProgress": "Guest progress is stored on this device. Sign in to sync it across devices.",
-  "levelSemantics": "Level {level}, {title}. {trophies} trophies",
+  "levelSemantics": "Level {level}, {title}. {trophies} XP",
   "@levelSemantics": {
     "placeholders": {
       "level": {
@@ -369,8 +369,8 @@
       }
     }
   },
-  "homePlantFirst": "Plant your first trophy: scan an item.",
-  "homeTreeGrows": "Your tree grows with every trophy.",
+  "homePlantFirst": "Earn your first XP: scan an item.",
+  "homeTreeGrows": "Your tree grows as you earn XP.",
   "homeTopLevel": "Top level",
   "homeToNextLevel": "{count} to Lv{next}",
   "@homeToNextLevel": {
@@ -401,7 +401,7 @@
       }
     }
   },
-  "questSemantics": "{title}, {state}. Reward {reward} trophies",
+  "questSemantics": "{title}, {state}. Reward {reward} XP",
   "@questSemantics": {
     "placeholders": {
       "title": {
@@ -858,7 +858,7 @@
   "guideGrabTitle": "Grab the item",
   "guideGrabBody": "When the item is close, press PICK UP. RELEASE drops it. HOME parks the arm.",
   "guideQuizTitle": "Answer the quiz",
-  "guideQuizBody": "After each scan ELIOS AI asks a question. Tap here to open it and win trophies!",
+  "guideQuizBody": "After each scan ELIOS AI asks a question. Tap here to open it and earn XP!",
   "guideStepOf": "STEP {step} OF {total}",
   "@guideStepOf": {
     "placeholders": {
@@ -872,7 +872,7 @@
   },
   "guideSkip": "Skip",
   "guideNext": "Next",
-  "guideIntro": "Drive to an item, grab it, sort it, then answer ELIOS AI to earn trophies. Tap Guide any time to replay this.",
+  "guideIntro": "Drive to an item, grab it, sort it, then answer ELIOS AI to earn XP. Tap Guide any time to replay this.",
   "r2JoystickHint": "Joystick: slide to steer, let go to stop",
   "r2SpeedValue": "Speed {value}",
   "@r2SpeedValue": {
@@ -898,8 +898,8 @@
   "dsTestMode": "Test mode",
   "histSavedLocal": "Saved locally",
   "histTitle": "Scan History",
-  "histSubtitleShort": "Quiz results & trophies",
-  "histSubtitle": "Every item you scanned, with its quiz results and trophies",
+  "histSubtitleShort": "Quiz results & XP",
+  "histSubtitle": "Every item you scanned, with its quiz results and XP",
   "histPickLeft": "Pick a scan on the left to see the quiz details.",
   "histRecent": "Recent scans",
   "histSeedDebug": "Seed Sample Data (Debug)",
@@ -927,7 +927,7 @@
       }
     }
   },
-  "hist10Trophies": "10 trophies per right answer",
+  "hist10Trophies": "10 XP per right answer",
   "histQuestions": "Questions",
   "histPending": "Pending",
   "histCorrect": "Correct",
@@ -936,7 +936,7 @@
   "histRightAnswer": "RIGHT ANSWER",
   "histScore": "SCORE",
   "awaitingGrading": "Awaiting grading",
-  "histEssayScore": "{score} / 10 · +{trophies} trophies",
+  "histEssayScore": "{score} / 10 · +{trophies} XP",
   "@histEssayScore": {
     "placeholders": {
       "score": {
@@ -1022,7 +1022,7 @@
   "quizWord": "Quiz",
   "scanFailed": "Scan did not work",
   "wasteGeneric": "Waste",
-  "trophiesEarned": "+{count} trophies",
+  "trophiesEarned": "+{count} XP",
   "@trophiesEarned": {
     "placeholders": {
       "count": {
@@ -1030,7 +1030,7 @@
       }
     }
   },
-  "trophiesTotal": "{count} total trophies",
+  "trophiesTotal": "{count} XP total",
   "@trophiesTotal": {
     "placeholders": {
       "count": {
@@ -1107,8 +1107,8 @@
   },
   "qzSkipFinish": "Skip and finish",
   "qzSkip": "Skip",
-  "qzUpTo10": "Up to +10 trophies for a full answer",
-  "qz10Right": "+10 trophies for a right answer",
+  "qzUpTo10": "Up to +10 XP for a full answer",
+  "qz10Right": "+10 XP for a right answer",
   "qzEssayCaps": "ESSAY · {level} · MAX {words} WORDS",
   "@qzEssayCaps": {
     "placeholders": {
@@ -1224,7 +1224,7 @@
   "qzQuestionCaps": "QUESTION",
   "qzCorrectAnswerCaps": "CORRECT ANSWER",
   "qzLoadingExplanation": "Loading the explanation…",
-  "qzSavedNoTrophies": "Your answer is saved. ELIOS AI grades it when it is ready; no trophies until then.",
+  "qzSavedNoTrophies": "Your answer is saved. ELIOS AI grades it when it is ready; no XP until then.",
   "qzFeedback": "Feedback",
   "qzWhyWrong": "Why your answer is not right",
   "qzWhyRight": "Why the correct answer is right",
@@ -1273,7 +1273,7 @@
   "qzExplanation": "Explanation",
   "ovEssayMax": "Essay · max 150 words",
   "ovPendingSub": "Answer saved. No score yet.",
-  "ovEssayScore": "Score: {score}/10 · +{score} trophies",
+  "ovEssayScore": "Score: {score}/10 · +{score} XP",
   "@ovEssayScore": {
     "placeholders": {
       "score": {
@@ -1283,7 +1283,7 @@
   },
   "ovGood": "Good answer!",
   "ovNeedsWork": "A few points need work.",
-  "ovRight": "Correct! +10 trophies",
+  "ovRight": "Correct! +10 XP",
   "ovWrong": "Not quite right",
   "ovRightAnswer": "Right answer: {answer}",
   "@ovRightAnswer": {
@@ -1945,7 +1945,7 @@
     }
   },
   "h3Title": "History",
-  "h3Subtitle": "Scan results, quizzes & trophies",
+  "h3Subtitle": "Scan results, quizzes & XP",
   "h3Back": "Back",
   "h3All": "All scans",
   "h3CatB3": "B3",
@@ -1969,7 +1969,7 @@
     }
   },
   "h3NoScansInCategory": "No scans in this category yet.",
-  "h3Trophies": "{count, plural, =1{1 trophy} other{{count} trophies}}",
+  "h3Trophies": "{count, plural, other{{count} XP}}",
   "@h3Trophies": {
     "placeholders": {
       "count": {
@@ -1977,7 +1977,7 @@
       }
     }
   },
-  "h3ToNextLevel": "{count} trophies to Level {level}",
+  "h3ToNextLevel": "{count} XP to Level {level}",
   "@h3ToNextLevel": {
     "placeholders": {
       "count": {
@@ -2039,7 +2039,7 @@
   "h3TryAgain": "Try again",
   "h3Loading": "Loading",
   "h3EmptyTitle": "No scans yet",
-  "h3EmptyBody": "Scan an item with ELIOS and its quiz results and trophies will show up here.",
+  "h3EmptyBody": "Scan an item with ELIOS and its quiz results and XP will show up here.",
   "h3StartScan": "Start scanning",
   "h3ExplanationTitle": "Explanation",
   "h3ExplanationMeta": "{item} · Q{index} of {total}",
@@ -2157,8 +2157,8 @@
       }
     }
   },
-  "pdfTrophies": "Trophies earned",
-  "pdfTrophyCount": "{count} trophies",
+  "pdfTrophies": "XP earned",
+  "pdfTrophyCount": "{count} XP",
   "@pdfTrophyCount": {
     "placeholders": {
       "count": {
@@ -2178,7 +2178,7 @@
       }
     }
   },
-  "pdfEssayLine": "{score} / 10 (+{trophies} trophies)",
+  "pdfEssayLine": "{score} / 10 (+{trophies} XP)",
   "@pdfEssayLine": {
     "placeholders": {
       "score": {
@@ -2224,7 +2224,7 @@
   "pdfColMax": "Max",
   "pdfColAwarded": "Awarded",
   "pdfColComment": "Comment",
-  "a11yTrophies": "{count} trophies",
+  "a11yTrophies": "{count} XP",
   "@a11yTrophies": {
     "placeholders": {
       "count": {
@@ -2232,7 +2232,7 @@
       }
     }
   },
-  "homeScanSubtitle": "{date} · +{count} trophies",
+  "homeScanSubtitle": "{date} · +{count} XP",
   "@homeScanSubtitle": {
     "placeholders": {
       "date": {
@@ -2384,7 +2384,7 @@
       }
     }
   },
-  "ctlPlusTrophies": "+{count} trophies",
+  "ctlPlusTrophies": "+{count} XP",
   "@ctlPlusTrophies": {
     "placeholders": {
       "count": {
@@ -2861,8 +2861,8 @@
       }
     }
   },
-  "h3YourTrophies": "Your trophies",
-  "h3TrophyUnit": "{count, plural, =1{trophy} other{trophies}}",
+  "h3YourTrophies": "Your XP",
+  "h3TrophyUnit": "{count, plural, other{XP}}",
   "@h3TrophyUnit": {
     "placeholders": {
       "count": {
@@ -2870,7 +2870,7 @@
       }
     }
   },
-  "h3StatTrophies": "Trophies",
+  "h3StatTrophies": "XP",
   "h3StatScanned": "Scanned",
   "h3QuestionOf": "Question {index} of {total}",
   "@h3QuestionOf": {
@@ -2887,7 +2887,7 @@
   "h3HeroRightBody": "You got it right. Here's why it works.",
   "h3HeroWrong": "Not quite!",
   "h3HeroWrongBody": "Good try. Let's find out why.",
-  "h3PlusTrophies": "{count, plural, =1{+1 trophy} other{+{count} trophies}}",
+  "h3PlusTrophies": "{count, plural, other{+{count} XP}}",
   "@h3PlusTrophies": {
     "placeholders": {
       "count": {
@@ -2908,7 +2908,7 @@
   },
   "h3MissionDone": "Mission complete: you know how to sort it right.",
   "h3SeeResults": "See results",
-  "h3CardSemantics": "{item}, {category}, {correct} of {total} correct, +{trophies} trophies",
+  "h3CardSemantics": "{item}, {category}, {correct} of {total} correct, +{trophies} XP",
   "@h3CardSemantics": {
     "placeholders": {
       "item": {
@@ -3330,7 +3330,7 @@
   "profileGuestTap": "Tap the picture to sign in or switch account",
   "homeLvShort": "Lv {n}",
   "@homeLvShort": {"placeholders": {"n": {"type": "int"}}},
-  "homeToNextLong": "{count} trophies to Level {level} · your tree grows with every trophy",
+  "homeToNextLong": "{count} XP to Level {level} · your tree grows as you earn XP",
   "@homeToNextLong": {"placeholders": {"count": {"type": "int"}, "level": {"type": "int"}}},
   "homeRobotOverline": "ELIOS robot",
   "homeStillConnected": "Still connected",
@@ -3366,11 +3366,11 @@
   "@contributeWentInto": {"placeholders": {"item": {"type": "String"}, "bin": {"type": "String"}}},
   "contributeBelongs": "{item} belongs in the {bin} bin. Try again!",
   "@contributeBelongs": {"placeholders": {"item": {"type": "String"}, "bin": {"type": "String"}}},
-  "contributeTrophies": "+{count} trophies",
+  "contributeTrophies": "+{count} XP",
   "@contributeTrophies": {"placeholders": {"count": {"type": "int"}}},
   "contributeSaved": "Saved to History as a contribution",
   "contributeAgain": "Contribute again",
-  "scanContributeOverline": "Earn trophies",
+  "scanContributeOverline": "Earn XP",
   "scanContributeBody": "Film yourself putting waste in the right bin. Keep the bin label in view.",
   "contributeRec": "REC {time}",
   "@contributeRec": {"placeholders": {"time": {"type": "String"}}},
@@ -3395,7 +3395,7 @@
   "histPhoneCamera": "phone",
   "histNoDevice": "Scans saved before this update have no device; they are under All.",
   "histAllScans": "All",
-  "h3TrophiesWord": "trophies",
+  "h3TrophiesWord": "XP",
   "celebrateTap": "Tap to continue",
   "celebrateLevelUp": "Level {level}!",
   "@celebrateLevelUp": {"placeholders": {"level": {"type": "int"}}},

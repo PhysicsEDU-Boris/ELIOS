@@ -123,15 +123,15 @@ void main() {
     addTearDown(t.view.reset);
     await t.pumpWidget(app('id'));
     await t.pump();
-    expect(find.text('PIALA KAMU'), findsOneWidget);
+    expect(find.text('XP KAMU'), findsOneWidget);
     expect(find.text('Semua scan'), findsOneWidget);
     expect(find.text('HARI INI'), findsOneWidget);
     await t.pumpWidget(app('en'));
     await t.pump();
-    expect(find.text('YOUR TROPHIES'), findsOneWidget);
+    expect(find.text('YOUR XP'), findsOneWidget);
     expect(find.text('All scans'), findsOneWidget);
     expect(find.text('TODAY'), findsOneWidget);
-    expect(find.text('PIALA KAMU'), findsNothing);
+    expect(find.text('XP KAMU'), findsNothing);
   });
   for (final mode in Brightness.values) {
     final name = mode.name;
@@ -142,7 +142,7 @@ void main() {
         await pump(t, ScanHistoryScreen(store: store), mode);
         expect(find.text('Riwayat'), findsOneWidget);
         expect(find.text('${record.trophies}'), findsOneWidget);
-        expect(find.text('PIALA KAMU'), findsOneWidget);
+        expect(find.text('XP KAMU'), findsOneWidget);
         expect(find.text('HARI INI'), findsOneWidget);
         expect(find.text('Tersimpan lokal'), findsOneWidget);
         await t.tap(find.widgetWithText(HistoryCategoryTile, 'Organik'));

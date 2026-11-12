@@ -106,7 +106,7 @@ void main() {
     expect(name.overflow, TextOverflow.ellipsis);
     // One target per card with the spoken summary.
     expect(
-      find.bySemanticsLabel('$long, Daur ulang, 3 dari 3 benar, +30 piala'),
+      find.bySemanticsLabel('$long, Daur ulang, 3 dari 3 benar, +30 XP'),
       findsOneWidget,
     );
     semantics.dispose();
