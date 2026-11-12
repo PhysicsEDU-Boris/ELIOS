@@ -66,13 +66,16 @@ const _trackedLearningModuleIds = ['organic', 'inorganic', 'hazardous'];
 
 /// What to celebrate now, given what was last seen. A null last value is a
 /// first run on this phone/account: nothing is celebrated, only recorded.
-({bool levelUp, List<int> newMedals}) celebrationsDue({
+/// [seenLevel] never goes down: learning XP arrives after the first frame, and
+/// a brief lower level must not make the real one celebrate again (0206).
+({bool levelUp, List<int> newMedals, int seenLevel}) celebrationsDue({
   required int? lastLevel,
   required int level,
   required Set<int>? lastMedals,
   required Set<int>? medals,
 }) => (
   levelUp: lastLevel != null && level > lastLevel,
+  seenLevel: math.max(level, lastLevel ?? level),
   newMedals: lastMedals == null || medals == null
       ? const []
       : ([...medals.difference(lastMedals)]..sort()),
@@ -782,7 +785,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         lastMedals: prefs.getStringList(medalKey)?.map(int.parse).toSet(),
         medals: medalIds,
       );
-      await prefs.setInt(levelKey, level);
+      await prefs.setInt(levelKey, due.seenLevel);
       if (medalIds != null) {
         await prefs.setStringList(medalKey, [for (final m in medalIds) '$m']);
       }
