@@ -640,7 +640,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get binTop => 'Top';
 
   @override
-  String get residuNote => 'Residu scans count toward Anorganik.';
+  String get residuNote =>
+      'Residu scans count toward Anorganik (the robot sorts residu there).';
 
   @override
   String residuIncluded(Object count, Object scans) {
@@ -3316,6 +3317,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeScansUnit => ' scans';
+
+  @override
+  String get homeOpenHistory => 'Open History';
+
+  @override
+  String homeLatestScan(String item, String when) {
+    return 'Latest: $item · $when';
+  }
 
   @override
   String homeMedalsOf(Object unlocked, Object total) {

@@ -628,7 +628,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get binTop => 'Teratas';
 
   @override
-  String get residuNote => 'Scan residu dihitung sebagai Anorganik.';
+  String get residuNote =>
+      'Scan residu dihitung sebagai Anorganik (robot memilah residu ke sana).';
 
   @override
   String residuIncluded(Object count, Object scans) {
@@ -3252,6 +3253,14 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get homeScansUnit => ' scan';
+
+  @override
+  String get homeOpenHistory => 'Buka Riwayat';
+
+  @override
+  String homeLatestScan(String item, String when) {
+    return 'Terbaru: $item · $when';
+  }
 
   @override
   String homeMedalsOf(Object unlocked, Object total) {

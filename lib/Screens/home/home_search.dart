@@ -40,7 +40,11 @@ class SearchItem {
     required this.onTap,
     this.icon,
     this.bin,
+    this.thumb,
   });
+
+  /// Cover shown in the row's thumbnail frame (Figma 739:30806).
+  final Widget? thumb;
 
   final SearchScope scope;
   final String title, subtitle;
@@ -87,9 +91,9 @@ class HomeSearchField extends StatelessWidget {
       style: ElioTokens.body.copyWith(color: p.textPrimary),
       decoration: InputDecoration(
         filled: true,
-        fillColor: p.field,
+        fillColor: p.surface,
         hintText: l10n.searchHint,
-        hintStyle: ElioTokens.body.copyWith(color: p.textTertiary),
+        hintStyle: ElioTokens.bodySmall.copyWith(color: p.textTertiary),
         hintMaxLines: 1,
         contentPadding: const EdgeInsets.symmetric(vertical: 14),
         prefixIcon: Icon(
@@ -97,7 +101,7 @@ class HomeSearchField extends StatelessWidget {
           color: active ? p.primaryText : p.textSecondary,
         ),
         enabledBorder: border(
-          active ? p.primaryText : p.formBorder,
+          active ? p.primaryText : p.borderSubtle,
           active ? 2 : 1,
         ),
         focusedBorder: border(p.primaryText, 2),
@@ -348,13 +352,16 @@ class _ResultRow extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 56),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
             child: Row(
               children: [
-                item.icon == null
-                    ? homeArt('scan_line_art', width: 24, height: 24)
-                    : Icon(item.icon, color: iconColor),
-                const SizedBox(width: 16),
+                if (item.thumb != null)
+                  HomeThumb(child: item.thumb!)
+                else if (item.icon == null)
+                  homeArt('scan_line_art', width: 24, height: 24)
+                else
+                  Icon(item.icon, color: iconColor),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

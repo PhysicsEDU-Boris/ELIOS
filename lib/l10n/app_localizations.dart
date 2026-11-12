@@ -1211,7 +1211,7 @@ abstract class AppLocalizations {
   /// No description provided for @residuNote.
   ///
   /// In en, this message translates to:
-  /// **'Residu scans count toward Anorganik.'**
+  /// **'Residu scans count toward Anorganik (the robot sorts residu there).'**
   String get residuNote;
 
   /// No description provided for @residuIncluded.
@@ -5814,6 +5814,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **' scans'**
   String get homeScansUnit;
+
+  /// No description provided for @homeOpenHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Open History'**
+  String get homeOpenHistory;
+
+  /// No description provided for @homeLatestScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest: {item} · {when}'**
+  String homeLatestScan(String item, String when);
 
   /// No description provided for @homeMedalsOf.
   ///
