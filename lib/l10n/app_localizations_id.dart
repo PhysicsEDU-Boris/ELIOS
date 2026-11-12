@@ -4495,11 +4495,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String g4IssuesStreak(int count, Object days) {
-    return '$count edisi · beruntun $days hari';
-  }
-
-  @override
   String get g4LabApproved => 'Lab disetujui';
 
   @override
@@ -4760,12 +4755,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String g4StreakDays(Object days) {
-    return 'Beruntun membaca $days hari';
-  }
+  String get g4StreakHint =>
+      'Baca panduan hari ini untuk dapat XP dan semanggi';
 
   @override
-  String get g4StreakHint => 'Baca panduan hari ini agar terus berlanjut';
+  String get g4WeekReading => 'Bacaanmu minggu ini';
 
   @override
   String get g4TakePhoto => 'Ambil foto';

@@ -27,7 +27,6 @@ class GuidesHubSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final feed = ref.watch(dailyGuideFeedProvider).valueOrNull;
     final guides = feed?.guides ?? const <DailyGuide>[];
-    final streak = ref.watch(guideProgressProvider.select((s) => s.streak));
     void openFeed() =>
         Navigator.of(context).push(learnRoute<void>(const DailyGuidesPage()));
     return Column(
@@ -68,7 +67,7 @@ class GuidesHubSection extends ConsumerWidget {
                     Text(
                       guides.isEmpty
                           ? l10n.dailyGuidesDescription
-                          : l10n.g4IssuesStreak(guides.length, streak),
+                          : l10n.g4IssueCount(guides.length),
                       style: context.text.bodySmall?.copyWith(
                         color: context.elio.textSecondary,
                       ),

@@ -7849,12 +7849,6 @@ abstract class AppLocalizations {
   /// **'Issue #{n}'**
   String g4IssueN(Object n);
 
-  /// No description provided for @g4IssuesStreak.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 issue} other{{count} issues}} · {days}-day streak'**
-  String g4IssuesStreak(int count, Object days);
-
   /// No description provided for @g4LabApproved.
   ///
   /// In en, this message translates to:
@@ -8293,17 +8287,17 @@ abstract class AppLocalizations {
   /// **'{done}/3 stops'**
   String g4StopsOf(Object done);
 
-  /// No description provided for @g4StreakDays.
-  ///
-  /// In en, this message translates to:
-  /// **'{days}-day reading streak'**
-  String g4StreakDays(Object days);
-
   /// No description provided for @g4StreakHint.
   ///
   /// In en, this message translates to:
-  /// **'Read today\'s guide to keep it going'**
+  /// **'Read today\'s guide to earn XP and clovers'**
   String get g4StreakHint;
+
+  /// No description provided for @g4WeekReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Your reading this week'**
+  String get g4WeekReading;
 
   /// No description provided for @g4TakePhoto.
   ///

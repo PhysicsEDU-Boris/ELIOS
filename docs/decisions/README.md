@@ -80,3 +80,4 @@ their status changed.
 - [0211](0211-clovers-completion.md) Clovers count finished learning
 - [0212](0212-lesson-xp.md) Videos, module guides and lesson quizzes give XP
 - [0213](0213-trophies-to-xp.md) "Trophies" become "XP" everywhere
+- [0214](0214-scoring-finish.md) Module % from clovers, one streak
