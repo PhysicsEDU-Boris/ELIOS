@@ -257,7 +257,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeTrophies.
   ///
   /// In en, this message translates to:
-  /// **'{count} trophies'**
+  /// **'{count} XP'**
   String homeTrophies(Object count);
 
   /// No description provided for @homeDailyQuests.
@@ -1103,7 +1103,7 @@ abstract class AppLocalizations {
   /// No description provided for @levelSemantics.
   ///
   /// In en, this message translates to:
-  /// **'Level {level}, {title}. {trophies} trophies'**
+  /// **'Level {level}, {title}. {trophies} XP'**
   String levelSemantics(Object level, Object title, Object trophies);
 
   /// No description provided for @levelSemanticsTop.
@@ -1127,13 +1127,13 @@ abstract class AppLocalizations {
   /// No description provided for @homePlantFirst.
   ///
   /// In en, this message translates to:
-  /// **'Plant your first trophy: scan an item.'**
+  /// **'Earn your first XP: scan an item.'**
   String get homePlantFirst;
 
   /// No description provided for @homeTreeGrows.
   ///
   /// In en, this message translates to:
-  /// **'Your tree grows with every trophy.'**
+  /// **'Your tree grows as you earn XP.'**
   String get homeTreeGrows;
 
   /// No description provided for @homeTopLevel.
@@ -1175,7 +1175,7 @@ abstract class AppLocalizations {
   /// No description provided for @questSemantics.
   ///
   /// In en, this message translates to:
-  /// **'{title}, {state}. Reward {reward} trophies'**
+  /// **'{title}, {state}. Reward {reward} XP'**
   String questSemantics(Object title, Object state, Object reward);
 
   /// No description provided for @questDone.
@@ -2525,7 +2525,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideQuizBody.
   ///
   /// In en, this message translates to:
-  /// **'After each scan ELIOS AI asks a question. Tap here to open it and win trophies!'**
+  /// **'After each scan ELIOS AI asks a question. Tap here to open it and earn XP!'**
   String get guideQuizBody;
 
   /// No description provided for @guideStepOf.
@@ -2549,7 +2549,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideIntro.
   ///
   /// In en, this message translates to:
-  /// **'Drive to an item, grab it, sort it, then answer ELIOS AI to earn trophies. Tap Guide any time to replay this.'**
+  /// **'Drive to an item, grab it, sort it, then answer ELIOS AI to earn XP. Tap Guide any time to replay this.'**
   String get guideIntro;
 
   /// No description provided for @r2JoystickHint.
@@ -2663,13 +2663,13 @@ abstract class AppLocalizations {
   /// No description provided for @histSubtitleShort.
   ///
   /// In en, this message translates to:
-  /// **'Quiz results & trophies'**
+  /// **'Quiz results & XP'**
   String get histSubtitleShort;
 
   /// No description provided for @histSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Every item you scanned, with its quiz results and trophies'**
+  /// **'Every item you scanned, with its quiz results and XP'**
   String get histSubtitle;
 
   /// No description provided for @histPickLeft.
@@ -2717,7 +2717,7 @@ abstract class AppLocalizations {
   /// No description provided for @hist10Trophies.
   ///
   /// In en, this message translates to:
-  /// **'10 trophies per right answer'**
+  /// **'10 XP per right answer'**
   String get hist10Trophies;
 
   /// No description provided for @histQuestions.
@@ -2771,7 +2771,7 @@ abstract class AppLocalizations {
   /// No description provided for @histEssayScore.
   ///
   /// In en, this message translates to:
-  /// **'{score} / 10 · +{trophies} trophies'**
+  /// **'{score} / 10 · +{trophies} XP'**
   String histEssayScore(Object score, Object trophies);
 
   /// No description provided for @histHideExplanation.
@@ -3185,13 +3185,13 @@ abstract class AppLocalizations {
   /// No description provided for @trophiesEarned.
   ///
   /// In en, this message translates to:
-  /// **'+{count} trophies'**
+  /// **'+{count} XP'**
   String trophiesEarned(Object count);
 
   /// No description provided for @trophiesTotal.
   ///
   /// In en, this message translates to:
-  /// **'{count} total trophies'**
+  /// **'{count} XP total'**
   String trophiesTotal(Object count);
 
   /// No description provided for @robotDropping.
@@ -3347,13 +3347,13 @@ abstract class AppLocalizations {
   /// No description provided for @qzUpTo10.
   ///
   /// In en, this message translates to:
-  /// **'Up to +10 trophies for a full answer'**
+  /// **'Up to +10 XP for a full answer'**
   String get qzUpTo10;
 
   /// No description provided for @qz10Right.
   ///
   /// In en, this message translates to:
-  /// **'+10 trophies for a right answer'**
+  /// **'+10 XP for a right answer'**
   String get qz10Right;
 
   /// No description provided for @qzEssayCaps.
@@ -3568,7 +3568,7 @@ abstract class AppLocalizations {
   /// No description provided for @qzSavedNoTrophies.
   ///
   /// In en, this message translates to:
-  /// **'Your answer is saved. ELIOS AI grades it when it is ready; no trophies until then.'**
+  /// **'Your answer is saved. ELIOS AI grades it when it is ready; no XP until then.'**
   String get qzSavedNoTrophies;
 
   /// No description provided for @qzFeedback.
@@ -3820,7 +3820,7 @@ abstract class AppLocalizations {
   /// No description provided for @ovEssayScore.
   ///
   /// In en, this message translates to:
-  /// **'Score: {score}/10 · +{score} trophies'**
+  /// **'Score: {score}/10 · +{score} XP'**
   String ovEssayScore(Object score);
 
   /// No description provided for @ovGood.
@@ -3838,7 +3838,7 @@ abstract class AppLocalizations {
   /// No description provided for @ovRight.
   ///
   /// In en, this message translates to:
-  /// **'Correct! +10 trophies'**
+  /// **'Correct! +10 XP'**
   String get ovRight;
 
   /// No description provided for @ovWrong.
@@ -5182,7 +5182,7 @@ abstract class AppLocalizations {
   /// No description provided for @h3Subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Scan results, quizzes & trophies'**
+  /// **'Scan results, quizzes & XP'**
   String get h3Subtitle;
 
   /// No description provided for @h3Back.
@@ -5284,13 +5284,13 @@ abstract class AppLocalizations {
   /// No description provided for @h3Trophies.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 trophy} other{{count} trophies}}'**
+  /// **'{count, plural, other{{count} XP}}'**
   String h3Trophies(int count);
 
   /// No description provided for @h3ToNextLevel.
   ///
   /// In en, this message translates to:
-  /// **'{count} trophies to Level {level}'**
+  /// **'{count} XP to Level {level}'**
   String h3ToNextLevel(Object count, Object level);
 
   /// No description provided for @h3TopLevel.
@@ -5440,7 +5440,7 @@ abstract class AppLocalizations {
   /// No description provided for @h3EmptyBody.
   ///
   /// In en, this message translates to:
-  /// **'Scan an item with ELIOS and its quiz results and trophies will show up here.'**
+  /// **'Scan an item with ELIOS and its quiz results and XP will show up here.'**
   String get h3EmptyBody;
 
   /// No description provided for @h3StartScan.
@@ -5668,13 +5668,13 @@ abstract class AppLocalizations {
   /// No description provided for @pdfTrophies.
   ///
   /// In en, this message translates to:
-  /// **'Trophies earned'**
+  /// **'XP earned'**
   String get pdfTrophies;
 
   /// No description provided for @pdfTrophyCount.
   ///
   /// In en, this message translates to:
-  /// **'{count} trophies'**
+  /// **'{count} XP'**
   String pdfTrophyCount(Object count);
 
   /// No description provided for @pdfGrade.
@@ -5692,7 +5692,7 @@ abstract class AppLocalizations {
   /// No description provided for @pdfEssayLine.
   ///
   /// In en, this message translates to:
-  /// **'{score} / 10 (+{trophies} trophies)'**
+  /// **'{score} / 10 (+{trophies} XP)'**
   String pdfEssayLine(Object score, Object trophies);
 
   /// No description provided for @pdfNoExplanation.
@@ -5782,13 +5782,13 @@ abstract class AppLocalizations {
   /// No description provided for @a11yTrophies.
   ///
   /// In en, this message translates to:
-  /// **'{count} trophies'**
+  /// **'{count} XP'**
   String a11yTrophies(Object count);
 
   /// No description provided for @homeScanSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'{date} · +{count} trophies'**
+  /// **'{date} · +{count} XP'**
   String homeScanSubtitle(Object date, Object count);
 
   /// No description provided for @a11yLabelValue.
@@ -5932,7 +5932,7 @@ abstract class AppLocalizations {
   /// No description provided for @ctlPlusTrophies.
   ///
   /// In en, this message translates to:
-  /// **'+{count} trophies'**
+  /// **'+{count} XP'**
   String ctlPlusTrophies(Object count);
 
   /// No description provided for @guideReady.
@@ -7390,19 +7390,19 @@ abstract class AppLocalizations {
   /// No description provided for @h3YourTrophies.
   ///
   /// In en, this message translates to:
-  /// **'Your trophies'**
+  /// **'Your XP'**
   String get h3YourTrophies;
 
   /// No description provided for @h3TrophyUnit.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{trophy} other{trophies}}'**
+  /// **'{count, plural, other{XP}}'**
   String h3TrophyUnit(int count);
 
   /// No description provided for @h3StatTrophies.
   ///
   /// In en, this message translates to:
-  /// **'Trophies'**
+  /// **'XP'**
   String get h3StatTrophies;
 
   /// No description provided for @h3StatScanned.
@@ -7444,7 +7444,7 @@ abstract class AppLocalizations {
   /// No description provided for @h3PlusTrophies.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{+1 trophy} other{+{count} trophies}}'**
+  /// **'{count, plural, other{+{count} XP}}'**
   String h3PlusTrophies(int count);
 
   /// No description provided for @h3TheQuestion.
@@ -7486,7 +7486,7 @@ abstract class AppLocalizations {
   /// No description provided for @h3CardSemantics.
   ///
   /// In en, this message translates to:
-  /// **'{item}, {category}, {correct} of {total} correct, +{trophies} trophies'**
+  /// **'{item}, {category}, {correct} of {total} correct, +{trophies} XP'**
   String h3CardSemantics(
     String item,
     String category,
@@ -8764,7 +8764,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeToNextLong.
   ///
   /// In en, this message translates to:
-  /// **'{count} trophies to Level {level} · your tree grows with every trophy'**
+  /// **'{count} XP to Level {level} · your tree grows as you earn XP'**
   String homeToNextLong(int count, int level);
 
   /// No description provided for @homeRobotOverline.
@@ -8944,7 +8944,7 @@ abstract class AppLocalizations {
   /// No description provided for @contributeTrophies.
   ///
   /// In en, this message translates to:
-  /// **'+{count} trophies'**
+  /// **'+{count} XP'**
   String contributeTrophies(int count);
 
   /// No description provided for @contributeSaved.
@@ -8962,7 +8962,7 @@ abstract class AppLocalizations {
   /// No description provided for @scanContributeOverline.
   ///
   /// In en, this message translates to:
-  /// **'Earn trophies'**
+  /// **'Earn XP'**
   String get scanContributeOverline;
 
   /// No description provided for @scanContributeBody.
@@ -9094,7 +9094,7 @@ abstract class AppLocalizations {
   /// No description provided for @h3TrophiesWord.
   ///
   /// In en, this message translates to:
-  /// **'trophies'**
+  /// **'XP'**
   String get h3TrophiesWord;
 
   /// No description provided for @celebrateTap.

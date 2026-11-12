@@ -103,7 +103,7 @@ void main() {
       await tester.pumpWidget(createSubject(state));
       await tester.pumpAndSettle();
 
-      expect(find.text('Correct! +10 trophies'), findsOneWidget);
+      expect(find.text('Correct! +10 XP'), findsOneWidget);
       expect(find.text('Question 1 of 3'), findsOneWidget);
       expect(find.text('Next question →'), findsOneWidget);
       expect(find.text('AI Correction Assistant'), findsOneWidget);
@@ -230,7 +230,7 @@ void main() {
       await tester.pumpWidget(createEssaySubject(state));
       await tester.pumpAndSettle();
 
-      expect(find.text('Score: 8/10 · +8 trophies'), findsOneWidget);
+      expect(find.text('Score: 8/10 · +8 XP'), findsOneWidget);
       expect(find.text('Table 1. Scoring breakdown'), findsOneWidget);
       expect(find.text('Analisis bahaya logam berat'), findsOneWidget);
       expect(find.text('Essay · max 150 words'), findsOneWidget);

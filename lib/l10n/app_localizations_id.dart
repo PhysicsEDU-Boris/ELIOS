@@ -90,7 +90,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String homeTrophies(Object count) {
-    return '$count trofi';
+    return '$count XP';
   }
 
   @override
@@ -557,7 +557,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String levelSemantics(Object level, Object title, Object trophies) {
-    return 'Level $level, $title. $trophies trofi';
+    return 'Level $level, $title. $trophies XP';
   }
 
   @override
@@ -574,10 +574,10 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get homePlantFirst => 'Tanam trofi pertamamu: scan sebuah benda.';
+  String get homePlantFirst => 'Raih XP pertamamu: scan sebuah benda.';
 
   @override
-  String get homeTreeGrows => 'Pohonmu tumbuh dengan setiap trofi.';
+  String get homeTreeGrows => 'Pohonmu tumbuh setiap kamu dapat XP.';
 
   @override
   String get homeTopLevel => 'Level tertinggi';
@@ -605,7 +605,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String questSemantics(Object title, Object state, Object reward) {
-    return '$title, $state. Hadiah $reward trofi';
+    return '$title, $state. Hadiah $reward XP';
   }
 
   @override
@@ -1354,7 +1354,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get guideQuizBody =>
-      'Setelah tiap scan ELIOS AI memberi pertanyaan. Ketuk di sini untuk membukanya dan menangkan trofi!';
+      'Setelah tiap scan ELIOS AI memberi pertanyaan. Ketuk di sini untuk membukanya dan dapatkan XP!';
 
   @override
   String guideStepOf(Object step, Object total) {
@@ -1369,7 +1369,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get guideIntro =>
-      'Kemudikan ke sebuah benda, ambil, pilah, lalu jawab ELIOS AI untuk mendapat trofi. Ketuk Panduan kapan saja untuk mengulang ini.';
+      'Kemudikan ke sebuah benda, ambil, pilah, lalu jawab ELIOS AI untuk mendapat XP. Ketuk Panduan kapan saja untuk mengulang ini.';
 
   @override
   String get r2JoystickHint =>
@@ -1430,11 +1430,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get histTitle => 'Riwayat Scan';
 
   @override
-  String get histSubtitleShort => 'Hasil kuis & trofi';
+  String get histSubtitleShort => 'Hasil kuis & XP';
 
   @override
   String get histSubtitle =>
-      'Semua benda yang kamu scan, dengan hasil kuis dan trofinya';
+      'Semua benda yang kamu scan, dengan hasil kuis dan XP-nya';
 
   @override
   String get histPickLeft =>
@@ -1463,7 +1463,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get hist10Trophies => '10 trofi untuk tiap jawaban benar';
+  String get hist10Trophies => '10 XP untuk tiap jawaban benar';
 
   @override
   String get histQuestions => 'Soal';
@@ -1491,7 +1491,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String histEssayScore(Object score, Object trophies) {
-    return '$score / 10 · +$trophies Piala';
+    return '$score / 10 · +$trophies XP';
   }
 
   @override
@@ -1712,12 +1712,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String trophiesEarned(Object count) {
-    return '+$count Piala';
+    return '+$count XP';
   }
 
   @override
   String trophiesTotal(Object count) {
-    return '$count Total Piala';
+    return 'Total $count XP';
   }
 
   @override
@@ -1808,10 +1808,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get qzSkip => 'Lewati';
 
   @override
-  String get qzUpTo10 => 'Sampai +10 trofi untuk jawaban lengkap';
+  String get qzUpTo10 => 'Sampai +10 XP untuk jawaban lengkap';
 
   @override
-  String get qz10Right => '+10 trofi untuk jawaban benar';
+  String get qz10Right => '+10 XP untuk jawaban benar';
 
   @override
   String qzEssayCaps(Object level, Object words) {
@@ -1942,7 +1942,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get qzSavedNoTrophies =>
-      'Jawabanmu disimpan. ELIOS AI menilainya saat siap; belum ada trofi sampai itu.';
+      'Jawabanmu disimpan. ELIOS AI menilainya saat siap; belum ada XP sampai itu.';
 
   @override
   String get qzFeedback => 'Masukan';
@@ -2071,7 +2071,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String ovEssayScore(Object score) {
-    return 'Score: $score/10 · +$score Piala';
+    return 'Skor: $score/10 · +$score XP';
   }
 
   @override
@@ -2081,7 +2081,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get ovNeedsWork => 'Perlu diperbaiki pada beberapa poin.';
 
   @override
-  String get ovRight => 'Jawaban Benar! +10 Piala';
+  String get ovRight => 'Jawaban Benar! +10 XP';
 
   @override
   String get ovWrong => 'Jawaban Kurang Tepat';
@@ -2888,7 +2888,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get h3Title => 'Riwayat';
 
   @override
-  String get h3Subtitle => 'Hasil scan, kuis, dan piala';
+  String get h3Subtitle => 'Hasil scan, kuis, dan XP';
 
   @override
   String get h3Back => 'Kembali';
@@ -2942,12 +2942,17 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String h3Trophies(int count) {
-    return '$count piala';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count XP',
+    );
+    return '$_temp0';
   }
 
   @override
   String h3ToNextLevel(Object count, Object level) {
-    return '$count piala ke Level $level';
+    return '$count XP lagi ke Level $level';
   }
 
   @override
@@ -3030,7 +3035,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get h3EmptyBody =>
-      'Scan benda dengan ELIOS. Hasil kuis dan pialamu akan muncul di sini.';
+      'Scan benda dengan ELIOS. Hasil kuis dan XP-mu akan muncul di sini.';
 
   @override
   String get h3StartScan => 'Mulai scan';
@@ -3160,11 +3165,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get pdfTrophies => 'Piala Diperoleh';
+  String get pdfTrophies => 'XP Diperoleh';
 
   @override
   String pdfTrophyCount(Object count) {
-    return '$count Piala';
+    return '$count XP';
   }
 
   @override
@@ -3177,7 +3182,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String pdfEssayLine(Object score, Object trophies) {
-    return '$score / 10 (+$trophies Piala)';
+    return '$score / 10 (+$trophies XP)';
   }
 
   @override
@@ -3230,12 +3235,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String a11yTrophies(Object count) {
-    return '$count piala';
+    return '$count XP';
   }
 
   @override
   String homeScanSubtitle(Object date, Object count) {
-    return '$date · +$count piala';
+    return '$date · +$count XP';
   }
 
   @override
@@ -3340,7 +3345,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String ctlPlusTrophies(Object count) {
-    return '+$count piala';
+    return '+$count XP';
   }
 
   @override
@@ -4204,20 +4209,20 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get h3YourTrophies => 'Piala kamu';
+  String get h3YourTrophies => 'XP kamu';
 
   @override
   String h3TrophyUnit(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'piala',
+      other: 'XP',
     );
     return '$_temp0';
   }
 
   @override
-  String get h3StatTrophies => 'Piala';
+  String get h3StatTrophies => 'XP';
 
   @override
   String get h3StatScanned => 'Dipindai';
@@ -4244,7 +4249,7 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '+$count piala',
+      other: '+$count XP',
     );
     return '$_temp0';
   }
@@ -4283,7 +4288,7 @@ class AppLocalizationsId extends AppLocalizations {
     int total,
     int trophies,
   ) {
-    return '$item, $category, $correct dari $total benar, +$trophies piala';
+    return '$item, $category, $correct dari $total benar, +$trophies XP';
   }
 
   @override
@@ -5022,7 +5027,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String homeToNextLong(int count, int level) {
-    return '$count trofi lagi ke Level $level · pohonmu tumbuh dengan setiap trofi';
+    return '$count XP lagi ke Level $level · pohonmu tumbuh setiap kamu dapat XP';
   }
 
   @override
@@ -5128,7 +5133,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String contributeTrophies(int count) {
-    return '+$count trofi';
+    return '+$count XP';
   }
 
   @override
@@ -5138,7 +5143,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get contributeAgain => 'Kontribusi lagi';
 
   @override
-  String get scanContributeOverline => 'Dapatkan trofi';
+  String get scanContributeOverline => 'Dapatkan XP';
 
   @override
   String get scanContributeBody =>
@@ -5212,7 +5217,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get histAllScans => 'Semua';
 
   @override
-  String get h3TrophiesWord => 'trofi';
+  String get h3TrophiesWord => 'XP';
 
   @override
   String get celebrateTap => 'Ketuk untuk lanjut';

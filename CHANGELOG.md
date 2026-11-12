@@ -10,6 +10,8 @@ hashes updated after the history rewrite on 2026-10-08. The old-to-new map is
 kept outside the repo.
 
 ## [Unreleased]
+- Trophies are now called XP everywhere (0213): Home, History, quizzes, Control, contribute and the PDF export say XP, in English and Bahasa Indonesia (no more "trofi" / "piala"). Your level, History and saved scores are unchanged.
+
 - Lessons give XP toward the level (0212): 15 per video finished, 10 per module guide finished, 10 per correct answer of a lesson quiz's best try (a retake only adds its improvement).
 
 - Clovers count finished learning (0211): 1 per video, module guide and simulation finished, 1 for a quiz at 70 % (+1 at 100 %), and 1 each for a Daily Guide's reading, quiz and lab. Learn shows "12 of 40 clovers" and its overall % is now clovers earned / possible.
