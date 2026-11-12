@@ -80,6 +80,10 @@ class WebSocketService {
   Stream<String> get status => _statusController.stream;
   Stream<Uint8List> get frames => _framesController.stream;
   bool get isConnected => _isConnected;
+
+  /// The endpoint of the current (or last) link.
+  String get ip => _ip;
+  int get port => _port;
   int get receivedFrameCount => _receivedFrameCount;
   int get receivedFrameBytes => _receivedFrameBytes;
   DateTime? get lastFrameReceivedAt => _lastFrameReceivedAt;

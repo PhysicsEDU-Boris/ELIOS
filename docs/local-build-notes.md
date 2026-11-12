@@ -1,5 +1,9 @@
 # Local build notes
 
+## 12 Nov 2026 — Setup + Wi-Fi QR merged into base, phone check (`feat/elios3-setup-wifi`)
+- APP_COMMIT `e85c30e` (`feature/live-scan` b0ea1fa + setup 0205 + Wi-Fi QR 0204), arm64 debug APK; `adb install -r` on the Edge 60 Fusion, no data clear; History md5 unchanged; no Flutter errors.
+- Checked: Scan hub → Pilih kendaraan → Pakai ELIOS → new ELIOS setup (robot stage, Offline/MaixCAM2 pills, 3-step stepper) → "Tampilkan QR Wi-Fi robot" opens the ELIOS 3 QR sheet. Robot itself not connected. Left on Home.
+
 ## 12 Nov 2026 — Scoring finish phone check (0214, `feat/scoring-finish`)
 - APP_COMMIT `33d2dd7`, arm64 debug APK (LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION); `adb install -r` on the Edge 60 Fusion, no data clear; all 5 History files md5-identical; no Flutter errors in logcat.
 - Learn (phone in dark mode): Organic card 22 % (2 of 9 clovers; was 33 % with the old rule). Daily Guides: "Bacaanmu minggu ini", "80 XP panduan", week days, archive "2 edisi" (no streak). Left on Home.
@@ -18,6 +22,12 @@
 - Motorola Edge 60 Fusion over USB, `com.boris.elio` debug, same signing; `adb install -r` Success, no uninstall/data clear. App data tar backup in the session scratchpad first; all 5 `scan_records*.json` md5-identical after testing.
 - Found on `45139a7`: Level-2 celebration on every cold start (seen level saved from the scans-only level before learning XP loaded). Fixed in `e68ff7f`; two cold starts after: no celebration.
 - Checked: Home Level 2, 220 trophies, 155 to Lv3; Learn sticker 8 clovers, "8 dari 36 semanggi · 80 XP dari Panduan Harian", ring 22 %. Left on Home. No Mac app, model, firmware or signing change.
+## 10 Nov 2026 — ELIOS setup phone test (0205, `feat/elios3-setup-screen`)
+- Android only, no Mac bundle/model/signing change. `flutter build apk --debug --target-platform android-arm64` with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION, APP_COMMIT `29cc6e4` → `ba2112c` → final `c36ca60`; `.env.dev`/`.env.prod`/`google-services.json` copied from the main checkout for the build (gitignored, removed after).
+- Motorola Edge 60 Fusion, `com.boris.elio` debug, same signing; `adb install -r` ×3, no uninstall/data clear. Shared phone lock `~/.elios-phone-lock` taken and released. Left light / Bahasa Indonesia on Home.
+## 10 Nov 2026 — Robot Wi-Fi QR sheet phone check (0204, `feat/elios3-wifi-qr-sheet`)
+- APP_COMMIT `1567368`; `flutter build apk --debug --target-platform android-arm64` with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION; Gradle 196 s, APK 165 MB, no `.litertlm` in it. `.env.dev`, `.env.prod`, `google-services.json` copied from the main checkout into the worktree (gitignored).
+- Edge 60 Fusion, `adb install -r` Success, no data clear; History md5 unchanged; left Indonesian/light. No Mac bundle, model, firmware or signing change.
 
 ## 9 Nov 2026 — Learn L2 v3 phone test (0195, `feat/learn-l2v3`)
 - Source / APP_COMMIT `1e4810f` (first test build `b54a1b6+l2v3`); `flutter build apk --debug --target-platform android-arm64` with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION; Gradle 36 s. `.env*` and `google-services.json` already present (gitignored).

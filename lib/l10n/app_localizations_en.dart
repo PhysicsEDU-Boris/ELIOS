@@ -349,6 +349,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get robotWifiQr => 'Robot Wi-Fi QR';
 
   @override
+  String get robotWifiQrSubtitle => 'Join ELIOS to a hotspot or Wi-Fi';
+
+  @override
   String get robotQrHint =>
       'Robot not reading it? Lower the screen brightness or tilt the phone a little.';
 
@@ -1085,7 +1088,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get qrIntro =>
-      'Turn on this phone\'s hotspot (2.4 GHz) and type its name and password. On the robot screen tap Wi-Fi setup, then hold this QR in front of the camera.';
+      'Turn on this phone\'s hotspot (2.4 GHz), or use your home Wi-Fi, and type its name and password. On the robot screen tap Wi-Fi setup, then hold this QR in front of the camera.';
 
   @override
   String get qrSsid => 'Hotspot name (SSID)';
@@ -5438,4 +5441,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lnPickToContinue => 'Pick an answer to continue.';
+
+  @override
+  String get setupWsOverWifi => 'ELIOS WebSocket address over the robot Wi-Fi';
+
+  @override
+  String get setupJoinWifi => 'Join the ELIOS Wi-Fi';
+
+  @override
+  String get setupJoinWifiBody =>
+      'Scan the Wi-Fi QR on the robot so this phone joins its network.';
+
+  @override
+  String get setupShowWifiQr => 'Show robot Wi-Fi QR';
+
+  @override
+  String setupFoundAt(String ip) {
+    return 'Found at $ip';
+  }
+
+  @override
+  String get setupSearch => 'Search for ELIOS';
+
+  @override
+  String get setupSearchAgain => 'Search again';
+
+  @override
+  String get setupConnectStep => 'Connect';
+
+  @override
+  String get setupSaveDefault => 'Save as default address';
+
+  @override
+  String get setupSavedDefault => 'Saved as default address';
+
+  @override
+  String setupStepState(int n, String state) {
+    return 'Step $n, $state';
+  }
+
+  @override
+  String get setupStepDone => 'done';
+
+  @override
+  String get setupStepNow => 'current step';
+
+  @override
+  String get setupStepTodo => 'not yet';
+
+  @override
+  String get setupStepProblem => 'needs attention';
 }
