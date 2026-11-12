@@ -434,7 +434,7 @@
     }
   },
   "binTop": "Top",
-  "residuNote": "Residu scans count toward Anorganik.",
+  "residuNote": "Residu scans count toward Anorganik (the robot sorts residu there).",
   "residuIncluded": "Anorganik includes {count} residu {scans} (the robot sorts residu there).",
   "@residuIncluded": {
     "placeholders": {
@@ -2270,6 +2270,18 @@
   },
   "a11yTopBin": ", top bin",
   "homeScansUnit": " scans",
+  "homeOpenHistory": "Open History",
+  "homeLatestScan": "Latest: {item} · {when}",
+  "@homeLatestScan": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "homeMedalsOf": "{unlocked} of {total}",
   "@homeMedalsOf": {
     "placeholders": {

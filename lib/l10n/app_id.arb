@@ -185,7 +185,7 @@
   "binsHungry": "Tempat sampahmu lapar: scan sebuah benda",
   "binsFed": "{scans} masuk ke 3 tempat sampahmu",
   "binTop": "Teratas",
-  "residuNote": "Scan residu dihitung sebagai Anorganik.",
+  "residuNote": "Scan residu dihitung sebagai Anorganik (robot memilah residu ke sana).",
   "residuIncluded": "Anorganik termasuk {count} {scans} residu (robot memilah residu ke sana).",
   "scanWord": "scan",
   "weekSemantics": "{count} scan minggu ini. {days}",
@@ -952,6 +952,18 @@
   "a11yBinStat": "{bin} {count} scan, {percent}",
   "a11yTopBin": ", tempat sampah teratas",
   "homeScansUnit": " scan",
+  "homeOpenHistory": "Buka Riwayat",
+  "homeLatestScan": "Terbaru: {item} · {when}",
+  "@homeLatestScan": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "homeMedalsOf": "{unlocked} dari {total}",
   "a11yMedal": "{name}, {state}. {description}",
   "a11yUnlocked": "terbuka",

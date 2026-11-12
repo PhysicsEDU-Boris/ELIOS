@@ -87,9 +87,9 @@ class HomeSearchField extends StatelessWidget {
       style: ElioTokens.body.copyWith(color: p.textPrimary),
       decoration: InputDecoration(
         filled: true,
-        fillColor: p.field,
+        fillColor: p.surface,
         hintText: l10n.searchHint,
-        hintStyle: ElioTokens.body.copyWith(color: p.textTertiary),
+        hintStyle: ElioTokens.bodySmall.copyWith(color: p.textTertiary),
         hintMaxLines: 1,
         contentPadding: const EdgeInsets.symmetric(vertical: 14),
         prefixIcon: Icon(
@@ -97,7 +97,7 @@ class HomeSearchField extends StatelessWidget {
           color: active ? p.primaryText : p.textSecondary,
         ),
         enabledBorder: border(
-          active ? p.primaryText : p.formBorder,
+          active ? p.primaryText : p.borderSubtle,
           active ? 2 : 1,
         ),
         focusedBorder: border(p.primaryText, 2),
