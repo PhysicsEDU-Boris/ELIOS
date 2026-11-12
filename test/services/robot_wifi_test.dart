@@ -34,16 +34,16 @@ void main() {
   testWidgets('sheet shows the QR only for a valid name and password', (t) async {
     await t.pumpWidget(ProviderScope(
         child: MaterialApp(home: Scaffold(body: ElioTheme.wrap(const RobotWifiQrSheet())))));
-    await t.enterText(find.widgetWithText(TextFormField, 'Hotspot name (SSID)'), 'boris');
-    await t.enterText(find.widgetWithText(TextFormField, 'Hotspot password'), 'short');
+    await t.enterText(find.byType(TextFormField).at(0), 'boris');
+    await t.enterText(find.byType(TextFormField).at(1), 'short');
     await t.tap(find.text('Show QR'));
     await t.pump();
     expect(find.text('Password: 8 to 63 plain characters'), findsOneWidget);
     expect(find.byType(SvgPicture), findsNothing);
 
-    await t.enterText(find.widgetWithText(TextFormField, 'Hotspot password'), 'secret123');
+    await t.enterText(find.byType(TextFormField).at(1), 'secret123');
     await t.tap(find.text('Show QR'));
-    await t.pump();
+    await t.pumpAndSettle();
     expect(find.byType(SvgPicture), findsOneWidget);
     expect(find.bySemanticsLabel('Wi-Fi QR code for boris'), findsOneWidget);
   });

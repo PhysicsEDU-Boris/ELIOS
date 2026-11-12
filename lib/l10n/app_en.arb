@@ -199,6 +199,7 @@
   "aiCloud": "cloud",
   "aiUnavailable": "No internet, or every AI model is busy. The quiz uses the question bank and tries the AI again on the next scan.",
   "robotWifiQr": "Robot Wi-Fi QR",
+  "robotWifiQrSubtitle": "Join ELIOS to a hotspot or Wi-Fi",
   "robotQrHint": "Robot not reading it? Lower the screen brightness or tilt the phone a little.",
   "searchSeeAll": "See all {count} results",
   "@searchSeeAll": {
@@ -695,7 +696,7 @@
   "setTimerSub": "Time for each question",
   "setAllowSkip": "Allow skipping",
   "setAllowSkipSub": "Learners can skip a question",
-  "qrIntro": "Turn on this phone's hotspot (2.4 GHz) and type its name and password. On the robot screen tap Wi-Fi setup, then hold this QR in front of the camera.",
+  "qrIntro": "Turn on this phone's hotspot (2.4 GHz), or use your home Wi-Fi, and type its name and password. On the robot screen tap Wi-Fi setup, then hold this QR in front of the camera.",
   "qrSsid": "Hotspot name (SSID)",
   "qrPassword": "Hotspot password",
   "qrShowPassword": "Show password",

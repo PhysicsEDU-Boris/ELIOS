@@ -21,6 +21,9 @@
 ## 10 Nov 2026 — ELIOS setup phone test (0205, `feat/elios3-setup-screen`)
 - Android only, no Mac bundle/model/signing change. `flutter build apk --debug --target-platform android-arm64` with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION, APP_COMMIT `29cc6e4` → `ba2112c` → final `c36ca60`; `.env.dev`/`.env.prod`/`google-services.json` copied from the main checkout for the build (gitignored, removed after).
 - Motorola Edge 60 Fusion, `com.boris.elio` debug, same signing; `adb install -r` ×3, no uninstall/data clear. Shared phone lock `~/.elios-phone-lock` taken and released. Left light / Bahasa Indonesia on Home.
+## 10 Nov 2026 — Robot Wi-Fi QR sheet phone check (0204, `feat/elios3-wifi-qr-sheet`)
+- APP_COMMIT `1567368`; `flutter build apk --debug --target-platform android-arm64` with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION; Gradle 196 s, APK 165 MB, no `.litertlm` in it. `.env.dev`, `.env.prod`, `google-services.json` copied from the main checkout into the worktree (gitignored).
+- Edge 60 Fusion, `adb install -r` Success, no data clear; History md5 unchanged; left Indonesian/light. No Mac bundle, model, firmware or signing change.
 
 ## 9 Nov 2026 — Learn L2 v3 phone test (0195, `feat/learn-l2v3`)
 - Source / APP_COMMIT `1e4810f` (first test build `b54a1b6+l2v3`); `flutter build apk --debug --target-platform android-arm64` with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION; Gradle 36 s. `.env*` and `google-services.json` already present (gitignored).

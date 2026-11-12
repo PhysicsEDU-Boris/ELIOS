@@ -734,6 +734,12 @@ abstract class AppLocalizations {
   /// **'Robot Wi-Fi QR'**
   String get robotWifiQr;
 
+  /// No description provided for @robotWifiQrSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join ELIOS to a hotspot or Wi-Fi'**
+  String get robotWifiQrSubtitle;
+
   /// No description provided for @robotQrHint.
   ///
   /// In en, this message translates to:
@@ -1997,7 +2003,7 @@ abstract class AppLocalizations {
   /// No description provided for @qrIntro.
   ///
   /// In en, this message translates to:
-  /// **'Turn on this phone\'s hotspot (2.4 GHz) and type its name and password. On the robot screen tap Wi-Fi setup, then hold this QR in front of the camera.'**
+  /// **'Turn on this phone\'s hotspot (2.4 GHz), or use your home Wi-Fi, and type its name and password. On the robot screen tap Wi-Fi setup, then hold this QR in front of the camera.'**
   String get qrIntro;
 
   /// No description provided for @qrSsid.
