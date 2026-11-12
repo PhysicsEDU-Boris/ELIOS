@@ -5396,4 +5396,16 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get setupStepProblem => 'perlu dicek';
+
+  @override
+  String get histEcoLevel => 'LEVEL EKO KAMU';
+
+  @override
+  String get histSyncedShort => 'Tersinkron';
+
+  @override
+  String get histSyncingShort => 'Menyinkron';
+
+  @override
+  String get histNotSyncedShort => 'Belum sinkron';
 }

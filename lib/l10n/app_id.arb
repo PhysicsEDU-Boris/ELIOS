@@ -1551,5 +1551,9 @@
   "setupStepDone": "selesai",
   "setupStepNow": "langkah sekarang",
   "setupStepTodo": "belum",
-  "setupStepProblem": "perlu dicek"
+  "setupStepProblem": "perlu dicek",
+  "histEcoLevel": "LEVEL EKO KAMU",
+  "histSyncedShort": "Tersinkron",
+  "histSyncingShort": "Menyinkron",
+  "histNotSyncedShort": "Belum sinkron"
 }

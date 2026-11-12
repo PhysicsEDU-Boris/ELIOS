@@ -9360,6 +9360,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'needs attention'**
   String get setupStepProblem;
+
+  /// No description provided for @histEcoLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR ECO LEVEL'**
+  String get histEcoLevel;
+
+  /// No description provided for @histSyncedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced'**
+  String get histSyncedShort;
+
+  /// No description provided for @histSyncingShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing'**
+  String get histSyncingShort;
+
+  /// No description provided for @histNotSyncedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Not synced'**
+  String get histNotSyncedShort;
 }
 
 class _AppLocalizationsDelegate

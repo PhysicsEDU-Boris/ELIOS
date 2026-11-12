@@ -895,9 +895,16 @@ class HistoryScanGrid extends StatelessWidget {
 /// Scan detail photo frame: category tint, blobs, sparkles, the polaroid
 /// (contain), time pill and a 48 dp fullscreen button when [onOpen] is set.
 class HistoryPhotoFrame extends StatelessWidget {
-  const HistoryPhotoFrame(this.record, {super.key, this.onOpen});
+  const HistoryPhotoFrame(
+    this.record, {
+    super.key,
+    this.onOpen,
+    this.height = 184,
+    this.radius = 20,
+  });
   final ScanRecord record;
   final VoidCallback? onOpen;
+  final double height, radius;
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context), t = context.l10n;
@@ -906,8 +913,8 @@ class HistoryPhotoFrame extends StatelessWidget {
     ];
     return _TintCover(
       category: record.category,
-      height: 184,
-      radius: 20,
+      height: height,
+      radius: radius,
       circles: const [(150, -50, null, null, -70), (120, null, -50, -30, null)],
       sparkles: const [
         (14, 92, 40, null, null),
@@ -1165,64 +1172,140 @@ class HistoryResultStats extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context), t = context.l10n;
-    Widget stat(IconData icon, Color color, String value, String label) =>
-        Expanded(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+    // Figma 629:99682-99: three tilted leaf blobs (XP, Correct, Scanned).
+    Widget stat(
+      int i,
+      Widget icon,
+      Color bg,
+      double degrees,
+      double drop,
+      String value,
+      String label,
+    ) => Expanded(
+      child: Padding(
+        padding: EdgeInsets.only(top: drop),
+        // Pops in tilted, one after another.
+        child: ElioPopIn(
+          index: i,
+          stagger: const Duration(milliseconds: 70),
+          delay: const Duration(milliseconds: 120),
+          scale: 0.6,
+          curve: ElioMotion.pop,
+          child: Transform.rotate(
+            angle: degrees * math.pi / 180,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(26),
+                  topRight: Radius.circular(8),
+                  bottomRight: Radius.circular(26),
+                  bottomLeft: Radius.circular(8),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(icon, size: 18, color: color),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      value,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: ElioTokens.subhead.copyWith(color: p.textPrimary),
-                    ),
+                  Row(
+                    children: [
+                      icon,
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          value,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: _bold(
+                            ElioTokens.subhead,
+                          ).copyWith(color: p.textPrimary),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: ElioTokens.caption.copyWith(color: p.textSecondary),
                   ),
                 ],
               ),
-              Text(
-                label,
-                style: ElioTokens.caption.copyWith(color: p.textSecondary),
-              ),
-            ],
+            ),
           ),
-        );
-    final line = Container(width: 1, height: 40, color: p.borderSubtle);
-    return HistoryCard(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-      child: Row(
-        children: [
-          stat(
-            Icons.emoji_events_outlined,
-            p.secondaryText,
-            '+${record.trophies}',
-            t.h3StatTrophies,
-          ),
-          line,
-          stat(
-            Icons.check,
-            p.primaryText,
-            '${record.correctCount}/${record.totalQuestions}',
-            t.h3Correct,
-          ),
-          line,
-          stat(
-            Icons.schedule_outlined,
-            p.tertiaryText,
-            historyTime(t, record.time),
-            t.h3StatScanned,
-          ),
-        ],
+        ),
       ),
+    );
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        stat(
+          0,
+          SvgPicture.asset(
+            'assets/illustrations/history/icon_xp.svg',
+            width: 18,
+            height: 18,
+            excludeFromSemantics: true,
+          ),
+          historyTint(p, HistoryTone.warning).bg,
+          3,
+          2,
+          '+${record.trophies}',
+          t.h3StatTrophies,
+        ),
+        const SizedBox(width: 14),
+        stat(
+          1,
+          Icon(Icons.check_rounded, size: 18, color: p.primaryText),
+          historyTint(p, HistoryTone.success).bg,
+          -2,
+          6,
+          '${record.correctCount}/${record.totalQuestions}',
+          t.h3Correct,
+        ),
+        const SizedBox(width: 14),
+        stat(
+          2,
+          Icon(Icons.calendar_today_outlined, size: 16, color: p.textSecondary),
+          p.surfaceRaised,
+          2,
+          0,
+          historyDay(t, record.time),
+          t.h3StatScanned,
+        ),
+      ],
     );
   }
 }
 
-/// Question card: Q badge + question, chips, answers panel, explanation link.
+/// Bold on the variable font ('wght' axis as well as fontWeight).
+TextStyle _bold(TextStyle s, [int weight = 700]) => s.copyWith(
+  fontWeight: FontWeight.values[weight ~/ 100 - 1],
+  fontVariations: [FontVariation('wght', weight.toDouble())],
+);
+
+class _DashPainter extends CustomPainter {
+  _DashPainter(this.color);
+  final Color color;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
+    for (var x = 0.0; x < size.width; x += 8) {
+      canvas.drawLine(Offset(x, 0.75), Offset(x + 4, 0.75), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashPainter old) => old.color != color;
+}
+
+/// Question (Figma 629:99713): round Q badge, question, one result chip with
+/// the XP, the answer as a leaf quote and "See explanation". No card; a
+/// dashed line separates it from the question above.
 class HistoryQuestionCard extends StatelessWidget {
   const HistoryQuestionCard(
     this.q,
@@ -1235,102 +1318,160 @@ class HistoryQuestionCard extends StatelessWidget {
   final VoidCallback onExplain;
   @override
   Widget build(BuildContext context) {
-    final p = authPalette(context);
-    final yours = q.isEssay
-        ? p.textPrimary
-        : q.isCorrect
-        ? p.primaryText
-        : p.errorText;
+    final p = authPalette(context), t = context.l10n;
+    final wrong = !q.isCorrect && !q.isEssay;
+    final tint = historyTint(
+      p,
+      q.isEssay
+          ? HistoryTone.warning
+          : wrong
+          ? HistoryTone.error
+          : HistoryTone.success,
+    );
+    final result = q.isEssay
+        ? (q.gradingPending
+              ? t.h3AwaitingGrading
+              : t.h3EssayScore(q.essayScore ?? 0))
+        : wrong
+        ? t.h3Incorrect
+        : '✓ ${t.h3Correct}';
     Widget answer(String label, String text, Color color) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label.toUpperCase(),
-          style: ElioTokens.overline.copyWith(color: p.textTertiary),
+          style: _bold(
+            ElioTokens.overline,
+            600,
+          ).copyWith(color: p.textTertiary, letterSpacing: 1.1),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(text, style: ElioTokens.bodySmall.copyWith(color: color)),
       ],
     );
-    return HistoryCard(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Column(
+      children: [
+        if (index > 0)
+          CustomPaint(
+            size: const Size(double.infinity, 1.5),
+            painter: _DashPainter(p.borderMedium),
+          ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              HistoryQuestionBadge(
-                index + 1,
-                correct: q.isCorrect,
-                essay: q.isEssay,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                decoration: ShapeDecoration(
+                  color: wrong ? p.error : p.primary,
+                  shape: const StadiumBorder(),
+                ),
+                child: Text(
+                  'Q${index + 1}',
+                  style: _bold(
+                    ElioTokens.caption,
+                  ).copyWith(color: wrong ? p.onError : p.onPrimary),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  q.question,
-                  style: ElioTokens.body.copyWith(color: p.textPrimary),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [HistoryResultChip(q), HistoryTrophyChip(q.trophies)],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: ShapeDecoration(
-              color: p.surfaceRaised,
-              shape: _shape(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                answer(context.l10n.h3YourAnswer, q.yourAnswer, yours),
-                if (!q.isCorrect && !q.isEssay) ...[
-                  const SizedBox(height: 12),
-                  answer(
-                    context.l10n.h3CorrectAnswer,
-                    q.rightAnswer,
-                    p.primaryText,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Semantics(
-            button: true,
-            child: InkWell(
-              onTap: onExplain,
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.menu_book_outlined,
-                      size: 18,
-                      color: p.primaryText,
-                    ),
-                    const SizedBox(width: 8),
                     Text(
-                      context.l10n.h3SeeExplanation,
-                      style: historyButtonText.copyWith(color: p.primaryText),
+                      q.question,
+                      style: _bold(
+                        ElioTokens.body,
+                        600,
+                      ).copyWith(color: p.textPrimary),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: ShapeDecoration(
+                        color: tint.bg,
+                        shape: const StadiumBorder(),
+                      ),
+                      child: Text(
+                        // No XP yet while an essay waits for its grade.
+                        q.isEssay && q.gradingPending
+                            ? result
+                            : '$result · +${q.trophies}',
+                        style: _bold(
+                          ElioTokens.caption,
+                        ).copyWith(color: tint.fg),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: p.surfaceRaised,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(4),
+                          bottomRight: Radius.circular(16),
+                          bottomLeft: Radius.circular(4),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          answer(t.h3YourAnswer, q.yourAnswer, p.textPrimary),
+                          if (wrong) ...[
+                            const SizedBox(height: 10),
+                            answer(
+                              t.h3CorrectAnswer,
+                              q.rightAnswer,
+                              p.primaryText,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Semantics(
+                      button: true,
+                      child: InkWell(
+                        onTap: onExplain,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                t.h3SeeExplanation,
+                                style: historyButtonText.copyWith(
+                                  color: p.primaryText,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                size: 18,
+                                color: p.primaryText,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1424,7 +1565,12 @@ class HistoryTrophyPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.emoji_events_outlined, size: 18, color: t.fg),
+          SvgPicture.asset(
+            'assets/illustrations/history/icon_xp.svg',
+            width: 18,
+            height: 18,
+            excludeFromSemantics: true,
+          ),
           const SizedBox(width: 6),
           Text(label, style: historyButtonText.copyWith(color: t.fg)),
         ],
@@ -1497,14 +1643,15 @@ class HistoryResultHero extends StatelessWidget {
             children: [
               Positioned(right: -42, top: -40, child: _circle(200, hover)),
               Positioned(
-                right: 22,
-                top: 46,
+                right: 18,
+                top: 50,
+                // ELIO robot buddy (Figma 629:99756), as on Learn.
                 child: SvgPicture.asset(
                   correct
-                      ? 'assets/illustrations/control/bottle_buddy_happy.svg'
-                      : 'assets/illustrations/control/bottle_buddy_sad.svg',
-                  width: 90,
-                  height: 122,
+                      ? 'assets/illustrations/robot/robot_happy.svg'
+                      : 'assets/illustrations/robot/robot_sad.svg',
+                  width: 98,
+                  height: 112,
                   excludeFromSemantics: true,
                 ),
               ),
@@ -1556,10 +1703,11 @@ class HistoryResultHero extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.emoji_events_outlined,
-                            size: 16,
-                            color: on,
+                          SvgPicture.asset(
+                            'assets/illustrations/history/icon_xp.svg',
+                            width: 16,
+                            height: 16,
+                            excludeFromSemantics: true,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -2428,290 +2576,3 @@ IconData historyDeviceIcon(HistoryDevice d) => switch (d) {
 
 String historyDeviceName(AppLocalizations t, HistoryDevice d) =>
     d == HistoryDevice.phone ? t.histPhone : 'ELIOS';
-
-/// "Contribution", "Quiz 2/3" or "Scan only" for a record.
-Widget historyKindChip(AppLocalizations t, ScanRecord r) => r.isContribution
-    ? HistoryChip(
-        t.histContribution,
-        tone: HistoryTone.warning,
-        icon: Icons.circle,
-      )
-    : r.questions.isEmpty
-    ? HistoryChip(t.histScanOnly)
-    : HistoryChip(
-        t.histQuiz(r.correctCount, r.totalQuestions),
-        tone: HistoryTone.info,
-      );
-
-/// One compact scan row (Figma 629:99388 "Recent scans", 629:99557 timeline):
-/// polaroid, name, device + kind chips, then the day/time and trophies.
-class HistoryScanRow extends StatelessWidget {
-  const HistoryScanRow({
-    super.key,
-    required this.record,
-    required this.onTap,
-    this.trailingLabel,
-    this.highlighted = false,
-    this.showDevice = true,
-  });
-
-  final ScanRecord record;
-  final VoidCallback onTap;
-
-  /// Day ("Yesterday") on the tab, time on the timeline.
-  final String? trailingLabel;
-  final bool highlighted, showDevice;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = authPalette(context);
-    final t = context.l10n;
-    final r = record;
-    final device = historyDeviceOf(r);
-    return Semantics(
-      button: true,
-      label:
-          '${r.itemName}, ${historyCategory(t, r.category)}, '
-          '${trailingLabel ?? ''}, +${r.trophies}',
-      excludeSemantics: true,
-      child: HistoryCard(
-        tone: highlighted ? HistoryTone.success : null,
-        padding: const EdgeInsets.fromLTRB(10, 10, 12, 10),
-        onTap: onTap,
-        child: Row(
-          children: [
-            // Morphs into the scan detail photo (Figma 13 · 32, container
-            // transform 320 ms).
-            Hero(
-              tag: 'history-photo-${r.id}',
-              child: HistoryPolaroid(r, width: 52, height: 44, degrees: -3),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    r.itemName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: ElioTokens.body.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: p.textPrimary,
-                      height: 1.3,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: [
-                      if (showDevice && device != null)
-                        HistoryChip(
-                          historyDeviceName(t, device),
-                          icon: historyDeviceIcon(device),
-                        ),
-                      historyKindChip(t, r),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (trailingLabel != null)
-                  Text(
-                    trailingLabel!,
-                    style: ElioTokens.caption.copyWith(color: p.textSecondary),
-                  ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.emoji_events_outlined,
-                      size: 16,
-                      color: p.secondaryText,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      '+${r.trophies}',
-                      style: ElioTokens.button.copyWith(color: p.secondaryText),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Slim trophy strip at the top of the History tab (Figma 629:99388).
-class HistoryTrophyStrip extends StatelessWidget {
-  const HistoryTrophyStrip({
-    super.key,
-    required this.total,
-    required this.levelNumber,
-    required this.level,
-    required this.progress,
-    required this.next,
-  });
-  final int total, levelNumber;
-  final String level, next;
-  final double progress;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = authPalette(context);
-    final t = context.l10n;
-    return Semantics(
-      container: true,
-      label: '${t.h3Trophies(total)}, $level. $next',
-      excludeSemantics: true,
-      child: HistoryCard(
-        padding: const EdgeInsets.fromLTRB(10, 10, 14, 10),
-        child: Row(
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: p.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: SvgPicture.asset(
-                'assets/illustrations/home/${levelNumber >= 3 ? 'tree_lv3' : 'sprout_lv1'}.svg',
-                excludeFromSemantics: true,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '$total ',
-                          style: ElioTokens.subhead.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: p.textPrimary,
-                          ),
-                        ),
-                        TextSpan(
-                          text: '${t.h3TrophiesWord} · $level',
-                          style: ElioTokens.caption.copyWith(
-                            color: p.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: progress.clamp(0, 1),
-                      minHeight: 8,
-                      color: p.primary,
-                      backgroundColor: p.surfaceRaised,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    next,
-                    style: ElioTokens.caption.copyWith(color: p.textSecondary),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A "By device" card; without [onTap] it is locked ("Coming soon").
-class HistoryDeviceCard extends StatelessWidget {
-  const HistoryDeviceCard({
-    super.key,
-    required this.name,
-    required this.icon,
-    required this.last,
-    this.onTap,
-  });
-  final String name, last;
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = authPalette(context);
-    final locked = onTap == null;
-    return Semantics(
-      button: !locked,
-      enabled: !locked,
-      label: '$name, $last',
-      excludeSemantics: true,
-      child: HistoryCard(
-        tone: locked ? HistoryTone.neutral : HistoryTone.success,
-        radius: 20,
-        padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: p.surface,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    icon,
-                    color: locked ? p.textTertiary : p.primaryText,
-                  ),
-                ),
-                const Spacer(),
-                Icon(
-                  locked ? Icons.lock_rounded : Icons.chevron_right_rounded,
-                  size: 18,
-                  color: p.textTertiary,
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: ElioTokens.body.copyWith(
-                fontWeight: FontWeight.w700,
-                color: p.textPrimary,
-              ),
-            ),
-            Text(
-              last,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: ElioTokens.caption.copyWith(color: p.textSecondary),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

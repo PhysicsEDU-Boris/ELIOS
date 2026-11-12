@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 /// The palette. Assets are made by tools/sounds/make_sounds.py.
 enum ElioSfx {
@@ -157,6 +158,27 @@ abstract final class ElioHaptics {
 }
 
 /// Sound + haptic in one call, for the common pairs.
+/// Runs [cue] once the route of [context] has finished entering (at once
+/// when it has no transition): the entry sound lands with the page, not on
+/// top of the tap that opened it. No timers.
+void elioOnRouteEntered(BuildContext context, VoidCallback cue) {
+  final a = ModalRoute.of(context)?.animation;
+  if (a == null || a.isCompleted) return cue();
+  void listener(AnimationStatus s) {
+    if (s != AnimationStatus.completed) return;
+    a.removeStatusListener(listener);
+    cue();
+  }
+
+  a.addStatusListener(listener);
+}
+
+/// A quiet entry cue: [sfx] at half gain with [haptic].
+void elioEntryCue(ElioSfx sfx, void Function() haptic) {
+  haptic();
+  unawaited(ElioSound.instance.play(sfx, gain: 0.5));
+}
+
 void elioFeedback(ElioSfx sfx, void Function() haptic) {
   haptic();
   unawaited(ElioSound.instance.play(sfx));

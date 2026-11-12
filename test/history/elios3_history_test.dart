@@ -86,7 +86,10 @@ void main() {
       t,
       ScanHistoryScreen(store: store, showHeader: false, compact: true),
     );
-    expect(find.text('Scans, quizzes and contributions'), findsOneWidget);
+    // Figma 629:99388: curved hero instead of the title + subtitle.
+    expect(find.text('Scans, quizzes and contributions'), findsNothing);
+    expect(find.text('YOUR ECO LEVEL'), findsOneWidget);
+    expect(find.text('History'), findsOneWidget);
     expect(find.text('Botol plastik'), findsOneWidget);
     expect(find.text('Kaleng'), findsWidgets);
     expect(find.text('Lama'), findsNothing, reason: 'only the latest 3');
@@ -97,6 +100,14 @@ void main() {
     expect(find.text('Coming soon'), findsOneWidget, reason: 'drone locked');
     expect(find.text('Questions to review'), findsOneWidget);
     expect(find.textContaining('Kaleng 0/1'), findsOneWidget);
+
+    // The locked drone stays on the tab; See timeline opens the timeline.
+    await t.tap(find.text('Drone'));
+    await t.pumpAndSettle();
+    expect(find.byType(ScanTimelineScreen), findsNothing);
+    await t.tap(find.text('See timeline'));
+    await t.pumpAndSettle();
+    expect(find.byType(ScanTimelineScreen), findsOneWidget);
   });
 
   testWidgets('timeline: device tabs filter; older records only under All', (
