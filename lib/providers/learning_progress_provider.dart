@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/app_notification.dart';
 import '../models/learning_progress.dart';
+import '../services/guide_progress.dart';
 import '../services/progress_service.dart';
 import 'app_notification_provider.dart';
 import 'auth_provider.dart';
@@ -26,6 +27,13 @@ final learningProgressProvider =
     AsyncNotifierProvider<LearningProgressNotifier, LearningProgress>(
       LearningProgressNotifier.new,
     );
+
+/// Daily Guide XP + lesson XP, added to the level total (decisions 0204, 0206).
+final learnXpProvider = Provider<int>(
+  (ref) =>
+      ref.watch(guideProgressProvider.select((s) => s.totalXp)) +
+      (ref.watch(learningProgressProvider).valueOrNull?.lessonXp ?? 0),
+);
 
 final progressSyncWarningProvider = Provider<bool>((ref) {
   final progress = ref.watch(learningProgressProvider);

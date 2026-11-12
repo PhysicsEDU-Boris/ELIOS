@@ -253,6 +253,14 @@ class LearningProgress {
     return total / categories.length;
   }
 
+  /// XP from lessons (decision 0206): 15 per video finished, 10 per module guide
+  /// finished, 10 per correct answer of each quiz's best try, so a retake only
+  /// adds its improvement. Derived, so nothing extra is stored.
+  int get lessonXp =>
+      completedVideoIds.length * 15 +
+      completedGuideIds.length * 10 +
+      categories.values.fold(0, (sum, c) => sum + c.quizBestScore * 10);
+
   int get completedLessonsCount =>
       completedVideoIds.length + completedGuideIds.length;
 
@@ -417,7 +425,6 @@ class LearningProgress {
 
   factory LearningProgress.fromJson(String source) =>
       LearningProgress.fromMap(jsonDecode(source) as Map<String, dynamic>);
-
 
   static Set<String> _stringSetFromList(List<dynamic> list) =>
       list.whereType<String>().toSet();

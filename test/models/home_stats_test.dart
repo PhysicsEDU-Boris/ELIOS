@@ -260,10 +260,10 @@ void main() {
     expect(top.levelProgress, 1.0);
   });
 
-  test('guide XP counts toward the level (decision 0204)', () {
+  test('learning XP counts toward the level (0204, 0206)', () {
     final records = [rec(now, trophies: 100)];
     expect(HomeStats.from(records, now).level, StudentLevel.ecoStarter);
-    final s = HomeStats.from(records, now, guideXp: 60);
+    final s = HomeStats.from(records, now, learnXp: 60);
     expect(s.totalTrophies, 160);
     expect(s.level, StudentLevel.wasteSpotter);
   });

@@ -93,11 +93,11 @@ class HomeStats {
     required this.residuCount,
   });
 
-  /// [guideXp]: Daily Guide XP, counted in the level total (decision 0204).
+  /// [learnXp]: Daily Guide + lesson XP, counted in the level total (0204, 0206).
   factory HomeStats.from(
     List<ScanRecord> records,
     DateTime now, {
-    int guideXp = 0,
+    int learnXp = 0,
   }) {
     final perDay = <DateTime, int>{};
     final bins = {for (final b in HomeBin.values) b: 0};
@@ -137,7 +137,7 @@ class HomeStats {
       today: today,
       records: records,
       perDay: perDay,
-      totalTrophies: trophies + questBonus(records) + guideXp,
+      totalTrophies: trophies + questBonus(records) + learnXp,
       quizSeries: last,
       currentStreak: current,
       longestStreak: longest,

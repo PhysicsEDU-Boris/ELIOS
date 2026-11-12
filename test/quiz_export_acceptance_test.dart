@@ -151,7 +151,7 @@ void main() {
     expect(state.phase, WasteQuizPhase.finished);
     expect(state.messages.last.text, contains('Jawaban benar: 1 dari 1.'));
     expect(store.totalTrophies, 8 + questBonus(store.records));
-    store.guideXp = 30; // Daily Guide XP counts too (0204)
+    store.learnXp = 30; // learning XP counts too (0204, 0206)
     expect(store.totalTrophies, 38 + questBonus(store.records));
   });
 

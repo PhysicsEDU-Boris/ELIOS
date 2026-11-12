@@ -11,7 +11,7 @@ import '../providers/auth_provider.dart';
 import '../models/app_notification.dart';
 import '../providers/app_notification_provider.dart';
 import '../providers/daily_guide_provider.dart';
-import '../services/guide_progress.dart';
+import '../providers/learning_progress_provider.dart' show learnXpProvider;
 import '../services/scan_record_store.dart';
 import '../providers/elio_theme_mode_provider.dart';
 import '../providers/navigation_provider.dart';
@@ -246,10 +246,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   Widget build(BuildContext context) {
     // Guide catalogue and progress sync from app start (Home shows the "New guide" notification).
     ref.listen(dailyGuideFeedProvider, (_, _) {});
-    // Starts at 0 XP and emits once loaded, so no fireImmediately; the level counts it (0204).
+    // Starts at 0 XP and emits once loaded, so no fireImmediately; the level counts it (0204, 0206).
     ref.listen(
-      guideProgressProvider.select((s) => s.totalXp),
-      (_, xp) => ScanRecordStore.instance.guideXp = xp,
+      learnXpProvider,
+      (_, xp) => ScanRecordStore.instance.learnXp = xp,
     );
     ref.listen<int>(
       navigationIndexProvider,

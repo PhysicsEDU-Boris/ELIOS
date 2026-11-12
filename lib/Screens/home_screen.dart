@@ -681,7 +681,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 final stats = HomeStats.from(
                   loaded ? _store.records : const [],
                   homeClock(),
-                  guideXp: _store.guideXp,
+                  learnXp: _store.learnXp,
                 );
                 final results = _results(stats, progress);
                 return ListView(
