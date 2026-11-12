@@ -622,7 +622,8 @@ class GuideArchiveCard extends ConsumerWidget {
   }
 }
 
-/// Streak card: count, guide XP and this week's 7 days.
+/// This week's reading: guide XP and the week's 7 days. The scan streak is
+/// the app's only streak (decision 0214).
 class GuideStreakCard extends ConsumerWidget {
   const GuideStreakCard({super.key});
 
@@ -644,7 +645,7 @@ class GuideStreakCard extends ConsumerWidget {
                   shape: learnShape(12),
                 ),
                 child: Icon(
-                  Icons.local_fire_department_rounded,
+                  Icons.auto_stories_rounded,
                   color: p.secondaryText,
                   size: 22,
                 ),
@@ -655,7 +656,7 @@ class GuideStreakCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.g4StreakDays(s.streak),
+                      l10n.g4WeekReading,
                       style: context.text.titleMedium,
                     ),
                     Text(
@@ -733,7 +734,7 @@ class _WeekDay extends StatelessWidget {
       'today' => (
         p.surface,
         p.primaryText,
-        Icons.local_fire_department_rounded,
+        Icons.auto_stories_rounded,
       ),
       'missed' => (p.surfaceRaised, p.surfaceRaised, null),
       _ => (p.surface, p.borderMedium, null),

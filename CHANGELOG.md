@@ -10,6 +10,8 @@ hashes updated after the history rewrite on 2026-10-08. The old-to-new map is
 kept outside the repo.
 
 ## [Unreleased]
+- Module progress and one streak (0214): each module card's % is now its clovers earned out of possible (finished videos and guides, quiz at 70 % and 100 %). Scanning is the only streak: the Daily Guides card now shows "Your reading this week" instead of a reading streak.
+
 - Trophies are now called XP everywhere (0213): Home, History, quizzes, Control, contribute and the PDF export say XP, in English and Bahasa Indonesia (no more "trofi" / "piala"). Your level, History and saved scores are unchanged.
 
 - Lessons give XP toward the level (0212): 15 per video finished, 10 per module guide finished, 10 per correct answer of a lesson quiz's best try (a retake only adds its improvement).

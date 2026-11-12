@@ -309,7 +309,7 @@ void main() {
     (t) async {
       await pump(t, const DailyGuidesPage());
       expect(find.text('ELIOS Guides'), findsOneWidget);
-      expect(find.text('0-day reading streak'), findsOneWidget);
+      expect(find.text('Your reading this week'), findsOneWidget);
       expect(find.text('How fast rivers carve deep rocks'), findsWidgets);
       expect(find.text('2 issues'), findsOneWidget);
       await t.scrollUntilVisible(

@@ -1,3 +1,4 @@
+import '../../../models/clovers.dart';
 import '../../../models/guide_lesson.dart';
 import '../../../models/learning_progress.dart';
 import '../../../models/physics_module.dart';
@@ -186,16 +187,23 @@ List<LearnLesson> inProgressLessons(
   return list;
 }
 
-/// Module progress 0..1 as the share of finished lessons plus the quiz.
+/// Module progress 0..1 = the module's clovers earned / possible (decision
+/// 0214): its finished videos and guides, and its quiz (70 % and 100 %).
 double moduleProgress(
   String moduleId,
   List<LearnLesson> lessons,
   LearningProgress? p,
 ) {
-  final own = lessons.where((l) => l.moduleId == moduleId).toList();
-  final quizDone = p?.completedQuizModules.contains(moduleId) ?? false;
-  final total = own.length + 1;
-  final sum =
-      own.fold<double>(0, (s, l) => s + l.progress(p)) + (quizDone ? 1 : 0);
-  return (sum / total).clamp(0.0, 1.0);
+  final own = lessons.where((l) => l.moduleId == moduleId);
+  return CloverTally.from(
+    videoIds: own.where((l) => l.isVideo).map((l) => l.id),
+    completedVideoIds: p?.completedVideoIds ?? const {},
+    guideIds: own.where((l) => !l.isVideo).map((l) => l.id),
+    completedGuideIds: p?.completedGuideIds ?? const {},
+    quizModuleIds: [moduleId],
+    quizBestPercent: p?.quizScores ?? const {},
+    simulationIds: const [],
+    viewedSimulationIds: const {},
+    issues: const [],
+  ).fraction;
 }

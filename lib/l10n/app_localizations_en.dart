@@ -4567,17 +4567,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String g4IssuesStreak(int count, Object days) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count issues',
-      one: '1 issue',
-    );
-    return '$_temp0 · $days-day streak';
-  }
-
-  @override
   String get g4LabApproved => 'Lab approved';
 
   @override
@@ -4844,12 +4833,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String g4StreakDays(Object days) {
-    return '$days-day reading streak';
-  }
+  String get g4StreakHint => 'Read today\'s guide to earn XP and clovers';
 
   @override
-  String get g4StreakHint => 'Read today\'s guide to keep it going';
+  String get g4WeekReading => 'Your reading this week';
 
   @override
   String get g4TakePhoto => 'Take photo';

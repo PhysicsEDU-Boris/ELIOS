@@ -3044,15 +3044,6 @@
       "n": {}
     }
   },
-  "g4IssuesStreak": "{count, plural, =1{1 issue} other{{count} issues}} · {days}-day streak",
-  "@g4IssuesStreak": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      },
-      "days": {}
-    }
-  },
   "g4LabApproved": "Lab approved",
   "g4LabApprovedBy": "Lab approved by ELIOS AI",
   "g4LabBusy": "The lab check is busy. Your photos stayed on your phone; try again in a minute.",
@@ -3208,13 +3199,8 @@
       "done": {}
     }
   },
-  "g4StreakDays": "{days}-day reading streak",
-  "@g4StreakDays": {
-    "placeholders": {
-      "days": {}
-    }
-  },
-  "g4StreakHint": "Read today's guide to keep it going",
+  "g4StreakHint": "Read today's guide to earn XP and clovers",
+  "g4WeekReading": "Your reading this week",
   "g4TakePhoto": "Take photo",
   "g4TeacherBody": "ELIOS AI wasn't sure, so your teacher will look at the result. No photos are kept.",
   "g4TeacherNote": "Your teacher can see this result and change it. Photos were deleted after the check.",
