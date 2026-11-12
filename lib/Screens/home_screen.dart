@@ -1732,97 +1732,6 @@ class _Count extends StatelessWidget {
   }
 }
 
-/// The green squiggle under a heading: 12 px waves, drawn left → right.
-class _SquigglePainter extends CustomPainter {
-  _SquigglePainter(this.color, this.t);
-  final Color color;
-  final double t;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (t <= 0) return;
-    final path = Path()..moveTo(2, 6);
-    var up = true;
-    for (var x = 2.0; x + 6 <= size.width - 8; x += 6, up = !up) {
-      final y = up ? 2.6667 : 9.3333;
-      path.cubicTo(x + 2, y, x + 4, y, x + 6, 6);
-    }
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-    for (final m in path.computeMetrics()) {
-      canvas.drawPath(m.extractPath(0, m.length * t.clamp(0.0, 1.0)), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_SquigglePainter old) => old.color != color || old.t != t;
-}
-
-/// Section heading: title, squiggle, optional line below and a trailing
-/// widget, entering over the first half of [a].
-class _Head extends StatelessWidget {
-  const _Head({
-    required this.a,
-    required this.title,
-    required this.squiggle,
-    this.subtitle,
-    this.trailing,
-  });
-  final Animation<double> a;
-  final String title;
-  final double squiggle;
-  final String? subtitle;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = authPalette(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              HomeRise(
-                a,
-                0,
-                0.3,
-                rise: 10,
-                child: Semantics(
-                  header: true,
-                  child: Text(title, style: homeTitle(p)),
-                ),
-              ),
-              AnimatedBuilder(
-                animation: a,
-                builder: (context, _) => CustomPaint(
-                  size: Size(squiggle, 10),
-                  painter: _SquigglePainter(p.primary, homeSlice(a, 0.1, 0.55)),
-                ),
-              ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 4),
-                HomeRise(
-                  a,
-                  0.15,
-                  0.45,
-                  rise: 8,
-                  child: Text(subtitle!, style: homeSmall(p)),
-                ),
-              ],
-            ],
-          ),
-        ),
-        ?trailing,
-      ],
-    );
-  }
-}
-
 /// Daily quests (629:80438-44, cards 629:80672): heading with squiggle and
 /// ring, then three pop cards dealt in, the middle one raised.
 class _Quests extends StatelessWidget {
@@ -1854,7 +1763,7 @@ class _Quests extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Head(
+        HomeHead(
           a: a,
           title: context.l10n.homeDailyQuests,
           squiggle: 96,
@@ -2464,7 +2373,7 @@ class _BinBuddiesState extends State<_BinBuddies> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Head(
+        HomeHead(
           a: a,
           title: context.l10n.homeBinBuddies,
           squiggle: 90,
@@ -2878,7 +2787,7 @@ class _MedalsState extends State<_Medals> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Head(
+        HomeHead(
           a: a,
           title: context.l10n.homeMedals,
           squiggle: 72,

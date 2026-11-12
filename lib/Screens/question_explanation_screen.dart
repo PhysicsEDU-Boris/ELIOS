@@ -3,12 +3,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/quiz_explanation.dart';
 import '../models/scan_record.dart';
+import '../services/elio_feedback.dart';
 import '../services/history_explanation_service.dart';
 import '../services/history_translation_service.dart';
 import '../services/quiz_pdf_service.dart';
 import '../services/quiz_tts_service.dart';
 import '../services/scan_record_store.dart';
 import '../l10n/l10n.dart';
+import '../theme/elio_motion.dart';
 import '../theme/elio_tokens.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
 import '../widgets/history_ui.dart';
@@ -35,7 +37,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
     with WidgetsBindingObserver {
   late int _index = widget.questionIndex;
   QuizExplanation? _explanation;
-  bool _loading = true, _whole = false;
+  bool _loading = true, _whole = false, _cued = false;
 
   /// The app language shown ('en'/'id'); [_original]: its translation is not
   /// available (offline), so the record's own language is shown with a note.
@@ -60,6 +62,16 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (!_cued) {
+      _cued = true;
+      // S4 for a right answer, S1 otherwise, as the page lands.
+      elioOnRouteEntered(
+        context,
+        () => _q.isCorrect
+            ? elioEntryCue(ElioSfx.chime, ElioHaptics.light)
+            : elioEntryCue(ElioSfx.tick, ElioHaptics.select),
+      );
+    }
     final lang = context.l10n.localeName == 'en' ? 'en' : 'id';
     if (lang == _lang) return;
     // A live language switch stops speech and shows the record in the new language.
@@ -185,9 +197,15 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
     }
   }
 
+  // Haptic only: a sound would sit on top of the voice.
+  void _tapListen(String id, String text) {
+    ElioHaptics.select();
+    unawaited(_listen(id, text));
+  }
+
   Widget _listenButton(String id, String text) => HistoryListenButton(
     active: _playing == id || (id == 'question' && _whole),
-    onPressed: () => _listen(id, text),
+    onPressed: () => _tapListen(id, text),
   );
 
   Future<void> _openExport() async {
@@ -234,6 +252,14 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
     String? body(String id) =>
         sections.where((s) => s.$1 == id).firstOrNull?.$3;
     final idea = body('idea'), steps = _explanation?.steps ?? const [];
+    var n = 0;
+    Widget enter(Widget child, {bool pop = false}) => ElioPopIn(
+      key: ValueKey('enter-$_index-$n'),
+      index: n++,
+      scale: pop ? 0.9 : 0.96,
+      curve: pop ? ElioMotion.pop : ElioMotion.emphasized,
+      child: child,
+    );
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) _stop();
@@ -264,16 +290,22 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                       lang: _record.lang,
                       onRetry: () => unawaited(_load()),
                     ),
-                  HistoryResultHero(
-                    correct: q.isCorrect,
-                    index: _index,
-                    total: _record.questions.length,
-                    trophies: q.trophies,
+                  // Sections rise in one after another, again per question.
+                  enter(
+                    HistoryResultHero(
+                      correct: q.isCorrect,
+                      index: _index,
+                      total: _record.questions.length,
+                      trophies: q.trophies,
+                    ),
+                    pop: true,
                   ),
                   const SizedBox(height: 16),
-                  HistoryQuestionPanel(
-                    question: q.question,
-                    listen: _listenButton('question', q.question),
+                  enter(
+                    HistoryQuestionPanel(
+                      question: q.question,
+                      listen: _listenButton('question', q.question),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   if (q.isEssay) ...[
@@ -332,24 +364,31 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                     (s) => s.$1 != 'idea' && s.$1 != 'steps',
                   )) ...[
                     const SizedBox(height: 12),
-                    HistoryLearnCard(
-                      art: _learnArt(p, s.$1),
-                      title: s.$2,
-                      body: s.$3,
-                      active: _playing == s.$1,
-                      onListen: () => _listen(s.$1, s.$3),
+                    enter(
+                      HistoryLearnCard(
+                        art: _learnArt(p, s.$1),
+                        title: s.$2,
+                        body: s.$3,
+                        active: _playing == s.$1,
+                        onListen: () => _tapListen(s.$1, s.$3),
+                      ),
                     ),
                   ],
                   if (idea != null) ...[
                     const SizedBox(height: 16),
-                    HistoryKeyIdea(active: _playing == 'idea', text: idea),
+                    enter(
+                      HistoryKeyIdea(active: _playing == 'idea', text: idea),
+                      pop: true,
+                    ),
                   ],
                   if (body('steps') != null) ...[
                     const SizedBox(height: 16),
-                    HistoryMission(
-                      steps: steps,
-                      active: _playing == 'steps',
-                      onListen: () => _listen('steps', body('steps')!),
+                    enter(
+                      HistoryMission(
+                        steps: steps,
+                        active: _playing == 'steps',
+                        onListen: () => _tapListen('steps', body('steps')!),
+                      ),
                     ),
                   ],
                   if (_explanation == null ||
@@ -362,7 +401,10 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
           children: [
             OutlinedButton.icon(
               style: historyOutlineStyle(p),
-              onPressed: _openExport,
+              onPressed: () {
+                elioFeedback(ElioSfx.pop, ElioHaptics.light);
+                unawaited(_openExport());
+              },
               icon: const Icon(Icons.description_outlined),
               label: Text(context.l10n.h3ExportPdf),
             ),
@@ -371,6 +413,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                 style: historyPrimaryStyle(p),
                 iconAlignment: IconAlignment.end,
                 onPressed: () {
+                  elioFeedback(ElioSfx.tick, ElioHaptics.select);
                   _stop();
                   setState(() => _index++);
                   if (_scroll.hasClients) _scroll.jumpTo(0);

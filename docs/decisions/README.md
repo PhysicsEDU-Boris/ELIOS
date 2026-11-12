@@ -83,3 +83,4 @@ their status changed.
 - [0212](0212-lesson-xp.md) Videos, module guides and lesson quizzes give XP
 - [0213](0213-trophies-to-xp.md) "Trophies" become "XP" everywhere
 - [0214](0214-scoring-finish.md) Module % from clovers, one streak
+- [0215](0215-history-l4-figma.md) History tab in the Figma L4 style, entrance on every open, nested-screen motion

@@ -11,6 +11,7 @@ import 'package:elio/Screens/scan_history_screen.dart';
 import 'package:elio/Screens/history_photo_viewer.dart';
 import 'package:elio/Screens/question_explanation_screen.dart';
 import 'package:elio/services/ai_quiz_service.dart';
+import 'package:elio/services/elio_feedback.dart';
 import 'package:elio/services/quiz_tts_service.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/theme/elio_dark_theme.dart';
@@ -30,6 +31,9 @@ class WaitingStore extends HistoryTestStore {
 }
 
 void main() {
+  // History screens now play entry and tap sounds (0215): no audio plugin here.
+  setUpAll(() => ElioSound.instance.sink = (_, _) {});
+  tearDownAll(() => ElioSound.instance.sink = null);
   // H3 copy is asserted in Indonesian (decision 0185).
   setUpAll(() => debugSetL10n(const Locale('id')));
   tearDownAll(() => debugSetL10n(const Locale('en')));

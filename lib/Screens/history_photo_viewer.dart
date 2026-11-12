@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../l10n/l10n.dart';
 import '../models/scan_record.dart';
+import '../services/elio_feedback.dart';
 import '../services/quiz_pdf_service.dart';
 import '../theme/elio_tokens.dart';
 import '../widgets/history_ui.dart';
@@ -171,7 +172,10 @@ class _HistoryPhotoViewerState extends State<HistoryPhotoViewer> {
                         const SizedBox(width: 4),
                         IconButton(
                           tooltip: t.h3Close,
-                          onPressed: () => Navigator.of(context).maybePop(),
+                          onPressed: () {
+                            elioFeedback(ElioSfx.tick, ElioHaptics.select);
+                            Navigator.of(context).maybePop();
+                          },
                           icon: Icon(
                             Icons.close,
                             size: 22,
@@ -208,7 +212,10 @@ class _HistoryPhotoViewerState extends State<HistoryPhotoViewer> {
                         ),
                         IconButton(
                           tooltip: t.h3SharePhoto,
-                          onPressed: _share,
+                          onPressed: () {
+                            elioFeedback(ElioSfx.pop, ElioHaptics.light);
+                            _share();
+                          },
                           icon: Icon(
                             Icons.share_outlined,
                             size: 22,

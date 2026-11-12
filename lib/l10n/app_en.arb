@@ -3444,5 +3444,9 @@
   "setupStepDone": "done",
   "setupStepNow": "current step",
   "setupStepTodo": "not yet",
-  "setupStepProblem": "needs attention"
+  "setupStepProblem": "needs attention",
+  "histEcoLevel": "YOUR ECO LEVEL",
+  "histSyncedShort": "Synced",
+  "histSyncingShort": "Syncing",
+  "histNotSyncedShort": "Not synced"
 }

@@ -89,6 +89,7 @@ flutter:
     - assets/illustrations/home/
     - assets/illustrations/control/
     - assets/illustrations/scan/
+    - assets/illustrations/history/
     - assets/sounds/
 
   fonts:

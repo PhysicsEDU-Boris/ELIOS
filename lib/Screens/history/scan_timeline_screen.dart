@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../l10n/l10n.dart';
 import '../../models/scan_record.dart';
+import '../../services/elio_feedback.dart';
 import '../../services/scan_record_store.dart';
 import '../../theme/elio_motion.dart';
 import '../../theme/elio_theme.dart';
@@ -39,6 +40,18 @@ class ScanTimelineScreen extends StatefulWidget {
 
 class _ScanTimelineScreenState extends State<ScanTimelineScreen> {
   late HistoryDevice? _device = widget.device;
+  bool _cued = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_cued) return;
+    _cued = true;
+    elioOnRouteEntered(
+      context,
+      () => elioEntryCue(ElioSfx.tick, ElioHaptics.select),
+    );
+  }
 
   @override
   void initState() {
@@ -57,6 +70,7 @@ class _ScanTimelineScreenState extends State<ScanTimelineScreen> {
   }
 
   void _open(ScanRecord r) {
+    elioFeedback(ElioSfx.pop, ElioHaptics.light);
     final theme = Theme.of(context);
     Navigator.of(context).push(
       ElioPageRoute<void>(
@@ -91,6 +105,7 @@ class _ScanTimelineScreenState extends State<ScanTimelineScreen> {
               groups.add([r]);
             }
           }
+          var n = 0;
           return Scaffold(
             backgroundColor: p.background,
             body: SafeArea(
@@ -105,11 +120,23 @@ class _ScanTimelineScreenState extends State<ScanTimelineScreen> {
                   const SizedBox(height: 16),
                   _Tabs(
                     selected: _device,
-                    onSelect: (d) => setState(() => _device = d),
+                    onSelect: (d) {
+                      elioFeedback(ElioSfx.tick, ElioHaptics.select);
+                      setState(() => _device = d);
+                    },
                   ),
                   const SizedBox(height: 16),
                   if (_device != null) ...[
-                    _DeviceHero(device: _device!, count: records.length),
+                    // Pops in again for each device.
+                    ElioPopIn(
+                      key: ValueKey(_device),
+                      scale: 0.9,
+                      curve: ElioMotion.pop,
+                      child: _DeviceHero(
+                        device: _device!,
+                        count: records.length,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                   ] else ...[
                     Text(
@@ -137,20 +164,34 @@ class _ScanTimelineScreenState extends State<ScanTimelineScreen> {
                         ),
                       ),
                     ),
+                  // Day pills and rows rise in one after another, again on
+                  // a device change.
                   for (final group in groups) ...[
-                    _DayPill(historyDay(t, group.first.time)),
+                    ElioPopIn(
+                      key: ValueKey('$_device-day-${group.first.id}'),
+                      index: n++,
+                      scale: 0.8,
+                      curve: ElioMotion.pop,
+                      child: _DayPill(historyDay(t, group.first.time)),
+                    ),
                     for (final (i, r) in group.indexed)
-                      _RailRow(
-                        first: i == 0,
-                        last: i == group.length - 1,
-                        child: HistoryScanRow(
-                          record: r,
-                          highlighted: identical(r, records.first),
-                          showDevice: _device == null,
-                          trailingLabel: DateFormat.Hm(
-                            dateLocaleOf(t),
-                          ).format(r.time),
-                          onTap: () => _open(r),
+                      ElioPopIn(
+                        key: ValueKey('$_device-${r.id}'),
+                        index: n++,
+                        child: ElioPress(
+                          child: _RailRow(
+                            first: i == 0,
+                            last: i == group.length - 1,
+                            child: HistoryScanRow(
+                              record: r,
+                              highlighted: identical(r, records.first),
+                              showDevice: _device == null,
+                              trailingLabel: DateFormat.Hm(
+                                dateLocaleOf(t),
+                              ).format(r.time),
+                              onTap: () => _open(r),
+                            ),
+                          ),
                         ),
                       ),
                     const SizedBox(height: 12),
@@ -292,12 +333,12 @@ class _DeviceHero extends StatelessWidget {
                   color: p.textPrimary,
                 ),
               ),
-              Text(
-                t.histDeviceScans(
-                  count,
-                  phone ? t.histPhoneCamera : 'MaixCAM2',
+              ElioCountUp(
+                value: count,
+                builder: (context, v) => Text(
+                  t.histDeviceScans(v, phone ? t.histPhoneCamera : 'MaixCAM2'),
+                  style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
                 ),
-                style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
               ),
             ],
           ),

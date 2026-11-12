@@ -5491,4 +5491,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get setupStepProblem => 'needs attention';
+
+  @override
+  String get histEcoLevel => 'YOUR ECO LEVEL';
+
+  @override
+  String get histSyncedShort => 'Synced';
+
+  @override
+  String get histSyncingShort => 'Syncing';
+
+  @override
+  String get histNotSyncedShort => 'Not synced';
 }

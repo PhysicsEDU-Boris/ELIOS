@@ -273,9 +273,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     : ElioTokens.light)
                 .background,
         // ELIOS 3: no top bar and no sidebar; each tab draws its own title.
-        body: _currentIndex == _historyIndex
-            ? SafeArea(bottom: false, child: _buildCurrentScreen())
-            : _buildCurrentScreen(),
+        // History draws its green hero under the status bar (0215).
+        body: _buildCurrentScreen(),
         floatingActionButtonLocation: const ElioControlFabLocation(),
         floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
         floatingActionButton: ElioTheme.wrap(

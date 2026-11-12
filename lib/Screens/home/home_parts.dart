@@ -564,6 +564,102 @@ class HomeThumb extends StatelessWidget {
   }
 }
 
+/// The green squiggle under a heading: 12 px waves, drawn left → right.
+class HomeSquigglePainter extends CustomPainter {
+  HomeSquigglePainter(this.color, this.t);
+  final Color color;
+  final double t;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (t <= 0) return;
+    final path = Path()..moveTo(2, 6);
+    var up = true;
+    for (var x = 2.0; x + 6 <= size.width - 8; x += 6, up = !up) {
+      final y = up ? 2.6667 : 9.3333;
+      path.cubicTo(x + 2, y, x + 4, y, x + 6, 6);
+    }
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    for (final m in path.computeMetrics()) {
+      canvas.drawPath(m.extractPath(0, m.length * t.clamp(0.0, 1.0)), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(HomeSquigglePainter old) =>
+      old.color != color || old.t != t;
+}
+
+/// Section heading: title, squiggle, optional line below and a trailing
+/// widget, entering over the first half of [a].
+class HomeHead extends StatelessWidget {
+  const HomeHead({
+    super.key,
+    required this.a,
+    required this.title,
+    required this.squiggle,
+    this.subtitle,
+    this.trailing,
+  });
+  final Animation<double> a;
+  final String title;
+  final double squiggle;
+  final String? subtitle;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              HomeRise(
+                a,
+                0,
+                0.3,
+                rise: 10,
+                child: Semantics(
+                  header: true,
+                  child: Text(title, style: homeTitle(p)),
+                ),
+              ),
+              AnimatedBuilder(
+                animation: a,
+                builder: (context, _) => CustomPaint(
+                  size: Size(squiggle, 10),
+                  painter: HomeSquigglePainter(
+                    p.primary,
+                    homeSlice(a, 0.1, 0.55),
+                  ),
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                HomeRise(
+                  a,
+                  0.15,
+                  0.45,
+                  rise: 8,
+                  child: Text(subtitle!, style: homeSmall(p)),
+                ),
+              ],
+            ],
+          ),
+        ),
+        ?trailing,
+      ],
+    );
+  }
+}
+
 /// Tap reaction: the child springs (scale ±[amp], wobble ±[turn] radians,
 /// 500 ms) with [sfx] and [haptic]. Reduced motion keeps only the feedback.
 class HomeBoing extends StatefulWidget {
@@ -575,8 +671,10 @@ class HomeBoing extends StatefulWidget {
     this.sfx = ElioSfx.pop,
     this.haptic = ElioHaptics.light,
     this.alignment = Alignment.center,
+    this.onTap,
   });
   final Widget child;
+  final VoidCallback? onTap;
   final double amp, turn;
   final ElioSfx sfx;
   final void Function() haptic;
@@ -609,6 +707,7 @@ class _HomeBoingState extends State<HomeBoing>
   void _tap() {
     elioFeedback(widget.sfx, widget.haptic);
     if (!ElioMotion.reduced(context)) _c.forward(from: 0);
+    widget.onTap?.call();
   }
 
   @override
