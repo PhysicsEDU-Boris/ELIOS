@@ -10,6 +10,7 @@ hashes updated after the history rewrite on 2026-10-08. The old-to-new map is
 kept outside the repo.
 
 ## [Unreleased]
+- Level counts Daily Guide XP (0204): the level total is now scan trophies + quest rewards + guide XP, and the level thresholds are 150 / 375 / 750 / 1500 (were 100 / 250 / 500 / 1000) so a student doing both keeps their level.
 - Home in the new style (0209): Home now matches the newest design in light and dark: bolder titles, a Scan activity leaf panel, a new Recent scans card with your 3 latest scans and Open History, bins standing on a shelf, leaf cards for This week and Quiz accuracy, and medals hanging from a ribbon (tap "1 of 3" to see how to earn them). Every time you open Home the tree grows, the dial sweeps and the numbers count up with three quiet sounds; lower sections animate as you scroll to them. The tree, trophy sticker, pebbles, quest cards, bins and medals react when tapped. Search results and the selected day's scans show a small picture. "Did you know?" is gone from Home.
 - Fix (0208): going back from a Daily Guide page to Learn no longer shows a red error screen; the guide photo flies back as intended.
 

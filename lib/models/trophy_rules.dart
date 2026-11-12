@@ -37,17 +37,19 @@ enum QuizGrade {
 
 /// Student level derived from total cumulative trophies.
 /// Boundaries:
-/// - Lv1 Eco Starter     : 0 - 99
-/// - Lv2 Waste Spotter   : 100 - 249
-/// - Lv3 Bin Expert      : 250 - 499
-/// - Lv4 Eco Sorter      : 500 - 999
-/// - Lv5 Planet Guardian : 1000+
+/// - Lv1 Eco Starter     : 0 - 149
+/// - Lv2 Waste Spotter   : 150 - 374
+/// - Lv3 Bin Expert      : 375 - 749
+/// - Lv4 Eco Sorter      : 750 - 1499
+/// - Lv5 Planet Guardian : 1500+
+/// Counts scan trophies + quest rewards + guide XP; ×1.5 of the old
+/// scan-only thresholds so adding guide XP does not lift everyone (decision 0204).
 enum StudentLevel {
-  ecoStarter(1, 0, 99, 100),
-  wasteSpotter(2, 100, 249, 250),
-  binExpert(3, 250, 499, 500),
-  ecoSorter(4, 500, 999, 1000),
-  planetGuardian(5, 1000, null, null);
+  ecoStarter(1, 0, 149, 150),
+  wasteSpotter(2, 150, 374, 375),
+  binExpert(3, 375, 749, 750),
+  ecoSorter(4, 750, 1499, 1500),
+  planetGuardian(5, 1500, null, null);
 
   const StudentLevel(
     this.levelNumber,
@@ -71,13 +73,10 @@ enum StudentLevel {
   String get shortName => 'Lv$levelNumber $title';
   String get levelAndTitle => 'Level $levelNumber · $title';
 
-  static StudentLevel forTotal(int trophies) {
-    if (trophies >= 1000) return StudentLevel.planetGuardian;
-    if (trophies >= 500) return StudentLevel.ecoSorter;
-    if (trophies >= 250) return StudentLevel.binExpert;
-    if (trophies >= 100) return StudentLevel.wasteSpotter;
-    return StudentLevel.ecoStarter;
-  }
+  static StudentLevel forTotal(int trophies) => values.lastWhere(
+    (l) => trophies >= l.minTrophies,
+    orElse: () => ecoStarter,
+  );
 
   /// Linear progress fraction [0.0, 1.0] towards the next level threshold.
   double progress(int totalTrophies) {

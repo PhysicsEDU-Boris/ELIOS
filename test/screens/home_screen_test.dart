@@ -246,16 +246,16 @@ void main() {
       await t.pump(const Duration(seconds: 1));
       expect(t.takeException(), isNull);
       expect(find.text('25'), findsWidgets); // total scans
-      expect(find.text('Waste Spotter'), findsOneWidget); // 140 trophies
+      expect(find.text('Eco Starter'), findsOneWidget); // 140 < 150 (0204)
       expect(find.text('140 trophies'), findsOneWidget);
       expect(
         find.text(
-          '110 trophies to Level 3 · your tree grows with every trophy',
+          '10 trophies to Level 2 · your tree grows with every trophy',
         ),
         findsOneWidget,
       );
+      expect(find.text('Lv 1'), findsOneWidget);
       expect(find.text('Lv 2'), findsOneWidget);
-      expect(find.text('Lv 3'), findsOneWidget);
       expect(
         find.text('ELIOS robot'.toUpperCase()),
         findsNothing,

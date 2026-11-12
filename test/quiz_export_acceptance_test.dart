@@ -151,6 +151,8 @@ void main() {
     expect(state.phase, WasteQuizPhase.finished);
     expect(state.messages.last.text, contains('Jawaban benar: 1 dari 1.'));
     expect(store.totalTrophies, 8 + questBonus(store.records));
+    store.guideXp = 30; // Daily Guide XP counts too (0204)
+    expect(store.totalTrophies, 38 + questBonus(store.records));
   });
 
   test('new explanation phase still stops TTS before next question', () async {
