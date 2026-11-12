@@ -68,9 +68,17 @@ haptics on every part, quiz questions full-screen like the identified view, ligh
 
 ## Phone check (Edge 60 Fusion, 12 Nov)
 
-Debug APK `c050b64` installed in place, dark / English: hub, Select vehicle (locked toast),
-ELIOS setup, Wi-Fi QR sheet, contribute ("Not quite" path with the real AI), real Scan & quiz
-(laptop and mobile phone identified, hazard notice, Start quiz, wrong answer). The later
-commits (answer review, coach and quiz-complete pages) were not installed: the phone was
-unplugged. Not checked on the phone: light mode, Bahasa Indonesia, landscape, sounds and
-haptics by ear/hand, the approved contribution result.
+Debug APK `4a10f65` installed in place (`adb install -r`, data kept). Images:
+`docs/test-results/0216-scan-l4/`.
+
+- Dark / English: hub, Select vehicle (locked toast), ELIOS setup, Wi-Fi QR sheet, contribute
+  ("Not quite" path with the real AI), real Scan & quiz (laptop, mobile phone and computer
+  mouse identified; hazard notice; Start quiz; right and wrong answers), answer review, coach
+  page, flash button (light on).
+- Light / Bahasa Indonesia: hub, Select vehicle, ELIOS setup, scan result, question, wrong
+  answer, answer review. Settings put back to dark / English, app left on History.
+- Not checked on the phone: landscape, sounds and haptics by ear/hand, the approved
+  contribution result, the quiz-complete page (question 2 is an essay in the tester build and
+  was not answered), the Wi-Fi QR invalid-input shake.
+- History went from 46 scans / 1033 XP to 48 scans / 1123 XP during the session; the test
+  scans account for at least part of that.
