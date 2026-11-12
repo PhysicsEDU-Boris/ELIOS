@@ -253,67 +253,6 @@ class LearningProgress {
     return total / categories.length;
   }
 
-  double videoProgressFor({required int totalVideos}) {
-    return (completedVideoIds.length / _safeTotal(totalVideos)).clamp(0.0, 1.0);
-  }
-
-  double guideProgressFor({required int totalGuides}) {
-    return (completedGuideIds.length / _safeTotal(totalGuides)).clamp(0.0, 1.0);
-  }
-
-  double quizProgressFor({required int totalQuizModules}) {
-    return (completedQuizModules.length / _safeTotal(totalQuizModules)).clamp(
-      0.0,
-      1.0,
-    );
-  }
-
-  double weightedProgressFor({
-    required int totalVideos,
-    required int totalGuides,
-    required int totalQuizModules,
-  }) {
-    return (videoProgressFor(totalVideos: totalVideos) * 0.4 +
-            guideProgressFor(totalGuides: totalGuides) * 0.2 +
-            quizProgressFor(totalQuizModules: totalQuizModules) * 0.4)
-        .clamp(0.0, 1.0);
-  }
-
-  int weightedProgressPercentFor({
-    required int totalVideos,
-    required int totalGuides,
-    required int totalQuizModules,
-  }) {
-    return (weightedProgressFor(
-              totalVideos: totalVideos,
-              totalGuides: totalGuides,
-              totalQuizModules: totalQuizModules,
-            ) *
-            100)
-        .round();
-  }
-
-  double get videoProgress =>
-      videoProgressFor(totalVideos: fallbackTotalVideoLessons);
-
-  double get guideProgress =>
-      guideProgressFor(totalGuides: fallbackTotalGuideLessons);
-
-  double get quizProgress =>
-      quizProgressFor(totalQuizModules: fallbackTotalQuizModules);
-
-  double get weightedProgress => weightedProgressFor(
-    totalVideos: fallbackTotalVideoLessons,
-    totalGuides: fallbackTotalGuideLessons,
-    totalQuizModules: fallbackTotalQuizModules,
-  );
-
-  int get weightedProgressPercent => weightedProgressPercentFor(
-    totalVideos: fallbackTotalVideoLessons,
-    totalGuides: fallbackTotalGuideLessons,
-    totalQuizModules: fallbackTotalQuizModules,
-  );
-
   int get completedLessonsCount =>
       completedVideoIds.length + completedGuideIds.length;
 
@@ -479,7 +418,6 @@ class LearningProgress {
   factory LearningProgress.fromJson(String source) =>
       LearningProgress.fromMap(jsonDecode(source) as Map<String, dynamic>);
 
-  static int _safeTotal(int value) => value <= 0 ? 1 : value;
 
   static Set<String> _stringSetFromList(List<dynamic> list) =>
       list.whereType<String>().toSet();

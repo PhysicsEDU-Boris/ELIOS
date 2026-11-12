@@ -5146,7 +5146,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lnGuideRewards(int xp, String clovers) {
-    return '$xp XP · $clovers · from Daily Guides';
+    return '$clovers · $xp XP from Daily Guides';
+  }
+
+  @override
+  String lnCloversOf(int earned, int possible) {
+    return '$earned of $possible clovers';
   }
 
   @override

@@ -11,6 +11,7 @@ import '../../models/physics_module.dart';
 import '../../models/video_lesson.dart';
 import '../../providers/daily_guide_provider.dart';
 import '../../providers/learn_shortcut_provider.dart';
+import '../../providers/clover_provider.dart';
 import '../../providers/learning_progress_provider.dart';
 import '../../services/elio_feedback.dart';
 import '../../services/guide_progress.dart';
@@ -56,11 +57,9 @@ class _LearnShortcutsMenuState extends ConsumerState<LearnShortcutsMenu> {
       videos.valueOrNull ?? const <VideoLesson>[],
     );
     final resume = inProgressLessons(lessons, progress).firstOrNull;
-    final overall = progress?.weightedProgressFor(
-      totalVideos: count(videos) ?? 0,
-      totalGuides: count(guides) ?? 0,
-      totalQuizModules: count(modules) ?? 0,
-    );
+    final overall = progress == null
+        ? null
+        : ref.watch(cloverTallyProvider).fraction;
 
     Widget row(
       LearnShortcut s,
@@ -385,15 +384,15 @@ class LearnTabTitle extends StatelessWidget {
   }
 }
 
-/// "1 clover" sticker on the Learn header (Figma 629:82550): the Daily Guides
-/// reading streak, shown as clovers (ELIOS 3, decision 0197).
+/// "12 clovers" sticker on the Learn header (Figma 629:82550): clovers earned
+/// across all learning content (decision 0205; was the guide streak, 0197).
 class LearnTopPills extends ConsumerWidget {
   const LearnTopPills({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = authPalette(context);
-    final streak = ref.watch(guideProgressProvider.select((s) => s.streak));
+    final clovers = ref.watch(cloverTallyProvider);
     // Intro: drops in from above, turning and bouncing (spring/bounce).
     return LearnIntroSlice(
       from: 200,
@@ -409,20 +408,25 @@ class LearnTopPills extends ConsumerWidget {
           ),
         ),
       ),
-      child: _cloverSticker(context, p, streak),
+      child: _cloverSticker(context, p, clovers.earned, clovers.possible),
     );
   }
 
-  Widget _cloverSticker(BuildContext context, ElioPalette p, int streak) {
+  Widget _cloverSticker(
+    BuildContext context,
+    ElioPalette p,
+    int earned,
+    int possible,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(right: 16),
       child: Semantics(
-        label: l10n.g4StreakDays(streak),
+        label: l10n.lnCloversOf(earned, possible),
         excludeSemantics: true,
         // Card 20: a new clover spins in (0 → 360°, 0.6 → 1.1 → 1), the
         // count flips up, three leaves float off and the sticker wiggles.
         child: RiseWatcher(
-          value: streak,
+          value: earned,
           onRise: (_, _) =>
               elioFeedback(ElioSfx.sparkleShort, ElioHaptics.success),
           builder: (context, bump) => Replay(
@@ -478,8 +482,8 @@ class LearnTopPills extends ConsumerWidget {
                                 child: FadeTransition(opacity: a, child: child),
                               ),
                               child: Text(
-                                l10n.lnClovers(streak),
-                                key: ValueKey(streak),
+                                l10n.lnClovers(earned),
+                                key: ValueKey(earned),
                                 style: ElioTokens.button.copyWith(
                                   color: p.primaryText,
                                 ),

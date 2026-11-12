@@ -7,6 +7,7 @@ import '../../models/learning_progress.dart';
 import '../../models/physics_module.dart';
 import '../../models/quiz_set.dart';
 import '../../models/video_lesson.dart';
+import '../../providers/clover_provider.dart';
 import '../../providers/learning_progress_provider.dart';
 import '../../providers/navigation_provider.dart';
 import '../../providers/physics_progress_provider.dart';
@@ -345,13 +346,8 @@ class _HubContentState extends ConsumerState<_HubContent> {
     final lessons = _lessons;
     final lessonsLoaded = videos != null && guides != null;
     final firstLaunch = isFirstLaunch(progress);
-    final overall =
-        progress?.weightedProgressFor(
-          totalVideos: videos?.length ?? 0,
-          totalGuides: guides?.length ?? 0,
-          totalQuizModules: modules.length,
-        ) ??
-        0;
+    final clovers = ref.watch(cloverTallyProvider);
+    final overall = clovers.fraction;
     final values = [
       for (final m in modules) moduleProgress(m.id, lessons, progress),
     ];
@@ -478,9 +474,7 @@ class _HubContentState extends ConsumerState<_HubContent> {
             top: const LearnTabTitle(),
             rewards: l10n.lnGuideRewards(
               ref.watch(guideProgressProvider.select((s) => s.totalXp)),
-              l10n.lnClovers(
-                ref.watch(guideProgressProvider.select((s) => s.streak)),
-              ),
+              l10n.lnCloversOf(clovers.earned, clovers.possible),
             ),
             ticket: today == null
                 ? null
