@@ -11,7 +11,8 @@ import '../providers/auth_provider.dart';
 import '../models/app_notification.dart';
 import '../providers/app_notification_provider.dart';
 import '../providers/daily_guide_provider.dart';
-import '../services/guide_progress.dart';
+import '../providers/learning_progress_provider.dart' show learnXpProvider;
+import '../services/scan_record_store.dart';
 import '../providers/elio_theme_mode_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/robot_provider.dart';
@@ -56,7 +57,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusManager.instance.primaryFocus?.unfocus();
       SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
@@ -246,7 +246,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   Widget build(BuildContext context) {
     // Guide catalogue and progress sync from app start (Home shows the "New guide" notification).
     ref.listen(dailyGuideFeedProvider, (_, _) {});
-    ref.listen(guideProgressProvider, (_, _) {});
+    // Starts at 0 XP and emits once loaded, so no fireImmediately; the level counts it (0210, 0212).
+    ref.listen(
+      learnXpProvider,
+      (_, xp) => ScanRecordStore.instance.learnXp = xp,
+    );
     ref.listen<int>(
       navigationIndexProvider,
       (_, next) => _handleNavigationProviderChange(next),

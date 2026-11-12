@@ -6,6 +6,7 @@ import '../../../models/guide_lesson.dart';
 import '../../../models/physics_module.dart';
 import '../../../models/quiz_set.dart';
 import '../../../models/video_lesson.dart';
+import '../../../providers/clover_provider.dart';
 import '../../../providers/learning_progress_provider.dart';
 import '../../../providers/physics_progress_provider.dart';
 import '../../../services/elearning_content_service.dart';
@@ -84,13 +85,7 @@ class _ProgressPageState extends ConsumerState<ProgressPage> {
     final progress = ref.watch(learningProgressProvider).valueOrNull;
     final physics = ref.watch(physicsProgressProvider).valueOrNull;
     final lessons = mergeLessons(guides, videos);
-    final overall =
-        progress?.weightedProgressFor(
-          totalVideos: videos.length,
-          totalGuides: guides.length,
-          totalQuizModules: modules.length,
-        ) ??
-        0;
+    final overall = ref.watch(cloverTallyProvider).fraction;
     final values = {
       for (final m in modules) m.id: moduleProgress(m.id, lessons, progress),
     };

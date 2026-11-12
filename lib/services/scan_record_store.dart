@@ -104,9 +104,20 @@ class ScanRecordStore extends ChangeNotifier {
     if (!_loaded && _loadFuture == null) {
       unawaited(load());
     }
-    // Daily quest rewards count too (decision 0144).
+    // Daily quest rewards (0144) and learning XP (Daily Guides 0210, lessons 0212) count too.
     return _records.fold<int>(0, (sum, r) => sum + r.trophies) +
-        questBonus(_records);
+        questBonus(_records) +
+        _learnXp;
+  }
+
+  /// Learning XP of the signed-in account (Daily Guides + lessons), pushed from
+  /// [learnXpProvider] by HomeShell (0210, 0212).
+  int get learnXp => _learnXp;
+  int _learnXp = 0;
+  set learnXp(int xp) {
+    if (xp == _learnXp) return;
+    _learnXp = xp;
+    notifyListeners();
   }
 
   StudentLevel get userLevel => StudentLevel.forTotal(totalTrophies);

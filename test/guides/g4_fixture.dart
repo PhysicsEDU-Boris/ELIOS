@@ -6,6 +6,9 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:elio/providers/auth_provider.dart';
+import 'package:elio/providers/physics_progress_provider.dart';
+import 'package:elio/services/progress_service.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:elio/services/daily_guide_service.dart';
 import 'package:elio/services/guide_progress.dart';
 import 'package:elio/services/history_cloud.dart';
@@ -376,6 +379,14 @@ List<Override> guideOverrides({
     ),
     currentUserProvider.overrideWithValue(
       user ?? MockUser(uid: 'student-1', isAnonymous: false),
+    ),
+    // The Learn clover sticker counts opened simulations (0211).
+    physicsProgressProvider.overrideWith(
+      (ref) => PhysicsProgressNotifier(
+        ProgressService(firestore: FakeFirebaseFirestore()),
+        null,
+        false,
+      ),
     ),
   ];
 }

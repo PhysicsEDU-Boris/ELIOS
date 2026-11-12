@@ -36,7 +36,7 @@ void main() {
   test('celebrate only real changes; a first run only records', () {
     expect(
       celebrationsDue(lastLevel: null, level: 4, lastMedals: null, medals: {0}),
-      (levelUp: false, newMedals: const <int>[]),
+      (levelUp: false, newMedals: const <int>[], seenLevel: 4),
     );
     final due = celebrationsDue(
       lastLevel: 3,
@@ -56,6 +56,25 @@ void main() {
       isEmpty,
       reason: 'medals not loaded yet',
     );
+  });
+
+  test('a brief lower level at launch does not re-celebrate (0212)', () {
+    // Cold start: scans-only Lv1 before learning XP loads; Lv2 was seen before.
+    final start = celebrationsDue(
+      lastLevel: 2,
+      level: 1,
+      lastMedals: null,
+      medals: null,
+    );
+    expect(start.levelUp, isFalse);
+    expect(start.seenLevel, 2, reason: 'never lowered');
+    final loaded = celebrationsDue(
+      lastLevel: start.seenLevel,
+      level: 2,
+      lastMedals: null,
+      medals: null,
+    );
+    expect(loaded.levelUp, isFalse);
   });
 
   testWidgets('celebration shows the title, then closes by itself', (t) async {

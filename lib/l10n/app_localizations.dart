@@ -8794,8 +8794,14 @@ abstract class AppLocalizations {
   /// No description provided for @lnGuideRewards.
   ///
   /// In en, this message translates to:
-  /// **'{xp} XP · {clovers} · from Daily Guides'**
+  /// **'{clovers} · {xp} XP from Daily Guides'**
   String lnGuideRewards(int xp, String clovers);
+
+  /// No description provided for @lnCloversOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{earned} of {possible} clovers'**
+  String lnCloversOf(int earned, int possible);
 
   /// No description provided for @wqSavedNoQuiz.
   ///

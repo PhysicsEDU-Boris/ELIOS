@@ -5041,7 +5041,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String lnGuideRewards(int xp, String clovers) {
-    return '$xp XP · $clovers · dari Panduan Harian';
+    return '$clovers · $xp XP dari Panduan Harian';
+  }
+
+  @override
+  String lnCloversOf(int earned, int possible) {
+    return '$earned dari $possible semanggi';
   }
 
   @override
