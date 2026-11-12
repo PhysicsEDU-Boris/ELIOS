@@ -1,5 +1,11 @@
 # Local build notes
 
+## 12 Nov 2026 — XP/clovers phone test (0204–0206, `feat/lesson-xp`)
+- Source / APP_COMMIT `e68ff7f` (first build `45139a7`); arm64 debug APK with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION; Gradle ~38 s. adb from `~/Library/Android/sdk/platform-tools` (not on PATH).
+- Motorola Edge 60 Fusion over USB, `com.boris.elio` debug, same signing; `adb install -r` Success, no uninstall/data clear. App data tar backup in the session scratchpad first; all 5 `scan_records*.json` md5-identical after testing.
+- Found on `45139a7`: Level-2 celebration on every cold start (seen level saved from the scans-only level before learning XP loaded). Fixed in `e68ff7f`; two cold starts after: no celebration.
+- Checked: Home Level 2, 220 trophies, 155 to Lv3; Learn sticker 8 clovers, "8 dari 36 semanggi · 80 XP dari Panduan Harian", ring 22 %. Left on Home. No Mac app, model, firmware or signing change.
+
 ## 9 Nov 2026 — Learn L2 v3 phone test (0195, `feat/learn-l2v3`)
 - Source / APP_COMMIT `1e4810f` (first test build `b54a1b6+l2v3`); `flutter build apk --debug --target-platform android-arm64` with LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION; Gradle 36 s. `.env*` and `google-services.json` already present (gitignored).
 - Motorola Edge 60 Fusion over USB, `com.boris.elio` debug, same signing; `adb install -r` Success 14:41:23 Jakarta, no uninstall/data clear. App data backed up first (tar in the session scratchpad); the 3 `scan_records.json` files are md5-identical after testing.
