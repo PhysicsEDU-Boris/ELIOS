@@ -17,7 +17,15 @@ class ConfigSegmented extends StatelessWidget {
     required this.selected,
     required this.onSelected,
     this.labels,
+    this.leading,
+    this.neutral = false,
   });
+
+  /// An icon before each label (Quiz source card 629:90989).
+  final List<Widget>? leading;
+
+  /// White pill with a soft shadow instead of the green one.
+  final bool neutral;
 
   final String label;
   final List<String> options;
@@ -60,8 +68,21 @@ class ConfigSegmented extends StatelessWidget {
                   heightFactor: 1,
                   child: DecoratedBox(
                     decoration: ShapeDecoration(
-                      color: p.primary,
+                      color: !neutral
+                          ? p.primary
+                          : p.isDark
+                          ? p.textPrimary
+                          : p.surface,
                       shape: const StadiumBorder(),
+                      shadows: neutral
+                          ? const [
+                              BoxShadow(
+                                color: Color(0x1F0F172A),
+                                offset: Offset(0, 2),
+                                blurRadius: 4,
+                              ),
+                            ]
+                          : null,
                     ),
                   ),
                 ),
@@ -93,11 +114,33 @@ class ConfigSegmented extends StatelessWidget {
                               curve: const Interval(0.25, 1),
                               style: configStrong(
                                 p,
-                                color: o == selected
+                                color: o != selected
+                                    ? p.textSecondary
+                                    : !neutral
                                     ? p.onPrimary
-                                    : p.textSecondary,
+                                    : p.isDark
+                                    ? p.background
+                                    : p.textPrimary,
                               ),
-                              child: Text(labels?[i] ?? o),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (leading != null) ...[
+                                    Opacity(
+                                      opacity: o == selected ? 1 : 0.6,
+                                      child: leading![i],
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
+                                  Flexible(
+                                    child: Text(
+                                      labels?[i] ?? o,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),

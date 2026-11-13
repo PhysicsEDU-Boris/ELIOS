@@ -3448,5 +3448,36 @@
   "histEcoLevel": "YOUR ECO LEVEL",
   "histSyncedShort": "Synced",
   "histSyncingShort": "Syncing",
-  "histNotSyncedShort": "Not synced"
+  "histNotSyncedShort": "Not synced",
+  "scanResultTitle": "Scan result",
+  "scanIdentified": "Identified",
+  "scanIdentifying": "Identifying…",
+  "scanBinRecyclable": "Recyclable bin (Anorganik)",
+  "scanBinOrganic": "Organic bin (Organik)",
+  "scanBinB3": "Hazardous bin (B3)",
+  "scanBinResidu": "Residual bin (Residu)",
+  "scanQuizReady": "Your quiz is ready",
+  "scanQuizWriting": "Writing your quiz…",
+  "scanQuizQuestions": "{count, plural, =1{1 question} other{{count} questions}}",
+  "@scanQuizQuestions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanRetake": "Retake",
+  "scanStartQuiz": "Start quiz",
+  "scanSkipQuestion": "Skip question",
+  "scanJustNowPhone": "Just now · Phone",
+  "scanGallery": "Choose from gallery",
+  "scanZoom": "Zoom {zoom}",
+  "@scanZoom": {"placeholders": {"zoom": {"type": "Object"}}},
+  "scanFlash": "Flash",
+  "scanWhyWorks": "Why it works this way",
+  "scanBinFits": "Where each bin fits the scanned item",
+  "scanAskCoach": "Ask ELIOS AI coach",
+  "scanAskCoachSub": "Ask why, get a hint, hear it aloud",
+  "scanBinYes": "Yes",
+  "scanBinNo": "No"
 }

@@ -1,6 +1,7 @@
 // C1 Config screen pieces (decision 0145, Figma page 337:2358): ELIOS AI logo
 // and card, choice tile, status tile, card and buttons. Colours come from the
 // active palette only; the bulb is the shared Home illustration.
+import '../home/home_parts.dart' show homeWeight;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -25,12 +26,10 @@ TextStyle configBody(ElioPalette p, {Color? color, FontWeight? weight}) =>
       height: 1.45,
     );
 
-TextStyle configStrong(ElioPalette p, {Color? color}) =>
-    ElioTokens.bodySmall.copyWith(
-      color: color ?? p.textPrimary,
-      fontWeight: FontWeight.w700,
-      height: 1.35,
-    );
+TextStyle configStrong(ElioPalette p, {Color? color}) => homeWeight(
+  ElioTokens.bodySmall,
+  700,
+).copyWith(color: color ?? p.textPrimary, height: 1.35);
 
 TextStyle configCaption(ElioPalette p, {Color? color}) => ElioTokens.caption
     .copyWith(color: color ?? p.textSecondary, fontWeight: FontWeight.w400);

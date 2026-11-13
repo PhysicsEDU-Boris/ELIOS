@@ -9384,6 +9384,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not synced'**
   String get histNotSyncedShort;
+
+  /// No description provided for @scanResultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan result'**
+  String get scanResultTitle;
+
+  /// No description provided for @scanIdentified.
+  ///
+  /// In en, this message translates to:
+  /// **'Identified'**
+  String get scanIdentified;
+
+  /// No description provided for @scanIdentifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Identifying…'**
+  String get scanIdentifying;
+
+  /// No description provided for @scanBinRecyclable.
+  ///
+  /// In en, this message translates to:
+  /// **'Recyclable bin (Anorganik)'**
+  String get scanBinRecyclable;
+
+  /// No description provided for @scanBinOrganic.
+  ///
+  /// In en, this message translates to:
+  /// **'Organic bin (Organik)'**
+  String get scanBinOrganic;
+
+  /// No description provided for @scanBinB3.
+  ///
+  /// In en, this message translates to:
+  /// **'Hazardous bin (B3)'**
+  String get scanBinB3;
+
+  /// No description provided for @scanBinResidu.
+  ///
+  /// In en, this message translates to:
+  /// **'Residual bin (Residu)'**
+  String get scanBinResidu;
+
+  /// No description provided for @scanQuizReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Your quiz is ready'**
+  String get scanQuizReady;
+
+  /// No description provided for @scanQuizWriting.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing your quiz…'**
+  String get scanQuizWriting;
+
+  /// No description provided for @scanQuizQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 question} other{{count} questions}}'**
+  String scanQuizQuestions(int count);
+
+  /// No description provided for @scanRetake.
+  ///
+  /// In en, this message translates to:
+  /// **'Retake'**
+  String get scanRetake;
+
+  /// No description provided for @scanStartQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Start quiz'**
+  String get scanStartQuiz;
+
+  /// No description provided for @scanSkipQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip question'**
+  String get scanSkipQuestion;
+
+  /// No description provided for @scanJustNowPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now · Phone'**
+  String get scanJustNowPhone;
+
+  /// No description provided for @scanGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from gallery'**
+  String get scanGallery;
+
+  /// No description provided for @scanZoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom {zoom}'**
+  String scanZoom(Object zoom);
+
+  /// No description provided for @scanFlash.
+  ///
+  /// In en, this message translates to:
+  /// **'Flash'**
+  String get scanFlash;
+
+  /// No description provided for @scanWhyWorks.
+  ///
+  /// In en, this message translates to:
+  /// **'Why it works this way'**
+  String get scanWhyWorks;
+
+  /// No description provided for @scanBinFits.
+  ///
+  /// In en, this message translates to:
+  /// **'Where each bin fits the scanned item'**
+  String get scanBinFits;
+
+  /// No description provided for @scanAskCoach.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask ELIOS AI coach'**
+  String get scanAskCoach;
+
+  /// No description provided for @scanAskCoachSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask why, get a hint, hear it aloud'**
+  String get scanAskCoachSub;
+
+  /// No description provided for @scanBinYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get scanBinYes;
+
+  /// No description provided for @scanBinNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get scanBinNo;
 }
 
 class _AppLocalizationsDelegate

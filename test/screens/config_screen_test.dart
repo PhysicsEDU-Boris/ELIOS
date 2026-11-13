@@ -157,7 +157,7 @@ void main() {
         expect(find.text('Save as default address'), findsOneWidget);
         expect(_enabled(t, 'Connect now'), isTrue);
         expect(find.text('Disconnect'), findsNothing, reason: 'nothing to disconnect');
-        expect(find.text('Gemini · needs internet'), findsOneWidget);
+        expect(find.text('Gemini · needs internet'), findsNothing);
       });
 
       testWidgets('connecting', (t) async {
@@ -213,7 +213,7 @@ void main() {
         expect(find.text('Start scan'), findsNothing);
         expect(find.text('Robot not used'), findsNothing);
         expect(find.text('Connection'), findsOneWidget);
-        expect(find.text('ELIOS AI is not reachable'), findsOneWidget);
+        expect(find.text('ELIOS AI is not reachable'), findsNothing);
       });
     });
 
@@ -306,6 +306,8 @@ void main() {
 
   testWidgets('robot quiz card: own source and on/off; phone source untouched (0198)', (t) async {
     await _pumpConfig(t, dark: false, ai: AiStatus.offline);
+    await t.pump(const Duration(milliseconds: 300)); // section entrance (0216)
+    await t.pump(const Duration(milliseconds: 600));
     final container = ProviderScope.containerOf(t.element(find.byType(ConfigScreen)));
     final phone = container.read(appPreferencesProvider).questionSource;
     await t.tap(find.text('Question bank'));
@@ -315,15 +317,19 @@ void main() {
     await t.pump();
     expect(container.read(appPreferencesProvider).robotQuestionSource, QuestionSource.ai);
     expect(container.read(appPreferencesProvider).questionSource, phone);
-    expect(t.getSemantics(find.text('Question bank')).flagsCollection.isSelected, Tristate.isFalse);
+    expect(t.getSemantics(find.bySemanticsLabel('Quiz questions Question bank')).flagsCollection.isSelected, Tristate.isFalse);
 
     await t.tap(find.text('Quiz after each scan'));
     await t.pump();
     expect(container.read(appPreferencesProvider).robotQuizEnabled, isFalse);
     expect(find.text('Saved to History. The quiz is off for robot scans.'), findsOneWidget);
-    await t.tap(find.text('Question bank'));
+    // Quiz off: the source switch collapses (decision 0216), the choice is kept.
+    expect(find.descendant(of: find.byType(ConfigScreen), matching: find.byType(ConfigSegmented).last), findsOneWidget, reason: 'resolution switch stays');
+    expect(find.text('Question bank'), findsNothing);
+    expect(container.read(appPreferencesProvider).robotQuestionSource, QuestionSource.ai);
+    await t.tap(find.text('Quiz after each scan'));
     await t.pump();
-    expect(container.read(appPreferencesProvider).robotQuestionSource, QuestionSource.ai, reason: 'tiles are off');
+    expect(find.text('Question bank'), findsOneWidget, reason: 'back with the quiz on');
   });
 
   testWidgets('ELIOS setup saves connection and video inline; no settings sheet (0198)', (t) async {

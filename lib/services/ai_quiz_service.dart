@@ -287,7 +287,9 @@ OUTPUT
   static String? bannedTopicIn(String text) {
     final lower = text.toLowerCase();
     for (final term in bannedTopicTerms) {
-      if (RegExp('(^|[^a-z])${RegExp.escape(term)}(\$|[^a-z])').hasMatch(lower)) {
+      if (RegExp(
+        '(^|[^a-z])${RegExp.escape(term)}(\$|[^a-z])',
+      ).hasMatch(lower)) {
         return term;
       }
     }
@@ -628,6 +630,8 @@ OUTPUT
         '(1-1800 karakter), why_wrong (kosong bila jawaban siswa benar, maksimal 1800), '
         'key_idea (1-600 karakter), steps (0-5 string, masing-masing 1-240 karakter). '
         'Di sisi "$lang" salin correct_option persis dari data; di sisi lain terjemahkan. '
+        'Sisi "id" seluruhnya dalam Bahasa Indonesia dan sisi "en" seluruhnya dalam '
+        'bahasa Inggris (English), apa pun bahasa datanya. '
         'Data: $input';
     for (var attempt = 0; attempt < 2; attempt++) {
       final raw = await _send(
@@ -1126,7 +1130,6 @@ OUTPUT
         .replaceAll(RegExp(r'^#+\s*', multiLine: true), '')
         .trim();
   }
-
 
   /// Multiple choice comes as one `correct` answer plus `wrong` distractors
   /// (decision 0013), so the answer key is the structure itself: no index can

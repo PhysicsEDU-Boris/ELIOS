@@ -5408,4 +5408,82 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get histNotSyncedShort => 'Belum sinkron';
+
+  @override
+  String get scanResultTitle => 'Hasil scan';
+
+  @override
+  String get scanIdentified => 'Teridentifikasi';
+
+  @override
+  String get scanIdentifying => 'Mengenali…';
+
+  @override
+  String get scanBinRecyclable => 'Tempat sampah Anorganik';
+
+  @override
+  String get scanBinOrganic => 'Tempat sampah Organik';
+
+  @override
+  String get scanBinB3 => 'Tempat sampah B3';
+
+  @override
+  String get scanBinResidu => 'Tempat sampah Residu';
+
+  @override
+  String get scanQuizReady => 'Kuismu sudah siap';
+
+  @override
+  String get scanQuizWriting => 'Menulis kuismu…';
+
+  @override
+  String scanQuizQuestions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count soal',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanRetake => 'Foto ulang';
+
+  @override
+  String get scanStartQuiz => 'Mulai kuis';
+
+  @override
+  String get scanSkipQuestion => 'Lewati soal';
+
+  @override
+  String get scanJustNowPhone => 'Baru saja · Ponsel';
+
+  @override
+  String get scanGallery => 'Pilih dari galeri';
+
+  @override
+  String scanZoom(Object zoom) {
+    return 'Zoom $zoom';
+  }
+
+  @override
+  String get scanFlash => 'Lampu kilat';
+
+  @override
+  String get scanWhyWorks => 'Mengapa begitu';
+
+  @override
+  String get scanBinFits => 'Tempat sampah mana yang cocok untuk benda ini';
+
+  @override
+  String get scanAskCoach => 'Tanya pelatih ELIOS AI';
+
+  @override
+  String get scanAskCoachSub => 'Tanya alasannya, minta petunjuk, dengarkan';
+
+  @override
+  String get scanBinYes => 'Ya';
+
+  @override
+  String get scanBinNo => 'Bukan';
 }
