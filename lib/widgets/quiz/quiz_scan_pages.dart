@@ -1383,19 +1383,19 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
     final s = widget.state;
     final q = s.question!;
     final n = ref.read(wasteQuizProvider.notifier);
-    final ex = s.currentExplanation;
+    // The side written in the app language, when the reply has it (0185).
+    final made = s.currentExplanation;
+    final ex = made?.alt != null && made?.alt?.lang == l10n.localeName
+        ? made!.alt
+        : made;
     final picked = s.selectedOption;
     final correct = picked == q.correctIndex;
     final category = ScanCategory.fromString(s.scan?.category?.id);
     final top = MediaQuery.paddingOf(context).top;
-    final why = [
-      if (ex != null) ...[
-        ex.summary,
-        if (!correct && ex.selectedAnswerFeedback.isNotEmpty)
-          ex.selectedAnswerFeedback,
-      ] else if (q.bankId == null || q.bankReviewed)
-        q.explanation,
-    ].where((t) => t.isNotEmpty).join('\n\n');
+    // One explanation only; "why not my answer" is the coach's job.
+    final why =
+        ex?.summary ??
+        (q.bankId == null || q.bankReviewed ? q.explanation : '');
 
     // Curved green header (662:26005): back, title, read aloud.
     final wide = MediaQuery.sizeOf(context).width > 800;
@@ -1558,16 +1558,17 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  homeArt(
-                    correct ? 'medal_gold' : 'medal_locked',
+                  SvgPicture.asset(
+                    'assets/illustrations/history/icon_xp.svg',
                     width: 20,
-                    height: 24,
+                    height: 20,
+                    excludeFromSemantics: true,
                   ),
                   const SizedBox(width: 4),
                   ElioCountUp(
                     value: correct ? 10 : 0,
                     builder: (context, v) => Text(
-                      '+$v',
+                      l10n.trophiesEarned(v),
                       style: _sq(
                         ElioTokens.subhead,
                         600,

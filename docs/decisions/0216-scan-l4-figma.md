@@ -82,3 +82,42 @@ Debug APK `4a10f65` installed in place (`adb install -r`, data kept). Images:
   was not answered), the Wi-Fi QR invalid-input shake.
 - History went from 46 scans / 1033 XP to 48 scans / 1123 XP during the session; the test
   scans account for at least part of that.
+
+## Owner's phone test, 13 Nov: seven changes
+
+1. **Zoom**: steps 1× 2× 3× 5× above the shutter (only those the camera reports, capped at 5×
+   because digital zoom beyond that is too soft for the AI) and pinch to zoom. The zoomed
+   stream is what gets scanned.
+2. **Gallery**: a button left of the shutter opens the system photo picker (`image_picker`,
+   new dependency; no storage permission on Android 13+). The photo is scanned whole, not
+   cropped to the viewfinder. Hidden on macOS: the sandboxed Mac build has no file access.
+3. **ELIOS AI card and Tester mode removed from ELIOS setup.** The widgets (`EliosAiCard`,
+   `TesterPanel`) and their tests stay in the code but nothing shows them. Consequences: no
+   in-app Bank/ELIOS AI question-source switch (the saved choice keeps applying), no Share/
+   View log buttons (the log file is still written; `adb pull`), and setup no longer says
+   when ELIOS AI is unreachable.
+4. **Review points pill**: XP icon and "+10 XP" / "+0 XP" instead of the medal.
+5. **Contribute result sheet** reaches the bottom edge (it pads itself for the gesture bar)
+   and scrolls on short screens (it overflowed by 14 px in landscape).
+6. **Review explanation language**: the owner saw an Indonesian explanation under an English
+   question, in two paragraphs. The review now shows one paragraph (why the right answer is
+   right; "why not mine" is the coach's job) and takes the side of the bilingual reply that
+   matches the app language. The explain prompt now states that the "id" side is all Bahasa
+   Indonesia and the "en" side all English. The wrong text most likely came from the model
+   filling the "en" side in Indonesian (the prompt is written in Indonesian); that is not
+   proven, and the app cannot detect it if the model does it again.
+7. **Contribute bin picker**: three tiles with the bin art, organic green `#22C55E`,
+   recyclable orange `#F97316`, B3 red `#EF4444`; the picked one is filled.
+
+Also fixed: `PhoneScanScreen` read the quiz provider lazily in `dispose`, which threw when the
+camera was closed without taking a photo.
+
+Tests: `test/screens/phone_scan_test.dart` (zoom steps, gallery pick and cancel, bin tiles) and
+one more in `scan_quiz_pages_test.dart` (one explanation, app language, XP). Break-checked
+against the old review page and bin chips. Full suite 1594 passed, 20 skipped.
+
+Phone (build `e960b37+owner-fixes`, light / English): 3× zoom, gallery photo identified and
+quizzed, review in English with "+0 XP", bin tiles and the approved result in landscape with
+no overflow. Not checked: ELIOS setup without the two blocks (tests only), pinch zoom, the
+result sheet edge in portrait, Bahasa Indonesia for these changes. The AI approved a cardboard
+box lying on the floor as "went into the Recyclable bin" twice (existing check, not changed).

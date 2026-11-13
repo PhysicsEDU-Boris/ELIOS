@@ -3,6 +3,7 @@
 // overflow in portrait and landscape, light/dark, EN/ID.
 // SCAN_RENDER=<dir> writes PNGs of every state.
 import 'package:elio/l10n/l10n.dart';
+import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/ai_quiz_service.dart';
@@ -169,6 +170,34 @@ void main() {
     await t.tap(find.byKey(const ValueKey('scan_coach_entry')));
     await _settle(t);
     expect(find.byKey(const ValueKey('scan_coach')), findsOneWidget);
+  });
+
+  testWidgets('the review shows one explanation, in the app language, and '
+      'XP', (t) async {
+    const en = QuizExplanation(
+      summary: 'Heat softens PET.',
+      correctAnswerReason: 'Heat softens PET.',
+      selectedAnswerFeedback: 'Weight does not change.',
+      lang: 'en',
+    );
+    await _pump(
+      t,
+      _ready.copyWith(
+        phase: WasteQuizPhase.explaining,
+        selectedOption: 1,
+        currentExplanation: const QuizExplanation(
+          summary: 'Panas melunakkan PET.',
+          correctAnswerReason: 'Panas melunakkan PET.',
+          selectedAnswerFeedback: 'Berat tidak berubah.',
+          lang: 'id',
+          alt: en,
+        ),
+      ),
+    );
+    expect(find.text('Heat softens PET.'), findsOneWidget);
+    expect(find.textContaining('Panas'), findsNothing);
+    expect(find.textContaining('Weight does not change'), findsNothing);
+    expect(find.text('+0 XP'), findsOneWidget);
   });
 
   testWidgets('a failed scan offers Retake', (t) async {

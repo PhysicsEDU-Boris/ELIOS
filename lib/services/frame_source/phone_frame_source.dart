@@ -73,6 +73,23 @@ class PhoneFrameSource extends FrameSource {
     notifyListeners();
   }
 
+  /// Camera zoom (Scan & quiz): 1 up to [maxZoom]; the photo is zoomed too.
+  double zoom = 1;
+  double maxZoom = 1;
+  Future<void> setZoom(double value) async {
+    final c = _controller;
+    if (c == null || !c.value.isInitialized) return;
+    final z = value.clamp(1.0, maxZoom);
+    if (z == zoom) return;
+    zoom = z;
+    notifyListeners();
+    try {
+      await c.setZoomLevel(z);
+    } catch (_) {
+      // The preview stays as it was; the next change tries again.
+    }
+  }
+
   @override
   Stream<CapturedFrame> get frames => _frameController.stream;
 
@@ -129,6 +146,13 @@ class PhoneFrameSource extends FrameSource {
           _latest = image;
           frameCount++;
         });
+      }
+      zoom = 1;
+      try {
+        // ponytail: digital zoom past 5× is too soft for the AI to read.
+        maxZoom = (await controller.getMaxZoomLevel()).clamp(1.0, 5.0);
+      } catch (_) {
+        maxZoom = 1;
       }
       _controller = controller;
       _errorMsg = null;

@@ -157,7 +157,7 @@ void main() {
         expect(find.text('Save as default address'), findsOneWidget);
         expect(_enabled(t, 'Connect now'), isTrue);
         expect(find.text('Disconnect'), findsNothing, reason: 'nothing to disconnect');
-        expect(find.text('Gemini · needs internet'), findsOneWidget);
+        expect(find.text('Gemini · needs internet'), findsNothing);
       });
 
       testWidgets('connecting', (t) async {
@@ -213,7 +213,7 @@ void main() {
         expect(find.text('Start scan'), findsNothing);
         expect(find.text('Robot not used'), findsNothing);
         expect(find.text('Connection'), findsOneWidget);
-        expect(find.text('ELIOS AI is not reachable'), findsOneWidget);
+        expect(find.text('ELIOS AI is not reachable'), findsNothing);
       });
     });
 

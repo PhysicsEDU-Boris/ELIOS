@@ -5555,6 +5555,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanJustNowPhone => 'Just now · Phone';
 
   @override
+  String get scanGallery => 'Choose from gallery';
+
+  @override
+  String scanZoom(Object zoom) {
+    return 'Zoom $zoom';
+  }
+
+  @override
   String get scanFlash => 'Flash';
 
   @override

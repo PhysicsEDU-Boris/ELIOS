@@ -20,7 +20,6 @@ import '../theme/elio_theme.dart';
 import '../theme/elio_tokens.dart';
 import '../utils/system_ui.dart';
 import '../widgets/learn/learn_ui.dart';
-import '../widgets/tester_panel.dart';
 import 'config/config_parts.dart';
 import '../widgets/waste_quiz_popup.dart' show EliosAiBadge;
 import 'home/home_parts.dart' show homeArt, homeWeight;
@@ -254,7 +253,6 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                           const ElioPopIn(index: 3, child: _VideoSection()),
                           const SizedBox(height: 28),
                           const ElioPopIn(index: 4, child: _QuizSection()),
-                          if (testerBuild) const TesterPanel(),
                         ],
                       ),
                     ),
@@ -1540,8 +1538,6 @@ class _QuizSection extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            const EliosAiCard(),
           ],
         ),
       ],

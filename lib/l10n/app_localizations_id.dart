@@ -5459,6 +5459,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get scanJustNowPhone => 'Baru saja · Ponsel';
 
   @override
+  String get scanGallery => 'Pilih dari galeri';
+
+  @override
+  String scanZoom(Object zoom) {
+    return 'Zoom $zoom';
+  }
+
+  @override
   String get scanFlash => 'Lampu kilat';
 
   @override

@@ -9469,6 +9469,18 @@ abstract class AppLocalizations {
   /// **'Just now · Phone'**
   String get scanJustNowPhone;
 
+  /// No description provided for @scanGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from gallery'**
+  String get scanGallery;
+
+  /// No description provided for @scanZoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom {zoom}'**
+  String scanZoom(Object zoom);
+
   /// No description provided for @scanFlash.
   ///
   /// In en, this message translates to:

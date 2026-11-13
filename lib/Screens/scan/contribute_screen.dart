@@ -244,6 +244,8 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
                 else
                   const Center(child: CircularProgressIndicator()),
                 SafeArea(
+                  // The sheets reach the screen edge; they pad themselves.
+                  bottom: false,
                   child: Column(
                     children: [
                       Padding(
@@ -329,7 +331,7 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
                           ],
                         ),
                       ),
-                      const Spacer(),
+                      if (_step != _Step.done) const Spacer(),
                       if (_step == _Step.pick || _step == _Step.recording)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -362,32 +364,25 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
                                     ),
                                     if (_step == _Step.pick) ...[
                                       const SizedBox(height: 10),
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
+                                      Row(
                                         children: [
-                                          for (final b in contributeBins)
-                                            ChoiceChip(
-                                              label: Text(binName(b)),
-                                              selected: _bin == b,
-                                              selectedColor: b.fg,
-                                              labelStyle:
-                                                  homeWeight(
-                                                    ElioTokens.caption,
-                                                    600,
-                                                  ).copyWith(
-                                                    color: _bin == b
-                                                        ? Colors.white
-                                                        : p.textPrimary,
-                                                  ),
-                                              onSelected: (_) {
-                                                elioFeedback(
-                                                  ElioSfx.tick,
-                                                  ElioHaptics.select,
-                                                );
-                                                setState(() => _bin = b);
-                                              },
+                                          for (final b in contributeBins) ...[
+                                            if (b != contributeBins.first)
+                                              const SizedBox(width: 8),
+                                            Expanded(
+                                              child: _BinChoice(
+                                                bin: b,
+                                                selected: _bin == b,
+                                                onTap: () {
+                                                  elioFeedback(
+                                                    ElioSfx.tick,
+                                                    ElioHaptics.select,
+                                                  );
+                                                  setState(() => _bin = b);
+                                                },
+                                              ),
                                             ),
+                                          ],
                                         ],
                                       ),
                                     ],
@@ -450,10 +445,22 @@ class _ContributeScreenState extends ConsumerState<ContributeScreen> {
                             ),
                           ),
                         ),
-                      if (_step == _Step.done) _result(p),
+                      // Short (landscape) screens scroll the result sheet.
+                      if (_step == _Step.done)
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: _result(p),
+                          ),
+                        ),
                       if (_step == _Step.pick || _step == _Step.recording)
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 20, 0, 24),
+                          padding: EdgeInsets.fromLTRB(
+                            0,
+                            20,
+                            0,
+                            24 + MediaQuery.paddingOf(context).bottom,
+                          ),
                           child: Semantics(
                             button: true,
                             label: _step == _Step.pick
@@ -727,6 +734,72 @@ class _SlideIn extends StatelessWidget {
   );
 }
 
+/// One bin to pick: its art and name in the bin's colour (owner, 12 Nov
+/// 2026: organic green, recyclable orange, B3 red); filled when selected.
+class _BinChoice extends StatelessWidget {
+  const _BinChoice({
+    required this.bin,
+    required this.selected,
+    required this.onTap,
+  });
+  final ScanCategory bin;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (bin) {
+      ScanCategory.organic => const Color(0xFF22C55E),
+      ScanCategory.b3 => const Color(0xFFEF4444),
+      _ => const Color(0xFFF97316),
+    };
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: ElioPress(
+        pressed: 0.95,
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: ElioMotion.fast,
+            constraints: const BoxConstraints(minHeight: 96),
+            padding: const EdgeInsets.fromLTRB(6, 10, 6, 10),
+            decoration: BoxDecoration(
+              color: selected ? color : color.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color, width: selected ? 3 : 1.5),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedScale(
+                  scale: selected ? 1.12 : 1,
+                  duration: ElioMotion.base,
+                  curve: ElioMotion.pop,
+                  child: homeArt(switch (bin) {
+                    ScanCategory.organic => 'bin_organik',
+                    ScanCategory.b3 => 'bin_b3',
+                    _ => 'bin_anorganik',
+                  }, height: 40),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  binName(bin),
+                  textAlign: TextAlign.center,
+                  style: homeWeight(
+                    ElioTokens.caption,
+                    700,
+                  ).copyWith(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Result sheet (629:91074): handle, rounded top; slides up when it opens
 /// and nudges 6 px up and back for "try again".
 class _Sheet extends StatelessWidget {
@@ -739,25 +812,32 @@ class _Sheet extends StatelessWidget {
     final p = context.elio;
     final sheet = Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        10,
+        20,
+        20 + MediaQuery.paddingOf(context).bottom,
+      ),
       decoration: BoxDecoration(
         color: p.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.only(bottom: 14),
-            decoration: ShapeDecoration(
-              color: p.borderMedium,
-              shape: const StadiumBorder(),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 14),
+              decoration: ShapeDecoration(
+                color: p.borderMedium,
+                shape: const StadiumBorder(),
+              ),
             ),
-          ),
-          child,
-        ],
+            child,
+          ],
+        ),
       ),
     );
     if (ElioMotion.reduced(context)) return sheet;

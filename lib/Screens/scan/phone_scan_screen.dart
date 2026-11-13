@@ -3,8 +3,10 @@
 // identify → quiz steps are the full-screen ScanQuizPages (decision 0216).
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../l10n/l10n.dart';
 import '../../providers/app_preferences_provider.dart';
@@ -23,8 +25,13 @@ import '../../services/elio_feedback.dart';
 /// The square viewfinder; the AI and History get only what is inside it.
 const phoneScanBox = Size(260, 260);
 
+final _noGallery = defaultTargetPlatform == TargetPlatform.macOS;
+
 class PhoneScanScreen extends ConsumerStatefulWidget {
-  const PhoneScanScreen({super.key, this.source});
+  const PhoneScanScreen({super.key, this.source, this.pickPhoto});
+
+  /// Test seam: the gallery picker.
+  final Future<Uint8List?> Function()? pickPhoto;
 
   /// Test seam: a fake camera.
   final PhoneFrameSource? source;
@@ -42,7 +49,8 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
             .valueOrNull
             ?.resolutionPreset,
       );
-  late final WasteQuizNotifier _quiz = ref.read(wasteQuizProvider.notifier);
+  // Read in initState: dispose needs it and can no longer use ref.
+  late final WasteQuizNotifier _quiz;
   bool _capturing = false;
   int _shots = 0;
   bool _down = false;
@@ -50,6 +58,7 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
   @override
   void initState() {
     super.initState();
+    _quiz = ref.read(wasteQuizProvider.notifier);
     _source.addListener(_changed);
     _source.initialize();
   }
@@ -86,6 +95,31 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
     }
   }
 
+  /// A photo from the gallery is scanned whole, like a camera photo.
+  Future<void> _pickFromGallery() async {
+    if (_capturing) return;
+    elioFeedback(ElioSfx.pop, ElioHaptics.light);
+    try {
+      final bytes =
+          await (widget.pickPhoto ??
+              () async => (await ImagePicker().pickImage(
+                source: ImageSource.gallery,
+                maxWidth: 1280,
+                maxHeight: 1280,
+                imageQuality: 85,
+              ))?.readAsBytes())();
+      if (bytes != null) _quiz.onPhotoCaptured(bytes);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.photoFailed(e))));
+      }
+    }
+  }
+
+  double _zoomStart = 1;
+
   @override
   void dispose() {
     _source.removeListener(_changed);
@@ -120,7 +154,12 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
               fit: StackFit.expand,
               children: [
                 if (ready)
-                  _source.buildPreview()
+                  // Pinch to zoom.
+                  GestureDetector(
+                    onScaleStart: (_) => _zoomStart = _source.zoom,
+                    onScaleUpdate: (d) => _source.setZoom(_zoomStart * d.scale),
+                    child: _source.buildPreview(),
+                  )
                 else
                   Center(
                     child: _source.error != null
@@ -228,11 +267,75 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
                       ),
                       SizedBox(height: phoneScanBox.height + 48),
                       const Spacer(),
+                      // Zoom steps the camera can do; a pinch lands between.
+                      if (ready && _source.maxZoom >= 2)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const ShapeDecoration(
+                              color: scrim,
+                              shape: StadiumBorder(),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                for (final z in const [1.0, 2.0, 3.0, 5.0])
+                                  if (z <= _source.maxZoom)
+                                    _ZoomStep(
+                                      zoom: z,
+                                      selected: _source.zoom.round() == z,
+                                      label: _source.zoom.round() == z
+                                          ? _source.zoom
+                                          : z,
+                                      onTap: () {
+                                        elioFeedback(
+                                          ElioSfx.tick,
+                                          ElioHaptics.select,
+                                        );
+                                        _source.setZoom(z);
+                                      },
+                                    ),
+                              ],
+                            ),
+                          ),
+                        ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                         child: Row(
                           children: [
-                            const Expanded(child: SizedBox()),
+                            Expanded(
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                // The sandboxed Mac build cannot open files.
+                                child: _noGallery
+                                    ? null
+                                    : ElioPopIn(
+                                        rise: 12,
+                                        delay: const Duration(
+                                          milliseconds: 180,
+                                        ),
+                                        child: ElioPress(
+                                          pressed: 0.92,
+                                          child: IconButton(
+                                            key: const ValueKey('scan_gallery'),
+                                            tooltip: l10n.scanGallery,
+                                            onPressed: _pickFromGallery,
+                                            style: IconButton.styleFrom(
+                                              backgroundColor: scrim,
+                                              minimumSize: const Size.square(
+                                                52,
+                                              ),
+                                            ),
+                                            icon: const Icon(
+                                              Icons.photo_library_rounded,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                              ),
+                            ),
                             Semantics(
                               button: true,
                               label: l10n.scanTakePhoto,
@@ -361,6 +464,55 @@ class _Pill extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// One zoom step ("2×"); the selected one is filled and shows the live zoom.
+class _ZoomStep extends StatelessWidget {
+  const _ZoomStep({
+    required this.zoom,
+    required this.selected,
+    required this.label,
+    required this.onTap,
+  });
+  final double zoom, label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    final text = label == label.roundToDouble()
+        ? '${label.round()}×'
+        : '${label.toStringAsFixed(1)}×';
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: l10n.scanZoom(text),
+      excludeSemantics: true,
+      child: GestureDetector(
+        key: ValueKey('scan_zoom_${zoom.round()}'),
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: ElioMotion.fast,
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 40),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: ShapeDecoration(
+            color: selected ? p.primary : Colors.transparent,
+            shape: const StadiumBorder(),
+          ),
+          child: Text(
+            text,
+            style: ElioTokens.caption.copyWith(
+              color: selected ? p.onPrimary : Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Four rounded viewfinder corners.
