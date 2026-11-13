@@ -92,8 +92,7 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
       final fresh =
           next.phase == WasteQuizPhase.idle ||
           next.phase == WasteQuizPhase.identifying;
-      // Not disposed: a page still animating out may hold one.
-      if (fresh) _essayDraft.clear();
+      if (fresh) _essayKeys.clear();
       if (fresh && (_started || _hold)) {
         _holdTimer?.cancel();
         setState(() => _started = _hold = false);
@@ -1484,7 +1483,7 @@ class _ScanQuestionPage extends ConsumerWidget {
     final skip = q != null && prefs.skipAllowed && picked == null;
     final answers = essay
         ? _EssayAnswer(
-            key: ValueKey('essay-${state.questionIndex}'),
+            key: _essayKeys.putIfAbsent(state.questionIndex, GlobalKey.new),
             state: state,
             skip: skip && !state.essaySubmitted,
           )
@@ -1531,7 +1530,10 @@ class _ScanQuestionPage extends ConsumerWidget {
                     ),
                   Expanded(
                     child: _EssayAnswer(
-                      key: ValueKey('essay-${state.questionIndex}'),
+                      key: _essayKeys.putIfAbsent(
+                        state.questionIndex,
+                        GlobalKey.new,
+                      ),
                       state: state,
                       skip: false,
                       compact: true,
@@ -1621,9 +1623,10 @@ class _SkipButton extends ConsumerWidget {
   }
 }
 
-/// The text typed for the essay of this scan; it outlives the keyboard
-/// switching the page between its full and compact layouts.
-final _essayDraft = <int, TextEditingController>{};
+/// One key per essay question of this scan: the answer keeps its state
+/// (text, focus, so the keyboard) when the page moves it between its full
+/// and compact layouts.
+final _essayKeys = <int, GlobalKey>{};
 
 /// Essay answer (Figma 821:28687): "Your answer" field with the word count,
 /// Submit answer, Skip. [compact]: field and Submit side by side (keyboard
@@ -1644,18 +1647,14 @@ class _EssayAnswer extends ConsumerStatefulWidget {
 
 class _EssayAnswerState extends ConsumerState<_EssayAnswer> {
   static const _limit = _EssayInputView.wordLimit;
-  late final TextEditingController _text;
+  final _text = TextEditingController();
   final _focus = FocusNode();
+  final _fieldKey = GlobalKey(debugLabel: 'quiz_essay_field');
   int _over = 0;
 
   @override
   void initState() {
     super.initState();
-    // ponytail: one draft per question index, cleared on submit / new scan.
-    _text = _essayDraft.putIfAbsent(
-      widget.state.questionIndex,
-      TextEditingController.new,
-    );
     _text.addListener(_changed);
     _focus.addListener(_changed);
   }
@@ -1666,7 +1665,7 @@ class _EssayAnswerState extends ConsumerState<_EssayAnswer> {
 
   @override
   void dispose() {
-    _text.removeListener(_changed);
+    _text.dispose();
     _focus.dispose();
     super.dispose();
   }
@@ -1698,8 +1697,9 @@ class _EssayAnswerState extends ConsumerState<_EssayAnswer> {
     final ready = words > 0 && !s.sendingChat && !s.essaySubmitted;
     final over = words > _limit;
 
+    // Keyed globally: the two layouts hold the field at different depths.
     final field = TextField(
-      key: const ValueKey('quiz_essay_field'),
+      key: _fieldKey,
       controller: _text,
       focusNode: _focus,
       enabled: !s.essaySubmitted,
@@ -1854,6 +1854,10 @@ class _ScanReviewPage extends ConsumerStatefulWidget {
 
 class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
   final _ask = TextEditingController();
+
+  /// The chat keeps its ask field (focus, so the keyboard) wherever the
+  /// page puts it: beside the review, on its own page, or over the keyboard.
+  final _chatKey = GlobalKey();
   String? _speaking;
   bool _chat = false;
 
@@ -2001,13 +2005,16 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
       ),
     );
 
-    Widget coachChat({bool compact = false}) => _Coach(
-      state: s,
-      ask: _ask,
-      speaking: _speaking,
-      onListen: _listen,
-      onSend: _send,
-      compact: compact,
+    Widget coachChat({bool compact = false}) => KeyedSubtree(
+      key: _chatKey,
+      child: _Coach(
+        state: s,
+        ask: _ask,
+        speaking: _speaking,
+        onListen: _listen,
+        onSend: _send,
+        compact: compact,
+      ),
     );
     final chat = coachChat();
     // Keyboard open on a short (landscape) screen: the chat only, so the

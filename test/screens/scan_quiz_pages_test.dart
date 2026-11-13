@@ -305,10 +305,7 @@ void main() {
       expect(find.textContaining('ESSAY'), findsOneWidget);
       final submit = find.byKey(const ValueKey('quiz_essay_submit'));
       expect(t.widget<FilledButton>(submit).onPressed, isNull);
-      await t.enterText(
-        find.byKey(const ValueKey('quiz_essay_field')),
-        'Rinse it first',
-      );
+      await t.enterText(find.byType(TextField), 'Rinse it first');
       await t.pump();
       expect(find.text('3 / 150 words'), findsOneWidget);
       await t.tap(submit);
@@ -319,7 +316,7 @@ void main() {
     testWidgets('over the word limit does not submit', (t) async {
       final quiz = await _pump(t, _essay, size: const Size(915, 412));
       await t.enterText(
-        find.byKey(const ValueKey('quiz_essay_field')),
+        find.byType(TextField),
         List.filled(151, 'word').join(' '),
       );
       await t.pump();
@@ -336,17 +333,16 @@ void main() {
       testWidgets('keyboard open ($name): field and Submit stay visible, '
           'text kept', (t) async {
         await _pump(t, _essay, size: size);
-        await t.enterText(
-          find.byKey(const ValueKey('quiz_essay_field')),
-          'Rinse it',
-        );
+        await t.enterText(find.byType(TextField), 'Rinse it');
         t.view.viewInsets = const FakeViewPadding(bottom: 280);
         await _settle(t);
         expect(t.takeException(), isNull);
-        final field = find.byKey(const ValueKey('quiz_essay_field'));
+        final field = find.byType(TextField);
         final submit = find.byKey(const ValueKey('quiz_essay_submit'));
         expect(field, findsOneWidget);
         expect(find.text('Rinse it'), findsOneWidget);
+        // Still focused: a rebuilt field would drop the keyboard again.
+        expect(t.testTextInput.hasAnyClients, isTrue);
         final limit = size.height - 280;
         expect(t.getRect(field).bottom, lessThanOrEqualTo(limit));
         expect(t.getRect(submit).bottom, lessThanOrEqualTo(limit));
@@ -370,10 +366,17 @@ void main() {
     testWidgets('coach keyboard in landscape: the ask field stays visible', (
       t,
     ) async {
-      await _pump(t, _essayReview, size: const Size(915, 412), keyboard: 280);
+      await _pump(t, _essayReview, size: const Size(915, 412));
+      await t.tap(find.byType(TextField));
+      await t.pump();
+      expect(t.testTextInput.hasAnyClients, isTrue);
+      t.view.viewInsets = const FakeViewPadding(bottom: 280);
+      await _settle(t);
       expect(t.takeException(), isNull);
       final ask = find.byType(TextField);
       expect(ask, findsOneWidget);
+      // Still focused: a rebuilt field would drop the keyboard again.
+      expect(t.testTextInput.hasAnyClients, isTrue);
       expect(t.getRect(ask).bottom, lessThanOrEqualTo(412 - 280));
     });
   });
