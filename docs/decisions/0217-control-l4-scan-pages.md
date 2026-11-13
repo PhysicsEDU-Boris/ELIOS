@@ -58,11 +58,33 @@ keyboard in landscape, no overflow for every state × phone/robot × 4 sizes × 
 EN/ID. Break-checked: the landscape keyboard test fails without the compact layout.
 Full suite 1732 passed, 20 skipped; analyze clean; string audit 0.
 
-## Phone check (Edge 60 Fusion, build `5bfc300`, light / Bahasa Indonesia)
+## Phone check (Edge 60 Fusion, light / Bahasa Indonesia)
 
-Checked: ELIOS setup without the ELIOS AI card and Tester mode; a phone scan through result,
-question, review, coach page with the keyboard open (field above the keyboard), quiz complete.
-**Not checked: anything on the control screen. The robot was not connected, so the robot
-pages, STOP pill, minimise, Scan again and the scan-start animation were never seen on a
-device.** Also not checked: an essay on the phone (the quiz gave one multiple-choice
-question), landscape, sounds and haptics.
+Build `5bfc300`, robot not connected: ELIOS setup without the ELIOS AI card and Tester mode;
+a phone scan through result, question, review, coach page with the keyboard open, quiz complete.
+
+Build `5bfc300` then `18559f6`, robot connected (watching and scanning only, the robot was
+not driven): SCAN on the control screen opens "Scan robot" with the robot camera photo and the
+STOP pill; Start quiz; the question arrives under the scan line with brackets; close
+minimises to the control screen with the Quiz button and the lock box, the Quiz button
+reopens the question; a wrong answer; landscape review with the coach beside it; quiz
+complete with Done staying on the control screen. Images: `docs/test-results/0217-control-l4/`.
+
+**Bug found on the device and fixed (`18559f6`):** tapping the coach's ask field in landscape
+opened the keyboard and it closed again at once. The page moved the field to another place in
+the tree for its keyboard layout, which rebuilt it and dropped focus. The essay field had the
+same flaw. Both now keep their state through a global key; the keyboard tests check that the
+field is still focused after the keyboard opens (they fail on the old code). Confirmed on the
+robot screen: keyboard stays, typed text and the last coach message sit above it.
+
+Seen but not changed:
+- Minimising and reopening a question restarts its countdown (the old popup did the same).
+- The pages sit inside the control screen's safe area, so in landscape a strip the width of
+  the camera cutout stays at the left of the green header.
+- Two scans did nothing visible: the AI service answered HTTP 503 ("every Gemini model is
+  busy or capped") and the control screen shows no message for that.
+- The AI named the same lanyard "Tali lanyard" once and "Kaleng aluminium" once.
+
+Not checked: an essay on any device (no quiz gave one), the STOP pill pressed (it would stop
+the robot), "Scan again", the opening grow animation (too fast to capture), sounds (the phone
+is on silent, the app skips them), haptics, dark mode and English on the robot pages.
