@@ -61,6 +61,12 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
   /// "Start quiz" was tapped for this scan.
   bool _started = false;
 
+  /// The pages are showing (not idle, not minimised).
+  bool _open = false;
+
+  /// Counts the times the pages opened; restarts the scan-start reveal.
+  int _opens = 0;
+
   /// The answered question stays up while its right / wrong feedback plays.
   bool _hold = false;
   Timer? _holdTimer;
@@ -95,8 +101,12 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
     });
     final s = ref.watch(wasteQuizProvider);
     if (s.phase == WasteQuizPhase.idle || (widget.robot && s.minimized)) {
+      _open = false;
       return const SizedBox.shrink();
     }
+    // First frame after being hidden: the scan-start reveal plays.
+    if (!_open) _opens++;
+    _open = true;
     final p = context.elio;
     final n = ref.read(wasteQuizProvider.notifier);
     final robot = widget.robot;
@@ -151,7 +161,7 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
         'done',
         _ScanDonePage(state: s, onClose: n.dismiss, onRescan: rescan),
       ),
-      WasteQuizPhase.explaining when mc => (
+      WasteQuizPhase.explaining when q != null => (
         'review-${s.questionIndex}',
         _ScanReviewPage(state: s, onClose: close),
       ),
@@ -170,35 +180,192 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
       ),
     };
     // The camera controls under the page stay out of the screen reader.
-    return BlockSemantics(
-      child: Material(
-        color: p.background,
-        child: Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.viewInsetsOf(context).bottom,
-          ),
-          child: _Robot(
-            robot: robot,
-            onStop: robot ? widget.onStop : null,
-            onRescan: robot ? widget.onRescan : null,
-            child: AnimatedSwitcher(
-              duration: ElioMotion.reduced(context)
-                  ? Duration.zero
-                  : ElioMotion.base,
-              switchInCurve: ElioMotion.emphasized,
-              switchOutCurve: ElioMotion.exit,
-              // Pages fill the screen from the top (the default centres them).
-              layoutBuilder: (current, previous) => Stack(
-                fit: StackFit.expand,
-                children: [...previous, ?current],
-              ),
-              child: KeyedSubtree(key: ValueKey(kind), child: page),
+    final pages = Material(
+      color: p.background,
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: _Robot(
+          robot: robot,
+          onStop: robot ? widget.onStop : null,
+          onRescan: robot ? widget.onRescan : null,
+          child: AnimatedSwitcher(
+            duration: ElioMotion.reduced(context)
+                ? Duration.zero
+                : ElioMotion.base,
+            switchInCurve: ElioMotion.emphasized,
+            switchOutCurve: ElioMotion.exit,
+            // Pages fill the screen from the top (the default centres them).
+            layoutBuilder: (current, previous) =>
+                Stack(fit: StackFit.expand, children: [...previous, ?current]),
+            child: KeyedSubtree(
+              key: ValueKey(kind),
+              child: robot ? _ScanStart(child: page) : page,
             ),
           ),
         ),
       ),
     );
+    return BlockSemantics(
+      child: robot
+          ? _ScanStart(key: ValueKey(_opens), grow: true, child: pages)
+          : pages,
+    );
   }
+}
+
+/// Scan-start animation of the robot pages (MaixCAM2 viewfinder): every page
+/// (identified, question, essay, review, result) arrives under a green scan
+/// line and the camera's corner brackets; when the pages [open] from the
+/// control screen they also grow out of the 4:3 camera frame in the middle.
+class _ScanStart extends StatefulWidget {
+  const _ScanStart({super.key, this.grow = false, required this.child});
+
+  /// Grow out of the camera frame (pages opening) instead of the scan line.
+  final bool grow;
+  final Widget child;
+
+  @override
+  State<_ScanStart> createState() => _ScanStartState();
+}
+
+class _ScanStartState extends State<_ScanStart>
+    with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(
+    vsync: this,
+    duration: Duration(milliseconds: widget.grow ? 420 : 560),
+  );
+  late final bool _grow = widget.grow;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (ElioMotion.reduced(context)) {
+        _c.value = 1;
+        return;
+      }
+      if (_grow) elioFeedback(ElioSfx.blip, ElioHaptics.light);
+      _c.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = context.elio.primary;
+    return AnimatedBuilder(
+      animation: _c,
+      child: widget.child,
+      // The tree keeps one shape before and after: swapping the wrapper
+      // away would rebuild the page under it and lose its state.
+      builder: (context, child) {
+        final done = _c.isCompleted;
+        final t = _c.value;
+        return _grow
+            ? ClipPath(
+                clipper: done
+                    ? null
+                    : _FrameClip(ElioMotion.emphasized.transform(t)),
+                child: child,
+              )
+            : CustomPaint(
+                foregroundPainter: done ? null : _ScanStartPainter(t, color),
+                child: child,
+              );
+      },
+    );
+  }
+}
+
+/// The MaixCAM2 frame (4:3, 45 % of the height) in the middle of [size],
+/// grown by [t] to the whole page.
+RRect _cameraFrame(Size size, double t) {
+  final h = size.height * 0.45, w = h * 4 / 3;
+  final from = Rect.fromCenter(
+    center: size.center(Offset.zero),
+    width: w,
+    height: h,
+  );
+  return RRect.fromRectAndRadius(
+    Rect.lerp(from, Offset.zero & size, t)!,
+    Radius.circular(24 * (1 - t)),
+  );
+}
+
+class _FrameClip extends CustomClipper<Path> {
+  _FrameClip(this.t);
+  final double t;
+
+  @override
+  Path getClip(Size size) => Path()..addRRect(_cameraFrame(size, t));
+
+  @override
+  bool shouldReclip(_FrameClip old) => old.t != t;
+}
+
+class _ScanStartPainter extends CustomPainter {
+  _ScanStartPainter(this.t, this.color);
+  final double t;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fade = (1 - t).clamp(0.0, 1.0);
+    // Scan line: top to bottom, with a soft trail above it.
+    final y = size.height * Curves.easeInOut.transform(t);
+    canvas.drawRect(
+      Rect.fromLTRB(0, y - 60, size.width, y),
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            color.withValues(alpha: 0),
+            color.withValues(alpha: 0.28 * fade),
+          ],
+        ).createShader(Rect.fromLTRB(0, y - 60, size.width, y)),
+    );
+    canvas.drawRect(
+      Rect.fromLTRB(0, y - 1.5, size.width, y + 1.5),
+      Paint()..color = color.withValues(alpha: fade),
+    );
+    // Viewfinder brackets on the growing camera frame.
+    final f = _cameraFrame(
+      size,
+      ElioMotion.emphasized.transform(t),
+    ).outerRect.deflate(10);
+    const len = 28.0;
+    final pen = Paint()
+      ..color = color.withValues(alpha: fade)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+    for (final (x, y, sx, sy) in [
+      (f.left, f.top, 1.0, 1.0),
+      (f.right, f.top, -1.0, 1.0),
+      (f.left, f.bottom, 1.0, -1.0),
+      (f.right, f.bottom, -1.0, -1.0),
+    ]) {
+      canvas.drawPath(
+        Path()
+          ..moveTo(x, y + sy * len)
+          ..lineTo(x, y)
+          ..lineTo(x + sx * len, y),
+        pen,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ScanStartPainter old) => old.t != t || old.color != color;
 }
 
 /// Round close / back button of the scan pages: 44 dp, surface, subtle edge.
@@ -1546,7 +1713,11 @@ class _EssayAnswerState extends ConsumerState<_EssayAnswer> {
       cursorColor: p.primary,
       decoration: InputDecoration(
         isCollapsed: true,
+        filled: false,
         border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        disabledBorder: InputBorder.none,
         hintText: l10n.qzTypeAnswer,
         hintStyle: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
       ),
@@ -1750,13 +1921,21 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
         ? made!.alt
         : made;
     final picked = s.selectedOption;
-    final correct = picked == q.correctIndex;
+    // Essay (Figma "8 Essay review"): the score is the verdict, the answer
+    // and its rubric replace the explanation and the bins.
+    final essay = q.type == QuizQuestionType.essay;
+    final score = ex?.essayScore;
+    final correct = essay ? (score ?? 0) >= 6 : picked == q.correctIndex;
     final category = ScanCategory.fromString(s.scan?.category?.id);
     final top = MediaQuery.paddingOf(context).top;
     // One explanation only; "why not my answer" is the coach's job.
-    final why =
-        ex?.summary ??
-        (q.bankId == null || q.bankReviewed ? q.explanation : '');
+    final why = essay
+        ? (ex?.essayFeedback ?? '')
+        : ex?.summary ??
+              (q.bankId == null || q.bankReviewed ? q.explanation : '');
+    final answerText = essay
+        ? (score == null ? l10n.qzNotGradedYet : why)
+        : q.options[q.correctIndex];
 
     // Curved green header (662:26005): back, title, read aloud.
     final wide = MediaQuery.sizeOf(context).width > 800;
@@ -1787,7 +1966,11 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                     Semantics(
                       header: true,
                       child: Text(
-                        _chat ? l10n.qzCoach : l10n.qzAnswerReview,
+                        _chat
+                            ? l10n.qzCoach
+                            : essay
+                            ? l10n.qzEssayReview
+                            : l10n.qzAnswerReview,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: _sq(ElioTokens.subhead, 600, p.onPrimary),
@@ -1818,27 +2001,44 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
       ),
     );
 
-    if (_chat) {
-      return Column(
-        key: const ValueKey('scan_coach'),
-        children: [
-          header,
-          Expanded(
-            child: SafeArea(
-              top: false,
+    Widget coachChat({bool compact = false}) => _Coach(
+      state: s,
+      ask: _ask,
+      speaking: _speaking,
+      onListen: _listen,
+      onSend: _send,
+      compact: compact,
+    );
+    final chat = coachChat();
+    // Keyboard open on a short (landscape) screen: the chat only, so the
+    // field being typed in is never under the keyboard or the header.
+    Widget overKeyboard(Widget page) => LayoutBuilder(
+      builder: (context, all) => all.maxHeight < 260
+          ? SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-                child: _Coach(
-                  state: s,
-                  ask: _ask,
-                  speaking: _speaking,
-                  onListen: _listen,
-                  onSend: _send,
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+                child: coachChat(compact: true),
+              ),
+            )
+          : page,
+    );
+    if (_chat) {
+      return overKeyboard(
+        Column(
+          key: const ValueKey('scan_coach'),
+          children: [
+            header,
+            Expanded(
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                  child: chat,
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
@@ -1880,7 +2080,14 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  (correct ? l10n.qzCorrect : l10n.qzNotQuite).toUpperCase(),
+                  (essay
+                          ? (score == null
+                                ? l10n.qzWaitingGrading
+                                : l10n.qzScoreOf10(score))
+                          : correct
+                          ? l10n.qzCorrect
+                          : l10n.qzNotQuite)
+                      .toUpperCase(),
                   style: _sq(
                     ElioTokens.overline,
                     600,
@@ -1889,10 +2096,14 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  q.options[q.correctIndex],
-                  style: _sq(ElioTokens.subhead, 600, p.textPrimary),
+                  answerText,
+                  style: _sq(
+                    essay ? ElioTokens.bodySmall : ElioTokens.subhead,
+                    600,
+                    p.textPrimary,
+                  ),
                 ),
-                if (picked != null && !correct) ...[
+                if (!essay && picked != null && !correct) ...[
                   const SizedBox(height: 2),
                   Text(
                     l10n.qzYouChose(q.options[picked]),
@@ -1928,7 +2139,7 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                   ),
                   const SizedBox(width: 4),
                   ElioCountUp(
-                    value: correct ? 10 : 0,
+                    value: essay ? (score ?? 0) : (correct ? 10 : 0),
                     builder: (context, v) => Text(
                       l10n.trophiesEarned(v),
                       style: _sq(
@@ -1950,7 +2161,7 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          l10n.scanWhyWorks,
+          essay ? l10n.qzYourAnswer : l10n.scanWhyWorks,
           style: _sq(ElioTokens.subhead, 600, p.textPrimary),
         ),
         const SizedBox(height: 6),
@@ -1963,7 +2174,65 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
           colorFilter: ColorFilter.mode(p.primary, BlendMode.srcIn),
         ),
         const SizedBox(height: 6),
-        if (why.isEmpty && s.explanationLoading)
+        if (essay) ...[
+          // The student's own words, quoted.
+          Container(
+            key: const ValueKey('scan_essay_answer'),
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            decoration: BoxDecoration(
+              color: p.surfaceRaised,
+              borderRadius: BorderRadius.circular(12),
+              border: Border(left: BorderSide(color: p.primary, width: 3)),
+            ),
+            child: Text(
+              '“${s.essayAnswer ?? ''}”',
+              style: ElioTokens.bodySmall.copyWith(color: p.textPrimary),
+            ),
+          ),
+          // Rubric: one dash per point, the earned ones fill in turn.
+          for (final (i, r) in (ex?.rubricRows ?? const <RubricRow>[]).indexed)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      r.criterion,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: _sq(ElioTokens.bodySmall, 600, p.textPrimary),
+                    ),
+                  ),
+                  for (var d = 0; d < r.maxScore; d++)
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: d < r.awardedScore ? 1 : 0),
+                      duration: ElioMotion.reduced(context)
+                          ? Duration.zero
+                          : Duration(milliseconds: 250 + 120 * (i + d)),
+                      curve: ElioMotion.standard,
+                      builder: (context, v, _) => Container(
+                        width: 14,
+                        height: 5,
+                        margin: const EdgeInsets.only(left: 4),
+                        decoration: BoxDecoration(
+                          color: Color.lerp(p.surfaceRaised, p.primary, v),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                    ),
+                  SizedBox(
+                    width: 44,
+                    child: Text(
+                      '${r.awardedScore} / ${r.maxScore}',
+                      textAlign: TextAlign.end,
+                      style: _sq(ElioTokens.caption, 600, p.textPrimary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ] else if (why.isEmpty && s.explanationLoading)
           ElioShimmer(
             child: Column(
               key: const ValueKey('scan_review_loading'),
@@ -2169,89 +2438,100 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
     Widget enter(int i, Widget child) =>
         ElioPopIn(key: ValueKey('review-in-$i'), index: i, child: child);
 
-    return Column(
-      key: const ValueKey('scan_review'),
-      children: [
-        header,
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, box) {
-              if (box.maxWidth > box.maxHeight * 1.3) {
-                // Landscape (662:26256): review left, bins + coach + next right.
-                return SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: ListView(
-                            padding: EdgeInsets.zero,
-                            children: [
-                              enter(0, verdict),
-                              const SizedBox(height: 14),
-                              enter(1, whyBlock),
-                            ],
+    return overKeyboard(
+      Column(
+        key: const ValueKey('scan_review'),
+        children: [
+          header,
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, box) {
+                if (box.maxWidth > box.maxHeight * 1.3) {
+                  // Landscape (Figma "6/7 Answer review", "8 Essay review"):
+                  // the review left, the ELIOS AI coach chat and Next right.
+                  return SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: ListView(
+                              padding: EdgeInsets.zero,
+                              children: [
+                                enter(0, verdict),
+                                const SizedBox(height: 14),
+                                enter(1, whyBlock),
+                                if (!essay) ...[
+                                  const SizedBox(height: 14),
+                                  enter(2, bins),
+                                ],
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ListView(
-                            padding: EdgeInsets.zero,
-                            children: [
-                              enter(2, bins),
-                              const SizedBox(height: 12),
-                              enter(3, coach),
-                              const SizedBox(height: 12),
-                              next,
-                            ],
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: KeyedSubtree(
+                                    key: const ValueKey('scan_coach_inline'),
+                                    child: enter(3, chat),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                next,
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                  );
+                }
+                return Column(
+                  children: [
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                        children: [
+                          enter(0, verdict),
+                          const SizedBox(height: 20),
+                          enter(1, whyBlock),
+                          const SizedBox(height: 20),
+                          if (!essay) ...[
+                            enter(2, bins),
+                            const SizedBox(height: 20),
+                          ],
+                          enter(3, coach),
+                        ],
+                      ),
+                    ),
+                    // Action bar (662:26165).
+                    Container(
+                      decoration: BoxDecoration(
+                        color: p.surface,
+                        border: Border(top: BorderSide(color: p.borderSubtle)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(28),
+                        ),
+                      ),
+                      child: SafeArea(
+                        top: false,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                          child: next,
+                        ),
+                      ),
+                    ),
+                  ],
                 );
-              }
-              return Column(
-                children: [
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-                      children: [
-                        enter(0, verdict),
-                        const SizedBox(height: 20),
-                        enter(1, whyBlock),
-                        const SizedBox(height: 20),
-                        enter(2, bins),
-                        const SizedBox(height: 20),
-                        enter(3, coach),
-                      ],
-                    ),
-                  ),
-                  // Action bar (662:26165).
-                  Container(
-                    decoration: BoxDecoration(
-                      color: p.surface,
-                      border: Border(top: BorderSide(color: p.borderSubtle)),
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(28),
-                      ),
-                    ),
-                    child: SafeArea(
-                      top: false,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                        child: next,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

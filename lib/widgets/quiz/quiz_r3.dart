@@ -2594,11 +2594,15 @@ class _Coach extends StatelessWidget {
     required this.speaking,
     required this.onListen,
     required this.onSend,
+    this.compact = false,
   });
   final WasteQuizUiState state;
   final TextEditingController ask;
   final String? speaking;
   final ValueChanged<String> onListen, onSend;
+
+  /// Keyboard open on a short screen: messages and the ask field only.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -2623,20 +2627,21 @@ class _Coach extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              const EliosAiBadge(size: 28),
-              const SizedBox(width: 8),
-              Text(
-                l10n.qzCoach,
-                style: TextStyle(
-                  color: p.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
+          if (!compact)
+            Row(
+              children: [
+                const EliosAiBadge(size: 28),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.qzCoach,
+                  style: TextStyle(
+                    color: p.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           const SizedBox(height: 6),
           Expanded(
             // Newest at the bottom; older messages scroll up.
@@ -2664,19 +2669,20 @@ class _Coach extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Wrap(
-            spacing: 6,
-            runSpacing: 4,
-            children: [
-              for (final t in suggestions)
-                _Pill(
-                  icon: Icons.add_rounded,
-                  label: t,
-                  small: true,
-                  onTap: state.sendingChat ? null : () => onSend(t),
-                ),
-            ],
-          ),
+          if (!compact)
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                for (final t in suggestions)
+                  _Pill(
+                    icon: Icons.add_rounded,
+                    label: t,
+                    small: true,
+                    onTap: state.sendingChat ? null : () => onSend(t),
+                  ),
+              ],
+            ),
           const SizedBox(height: 6),
           Container(
             height: 38,

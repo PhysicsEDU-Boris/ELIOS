@@ -32,6 +32,12 @@ class _Quiz extends WasteQuizNotifier {
     phase: WasteQuizPhase.explaining,
   );
   void set(WasteQuizUiState s) => state = s;
+  String? essay;
+  @override
+  Future<void> submitEssay(String answerText, {int? score}) async =>
+      essay = answerText;
+  @override
+  void logRescanTapped() {}
 }
 
 final _scan = ScannedWaste.fromLabel('botol-plastik');
@@ -58,15 +64,46 @@ final _ready = WasteQuizUiState(
   question: _q,
 );
 
+const _essayQ = GeneratedQuestion(
+  type: QuizQuestionType.essay,
+  question: 'Why should you rinse a plastic bottle before recycling it?',
+);
+final _essay = WasteQuizUiState(
+  phase: WasteQuizPhase.active,
+  scan: _scan,
+  question: _essayQ,
+  questionIndex: 1,
+);
+final _essayReview = _essay.copyWith(
+  phase: WasteQuizPhase.explaining,
+  essaySubmitted: true,
+  essayAnswer: 'Rinse it first so food does not spoil the batch.',
+  currentExplanation: const QuizExplanation(
+    summary: '',
+    correctAnswerReason: '',
+    essayScore: 8,
+    essayFeedback: 'Add landfill time for full marks.',
+    rubricRows: [
+      RubricRow(criterion: 'Accuracy', maxScore: 4, awardedScore: 4),
+      RubricRow(criterion: 'Key terms', maxScore: 3, awardedScore: 2),
+    ],
+  ),
+);
+
 Future<_Quiz> _pump(
   WidgetTester t,
   WasteQuizUiState seed, {
+  bool robot = false,
+  VoidCallback? onStop,
+  VoidCallback? onRescan,
+  double keyboard = 0,
   Size size = const Size(390, 844),
   bool dark = false,
   String lang = 'en',
 }) async {
   t.view.devicePixelRatio = 1;
   t.view.physicalSize = size;
+  if (keyboard > 0) t.view.viewInsets = FakeViewPadding(bottom: keyboard);
   addTearDown(t.view.reset);
   debugSetL10n(Locale(lang));
   addTearDown(() => debugSetL10n(const Locale('en')));
@@ -83,7 +120,15 @@ Future<_Quiz> _pump(
           supportedLocales: AppLocalizations.supportedLocales,
           home: (dark ? ElioDarkTheme.wrap : ElioLightTheme.wrap)(
             // Filled like on the camera screen (Positioned.fill).
-            const Scaffold(body: SizedBox.expand(child: ScanQuizPages())),
+            Scaffold(
+              body: SizedBox.expand(
+                child: ScanQuizPages(
+                  robot: robot,
+                  onStop: onStop,
+                  onRescan: onRescan,
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -200,6 +245,139 @@ void main() {
     expect(find.text('+0 XP'), findsOneWidget);
   });
 
+  group('robot control (Figma 815:31496 / 815:31579 / 821:28687)', () {
+    const land = Size(915, 412);
+    testWidgets('robot wording, STOP in the header, Scan again rescans', (
+      t,
+    ) async {
+      var stops = 0, rescans = 0;
+      final quiz = await _pump(
+        t,
+        _ready,
+        size: land,
+        robot: true,
+        onStop: () => stops++,
+        onRescan: () => rescans++,
+      );
+      expect(find.text('Robot scan'), findsOneWidget);
+      expect(find.text('Just now · Robot camera'), findsOneWidget);
+      expect(find.text('Scan result'), findsNothing);
+      await t.tap(find.byKey(const ValueKey('quiz_stop')));
+      expect(stops, 1);
+      await t.tap(find.text('Scan again'));
+      await _settle(t);
+      expect(rescans, 1);
+      expect(quiz.state.phase, WasteQuizPhase.idle);
+    });
+
+    testWidgets('STOP stays on the question; close minimises, not ends', (
+      t,
+    ) async {
+      var stops = 0;
+      final quiz = await _pump(
+        t,
+        _ready,
+        size: land,
+        robot: true,
+        onStop: () => stops++,
+      );
+      await t.tap(find.byKey(const ValueKey('scan_start_quiz')));
+      await _settle(t);
+      await t.tap(find.byKey(const ValueKey('quiz_stop')));
+      expect(stops, 1);
+      await t.tap(find.byTooltip('Close'));
+      await _settle(t);
+      expect(quiz.state.phase, WasteQuizPhase.active);
+      expect(quiz.state.minimized, isTrue);
+      expect(find.byKey(const ValueKey('scan_question_card')), findsNothing);
+    });
+
+    testWidgets('the phone pages have no STOP', (t) async {
+      await _pump(t, _ready, size: land);
+      expect(find.byKey(const ValueKey('quiz_stop')), findsNothing);
+    });
+  });
+
+  group('essay (Figma 821:28687, 8 Essay review)', () {
+    testWidgets('full-page essay: type, count words, submit', (t) async {
+      final quiz = await _pump(t, _essay, size: const Size(915, 412));
+      expect(find.byKey(const ValueKey('quiz_popup')), findsNothing);
+      expect(find.textContaining('ESSAY'), findsOneWidget);
+      final submit = find.byKey(const ValueKey('quiz_essay_submit'));
+      expect(t.widget<FilledButton>(submit).onPressed, isNull);
+      await t.enterText(
+        find.byKey(const ValueKey('quiz_essay_field')),
+        'Rinse it first',
+      );
+      await t.pump();
+      expect(find.text('3 / 150 words'), findsOneWidget);
+      await t.tap(submit);
+      await t.pump();
+      expect(quiz.essay, 'Rinse it first');
+    });
+
+    testWidgets('over the word limit does not submit', (t) async {
+      final quiz = await _pump(t, _essay, size: const Size(915, 412));
+      await t.enterText(
+        find.byKey(const ValueKey('quiz_essay_field')),
+        List.filled(151, 'word').join(' '),
+      );
+      await t.pump();
+      await t.tap(find.byKey(const ValueKey('quiz_essay_submit')));
+      await t.pump(const Duration(milliseconds: 500));
+      expect(quiz.essay, isNull);
+    });
+
+    for (final (size, name) in const [
+      (Size(915, 412), 'landscape'),
+      (Size(800, 360), 'landscape-small'),
+      (Size(390, 844), 'portrait'),
+    ]) {
+      testWidgets('keyboard open ($name): field and Submit stay visible, '
+          'text kept', (t) async {
+        await _pump(t, _essay, size: size);
+        await t.enterText(
+          find.byKey(const ValueKey('quiz_essay_field')),
+          'Rinse it',
+        );
+        t.view.viewInsets = const FakeViewPadding(bottom: 280);
+        await _settle(t);
+        expect(t.takeException(), isNull);
+        final field = find.byKey(const ValueKey('quiz_essay_field'));
+        final submit = find.byKey(const ValueKey('quiz_essay_submit'));
+        expect(field, findsOneWidget);
+        expect(find.text('Rinse it'), findsOneWidget);
+        final limit = size.height - 280;
+        expect(t.getRect(field).bottom, lessThanOrEqualTo(limit));
+        expect(t.getRect(submit).bottom, lessThanOrEqualTo(limit));
+        if (_png.isNotEmpty) await savePng(t, _png, 'essay-keyboard-$name');
+      });
+    }
+
+    testWidgets('essay review: score, the answer, rubric, no bins', (t) async {
+      await _pump(t, _essayReview, size: const Size(915, 412));
+      expect(t.takeException(), isNull);
+      expect(find.text('Essay review'), findsOneWidget);
+      expect(find.text('SCORE 8 / 10'), findsOneWidget);
+      expect(find.byKey(const ValueKey('scan_essay_answer')), findsOneWidget);
+      expect(find.text('2 / 3'), findsOneWidget);
+      expect(find.text('+8 XP'), findsOneWidget);
+      expect(find.text('Organik'), findsNothing);
+      // Landscape: the coach chat sits next to the review.
+      expect(find.byKey(const ValueKey('scan_coach_inline')), findsOneWidget);
+    });
+
+    testWidgets('coach keyboard in landscape: the ask field stays visible', (
+      t,
+    ) async {
+      await _pump(t, _essayReview, size: const Size(915, 412), keyboard: 280);
+      expect(t.takeException(), isNull);
+      final ask = find.byType(TextField);
+      expect(ask, findsOneWidget);
+      expect(t.getRect(ask).bottom, lessThanOrEqualTo(412 - 280));
+    });
+  });
+
   testWidgets('a failed scan offers Retake', (t) async {
     final quiz = await _pump(
       t,
@@ -233,6 +411,8 @@ void main() {
   });
 
   final states = {
+    'essay': _essay,
+    'essay-review': _essayReview,
     'identifying': _identifying,
     'writing': _writing,
     'identified': _ready,
@@ -256,6 +436,21 @@ void main() {
             await _pump(t, st.value, size: size, dark: dark, lang: lang);
             expect(t.takeException(), isNull);
             if (_png.isNotEmpty) await savePng(t, _png, '${st.key}-$tag');
+          });
+          testWidgets('no overflow: robot ${st.key} $tag', (t) async {
+            await _pump(
+              t,
+              st.value,
+              size: size,
+              dark: dark,
+              lang: lang,
+              robot: true,
+              onStop: () {},
+            );
+            expect(t.takeException(), isNull);
+            if (_png.isNotEmpty) {
+              await savePng(t, _png, 'robot-${st.key}-$tag');
+            }
           });
         }
         testWidgets('no overflow: question + answered $tag', (t) async {
