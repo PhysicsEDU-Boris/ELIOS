@@ -8,8 +8,50 @@ part of '../waste_quiz_popup.dart';
 TextStyle _sq(TextStyle base, int weight, Color color) =>
     homeWeight(base, weight).copyWith(color: color);
 
+/// The robot control screen's settings for the pages (Figma 815:31496,
+/// 815:31579, 821:28687): robot wording, the emergency stop in every header,
+/// "Scan again" restarts the live scan, and close minimises so the student
+/// can keep driving.
+class _Robot extends InheritedWidget {
+  const _Robot({
+    required this.robot,
+    required this.onStop,
+    required this.onRescan,
+    required super.child,
+  });
+  final bool robot;
+  final VoidCallback? onStop;
+  final VoidCallback? onRescan;
+
+  static _Robot? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_Robot>();
+
+  @override
+  bool updateShouldNotify(_Robot old) => false;
+}
+
+bool _isRobot(BuildContext context) => _Robot.of(context)?.robot ?? false;
+
+/// The compact STOP of the robot pages; nothing on the phone.
+List<Widget> _stopPill(BuildContext context) {
+  final stop = _Robot.of(context)?.onStop;
+  return stop == null
+      ? const []
+      : [_CompactStop(onStop: stop), const SizedBox(width: 8)];
+}
+
 class ScanQuizPages extends ConsumerStatefulWidget {
-  const ScanQuizPages({super.key});
+  const ScanQuizPages({
+    super.key,
+    this.robot = false,
+    this.onStop,
+    this.onRescan,
+  });
+
+  /// Robot control: see [_Robot].
+  final bool robot;
+  final VoidCallback? onStop;
+  final VoidCallback? onRescan;
 
   @override
   ConsumerState<ScanQuizPages> createState() => _ScanQuizPagesState();
@@ -44,15 +86,30 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
       final fresh =
           next.phase == WasteQuizPhase.idle ||
           next.phase == WasteQuizPhase.identifying;
+      // Not disposed: a page still animating out may hold one.
+      if (fresh) _essayDraft.clear();
       if (fresh && (_started || _hold)) {
         _holdTimer?.cancel();
         setState(() => _started = _hold = false);
       }
     });
     final s = ref.watch(wasteQuizProvider);
-    if (s.phase == WasteQuizPhase.idle) return const SizedBox.shrink();
+    if (s.phase == WasteQuizPhase.idle || (widget.robot && s.minimized)) {
+      return const SizedBox.shrink();
+    }
     final p = context.elio;
     final n = ref.read(wasteQuizProvider.notifier);
+    final robot = widget.robot;
+    // Robot: the quiz waits behind the Quiz button while the student drives.
+    final close = robot ? n.minimize : n.dismiss;
+    void rescan() {
+      if (robot) {
+        n.logRescanTapped();
+        widget.onRescan?.call();
+      }
+      n.dismiss();
+    }
+
     final q = s.question;
     final mc = q != null && q.type == QuizQuestionType.multipleChoice;
     final loading = s.phase == WasteQuizPhase.loadingQuestion;
@@ -60,43 +117,54 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
     final (String kind, Widget page) = switch (s.phase) {
       _ when s.notice != null => (
         'failed',
-        _ScanFailedPage(notice: s.notice!, onRetake: n.dismiss),
+        _ScanFailedPage(notice: s.notice!, onRetake: rescan),
       ),
       WasteQuizPhase.identifying => (
         'identified',
-        _IdentifiedPage(state: s, onClose: n.dismiss, onStart: null),
+        _IdentifiedPage(
+          state: s,
+          onClose: close,
+          onRetake: rescan,
+          onStart: null,
+        ),
       ),
       _ when (loading || active) && !_started && s.questionIndex == 0 => (
         'identified',
         _IdentifiedPage(
           state: s,
-          onClose: n.dismiss,
+          onClose: close,
+          onRetake: rescan,
           onStart: active ? () => setState(() => _started = true) : null,
         ),
       ),
       _
           when loading ||
+              (q != null && !mc && active) ||
               (mc &&
                   (active ||
                       (_hold && s.phase == WasteQuizPhase.explaining))) =>
         (
           'question-${s.questionIndex}',
-          _ScanQuestionPage(state: s, onClose: n.dismiss, onAnswer: _answer),
+          _ScanQuestionPage(state: s, onClose: close, onAnswer: _answer),
         ),
       WasteQuizPhase.finished => (
         'done',
-        _ScanDonePage(state: s, onClose: n.dismiss),
+        _ScanDonePage(state: s, onClose: n.dismiss, onRescan: rescan),
       ),
       WasteQuizPhase.explaining when mc => (
         'review-${s.questionIndex}',
-        _ScanReviewPage(state: s, onClose: n.dismiss),
+        _ScanReviewPage(state: s, onClose: close),
       ),
       _ => (
         'popup-${s.phase.name}',
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-            child: _QuizBody(state: s),
+            child: _QuizBody(
+              state: s,
+              onStop: widget.onStop,
+              onRescan: widget.onRescan,
+            ),
           ),
         ),
       ),
@@ -105,16 +173,28 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
     return BlockSemantics(
       child: Material(
         color: p.background,
-        child: AnimatedSwitcher(
-          duration: ElioMotion.reduced(context)
-              ? Duration.zero
-              : ElioMotion.base,
-          switchInCurve: ElioMotion.emphasized,
-          switchOutCurve: ElioMotion.exit,
-          // Pages fill the screen from the top (the default centres them).
-          layoutBuilder: (current, previous) =>
-              Stack(fit: StackFit.expand, children: [...previous, ?current]),
-          child: KeyedSubtree(key: ValueKey(kind), child: page),
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: _Robot(
+            robot: robot,
+            onStop: robot ? widget.onStop : null,
+            onRescan: robot ? widget.onRescan : null,
+            child: AnimatedSwitcher(
+              duration: ElioMotion.reduced(context)
+                  ? Duration.zero
+                  : ElioMotion.base,
+              switchInCurve: ElioMotion.emphasized,
+              switchOutCurve: ElioMotion.exit,
+              // Pages fill the screen from the top (the default centres them).
+              layoutBuilder: (current, previous) => Stack(
+                fit: StackFit.expand,
+                children: [...previous, ?current],
+              ),
+              child: KeyedSubtree(key: ValueKey(kind), child: page),
+            ),
+          ),
         ),
       ),
     );
@@ -168,10 +248,12 @@ class _IdentifiedPage extends StatefulWidget {
   const _IdentifiedPage({
     required this.state,
     required this.onClose,
+    required this.onRetake,
     required this.onStart,
   });
   final WasteQuizUiState state;
   final VoidCallback onClose;
+  final VoidCallback onRetake;
 
   /// Null until the first question is ready.
   final VoidCallback? onStart;
@@ -253,7 +335,9 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
             Padding(
               padding: const EdgeInsets.only(left: 2),
               child: Text(
-                l10n.scanJustNowPhone,
+                !_isRobot(context)
+                    ? l10n.scanJustNowPhone
+                    : l10n.scanJustNowRobot,
                 style: _sq(ElioTokens.caption, 500, p.textSecondary),
               ),
             ),
@@ -428,7 +512,7 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
             delay: const Duration(milliseconds: 320),
             child: _QuizTicket(
               state: s,
-              onRetake: widget.onClose,
+              onRetake: widget.onRetake,
               onStart: widget.onStart,
             ),
           );
@@ -437,10 +521,15 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
       children: [
         _RoundClose(onTap: widget.onClose),
         const SizedBox(width: 12),
-        Text(
-          l10n.scanResultTitle,
-          style: _sq(ElioTokens.subhead, 700, p.textPrimary),
+        Expanded(
+          child: Text(
+            !_isRobot(context) ? l10n.scanResultTitle : l10n.scanRobotTitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: _sq(ElioTokens.subhead, 700, p.textPrimary),
+          ),
         ),
+        ..._stopPill(context),
       ],
     );
 
@@ -691,7 +780,9 @@ class _QuizTicket extends ConsumerWidget {
                             ),
                             icon: const Icon(Icons.refresh_rounded, size: 16),
                             label: Text(
-                              l10n.scanRetake,
+                              !_isRobot(context)
+                                  ? l10n.scanRetake
+                                  : l10n.scanAgain,
                               style: _sq(ElioTokens.button, 600, p.textPrimary),
                             ),
                           ),
@@ -804,10 +895,15 @@ class _ScanFailedPage extends StatelessWidget {
               children: [
                 _RoundClose(onTap: onRetake),
                 const SizedBox(width: 12),
-                Text(
-                  l10n.scanResultTitle,
-                  style: _sq(ElioTokens.subhead, 700, p.textPrimary),
+                Expanded(
+                  child: Text(
+                    !_isRobot(context)
+                        ? l10n.scanResultTitle
+                        : l10n.scanRobotTitle,
+                    style: _sq(ElioTokens.subhead, 700, p.textPrimary),
+                  ),
                 ),
+                ..._stopPill(context),
               ],
             ),
             Expanded(
@@ -864,7 +960,9 @@ class _ScanFailedPage extends StatelessWidget {
                             ),
                             icon: const Icon(Icons.refresh_rounded, size: 18),
                             label: Text(
-                              l10n.scanRetake,
+                              !_isRobot(context)
+                                  ? l10n.scanRetake
+                                  : l10n.scanAgain,
                               style: _sq(ElioTokens.button, 600, p.onPrimary),
                             ),
                           ),
@@ -924,6 +1022,7 @@ class _ScanQuestionPage extends ConsumerWidget {
         : state.question;
     final picked = state.selectedOption;
     final seconds = int.tryParse(prefs.quizTimer.replaceAll('s', ''));
+    final essay = q?.type == QuizQuestionType.essay;
 
     final header = Row(
       children: [
@@ -962,6 +1061,7 @@ class _ScanQuestionPage extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 12),
+        ..._stopPill(context),
         if (seconds != null && q != null && picked == null)
           QuizCountdown(
             key: ValueKey('quiz_timer_${state.questionIndex}'),
@@ -1019,7 +1119,8 @@ class _ScanQuestionPage extends ConsumerWidget {
                         l10n.qzQuestionOfCaps(
                           state.questionIndex + 1,
                           state.totalQuestions,
-                          (state.scan?.displayName ?? '').toUpperCase(),
+                          '${essay ? '${l10n.scanEssay.toUpperCase()} · ' : ''}'
+                          '${(state.scan?.displayName ?? '').toUpperCase()}',
                         ),
                         style: _sq(
                           ElioTokens.overline,
@@ -1213,53 +1314,66 @@ class _ScanQuestionPage extends ConsumerWidget {
       );
     }
 
-    final answers = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var r = 0; r < count; r += 2) ...[
-          if (r > 0) const SizedBox(height: 14),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                tile(r),
-                const SizedBox(width: 16),
-                if (r + 1 < count) tile(r + 1) else const Spacer(),
-              ],
-            ),
-          ),
-        ],
-        if (q != null && prefs.skipAllowed && picked == null) ...[
-          const SizedBox(height: 12),
-          TextButton(
-            key: const ValueKey('quiz_skip'),
-            onPressed: () {
-              elioFeedback(ElioSfx.tick, ElioHaptics.light);
-              n.skipQuestion();
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: p.textSecondary,
-              minimumSize: const Size(0, 48),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  l10n.scanSkipQuestion,
-                  style: _sq(ElioTokens.button, 600, p.textSecondary),
+    final skip = q != null && prefs.skipAllowed && picked == null;
+    final answers = essay
+        ? _EssayAnswer(
+            key: ValueKey('essay-${state.questionIndex}'),
+            state: state,
+            skip: skip && !state.essaySubmitted,
+          )
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var r = 0; r < count; r += 2) ...[
+                if (r > 0) const SizedBox(height: 14),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      tile(r),
+                      const SizedBox(width: 16),
+                      if (r + 1 < count) tile(r + 1) else const Spacer(),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 4),
-                const Icon(Icons.chevron_right_rounded, size: 16),
               ],
-            ),
-          ),
-        ],
-      ],
-    );
+              if (skip) ...[const SizedBox(height: 12), const _SkipButton()],
+            ],
+          );
 
     return SafeArea(
       child: LayoutBuilder(
         builder: (context, box) {
+          // Keyboard open on a short screen: the question in one line and
+          // the answer field, nothing else to scroll past.
+          if (essay && box.maxHeight < 250) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (box.maxHeight > 120)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        q!.question,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _sq(ElioTokens.bodySmall, 600, p.textPrimary),
+                      ),
+                    ),
+                  Expanded(
+                    child: _EssayAnswer(
+                      key: ValueKey('essay-${state.questionIndex}'),
+                      state: state,
+                      skip: false,
+                      compact: true,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
           if (box.maxWidth > box.maxHeight) {
             // Landscape (659:25857): question left, answers right.
             return Padding(
@@ -1305,6 +1419,253 @@ class _ScanQuestionPage extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _SkipButton extends ConsumerWidget {
+  const _SkipButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.elio;
+    return TextButton(
+      key: const ValueKey('quiz_skip'),
+      onPressed: () {
+        elioFeedback(ElioSfx.tick, ElioHaptics.light);
+        ref.read(wasteQuizProvider.notifier).skipQuestion();
+      },
+      style: TextButton.styleFrom(
+        foregroundColor: p.textSecondary,
+        minimumSize: const Size(0, 48),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l10n.scanSkipQuestion,
+            style: _sq(ElioTokens.button, 600, p.textSecondary),
+          ),
+          const SizedBox(width: 4),
+          const Icon(Icons.chevron_right_rounded, size: 16),
+        ],
+      ),
+    );
+  }
+}
+
+/// The text typed for the essay of this scan; it outlives the keyboard
+/// switching the page between its full and compact layouts.
+final _essayDraft = <int, TextEditingController>{};
+
+/// Essay answer (Figma 821:28687): "Your answer" field with the word count,
+/// Submit answer, Skip. [compact]: field and Submit side by side (keyboard
+/// open on a short screen).
+class _EssayAnswer extends ConsumerStatefulWidget {
+  const _EssayAnswer({
+    super.key,
+    required this.state,
+    required this.skip,
+    this.compact = false,
+  });
+  final WasteQuizUiState state;
+  final bool skip, compact;
+
+  @override
+  ConsumerState<_EssayAnswer> createState() => _EssayAnswerState();
+}
+
+class _EssayAnswerState extends ConsumerState<_EssayAnswer> {
+  static const _limit = _EssayInputView.wordLimit;
+  late final TextEditingController _text;
+  final _focus = FocusNode();
+  int _over = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // ponytail: one draft per question index, cleared on submit / new scan.
+    _text = _essayDraft.putIfAbsent(
+      widget.state.questionIndex,
+      TextEditingController.new,
+    );
+    _text.addListener(_changed);
+    _focus.addListener(_changed);
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _text.removeListener(_changed);
+    _focus.dispose();
+    super.dispose();
+  }
+
+  int get _words {
+    final t = _text.text.trim();
+    return t.isEmpty ? 0 : t.split(RegExp(r'\s+')).length;
+  }
+
+  void _submit() {
+    final s = widget.state;
+    if (_words == 0 || s.sendingChat || s.essaySubmitted) return;
+    if (_words > _limit) {
+      elioFeedback(ElioSfx.knock, ElioHaptics.warning);
+      setState(() => _over++);
+      return;
+    }
+    elioFeedback(ElioSfx.pop, ElioHaptics.medium);
+    _focus.unfocus();
+    ref.read(wasteQuizProvider.notifier).submitEssay(_text.text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    final s = widget.state;
+    final grading = s.essaySubmitted && s.sendingChat;
+    final words = _words;
+    final ready = words > 0 && !s.sendingChat && !s.essaySubmitted;
+    final over = words > _limit;
+
+    final field = TextField(
+      key: const ValueKey('quiz_essay_field'),
+      controller: _text,
+      focusNode: _focus,
+      enabled: !s.essaySubmitted,
+      expands: widget.compact,
+      minLines: widget.compact ? null : 3,
+      maxLines: widget.compact ? null : 5,
+      textAlignVertical: TextAlignVertical.top,
+      textCapitalization: TextCapitalization.sentences,
+      textInputAction: TextInputAction.newline,
+      style: ElioTokens.bodySmall.copyWith(color: p.textPrimary),
+      cursorColor: p.primary,
+      decoration: InputDecoration(
+        isCollapsed: true,
+        border: InputBorder.none,
+        hintText: l10n.qzTypeAnswer,
+        hintStyle: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
+      ),
+    );
+
+    // The field's edge turns green with focus, red over the word limit.
+    final box = ElioShake(
+      trigger: _over == 0 ? null : _over,
+      child: AnimatedContainer(
+        duration: ElioMotion.fast,
+        padding: const EdgeInsets.fromLTRB(14, 10, 10, 8),
+        decoration: BoxDecoration(
+          color: p.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: over
+                ? p.error
+                : _focus.hasFocus
+                ? p.primary
+                : p.borderMedium,
+            width: _focus.hasFocus || over ? 2 : 1,
+          ),
+        ),
+        child: grading
+            ? Row(
+                key: const ValueKey('quiz_essay_grading'),
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const EliosAiBadge(size: 28),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: ElioShimmer(
+                      child: Text(
+                        l10n.qzGrading,
+                        style: _sq(ElioTokens.bodySmall, 600, p.textPrimary),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: widget.compact
+                    ? MainAxisSize.max
+                    : MainAxisSize.min,
+                children: [
+                  if (!widget.compact) ...[
+                    Text(
+                      l10n.qzYourAnswer,
+                      style: _sq(ElioTokens.caption, 500, p.textSecondary),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                  if (widget.compact) Expanded(child: field) else field,
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.qzWordCount(words, _limit),
+                    key: const ValueKey('quiz_essay_words'),
+                    style: _sq(
+                      ElioTokens.caption,
+                      500,
+                      over ? p.errorText : p.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+
+    final submit = ElioPress(
+      pressed: 0.97,
+      child: SizedBox(
+        height: 52,
+        child: FilledButton(
+          key: const ValueKey('quiz_essay_submit'),
+          onPressed: ready ? _submit : null,
+          style: FilledButton.styleFrom(
+            backgroundColor: p.primary,
+            foregroundColor: p.onPrimary,
+            disabledBackgroundColor: p.surfaceRaised,
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+          ),
+          child: Text(
+            widget.compact ? l10n.qzSubmit : l10n.scanSubmitAnswer,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: _sq(
+              ElioTokens.subhead,
+              600,
+              ready ? p.onPrimary : p.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (widget.compact) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(child: box),
+          const SizedBox(width: 10),
+          submit,
+        ],
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ElioPopIn(index: 0, child: box),
+        const SizedBox(height: 12),
+        ElioPopIn(index: 1, child: submit),
+        if (widget.skip) ...[
+          const SizedBox(height: 4),
+          const Center(child: _SkipButton()),
+        ],
+      ],
     );
   }
 }
@@ -1444,6 +1805,7 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                 ),
               ),
               const SizedBox(width: 8),
+              ..._stopPill(context),
               _round(
                 p,
                 Icons.volume_up_outlined,
@@ -1930,9 +2292,14 @@ class _GreenHeader extends StatelessWidget {
 /// level bar, Scan again / Export PDF / Done. No Figma frame exists for this
 /// state; it follows the answer-review page.
 class _ScanDonePage extends StatelessWidget {
-  const _ScanDonePage({required this.state, required this.onClose});
+  const _ScanDonePage({
+    required this.state,
+    required this.onClose,
+    required this.onRescan,
+  });
   final WasteQuizUiState state;
   final VoidCallback onClose;
+  final VoidCallback onRescan;
 
   @override
   Widget build(BuildContext context) {
@@ -2106,12 +2473,65 @@ class _ScanDonePage extends StatelessWidget {
     final actions = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        button(
-          l10n.scanAgain,
-          Icons.qr_code_scanner_rounded,
-          onClose,
-          primary: true,
-          key: const Key('result_card_rescan_button'),
+        // Robot (R1): no new scan while the arm is still dropping the item.
+        Consumer(
+          builder: (context, ref, _) {
+            final dropping =
+                _isRobot(context) &&
+                (_ResultCard.r1EnabledOverride ||
+                    const bool.fromEnvironment('R1')) &&
+                ref.watch(r1DropPendingProvider);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (dropping) ...[
+                  Container(
+                    key: const Key('result_card_r1_drop_notice'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: historyTint(p, HistoryTone.warning).bg,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        SizedBox.square(
+                          dimension: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: p.secondaryText,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            l10n.robotDropping,
+                            style: _sq(ElioTokens.caption, 600, p.textPrimary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                IgnorePointer(
+                  ignoring: dropping,
+                  child: Opacity(
+                    opacity: dropping ? 0.5 : 1,
+                    child: button(
+                      l10n.scanAgain,
+                      Icons.qr_code_scanner_rounded,
+                      onRescan,
+                      primary: true,
+                      key: const Key('result_card_rescan_button'),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 10),
         Row(
@@ -2128,7 +2548,10 @@ class _ScanDonePage extends StatelessWidget {
             Expanded(
               child: button(l10n.notifDone, Icons.check_rounded, () {
                 onClose();
-                Navigator.of(context).maybePop();
+                // Phone: back to the hub. Robot: stay on the control screen.
+                if (!_isRobot(context)) {
+                  Navigator.of(context).maybePop();
+                }
               }),
             ),
           ],
@@ -2170,6 +2593,7 @@ class _ScanDonePage extends StatelessWidget {
                       ],
                     ),
                   ),
+                  ..._stopPill(context),
                 ],
               ),
             ),

@@ -4949,7 +4949,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get scanRobotOverline => 'Dengan robot';
 
   @override
-  String get scanRobotTitle => 'Pindai dengan robot';
+  String get scanRobotTitle => 'Scan robot';
 
   @override
   String get scanRobotBody =>
@@ -5465,6 +5465,15 @@ class AppLocalizationsId extends AppLocalizations {
   String scanZoom(Object zoom) {
     return 'Zoom $zoom';
   }
+
+  @override
+  String get scanJustNowRobot => 'Baru saja · Kamera robot';
+
+  @override
+  String get scanSubmitAnswer => 'Kirim jawaban';
+
+  @override
+  String get scanEssay => 'Esai';
 
   @override
   String get scanFlash => 'Lampu kilat';

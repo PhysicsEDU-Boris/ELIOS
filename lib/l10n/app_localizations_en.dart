@@ -5563,6 +5563,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get scanJustNowRobot => 'Just now · Robot camera';
+
+  @override
+  String get scanSubmitAnswer => 'Submit answer';
+
+  @override
+  String get scanEssay => 'Essay';
+
+  @override
   String get scanFlash => 'Flash';
 
   @override

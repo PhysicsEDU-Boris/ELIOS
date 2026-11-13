@@ -9481,6 +9481,24 @@ abstract class AppLocalizations {
   /// **'Zoom {zoom}'**
   String scanZoom(Object zoom);
 
+  /// No description provided for @scanJustNowRobot.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now · Robot camera'**
+  String get scanJustNowRobot;
+
+  /// No description provided for @scanSubmitAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit answer'**
+  String get scanSubmitAnswer;
+
+  /// No description provided for @scanEssay.
+  ///
+  /// In en, this message translates to:
+  /// **'Essay'**
+  String get scanEssay;
+
   /// No description provided for @scanFlash.
   ///
   /// In en, this message translates to:

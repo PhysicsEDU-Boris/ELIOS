@@ -831,13 +831,16 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                   onScanQuiz: onScanQuiz,
                   onVoice: onVoice,
                 ),
-                quiz: WasteQuizPopup(
-                  onStop: stop,
-                  showLauncher: false,
-                  onRescan: () {
-                    _liveScan?.logEvent('rescan_tapped', {});
-                    _liveScan?.rescan();
-                  },
+                // Full-screen scan pages (decision 0217).
+                quiz: Positioned.fill(
+                  child: ScanQuizPages(
+                    robot: true,
+                    onStop: stop,
+                    onRescan: () {
+                      _liveScan?.logEvent('rescan_tapped', {});
+                      _liveScan?.rescan();
+                    },
+                  ),
                 ),
               ),
             ),
@@ -961,9 +964,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       quizKey: _quizKey,
       overlays: [
         Positioned.fill(
-          child: WasteQuizPopup(
+          child: ScanQuizPages(
+            robot: true,
             onStop: stop,
-            showLauncher: false,
             onRescan: () {
               _liveScan?.logEvent('rescan_tapped', {});
               _liveScan?.rescan();
