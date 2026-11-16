@@ -4,6 +4,7 @@
 // SCAN_RENDER=<dir> writes PNGs of every state.
 import 'package:elio/l10n/l10n.dart';
 import 'package:elio/models/quiz_explanation.dart';
+import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/ai_quiz_service.dart';
@@ -63,6 +64,9 @@ final _ready = WasteQuizUiState(
   scan: _scan,
   question: _q,
 );
+
+/// The robot's bin check is over (right bin, "Got it" tapped).
+final _checked = _ready.copyWith(binPick: 'recyclable', binAcked: true);
 
 const _essayQ = GeneratedQuestion(
   type: QuizQuestionType.essay,
@@ -253,7 +257,7 @@ void main() {
       var stops = 0, rescans = 0;
       final quiz = await _pump(
         t,
-        _ready,
+        _checked,
         size: land,
         robot: true,
         onStop: () => stops++,
@@ -276,7 +280,7 @@ void main() {
       var stops = 0;
       final quiz = await _pump(
         t,
-        _ready,
+        _checked,
         size: land,
         robot: true,
         onStop: () => stops++,
@@ -381,6 +385,137 @@ void main() {
     });
   });
 
+  group('robot bin check (Figma 860:28986 / 860:29035 / 861:29181)', () {
+    const land = Size(915, 412);
+    Future<_Quiz> open(
+      WidgetTester t, {
+      WasteQuizUiState? seed,
+      String lang = 'en',
+      bool dark = false,
+      VoidCallback? onStop,
+    }) => _pump(
+      t,
+      seed ?? _ready,
+      size: land,
+      robot: true,
+      lang: lang,
+      dark: dark,
+      onStop: onStop ?? () {},
+    );
+
+    testWidgets('question first: chip, three bars, timer; STOP works', (
+      t,
+    ) async {
+      var stops = 0;
+      final quiz = await open(t, onStop: () => stops++);
+      expect(find.text('Bin check · before the quiz'), findsOneWidget);
+      expect(
+        find.text('Where will this waste go? Pick the right bin.'),
+        findsOneWidget,
+      );
+      expect(find.text('Organik bin'), findsOneWidget);
+      expect(find.text('Anorganik bin'), findsOneWidget);
+      expect(find.text('B3 (hazardous) bin'), findsOneWidget);
+      expect(find.byKey(const ValueKey('answer_3')), findsNothing);
+      // Full-width bars, one under the other.
+      final a0 = t.getRect(find.byKey(const ValueKey('answer_0')));
+      final a1 = t.getRect(find.byKey(const ValueKey('answer_1')));
+      expect(a1.top, greaterThan(a0.bottom));
+      expect(a1.width, a0.width);
+      expect(find.byKey(const ValueKey('quiz_timer_bin')), findsOneWidget);
+      expect(find.byKey(const ValueKey('scan_identified')), findsNothing);
+      await t.tap(find.byKey(const ValueKey('quiz_stop')));
+      expect(stops, 1);
+      expect(quiz.state.binPick, isNull, reason: 'STOP does not answer');
+    });
+
+    testWidgets('right bin: +20 XP once, Got it flips the ticket in place, '
+        'Start quiz opens question 1', (t) async {
+      final quiz = await open(t);
+      await t.tap(find.byKey(const ValueKey('answer_1'))); // Anorganik
+      await _settle(t);
+      expect(quiz.state.binCheckXp, 20);
+      final page = find.byKey(const ValueKey('scan_identified'));
+      expect(page, findsOneWidget);
+      expect(find.text('Nice sorting! Anorganik it is'), findsOneWidget);
+      expect(find.text('+20 XP'), findsOneWidget);
+      expect(find.byKey(const ValueKey('bin_mark_right')), findsOneWidget);
+      expect(find.text('Your quiz is next'), findsOneWidget);
+      expect(find.byKey(const ValueKey('scan_quiz_ticket')), findsNothing);
+
+      // A second answer, a minimise and a restore change nothing.
+      quiz.answerBinCheck(ScanCategory.organic);
+      quiz.minimize();
+      await _settle(t);
+      quiz.restore();
+      await _settle(t);
+      expect(quiz.state.binCheckXp, 20);
+      expect(find.text('Nice sorting! Anorganik it is'), findsOneWidget);
+      expect(find.byKey(const ValueKey('bin_check_chip')), findsNothing);
+
+      final route = ModalRoute.of(t.element(page));
+      final identified = t.state(
+        find.byWidgetPredicate(
+          (w) => w.runtimeType.toString() == '_IdentifiedPage',
+        ),
+      );
+      await t.tap(find.byKey(const ValueKey('bin_got_it')));
+      await _settle(t);
+      expect(find.byKey(const ValueKey('bin_ticket')), findsNothing);
+      expect(find.byKey(const ValueKey('scan_quiz_ticket')), findsOneWidget);
+      expect(find.text('Your quiz is ready'), findsOneWidget);
+      // Same route and the same page instance: no screen change.
+      expect(ModalRoute.of(t.element(page)), same(route));
+      expect(
+        t.state(
+          find.byWidgetPredicate(
+            (w) => w.runtimeType.toString() == '_IdentifiedPage',
+          ),
+        ),
+        same(identified),
+      );
+      expect(quiz.state.binCheckXp, 20);
+
+      await t.tap(find.byKey(const ValueKey('scan_start_quiz')));
+      await _settle(t);
+      expect(find.byKey(const ValueKey('scan_question_card')), findsOneWidget);
+      expect(find.text(_q.question), findsOneWidget);
+      expect(find.byKey(const ValueKey('answer_3')), findsOneWidget);
+    });
+
+    for (final (lang, dark, oops, got) in const [
+      ('en', false, 'Oops! Not the Organik bin', 'Got it'),
+      ('id', true, 'Ups! Bukan tempat sampah Organik', 'Mengerti'),
+    ]) {
+      testWidgets('wrong bin: correction ticket and +0 XP ($lang)', (t) async {
+        final quiz = await open(t, lang: lang, dark: dark);
+        await t.tap(find.byKey(const ValueKey('answer_0'))); // Organik
+        await _settle(t);
+        expect(t.takeException(), isNull);
+        expect(quiz.state.binCheckXp, 0);
+        expect(find.text(oops), findsOneWidget);
+        expect(find.text('+0 XP'), findsOneWidget);
+        expect(find.byKey(const ValueKey('bin_mark_wrong')), findsOneWidget);
+        expect(find.text(got), findsOneWidget);
+      });
+    }
+
+    testWidgets('skip ends the check without a ticket or XP', (t) async {
+      final quiz = await open(t);
+      quiz.skipBinCheck();
+      await _settle(t);
+      expect(quiz.state.binCheckXp, 0);
+      expect(find.byKey(const ValueKey('bin_ticket')), findsNothing);
+      expect(find.byKey(const ValueKey('scan_quiz_ticket')), findsOneWidget);
+    });
+
+    testWidgets('the phone has no bin check', (t) async {
+      await _pump(t, _ready, size: land);
+      expect(find.byKey(const ValueKey('bin_check_chip')), findsNothing);
+      expect(find.byKey(const ValueKey('scan_quiz_ticket')), findsOneWidget);
+    });
+  });
+
   testWidgets('a failed scan offers Retake', (t) async {
     final quiz = await _pump(
       t,
@@ -419,6 +554,9 @@ void main() {
     'identifying': _identifying,
     'writing': _writing,
     'identified': _ready,
+    'bin-done': _checked,
+    'bin-right': _ready.copyWith(binPick: 'recyclable'),
+    'bin-wrong': _ready.copyWith(binPick: 'organic'),
     'done': WasteQuizUiState(
       phase: WasteQuizPhase.finished,
       scan: _scan,

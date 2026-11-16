@@ -5495,4 +5495,56 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get scanBinNo => 'Bukan';
+
+  @override
+  String get binCheckChip => 'Cek tempat sampah · sebelum kuis';
+
+  @override
+  String binCheckOverline(Object item) {
+    return 'CEK TEMPAT SAMPAH · $item';
+  }
+
+  @override
+  String get binCheckQuestion =>
+      'Ke mana sampah ini dibuang? Pilih tempat sampah yang benar.';
+
+  @override
+  String get binOrganik => 'Tempat sampah Organik';
+
+  @override
+  String get binAnorganik => 'Tempat sampah Anorganik';
+
+  @override
+  String get binB3 => 'Tempat sampah B3 (berbahaya)';
+
+  @override
+  String binOops(Object bin) {
+    return 'Ups! Bukan tempat sampah $bin';
+  }
+
+  @override
+  String binNice(Object bin) {
+    return 'Pilahanmu tepat! Memang $bin';
+  }
+
+  @override
+  String binWhyOrganic(Object item) {
+    return '$item adalah sisa makanan atau tumbuhan, jadi bisa membusuk. Masuk ke tempat sampah Organik untuk jadi kompos.';
+  }
+
+  @override
+  String binWhyAnorganik(Object item) {
+    return '$item tidak membusuk. Masuk ke tempat sampah Anorganik agar bisa didaur ulang.';
+  }
+
+  @override
+  String binWhyB3(Object item) {
+    return '$item bisa mengandung bahan berbahaya. Masuk ke tempat sampah B3 agar ditangani dengan aman.';
+  }
+
+  @override
+  String get binQuizNext => 'Kuismu berikutnya';
+
+  @override
+  String get binGotIt => 'Mengerti';
 }
