@@ -2202,9 +2202,13 @@ class HistoryOriginalNote extends StatelessWidget {
     super.key,
     required this.lang,
     required this.onRetry,
+    this.busy = false,
   });
   final String lang;
   final VoidCallback onRetry;
+
+  /// The translation is being fetched: the saved text stays readable below.
+  final bool busy;
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context), t = historyTint(p, HistoryTone.info);
@@ -2218,17 +2222,28 @@ class HistoryOriginalNote extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              context.l10n.h3ShownInOriginal(
-                lookupAppLocalizations(Locale(lang)).languageName,
-              ),
+              busy
+                  ? context.l10n.h3Translating
+                  : context.l10n.h3ShownInOriginal(
+                      lookupAppLocalizations(Locale(lang)).languageName,
+                    ),
               style: ElioTokens.caption.copyWith(color: p.textPrimary),
             ),
           ),
-          TextButton(
-            onPressed: onRetry,
-            style: TextButton.styleFrom(foregroundColor: p.primaryText),
-            child: Text(context.l10n.h3TryAgain),
-          ),
+          if (busy)
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: SizedBox.square(
+                dimension: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: t.fg),
+              ),
+            )
+          else
+            TextButton(
+              onPressed: onRetry,
+              style: TextButton.styleFrom(foregroundColor: p.primaryText),
+              child: Text(context.l10n.h3TryAgain),
+            ),
         ],
       ),
     );

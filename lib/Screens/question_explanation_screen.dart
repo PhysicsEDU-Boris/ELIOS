@@ -78,6 +78,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
     if (_lang != null) _stop();
     _lang = lang;
     _loading = true;
+    _explanation = _q.explanation;
     Future.microtask(_load);
   }
 
@@ -272,15 +273,17 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                 HistoryTrophyPill('${widget.store.totalTrophies}'),
           ),
         ),
-        body: _loading
+        // A saved explanation shows at once; only a missing one waits.
+        body: _loading && _explanation == null
             ? const HistorySkeleton(HistoryLoadingLayout.explanation)
             : ListView(
                 controller: _scroll,
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
-                  if (_original)
+                  if (_original || (_loading && _record.needsTranslation(_lang!)))
                     HistoryOriginalNote(
                       lang: _record.lang,
+                      busy: _loading,
                       onRetry: () => unawaited(_load()),
                     ),
                   // Sections rise in one after another, again per question.
