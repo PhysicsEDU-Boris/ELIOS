@@ -156,6 +156,21 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
           'question-${s.questionIndex}',
           _ScanQuestionPage(state: s, onClose: close, onAnswer: _answer),
         ),
+      // Hazardous (B3) item: the identified page with a caution note; the
+      // quiz starts straight from its ticket (851:28659, 852:28687).
+      WasteQuizPhase.confirmingHazard => (
+        'identified',
+        _IdentifiedPage(
+          state: s,
+          hazard: true,
+          onClose: close,
+          onRetake: rescan,
+          onStart: () {
+            n.confirmHazard();
+            setState(() => _started = true);
+          },
+        ),
+      ),
       WasteQuizPhase.finished => (
         'done',
         _ScanDonePage(state: s, onClose: n.dismiss, onRescan: rescan),
@@ -416,6 +431,7 @@ class _IdentifiedPage extends StatefulWidget {
     required this.onClose,
     required this.onRetake,
     required this.onStart,
+    this.hazard = false,
   });
   final WasteQuizUiState state;
   final VoidCallback onClose;
@@ -423,6 +439,9 @@ class _IdentifiedPage extends StatefulWidget {
 
   /// Null until the first question is ready.
   final VoidCallback? onStart;
+
+  /// Hazardous (B3) item waiting for "Continue quiz" (851:28659).
+  final bool hazard;
 
   @override
   State<_IdentifiedPage> createState() => _IdentifiedPageState();
@@ -441,7 +460,7 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
   void didUpdateWidget(_IdentifiedPage old) {
     super.didUpdateWidget(old);
     if (_known && old.state.phase == WasteQuizPhase.identifying) _cue();
-    if (widget.onStart != null && old.onStart == null) {
+    if (widget.onStart != null && old.onStart == null && !widget.hazard) {
       elioFeedback(ElioSfx.tick, ElioHaptics.select);
     }
   }
@@ -455,6 +474,12 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
     final s = widget.state;
     final category = ScanCategory.fromString(s.scan?.category?.id);
     final reduced = ElioMotion.reduced(context);
+    final size = MediaQuery.sizeOf(context);
+    final wide = size.width > size.height;
+    // Hazard, landscape: the voice / minimise actions sit top right of the
+    // screen (852:28649), so the item name stays clear of them.
+    final cornerActions = widget.hazard && wide;
+    final titleInset = cornerActions ? 170.0 : 0.0;
 
     // Polaroid drops in: y −40 → 0, −8° → 3° (spring/pop, 420 ms).
     final polaroid = TweenAnimationBuilder<double>(
@@ -584,21 +609,27 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  l10n.scanIdentified.toUpperCase(),
+                  (widget.hazard
+                          ? l10n.scanHazardOverline
+                          : l10n.scanIdentified)
+                      .toUpperCase(),
                   style: _sq(
                     ElioTokens.overline,
                     600,
-                    p.primaryText,
+                    widget.hazard ? p.errorText : p.primaryText,
                   ).copyWith(letterSpacing: 1.1),
                 ),
                 const SizedBox(height: 10),
                 Semantics(
                   header: true,
-                  child: Text(
-                    s.scan?.displayName ?? l10n.wasteGeneric,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: _sq(ElioTokens.display, 700, p.textPrimary),
+                  child: Padding(
+                    padding: EdgeInsets.only(right: titleInset),
+                    child: Text(
+                      s.scan?.displayName ?? l10n.wasteGeneric,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: _sq(ElioTokens.display, 700, p.textPrimary),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -649,8 +680,38 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
                         ],
                       ),
                     ),
+                    // Caution note (852:28634): error tint, warning icon.
+                    if (widget.hazard)
+                      Container(
+                        key: const ValueKey('scan_hazard_note'),
+                        padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
+                        decoration: BoxDecoration(
+                          color: tint.bg,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.warning_rounded,
+                              size: 22,
+                              color: p.error,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                l10n.scanHazardNote,
+                                style: _sq(
+                                  ElioTokens.bodySmall,
+                                  400,
+                                  p.textSecondary,
+                                ).copyWith(height: 20 / 14),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     // _InfoChip is flexible: it needs a Row around it.
-                    if (s.canCorrectItem)
+                    if (s.canCorrectItem && !widget.hazard)
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -680,6 +741,7 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
               state: s,
               onRetake: widget.onRetake,
               onStart: widget.onStart,
+              hazard: widget.hazard,
             ),
           );
 
@@ -696,6 +758,7 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
           ),
         ),
         ..._stopPill(context),
+        if (widget.hazard && !cornerActions) const _HazardActions(),
       ],
     );
 
@@ -704,7 +767,7 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
         builder: (context, box) {
           if (box.maxWidth > box.maxHeight) {
             // Landscape (659:25791): photo left, result and ticket right.
-            return Padding(
+            final page = Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -735,6 +798,18 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
                 ],
               ),
             );
+            return cornerActions
+                ? Stack(
+                    children: [
+                      page,
+                      const Positioned(
+                        top: 8,
+                        right: 16,
+                        child: _HazardActions(),
+                      ),
+                    ],
+                  )
+                : page;
           }
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -759,6 +834,81 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
   }
 }
 
+/// Top-right actions of the hazard page (852:28649): the quiz voice switch,
+/// and on the robot the minimise button, as the popup's header had.
+class _HazardActions extends ConsumerWidget {
+  const _HazardActions();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.elio;
+    final voiceOn = ref.watch(wasteQuizProvider.select((s) => s.voiceOn));
+    final n = ref.read(wasteQuizProvider.notifier);
+    void toggle() {
+      elioFeedback(ElioSfx.tick, ElioHaptics.select);
+      n.toggleVoice();
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Semantics(
+          toggled: voiceOn,
+          label: l10n.ctlVoice,
+          excludeSemantics: true,
+          onTap: toggle,
+          child: GestureDetector(
+            key: const ValueKey('quiz_voice'),
+            onTap: toggle,
+            child: Container(
+              height: 44,
+              padding: const EdgeInsets.fromLTRB(12, 5, 5, 5),
+              decoration: ShapeDecoration(
+                color: p.surface,
+                shape: StadiumBorder(side: BorderSide(color: p.borderSubtle)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.volume_up_outlined,
+                    size: 20,
+                    color: p.textPrimary,
+                  ),
+                  const SizedBox(width: 8),
+                  _MiniSwitch(on: voiceOn),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (_isRobot(context)) ...[
+          const SizedBox(width: 10),
+          ElioPress(
+            pressed: 0.94,
+            child: IconButton(
+              key: const ValueKey('quiz_minimise'),
+              tooltip: l10n.qzMinimiseQuiz,
+              onPressed: () {
+                elioFeedback(ElioSfx.tick, ElioHaptics.light);
+                n.minimize();
+              },
+              style: IconButton.styleFrom(
+                backgroundColor: p.surface,
+                fixedSize: const Size.square(44),
+                minimumSize: const Size.square(44),
+                padding: EdgeInsets.zero,
+                side: BorderSide(color: p.borderSubtle),
+              ),
+              icon: Icon(Icons.remove_rounded, size: 22, color: p.textPrimary),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 /// "Your quiz is ready" ticket (629:90795): notched sides, dashed tear line,
 /// Retake and Start quiz.
 class _QuizTicket extends ConsumerWidget {
@@ -766,10 +916,14 @@ class _QuizTicket extends ConsumerWidget {
     required this.state,
     required this.onRetake,
     required this.onStart,
+    this.hazard = false,
   });
   final WasteQuizUiState state;
   final VoidCallback onRetake;
   final VoidCallback? onStart;
+
+  /// "Keep learning about this item?" with Scan again / Continue quiz.
+  final bool hazard;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -853,7 +1007,9 @@ class _QuizTicket extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  ready
+                                  hazard
+                                      ? l10n.scanHazardKeepLearning
+                                      : ready
                                       ? l10n.scanQuizReady
                                       : l10n.scanQuizWriting,
                                   maxLines: 1,
@@ -946,7 +1102,7 @@ class _QuizTicket extends ConsumerWidget {
                             ),
                             icon: const Icon(Icons.refresh_rounded, size: 16),
                             label: Text(
-                              !_isRobot(context)
+                              !_isRobot(context) && !hazard
                                   ? l10n.scanRetake
                                   : l10n.scanAgain,
                               style: _sq(ElioTokens.button, 600, p.textPrimary),
@@ -981,7 +1137,9 @@ class _QuizTicket extends ConsumerWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  l10n.scanStartQuiz,
+                                  hazard
+                                      ? l10n.qzContinueQuiz
+                                      : l10n.scanStartQuiz,
                                   style: _sq(
                                     ElioTokens.button,
                                     600,

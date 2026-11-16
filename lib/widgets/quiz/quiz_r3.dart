@@ -1679,7 +1679,7 @@ class _HazardView extends ConsumerWidget {
       onStop: onStop,
       state: state,
       title: l10n.qzHazardTitle(state.scan?.displayName ?? ''),
-      body: l10n.qzHazardBody,
+      body: '${l10n.scanHazardNote} ${l10n.scanHazardKeepLearning}',
       actions: [
         _Pill(
           key: const ValueKey('quiz_scan_again'),
