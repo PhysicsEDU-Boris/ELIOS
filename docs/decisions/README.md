@@ -85,3 +85,4 @@ their status changed.
 - [0214](0214-scoring-finish.md) Module % from clovers, one streak
 - [0215](0215-history-l4-figma.md) History tab in the Figma L4 style, entrance on every open, nested-screen motion
 - [0216](0216-scan-l4-figma.md) Scan flows in the Figma L4 style, full-screen Scan & quiz pages, motion everywhere
+- [0221](0221-profile-header-joyful.md) Joyful profile header and settings entry animation

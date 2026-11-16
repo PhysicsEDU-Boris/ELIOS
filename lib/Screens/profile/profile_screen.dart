@@ -6,6 +6,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../l10n/l10n.dart';
 import '../../providers/app_locale_provider.dart';
@@ -16,6 +17,7 @@ import '../../theme/elio_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/elio_theme_reveal.dart';
 import '../../widgets/learn/learn_ui.dart';
+import '../../widgets/splash/elio_leaf.dart';
 import '../config/config_settings_sheet.dart' show ConfigSegmented;
 import '../../services/elio_feedback.dart';
 
@@ -64,10 +66,11 @@ class ProfileScreen extends ConsumerWidget {
           return Material(
             color: p.background,
             child: SafeArea(
+              top: false, // the header's green curve sits behind the status bar
               bottom: false,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 48),
-                children: [
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 48),
+                children: _staggered([
                   _ProfileHeader(user: user, onSignOut: onSignOut),
                   const SizedBox(height: 16),
                   _Section(
@@ -232,7 +235,7 @@ class ProfileScreen extends ConsumerWidget {
                     value: prefs.skipAllowed,
                     onChanged: (v) => patch((s) => s.copyWith(skipAllowed: v)),
                   ),
-                ],
+                ]),
               ),
             ),
           );
@@ -240,6 +243,17 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Entry: the header pops in by itself, then each section (title + its rows)
+/// rises in after the one before. Reduce motion: a plain fade (ElioPopIn).
+List<Widget> _staggered(List<Widget> children) {
+  var section = 0;
+  return [
+    children.first,
+    for (final w in children.skip(1))
+      ElioPopIn(index: (w is _Section ? ++section : section) + 2, child: w),
+  ];
 }
 
 TextStyle _rowTitle(ElioPalette p) => ElioTokens.body.copyWith(
@@ -317,21 +331,30 @@ class _ProfileHeader extends StatelessWidget {
     final initials = guest ? '' : initialsOf(user);
     final chipColor = guest ? p.secondaryText : p.primaryText;
 
+    // Avatar (629:100971): leaf shape, 5 dp surface ring outside, soft shadow.
+    const leaf = BorderRadius.only(
+      topLeft: Radius.circular(58),
+      topRight: Radius.circular(16),
+      bottomRight: Radius.circular(58),
+      bottomLeft: Radius.circular(16),
+    );
     final avatar = Container(
-      width: 140,
-      height: 140,
-      padding: const EdgeInsets.all(4),
-      decoration: ShapeDecoration(
-        color: p.primary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(44)),
+      width: 130,
+      height: 130,
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: p.surface,
+        borderRadius: leaf + const BorderRadius.all(Radius.circular(5)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x2E0F1729),
+            offset: Offset(0, 8),
+            blurRadius: 20,
+          ),
+        ],
       ),
       child: Container(
-        decoration: ShapeDecoration(
-          color: p.surfaceRaised,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(40),
-          ),
-        ),
+        decoration: BoxDecoration(color: p.surfaceRaised, borderRadius: leaf),
         clipBehavior: Clip.antiAlias,
         child: photo != null && photo.isNotEmpty && !guest
             ? Image.network(
@@ -342,42 +365,80 @@ class _ProfileHeader extends StatelessWidget {
             : _fallback(p, initials),
       ),
     );
+    // Edit leaf (629:100976): 3 dp surface ring. Decorative; the avatar is the button.
+    final badge = Container(
+      width: 38,
+      height: 38,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: p.primary,
+        shape: BoxShape.circle,
+        border: Border.all(color: p.surface, width: 3),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x24000000),
+            offset: Offset(0, 3),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      // ponytail: Figma's dark frame draws the leaf in primary on primary
+      // (invisible); the on-primary ink is used there instead.
+      child: ElioMark(size: 24, color: p.isDark ? p.onPrimary : p.primaryText),
+    );
+    final top = MediaQuery.paddingOf(context).top;
 
     return Column(
       children: [
+        SizedBox(height: top),
         SizedBox(
-          height: 190,
+          height: 166,
           child: Stack(
-            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            alignment: Alignment.topCenter,
             children: [
-              ExcludeSemantics(
-                child: Container(
-                  width: 230,
-                  height: 170,
-                  decoration: BoxDecoration(
-                    color: p.primary.withValues(alpha: 0.14),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(120),
-                      topRight: Radius.circular(90),
-                      bottomRight: Radius.circular(120),
-                      bottomLeft: Radius.circular(70),
-                    ),
-                  ),
-                ),
+              // Full-bleed: the list pads 16 dp each side.
+              Positioned(
+                left: -16,
+                right: -16,
+                top: 0,
+                bottom: 0,
+                child: const _HeaderDecor(key: Key('profile-header-decor')),
               ),
-              Semantics(
-                button: true,
-                label: l10n.profileAccountMenu,
-                excludeSemantics: true,
-                onTap: () => _openMenu(context),
-                child: Builder(
-                  builder: (anchor) => InkWell(
-                    key: const Key('profile-avatar'),
-                    customBorder: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(44),
-                    ),
-                    onTap: () => _openMenu(anchor),
-                    child: avatar,
+              Positioned(
+                top: 31,
+                // Entry: the avatar pops in first (spring), then the sections.
+                child: ElioPopIn(
+                  scale: 0.8,
+                  rise: 0,
+                  curve: ElioMotion.pop,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Semantics(
+                        button: true,
+                        label: l10n.profileAccountMenu,
+                        excludeSemantics: true,
+                        onTap: () => _openMenu(context),
+                        child: Builder(
+                          builder: (anchor) => InkWell(
+                            key: const Key('profile-avatar'),
+                            customBorder: const RoundedRectangleBorder(
+                              borderRadius: leaf,
+                            ),
+                            onTap: () => _openMenu(anchor),
+                            child: avatar,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 95,
+                        top: 94,
+                        child: IgnorePointer(
+                          child: ExcludeSemantics(child: badge),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -440,13 +501,137 @@ class _ProfileHeader extends StatelessWidget {
         ? Text(
             initials,
             style: ElioTokens.body.copyWith(
-              fontSize: 44,
+              fontSize: 40,
               fontWeight: FontWeight.w700,
               color: p.primaryText,
             ),
           )
         : Icon(Icons.person_outline_rounded, size: 56, color: p.textSecondary),
   );
+}
+
+/// Header backdrop (851:28593-603): green curve reaching behind the status
+/// bar, bubbles, confetti, mini leaf and sparkle. Drawn on a 390 dp frame and
+/// spread to the real width. Purely visual.
+class _HeaderDecor extends StatelessWidget {
+  const _HeaderDecor({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    return ExcludeSemantics(
+      child: IgnorePointer(
+        child: LayoutBuilder(
+          builder: (context, box) {
+            final k = box.maxWidth / 390;
+            Widget at(double x, double y, Widget child) =>
+                Positioned(left: x * k, top: y, child: child);
+            Widget dot(double d, Color c) => Container(
+              width: d,
+              height: d,
+              decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+            );
+            Widget bar(double h, double deg, Color c) => Transform.rotate(
+              angle: deg * 3.1415926535 / 180,
+              child: Container(
+                width: 6,
+                height: h,
+                decoration: BoxDecoration(
+                  color: c,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            );
+            const white = Color(0xD9FFFFFF);
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  left: -125 * k,
+                  top: -178,
+                  width: 640 * k,
+                  height: 300,
+                  child: DecoratedBox(
+                    decoration: ShapeDecoration(
+                      color: p.primary,
+                      shape: const OvalBorder(),
+                    ),
+                  ),
+                ),
+                at(296, -92, dot(120, p.primaryHover)),
+                at(-22, 40, dot(64, p.primaryHover)),
+                // Confetti fades in after the avatar lands.
+                Positioned.fill(
+                  child: ElioPopIn(
+                    rise: 0,
+                    scale: 1,
+                    delay: ElioMotion.fast,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        at(
+                          318,
+                          74,
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: p.surface, width: 3),
+                            ),
+                          ),
+                        ),
+                        at(60, 22, dot(10, ElioTokens.answerYellow)),
+                        at(107, 67, bar(16, -30, ElioTokens.answerBlue)),
+                        at(41, 112, bar(14, 25, ElioTokens.answerRed)),
+                        at(348, 40, dot(8, white)),
+                        at(281, 108, bar(14, 40, ElioTokens.answerYellow)),
+                        at(86, 42, dot(6, white)),
+                        at(
+                          17.5,
+                          13,
+                          Transform.rotate(
+                            angle: 20 * 3.1415926535 / 180,
+                            child: Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: p.surface,
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(16),
+                                  topRight: Radius.circular(3),
+                                  bottomRight: Radius.circular(16),
+                                  bottomLeft: Radius.circular(3),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          // Beside the avatar at any width.
+                          left: box.maxWidth / 2 + 73,
+                          top: 136,
+                          child: SvgPicture.asset(
+                            'assets/illustrations/home/icon_sparkle.svg',
+                            width: 24,
+                            height: 24,
+                            colorFilter: ColorFilter.mode(
+                              p.textPrimary,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 }
 
 class _MenuRow extends StatelessWidget {
