@@ -1591,5 +1591,18 @@
   "scanAskCoach": "Tanya pelatih ELIOS AI",
   "scanAskCoachSub": "Tanya alasannya, minta petunjuk, dengarkan",
   "scanBinYes": "Ya",
-  "scanBinNo": "Bukan"
+  "scanBinNo": "Bukan",
+  "binCheckChip": "Cek tempat sampah · sebelum kuis",
+  "binCheckOverline": "CEK TEMPAT SAMPAH · {item}",
+  "binCheckQuestion": "Ke mana sampah ini dibuang? Pilih tempat sampah yang benar.",
+  "binOrganik": "Tempat sampah Organik",
+  "binAnorganik": "Tempat sampah Anorganik",
+  "binB3": "Tempat sampah B3 (berbahaya)",
+  "binOops": "Ups! Bukan tempat sampah {bin}",
+  "binNice": "Pilahanmu tepat! Memang {bin}",
+  "binWhyOrganic": "{item} adalah sisa makanan atau tumbuhan, jadi bisa membusuk. Masuk ke tempat sampah Organik untuk jadi kompos.",
+  "binWhyAnorganik": "{item} tidak membusuk. Masuk ke tempat sampah Anorganik agar bisa didaur ulang.",
+  "binWhyB3": "{item} bisa mengandung bahan berbahaya. Masuk ke tempat sampah B3 agar ditangani dengan aman.",
+  "binQuizNext": "Kuismu berikutnya",
+  "binGotIt": "Mengerti"
 }

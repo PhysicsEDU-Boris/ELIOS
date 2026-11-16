@@ -9588,6 +9588,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No'**
   String get scanBinNo;
+
+  /// No description provided for @binCheckChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Bin check · before the quiz'**
+  String get binCheckChip;
+
+  /// No description provided for @binCheckOverline.
+  ///
+  /// In en, this message translates to:
+  /// **'BIN CHECK · {item}'**
+  String binCheckOverline(Object item);
+
+  /// No description provided for @binCheckQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Where will this waste go? Pick the right bin.'**
+  String get binCheckQuestion;
+
+  /// No description provided for @binOrganik.
+  ///
+  /// In en, this message translates to:
+  /// **'Organik bin'**
+  String get binOrganik;
+
+  /// No description provided for @binAnorganik.
+  ///
+  /// In en, this message translates to:
+  /// **'Anorganik bin'**
+  String get binAnorganik;
+
+  /// No description provided for @binB3.
+  ///
+  /// In en, this message translates to:
+  /// **'B3 (hazardous) bin'**
+  String get binB3;
+
+  /// No description provided for @binOops.
+  ///
+  /// In en, this message translates to:
+  /// **'Oops! Not the {bin} bin'**
+  String binOops(Object bin);
+
+  /// No description provided for @binNice.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice sorting! {bin} it is'**
+  String binNice(Object bin);
+
+  /// No description provided for @binWhyOrganic.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} is food or plant waste, so it rots. It goes in the Organik bin to become compost.'**
+  String binWhyOrganic(Object item);
+
+  /// No description provided for @binWhyAnorganik.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} doesn\'t rot. It goes in the Anorganik bin so it can be recycled.'**
+  String binWhyAnorganik(Object item);
+
+  /// No description provided for @binWhyB3.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} can hold harmful materials. It goes in the B3 bin so it is handled safely.'**
+  String binWhyB3(Object item);
+
+  /// No description provided for @binQuizNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Your quiz is next'**
+  String get binQuizNext;
+
+  /// No description provided for @binGotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get binGotIt;
 }
 
 class _AppLocalizationsDelegate

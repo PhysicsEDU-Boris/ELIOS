@@ -77,6 +77,34 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
     super.dispose();
   }
 
+  /// Robot bin check (decision 0224): the three bars, in Figma order.
+  static const _bins = [
+    ScanCategory.organic,
+    ScanCategory.recyclable,
+    ScanCategory.b3,
+  ];
+
+  /// The bar picked in the bin check, while its right / wrong feedback plays.
+  int? _binPicked;
+
+  void _answerBin(int i) {
+    final right = _bins[i] == ref.read(wasteQuizProvider).binAnswer;
+    // Right: success cue. Wrong: the gentle knock.
+    elioFeedback(
+      right ? ElioSfx.chime : ElioSfx.knock,
+      right ? ElioHaptics.success : ElioHaptics.warning,
+    );
+    ref.read(wasteQuizProvider.notifier).answerBinCheck(_bins[i]);
+    _holdTimer?.cancel();
+    setState(() {
+      _hold = true;
+      _binPicked = i;
+    });
+    _holdTimer = Timer(const Duration(milliseconds: 900), () {
+      if (mounted) setState(() => _hold = false);
+    });
+  }
+
   void _answer(int i) {
     ref.read(wasteQuizProvider.notifier).selectOption(i);
     _holdTimer?.cancel();
@@ -93,6 +121,7 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
           next.phase == WasteQuizPhase.idle ||
           next.phase == WasteQuizPhase.identifying;
       if (fresh) _essayKeys.clear();
+      if (fresh) _binPicked = null;
       if (fresh && (_started || _hold)) {
         _holdTimer?.cancel();
         setState(() => _started = _hold = false);
@@ -123,6 +152,18 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
     final mc = q != null && q.type == QuizQuestionType.multipleChoice;
     final loading = s.phase == WasteQuizPhase.loadingQuestion;
     final active = s.phase == WasteQuizPhase.active;
+    // Robot: one bin check before the quiz, then its result ticket on the
+    // identified page until "Got it" (Figma 860:28986, 860:29035, 861:29181).
+    final binStage =
+        robot &&
+        s.binAnswer != null &&
+        !_started &&
+        s.questionIndex == 0 &&
+        (loading || active || s.phase == WasteQuizPhase.confirmingHazard);
+    final binAsk =
+        binStage &&
+        (s.binPick == null || (_hold && _binPicked != null && !s.binAcked));
+    final binResult = binStage && !binAsk && !s.binAcked;
     final (String kind, Widget page) = switch (s.phase) {
       _ when s.notice != null => (
         'failed',
@@ -135,6 +176,34 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
           onClose: close,
           onRetake: rescan,
           onStart: null,
+        ),
+      ),
+      _ when binAsk => (
+        'bincheck',
+        _ScanQuestionPage(
+          state: s.copyWith(
+            phase: WasteQuizPhase.active,
+            question: GeneratedQuestion(
+              type: QuizQuestionType.multipleChoice,
+              question: l10n.binCheckQuestion,
+              options: [l10n.binOrganik, l10n.binAnorganik, l10n.binB3],
+              correctIndex: _bins.indexOf(s.binAnswer!),
+            ),
+            selectedOption: s.binPick == null ? null : _binPicked,
+          ),
+          onClose: close,
+          onAnswer: _answerBin,
+          onBinSkip: n.skipBinCheck,
+        ),
+      ),
+      _ when binResult => (
+        'identified',
+        _IdentifiedPage(
+          state: s,
+          onClose: close,
+          onRetake: rescan,
+          onStart: null,
+          onGotIt: n.ackBinCheck,
         ),
       ),
       _ when (loading || active) && !_started && s.questionIndex == 0 => (
@@ -432,6 +501,7 @@ class _IdentifiedPage extends StatefulWidget {
     required this.onRetake,
     required this.onStart,
     this.hazard = false,
+    this.onGotIt,
   });
   final WasteQuizUiState state;
   final VoidCallback onClose;
@@ -442,6 +512,9 @@ class _IdentifiedPage extends StatefulWidget {
 
   /// Hazardous (B3) item waiting for "Continue quiz" (851:28659).
   final bool hazard;
+
+  /// Set while the bin check result ticket shows instead of the quiz ticket.
+  final VoidCallback? onGotIt;
 
   @override
   State<_IdentifiedPage> createState() => _IdentifiedPageState();
@@ -460,7 +533,10 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
   void didUpdateWidget(_IdentifiedPage old) {
     super.didUpdateWidget(old);
     if (_known && old.state.phase == WasteQuizPhase.identifying) _cue();
-    if (widget.onStart != null && old.onStart == null && !widget.hazard) {
+    if (widget.onStart != null &&
+        old.onStart == null &&
+        !widget.hazard &&
+        widget.onGotIt == null) {
       elioFeedback(ElioSfx.tick, ElioHaptics.select);
     }
   }
@@ -711,7 +787,8 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
                         ),
                       ),
                     // _InfoChip is flexible: it needs a Row around it.
-                    if (s.canCorrectItem && !widget.hazard)
+                    // After a bin check the item is settled (its XP was given).
+                    if (s.canCorrectItem && !widget.hazard && s.binPick == null)
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -737,11 +814,41 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
             rise: 40,
             scale: 1,
             delay: const Duration(milliseconds: 320),
-            child: _QuizTicket(
-              state: s,
-              onRetake: widget.onRetake,
-              onStart: widget.onStart,
-              hazard: widget.hazard,
+            // "Got it" flips the result ticket to the quiz ticket in place.
+            child: AnimatedSwitcher(
+              duration: reduced ? Duration.zero : ElioMotion.base,
+              switchInCurve: ElioMotion.emphasized,
+              switchOutCurve: ElioMotion.exit,
+              layoutBuilder: (current, previous) => Stack(
+                alignment: Alignment.topCenter,
+                children: [...previous, ?current],
+              ),
+              transitionBuilder: (child, a) => FadeTransition(
+                opacity: a,
+                child: AnimatedBuilder(
+                  animation: a,
+                  builder: (context, c) => Transform(
+                    alignment: Alignment.center,
+                    transform: Matrix4.identity()
+                      ..setEntry(3, 2, 0.001)
+                      ..rotateX((1 - a.value) * math.pi / 2),
+                    child: c,
+                  ),
+                  child: child,
+                ),
+              ),
+              child: SizedBox(
+                key: ValueKey(widget.onGotIt != null),
+                width: double.infinity,
+                child: widget.onGotIt != null
+                    ? _BinTicket(state: s, onGotIt: widget.onGotIt!)
+                    : _QuizTicket(
+                        state: s,
+                        onRetake: widget.onRetake,
+                        onStart: widget.onStart,
+                        hazard: widget.hazard,
+                      ),
+              ),
             ),
           );
 
@@ -905,6 +1012,254 @@ class _HazardActions extends ConsumerWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Bin check result on the identified page (860:29035 wrong, 861:29181
+/// right): the picked bin buddy with a ✗ or ✓, why the item belongs in its
+/// bin, the XP chip, "Your quiz is next" and Got it.
+class _BinTicket extends StatelessWidget {
+  const _BinTicket({required this.state, required this.onGotIt});
+  final WasteQuizUiState state;
+  final VoidCallback onGotIt;
+
+  static String _short(ScanCategory c) => switch (c) {
+    ScanCategory.organic => 'Organik',
+    ScanCategory.b3 => 'B3',
+    _ => 'Anorganik',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    final right = state.binRight;
+    final correct = state.binAnswer!;
+    final picked = ScanCategory.values.asNameMap()[state.binPick] ?? correct;
+    final item = state.scan?.displayName ?? l10n.wasteGeneric;
+    final tone = historyTint(
+      p,
+      right ? HistoryTone.success : HistoryTone.error,
+    );
+    final chip = historyTint(
+      p,
+      right ? HistoryTone.success : HistoryTone.neutral,
+    );
+    Widget notch(bool left) => Positioned(
+      left: left ? -13 : null,
+      right: left ? null : -13,
+      top: 0,
+      child: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          color: p.background,
+          shape: BoxShape.circle,
+          border: Border.all(color: p.borderSubtle),
+        ),
+      ),
+    );
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1A000000),
+            offset: Offset(0, 4),
+            blurRadius: 6,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          key: const ValueKey('bin_ticket'),
+          decoration: BoxDecoration(
+            color: p.surface,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: p.borderSubtle),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // The picked bin buddy, marked right or wrong.
+                    ExcludeSemantics(
+                      child: SizedBox(
+                        width: 48,
+                        height: 52,
+                        child: Stack(
+                          children: [
+                            homeArt(_binAsset(picked), width: 40, height: 48),
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: ElioPopIn(
+                                rise: 0,
+                                scale: 0.4,
+                                curve: ElioMotion.pop,
+                                delay: const Duration(milliseconds: 200),
+                                child: Container(
+                                  key: ValueKey(
+                                    right ? 'bin_mark_right' : 'bin_mark_wrong',
+                                  ),
+                                  width: 20,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    color: right ? p.primaryActive : p.error,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: p.surface,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    right
+                                        ? Icons.check_rounded
+                                        : Icons.close_rounded,
+                                    size: 12,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            right
+                                ? l10n.binNice(_short(correct))
+                                : l10n.binOops(_short(picked)),
+                            style: _sq(ElioTokens.body, 700, tone.fg),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            switch (correct) {
+                              ScanCategory.organic => l10n.binWhyOrganic(item),
+                              ScanCategory.b3 => l10n.binWhyB3(item),
+                              _ => l10n.binWhyAnorganik(item),
+                            },
+                            style: ElioTokens.bodySmall.copyWith(
+                              color: p.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      key: const ValueKey('bin_xp_chip'),
+                      padding: const EdgeInsets.fromLTRB(8, 4, 10, 4),
+                      decoration: ShapeDecoration(
+                        color: chip.bg,
+                        shape: StadiumBorder(
+                          side: BorderSide(
+                            color: chip.border ?? p.borderSubtle,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Opacity(
+                            opacity: right ? 1 : 0.45,
+                            child: SvgPicture.asset(
+                              'assets/illustrations/history/icon_xp.svg',
+                              width: 18,
+                              height: 18,
+                              excludeFromSemantics: true,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            l10n.trophiesEarned(state.binCheckXp),
+                            style: _sq(
+                              ElioTokens.bodySmall,
+                              700,
+                              right ? chip.fg : p.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 24,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    notch(true),
+                    notch(false),
+                    Positioned(
+                      left: 18,
+                      right: 18,
+                      top: 11,
+                      child: CustomPaint(
+                        size: const Size.fromHeight(2),
+                        painter: _DashLine(p.borderMedium),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 2, 16, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.binQuizNext,
+                        style: _sq(ElioTokens.bodySmall, 500, p.textSecondary),
+                      ),
+                    ),
+                    ElioPress(
+                      pressed: 0.96,
+                      child: FilledButton(
+                        key: const ValueKey('bin_got_it'),
+                        onPressed: () {
+                          // The ticket flips: a tick.
+                          elioFeedback(ElioSfx.tick, ElioHaptics.select);
+                          onGotIt();
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: p.primary,
+                          foregroundColor: p.onPrimary,
+                          minimumSize: const Size(0, 48),
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                          shape: const StadiumBorder(),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              l10n.binGotIt,
+                              style: _sq(ElioTokens.button, 600, p.onPrimary),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.chevron_right_rounded, size: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1311,10 +1666,16 @@ class _ScanQuestionPage extends ConsumerWidget {
     required this.state,
     required this.onClose,
     required this.onAnswer,
+    this.onBinSkip,
   });
   final WasteQuizUiState state;
   final VoidCallback onClose;
   final ValueChanged<int> onAnswer;
+
+  /// Set for the robot bin check (860:28986): a chip instead of the progress
+  /// dashes, three full-width bars, skip and time-up end the check.
+  final VoidCallback? onBinSkip;
+  bool get _bin => onBinSkip != null;
 
   // Figma order: red triangle, blue diamond, yellow circle, green square.
   static const _fills = [
@@ -1352,45 +1713,81 @@ class _ScanQuestionPage extends ConsumerWidget {
       children: [
         _RoundClose(onTap: onClose),
         const SizedBox(width: 12),
-        Expanded(
-          child: Semantics(
-            label: l10n.qzQuestionOf(
-              state.questionIndex + 1,
-              state.totalQuestions,
+        if (_bin)
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                key: const ValueKey('bin_check_chip'),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 5,
+                ),
+                decoration: ShapeDecoration(
+                  color: historyTint(p, HistoryTone.success).bg,
+                  shape: StadiumBorder(
+                    side: BorderSide(
+                      color:
+                          historyTint(p, HistoryTone.success).border ??
+                          p.borderSubtle,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  l10n.binCheckChip,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _sq(
+                    ElioTokens.caption,
+                    600,
+                    p.primaryText,
+                  ).copyWith(fontSize: 13),
+                ),
+              ),
             ),
-            child: Row(
-              children: [
-                for (var i = 0; i < state.totalQuestions; i++) ...[
-                  if (i > 0) const SizedBox(width: 8),
-                  Flexible(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 68),
-                      // The dash of the current question fills (300 ms).
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        curve: ElioMotion.standard,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: i <= state.questionIndex
-                              ? p.primary
-                              : p.surfaceRaised,
-                          borderRadius: BorderRadius.circular(5),
+          )
+        else
+          Expanded(
+            child: Semantics(
+              label: l10n.qzQuestionOf(
+                state.questionIndex + 1,
+                state.totalQuestions,
+              ),
+              child: Row(
+                children: [
+                  for (var i = 0; i < state.totalQuestions; i++) ...[
+                    if (i > 0) const SizedBox(width: 8),
+                    Flexible(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 68),
+                        // The dash of the current question fills (300 ms).
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          curve: ElioMotion.standard,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: i <= state.questionIndex
+                                ? p.primary
+                                : p.surfaceRaised,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
-        ),
         const SizedBox(width: 12),
         ..._stopPill(context),
         if (seconds != null && q != null && picked == null)
           QuizCountdown(
-            key: ValueKey('quiz_timer_${state.questionIndex}'),
+            key: ValueKey(
+              _bin ? 'quiz_timer_bin' : 'quiz_timer_${state.questionIndex}',
+            ),
             seconds: seconds,
-            onTimeUp: n.timeUp,
+            onTimeUp: onBinSkip ?? n.timeUp,
             chip: true,
           ),
       ],
@@ -1440,12 +1837,16 @@ class _ScanQuestionPage extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        l10n.qzQuestionOfCaps(
-                          state.questionIndex + 1,
-                          state.totalQuestions,
-                          '${essay ? '${l10n.scanEssay.toUpperCase()} · ' : ''}'
-                          '${(state.scan?.displayName ?? '').toUpperCase()}',
-                        ),
+                        _bin
+                            ? l10n.binCheckOverline(
+                                (state.scan?.displayName ?? '').toUpperCase(),
+                              )
+                            : l10n.qzQuestionOfCaps(
+                                state.questionIndex + 1,
+                                state.totalQuestions,
+                                '${essay ? '${l10n.scanEssay.toUpperCase()} · ' : ''}'
+                                '${(state.scan?.displayName ?? '').toUpperCase()}',
+                              ),
                         style: _sq(
                           ElioTokens.overline,
                           600,
@@ -1645,6 +2046,29 @@ class _ScanQuestionPage extends ConsumerWidget {
             state: state,
             skip: skip && !state.essaySubmitted,
           )
+        : _bin
+        // Bin check: three full-width bars (red, blue, yellow).
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var r = 0; r < count; r++) ...[
+                if (r > 0) const SizedBox(height: 12),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 64),
+                  child: IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [tile(r)],
+                    ),
+                  ),
+                ),
+              ],
+              if (skip) ...[
+                const SizedBox(height: 12),
+                _SkipButton(onSkip: onBinSkip),
+              ],
+            ],
+          )
         : Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1751,7 +2175,10 @@ class _ScanQuestionPage extends ConsumerWidget {
 }
 
 class _SkipButton extends ConsumerWidget {
-  const _SkipButton();
+  const _SkipButton({this.onSkip});
+
+  /// The bin check's own skip; null skips the quiz question.
+  final VoidCallback? onSkip;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1760,7 +2187,7 @@ class _SkipButton extends ConsumerWidget {
       key: const ValueKey('quiz_skip'),
       onPressed: () {
         elioFeedback(ElioSfx.tick, ElioHaptics.light);
-        ref.read(wasteQuizProvider.notifier).skipQuestion();
+        (onSkip ?? ref.read(wasteQuizProvider.notifier).skipQuestion)();
       },
       style: TextButton.styleFrom(
         foregroundColor: p.textSecondary,
@@ -2981,7 +3408,8 @@ class _ScanDonePage extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 ElioCountUp(
-                  value: earned,
+                  // With the bin check's XP, as saved in History (0224).
+                  value: earned + state.binCheckXp,
                   builder: (context, v) => Text(
                     l10n.trophiesEarned(v),
                     style: _sq(ElioTokens.subhead, 700, p.secondaryText),
