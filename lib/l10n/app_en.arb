@@ -692,6 +692,8 @@
   "setEasy": "Easy",
   "setMedium": "Medium",
   "setHard": "Hard",
+  "setEssay": "Essay questions",
+  "setEssaySub": "Written answers, graded by ELIOS AI",
   "setTimer": "Timer",
   "setTimerSub": "Time for each question",
   "setAllowSkip": "Allow skipping",

@@ -1052,6 +1052,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get setHard => 'Sulit';
 
   @override
+  String get setEssay => 'Soal esai';
+
+  @override
+  String get setEssaySub => 'Jawaban tertulis, dinilai ELIOS AI';
+
+  @override
   String get setTimer => 'Waktu';
 
   @override

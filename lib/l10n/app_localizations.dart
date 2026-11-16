@@ -1976,6 +1976,18 @@ abstract class AppLocalizations {
   /// **'Hard'**
   String get setHard;
 
+  /// No description provided for @setEssay.
+  ///
+  /// In en, this message translates to:
+  /// **'Essay questions'**
+  String get setEssay;
+
+  /// No description provided for @setEssaySub.
+  ///
+  /// In en, this message translates to:
+  /// **'Written answers, graded by ELIOS AI'**
+  String get setEssaySub;
+
   /// No description provided for @setTimer.
   ///
   /// In en, this message translates to:

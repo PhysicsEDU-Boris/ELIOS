@@ -313,6 +313,8 @@
   "setEasy": "Mudah",
   "setMedium": "Sedang",
   "setHard": "Sulit",
+  "setEssay": "Soal esai",
+  "setEssaySub": "Jawaban tertulis, dinilai ELIOS AI",
   "setTimer": "Waktu",
   "setTimerSub": "Waktu untuk tiap soal",
   "setAllowSkip": "Boleh lewati soal",

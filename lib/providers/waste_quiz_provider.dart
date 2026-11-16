@@ -43,11 +43,6 @@ enum WasteQuizPhase {
 /// stand-in for testing without the robot.
 enum WasteQuizSource { maixCam2, phoneCamera }
 
-/// Essay questions are off by default: sessions are multiple choice only (decision 0017).
-// The tester build always asks essays (A1: the essay grade needs measuring).
-const essayQuestionsEnabled =
-    bool.fromEnvironment('ESSAY_QUESTIONS') || testerBuild;
-
 /// Question order within one scan session: alternate the two types, or
 /// multiple choice only when essays are off.
 QuizQuestionType questionTypeFor(int index, {bool essays = true}) =>
@@ -224,14 +219,17 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   int _generation = 0;
   final _askedQuestions = <String>[];
 
-  /// Test overrides: a fixed question source, and the essay build flag.
+  /// Test overrides: a fixed question source, and the essay switch.
   @visibleForTesting
   static QuestionSource? sourceOverride;
 
   /// True for MaixCAM2 scans (LOCK and live scan), false for the phone.
   bool _robotSession = false;
+  /// Test override; null follows Profile → Essay questions (decision 0219).
   @visibleForTesting
-  static bool essayQuestions = essayQuestionsEnabled;
+  static bool? essayQuestions;
+  bool get _essays =>
+      essayQuestions ?? ref.read(appPreferencesProvider).essayQuestions;
 
   // Captured when a session starts, so a switch only affects the next scan (decision 0018).
   QuestionSource _sessionSource = QuestionSource.bank;
@@ -732,7 +730,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     unawaited(QuizTtsService.instance.stop());
     final generation = ++_generation;
     final scan = state.scan!;
-    final type = questionTypeFor(index, essays: essayQuestions);
+    final type = questionTypeFor(index, essays: _essays);
     final total = state.totalQuestions;
     loadingSince = DateTime.now();
     state = state.copyWith(
@@ -895,7 +893,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     int index,
     int gen,
   ) async {
-    final type = questionTypeFor(index, essays: essayQuestions);
+    final type = questionTypeFor(index, essays: _essays);
     final diagnostics = _diagnostics;
     var attempt = 0;
     while (gen == _prefetchSessionGen) {
@@ -942,7 +940,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     unawaited(QuizTtsService.instance.stop());
     final generation = ++_generation;
     final scan = state.scan!;
-    final type = questionTypeFor(index, essays: essayQuestions);
+    final type = questionTypeFor(index, essays: _essays);
     final total = state.totalQuestions;
     loadingSince = DateTime.now();
     state = state.copyWith(
