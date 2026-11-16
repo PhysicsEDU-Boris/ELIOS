@@ -18,6 +18,7 @@ import '../scan/scan_hub_screen.dart' show scanArt;
 import '../home/home_parts.dart';
 import '../scan_history_screen.dart' show ScanDetailScreen;
 import 'history_tab.dart';
+import '../../widgets/xp_icon.dart';
 
 class ScanTimelineScreen extends StatefulWidget {
   const ScanTimelineScreen({
@@ -547,11 +548,7 @@ class _Item extends StatelessWidget {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
-                                  Icons.emoji_events_outlined,
-                                  size: 14,
-                                  color: p.secondaryText,
-                                ),
+                                const XpIcon(14),
                                 const SizedBox(width: 3),
                                 Text(
                                   '+${r.trophies}',

@@ -9,6 +9,7 @@ import '../services/ai_quiz_service.dart';
 import '../theme/elio_motion.dart';
 import '../theme/elio_tokens.dart';
 import 'auth/auth_widgets.dart' show authPalette;
+import 'xp_icon.dart';
 
 // H3 History components. Sizes, gaps and tokens follow
 // docs/design/h3-figma/README.md (Figma 433:2358); colours come only from the
@@ -125,10 +126,14 @@ class HistoryChip extends StatelessWidget {
     super.key,
     this.tone = HistoryTone.neutral,
     this.icon,
+    this.leading,
   });
   final String text;
   final HistoryTone tone;
   final IconData? icon;
+
+  /// A ready-made 14 dp picture instead of [icon] (the XP sticker).
+  final Widget? leading;
   @override
   Widget build(BuildContext context) {
     final t = historyTint(authPalette(context), tone);
@@ -144,8 +149,8 @@ class HistoryChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 14, color: t.fg),
+          if (leading != null || icon != null) ...[
+            leading ?? Icon(icon, size: 14, color: t.fg),
             const SizedBox(width: 4),
           ],
           Flexible(
@@ -506,7 +511,7 @@ class HistoryTrophyChip extends StatelessWidget {
   Widget build(BuildContext context) => HistoryChip(
     '+$trophies',
     tone: HistoryTone.warning,
-    icon: Icons.emoji_events_outlined,
+    leading: const XpIcon(14),
   );
 }
 
@@ -732,11 +737,7 @@ class HistoryScanCard extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.emoji_events_outlined,
-                                size: 14,
-                                color: p.surface,
-                              ),
+                              const XpIcon(14),
                               const SizedBox(width: 2),
                               Text(
                                 '+${record.trophies}',

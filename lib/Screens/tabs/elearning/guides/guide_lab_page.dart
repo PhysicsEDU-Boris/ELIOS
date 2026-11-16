@@ -19,6 +19,7 @@ import '../../../../widgets/learn/learn_l3.dart';
 import '../../../../widgets/learn/learn_ui.dart';
 import '../learn_content.dart';
 import 'guide_widgets.dart';
+import '../../../../widgets/xp_icon.dart';
 
 const labMinSeconds = 15;
 const labMaxSeconds = 30;
@@ -1100,11 +1101,7 @@ class _BadgeArt extends StatelessWidget {
         ),
         boxShadow: l3Shadow,
       ),
-      child: Icon(
-        Icons.emoji_events_outlined,
-        size: size * 0.45,
-        color: p.secondaryText,
-      ),
+      child: Center(child: XpIcon(size * 0.45)),
     );
   }
 }
