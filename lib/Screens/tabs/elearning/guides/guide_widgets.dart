@@ -24,10 +24,11 @@ const _onNewPill = Color(0xFF92400E);
 /// Image cache for guide photos; tests swap it.
 BaseCacheManager? guideImageCache;
 
-/// The guide language: the student's pick, else the app language.
+/// The guide language: the student's pick, else the app language. Read from
+/// the widget's Localizations so a language switch rebuilds it the same frame.
 String guideLangOf(WidgetRef ref) =>
     ref.watch(guideProgressProvider.select((s) => s.guideLang)) ??
-    (l10n.localeName == 'id' ? 'id' : 'en');
+    (ref.context.l10n.localeName == 'id' ? 'id' : 'en');
 
 /// Content JSON per (issue, language); null while missing.
 final guideContentProvider =

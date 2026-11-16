@@ -86,3 +86,4 @@ their status changed.
 - [0215](0215-history-l4-figma.md) History tab in the Figma L4 style, entrance on every open, nested-screen motion
 - [0216](0216-scan-l4-figma.md) Scan flows in the Figma L4 style, full-screen Scan & quiz pages, motion everywhere
 - [0217](0217-control-l4-scan-pages.md) Robot control uses the full-screen scan pages; essay page and review; scan-start animation; keyboard-safe
+- [0218](0218-language-switch-sync.md) Language switch: saved scans open at once, Today's Guide follows the app language

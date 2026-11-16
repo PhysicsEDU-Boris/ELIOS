@@ -504,6 +504,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
   Future<void> _translate() async {
     final epoch = ++_translateEpoch, lang = _lang!;
     setState(() => _translating = true);
+    final clock = Stopwatch()..start();
     var ok = false;
     try {
       ok = await HistoryTranslationService.ensure(
@@ -512,6 +513,10 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
         lang,
       ).timeout(widget.loadTimeout);
     } catch (_) {}
+    debugPrint(
+      '[HistoryTranslation] ${_saved.id} -> $lang: '
+      '${ok ? 'cached' : 'failed'} after ${clock.elapsedMilliseconds} ms',
+    );
     if (mounted && epoch == _translateEpoch) {
       setState(() {
         _translating = false;
@@ -579,7 +584,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
         _export(context);
       },
     );
-    if (!_ready || _failed || store.loadError != null || _translating) {
+    if (!_ready || _failed || store.loadError != null) {
       return Scaffold(
         backgroundColor: p.background,
         appBar: bar,
@@ -606,9 +611,11 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
         key: const ValueKey('detail_list_view'),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          if (_original)
+          // The saved text shows at once; its translation fills in place.
+          if (_original || _translating)
             HistoryOriginalNote(
               lang: _saved.lang,
+              busy: _translating,
               onRetry: () => unawaited(_translate()),
             ),
           // Polaroid (629:99667): tilted 2°, the photo morphs in (Hero), the

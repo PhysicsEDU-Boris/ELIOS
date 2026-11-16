@@ -3088,6 +3088,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get h3TryAgain => 'Try again';
 
   @override
+  String get h3Translating => 'Translating…';
+
+  @override
   String get h3Loading => 'Loading';
 
   @override

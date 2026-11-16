@@ -5431,6 +5431,12 @@ abstract class AppLocalizations {
   /// **'Try again'**
   String get h3TryAgain;
 
+  /// No description provided for @h3Translating.
+  ///
+  /// In en, this message translates to:
+  /// **'Translating…'**
+  String get h3Translating;
+
   /// No description provided for @h3Loading.
   ///
   /// In en, this message translates to:

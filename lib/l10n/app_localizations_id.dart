@@ -3031,6 +3031,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get h3TryAgain => 'Coba lagi';
 
   @override
+  String get h3Translating => 'Menerjemahkan…';
+
+  @override
   String get h3Loading => 'Sedang memuat';
 
   @override
