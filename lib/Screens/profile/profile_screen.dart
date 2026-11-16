@@ -217,6 +217,14 @@ class ProfileScreen extends ConsumerWidget {
                         patch((s) => s.copyWith(quizDifficulty: v)),
                   ),
                   const _Rule(),
+                  _SwitchRow(
+                    title: l10n.setEssay,
+                    subtitle: l10n.setEssaySub,
+                    value: prefs.essayQuestions,
+                    onChanged: (v) =>
+                        patch((s) => s.copyWith(essayQuestions: v)),
+                  ),
+                  const _Rule(),
                   _RowTitle(title: l10n.setTimer, subtitle: l10n.setTimerSub),
                   const SizedBox(height: 10),
                   ConfigSegmented(

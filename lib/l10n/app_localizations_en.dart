@@ -1075,6 +1075,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setHard => 'Hard';
 
   @override
+  String get setEssay => 'Essay questions';
+
+  @override
+  String get setEssaySub => 'Written answers, graded by ELIOS AI';
+
+  @override
   String get setTimer => 'Timer';
 
   @override

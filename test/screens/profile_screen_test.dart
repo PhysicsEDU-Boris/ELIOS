@@ -84,6 +84,11 @@ void main() {
     await t.tap(find.text('90s'));
     await t.pumpAndSettle();
     await toggle('Allow skipping');
+    // Essay questions sits directly below Difficulty (decision 0219).
+    final essayY = t.getTopLeft(find.text('Essay questions')).dy;
+    expect(essayY, greaterThan(t.getTopLeft(find.text('Hard')).dy));
+    expect(essayY, lessThan(t.getTopLeft(find.text('Timer')).dy));
+    await toggle('Essay questions'); // off → on
     await t.drag(find.byType(Slider), const Offset(-2000, 0));
     await t.pumpAndSettle();
     // Language last: the labels above are English.
@@ -99,6 +104,7 @@ void main() {
     expect(prefs, containsPair('quizDifficulty', 'Hard'));
     expect(prefs, containsPair('quizTimer', '90s'));
     expect(prefs, containsPair('skipAllowed', true));
+    expect(prefs, containsPair('essayQuestions', true));
     expect(saved.getString('elio_theme_mode_v1'), 'dark');
     expect(saved.getString('elio_locale_v1'), 'id');
 
