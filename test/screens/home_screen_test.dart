@@ -28,6 +28,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'auth_test_support.dart';
+import 'package:elio/widgets/xp_icon.dart';
 
 /// H1 v4 gamified Home (decision 0144). Firestore is a fake content service;
 /// the scan store is in memory; "now" is fixed to Saturday 31 Oct 2026 15:00.
@@ -476,7 +477,7 @@ void main() {
         ),
         overrides: [currentUserProvider.overrideWithValue(null)],
       );
-      expect(find.byIcon(Icons.emoji_events_outlined), findsNothing);
+      expect(find.byType(XpIcon), findsNothing);
       final bell = t.getSize(find.byTooltip('Open notifications'));
       expect(bell.width, greaterThanOrEqualTo(48));
       await t.tap(find.byTooltip('Open notifications'));

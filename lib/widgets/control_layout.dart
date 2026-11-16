@@ -8,6 +8,7 @@ import '../theme/elio_tokens.dart';
 import 'control/r2_controls.dart';
 import 'learn/learn_ui.dart' show LearnTheme;
 import 'package:elio/l10n/l10n.dart';
+import 'xp_icon.dart';
 
 /// The R2 gamified Control screen layout (Figma 358:2358, decision 0173; the
 /// STOP rules of 0026 hold at every size).
@@ -553,7 +554,7 @@ class HistoryPill extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.emoji_events_rounded, size: 14, color: p.secondaryText),
+                  const XpIcon(14),
                   const SizedBox(width: 4),
                   Text(
                     '$total',

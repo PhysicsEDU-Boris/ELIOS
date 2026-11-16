@@ -57,6 +57,7 @@ import 'login_screen.dart';
 import 'package:elio/l10n/l10n.dart';
 import 'tabs/elearning/simulations/simulations_page.dart' show openSimulation;
 import '../services/elio_feedback.dart';
+import '../widgets/xp_icon.dart';
 
 const _scanTab = 2;
 const _controlTab = 3;
@@ -1277,7 +1278,7 @@ class _Hero extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.emoji_events_outlined, size: 14, color: p.onPrimary),
+              const XpIcon(14),
               const SizedBox(width: 4),
               // The total counts up as the sticker lands.
               AnimatedBuilder(

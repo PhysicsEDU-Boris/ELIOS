@@ -15,6 +15,7 @@ import '../../waste_quiz_popup.dart' show QuizButton;
 import '../r2_controls.dart';
 import '../../learn/learn_ui.dart' show LearnTheme;
 import 'package:elio/l10n/l10n.dart';
+import '../../xp_icon.dart';
 
 /// Phones in landscape: the shortest side is under 600 dp. Tablets and the Mac keep R2.
 bool isPhoneLandscape(BuildContext context) {
@@ -1092,11 +1093,7 @@ class TrophyCount extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.emoji_events_rounded,
-              size: 14,
-              color: ElioTokens.answerYellow,
-            ),
+            const XpIcon(14),
             const SizedBox(width: 3),
             Text(
               '$count',

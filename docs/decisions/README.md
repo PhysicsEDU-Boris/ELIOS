@@ -88,3 +88,4 @@ their status changed.
 - [0217](0217-control-l4-scan-pages.md) Robot control uses the full-screen scan pages; essay page and review; scan-start animation; keyboard-safe
 - [0218](0218-language-switch-sync.md) Language switch: saved scans open at once, Today's Guide follows the app language
 - [0219](0219-essay-questions-setting.md) Essay questions on/off in Profile
+- [0220](0220-trophy-icons-to-xp.md) Trophy icons become the XP icon

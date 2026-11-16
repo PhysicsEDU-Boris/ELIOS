@@ -32,6 +32,7 @@ import 'history_ui.dart' show HistoryTone, historyTint;
 import 'learn/learn_l3.dart' show L3Hero, RobotBuddy, RobotMood;
 import 'learn/learn_ui.dart' show LearnTheme;
 import 'package:elio/l10n/l10n.dart';
+import 'xp_icon.dart';
 
 part 'quiz/quiz_r3.dart';
 part 'quiz/quiz_scan_pages.dart';
@@ -364,11 +365,7 @@ class _ResultCard extends ConsumerWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.emoji_events_rounded,
-                      size: 16,
-                      color: Color(0xFFD97706),
-                    ),
+                    const XpIcon(16),
                     const SizedBox(width: 4),
                     Text(
                       l10n.trophiesEarned(earnedTrophies),
