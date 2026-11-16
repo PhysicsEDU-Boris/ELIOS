@@ -95,6 +95,8 @@ final _essayReview = _essay.copyWith(
     correctAnswerReason: '',
     essayScore: 8,
     essayFeedback: 'Add landfill time for full marks.',
+    learningTakeaway: 'For full marks: say what happens to a dirty batch.',
+    referenceAnswer: 'Rinse it so leftovers do not dirty the other recycling.',
     rubricRows: [
       RubricRow(criterion: 'Accuracy', maxScore: 4, awardedScore: 4),
       RubricRow(criterion: 'Key terms', maxScore: 3, awardedScore: 2),
@@ -362,16 +364,114 @@ void main() {
       });
     }
 
-    testWidgets('essay review: score, the answer, rubric, no bins', (t) async {
-      await _pump(t, _essayReview, size: const Size(915, 412));
+    testWidgets('essay review landscape (856:28871): verdict, correct answer, '
+        'your answer, why; coach entry and Next on the right', (t) async {
+      final quiz = await _pump(t, _essayReview, size: const Size(915, 412));
       expect(t.takeException(), isNull);
-      expect(find.text('Essay review'), findsOneWidget);
-      expect(find.text('SCORE 8 / 10'), findsOneWidget);
-      expect(find.byKey(const ValueKey('scan_essay_answer')), findsOneWidget);
-      expect(find.text('2 / 3'), findsOneWidget);
+      expect(find.text('Answer review'), findsOneWidget);
+      expect(
+        find.text('Question 2 of 3 · Essay · ${_scan.displayName}'),
+        findsOneWidget,
+      );
+      expect(find.text('GOOD THINKING'), findsOneWidget);
+      expect(find.text('Score 8 / 10'), findsOneWidget);
+      expect(find.text('Checked by ELIOS AI'), findsOneWidget);
       expect(find.text('+8 XP'), findsOneWidget);
+      final correct = find.byKey(const ValueKey('scan_essay_correct'));
+      final yours = find.byKey(const ValueKey('scan_essay_answer'));
+      expect(find.text('THE CORRECT ANSWER'), findsOneWidget);
+      expect(
+        find.text('Rinse it so leftovers do not dirty the other recycling.'),
+        findsOneWidget,
+      );
+      // Left column order: correct answer above your answer.
+      expect(t.getTopLeft(correct).dy, lessThan(t.getTopLeft(yours).dy));
       expect(find.text('Organik'), findsNothing);
-      // Landscape: the coach chat sits next to the review.
+      // Right column: the coach entry (no inline chat) and Next.
+      expect(find.byKey(const ValueKey('scan_coach_inline')), findsNothing);
+      final entry = find.byKey(const ValueKey('scan_coach_entry'));
+      expect(t.getTopLeft(entry).dx, greaterThan(t.getTopRight(correct).dx));
+      // The green curve ends above the content.
+      expect(
+        t.getTopLeft(find.byKey(const ValueKey('scan_verdict'))).dy,
+        greaterThanOrEqualTo(76),
+      );
+      await t.tap(entry);
+      await _settle(t);
+      expect(find.byKey(const ValueKey('scan_coach')), findsOneWidget);
+      expect(quiz.state.phase, WasteQuizPhase.explaining);
+    });
+
+    for (final lang in ['en', 'id']) {
+      for (final dark in [false, true]) {
+        testWidgets('essay review portrait (853:28675) $lang dark: $dark', (
+          t,
+        ) async {
+          await _pump(t, _essayReview, lang: lang, dark: dark);
+          expect(t.takeException(), isNull);
+          final yours = find.byKey(const ValueKey('scan_essay_answer'));
+          final correct = find.byKey(const ValueKey('scan_essay_correct'));
+          // Your answer first, then the correct answer leaf.
+          expect(t.getTopLeft(yours).dy, lessThan(t.getTopLeft(correct).dy));
+          expect(
+            find.text(lang == 'en' ? 'YOUR ANSWER' : 'JAWABANMU'),
+            findsOneWidget,
+          );
+          expect(
+            find.text(
+              lang == 'en' ? 'THE CORRECT ANSWER' : 'JAWABAN YANG BENAR',
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.text('“Rinse it first so food does not spoil the batch.”'),
+            findsOneWidget,
+          );
+          // The grader's rubric stays (it returns no key points).
+          expect(find.text('2 / 3'), findsOneWidget);
+          final why = find.byKey(const ValueKey('scan_essay_why'));
+          await t.scrollUntilVisible(why, 200);
+          expect(
+            t.widget<Text>(why).data,
+            'Add landfill time for full marks.\n\n'
+            'For full marks: say what happens to a dirty batch.',
+          );
+        });
+      }
+    }
+
+    testWidgets('a failing essay score uses the Wrong tone', (t) async {
+      await _pump(
+        t,
+        _essayReview.copyWith(
+          currentExplanation: const QuizExplanation(
+            summary: '',
+            correctAnswerReason: '',
+            essayScore: 4,
+            essayFeedback: 'Say why.',
+          ),
+        ),
+      );
+      expect(find.text('NOT QUITE'), findsOneWidget);
+      expect(find.text('Score 4 / 10'), findsOneWidget);
+      expect(find.text('GOOD THINKING'), findsNothing);
+      // No model answer was saved: the leaf is not shown.
+      expect(find.byKey(const ValueKey('scan_essay_correct')), findsNothing);
+    });
+
+    testWidgets('landscape MCQ review: the curve ends above the content', (
+      t,
+    ) async {
+      await _pump(
+        t,
+        _ready.copyWith(phase: WasteQuizPhase.explaining, selectedOption: 0),
+        size: const Size(915, 412),
+      );
+      expect(t.takeException(), isNull);
+      expect(
+        t.getTopLeft(find.byKey(const ValueKey('scan_verdict'))).dy,
+        greaterThanOrEqualTo(76),
+      );
       expect(find.byKey(const ValueKey('scan_coach_inline')), findsOneWidget);
     });
 
@@ -379,6 +479,9 @@ void main() {
       t,
     ) async {
       await _pump(t, _essayReview, size: const Size(915, 412));
+      // The essay review opens the coach from its entry (856:28871).
+      await t.tap(find.byKey(const ValueKey('scan_coach_entry')));
+      await _settle(t);
       await t.tap(find.byType(TextField));
       await t.pump();
       expect(t.testTextInput.hasAnyClients, isTrue);

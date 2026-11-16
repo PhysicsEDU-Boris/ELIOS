@@ -1928,6 +1928,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get qzNotQuite => 'Kurang tepat';
 
   @override
+  String get qzGoodThinking => 'Pemikiran bagus';
+
+  @override
+  String get qzTheCorrectAnswer => 'Jawaban yang benar';
+
+  @override
+  String get qzCheckedByAi => 'Diperiksa ELIOS AI';
+
+  @override
   String qzRightAnswerIs(Object answer) {
     return 'Jawaban yang benar adalah “$answer”.';
   }

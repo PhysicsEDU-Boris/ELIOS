@@ -91,3 +91,4 @@ their status changed.
 - [0220](0220-trophy-icons-to-xp.md) Trophy icons become the XP icon
 - [0221](0221-profile-header-joyful.md) Joyful profile header and settings entry animation
 - [0222](0222-hazard-b3-scan-result.md) Hazardous (B3) scan result as a full page
+- [0223](0223-essay-explanation-page.md) Essay explanation page

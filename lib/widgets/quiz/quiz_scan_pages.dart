@@ -2096,7 +2096,7 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
         : ex?.summary ??
               (q.bankId == null || q.bankReviewed ? q.explanation : '');
     final answerText = essay
-        ? (score == null ? l10n.qzNotGradedYet : why)
+        ? (score == null ? l10n.qzNotGradedYet : l10n.qzScoreOf10(score))
         : q.options[q.correctIndex];
 
     // Curved green header (662:26005): back, title, read aloud.
@@ -2128,11 +2128,7 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                     Semantics(
                       header: true,
                       child: Text(
-                        _chat
-                            ? l10n.qzCoach
-                            : essay
-                            ? l10n.qzEssayReview
-                            : l10n.qzAnswerReview,
+                        _chat ? l10n.qzCoach : l10n.qzAnswerReview,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: _sq(ElioTokens.subhead, 600, p.onPrimary),
@@ -2141,7 +2137,14 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                     Text(
                       _chat
                           ? l10n.scanAskCoachSub
-                          : '${l10n.qzQuestionOf(s.questionIndex + 1, s.totalQuestions)} · ${s.scan?.displayName ?? ''}',
+                          : [
+                              l10n.qzQuestionOf(
+                                s.questionIndex + 1,
+                                s.totalQuestions,
+                              ),
+                              if (essay) l10n.scanEssay,
+                              s.scan?.displayName ?? '',
+                            ].join(' · '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: _sq(ElioTokens.caption, 500, p.onPrimary),
@@ -2248,7 +2251,9 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                   (essay
                           ? (score == null
                                 ? l10n.qzWaitingGrading
-                                : l10n.qzScoreOf10(score))
+                                : correct
+                                ? l10n.qzGoodThinking
+                                : l10n.qzNotQuite)
                           : correct
                           ? l10n.qzCorrect
                           : l10n.qzNotQuite)
@@ -2263,11 +2268,20 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                 Text(
                   answerText,
                   style: _sq(
-                    essay ? ElioTokens.bodySmall : ElioTokens.subhead,
+                    essay && score == null
+                        ? ElioTokens.bodySmall
+                        : ElioTokens.subhead,
                     600,
                     p.textPrimary,
                   ),
                 ),
+                if (essay && score != null)
+                  Text(
+                    l10n.qzCheckedByAi,
+                    style: ElioTokens.bodySmall.copyWith(
+                      color: p.textSecondary,
+                    ),
+                  ),
                 if (!essay && picked != null && !correct) ...[
                   const SizedBox(height: 2),
                   Text(
@@ -2322,38 +2336,42 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
       ),
     );
 
-    final whyBlock = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    // Essay (853:28786, 853:28792): the student's words in a card, then the
+    // model answer in a green leaf. The grader's rubric stays under the
+    // answer; it returns no key points, so that Figma section is not shown.
+    Widget label(IconData icon, String text, Color c) => Row(
       children: [
-        Text(
-          essay ? l10n.qzYourAnswer : l10n.scanWhyWorks,
-          style: _sq(ElioTokens.subhead, 600, p.textPrimary),
+        Icon(icon, size: 16, color: c),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            text.toUpperCase(),
+            style: _sq(
+              ElioTokens.caption,
+              600,
+              c,
+            ).copyWith(letterSpacing: 0.72, height: 16 / 12),
+          ),
         ),
-        const SizedBox(height: 6),
-        SvgPicture.asset(
-          'assets/illustrations/scan/squiggle.svg',
-          width: 150,
-          height: 9,
-          fit: BoxFit.fill,
-          excludeFromSemantics: true,
-          colorFilter: ColorFilter.mode(p.primary, BlendMode.srcIn),
-        ),
-        const SizedBox(height: 6),
-        if (essay) ...[
-          // The student's own words, quoted.
-          Container(
-            key: const ValueKey('scan_essay_answer'),
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-            decoration: BoxDecoration(
-              color: p.surfaceRaised,
-              borderRadius: BorderRadius.circular(12),
-              border: Border(left: BorderSide(color: p.primary, width: 3)),
-            ),
-            child: Text(
-              '“${s.essayAnswer ?? ''}”',
-              style: ElioTokens.bodySmall.copyWith(color: p.textPrimary),
-            ),
+      ],
+    );
+    final yourAnswer = Container(
+      key: const ValueKey('scan_essay_answer'),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: p.surface,
+        border: Border.all(color: p.borderSubtle),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          label(Icons.edit_outlined, l10n.qzYourAnswer, p.textSecondary),
+          const SizedBox(height: 8),
+          Text(
+            '“${s.essayAnswer ?? ''}”',
+            style: ElioTokens.body.copyWith(color: p.textPrimary, height: 1.5),
           ),
           // Rubric: one dash per point, the earned ones fill in turn.
           for (final (i, r) in (ex?.rubricRows ?? const <RubricRow>[]).indexed)
@@ -2397,7 +2415,69 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                 ],
               ),
             ),
-        ] else if (why.isEmpty && s.explanationLoading)
+        ],
+      ),
+    );
+    final okTint = historyTint(p, HistoryTone.success);
+    final reference = ex?.referenceAnswer ?? '';
+    final correctAnswer = Container(
+      key: const ValueKey('scan_essay_correct'),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: okTint.bg,
+        border: Border.all(color: okTint.border ?? p.borderSubtle),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(8),
+          bottomRight: Radius.circular(28),
+          bottomLeft: Radius.circular(8),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          label(Icons.check_circle_rounded, l10n.qzTheCorrectAnswer, okTint.fg),
+          const SizedBox(height: 8),
+          Text(
+            reference,
+            style: _sq(
+              ElioTokens.body,
+              500,
+              p.textPrimary,
+            ).copyWith(height: 1.5),
+          ),
+        ],
+      ),
+    );
+
+    final whyBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.scanWhyWorks,
+          style: _sq(ElioTokens.subhead, 600, p.textPrimary),
+        ),
+        const SizedBox(height: 6),
+        SvgPicture.asset(
+          'assets/illustrations/scan/squiggle.svg',
+          width: 150,
+          height: 9,
+          fit: BoxFit.fill,
+          excludeFromSemantics: true,
+          colorFilter: ColorFilter.mode(p.primary, BlendMode.srcIn),
+        ),
+        const SizedBox(height: 6),
+        if (essay)
+          Text(
+            [
+              why,
+              ex?.learningTakeaway ?? '',
+            ].where((t) => t.isNotEmpty).join('\n\n'),
+            key: const ValueKey('scan_essay_why'),
+            style: ElioTokens.body.copyWith(color: p.textSecondary),
+          )
+        else if (why.isEmpty && s.explanationLoading)
           ElioShimmer(
             child: Column(
               key: const ValueKey('scan_review_loading'),
@@ -2627,7 +2707,16 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                               children: [
                                 enter(0, verdict),
                                 const SizedBox(height: 14),
-                                enter(1, whyBlock),
+                                if (essay) ...[
+                                  // 856:28871: correct answer, your answer, why.
+                                  if (reference.isNotEmpty) ...[
+                                    enter(1, correctAnswer),
+                                    const SizedBox(height: 14),
+                                  ],
+                                  enter(2, yourAnswer),
+                                  const SizedBox(height: 14),
+                                ],
+                                enter(essay ? 3 : 1, whyBlock),
                                 if (!essay) ...[
                                   const SizedBox(height: 14),
                                   enter(2, bins),
@@ -2637,18 +2726,30 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: Column(
-                              children: [
-                                Expanded(
-                                  child: KeyedSubtree(
-                                    key: const ValueKey('scan_coach_inline'),
-                                    child: enter(3, chat),
+                            child: essay
+                                // Essay: the coach entry and Next (no inline
+                                // chat; key points would sit above them).
+                                ? Column(
+                                    children: [
+                                      enter(4, coach),
+                                      const Spacer(),
+                                      next,
+                                    ],
+                                  )
+                                : Column(
+                                    children: [
+                                      Expanded(
+                                        child: KeyedSubtree(
+                                          key: const ValueKey(
+                                            'scan_coach_inline',
+                                          ),
+                                          child: enter(3, chat),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      next,
+                                    ],
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                next,
-                              ],
-                            ),
                           ),
                         ],
                       ),
@@ -2663,13 +2764,21 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                         children: [
                           enter(0, verdict),
                           const SizedBox(height: 20),
-                          enter(1, whyBlock),
+                          if (essay) ...[
+                            enter(1, yourAnswer),
+                            const SizedBox(height: 20),
+                            if (reference.isNotEmpty) ...[
+                              enter(2, correctAnswer),
+                              const SizedBox(height: 20),
+                            ],
+                          ],
+                          enter(essay ? 3 : 1, whyBlock),
                           const SizedBox(height: 20),
                           if (!essay) ...[
                             enter(2, bins),
                             const SizedBox(height: 20),
                           ],
-                          enter(3, coach),
+                          enter(4, coach),
                         ],
                       ),
                     ),
@@ -2701,8 +2810,8 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
   }
 }
 
-/// Curved green page header. Wider than the 880 px curve (landscape): a
-/// green band with a rounded bottom instead, so no gap shows at the sides.
+/// Curved green page header (portrait). Landscape: the top-left ellipse of
+/// 662:26256 / 856:28871, kept above the content.
 class _GreenHeader extends StatelessWidget {
   const _GreenHeader({required this.height, required this.child});
   final double height;
@@ -2719,14 +2828,40 @@ class _GreenHeader extends StatelessWidget {
         child: child,
       );
     }
-    return Container(
-      decoration: BoxDecoration(
-        color: p.primary,
-        borderRadius: const BorderRadius.vertical(
-          bottom: Radius.elliptical(420, 26),
-        ),
+    // Landscape: Figma's ellipse 960×540 at (−300, −470) and its bubble, both
+    // inside the header's own height so the curve never runs over the content.
+    final top = MediaQuery.paddingOf(context).top;
+    return ClipRect(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            left: -300,
+            top: top - 470,
+            width: 960,
+            height: 540,
+            child: DecoratedBox(
+              decoration: ShapeDecoration(
+                color: p.primary,
+                shape: const OvalBorder(),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 313,
+            top: top - 80,
+            width: 150,
+            height: 150,
+            child: DecoratedBox(
+              decoration: ShapeDecoration(
+                color: p.primaryHover,
+                shape: const OvalBorder(),
+              ),
+            ),
+          ),
+          child,
+        ],
       ),
-      child: child,
     );
   }
 }
