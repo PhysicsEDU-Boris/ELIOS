@@ -21,6 +21,10 @@ Figma `ELIOS 3`: 629:100965 (settings), 629:101085 (account menu), 629:101230 (g
   shell), like the other `ElioPopIn` entrances.
 - Dark mode, language, sound and quiz rows are the same widgets as before, only wrapped.
 
+- Phone check (16 Nov): scrolled settings text ran under the status bar. A background strip
+  (`_StatusBarScrim`) now covers the status bar once the list scrolls; at rest the green
+  curve still shows there.
+
 ## Not 1:1
 
 - Figma's dark frame draws the badge leaf in primary on primary (invisible); the app uses the

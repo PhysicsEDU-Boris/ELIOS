@@ -68,178 +68,238 @@ class ProfileScreen extends ConsumerWidget {
             child: SafeArea(
               top: false, // the header's green curve sits behind the status bar
               bottom: false,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 48),
-                children: _staggered([
-                  _ProfileHeader(user: user, onSignOut: onSignOut),
-                  const SizedBox(height: 16),
-                  _Section(
-                    icon: Icons.palette_outlined,
-                    tone: p.primaryText,
-                    title: l10n.profileAppearance,
-                  ),
-                  // The new theme grows out of the switch (Figma 13 · 36).
-                  Builder(
-                    builder: (row) => _SwitchRow(
-                      title: l10n.sidebarDarkMode,
-                      subtitle: l10n.profileDarkModeSub,
-                      value: dark,
-                      onChanged: (v) {
-                        final box = row.findRenderObject() as RenderBox?;
-                        final at = box == null
-                            ? Offset.zero
-                            : box.localToGlobal(
-                                Offset(
-                                  box.size.width - 40,
-                                  box.size.height / 2,
-                                ),
-                              );
-                        ThemeSwitchReveal.run(
-                          at,
-                          () => ref
-                              .read(elioThemeModeProvider.notifier)
-                              .setMode(
-                                v ? ElioThemeMode.dark : ElioThemeMode.light,
-                              ),
-                        );
-                      },
+              child: _StatusBarScrim(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 48),
+                  children: _staggered([
+                    _ProfileHeader(user: user, onSignOut: onSignOut),
+                    const SizedBox(height: 16),
+                    _Section(
+                      icon: Icons.palette_outlined,
+                      tone: p.primaryText,
+                      title: l10n.profileAppearance,
                     ),
-                  ),
-                  const _Rule(),
-                  _RowTitle(
-                    title: l10n.sidebarLanguage,
-                    subtitle: l10n.profileLanguageSub,
-                  ),
-                  const SizedBox(height: 10),
-                  ConfigSegmented(
-                    key: const Key('profile-language'),
-                    label: l10n.sidebarLanguage,
-                    options: [
-                      for (final l in AppLocalizations.supportedLocales)
-                        l.languageCode,
-                    ],
-                    labels: [
-                      for (final l in AppLocalizations.supportedLocales)
-                        lookupAppLocalizations(l).languageName,
-                    ],
-                    selected: lang,
-                    onSelected: (code) => ref
-                        .read(appLocaleProvider.notifier)
-                        .setLocale(Locale(code)),
-                  ),
-                  const SizedBox(height: 24),
-                  _Section(
-                    icon: Icons.music_note_outlined,
-                    tone: p.secondaryText,
-                    title: l10n.setSound,
-                  ),
-                  _SwitchRow(
-                    title: l10n.setSoundEffects,
-                    subtitle: l10n.setSoundEffectsSub,
-                    value: prefs.soundEffects,
-                    onChanged: (v) => patch((s) => s.copyWith(soundEffects: v)),
-                  ),
-                  const _Rule(),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(l10n.setMasterVolume, style: _rowTitle(p)),
+                    // The new theme grows out of the switch (Figma 13 · 36).
+                    Builder(
+                      builder: (row) => _SwitchRow(
+                        title: l10n.sidebarDarkMode,
+                        subtitle: l10n.profileDarkModeSub,
+                        value: dark,
+                        onChanged: (v) {
+                          final box = row.findRenderObject() as RenderBox?;
+                          final at = box == null
+                              ? Offset.zero
+                              : box.localToGlobal(
+                                  Offset(
+                                    box.size.width - 40,
+                                    box.size.height / 2,
+                                  ),
+                                );
+                          ThemeSwitchReveal.run(
+                            at,
+                            () => ref
+                                .read(elioThemeModeProvider.notifier)
+                                .setMode(
+                                  v ? ElioThemeMode.dark : ElioThemeMode.light,
+                                ),
+                          );
+                        },
                       ),
-                      Text(
-                        '${(prefs.masterVolume * 100).round()}%',
-                        style: ElioTokens.button.copyWith(color: p.primaryText),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.volume_mute_outlined,
-                        size: 20,
-                        color: p.textSecondary,
-                      ),
-                      Expanded(
-                        child: Slider(
-                          value: prefs.masterVolume,
-                          activeColor: p.primary,
-                          inactiveColor: p.surfaceRaised,
-                          semanticFormatterCallback: (v) =>
-                              l10n.setMasterVolumeValue((v * 100).round()),
-                          onChanged: (v) {
-                            // H-select on each 10 % detent, no sound while dragging.
-                            if ((v * 10).round() !=
-                                (prefs.masterVolume * 10).round()) {
-                              ElioHaptics.select();
-                            }
-                            patch((s) => s.copyWith(masterVolume: v));
-                          },
-                          // Preview at the new volume on release (Figma 13 · 6).
-                          onChangeEnd: (_) =>
-                              ElioSound.instance.play(ElioSfx.pop),
+                    ),
+                    const _Rule(),
+                    _RowTitle(
+                      title: l10n.sidebarLanguage,
+                      subtitle: l10n.profileLanguageSub,
+                    ),
+                    const SizedBox(height: 10),
+                    ConfigSegmented(
+                      key: const Key('profile-language'),
+                      label: l10n.sidebarLanguage,
+                      options: [
+                        for (final l in AppLocalizations.supportedLocales)
+                          l.languageCode,
+                      ],
+                      labels: [
+                        for (final l in AppLocalizations.supportedLocales)
+                          lookupAppLocalizations(l).languageName,
+                      ],
+                      selected: lang,
+                      onSelected: (code) => ref
+                          .read(appLocaleProvider.notifier)
+                          .setLocale(Locale(code)),
+                    ),
+                    const SizedBox(height: 24),
+                    _Section(
+                      icon: Icons.music_note_outlined,
+                      tone: p.secondaryText,
+                      title: l10n.setSound,
+                    ),
+                    _SwitchRow(
+                      title: l10n.setSoundEffects,
+                      subtitle: l10n.setSoundEffectsSub,
+                      value: prefs.soundEffects,
+                      onChanged: (v) =>
+                          patch((s) => s.copyWith(soundEffects: v)),
+                    ),
+                    const _Rule(),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.setMasterVolume,
+                            style: _rowTitle(p),
+                          ),
+                        ),
+                        Text(
+                          '${(prefs.masterVolume * 100).round()}%',
+                          style: ElioTokens.button.copyWith(
+                            color: p.primaryText,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.volume_mute_outlined,
+                          size: 20,
+                          color: p.textSecondary,
+                        ),
+                        Expanded(
+                          child: Slider(
+                            value: prefs.masterVolume,
+                            activeColor: p.primary,
+                            inactiveColor: p.surfaceRaised,
+                            semanticFormatterCallback: (v) =>
+                                l10n.setMasterVolumeValue((v * 100).round()),
+                            onChanged: (v) {
+                              // H-select on each 10 % detent, no sound while dragging.
+                              if ((v * 10).round() !=
+                                  (prefs.masterVolume * 10).round()) {
+                                ElioHaptics.select();
+                              }
+                              patch((s) => s.copyWith(masterVolume: v));
+                            },
+                            // Preview at the new volume on release (Figma 13 · 6).
+                            onChangeEnd: (_) =>
+                                ElioSound.instance.play(ElioSfx.pop),
+                          ),
+                        ),
+                        Icon(
+                          Icons.volume_up_outlined,
+                          size: 20,
+                          color: p.textSecondary,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _Section(
+                      icon: Icons.help_outline_rounded,
+                      tone: p.errorText,
+                      title: l10n.setQuiz,
+                    ),
+                    _RowTitle(
+                      title: l10n.profileQuestionSource,
+                      subtitle: l10n.profileQuestionSourceSub,
+                    ),
+                    const SizedBox(height: 10),
+                    ConfigSegmented(
+                      label: l10n.profileQuestionSource,
+                      options: [
+                        QuestionSource.bank.name,
+                        QuestionSource.ai.name,
+                      ],
+                      labels: [l10n.questionBank, 'ELIOS AI'],
+                      selected: prefs.questionSource.name,
+                      onSelected: (v) => patch(
+                        (s) => s.copyWith(
+                          questionSource: QuestionSource.values.byName(v),
                         ),
                       ),
-                      Icon(
-                        Icons.volume_up_outlined,
-                        size: 20,
-                        color: p.textSecondary,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _Section(
-                    icon: Icons.help_outline_rounded,
-                    tone: p.errorText,
-                    title: l10n.setQuiz,
-                  ),
-                  _RowTitle(
-                    title: l10n.profileQuestionSource,
-                    subtitle: l10n.profileQuestionSourceSub,
-                  ),
-                  const SizedBox(height: 10),
-                  ConfigSegmented(
-                    label: l10n.profileQuestionSource,
-                    options: [QuestionSource.bank.name, QuestionSource.ai.name],
-                    labels: [l10n.questionBank, 'ELIOS AI'],
-                    selected: prefs.questionSource.name,
-                    onSelected: (v) => patch(
-                      (s) => s.copyWith(
-                        questionSource: QuestionSource.values.byName(v),
-                      ),
                     ),
-                  ),
-                  const _Rule(),
-                  _RowTitle(title: l10n.setDifficulty),
-                  const SizedBox(height: 10),
-                  ConfigSegmented(
-                    label: l10n.setDifficulty,
-                    // Saved in English: the quiz reads 'Easy'/'Medium'/'Hard'.
-                    options: const ['Easy', 'Medium', 'Hard'],
-                    labels: [l10n.setEasy, l10n.setMedium, l10n.setHard],
-                    selected: prefs.quizDifficulty,
-                    onSelected: (v) =>
-                        patch((s) => s.copyWith(quizDifficulty: v)),
-                  ),
-                  const _Rule(),
-                  _RowTitle(title: l10n.setTimer, subtitle: l10n.setTimerSub),
-                  const SizedBox(height: 10),
-                  ConfigSegmented(
-                    label: l10n.setTimer,
-                    options: const ['30s', '60s', '90s', '120s'],
-                    selected: prefs.quizTimer,
-                    onSelected: (v) => patch((s) => s.copyWith(quizTimer: v)),
-                  ),
-                  const _Rule(),
-                  _SwitchRow(
-                    title: l10n.setAllowSkip,
-                    subtitle: l10n.setAllowSkipSub,
-                    value: prefs.skipAllowed,
-                    onChanged: (v) => patch((s) => s.copyWith(skipAllowed: v)),
-                  ),
-                ]),
+                    const _Rule(),
+                    _RowTitle(title: l10n.setDifficulty),
+                    const SizedBox(height: 10),
+                    ConfigSegmented(
+                      label: l10n.setDifficulty,
+                      // Saved in English: the quiz reads 'Easy'/'Medium'/'Hard'.
+                      options: const ['Easy', 'Medium', 'Hard'],
+                      labels: [l10n.setEasy, l10n.setMedium, l10n.setHard],
+                      selected: prefs.quizDifficulty,
+                      onSelected: (v) =>
+                          patch((s) => s.copyWith(quizDifficulty: v)),
+                    ),
+                    const _Rule(),
+                    _RowTitle(title: l10n.setTimer, subtitle: l10n.setTimerSub),
+                    const SizedBox(height: 10),
+                    ConfigSegmented(
+                      label: l10n.setTimer,
+                      options: const ['30s', '60s', '90s', '120s'],
+                      selected: prefs.quizTimer,
+                      onSelected: (v) => patch((s) => s.copyWith(quizTimer: v)),
+                    ),
+                    const _Rule(),
+                    _SwitchRow(
+                      title: l10n.setAllowSkip,
+                      subtitle: l10n.setAllowSkipSub,
+                      value: prefs.skipAllowed,
+                      onChanged: (v) =>
+                          patch((s) => s.copyWith(skipAllowed: v)),
+                    ),
+                  ]),
+                ),
               ),
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// The header's curve shows behind the status bar at rest; once the list
+/// scrolls, a background strip covers the status bar so settings text never
+/// runs under the clock (found on the phone, 16 Nov).
+class _StatusBarScrim extends StatefulWidget {
+  const _StatusBarScrim({required this.child});
+  final Widget child;
+
+  @override
+  State<_StatusBarScrim> createState() => _StatusBarScrimState();
+}
+
+class _StatusBarScrimState extends State<_StatusBarScrim> {
+  bool _scrolled = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (n) {
+        final scrolled =
+            n.metrics.axis == Axis.vertical && n.metrics.pixels > 60;
+        if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+        return false;
+      },
+      child: Stack(
+        children: [
+          widget.child,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: MediaQuery.paddingOf(context).top,
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                key: const Key('profile-status-scrim'),
+                opacity: _scrolled ? 1 : 0,
+                duration: ElioMotion.reduced(context)
+                    ? Duration.zero
+                    : ElioMotion.fast,
+                child: ColoredBox(color: context.elio.background),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

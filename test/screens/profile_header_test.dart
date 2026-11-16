@@ -199,6 +199,22 @@ void main() {
     );
   });
 
+  testWidgets('scrolled settings never show under the status bar', (t) async {
+    await _setUp(t);
+    await t.pumpWidget(_app(_signedIn));
+    await t.pumpAndSettle();
+    double scrim() => t
+        .widget<AnimatedOpacity>(find.byKey(const Key('profile-status-scrim')))
+        .opacity;
+    expect(scrim(), 0, reason: 'at rest the green curve shows there');
+    await t.drag(find.byType(ListView), const Offset(0, -300));
+    await t.pumpAndSettle();
+    expect(scrim(), 1);
+    await t.drag(find.byType(ListView), const Offset(0, 600));
+    await t.pumpAndSettle();
+    expect(scrim(), 0);
+  });
+
   testWidgets('the avatar still opens the account menu with its sound', (
     t,
   ) async {
