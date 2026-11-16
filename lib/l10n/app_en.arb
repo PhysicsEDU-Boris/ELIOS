@@ -1197,6 +1197,9 @@
     }
   },
   "qzNotQuite": "Not quite",
+  "qzGoodThinking": "Good thinking",
+  "qzTheCorrectAnswer": "The correct answer",
+  "qzCheckedByAi": "Checked by ELIOS AI",
   "qzRightAnswerIs": "The right answer is “{answer}”.",
   "@qzRightAnswerIs": {
     "placeholders": {

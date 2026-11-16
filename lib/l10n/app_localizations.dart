@@ -3523,6 +3523,24 @@ abstract class AppLocalizations {
   /// **'Not quite'**
   String get qzNotQuite;
 
+  /// No description provided for @qzGoodThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Good thinking'**
+  String get qzGoodThinking;
+
+  /// No description provided for @qzTheCorrectAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'The correct answer'**
+  String get qzTheCorrectAnswer;
+
+  /// No description provided for @qzCheckedByAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked by ELIOS AI'**
+  String get qzCheckedByAi;
+
   /// No description provided for @qzRightAnswerIs.
   ///
   /// In en, this message translates to:

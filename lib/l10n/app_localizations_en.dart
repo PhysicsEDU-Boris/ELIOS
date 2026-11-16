@@ -1936,6 +1936,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qzNotQuite => 'Not quite';
 
   @override
+  String get qzGoodThinking => 'Good thinking';
+
+  @override
+  String get qzTheCorrectAnswer => 'The correct answer';
+
+  @override
+  String get qzCheckedByAi => 'Checked by ELIOS AI';
+
+  @override
   String qzRightAnswerIs(Object answer) {
     return 'The right answer is “$answer”.';
   }
