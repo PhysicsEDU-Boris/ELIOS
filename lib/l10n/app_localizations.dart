@@ -3398,11 +3398,23 @@ abstract class AppLocalizations {
   /// **'Possibly hazardous (B3): {name}'**
   String qzHazardTitle(Object name);
 
-  /// No description provided for @qzHazardBody.
+  /// No description provided for @scanHazardOverline.
   ///
   /// In en, this message translates to:
-  /// **'Don\'t take it apart or put it in a normal bin. Ask staff to handle it. Continue the quiz about this item?'**
-  String get qzHazardBody;
+  /// **'Handle with care'**
+  String get scanHazardOverline;
+
+  /// No description provided for @scanHazardNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t take it apart or put it in a normal bin. Ask a staff member to handle it safely.'**
+  String get scanHazardNote;
+
+  /// No description provided for @scanHazardKeepLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep learning about this item?'**
+  String get scanHazardKeepLearning;
 
   /// No description provided for @qzContinueQuiz.
   ///

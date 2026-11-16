@@ -11,6 +11,7 @@ import 'package:elio/services/elio_feedback.dart';
 import 'package:elio/theme/elio_dark_theme.dart';
 import 'package:elio/theme/elio_light_theme.dart';
 import 'package:elio/widgets/waste_quiz_popup.dart';
+import 'package:elio/theme/elio_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,6 +39,12 @@ class _Quiz extends WasteQuizNotifier {
       essay = answerText;
   @override
   void logRescanTapped() {}
+  int hazardConfirms = 0;
+  @override
+  void confirmHazard() {
+    hazardConfirms++;
+    state = state.copyWith(phase: WasteQuizPhase.loadingQuestion);
+  }
 }
 
 final _scan = ScannedWaste.fromLabel('botol-plastik');
@@ -62,6 +69,11 @@ final _ready = WasteQuizUiState(
   phase: WasteQuizPhase.active,
   scan: _scan,
   question: _q,
+);
+
+final _hazard = WasteQuizUiState(
+  phase: WasteQuizPhase.confirmingHazard,
+  scan: ScannedWaste.fromLabel('E_Waste'),
 );
 
 const _essayQ = GeneratedQuestion(
@@ -381,6 +393,119 @@ void main() {
     });
   });
 
+  group('hazardous B3 result (Figma 851:28659 / 852:28687)', () {
+    for (final (lang, over, note, keep, go) in const [
+      (
+        'en',
+        'HANDLE WITH CARE',
+        "Don't take it apart or put it in a normal bin. Ask a staff member to handle it safely.",
+        'Keep learning about this item?',
+        'Continue quiz',
+      ),
+      (
+        'id',
+        'TANGANI DENGAN HATI-HATI',
+        'Jangan dibongkar atau dibuang ke tempat sampah biasa. Minta petugas menanganinya dengan aman.',
+        'Lanjut belajar benda ini?',
+        'Lanjutkan kuis',
+      ),
+    ]) {
+      for (final dark in [false, true]) {
+        testWidgets('page, not the red popup card ($lang, dark: $dark)', (
+          t,
+        ) async {
+          final quiz = await _pump(t, _hazard, lang: lang, dark: dark);
+          expect(find.byKey(const ValueKey('quiz_hazard')), findsNothing);
+          expect(find.byKey(const ValueKey('scan_identified')), findsOneWidget);
+          final overline = t.widget<Text>(find.text(over));
+          final p = (dark ? ElioTokens.dark : ElioTokens.light);
+          expect(overline.style!.color, p.errorText);
+          expect(find.text(note), findsOneWidget);
+          expect(find.text(keep), findsOneWidget);
+          // The polaroid and the B3 bin buddy (pop-out + chip).
+          expect(find.byKey(const ValueKey('buddy-b3')), findsOneWidget);
+          await t.ensureVisible(find.byKey(const ValueKey('scan_start_quiz')));
+          await t.pump();
+          await t.tap(find.text(go));
+          await _settle(t);
+          expect(quiz.hazardConfirms, 1);
+          expect(find.text(keep), findsNothing, reason: 'the quiz starts');
+        });
+      }
+    }
+
+    testWidgets('Scan again leaves the page; the voice switch works', (
+      t,
+    ) async {
+      final quiz = await _pump(t, _hazard);
+      final before = quiz.state.voiceOn;
+      await t.tap(find.byKey(const ValueKey('quiz_voice')));
+      await t.pump();
+      expect(quiz.state.voiceOn, !before);
+      expect(find.byKey(const ValueKey('quiz_minimise')), findsNothing);
+      await t.ensureVisible(find.byKey(const ValueKey('scan_retake')));
+      await t.pump();
+      await t.tap(find.text('Scan again'));
+      await _settle(t);
+      expect(quiz.state.phase, WasteQuizPhase.idle);
+    });
+
+    testWidgets('robot landscape: STOP works, minimise hides, rescan', (
+      t,
+    ) async {
+      var stops = 0, rescans = 0;
+      final quiz = await _pump(
+        t,
+        _hazard,
+        size: const Size(915, 412),
+        robot: true,
+        onStop: () => stops++,
+        onRescan: () => rescans++,
+      );
+      expect(find.text('Robot scan'), findsOneWidget);
+      // Landscape: photo left, text and ticket right.
+      expect(
+        t.getCenter(find.byKey(const ValueKey('buddy-b3'))).dx,
+        lessThan(t.getTopLeft(find.byKey(const ValueKey('scan_hazard_note'))).dx),
+      );
+      await t.tap(find.byKey(const ValueKey('quiz_stop')));
+      expect(stops, 1);
+      await t.tap(find.byKey(const ValueKey('quiz_minimise')));
+      await _settle(t);
+      expect(quiz.state.minimized, isTrue);
+      expect(quiz.state.phase, WasteQuizPhase.confirmingHazard);
+      quiz.set(_hazard);
+      await _settle(t);
+      // A two-line item name pushes the ticket buttons below a 412 dp fold.
+      await t.ensureVisible(find.byKey(const ValueKey('scan_retake')));
+      await t.pump();
+      await t.tap(find.text('Scan again'));
+      await _settle(t);
+      expect(rescans, 1);
+    });
+
+    testWidgets('portrait: the ticket sits below the caution note', (t) async {
+      await _pump(t, _hazard);
+      expect(
+        t.getTopLeft(find.byKey(const ValueKey('scan_quiz_ticket'))).dy,
+        greaterThan(
+          t.getBottomLeft(find.byKey(const ValueKey('scan_hazard_note'))).dy,
+        ),
+      );
+    });
+
+    testWidgets('reduce motion: the result is there on the first frames', (
+      t,
+    ) async {
+      t.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(t.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      await _pump(t, _hazard);
+      expect(find.text('HANDLE WITH CARE'), findsOneWidget);
+      expect(t.takeException(), isNull);
+    });
+  });
+
   testWidgets('a failed scan offers Retake', (t) async {
     final quiz = await _pump(
       t,
@@ -414,6 +539,7 @@ void main() {
   });
 
   final states = {
+    'hazard': _hazard,
     'essay': _essay,
     'essay-review': _essayReview,
     'identifying': _identifying,

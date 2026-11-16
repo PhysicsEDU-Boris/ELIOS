@@ -1839,8 +1839,14 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get qzHazardBody =>
-      'Jangan dibongkar atau dibuang ke tempat sampah biasa. Minta petugas menanganinya. Lanjutkan kuis tentang benda ini?';
+  String get scanHazardOverline => 'Tangani dengan hati-hati';
+
+  @override
+  String get scanHazardNote =>
+      'Jangan dibongkar atau dibuang ke tempat sampah biasa. Minta petugas menanganinya dengan aman.';
+
+  @override
+  String get scanHazardKeepLearning => 'Lanjut belajar benda ini?';
 
   @override
   String get qzContinueQuiz => 'Lanjutkan kuis';
