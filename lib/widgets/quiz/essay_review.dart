@@ -52,7 +52,7 @@ class EssayReview extends StatelessWidget {
     final p = authPalette(context), t = context.l10n, e = explanation;
     final s = score;
     final full = s == 10;
-    final skipped = isSkipped(answer) || answer.trim().isEmpty;
+    final skipped = isSkipped(answer);
     final feedback = e?.essayFeedback ?? '';
     final why = e?.correctAnswerReason ?? '';
     final idea = e?.keyIdea ?? '';
@@ -80,19 +80,21 @@ class EssayReview extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        enter(
-          'hero',
-          HistoryResultHero(
-            correct: (s ?? 0) >= 5,
-            essayScore: s,
-            index: index,
-            total: total,
-            trophies: s ?? 0,
-            animate: animate,
+        if (s != null) ...[
+          enter(
+            'hero',
+            HistoryResultHero(
+              correct: s >= 5,
+              essayScore: s,
+              index: index,
+              total: total,
+              trophies: s,
+              animate: animate,
+            ),
+            pop: true,
           ),
-          pop: true,
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
+        ],
         enter(
           'question',
           HistoryQuestionPanel(
@@ -117,30 +119,36 @@ class EssayReview extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 16),
-        enter(
-          'answer',
-          skipped
-              ? HistoryAnswerTile(
-                  t.h3YourAnswer,
-                  t.essaySkipped,
-                  tone: HistoryTone.error,
-                )
-              : HistoryAnswerTile(
-                  s == null
-                      ? t.h3YourAnswer
-                      : t.essayYourAnswer(HistoryEssayScore.verdict(t, s)),
-                  '“$answer”',
-                  tone: s == null
-                      ? HistoryTone.neutral
-                      : (full ? HistoryTone.success : HistoryTone.error),
-                ),
-        ),
+        // Saved but not graded yet: say so, never a zero score.
+        if (s == null && !skipped) ...[
+          Text(
+            t.h3AwaitingGrading,
+            style: ElioTokens.overline.copyWith(color: p.textSecondary),
+          ),
+          const SizedBox(height: 8),
+        ],
+        if (skipped || answer.trim().isNotEmpty)
+          enter(
+            'answer',
+            skipped
+                ? HistoryAnswerTile(
+                    t.h3YourAnswer,
+                    t.essaySkipped,
+                    tone: HistoryTone.error,
+                  )
+                : HistoryAnswerTile(
+                    s == null
+                        ? t.h3YourAnswer
+                        : t.essayYourAnswer(HistoryEssayScore.verdict(t, s)),
+                    '“$answer”',
+                    tone: s == null
+                        ? HistoryTone.neutral
+                        : (full ? HistoryTone.success : HistoryTone.error),
+                  ),
+          ),
         if (!full && reference.trim().isNotEmpty) ...[
           const SizedBox(height: 12),
-          enter(
-            'reference',
-            HistoryAnswerTile(t.essayRightAnswer, reference),
-          ),
+          enter('reference', HistoryAnswerTile(t.essayRightAnswer, reference)),
         ],
         if (feedback.isNotEmpty ||
             why.isNotEmpty ||

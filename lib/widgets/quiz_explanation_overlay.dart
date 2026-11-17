@@ -1,3 +1,4 @@
+import 'quiz/essay_review.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -276,7 +277,6 @@ class _EssayLeftPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final exp = state.currentExplanation;
     final essayScore = exp?.essayScore;
-    final isCorrect = (essayScore ?? 0) >= 6;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -296,22 +296,22 @@ class _EssayLeftPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          // Result Banner with essay score
-          _ResultBanner(
-            isCorrect: isCorrect,
-            isEssay: true,
-            correctAnswer: '',
-            itemName: state.scan?.displayName ?? '',
-            trophies: essayScore ?? 0,
-            essayScore: essayScore,
-          ),
-          const SizedBox(height: 16),
-          // Explanation Page
+          // The shared essay review (Figma 869:29309, decision 0227).
           Expanded(
-            child: _ExplanationPage(
-              state: state,
-              explanation: exp,
-              questionIndex: state.questionIndex,
+            child: SingleChildScrollView(
+              child: EssayReview(
+                key: ValueKey('essay-${state.questionIndex}'),
+                question: state.question?.question ?? '',
+                answer: state.essayAnswer ?? '',
+                reference:
+                    exp?.referenceAnswer ?? state.question?.explanation ?? '',
+                explanation: exp,
+                score: essayScore,
+                index: state.questionIndex,
+                total: state.totalQuestions,
+                playing: null,
+                onListen: (_, text) => notifier.listen(text),
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -388,6 +388,9 @@ class _ResultBanner extends StatelessWidget {
     required this.correctAnswer,
     required this.itemName,
     required this.trophies,
+    // ponytail: the banner's essay branch is unused since 0227 (essays use
+    // EssayReview); remove it with this overlay.
+    // ignore: unused_element_parameter
     this.essayScore,
   });
 

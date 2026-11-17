@@ -230,9 +230,9 @@ void main() {
       await tester.pumpWidget(createEssaySubject(state));
       await tester.pumpAndSettle();
 
-      expect(find.text('Score: 8/10 · +8 XP'), findsOneWidget);
-      expect(find.text('Table 1. Scoring breakdown'), findsOneWidget);
-      expect(find.text('Analisis bahaya logam berat'), findsOneWidget);
+      // The shared essay review (0227) replaces the old banner and table.
+      expect(find.text('8 / 10'), findsOneWidget);
+      expect(find.text('Almost there!'), findsOneWidget);
       expect(find.text('Essay · max 150 words'), findsOneWidget);
     });
   });

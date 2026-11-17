@@ -2512,6 +2512,9 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
   String? _speaking;
   bool _chat = false;
 
+  /// Essay review: the section being read (question, feedback, correct, steps).
+  String? _essayPlaying;
+
   /// The explanation text last built, to stop its voice when it changes.
   String? _shownWhy;
 
@@ -2524,8 +2527,8 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
   void _onTts() {
     if (QuizTtsService.instance.status.value != TtsStatus.speaking &&
         mounted &&
-        _speaking != null) {
-      setState(() => _speaking = null);
+        (_speaking != null || _essayPlaying != null)) {
+      setState(() => _speaking = _essayPlaying = null);
     }
   }
 
@@ -2646,13 +2649,12 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                       _chat
                           ? l10n.scanAskCoachSub
                           : [
+                              s.scan?.displayName ?? '',
                               l10n.qzQuestionOf(
                                 s.questionIndex + 1,
                                 s.totalQuestions,
                               ),
-                              if (essay) l10n.scanEssay,
-                              s.scan?.displayName ?? '',
-                            ].join(' · '),
+                            ].where((t) => t.isNotEmpty).join(' · '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: _sq(ElioTokens.caption, 500, p.onPrimary),
@@ -2858,118 +2860,6 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
     // Essay (853:28786, 853:28792): the student's words in a card, then the
     // model answer in a green leaf. The grader's rubric stays under the
     // answer; it returns no key points, so that Figma section is not shown.
-    Widget label(IconData icon, String text, Color c) => Row(
-      children: [
-        Icon(icon, size: 16, color: c),
-        const SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            text.toUpperCase(),
-            style: _sq(
-              ElioTokens.caption,
-              600,
-              c,
-            ).copyWith(letterSpacing: 0.72, height: 16 / 12),
-          ),
-        ),
-      ],
-    );
-    final yourAnswer = Container(
-      key: const ValueKey('scan_essay_answer'),
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      decoration: BoxDecoration(
-        color: p.surface,
-        border: Border.all(color: p.borderSubtle),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          label(Icons.edit_outlined, l10n.qzYourAnswer, p.textSecondary),
-          const SizedBox(height: 8),
-          Text(
-            '“${s.essayAnswer ?? ''}”',
-            style: ElioTokens.body.copyWith(color: p.textPrimary, height: 1.5),
-          ),
-          // Rubric: one dash per point, the earned ones fill in turn.
-          for (final (i, r) in (ex?.rubricRows ?? const <RubricRow>[]).indexed)
-            Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      r.criterion,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: _sq(ElioTokens.bodySmall, 600, p.textPrimary),
-                    ),
-                  ),
-                  for (var d = 0; d < r.maxScore; d++)
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0, end: d < r.awardedScore ? 1 : 0),
-                      duration: ElioMotion.reduced(context)
-                          ? Duration.zero
-                          : Duration(milliseconds: 250 + 120 * (i + d)),
-                      curve: ElioMotion.standard,
-                      builder: (context, v, _) => Container(
-                        width: 14,
-                        height: 5,
-                        margin: const EdgeInsets.only(left: 4),
-                        decoration: BoxDecoration(
-                          color: Color.lerp(p.surfaceRaised, p.primary, v),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                    ),
-                  SizedBox(
-                    width: 44,
-                    child: Text(
-                      '${r.awardedScore} / ${r.maxScore}',
-                      textAlign: TextAlign.end,
-                      style: _sq(ElioTokens.caption, 600, p.textPrimary),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-    final okTint = historyTint(p, HistoryTone.success);
-    final reference = ex?.referenceAnswer ?? '';
-    final correctAnswer = Container(
-      key: const ValueKey('scan_essay_correct'),
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      decoration: BoxDecoration(
-        color: okTint.bg,
-        border: Border.all(color: okTint.border ?? p.borderSubtle),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(28),
-          topRight: Radius.circular(8),
-          bottomRight: Radius.circular(28),
-          bottomLeft: Radius.circular(8),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          label(Icons.check_circle_rounded, l10n.qzTheCorrectAnswer, okTint.fg),
-          const SizedBox(height: 8),
-          Text(
-            reference,
-            style: _sq(
-              ElioTokens.body,
-              500,
-              p.textPrimary,
-            ).copyWith(height: 1.5),
-          ),
-        ],
-      ),
-    );
-
     final whyBlock = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3219,8 +3109,71 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
         ),
       ),
     );
-    Widget enter(int i, Widget child) =>
-        ElioPopIn(key: ValueKey('review-in-$i'), index: i, child: child);
+    Widget enter(int i, Widget child) => ElioPopIn(
+      key: ValueKey('review-in-$i'),
+      index: i,
+      rise: 10,
+      child: child,
+    );
+
+    // Essay (Figma "16 · Essay answer review"): the History explanation
+    // design, shared with History's own page (decision 0227).
+    final essayBody = !essay
+        ? const SizedBox.shrink()
+        : s.explanationLoading
+        ? const SizedBox(
+            height: 420,
+            child: HistorySkeleton(HistoryLoadingLayout.explanation),
+          )
+        : EssayReview(
+            key: ValueKey('essay-${s.questionIndex}'),
+            question: q.question,
+            answer: s.essayAnswer ?? '',
+            reference: ex?.referenceAnswer ?? q.explanation,
+            explanation: ex,
+            score: score,
+            index: s.questionIndex,
+            total: s.totalQuestions,
+            playing: _essayPlaying,
+            onListen: (id, text) {
+              if (_essayPlaying == id) {
+                unawaited(QuizTtsService.instance.stop());
+                setState(() => _essayPlaying = null);
+                return;
+              }
+              ElioHaptics.select();
+              _listen(text);
+              setState(() => _essayPlaying = id);
+            },
+          );
+    final export = SizedBox(
+      height: 56,
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        key: const ValueKey('quiz_export_pdf'),
+        style: historyOutlineStyle(p),
+        onPressed: () {
+          quizFeedback(ElioSfx.pop, ElioHaptics.light);
+          unawaited(QuizTtsService.instance.stop());
+          final record = n.previewRecord();
+          if (record.questions.isEmpty) return;
+          showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: p.surface,
+            shape: const RoundedSuperellipseBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            builder: (_) => QuestionExportSheet(
+              record: record,
+              questionIndex: record.questions.length - 1,
+            ),
+          );
+        },
+        icon: const Icon(Icons.description_outlined),
+        label: Text(l10n.h3ExportPdf, maxLines: 1),
+      ),
+    );
 
     return overKeyboard(
       Column(
@@ -3243,24 +3196,15 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                           Expanded(
                             child: ListView(
                               padding: EdgeInsets.zero,
-                              children: [
-                                enter(0, verdict),
-                                const SizedBox(height: 14),
-                                if (essay) ...[
-                                  // 856:28871: correct answer, your answer, why.
-                                  if (reference.isNotEmpty) ...[
-                                    enter(1, correctAnswer),
-                                    const SizedBox(height: 14),
-                                  ],
-                                  enter(2, yourAnswer),
-                                  const SizedBox(height: 14),
-                                ],
-                                enter(essay ? 3 : 1, whyBlock),
-                                if (!essay) ...[
-                                  const SizedBox(height: 14),
-                                  enter(2, bins),
-                                ],
-                              ],
+                              children: essay
+                                  ? [essayBody]
+                                  : [
+                                      enter(0, verdict),
+                                      const SizedBox(height: 14),
+                                      enter(1, whyBlock),
+                                      const SizedBox(height: 14),
+                                      enter(2, bins),
+                                    ],
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -3272,6 +3216,8 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                                     children: [
                                       enter(4, coach),
                                       const Spacer(),
+                                      export,
+                                      const SizedBox(height: 8),
                                       next,
                                     ],
                                   )
@@ -3301,19 +3247,14 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                       child: ListView(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
                         children: [
-                          enter(0, verdict),
-                          const SizedBox(height: 20),
                           if (essay) ...[
-                            enter(1, yourAnswer),
+                            essayBody,
                             const SizedBox(height: 20),
-                            if (reference.isNotEmpty) ...[
-                              enter(2, correctAnswer),
-                              const SizedBox(height: 20),
-                            ],
-                          ],
-                          enter(essay ? 3 : 1, whyBlock),
-                          const SizedBox(height: 20),
-                          if (!essay) ...[
+                          ] else ...[
+                            enter(0, verdict),
+                            const SizedBox(height: 20),
+                            enter(1, whyBlock),
+                            const SizedBox(height: 20),
                             enter(2, bins),
                             const SizedBox(height: 20),
                           ],
@@ -3334,7 +3275,16 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                         top: false,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                          child: next,
+                          // Essay (869:29775): Export PDF beside Next.
+                          child: essay
+                              ? Row(
+                                  children: [
+                                    Expanded(child: export),
+                                    const SizedBox(width: 12),
+                                    Expanded(child: next),
+                                  ],
+                                )
+                              : next,
                         ),
                       ),
                     ),

@@ -11,6 +11,7 @@ import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/elio_feedback.dart';
 import 'package:elio/theme/elio_dark_theme.dart';
 import 'package:elio/theme/elio_light_theme.dart';
+import 'package:elio/widgets/history_ui.dart' show HistoryResultHero;
 import 'package:elio/widgets/waste_quiz_popup.dart';
 import 'package:elio/theme/elio_tokens.dart';
 import 'package:flutter/material.dart';
@@ -377,32 +378,23 @@ void main() {
       expect(t.takeException(), isNull);
       expect(find.text('Answer review'), findsOneWidget);
       expect(
-        find.text('Question 2 of 3 · Essay · ${_scan.displayName}'),
+        find.text('${_scan.displayName} · Question 2 of 3'),
         findsOneWidget,
       );
-      expect(find.text('GOOD THINKING'), findsOneWidget);
-      expect(find.text('Score 8 / 10'), findsOneWidget);
-      expect(find.text('Checked by ELIOS AI'), findsOneWidget);
+      // Essay answer review (0227): hero, then the score card.
+      final hero = find.byType(HistoryResultHero);
+      expect(find.text('Almost there!'), findsOneWidget);
+      expect(find.text('8 / 10'), findsOneWidget);
+      expect(find.text('Checked by ELIOS AI · essay'), findsOneWidget);
       expect(find.text('+8 XP'), findsOneWidget);
-      final correct = find.byKey(const ValueKey('scan_essay_correct'));
-      final yours = find.byKey(const ValueKey('scan_essay_answer'));
-      expect(find.text('THE CORRECT ANSWER'), findsOneWidget);
-      expect(
-        find.text('Rinse it so leftovers do not dirty the other recycling.'),
-        findsOneWidget,
-      );
-      // Left column order: correct answer above your answer.
-      expect(t.getTopLeft(correct).dy, lessThan(t.getTopLeft(yours).dy));
       expect(find.text('Organik'), findsNothing);
-      // Right column: the coach entry (no inline chat) and Next.
+      // Right column: the coach entry (no inline chat), Export PDF and Next.
       expect(find.byKey(const ValueKey('scan_coach_inline')), findsNothing);
       final entry = find.byKey(const ValueKey('scan_coach_entry'));
-      expect(t.getTopLeft(entry).dx, greaterThan(t.getTopRight(correct).dx));
+      expect(t.getTopLeft(entry).dx, greaterThan(t.getTopRight(hero).dx));
+      expect(find.byKey(const ValueKey('quiz_export_pdf')), findsOneWidget);
       // The green curve ends above the content.
-      expect(
-        t.getTopLeft(find.byKey(const ValueKey('scan_verdict'))).dy,
-        greaterThanOrEqualTo(76),
-      );
+      expect(t.getTopLeft(hero).dy, greaterThanOrEqualTo(76));
       await t.tap(entry);
       await _settle(t);
       expect(find.byKey(const ValueKey('scan_coach')), findsOneWidget);
@@ -416,33 +408,36 @@ void main() {
         ) async {
           await _pump(t, _essayReview, lang: lang, dark: dark);
           expect(t.takeException(), isNull);
-          final yours = find.byKey(const ValueKey('scan_essay_answer'));
-          final correct = find.byKey(const ValueKey('scan_essay_correct'));
-          // Your answer first, then the correct answer leaf.
+          // Essay answer review (0227): your answer, then the right answer.
+          final yours = find.text(
+            lang == 'en'
+                ? 'YOUR ANSWER · PARTLY RIGHT'
+                : 'JAWABANMU · SEBAGIAN TEPAT',
+            skipOffstage: false,
+          );
+          final correct = find.text(
+            lang == 'en' ? 'THE RIGHT ANSWER' : 'JAWABAN YANG BENAR',
+            skipOffstage: false,
+          );
+          expect(yours, findsOneWidget);
+          expect(correct, findsOneWidget);
           expect(t.getTopLeft(yours).dy, lessThan(t.getTopLeft(correct).dy));
           expect(
-            find.text(lang == 'en' ? 'YOUR ANSWER' : 'JAWABANMU'),
-            findsOneWidget,
-          );
-          expect(
             find.text(
-              lang == 'en' ? 'THE CORRECT ANSWER' : 'JAWABAN YANG BENAR',
+              '“Rinse it first so food does not spoil the batch.”',
+              skipOffstage: false,
             ),
             findsOneWidget,
           );
+          // The grader's rubric rows, and its feedback as a learn card.
+          expect(find.text('2/3', skipOffstage: false), findsOneWidget);
           expect(
-            find.text('“Rinse it first so food does not spoil the batch.”'),
+            find.text('Add landfill time for full marks.', skipOffstage: false),
             findsOneWidget,
           );
-          // The grader's rubric stays (it returns no key points).
-          expect(find.text('2 / 3'), findsOneWidget);
-          final why = find.byKey(const ValueKey('scan_essay_why'));
-          await t.scrollUntilVisible(why, 200);
-          expect(
-            t.widget<Text>(why).data,
-            'Add landfill time for full marks.\n\n'
-            'For full marks: say what happens to a dirty batch.',
-          );
+          // Export PDF sits beside Next question.
+          expect(find.byKey(const ValueKey('quiz_export_pdf')), findsOneWidget);
+          expect(find.byKey(const ValueKey('quiz_next')), findsOneWidget);
         });
       }
     }
@@ -460,10 +455,10 @@ void main() {
         ),
       );
       expect(find.text('NOT QUITE'), findsOneWidget);
-      expect(find.text('Score 4 / 10'), findsOneWidget);
-      expect(find.text('GOOD THINKING'), findsNothing);
-      // No model answer was saved: the leaf is not shown.
-      expect(find.byKey(const ValueKey('scan_essay_correct')), findsNothing);
+      expect(find.text('4 / 10'), findsOneWidget);
+      expect(find.text('Almost there!'), findsNothing);
+      // No model answer was saved: the tile is not shown.
+      expect(find.text('THE RIGHT ANSWER', skipOffstage: false), findsNothing);
     });
 
     testWidgets('landscape MCQ review: the curve ends above the content', (

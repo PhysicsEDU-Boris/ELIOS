@@ -295,117 +295,121 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                  if (q.isEssay)
-                    EssayReview(
-                      key: ValueKey('essay-$_index'),
-                      question: q.question,
-                      answer: q.yourAnswer,
-                      reference: q.rightAnswer == '-' ? '' : q.rightAnswer,
-                      explanation: _explanation,
-                      score: q.essayScore,
-                      index: _index,
-                      total: _record.questions.length,
-                      playing: _whole ? 'question' : _playing,
-                      onListen: _tapListen,
-                    )
-                  else ...[
-                  if (_original || (_loading && _record.needsTranslation(_lang!)))
-                    HistoryOriginalNote(
-                      lang: _record.lang,
-                      busy: _loading,
-                      onRetry: () => unawaited(_load()),
-                    ),
-                  // Sections rise in one after another, again per question.
-                  enter(
-                    HistoryResultHero(
-                      correct: q.isCorrect,
-                      index: _index,
-                      total: _record.questions.length,
-                      trophies: q.trophies,
-                      animate: true,
-                    ),
-                    pop: true,
-                  ),
-                  const SizedBox(height: 16),
-                  enter(
-                    HistoryQuestionPanel(
-                      question: q.question,
-                      listen: _listenButton('question', q.question),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (q.isCorrect)
-                    HistoryAnswerTile(
-                      '${context.l10n.h3YourAnswer} · ${context.l10n.h3Correct}',
-                      q.yourAnswer,
-                    )
-                  else ...[
-                    HistoryAnswerTile(
-                      context.l10n.h3YourAnswer,
-                      q.yourAnswer,
-                      tone: HistoryTone.error,
-                    ),
-                    const SizedBox(height: 8),
-                    HistoryAnswerTile(
-                      context.l10n.h3CorrectAnswer,
-                      q.rightAnswer,
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      HistorySparkle(18, p.secondaryText),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Semantics(
-                          header: true,
-                          child: Text(
-                            context.l10n.h3LearnWhy,
-                            style: ElioTokens.subhead.copyWith(
-                              color: p.textPrimary,
-                            ),
-                          ),
+                    if (q.isEssay)
+                      EssayReview(
+                        key: ValueKey('essay-$_index'),
+                        question: q.question,
+                        answer: q.yourAnswer,
+                        reference: q.rightAnswer == '-' ? '' : q.rightAnswer,
+                        explanation: _explanation,
+                        score: q.essayScore,
+                        index: _index,
+                        total: _record.questions.length,
+                        playing: _whole ? 'question' : _playing,
+                        onListen: _tapListen,
+                      )
+                    else ...[
+                      if (_original ||
+                          (_loading && _record.needsTranslation(_lang!)))
+                        HistoryOriginalNote(
+                          lang: _record.lang,
+                          busy: _loading,
+                          onRetry: () => unawaited(_load()),
+                        ),
+                      // Sections rise in one after another, again per question.
+                      enter(
+                        HistoryResultHero(
+                          correct: q.isCorrect,
+                          index: _index,
+                          total: _record.questions.length,
+                          trophies: q.trophies,
+                          animate: true,
+                        ),
+                        pop: true,
+                      ),
+                      const SizedBox(height: 16),
+                      enter(
+                        HistoryQuestionPanel(
+                          question: q.question,
+                          listen: _listenButton('question', q.question),
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      if (q.isCorrect)
+                        HistoryAnswerTile(
+                          '${context.l10n.h3YourAnswer} · ${context.l10n.h3Correct}',
+                          q.yourAnswer,
+                        )
+                      else ...[
+                        HistoryAnswerTile(
+                          context.l10n.h3YourAnswer,
+                          q.yourAnswer,
+                          tone: HistoryTone.error,
+                        ),
+                        const SizedBox(height: 8),
+                        HistoryAnswerTile(
+                          context.l10n.h3CorrectAnswer,
+                          q.rightAnswer,
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          HistorySparkle(18, p.secondaryText),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Semantics(
+                              header: true,
+                              child: Text(
+                                context.l10n.h3LearnWhy,
+                                style: ElioTokens.subhead.copyWith(
+                                  color: p.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      for (final s in sections.where(
+                        (s) => s.$1 != 'idea' && s.$1 != 'steps',
+                      )) ...[
+                        const SizedBox(height: 12),
+                        enter(
+                          HistoryLearnCard(
+                            art: _learnArt(p, s.$1),
+                            title: s.$2,
+                            body: s.$3,
+                            active: _playing == s.$1,
+                            onListen: () => _tapListen(s.$1, s.$3),
+                          ),
+                        ),
+                      ],
+                      if (idea != null) ...[
+                        const SizedBox(height: 16),
+                        enter(
+                          HistoryKeyIdea(
+                            active: _playing == 'idea',
+                            text: idea,
+                          ),
+                          pop: true,
+                        ),
+                      ],
+                      if (body('steps') != null) ...[
+                        const SizedBox(height: 16),
+                        enter(
+                          HistoryMission(
+                            steps: steps,
+                            active: _playing == 'steps',
+                            onListen: () => _tapListen('steps', body('steps')!),
+                          ),
+                        ),
+                      ],
                     ],
-                  ),
-                  for (final s in sections.where(
-                    (s) => s.$1 != 'idea' && s.$1 != 'steps',
-                  )) ...[
-                    const SizedBox(height: 12),
-                    enter(
-                      HistoryLearnCard(
-                        art: _learnArt(p, s.$1),
-                        title: s.$2,
-                        body: s.$3,
-                        active: _playing == s.$1,
-                        onListen: () => _tapListen(s.$1, s.$3),
-                      ),
-                    ),
+                    if (_explanation == null ||
+                        (!_explanation!.isComplete && !q.isEssay) ||
+                        _explanation!.isUnavailable)
+                      HistoryError(onRetry: () => _load(retry: true)),
                   ],
-                  if (idea != null) ...[
-                    const SizedBox(height: 16),
-                    enter(
-                      HistoryKeyIdea(active: _playing == 'idea', text: idea),
-                      pop: true,
-                    ),
-                  ],
-                  if (body('steps') != null) ...[
-                    const SizedBox(height: 16),
-                    enter(
-                      HistoryMission(
-                        steps: steps,
-                        active: _playing == 'steps',
-                        onListen: () => _tapListen('steps', body('steps')!),
-                      ),
-                    ),
-                  ],
-                  ],
-                  if (_explanation == null ||
-                      (!_explanation!.isComplete && !q.isEssay) ||
-                      _explanation!.isUnavailable)
-                    HistoryError(onRetry: () => _load(retry: true)),
-                ],
                 ),
               ),
         bottomNavigationBar: HistoryActionsBar(

@@ -1,3 +1,7 @@
+## Essay answer review — `feat/essay-explanation-review` (0227, 17 Nov, branched from `fix/quiz-review-bugs`; phase 2 of 3)
+`EssayReview` (`lib/widgets/quiz/essay_review.dart`) is the essay review in the live quiz, History and the old overlay, built from History widgets (`HistoryResultHero.essayScore`, `HistoryQuestionPanel.essay`, `HistoryMission` texts, new `HistoryEssayScore`). Grading reply now carries per-criterion hints, why, key idea, tips; saved in existing `QuizExplanation` fields. `quizRevealCue` for correct / partial / wrong. Renders: `docs/test-results/0227-essay-review/`.
+Tests: `test/essay_review_test.dart` (22, break-checked). Not checked on phone or robot; no real grading reply with the new fields seen yet. Mac build still blocked by signing (no profile for `com.boris.elio`).
+
 ## Quiz review bugs — `fix/quiz-review-bugs` (0226, 17 Nov, from `feature/live-scan` 953e25d; phase 1 of 3, phases 2 and 3 stack on it)
 Mute: saved `AppPreferences.quizMuted` → `QuizTtsService.muted` + `ElioSound.quizMuted` (`quizFeedback` in quiz / explanation pages); review speaker button toggles it. Coach: `AiQuizService.messageLang` picks the reply language from the message. Back: `PopScope` + "Leave the quiz?" sheet in `ScanQuizPages`. Explanation: loading block until the final text, one request per key + epoch + 25 s timeout, fallback to the question's own text, Retry state, voice reads the shown text, skipped questions keep an explanation. Root cause in the decision doc.
 Tests: `test/quiz_review_bugs_test.dart` (14, each break-checked). Not checked on the phone or robot. iOS swipe-back is blocked during a quiz but opens no sheet.
@@ -53,7 +57,3 @@ Open: bank / AI questions about the bin can still follow the bin check (0224); e
 - Validation: full Flutter suite 1419 passed, 20 skipped; backend 26/26; analyze clean; secret scan clean; string audit 0.
 - Preview: https://ai-backend-24phg5dz3-elios5.vercel.app (`/api/guides` unauthenticated POST returns 401). Vercel authentication protection is enabled.
 - Applied `202611090001_guide_progress.sql` to ELIOS Supabase `tymiikfebewqvuokoyru` in a transaction; verified all 3 tables: RLS on, anon/authenticated reads denied, service_role inserts allowed. Production deployed: https://ai-backend-seven-orpin.vercel.app (deployment `dpl_E9RHpvWHYegNy5K3Ef86iTjJRpJx`); public `/api/guides` POST returns expected 401 without sign-in.
-- Phone (9 Nov, Edge 60 Fusion, Android 16, 1220x2712 @450, owner Google account, APK `0eb7730` via `adb install -r`, History 99 files md5-unchanged): hub, issue, PDF p.2/p.3 (+30 XP), quiz pass (+10, 2nd pass 0), real Gemini lab `retry` + teacher review OK, server totals 40 survive restart. Fixed: swapped XP/PDF strings, off-centre quiz result, a11y back cards, header XP chip, lab "0 photos ready" race. Not tested yet (need owner): lab `approved` (+20), offline queue, guest import. Notes: `docs/test-results/g4-guides/phone/README.md`.
-- Renders: `docs/test-results/g4-guides/app/` (48 app frames plus comparisons). Sources copy only; no share; quiz park -95%; Figma slots unchanged.
-
-# Daily Guide — 8 November 2026 (0193)

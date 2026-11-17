@@ -1816,7 +1816,10 @@ class HistoryEssayScore extends StatelessWidget {
     Widget card(double v) => Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: ShapeDecoration(color: p.surface, shape: _cardShape(p, false)),
+      decoration: ShapeDecoration(
+        color: p.surface,
+        shape: _cardShape(p, false),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

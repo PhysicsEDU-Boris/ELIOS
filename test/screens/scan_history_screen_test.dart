@@ -253,7 +253,10 @@ void main() {
           ).writeAsBytesSync(bytes.buffer.asUint8List());
           image.dispose();
         });
-        await t.drag(find.byType(ListView).first, const Offset(0, -600));
+        await t.drag(
+          find.byType(SingleChildScrollView).first,
+          const Offset(0, -600),
+        );
         await t.pumpAndSettle();
         expect(
           t.getSize(
@@ -478,10 +481,12 @@ void main() {
         Brightness.dark,
       );
       await t.pumpAndSettle();
-      expect(find.text('Skor 7/10'), findsOneWidget);
+      // Essay answer review (0227): score card and the two answer tiles.
+      expect(find.text('7 / 10'), findsOneWidget);
+      expect(find.text('Hampir tepat!'), findsOneWidget);
       expect(find.text('Salah'), findsNothing);
       expect(find.text('Benar'), findsNothing);
-      expect(find.text('JAWABAN ACUAN'), findsOneWidget);
+      expect(find.text('JAWABAN YANG BENAR'), findsOneWidget);
       expect(t.takeException(), isNull);
     },
   );
