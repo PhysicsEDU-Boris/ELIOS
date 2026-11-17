@@ -348,6 +348,87 @@ OUTPUT
   static String languageName(String lang) =>
       lang == 'en' ? 'English' : 'Bahasa Indonesia';
 
+  static const _idWords = {
+    'yang',
+    'dan',
+    'di',
+    'ke',
+    'dari',
+    'untuk',
+    'dengan',
+    'adalah',
+    'ini',
+    'itu',
+    'pada',
+    'tidak',
+    'karena',
+    'mengapa',
+    'bagaimana',
+    'apa',
+    'atau',
+    'agar',
+    'dapat',
+    'akan',
+    'oleh',
+    'sebagai',
+    'juga',
+    'lebih',
+    'saat',
+    'jika',
+    'jelaskan',
+    'sampah',
+    'harus',
+    'bisa',
+    'dalam',
+  };
+  static const _enWords = {
+    'the',
+    'and',
+    'of',
+    'to',
+    'is',
+    'why',
+    'how',
+    'what',
+    'in',
+    'are',
+    'be',
+    'that',
+    'it',
+    'for',
+    'with',
+    'can',
+    'from',
+    'when',
+    'does',
+    'do',
+    'this',
+    'because',
+    'not',
+    'should',
+    'explain',
+    'waste',
+    'your',
+    'an',
+    'on',
+  };
+
+  /// 'en' or 'id' when [text] is clearly written in one of them, else null
+  /// (too short or mixed). The model sometimes fills the "id" side of a
+  /// bilingual reply in English (seen 16 Nov with an English item name), so
+  /// the side's key alone is not trusted as the language label (0218).
+  static String? detectLang(String text) {
+    var id = 0, en = 0;
+    for (final w in text.toLowerCase().split(RegExp(r'[^a-z]+'))) {
+      if (_idWords.contains(w)) id++;
+      if (_enWords.contains(w)) en++;
+    }
+    if (id + en < 3) return null;
+    if (en > 2 * id) return 'en';
+    if (id > 2 * en) return 'id';
+    return null;
+  }
+
   void _log(String msg) => debugPrint('$_tag $msg');
 
   /// One backend call, signed with the student's Firebase ID token. [json] asks
@@ -1142,12 +1223,28 @@ OUTPUT
     QuizQuestionType type, {
     String? lang,
   }) {
-    final language = lang ?? replyLang;
+    var language = lang ?? replyLang;
     final sides = bilingual(raw, language);
     if (sides == null) return null;
-    final main = _parseSide(sides.main, type);
+    var main = _parseSide(sides.main, type);
     if (main == null) return null;
-    final other = sides.other == null ? null : _parseSide(sides.other!, type);
+    var other = sides.other == null ? null : _parseSide(sides.other!, type);
+    // The label follows the text, not the reply's key: swapped sides are
+    // swapped back, and a reply in one language only keeps no false twin.
+    String? written(
+      ({String question, List<String> options, String explanation}) s,
+    ) => detectLang('${s.question} ${s.options.join(' ')} ${s.explanation}');
+    final seen = written(main);
+    if (seen != null && seen != language) {
+      final seenOther = other == null ? null : written(other);
+      if (other != null && seenOther == language) {
+        (main, other) = (other, main);
+      } else {
+        _log('question side "$language" is written in "$seen"; relabelled');
+        language = seen;
+        other = null;
+      }
+    }
     // One permutation for both languages keeps the correct index shared.
     final order = [for (var i = 0; i < main.options.length; i++) i]
       ..shuffle(_random);

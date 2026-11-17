@@ -206,8 +206,14 @@ class QuizExplanationService {
       );
     }
 
-    final alt = essayGrade.alt;
+    var alt = essayGrade.alt;
     final altLang = AiQuizService.otherLang(question.lang);
+    // The grade's sides can arrive swapped (feedback in the other language).
+    if (alt != null &&
+        AiQuizService.detectLang(essayGrade.feedback) == altLang &&
+        AiQuizService.detectLang(alt.feedback) != altLang) {
+      (essayGrade, alt) = (alt, essayGrade);
+    }
     return build(
       essayGrade,
       question.lang,

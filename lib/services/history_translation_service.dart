@@ -32,6 +32,41 @@ class HistoryTranslationService {
     );
   }
 
+  static bool _prefetching = false;
+
+  /// Translates the newest records that still need [lang], one after
+  /// another, so they are ready before the student opens them (0218). Stops
+  /// at the first failure (offline) and never runs twice at once; a record
+  /// opened meanwhile joins its running request through [ensure].
+  static Future<void> prefetch(
+    ScanRecordStore store,
+    String lang, {
+    int max = 3,
+  }) async {
+    if (_prefetching || !store.isLoaded) return;
+    _prefetching = true;
+    final clock = Stopwatch()..start();
+    var done = 0;
+    try {
+      final todo = store.records.where((r) => r.needsTranslation(lang)).toList()
+        ..sort((a, b) => b.time.compareTo(a.time));
+      for (final r in todo.take(max)) {
+        if (!await ensure(store, r, lang)) break;
+        done++;
+      }
+    } catch (e) {
+      debugPrint('[HistoryTranslation] prefetch stopped: $e');
+    } finally {
+      _prefetching = false;
+      if (done > 0) {
+        debugPrint(
+          '[HistoryTranslation] prefetched $done -> $lang in '
+          '${clock.elapsedMilliseconds} ms',
+        );
+      }
+    }
+  }
+
   static Future<bool> _translate(
     ScanRecordStore store,
     ScanRecord record,
