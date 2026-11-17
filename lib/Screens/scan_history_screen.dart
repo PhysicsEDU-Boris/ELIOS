@@ -60,6 +60,26 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
     if (mounted) setState(() {});
   }
 
+  String? _lang;
+
+  /// Opening History or switching the language translates the newest scans
+  /// in the background, so their names and details are ready (0218).
+  void _prefetch() {
+    final lang = _lang;
+    if (lang != null) {
+      unawaited(HistoryTranslationService.prefetch(_store, lang));
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final lang = context.l10n.localeName == 'en' ? 'en' : 'id';
+    if (lang == _lang) return;
+    _lang = lang;
+    _prefetch();
+  }
+
   Future<void> _load() async {
     final epoch = ++_loadEpoch;
     setState(() => _failed = false);
@@ -68,6 +88,7 @@ class _ScanHistoryScreenState extends State<ScanHistoryScreen> {
       if (_store.loadError != null) {
         throw StateError('History could not be loaded');
       }
+      _prefetch();
     } catch (_) {
       if (mounted && epoch == _loadEpoch) setState(() => _failed = true);
     }

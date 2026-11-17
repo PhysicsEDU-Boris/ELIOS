@@ -29,6 +29,29 @@ long time, and Learn → Today's Guide keeps the old language.
 - `guideLangOf` reads the language from the widget's `Localizations` (not the global `l10n`),
   and the ticket uses `context.l10n`, so it depends on the locale directly.
 
+## Follow-up, 16 Nov (owner phone test): scans that never translated
+
+On the phone, two robot scans ("Plastic bottle", "Laptop") stayed English in Indonesian mode:
+name, questions, answers and essay feedback. Their saved data had `lang: "id"` with English
+text on both the main side and the `en` twin, so `needsTranslation("id")` was false and no
+translation was ever requested. Cause: the model filled the `"id"` side of the bilingual
+question reply in English (the item name from the robot was English), and the app trusted the
+reply's key as the language label. The essay grade's sides arrived swapped the same way.
+
+- `AiQuizService.detectLang` (common-word count) decides the language of a text. A question
+  reply whose main side is in the other language is swapped back, or relabelled with no twin.
+  The essay grade's sides are swapped back too. The prompt is unchanged (0185: the owner's
+  system prompt sets the languages; prompts do not name them).
+- Records already saved with the wrong label are repaired on load (`ScanRecord.fromJson`): the
+  label follows the question text and the same-language twin is dropped, so the missing
+  language is translated like any other record.
+- Faster: opening History or switching the language translates the 3 newest scans that need
+  it in the background (`HistoryTranslationService.prefetch`), so names in the list and the
+  detail are usually ready before they are opened. It stops at the first failure (offline).
+- Tests: `test/l10n/language_label_test.dart`.
+- Seen in the same data, not fixed here: one question's explanation belongs to another item
+  (a laptop explanation on a plastic-bottle question).
+
 ## Tests
 
 `test/l10n/language_switch_sync_test.dart`: ticket switches in one frame (light/dark); app
