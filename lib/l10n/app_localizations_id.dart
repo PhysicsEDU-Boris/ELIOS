@@ -1052,6 +1052,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get setHard => 'Sulit';
 
   @override
+  String get setEssay => 'Soal esai';
+
+  @override
+  String get setEssaySub => 'Jawaban tertulis, dinilai ELIOS AI';
+
+  @override
   String get setTimer => 'Waktu';
 
   @override
@@ -1839,8 +1845,14 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get qzHazardBody =>
-      'Jangan dibongkar atau dibuang ke tempat sampah biasa. Minta petugas menanganinya. Lanjutkan kuis tentang benda ini?';
+  String get scanHazardOverline => 'Tangani dengan hati-hati';
+
+  @override
+  String get scanHazardNote =>
+      'Jangan dibongkar atau dibuang ke tempat sampah biasa. Minta petugas menanganinya dengan aman.';
+
+  @override
+  String get scanHazardKeepLearning => 'Lanjut belajar benda ini?';
 
   @override
   String get qzContinueQuiz => 'Lanjutkan kuis';
@@ -1914,6 +1926,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get qzNotQuite => 'Kurang tepat';
+
+  @override
+  String get qzGoodThinking => 'Pemikiran bagus';
+
+  @override
+  String get qzTheCorrectAnswer => 'Jawaban yang benar';
+
+  @override
+  String get qzCheckedByAi => 'Diperiksa ELIOS AI';
 
   @override
   String qzRightAnswerIs(Object answer) {
@@ -3029,6 +3050,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get h3TryAgain => 'Coba lagi';
+
+  @override
+  String get h3Translating => 'Menerjemahkan…';
 
   @override
   String get h3Loading => 'Sedang memuat';
@@ -4949,7 +4973,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get scanRobotOverline => 'Dengan robot';
 
   @override
-  String get scanRobotTitle => 'Pindai dengan robot';
+  String get scanRobotTitle => 'Scan robot';
 
   @override
   String get scanRobotBody =>
@@ -5467,6 +5491,15 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get scanJustNowRobot => 'Baru saja · Kamera robot';
+
+  @override
+  String get scanSubmitAnswer => 'Kirim jawaban';
+
+  @override
+  String get scanEssay => 'Esai';
+
+  @override
   String get scanFlash => 'Lampu kilat';
 
   @override
@@ -5486,4 +5519,56 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get scanBinNo => 'Bukan';
+
+  @override
+  String get binCheckChip => 'Cek tempat sampah · sebelum kuis';
+
+  @override
+  String binCheckOverline(Object item) {
+    return 'CEK TEMPAT SAMPAH · $item';
+  }
+
+  @override
+  String get binCheckQuestion =>
+      'Ke mana sampah ini dibuang? Pilih tempat sampah yang benar.';
+
+  @override
+  String get binOrganik => 'Tempat sampah Organik';
+
+  @override
+  String get binAnorganik => 'Tempat sampah Anorganik';
+
+  @override
+  String get binB3 => 'Tempat sampah B3 (berbahaya)';
+
+  @override
+  String binOops(Object bin) {
+    return 'Ups! Bukan tempat sampah $bin';
+  }
+
+  @override
+  String binNice(Object bin) {
+    return 'Pilahanmu tepat! Memang $bin';
+  }
+
+  @override
+  String binWhyOrganic(Object item) {
+    return '$item adalah sisa makanan atau tumbuhan, jadi bisa membusuk. Masuk ke tempat sampah Organik untuk jadi kompos.';
+  }
+
+  @override
+  String binWhyAnorganik(Object item) {
+    return '$item tidak membusuk. Masuk ke tempat sampah Anorganik agar bisa didaur ulang.';
+  }
+
+  @override
+  String binWhyB3(Object item) {
+    return '$item bisa mengandung bahan berbahaya. Masuk ke tempat sampah B3 agar ditangani dengan aman.';
+  }
+
+  @override
+  String get binQuizNext => 'Kuismu berikutnya';
+
+  @override
+  String get binGotIt => 'Mengerti';
 }

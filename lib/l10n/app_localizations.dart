@@ -1976,6 +1976,18 @@ abstract class AppLocalizations {
   /// **'Hard'**
   String get setHard;
 
+  /// No description provided for @setEssay.
+  ///
+  /// In en, this message translates to:
+  /// **'Essay questions'**
+  String get setEssay;
+
+  /// No description provided for @setEssaySub.
+  ///
+  /// In en, this message translates to:
+  /// **'Written answers, graded by ELIOS AI'**
+  String get setEssaySub;
+
   /// No description provided for @setTimer.
   ///
   /// In en, this message translates to:
@@ -3398,11 +3410,23 @@ abstract class AppLocalizations {
   /// **'Possibly hazardous (B3): {name}'**
   String qzHazardTitle(Object name);
 
-  /// No description provided for @qzHazardBody.
+  /// No description provided for @scanHazardOverline.
   ///
   /// In en, this message translates to:
-  /// **'Don\'t take it apart or put it in a normal bin. Ask staff to handle it. Continue the quiz about this item?'**
-  String get qzHazardBody;
+  /// **'Handle with care'**
+  String get scanHazardOverline;
+
+  /// No description provided for @scanHazardNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t take it apart or put it in a normal bin. Ask a staff member to handle it safely.'**
+  String get scanHazardNote;
+
+  /// No description provided for @scanHazardKeepLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep learning about this item?'**
+  String get scanHazardKeepLearning;
 
   /// No description provided for @qzContinueQuiz.
   ///
@@ -3522,6 +3546,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not quite'**
   String get qzNotQuite;
+
+  /// No description provided for @qzGoodThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Good thinking'**
+  String get qzGoodThinking;
+
+  /// No description provided for @qzTheCorrectAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'The correct answer'**
+  String get qzTheCorrectAnswer;
+
+  /// No description provided for @qzCheckedByAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked by ELIOS AI'**
+  String get qzCheckedByAi;
 
   /// No description provided for @qzRightAnswerIs.
   ///
@@ -5430,6 +5472,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get h3TryAgain;
+
+  /// No description provided for @h3Translating.
+  ///
+  /// In en, this message translates to:
+  /// **'Translating…'**
+  String get h3Translating;
 
   /// No description provided for @h3Loading.
   ///
@@ -9481,6 +9529,24 @@ abstract class AppLocalizations {
   /// **'Zoom {zoom}'**
   String scanZoom(Object zoom);
 
+  /// No description provided for @scanJustNowRobot.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now · Robot camera'**
+  String get scanJustNowRobot;
+
+  /// No description provided for @scanSubmitAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit answer'**
+  String get scanSubmitAnswer;
+
+  /// No description provided for @scanEssay.
+  ///
+  /// In en, this message translates to:
+  /// **'Essay'**
+  String get scanEssay;
+
   /// No description provided for @scanFlash.
   ///
   /// In en, this message translates to:
@@ -9522,6 +9588,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No'**
   String get scanBinNo;
+
+  /// No description provided for @binCheckChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Bin check · before the quiz'**
+  String get binCheckChip;
+
+  /// No description provided for @binCheckOverline.
+  ///
+  /// In en, this message translates to:
+  /// **'BIN CHECK · {item}'**
+  String binCheckOverline(Object item);
+
+  /// No description provided for @binCheckQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Where will this waste go? Pick the right bin.'**
+  String get binCheckQuestion;
+
+  /// No description provided for @binOrganik.
+  ///
+  /// In en, this message translates to:
+  /// **'Organik bin'**
+  String get binOrganik;
+
+  /// No description provided for @binAnorganik.
+  ///
+  /// In en, this message translates to:
+  /// **'Anorganik bin'**
+  String get binAnorganik;
+
+  /// No description provided for @binB3.
+  ///
+  /// In en, this message translates to:
+  /// **'B3 (hazardous) bin'**
+  String get binB3;
+
+  /// No description provided for @binOops.
+  ///
+  /// In en, this message translates to:
+  /// **'Oops! Not the {bin} bin'**
+  String binOops(Object bin);
+
+  /// No description provided for @binNice.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice sorting! {bin} it is'**
+  String binNice(Object bin);
+
+  /// No description provided for @binWhyOrganic.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} is food or plant waste, so it rots. It goes in the Organik bin to become compost.'**
+  String binWhyOrganic(Object item);
+
+  /// No description provided for @binWhyAnorganik.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} doesn\'t rot. It goes in the Anorganik bin so it can be recycled.'**
+  String binWhyAnorganik(Object item);
+
+  /// No description provided for @binWhyB3.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} can hold harmful materials. It goes in the B3 bin so it is handled safely.'**
+  String binWhyB3(Object item);
+
+  /// No description provided for @binQuizNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Your quiz is next'**
+  String get binQuizNext;
+
+  /// No description provided for @binGotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get binGotIt;
 }
 
 class _AppLocalizationsDelegate

@@ -348,16 +348,30 @@ class ScanRecord {
       orElse: () => QuizDifficulty.medium,
     );
 
+    // Every record before schema 5 was made in Indonesian.
+    var lang = json['lang'] as String? ?? 'id';
+    final translations = {
+      for (final e in (json['translations'] as Map? ?? const {}).entries)
+        '${e.key}': RecordTranslation.fromJson(
+          Map<String, dynamic>.from(e.value as Map),
+        ),
+    };
+    // Repair (0218): some records were saved with the wrong language label
+    // (English questions labelled "id"), so they never got translated. The
+    // label follows the question text; a twin in that same language is dropped
+    // and the other language is translated on demand like any other record.
+    final seen = AiQuizService.detectLang(
+      questionsList.map((q) => q.question).join(' '),
+    );
+    if (seen != null && seen != lang) {
+      lang = seen;
+      translations.remove(seen);
+    }
+
     return ScanRecord(
       schemaVersion: 5,
-      // Every record before schema 5 was made in Indonesian.
-      lang: json['lang'] as String? ?? 'id',
-      translations: {
-        for (final e in (json['translations'] as Map? ?? const {}).entries)
-          '${e.key}': RecordTranslation.fromJson(
-            Map<String, dynamic>.from(e.value as Map),
-          ),
-      },
+      lang: lang,
+      translations: translations,
       id: json['id'] as String? ?? '',
       time: DateTime.tryParse(json['time'] as String? ?? '') ?? DateTime.now(),
       itemName: json['itemName'] as String? ?? 'Unknown Item',

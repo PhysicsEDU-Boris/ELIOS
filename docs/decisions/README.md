@@ -85,4 +85,12 @@ their status changed.
 - [0214](0214-scoring-finish.md) Module % from clovers, one streak
 - [0215](0215-history-l4-figma.md) History tab in the Figma L4 style, entrance on every open, nested-screen motion
 - [0216](0216-scan-l4-figma.md) Scan flows in the Figma L4 style, full-screen Scan & quiz pages, motion everywhere
+- [0217](0217-control-l4-scan-pages.md) Robot control uses the full-screen scan pages; essay page and review; scan-start animation; keyboard-safe
+- [0218](0218-language-switch-sync.md) Language switch: saved scans open at once, Today's Guide follows the app language
+- [0219](0219-essay-questions-setting.md) Essay questions on/off in Profile
+- [0220](0220-trophy-icons-to-xp.md) Trophy icons become the XP icon
+- [0221](0221-profile-header-joyful.md) Joyful profile header and settings entry animation
+- [0222](0222-hazard-b3-scan-result.md) Hazardous (B3) scan result as a full page
+- [0223](0223-essay-explanation-page.md) Essay explanation page
+- [0224](0224-robot-bin-check.md) Robot bin check before the quiz
 - [0225](0225-explanation-wrong-scan.md) A new scan no longer writes its explanations into the previous scan

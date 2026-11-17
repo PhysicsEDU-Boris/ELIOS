@@ -8,6 +8,7 @@ import '../services/quiz_pdf_service.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../theme/elio_learning_colors.dart';
 import 'package:elio/l10n/l10n.dart';
+import 'xp_icon.dart';
 
 // ---------------------------------------------------------------------------
 // Design tokens (Figma node 96:130 / 96:246)
@@ -418,7 +419,7 @@ class _ResultBanner extends StatelessWidget {
     final icon = pending
         ? Icons.hourglass_empty_rounded
         : isCorrect
-        ? Icons.emoji_events_rounded
+        ? null // the XP sticker
         : Icons.close_rounded;
 
     final String title;
@@ -452,7 +453,9 @@ class _ResultBanner extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-            child: Icon(icon, color: Colors.white, size: 20),
+            child: icon == null
+                ? const Center(child: XpIcon(20))
+                : Icon(icon, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(

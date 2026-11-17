@@ -18,6 +18,11 @@ const defaultQuestionSource = QuestionSource.ai;
 /// testing. It shows the source switch and the tester log panel (decision 0040).
 const testerBuild = bool.fromEnvironment('TESTER_BUILD');
 
+/// Build default for Profile → Essay questions: off (decision 0017), on with
+/// `--dart-define=ESSAY_QUESTIONS=true` and in the tester build (A1).
+const essayQuestionsEnabled =
+    bool.fromEnvironment('ESSAY_QUESTIONS') || testerBuild;
+
 /// UI-only application preferences (not device connection related),
 /// persisted so quiz settings (difficulty, skip) survive restarts.
 class AppPreferences {
@@ -26,6 +31,9 @@ class AppPreferences {
   final String quizDifficulty;
   final String quizTimer;
   final bool skipAllowed;
+
+  /// Profile → Essay questions (decision 0219): off = multiple choice only.
+  final bool essayQuestions;
 
   /// The Config screen's "Quiz questions" choice, saved since decision 0145.
   /// A saved ELIOS AI choice is safe: with no AI answer a quiz falls back to
@@ -43,6 +51,7 @@ class AppPreferences {
     this.quizDifficulty = 'Medium',
     this.quizTimer = '60s',
     this.skipAllowed = false,
+    this.essayQuestions = essayQuestionsEnabled,
     this.questionSource = defaultQuestionSource,
     this.robotQuizEnabled = true,
     this.robotQuestionSource = defaultQuestionSource,
@@ -54,6 +63,7 @@ class AppPreferences {
     String? quizDifficulty,
     String? quizTimer,
     bool? skipAllowed,
+    bool? essayQuestions,
     QuestionSource? questionSource,
     bool? robotQuizEnabled,
     QuestionSource? robotQuestionSource,
@@ -64,6 +74,7 @@ class AppPreferences {
       quizDifficulty: quizDifficulty ?? this.quizDifficulty,
       quizTimer: quizTimer ?? this.quizTimer,
       skipAllowed: skipAllowed ?? this.skipAllowed,
+      essayQuestions: essayQuestions ?? this.essayQuestions,
       questionSource: questionSource ?? this.questionSource,
       robotQuizEnabled: robotQuizEnabled ?? this.robotQuizEnabled,
       robotQuestionSource: robotQuestionSource ?? this.robotQuestionSource,
@@ -76,6 +87,7 @@ class AppPreferences {
     'quizDifficulty': quizDifficulty,
     'quizTimer': quizTimer,
     'skipAllowed': skipAllowed,
+    'essayQuestions': essayQuestions,
     'questionSource': questionSource.name,
     'robotQuizEnabled': robotQuizEnabled,
     'robotQuestionSource': robotQuestionSource.name,
@@ -104,6 +116,9 @@ class AppPreferences {
       skipAllowed: map['skipAllowed'] is bool
           ? map['skipAllowed'] as bool
           : d.skipAllowed,
+      essayQuestions: map['essayQuestions'] is bool
+          ? map['essayQuestions'] as bool
+          : d.essayQuestions,
       questionSource:
           QuestionSource.values.asNameMap()[map['questionSource']] ??
           d.questionSource,

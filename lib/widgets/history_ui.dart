@@ -9,6 +9,7 @@ import '../services/ai_quiz_service.dart';
 import '../theme/elio_motion.dart';
 import '../theme/elio_tokens.dart';
 import 'auth/auth_widgets.dart' show authPalette;
+import 'xp_icon.dart';
 
 // H3 History components. Sizes, gaps and tokens follow
 // docs/design/h3-figma/README.md (Figma 433:2358); colours come only from the
@@ -125,10 +126,14 @@ class HistoryChip extends StatelessWidget {
     super.key,
     this.tone = HistoryTone.neutral,
     this.icon,
+    this.leading,
   });
   final String text;
   final HistoryTone tone;
   final IconData? icon;
+
+  /// A ready-made 14 dp picture instead of [icon] (the XP sticker).
+  final Widget? leading;
   @override
   Widget build(BuildContext context) {
     final t = historyTint(authPalette(context), tone);
@@ -144,8 +149,8 @@ class HistoryChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 14, color: t.fg),
+          if (leading != null || icon != null) ...[
+            leading ?? Icon(icon, size: 14, color: t.fg),
             const SizedBox(width: 4),
           ],
           Flexible(
@@ -506,7 +511,7 @@ class HistoryTrophyChip extends StatelessWidget {
   Widget build(BuildContext context) => HistoryChip(
     '+$trophies',
     tone: HistoryTone.warning,
-    icon: Icons.emoji_events_outlined,
+    leading: const XpIcon(14),
   );
 }
 
@@ -732,11 +737,7 @@ class HistoryScanCard extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.emoji_events_outlined,
-                                size: 14,
-                                color: p.surface,
-                              ),
+                              const XpIcon(14),
                               const SizedBox(width: 2),
                               Text(
                                 '+${record.trophies}',
@@ -2202,9 +2203,13 @@ class HistoryOriginalNote extends StatelessWidget {
     super.key,
     required this.lang,
     required this.onRetry,
+    this.busy = false,
   });
   final String lang;
   final VoidCallback onRetry;
+
+  /// The translation is being fetched: the saved text stays readable below.
+  final bool busy;
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context), t = historyTint(p, HistoryTone.info);
@@ -2218,17 +2223,28 @@ class HistoryOriginalNote extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              context.l10n.h3ShownInOriginal(
-                lookupAppLocalizations(Locale(lang)).languageName,
-              ),
+              busy
+                  ? context.l10n.h3Translating
+                  : context.l10n.h3ShownInOriginal(
+                      lookupAppLocalizations(Locale(lang)).languageName,
+                    ),
               style: ElioTokens.caption.copyWith(color: p.textPrimary),
             ),
           ),
-          TextButton(
-            onPressed: onRetry,
-            style: TextButton.styleFrom(foregroundColor: p.primaryText),
-            child: Text(context.l10n.h3TryAgain),
-          ),
+          if (busy)
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: SizedBox.square(
+                dimension: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: t.fg),
+              ),
+            )
+          else
+            TextButton(
+              onPressed: onRetry,
+              style: TextButton.styleFrom(foregroundColor: p.primaryText),
+              child: Text(context.l10n.h3TryAgain),
+            ),
         ],
       ),
     );

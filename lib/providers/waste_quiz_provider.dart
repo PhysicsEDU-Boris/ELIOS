@@ -43,10 +43,8 @@ enum WasteQuizPhase {
 /// stand-in for testing without the robot.
 enum WasteQuizSource { maixCam2, phoneCamera }
 
-/// Essay questions are off by default: sessions are multiple choice only (decision 0017).
-// The tester build always asks essays (A1: the essay grade needs measuring).
-const essayQuestionsEnabled =
-    bool.fromEnvironment('ESSAY_QUESTIONS') || testerBuild;
+/// XP for picking the right bin in the robot bin check (decision 0224).
+const binCheckReward = 20;
 
 /// Question order within one scan session: alternate the two types, or
 /// multiple choice only when essays are off.
@@ -98,6 +96,30 @@ class WasteQuizUiState {
   /// True while [QuizExplanationService] is generating the explanation.
   final bool explanationLoading;
 
+  /// Robot bin check before the quiz (decision 0224): the picked bin as a
+  /// [ScanCategory] name, 'none' when skipped or timed out, null before it.
+  final String? binPick;
+
+  /// "Got it" was tapped on the bin check result ticket.
+  final bool binAcked;
+
+  /// The bin the scanned item belongs in; null when it has no bin to check.
+  ScanCategory? get binAnswer {
+    final c = ScanCategory.fromString(scan?.category?.id);
+    return const {
+          ScanCategory.organic,
+          ScanCategory.recyclable,
+          ScanCategory.b3,
+        }.contains(c)
+        ? c
+        : null;
+  }
+
+  bool get binRight => binPick != null && binPick == binAnswer?.name;
+
+  /// 20 XP for the right bin, counted once into the scan record.
+  int get binCheckXp => binRight ? binCheckReward : 0;
+
   const WasteQuizUiState({
     this.phase = WasteQuizPhase.idle,
     this.minimized = false,
@@ -123,6 +145,8 @@ class WasteQuizUiState {
     this.historyPhotoPath,
     this.currentExplanation,
     this.explanationLoading = false,
+    this.binPick,
+    this.binAcked = false,
   });
 
   int get totalQuestions => difficulty.questionCount;
@@ -174,6 +198,8 @@ class WasteQuizUiState {
     QuizExplanation? currentExplanation,
     bool clearExplanation = false,
     bool? explanationLoading,
+    String? binPick,
+    bool? binAcked,
   }) {
     return WasteQuizUiState(
       phase: phase ?? this.phase,
@@ -204,6 +230,8 @@ class WasteQuizUiState {
           ? null
           : (currentExplanation ?? this.currentExplanation),
       explanationLoading: explanationLoading ?? this.explanationLoading,
+      binPick: binPick ?? this.binPick,
+      binAcked: binAcked ?? this.binAcked,
     );
   }
 }
@@ -224,14 +252,17 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   int _generation = 0;
   final _askedQuestions = <String>[];
 
-  /// Test overrides: a fixed question source, and the essay build flag.
+  /// Test overrides: a fixed question source, and the essay switch.
   @visibleForTesting
   static QuestionSource? sourceOverride;
 
   /// True for MaixCAM2 scans (LOCK and live scan), false for the phone.
   bool _robotSession = false;
+  /// Test override; null follows Profile → Essay questions (decision 0219).
   @visibleForTesting
-  static bool essayQuestions = essayQuestionsEnabled;
+  static bool? essayQuestions;
+  bool get _essays =>
+      essayQuestions ?? ref.read(appPreferencesProvider).essayQuestions;
 
   // Captured when a session starts, so a switch only affects the next scan (decision 0018).
   QuestionSource _sessionSource = QuestionSource.bank;
@@ -735,7 +766,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     unawaited(QuizTtsService.instance.stop());
     final generation = ++_generation;
     final scan = state.scan!;
-    final type = questionTypeFor(index, essays: essayQuestions);
+    final type = questionTypeFor(index, essays: _essays);
     final total = state.totalQuestions;
     loadingSince = DateTime.now();
     state = state.copyWith(
@@ -898,7 +929,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     int index,
     int gen,
   ) async {
-    final type = questionTypeFor(index, essays: essayQuestions);
+    final type = questionTypeFor(index, essays: _essays);
     final diagnostics = _diagnostics;
     var attempt = 0;
     while (gen == _prefetchSessionGen) {
@@ -945,7 +976,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     unawaited(QuizTtsService.instance.stop());
     final generation = ++_generation;
     final scan = state.scan!;
-    final type = questionTypeFor(index, essays: essayQuestions);
+    final type = questionTypeFor(index, essays: _essays);
     final total = state.totalQuestions;
     loadingSince = DateTime.now();
     state = state.copyWith(
@@ -1043,7 +1074,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     ScannedWaste scan,
     QuizQuestionType type,
   ) {
-    for (final q in fallbackQuestions(scan, type)) {
+    // After the bin check the "which bin" fallback (first MC) is not asked again.
+    final skipBin =
+        state.binPick != null && type == QuizQuestionType.multipleChoice;
+    for (final q in fallbackQuestions(scan, type).skip(skipBin ? 1 : 0)) {
       if (!_askedQuestions.contains(q.question)) return q;
     }
     return null; // all used: the session ends early rather than repeat one
@@ -1550,10 +1584,11 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   Future<void> _finish() async {
     final store = _sessionStore ?? ScanRecordStore.instance;
-    final sessionTrophies = _recordedQuestions.fold<int>(
-      0,
-      (sum, q) => sum + q.trophies,
-    );
+    // The bin check's 20 XP is saved in the record total, so History and
+    // the level count it (decision 0224).
+    final sessionTrophies =
+        _recordedQuestions.fold<int>(0, (sum, q) => sum + q.trophies) +
+        state.binCheckXp;
 
     final photoPath = await _savePhoto(store);
 
@@ -1637,6 +1672,25 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   void listen(String text) => unawaited(QuizTtsService.instance.speak(text));
 
   void toggleVoice() => state = state.copyWith(voiceOn: !state.voiceOn);
+
+  /// Robot bin check: the first pick counts, later calls change nothing, so
+  /// the 20 XP cannot be earned twice (rebuild, minimise, double tap).
+  void answerBinCheck(ScanCategory pick) {
+    if (state.binPick != null) return;
+    _diagnostics?.event('bin_check', {
+      'pick': pick.name,
+      'right': pick == state.binAnswer,
+    });
+    state = state.copyWith(binPick: pick.name);
+  }
+
+  /// Skipped or out of time: no XP and no result ticket.
+  void skipBinCheck() {
+    if (state.binPick != null) return;
+    state = state.copyWith(binPick: 'none', binAcked: true);
+  }
+
+  void ackBinCheck() => state = state.copyWith(binAcked: true);
 
   void minimize() => state = state.copyWith(minimized: true);
 

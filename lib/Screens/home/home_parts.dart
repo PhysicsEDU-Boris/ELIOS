@@ -11,6 +11,7 @@ import '../../theme/elio_motion.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/auth/auth_widgets.dart' show authPalette;
 import '../../widgets/history_ui.dart' show HistoryTone, historyTint;
+import '../../widgets/xp_icon.dart';
 
 const homeRadiusL = 20.0;
 const homeRadiusM = 12.0;
@@ -149,11 +150,7 @@ class TrophyAmount extends StatelessWidget {
     final row = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          Icons.emoji_events_outlined,
-          size: chip ? 14 : 16,
-          color: p.secondaryText,
-        ),
+        XpIcon(chip ? 14 : 16),
         const SizedBox(width: 4),
         Text(
           text,

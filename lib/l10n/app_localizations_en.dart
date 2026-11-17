@@ -1075,6 +1075,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setHard => 'Hard';
 
   @override
+  String get setEssay => 'Essay questions';
+
+  @override
+  String get setEssaySub => 'Written answers, graded by ELIOS AI';
+
+  @override
   String get setTimer => 'Timer';
 
   @override
@@ -1859,8 +1865,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get qzHazardBody =>
-      'Don\'t take it apart or put it in a normal bin. Ask staff to handle it. Continue the quiz about this item?';
+  String get scanHazardOverline => 'Handle with care';
+
+  @override
+  String get scanHazardNote =>
+      'Don\'t take it apart or put it in a normal bin. Ask a staff member to handle it safely.';
+
+  @override
+  String get scanHazardKeepLearning => 'Keep learning about this item?';
 
   @override
   String get qzContinueQuiz => 'Continue quiz';
@@ -1934,6 +1946,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get qzNotQuite => 'Not quite';
+
+  @override
+  String get qzGoodThinking => 'Good thinking';
+
+  @override
+  String get qzTheCorrectAnswer => 'The correct answer';
+
+  @override
+  String get qzCheckedByAi => 'Checked by ELIOS AI';
 
   @override
   String qzRightAnswerIs(Object answer) {
@@ -3086,6 +3107,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get h3TryAgain => 'Try again';
+
+  @override
+  String get h3Translating => 'Translating…';
 
   @override
   String get h3Loading => 'Loading';
@@ -5563,6 +5587,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get scanJustNowRobot => 'Just now · Robot camera';
+
+  @override
+  String get scanSubmitAnswer => 'Submit answer';
+
+  @override
+  String get scanEssay => 'Essay';
+
+  @override
   String get scanFlash => 'Flash';
 
   @override
@@ -5582,4 +5615,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scanBinNo => 'No';
+
+  @override
+  String get binCheckChip => 'Bin check · before the quiz';
+
+  @override
+  String binCheckOverline(Object item) {
+    return 'BIN CHECK · $item';
+  }
+
+  @override
+  String get binCheckQuestion =>
+      'Where will this waste go? Pick the right bin.';
+
+  @override
+  String get binOrganik => 'Organik bin';
+
+  @override
+  String get binAnorganik => 'Anorganik bin';
+
+  @override
+  String get binB3 => 'B3 (hazardous) bin';
+
+  @override
+  String binOops(Object bin) {
+    return 'Oops! Not the $bin bin';
+  }
+
+  @override
+  String binNice(Object bin) {
+    return 'Nice sorting! $bin it is';
+  }
+
+  @override
+  String binWhyOrganic(Object item) {
+    return '$item is food or plant waste, so it rots. It goes in the Organik bin to become compost.';
+  }
+
+  @override
+  String binWhyAnorganik(Object item) {
+    return '$item doesn\'t rot. It goes in the Anorganik bin so it can be recycled.';
+  }
+
+  @override
+  String binWhyB3(Object item) {
+    return '$item can hold harmful materials. It goes in the B3 bin so it is handled safely.';
+  }
+
+  @override
+  String get binQuizNext => 'Your quiz is next';
+
+  @override
+  String get binGotIt => 'Got it';
 }

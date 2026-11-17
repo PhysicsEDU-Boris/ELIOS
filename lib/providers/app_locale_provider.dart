@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/guide_progress.dart';
 import '../services/quiz_tts_service.dart';
 
 /// The UI language picked in the sidebar; null = follow the device language.
@@ -37,6 +38,18 @@ class AppLocaleNotifier extends Notifier<Locale?> {
     // Speech in the old language stops at once (decision 0185).
     if (state?.languageCode != locale.languageCode) {
       unawaited(QuizTtsService.instance.stop());
+      // Guides follow the app language again: an older in-guide language pick
+      // would keep Today's Guide in the other language (decision 0218).
+      try {
+        unawaited(
+          ref
+              .read(guideProgressProvider.notifier)
+              .setGuideLang(null)
+              .catchError((Object e) => debugPrint('Guide lang reset: $e')),
+        );
+      } catch (e) {
+        debugPrint('Guide lang reset: $e');
+      }
     }
     state = locale;
     SharedPreferences.getInstance()

@@ -479,7 +479,7 @@ class GuideTicket extends ConsumerWidget {
     final title = guide.title[lang]!;
     return Semantics(
       container: true,
-      label: l10n.g4TodayLabel(title, done),
+      label: context.l10n.g4TodayLabel(title, done),
       // Card 17: each new stop chimes and pops its dot; finishing the guide
       // tears the ticket stub, pops the XP sticker and sways the polaroid.
       child: RiseWatcher(
@@ -528,8 +528,8 @@ class GuideTicket extends ConsumerWidget {
                                     Expanded(
                                       child: Text(
                                         guide.issue == null
-                                            ? l10n.g4TodaysGuide
-                                            : l10n.g4TodaysGuideIssue(
+                                            ? context.l10n.g4TodaysGuide
+                                            : context.l10n.g4TodaysGuideIssue(
                                                 guide.issue!,
                                               ),
                                         maxLines: 1,
@@ -558,7 +558,7 @@ class GuideTicket extends ConsumerWidget {
                                         scale: 0,
                                         curve: ElioMotion.bounce,
                                         child: GuideChip(
-                                          l10n.g4PlusXp(guide.xp.total),
+                                          context.l10n.g4PlusXp(guide.xp.total),
                                           fill: p.secondaryText,
                                           color: p.surface,
                                         ),
@@ -609,8 +609,8 @@ class GuideTicket extends ConsumerWidget {
                                       children: [
                                         Text(
                                           done == 3
-                                              ? l10n.g4AllStopsDone
-                                              : l10n.g4StopsDoneNext(
+                                              ? context.l10n.g4AllStopsDone
+                                              : context.l10n.g4StopsDoneNext(
                                                   done,
                                                   nextStopLabel(progress),
                                                 ),
@@ -656,7 +656,7 @@ class GuideTicket extends ConsumerWidget {
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Text(l10n.lnContinue),
+                                            Text(context.l10n.lnContinue),
                                             const Icon(
                                               Icons.chevron_right_rounded,
                                               size: 20,
