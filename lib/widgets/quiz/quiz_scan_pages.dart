@@ -3715,8 +3715,6 @@ Future<void> _exportQuizPdf(
   WasteQuizUiState state,
   int earned,
 ) async {
-  final messenger = ScaffoldMessenger.of(context);
-  final t = context.l10n;
   final record = ScanRecord(
     id: 'scan-${DateTime.now().millisecondsSinceEpoch}',
     time: DateTime.now(),
@@ -3728,10 +3726,6 @@ Future<void> _exportQuizPdf(
     trophies: earned,
     lang: AiQuizService.replyLang,
   );
-  try {
-    await QuizPdfService.shareOrSave(record);
-    messenger.showSnackBar(SnackBar(content: Text(t.pdfExported)));
-  } catch (e) {
-    messenger.showSnackBar(SnackBar(content: Text(t.pdfExportFailed(e))));
-  }
+  // Theme choice, then Share (decision 0228).
+  await showQuizReportSheet(context, record);
 }

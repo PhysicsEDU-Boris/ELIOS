@@ -1,5 +1,5 @@
 import 'package:elio/Screens/question_explanation_screen.dart'
-    show QuestionExportSheet;
+    show QuestionExportSheet, showQuizReportSheet;
 import 'package:elio/widgets/quiz/essay_review.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -23,7 +23,6 @@ import '../providers/waste_quiz_provider.dart';
 import '../services/ai_quiz_service.dart';
 import '../services/question_bank.dart';
 import '../services/quiz_explanation_service.dart';
-import '../services/quiz_pdf_service.dart';
 import '../services/quiz_tts_service.dart';
 import '../services/scan_record_store.dart';
 import '../Screens/home/home_parts.dart' show homeArt, homeWeight;
@@ -528,22 +527,8 @@ class _ResultCard extends ConsumerWidget {
                     trophies: earnedTrophies,
                     lang: AiQuizService.replyLang,
                   );
-                  try {
-                    await QuizPdfService.shareOrSave(record);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(context.l10n.pdfExported)),
-                      );
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(context.l10n.pdfExportFailed(e)),
-                        ),
-                      );
-                    }
-                  }
+                  // Theme choice, then Share (decision 0228).
+                  await showQuizReportSheet(context, record);
                 },
                 icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
                 label: Text(context.l10n.exportPdf),

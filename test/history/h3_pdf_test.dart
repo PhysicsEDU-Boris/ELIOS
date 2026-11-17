@@ -68,15 +68,17 @@ void main() {
           photo: mask & 4 != 0,
           notes: mask & 8 != 0,
         );
+        QuizPdfService.debugTexts = [];
+        addTearDown(() => QuizPdfService.debugTexts = null);
         final bytes = await QuizPdfService.generateQuestionPdfBytes(
           record,
           0,
           options: flags,
         );
         final pdf = latin1.decode(bytes);
-        final content = RegExp(
-          r'\(([^()]*)\)',
-        ).allMatches(streams(bytes)).map((m) => m[1]).join(' ');
+        // The embedded font writes glyph ids: the drawn text comes from the
+        // service's text log (decision 0228).
+        final content = QuizPdfService.debugTexts!.join(' ');
         expect(pdf, startsWith('%PDF-'));
         expect(
           pdf,
@@ -136,20 +138,22 @@ void main() {
             ),
           ],
         );
+        QuizPdfService.debugTexts = [];
         final bytes = await QuizPdfService.generateQuestionPdfBytes(
           record,
           0,
           options: const QuestionPdfOptions(explanation: false, notes: true),
         );
-        final lastPage = lastPageContent(bytes);
-        final text = RegExp(
-          r'\(([^()]*)\)',
-        ).allMatches(lastPage).map((m) => m[1]).join(' ');
-        expect(
-          text,
-          contains('Ruang catatan'),
-          reason: 'Notes need their heading, including at length $length',
-        );
+        // The notes are one fixed page of their own (decision 0228): the
+        // heading and its writing sections are always together, after the
+        // question however long it is.
+        final texts = QuizPdfService.debugTexts!;
+        QuizPdfService.debugTexts = null;
+        final heading = texts.indexOf('Ruang catatan');
+        expect(heading, greaterThan(-1), reason: 'length $length');
+        expect(texts.indexOf('1 · JELASKAN ULANG'), greaterThan(heading));
+        expect(texts.indexOf('Paraf guru / orang tua'), greaterThan(heading));
+        expect(lastPageContent(bytes), isNotEmpty);
       }
     },
   );

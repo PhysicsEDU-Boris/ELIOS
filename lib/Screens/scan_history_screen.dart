@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/scan_record.dart';
 import '../services/elio_feedback.dart';
-import '../services/quiz_pdf_service.dart';
 import '../services/history_translation_service.dart';
 import '../services/scan_record_store.dart';
 import '../l10n/l10n.dart';
@@ -799,18 +798,10 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
     );
   }
 
-  Future<void> _export(BuildContext context) async {
-    try {
-      // The PDF uses the cached text of the current language (decision 0185).
-      await QuizPdfService.shareOrSave(record);
-    } catch (_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(context.l10n.h3PdfFailed)));
-      }
-    }
-  }
+  // The PDF uses the cached text of the current language (decision 0185);
+  // the sheet adds the theme choice (decision 0228).
+  Future<void> _export(BuildContext context) =>
+      showQuizReportSheet(context, record);
 }
 
 /// Scan detail top bar (629:99655-66): round Back, title, Export PDF pill.

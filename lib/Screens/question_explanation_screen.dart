@@ -460,6 +460,13 @@ class _QuestionExportSheetState extends State<QuestionExportSheet> {
   final _include = [true, true, false, false];
   bool _busy = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(QuizPdfService.loadTheme());
+  }
+
   QuestionPdfOptions get _options => QuestionPdfOptions(
     answers: _include[0],
     explanation: _include[1],
@@ -502,7 +509,11 @@ class _QuestionExportSheetState extends State<QuestionExportSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final p = authPalette(context), paper = ElioTokens.light;
+    final p = authPalette(context);
+    // The thumbnail shows the page in the chosen PDF theme.
+    final paper = QuizPdfService.darkTheme.value
+        ? ElioTokens.dark
+        : ElioTokens.light;
     final inset = MediaQuery.viewPaddingOf(context).bottom;
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(16, 12, 16, math.max(28, inset + 12)),
@@ -544,13 +555,12 @@ class _QuestionExportSheetState extends State<QuestionExportSheet> {
             ),
             child: Row(
               children: [
-                // The page is always white (the PDF prints light).
                 Container(
                   width: 52,
                   height: 72,
                   padding: const EdgeInsets.fromLTRB(7, 9, 5, 0),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: paper.background,
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(color: paper.borderSubtle),
                   ),
@@ -638,6 +648,8 @@ class _QuestionExportSheetState extends State<QuestionExportSheet> {
                 style: ElioTokens.body.copyWith(color: p.textPrimary),
               ),
             ),
+          const SizedBox(height: 8),
+          PdfThemeChoice(enabled: !_busy, onChanged: () => setState(() {})),
           if (_error != null)
             Text(
               _error!,
@@ -666,6 +678,158 @@ class _QuestionExportSheetState extends State<QuestionExportSheet> {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "PDF theme: Light / Dark" of both export sheets (decision 0228). The
+/// choice is saved by [QuizPdfService.setDarkTheme]; light by default.
+class PdfThemeChoice extends StatelessWidget {
+  const PdfThemeChoice({super.key, this.enabled = true, this.onChanged});
+  final bool enabled;
+  final VoidCallback? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context), t = context.l10n;
+    return ValueListenableBuilder<bool>(
+      valueListenable: QuizPdfService.darkTheme,
+      builder: (context, dark, _) => Row(
+        children: [
+          Expanded(
+            child: Text(
+              t.pdfThemeLabel,
+              style: ElioTokens.body.copyWith(color: p.textPrimary),
+            ),
+          ),
+          SegmentedButton<bool>(
+            key: const ValueKey('pdf_theme'),
+            showSelectedIcon: false,
+            segments: [
+              ButtonSegment(
+                value: false,
+                icon: const Icon(Icons.light_mode_outlined, size: 18),
+                label: Text(t.pdfThemeLight),
+              ),
+              ButtonSegment(
+                value: true,
+                icon: const Icon(Icons.dark_mode_outlined, size: 18),
+                label: Text(t.pdfThemeDark),
+              ),
+            ],
+            selected: {dark},
+            onSelectionChanged: enabled
+                ? (v) {
+                    ElioHaptics.select();
+                    unawaited(QuizPdfService.setDarkTheme(v.single));
+                    onChanged?.call();
+                  }
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The full quiz report export: theme choice, then Share (decision 0228).
+Future<void> showQuizReportSheet(BuildContext context, ScanRecord record) {
+  final theme = Theme.of(context), p = authPalette(context);
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: p.surface,
+    barrierColor: const Color(0x8C0F172A),
+    shape: const RoundedSuperellipseBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder: (_) => Theme(data: theme, child: _QuizReportSheet(record)),
+  );
+}
+
+class _QuizReportSheet extends StatefulWidget {
+  const _QuizReportSheet(this.record);
+  final ScanRecord record;
+  @override
+  State<_QuizReportSheet> createState() => _QuizReportSheetState();
+}
+
+class _QuizReportSheetState extends State<_QuizReportSheet> {
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(QuizPdfService.loadTheme());
+  }
+
+  Future<void> _share() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await QuizPdfService.shareOrSave(widget.record);
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) setState(() => _error = context.l10n.h3PdfFailed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context), t = context.l10n;
+    final inset = MediaQuery.viewPaddingOf(context).bottom;
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(16, 12, 16, math.max(28, inset + 12)),
+      child: Column(
+        key: const ValueKey('quiz_report_sheet'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Container(
+              width: 32,
+              height: 4,
+              decoration: ShapeDecoration(
+                color: p.borderMedium,
+                shape: const StadiumBorder(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            t.pdfReportExport,
+            style: ElioTokens.subhead.copyWith(color: p.textPrimary),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            t.pdfReportSub(
+              widget.record.itemName,
+              widget.record.questions.length,
+            ),
+            style: ElioTokens.caption.copyWith(color: p.textSecondary),
+          ),
+          const SizedBox(height: 16),
+          PdfThemeChoice(enabled: !_busy),
+          if (_error != null)
+            Text(
+              _error!,
+              style: ElioTokens.bodySmall.copyWith(color: p.errorText),
+            ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            key: const ValueKey('quiz_report_share'),
+            style: historyPrimaryStyle(p),
+            onPressed: _busy ? null : _share,
+            icon: const Icon(Icons.share_outlined),
+            label: Text(_busy ? t.h3Saving : t.h3Share),
           ),
         ],
       ),

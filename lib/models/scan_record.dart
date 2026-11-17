@@ -60,6 +60,15 @@ class RecordQuestion {
 
   bool get gradingPending => isEssay && essayScore == null;
 
+  /// Skipped or timed out (the saved answer is that placeholder, in either
+  /// app language).
+  bool get skipped => [
+    for (final lang in const ['en', 'id']) ...[
+      lookupAppLocalizations(Locale(lang)).quizSkippedAnswer,
+      lookupAppLocalizations(Locale(lang)).quizTimeUpAnswer,
+    ],
+  ].contains(yourAnswer.trim());
+
   /// Optional structured explanation saved alongside the answer (schema v2+).
   /// Null for old records or when explanation generation failed.
   final QuizExplanation? explanation;

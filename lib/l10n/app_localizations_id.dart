@@ -5678,4 +5678,302 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get essayTipsDone => 'Gabungkan jadi 2–3 kalimat untuk skor 10/10.';
+
+  @override
+  String get pdfReportHead => 'Laporan kuis sampah';
+
+  @override
+  String get pdfExportedLabel => 'DIEKSPOR';
+
+  @override
+  String pdfScanResult(Object category) {
+    return '$category · hasil scan';
+  }
+
+  @override
+  String pdfCoverMeta(Object count, Object level, Object mc, Object essay) {
+    return '$count soal · tingkat $level · $mc pilihan ganda, $essay esai';
+  }
+
+  @override
+  String get pdfRingLabel => 'BENAR';
+
+  @override
+  String get pdfHeadNone => 'Coba lagi, kamu pasti bisa!';
+
+  @override
+  String get pdfHeadSome => 'Awal yang bagus, lanjutkan!';
+
+  @override
+  String get pdfHeadAll => 'Sempurna, semua benar!';
+
+  @override
+  String pdfSubNone(Object count) {
+    return '$count hal baru siap kamu pelajari dari kuis ini.';
+  }
+
+  @override
+  String pdfSubSome(Object count) {
+    return '$count soal lagi untuk diulang, lalu kamu menguasainya.';
+  }
+
+  @override
+  String get pdfSubAll => 'Kamu paham cara memilah sampah ini.';
+
+  @override
+  String pdfXpChip(Object xp, Object max) {
+    return '+$xp XP · maks. +$max XP';
+  }
+
+  @override
+  String pdfPhotoCaption(Object time) {
+    return 'Foto scan ELIOS · $time';
+  }
+
+  @override
+  String pdfStamp(Object grade) {
+    return 'NILAI: $grade';
+  }
+
+  @override
+  String get pdfStampRetry => 'COBA LAGI';
+
+  @override
+  String get pdfStampGood => 'BAGUS';
+
+  @override
+  String get pdfStampPerfect => 'SEMPURNA';
+
+  @override
+  String pdfNeedReview(Object count) {
+    return '$count perlu diulang';
+  }
+
+  @override
+  String get pdfAllRight => 'Semua benar';
+
+  @override
+  String get pdfXpRule => 'Jawab benar = +10';
+
+  @override
+  String get pdfDifficultyShort => 'KESULITAN';
+
+  @override
+  String pdfQuestionsCount(Object count) {
+    return '$count soal';
+  }
+
+  @override
+  String get pdfBinGreen => 'Tong hijau';
+
+  @override
+  String get pdfBinYellow => 'Tong kuning';
+
+  @override
+  String get pdfBinRed => 'Tong merah';
+
+  @override
+  String get pdfBinGrey => 'Tong abu-abu';
+
+  @override
+  String get pdfMapTitle => 'Peta soal';
+
+  @override
+  String get pdfMapHint => 'buka halamannya untuk penjelasan lengkap';
+
+  @override
+  String get pdfTypeMc => 'PILIHAN GANDA';
+
+  @override
+  String get pdfTypeEssay => 'ESAI';
+
+  @override
+  String pdfMapPage(Object type, Object page) {
+    return '$type · HAL. $page';
+  }
+
+  @override
+  String pdfYourAnswerLine(Object answer) {
+    return 'Jawabanmu: $answer';
+  }
+
+  @override
+  String get pdfChipWrong => 'Belum tepat';
+
+  @override
+  String get pdfChipSkipped => 'Dilewati';
+
+  @override
+  String get pdfTipLabel => 'TIPS DARI ELIOS';
+
+  @override
+  String pdfTipIdeas(Object count, Object ideas) {
+    return 'Fokus ke $count ide: $ideas Baca penjelasannya, lalu ulangi kuis.';
+  }
+
+  @override
+  String get pdfTipGeneric =>
+      'Baca tiap penjelasan, lalu ulangi kuis untuk meraih XP lebih banyak.';
+
+  @override
+  String get pdfFooterBrand => 'ELIOS · Edukasi Pemilahan Sampah';
+
+  @override
+  String pdfSessionId(Object id) {
+    return 'ID sesi · $id';
+  }
+
+  @override
+  String pdfQuestionOf(Object index, Object total) {
+    return 'SOAL $index DARI $total';
+  }
+
+  @override
+  String pdfQuestionType(Object index, Object type) {
+    return 'SOAL $index · $type';
+  }
+
+  @override
+  String pdfStickerXp(Object label, Object xp) {
+    return '$label · +$xp XP';
+  }
+
+  @override
+  String get pdfYourAnswer => 'JAWABANMU';
+
+  @override
+  String get pdfRightAnswer => 'JAWABAN BENAR';
+
+  @override
+  String get pdfModelAnswer => 'CONTOH JAWABAN BENAR';
+
+  @override
+  String get pdfYourRight => 'JAWABANMU · BENAR';
+
+  @override
+  String get pdfFeedbackLabel => 'MASUKAN UNTUK JAWABANMU';
+
+  @override
+  String get pdfEssayScoreLabel => 'SKOR ESAI';
+
+  @override
+  String get pdfGradedBy => 'Dinilai ELIOS AI · cek dengan gurumu';
+
+  @override
+  String get pdfNoExplTitle => 'Penjelasan belum tersimpan';
+
+  @override
+  String get pdfNoExplHint =>
+      'Buka soal ini di aplikasi ELIOS lalu ketuk \"Tanya ELIOS AI\" untuk melihat penjelasan lengkapnya.';
+
+  @override
+  String get pdfMyNotes => 'Catatanku';
+
+  @override
+  String get pdfMyNotesHint => 'tulis dengan kata-katamu sendiri';
+
+  @override
+  String get pdfStepsDone => 'Selesai!';
+
+  @override
+  String pdfContinued(Object item, Object index) {
+    return '$item · soal $index (lanjutan)';
+  }
+
+  @override
+  String pdfSingleExport(Object item) {
+    return '$item · ekspor 1 soal';
+  }
+
+  @override
+  String pdfNotesOver(Object index) {
+    return 'SOAL $index · RUANG CATATAN';
+  }
+
+  @override
+  String get pdfNotesTitle => 'Ruang catatan';
+
+  @override
+  String get pdfNotesIntro =>
+      'Ulangi materinya dengan caramu sendiri. Selesaikan semua bagian, lalu minta paraf guru atau orang tuamu.';
+
+  @override
+  String get pdfN1 => '1 · JELASKAN ULANG';
+
+  @override
+  String pdfN1Prompt(Object question) {
+    return 'Dengan kata-katamu sendiri: $question';
+  }
+
+  @override
+  String pdfN1Idea(Object idea) {
+    return 'Pakai ide ini: $idea';
+  }
+
+  @override
+  String get pdfN2 => '2 · GAMBAR & BANDINGKAN';
+
+  @override
+  String pdfN2Prompt(Object idea) {
+    return 'Gambar apa yang terjadi pada ide ini: $idea';
+  }
+
+  @override
+  String get pdfN2Generic => 'Gambar apa yang dijelaskan soal ini.';
+
+  @override
+  String get pdfN3 => '3 · CEK PEMAHAMANKU';
+
+  @override
+  String pdfCheckIdea(Object idea) {
+    return 'Aku bisa menjelaskan: $idea';
+  }
+
+  @override
+  String get pdfCheckWrong => 'Aku tahu kenapa jawabanku tadi kurang tepat.';
+
+  @override
+  String get pdfCheckRight => 'Aku bisa menjelaskan kenapa jawabanku benar.';
+
+  @override
+  String pdfCheckTry(Object item) {
+    return 'Aku sudah mencobanya di rumah dengan: $item.';
+  }
+
+  @override
+  String get pdfN4 => '4 · TANTANGAN';
+
+  @override
+  String pdfChallenge(Object item) {
+    return 'Ulangi kuis \"$item\" di ELIOS dan raih +10 XP untuk soal ini.';
+  }
+
+  @override
+  String get pdfN5 => '5 · PERTANYAANKU UNTUK GURU';
+
+  @override
+  String get pdfSign => 'Paraf guru / orang tua';
+
+  @override
+  String get pdfDate => 'Tanggal';
+
+  @override
+  String get pdfSticker => 'Tempel stiker';
+
+  @override
+  String get pdfThemeLabel => 'Tema PDF';
+
+  @override
+  String get pdfThemeLight => 'Terang';
+
+  @override
+  String get pdfThemeDark => 'Gelap';
+
+  @override
+  String get pdfReportExport => 'Ekspor laporan kuis';
+
+  @override
+  String pdfReportSub(Object item, Object count) {
+    return '$item · $count soal';
+  }
 }

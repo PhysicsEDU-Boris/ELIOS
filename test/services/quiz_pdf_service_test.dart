@@ -43,9 +43,10 @@ void main() {
         final bytes = await QuizPdfService.generatePdfBytes(record);
         final pdf = latin1.decode(bytes);
         expect(pdf, matches(RegExp(r'/Subtype\s*/Image')));
+        // Small photos keep their size; the photo is re-encoded as a
+        // compact JPEG for the polaroid (decision 0228).
         expect(pdf, contains('/Width ${dimensions.$1}'));
         expect(pdf, contains('/Height ${dimensions.$2}'));
-        expect(pdf, contains(latin1.decode(crop.readAsBytesSync())));
       });
     }
 
@@ -62,21 +63,18 @@ void main() {
           isCorrect: false, isEssay: true,
         )],
       );
+      // The embedded font writes glyph ids, so the drawn text is read from
+      // the service's text log (decision 0228).
+      QuizPdfService.debugTexts = [];
+      addTearDown(() => QuizPdfService.debugTexts = null);
       final pdf = latin1.decode(await QuizPdfService.generatePdfBytes(record));
-      expect(RegExp(r'/Type/Page\b').allMatches(pdf).length, greaterThan(1));
+      expect(RegExp(r'/Type/Page\b').allMatches(pdf).length, greaterThan(2));
       expect(pdf, matches(RegExp(r'/Subtype\s*/Image')));
-      final content = RegExp(r'stream\n(.*?)\nendstream', dotAll: true)
-          .allMatches(pdf).map((match) {
-        try {
-          return latin1.decode(zlib.decode(latin1.encode(match[1]!)));
-        } catch (_) {
-          return ''; // JPEG streams are not page text.
-        }
-      }).join();
-      final text = RegExp(r'\[\((.*?)\)\]TJ').allMatches(content)
-          .map((match) => match[1]).join(' ');
-      expect('Menunggu penilaian'.allMatches(text), hasLength(2));
-      expect(content, contains('ESSAY_END'));
+      final text = QuizPdfService.debugTexts!.join(' ');
+      // Ungraded: "awaiting grading", never a 0 / 10 score card.
+      expect(text, contains('Menunggu penilaian'));
+      expect(text, isNot(contains('0 / 10')));
+      expect(text, contains('ESSAY_END'));
     });
 
     for (final missing in [true, false]) {
