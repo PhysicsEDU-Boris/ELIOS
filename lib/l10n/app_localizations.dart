@@ -9708,6 +9708,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Explanation not available yet'**
   String get qzExplanationUnavailable;
+
+  /// No description provided for @h3HeroAlmost.
+  ///
+  /// In en, this message translates to:
+  /// **'Almost there!'**
+  String get h3HeroAlmost;
+
+  /// No description provided for @h3HeroPerfect.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect!'**
+  String get h3HeroPerfect;
+
+  /// No description provided for @h3HeroEssayWrongBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Score {score}/10. Let\'s find out why.'**
+  String h3HeroEssayWrongBody(Object score);
+
+  /// No description provided for @h3HeroEssayAlmostBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Score {score}/10. A little more for full marks.'**
+  String h3HeroEssayAlmostBody(Object score);
+
+  /// No description provided for @h3HeroEssayPerfectBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Score 10/10. Your answer is complete.'**
+  String get h3HeroEssayPerfectBody;
+
+  /// No description provided for @essayNotQuite.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite'**
+  String get essayNotQuite;
+
+  /// No description provided for @essayPartly.
+  ///
+  /// In en, this message translates to:
+  /// **'Partly right'**
+  String get essayPartly;
+
+  /// No description provided for @essayRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Right'**
+  String get essayRight;
+
+  /// No description provided for @essayCheckedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked by ELIOS AI · essay'**
+  String get essayCheckedBy;
+
+  /// No description provided for @essayScoreOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{score} / 10'**
+  String essayScoreOf(Object score);
+
+  /// No description provided for @essayBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Score breakdown'**
+  String get essayBreakdown;
+
+  /// No description provided for @rubricAccuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'Accuracy'**
+  String get rubricAccuracy;
+
+  /// No description provided for @rubricKeyTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Key terms'**
+  String get rubricKeyTerms;
+
+  /// No description provided for @rubricCompleteness.
+  ///
+  /// In en, this message translates to:
+  /// **'Completeness'**
+  String get rubricCompleteness;
+
+  /// No description provided for @rubricClarity.
+  ///
+  /// In en, this message translates to:
+  /// **'Clarity'**
+  String get rubricClarity;
+
+  /// No description provided for @essayAiNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Scores are made automatically by ELIOS AI and can be wrong. Not sure? Ask your teacher.'**
+  String get essayAiNote;
+
+  /// No description provided for @essayYourAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answer · {verdict}'**
+  String essayYourAnswer(Object verdict);
+
+  /// No description provided for @essayRightAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'The right answer'**
+  String get essayRightAnswer;
+
+  /// No description provided for @essaySkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'You skipped this question'**
+  String get essaySkipped;
+
+  /// No description provided for @essayFeedbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback on your answer'**
+  String get essayFeedbackTitle;
+
+  /// No description provided for @essayWhyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Why it is so'**
+  String get essayWhyTitle;
+
+  /// No description provided for @essayWhyRightTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Why your answer is right'**
+  String get essayWhyRightTitle;
+
+  /// No description provided for @essayTipsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tips for full marks'**
+  String get essayTipsTitle;
+
+  /// No description provided for @essayTipsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} steps to write an essay answer'**
+  String essayTipsSub(Object count);
+
+  /// No description provided for @essayTipsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Combine them into 2–3 sentences for 10/10.'**
+  String get essayTipsDone;
 }
 
 class _AppLocalizationsDelegate

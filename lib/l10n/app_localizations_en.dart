@@ -5688,4 +5688,90 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get qzExplanationUnavailable => 'Explanation not available yet';
+
+  @override
+  String get h3HeroAlmost => 'Almost there!';
+
+  @override
+  String get h3HeroPerfect => 'Perfect!';
+
+  @override
+  String h3HeroEssayWrongBody(Object score) {
+    return 'Score $score/10. Let\'s find out why.';
+  }
+
+  @override
+  String h3HeroEssayAlmostBody(Object score) {
+    return 'Score $score/10. A little more for full marks.';
+  }
+
+  @override
+  String get h3HeroEssayPerfectBody => 'Score 10/10. Your answer is complete.';
+
+  @override
+  String get essayNotQuite => 'Not quite';
+
+  @override
+  String get essayPartly => 'Partly right';
+
+  @override
+  String get essayRight => 'Right';
+
+  @override
+  String get essayCheckedBy => 'Checked by ELIOS AI · essay';
+
+  @override
+  String essayScoreOf(Object score) {
+    return '$score / 10';
+  }
+
+  @override
+  String get essayBreakdown => 'Score breakdown';
+
+  @override
+  String get rubricAccuracy => 'Accuracy';
+
+  @override
+  String get rubricKeyTerms => 'Key terms';
+
+  @override
+  String get rubricCompleteness => 'Completeness';
+
+  @override
+  String get rubricClarity => 'Clarity';
+
+  @override
+  String get essayAiNote =>
+      'Scores are made automatically by ELIOS AI and can be wrong. Not sure? Ask your teacher.';
+
+  @override
+  String essayYourAnswer(Object verdict) {
+    return 'Your answer · $verdict';
+  }
+
+  @override
+  String get essayRightAnswer => 'The right answer';
+
+  @override
+  String get essaySkipped => 'You skipped this question';
+
+  @override
+  String get essayFeedbackTitle => 'Feedback on your answer';
+
+  @override
+  String get essayWhyTitle => 'Why it is so';
+
+  @override
+  String get essayWhyRightTitle => 'Why your answer is right';
+
+  @override
+  String get essayTipsTitle => 'Tips for full marks';
+
+  @override
+  String essayTipsSub(Object count) {
+    return '$count steps to write an essay answer';
+  }
+
+  @override
+  String get essayTipsDone => 'Combine them into 2–3 sentences for 10/10.';
 }

@@ -15,6 +15,7 @@ import '../theme/elio_motion.dart';
 import '../theme/elio_tokens.dart';
 import '../widgets/auth/auth_widgets.dart' show authPalette;
 import '../widgets/history_ui.dart';
+import '../widgets/quiz/essay_review.dart';
 
 class QuestionExplanationScreen extends StatefulWidget {
   const QuestionExplanationScreen({
@@ -38,6 +39,10 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
   late int _index = widget.questionIndex;
   QuizExplanation? _explanation;
   bool _loading = true, _whole = false, _cued = false;
+
+  /// Entrances already played ("question index-n"): they never replay on a
+  /// rebuild, a language switch or when scrolling back.
+  final _seen = <String>{};
 
   /// The app language shown ('en'/'id'); [_original]: its translation is not
   /// available (offline), so the record's own language is shown with a note.
@@ -64,13 +69,8 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
     super.didChangeDependencies();
     if (!_cued) {
       _cued = true;
-      // S4 for a right answer, S1 otherwise, as the page lands.
-      elioOnRouteEntered(
-        context,
-        () => _q.isCorrect
-            ? elioEntryCue(ElioSfx.chime, ElioHaptics.light)
-            : elioEntryCue(ElioSfx.tick, ElioHaptics.select),
-      );
+      // One cue as the page lands: correct / partial / wrong (0227).
+      elioOnRouteEntered(context, () => quizRevealCue(_revealOf(_q)));
     }
     final lang = context.l10n.localeName == 'en' ? 'en' : 'id';
     if (lang == _lang) return;
@@ -155,6 +155,15 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
       });
     }
   }
+
+  /// Essay: full marks, 5-9 partial, else wrong. MC: right or wrong.
+  static QuizReveal _revealOf(RecordQuestion q) => q.isEssay
+      ? ((q.essayScore ?? 0) >= 10
+            ? QuizReveal.correct
+            : (q.essayScore ?? 0) >= 5
+            ? QuizReveal.partial
+            : QuizReveal.wrong)
+      : (q.isCorrect ? QuizReveal.correct : QuizReveal.wrong);
 
   List<(String, String, String)> get _sections {
     final e = _explanation, t = context.l10n;
@@ -249,6 +258,8 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
     var n = 0;
     Widget enter(Widget child, {bool pop = false}) => ElioPopIn(
       key: ValueKey('enter-$_index-$n'),
+      play: _seen.add('$_index-$n'),
+      rise: 10,
       index: n++,
       scale: pop ? 0.9 : 0.96,
       curve: pop ? ElioMotion.pop : ElioMotion.emphasized,
@@ -276,10 +287,28 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
         // A saved explanation shows at once; only a missing one waits.
         body: _loading && _explanation == null
             ? const HistorySkeleton(HistoryLoadingLayout.explanation)
-            : ListView(
+            // Not lazy: a card scrolled away and back keeps its state, so no
+            // entrance, count-up or bounce plays twice.
+            : SingleChildScrollView(
                 controller: _scroll,
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                children: [
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                  if (q.isEssay)
+                    EssayReview(
+                      key: ValueKey('essay-$_index'),
+                      question: q.question,
+                      answer: q.yourAnswer,
+                      reference: q.rightAnswer == '-' ? '' : q.rightAnswer,
+                      explanation: _explanation,
+                      score: q.essayScore,
+                      index: _index,
+                      total: _record.questions.length,
+                      playing: _whole ? 'question' : _playing,
+                      onListen: _tapListen,
+                    )
+                  else ...[
                   if (_original || (_loading && _record.needsTranslation(_lang!)))
                     HistoryOriginalNote(
                       lang: _record.lang,
@@ -293,6 +322,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                       index: _index,
                       total: _record.questions.length,
                       trophies: q.trophies,
+                      animate: true,
                     ),
                     pop: true,
                   ),
@@ -304,24 +334,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (q.isEssay) ...[
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: HistoryResultChip(q),
-                    ),
-                    const SizedBox(height: 8),
-                    HistoryAnswerTile(
-                      context.l10n.h3YourAnswer,
-                      q.yourAnswer,
-                      tone: HistoryTone.neutral,
-                    ),
-                    const SizedBox(height: 8),
-                    HistoryAnswerTile(
-                      context.l10n.h3ReferenceAnswer,
-                      q.rightAnswer,
-                      tone: HistoryTone.neutral,
-                    ),
-                  ] else if (q.isCorrect)
+                  if (q.isCorrect)
                     HistoryAnswerTile(
                       '${context.l10n.h3YourAnswer} · ${context.l10n.h3Correct}',
                       q.yourAnswer,
@@ -387,11 +400,13 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                       ),
                     ),
                   ],
+                  ],
                   if (_explanation == null ||
                       (!_explanation!.isComplete && !q.isEssay) ||
                       _explanation!.isUnavailable)
                     HistoryError(onRetry: () => _load(retry: true)),
                 ],
+                ),
               ),
         bottomNavigationBar: HistoryActionsBar(
           children: [

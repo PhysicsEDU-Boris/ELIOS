@@ -1176,6 +1176,11 @@ OUTPUT
         'dan string improvement berisi satu saran perbaikan. Jangan menambah markdown.\n'
         'Kelima skor wajib berupa angka bulat. keyTerms adalah skor 0 sampai 3, bukan daftar kata.\n'
         'Gunakan tepat kunci accuracy, keyTerms, completeness, clarity, total, feedback, improvement.\n'
+        'Tambahkan juga di tiap sisi: accuracyHint, keyTermsHint, completenessHint, clarityHint '
+        '(masing-masing satu kalimat pendek yang menjelaskan nilai kriteria itu untuk jawaban ini), '
+        'why (2-4 kalimat: penjelasan jawaban yang benar), keyIdea (satu kalimat ide kunci), '
+        'dan tips (array tepat 3 langkah singkat untuk menulis jawaban bernilai penuh). '
+        'feedback ditujukan langsung kepada mahasiswa tentang jawabannya.\n'
         'Soal essay: "$question"\n'
         '${expectedPoints.isEmpty ? '' : 'Poin jawaban yang diharapkan: $expectedPoints\n'}'
         'Jawaban mahasiswa: "$answer"';

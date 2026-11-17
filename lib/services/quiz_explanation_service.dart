@@ -188,7 +188,9 @@ class QuizExplanationService {
             : 'ai',
         generatedAt: DateTime.now(),
         model: AiQuizService.instance.lastModel,
-        correctAnswerReason: '',
+        correctAnswerReason: g.why,
+        keyIdea: g.keyIdea,
+        steps: g.tips,
         learningTakeaway: g.improvement.isEmpty
             ? ''
             : t.wqForFullMarks(g.improvement),
