@@ -310,6 +310,9 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     _scanClock = scan == null ? null : (Stopwatch()..start());
     _recordedQuestions.clear();
     _recordedTwins.clear();
+    // A new scan never writes its explanations into the previous scan's
+    // History record (photo and robot scans kept the old id; decision 0225).
+    _savedExplanationRecordId = null;
     return WasteQuizUiState(
       phase: phase,
       scan: scan,
