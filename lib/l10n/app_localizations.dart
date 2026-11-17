@@ -9666,6 +9666,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Got it'**
   String get binGotIt;
+
+  /// No description provided for @qzMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute voice and sounds'**
+  String get qzMute;
+
+  /// No description provided for @qzUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn voice and sounds on'**
+  String get qzUnmute;
+
+  /// No description provided for @quizLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave the quiz?'**
+  String get quizLeaveTitle;
+
+  /// No description provided for @quizLeaveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your progress will be lost.'**
+  String get quizLeaveBody;
+
+  /// No description provided for @quizLeaveKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep going'**
+  String get quizLeaveKeep;
+
+  /// No description provided for @quizLeaveLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get quizLeaveLeave;
+
+  /// No description provided for @qzExplanationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation not available yet'**
+  String get qzExplanationUnavailable;
 }
 
 class _AppLocalizationsDelegate

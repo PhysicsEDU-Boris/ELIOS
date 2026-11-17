@@ -5571,4 +5571,25 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get binGotIt => 'Mengerti';
+
+  @override
+  String get qzMute => 'Matikan suara';
+
+  @override
+  String get qzUnmute => 'Nyalakan suara';
+
+  @override
+  String get quizLeaveTitle => 'Keluar dari kuis?';
+
+  @override
+  String get quizLeaveBody => 'Progresmu akan hilang.';
+
+  @override
+  String get quizLeaveKeep => 'Lanjutkan kuis';
+
+  @override
+  String get quizLeaveLeave => 'Keluar';
+
+  @override
+  String get qzExplanationUnavailable => 'Penjelasan belum tersedia';
 }

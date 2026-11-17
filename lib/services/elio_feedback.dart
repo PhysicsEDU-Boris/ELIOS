@@ -39,6 +39,9 @@ class ElioSound {
   bool enabled = true;
   double volume = 0.75;
 
+  /// Quiz mute: silences [quizFeedback] cues only (app sounds stay on).
+  bool quizMuted = false;
+
   /// S10 is off by default (Figma).
   bool airEnabled = false;
 
@@ -177,6 +180,13 @@ void elioOnRouteEntered(BuildContext context, VoidCallback cue) {
 void elioEntryCue(ElioSfx sfx, void Function() haptic) {
   haptic();
   unawaited(ElioSound.instance.play(sfx, gain: 0.5));
+}
+
+/// [elioFeedback] for the quiz and explanation pages: the haptic always, the
+/// sound unless the quiz is muted.
+void quizFeedback(ElioSfx sfx, void Function() haptic) {
+  haptic();
+  if (!ElioSound.instance.quizMuted) unawaited(ElioSound.instance.play(sfx));
 }
 
 void elioFeedback(ElioSfx sfx, void Function() haptic) {

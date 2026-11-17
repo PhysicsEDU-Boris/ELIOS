@@ -32,6 +32,10 @@ class AppPreferences {
   final String quizTimer;
   final bool skipAllowed;
 
+  /// Quiz mute (answer review speaker button): no voice-over and no quiz
+  /// sound effects, across quizzes and restarts.
+  final bool quizMuted;
+
   /// Profile → Essay questions (decision 0219): off = multiple choice only.
   final bool essayQuestions;
 
@@ -51,6 +55,7 @@ class AppPreferences {
     this.quizDifficulty = 'Medium',
     this.quizTimer = '60s',
     this.skipAllowed = false,
+    this.quizMuted = false,
     this.essayQuestions = essayQuestionsEnabled,
     this.questionSource = defaultQuestionSource,
     this.robotQuizEnabled = true,
@@ -63,6 +68,7 @@ class AppPreferences {
     String? quizDifficulty,
     String? quizTimer,
     bool? skipAllowed,
+    bool? quizMuted,
     bool? essayQuestions,
     QuestionSource? questionSource,
     bool? robotQuizEnabled,
@@ -74,6 +80,7 @@ class AppPreferences {
       quizDifficulty: quizDifficulty ?? this.quizDifficulty,
       quizTimer: quizTimer ?? this.quizTimer,
       skipAllowed: skipAllowed ?? this.skipAllowed,
+      quizMuted: quizMuted ?? this.quizMuted,
       essayQuestions: essayQuestions ?? this.essayQuestions,
       questionSource: questionSource ?? this.questionSource,
       robotQuizEnabled: robotQuizEnabled ?? this.robotQuizEnabled,
@@ -87,6 +94,7 @@ class AppPreferences {
     'quizDifficulty': quizDifficulty,
     'quizTimer': quizTimer,
     'skipAllowed': skipAllowed,
+    'quizMuted': quizMuted,
     'essayQuestions': essayQuestions,
     'questionSource': questionSource.name,
     'robotQuizEnabled': robotQuizEnabled,
@@ -116,6 +124,9 @@ class AppPreferences {
       skipAllowed: map['skipAllowed'] is bool
           ? map['skipAllowed'] as bool
           : d.skipAllowed,
+      quizMuted: map['quizMuted'] is bool
+          ? map['quizMuted'] as bool
+          : d.quizMuted,
       essayQuestions: map['essayQuestions'] is bool
           ? map['essayQuestions'] as bool
           : d.essayQuestions,
@@ -148,8 +159,11 @@ void applySoundPrefs(AppPreferences p) {
   soundEffectsOn = p.soundEffects;
   ElioSound.instance
     ..enabled = p.soundEffects
+    ..quizMuted = p.quizMuted
     ..volume = p.masterVolume;
-  QuizTtsService.instance.volume = p.masterVolume;
+  QuizTtsService.instance
+    ..volume = p.masterVolume
+    ..muted = p.quizMuted;
 }
 
 class AppPreferencesNotifier extends Notifier<AppPreferences> {

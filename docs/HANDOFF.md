@@ -1,3 +1,7 @@
+## Quiz review bugs — `fix/quiz-review-bugs` (0226, 17 Nov, from `feature/live-scan` 953e25d; phase 1 of 3, phases 2 and 3 stack on it)
+Mute: saved `AppPreferences.quizMuted` → `QuizTtsService.muted` + `ElioSound.quizMuted` (`quizFeedback` in quiz / explanation pages); review speaker button toggles it. Coach: `AiQuizService.messageLang` picks the reply language from the message. Back: `PopScope` + "Leave the quiz?" sheet in `ScanQuizPages`. Explanation: loading block until the final text, one request per key + epoch + 25 s timeout, fallback to the question's own text, Retry state, voice reads the shown text, skipped questions keep an explanation. Root cause in the decision doc.
+Tests: `test/quiz_review_bugs_test.dart` (14, each break-checked). Not checked on the phone or robot. iOS swipe-back is blocked during a quiz but opens no sheet.
+
 ## Final QA, 16 Nov 2026 — `chore/final-qa` (merge of the 7 task branches on `feat/control-l4-figma`)
 PRs: #127 language switch (0218) · #128 essay switch (0219) · #129 XP icons (0220) · #130 profile header (0221) → base `feature/live-scan`; #131 hazard page (0222) · #132 essay explanation (0223) · #133 bin check (0224) → stacked on #126. Decision docs hold the details.
 Merged build: `flutter analyze` clean, full suite 1949 passed / 20 skipped, secret scan clean. Phone: Edge 60 Fusion, debug APK `d5ef58a` (LIVE_SCAN / TESTER_BUILD / DARK_MODE_OPTION), `adb install -r`, data kept, left light / English on Home (16 scans, 445 XP as found).
@@ -53,7 +57,3 @@ Open: bank / AI questions about the bin can still follow the bin check (0224); e
 - Renders: `docs/test-results/g4-guides/app/` (48 app frames plus comparisons). Sources copy only; no share; quiz park -95%; Figma slots unchanged.
 
 # Daily Guide — 8 November 2026 (0193)
-- App PR #102: https://github.com/PhysicsEDU-Boris/ELIOS/pull/102 (base feature/live-scan, unmerged); isolated worktree leaves owner floor/control edits untouched.
-- Daily Guide link survives empty/loading/error Firestore modules; bilingual Pages catalogue, latest/archive, refresh/resume and validated offline fallback.
-- Reuses cached PDF viewer; daily page position is local per UID/date, separate from course completion/XP. Revisioned assets refresh corrections.
-- Focused tests: 10 pass; live deployed-manifest Flutter contract passes. Empty-module entry regression fails with old LearnHub, passes restored. Full suite: 1343 pass, 20 skipped, 1 existing elio_tokens spacing/radii failure.

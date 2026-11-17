@@ -5667,4 +5667,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get binGotIt => 'Got it';
+
+  @override
+  String get qzMute => 'Mute voice and sounds';
+
+  @override
+  String get qzUnmute => 'Turn voice and sounds on';
+
+  @override
+  String get quizLeaveTitle => 'Leave the quiz?';
+
+  @override
+  String get quizLeaveBody => 'Your progress will be lost.';
+
+  @override
+  String get quizLeaveKeep => 'Keep going';
+
+  @override
+  String get quizLeaveLeave => 'Leave';
+
+  @override
+  String get qzExplanationUnavailable => 'Explanation not available yet';
 }
