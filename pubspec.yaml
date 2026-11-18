@@ -92,6 +92,9 @@ flutter:
     - assets/illustrations/scan/
     - assets/illustrations/history/
     - assets/sounds/
+    # Static Google Sans Flex weights for the PDF export (the pdf package
+    # cannot use the variable font's weight axis; decision 0228).
+    - assets/fonts/pdf/
 
   fonts:
     - family: Google Sans Code

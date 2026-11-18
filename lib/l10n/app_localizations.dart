@@ -9858,6 +9858,492 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Combine them into 2–3 sentences for 10/10.'**
   String get essayTipsDone;
+
+  /// No description provided for @pdfReportHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Waste quiz report'**
+  String get pdfReportHead;
+
+  /// No description provided for @pdfExportedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'EXPORTED'**
+  String get pdfExportedLabel;
+
+  /// No description provided for @pdfScanResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{category} · scan result'**
+  String pdfScanResult(Object category);
+
+  /// No description provided for @pdfCoverMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} questions · {level} level · {mc} multiple choice, {essay} essay'**
+  String pdfCoverMeta(Object count, Object level, Object mc, Object essay);
+
+  /// No description provided for @pdfRingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'CORRECT'**
+  String get pdfRingLabel;
+
+  /// No description provided for @pdfHeadNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again, you can do it!'**
+  String get pdfHeadNone;
+
+  /// No description provided for @pdfHeadSome.
+  ///
+  /// In en, this message translates to:
+  /// **'Good start, keep going!'**
+  String get pdfHeadSome;
+
+  /// No description provided for @pdfHeadAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect, all correct!'**
+  String get pdfHeadAll;
+
+  /// No description provided for @pdfSubNone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} new things are ready for you to learn from this quiz.'**
+  String pdfSubNone(Object count);
+
+  /// No description provided for @pdfSubSome.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} more to review, then you have it all.'**
+  String pdfSubSome(Object count);
+
+  /// No description provided for @pdfSubAll.
+  ///
+  /// In en, this message translates to:
+  /// **'You understand how to sort this waste.'**
+  String get pdfSubAll;
+
+  /// No description provided for @pdfXpChip.
+  ///
+  /// In en, this message translates to:
+  /// **'+{xp} XP · max. +{max} XP'**
+  String pdfXpChip(Object xp, Object max);
+
+  /// No description provided for @pdfPhotoCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS scan photo · {time}'**
+  String pdfPhotoCaption(Object time);
+
+  /// No description provided for @pdfStamp.
+  ///
+  /// In en, this message translates to:
+  /// **'GRADE: {grade}'**
+  String pdfStamp(Object grade);
+
+  /// No description provided for @pdfStampRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'TRY AGAIN'**
+  String get pdfStampRetry;
+
+  /// No description provided for @pdfStampGood.
+  ///
+  /// In en, this message translates to:
+  /// **'GOOD'**
+  String get pdfStampGood;
+
+  /// No description provided for @pdfStampPerfect.
+  ///
+  /// In en, this message translates to:
+  /// **'PERFECT'**
+  String get pdfStampPerfect;
+
+  /// No description provided for @pdfNeedReview.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} to review'**
+  String pdfNeedReview(Object count);
+
+  /// No description provided for @pdfAllRight.
+  ///
+  /// In en, this message translates to:
+  /// **'All correct'**
+  String get pdfAllRight;
+
+  /// No description provided for @pdfXpRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Right answer = +10'**
+  String get pdfXpRule;
+
+  /// No description provided for @pdfDifficultyShort.
+  ///
+  /// In en, this message translates to:
+  /// **'DIFFICULTY'**
+  String get pdfDifficultyShort;
+
+  /// No description provided for @pdfQuestionsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} questions'**
+  String pdfQuestionsCount(Object count);
+
+  /// No description provided for @pdfBinGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green bin'**
+  String get pdfBinGreen;
+
+  /// No description provided for @pdfBinYellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow bin'**
+  String get pdfBinYellow;
+
+  /// No description provided for @pdfBinRed.
+  ///
+  /// In en, this message translates to:
+  /// **'Red bin'**
+  String get pdfBinRed;
+
+  /// No description provided for @pdfBinGrey.
+  ///
+  /// In en, this message translates to:
+  /// **'Grey bin'**
+  String get pdfBinGrey;
+
+  /// No description provided for @pdfMapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Question map'**
+  String get pdfMapTitle;
+
+  /// No description provided for @pdfMapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'open the page for the full explanation'**
+  String get pdfMapHint;
+
+  /// No description provided for @pdfTypeMc.
+  ///
+  /// In en, this message translates to:
+  /// **'MULTIPLE CHOICE'**
+  String get pdfTypeMc;
+
+  /// No description provided for @pdfTypeEssay.
+  ///
+  /// In en, this message translates to:
+  /// **'ESSAY'**
+  String get pdfTypeEssay;
+
+  /// No description provided for @pdfMapPage.
+  ///
+  /// In en, this message translates to:
+  /// **'{type} · P. {page}'**
+  String pdfMapPage(Object type, Object page);
+
+  /// No description provided for @pdfYourAnswerLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answer: {answer}'**
+  String pdfYourAnswerLine(Object answer);
+
+  /// No description provided for @pdfChipWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite'**
+  String get pdfChipWrong;
+
+  /// No description provided for @pdfChipSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped'**
+  String get pdfChipSkipped;
+
+  /// No description provided for @pdfTipLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'TIPS FROM ELIOS'**
+  String get pdfTipLabel;
+
+  /// No description provided for @pdfTipIdeas.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus on {count} ideas: {ideas} Read the explanations, then retake the quiz.'**
+  String pdfTipIdeas(Object count, Object ideas);
+
+  /// No description provided for @pdfTipGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Read each explanation, then retake the quiz to earn more XP.'**
+  String get pdfTipGeneric;
+
+  /// No description provided for @pdfFooterBrand.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS · Waste Sorting Education'**
+  String get pdfFooterBrand;
+
+  /// No description provided for @pdfSessionId.
+  ///
+  /// In en, this message translates to:
+  /// **'Session ID · {id}'**
+  String pdfSessionId(Object id);
+
+  /// No description provided for @pdfQuestionOf.
+  ///
+  /// In en, this message translates to:
+  /// **'QUESTION {index} OF {total}'**
+  String pdfQuestionOf(Object index, Object total);
+
+  /// No description provided for @pdfQuestionType.
+  ///
+  /// In en, this message translates to:
+  /// **'QUESTION {index} · {type}'**
+  String pdfQuestionType(Object index, Object type);
+
+  /// No description provided for @pdfStickerXp.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} · +{xp} XP'**
+  String pdfStickerXp(Object label, Object xp);
+
+  /// No description provided for @pdfYourAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR ANSWER'**
+  String get pdfYourAnswer;
+
+  /// No description provided for @pdfRightAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'RIGHT ANSWER'**
+  String get pdfRightAnswer;
+
+  /// No description provided for @pdfModelAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'MODEL ANSWER'**
+  String get pdfModelAnswer;
+
+  /// No description provided for @pdfYourRight.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR ANSWER · CORRECT'**
+  String get pdfYourRight;
+
+  /// No description provided for @pdfFeedbackLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'FEEDBACK ON YOUR ANSWER'**
+  String get pdfFeedbackLabel;
+
+  /// No description provided for @pdfEssayScoreLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'ESSAY SCORE'**
+  String get pdfEssayScoreLabel;
+
+  /// No description provided for @pdfGradedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Graded by ELIOS AI · check with your teacher'**
+  String get pdfGradedBy;
+
+  /// No description provided for @pdfNoExplTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation not saved yet'**
+  String get pdfNoExplTitle;
+
+  /// No description provided for @pdfNoExplHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Open this question in the ELIOS app and tap \"Ask ELIOS AI\" to see the full explanation.'**
+  String get pdfNoExplHint;
+
+  /// No description provided for @pdfMyNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'My notes'**
+  String get pdfMyNotes;
+
+  /// No description provided for @pdfMyNotesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'write in your own words'**
+  String get pdfMyNotesHint;
+
+  /// No description provided for @pdfStepsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done!'**
+  String get pdfStepsDone;
+
+  /// No description provided for @pdfContinued.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} · question {index} (continued)'**
+  String pdfContinued(Object item, Object index);
+
+  /// No description provided for @pdfSingleExport.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} · 1-question export'**
+  String pdfSingleExport(Object item);
+
+  /// No description provided for @pdfNotesOver.
+  ///
+  /// In en, this message translates to:
+  /// **'QUESTION {index} · NOTES'**
+  String pdfNotesOver(Object index);
+
+  /// No description provided for @pdfNotesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes space'**
+  String get pdfNotesTitle;
+
+  /// No description provided for @pdfNotesIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Go over it in your own way. Finish every part, then ask your teacher or parent to sign.'**
+  String get pdfNotesIntro;
+
+  /// No description provided for @pdfN1.
+  ///
+  /// In en, this message translates to:
+  /// **'1 · EXPLAIN AGAIN'**
+  String get pdfN1;
+
+  /// No description provided for @pdfN1Prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'In your own words: {question}'**
+  String pdfN1Prompt(Object question);
+
+  /// No description provided for @pdfN1Idea.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this idea: {idea}'**
+  String pdfN1Idea(Object idea);
+
+  /// No description provided for @pdfN2.
+  ///
+  /// In en, this message translates to:
+  /// **'2 · DRAW & COMPARE'**
+  String get pdfN2;
+
+  /// No description provided for @pdfN2Prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw what happens in this idea: {idea}'**
+  String pdfN2Prompt(Object idea);
+
+  /// No description provided for @pdfN2Generic.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw what this question describes.'**
+  String get pdfN2Generic;
+
+  /// No description provided for @pdfN3.
+  ///
+  /// In en, this message translates to:
+  /// **'3 · CHECK MY UNDERSTANDING'**
+  String get pdfN3;
+
+  /// No description provided for @pdfCheckIdea.
+  ///
+  /// In en, this message translates to:
+  /// **'I can explain: {idea}'**
+  String pdfCheckIdea(Object idea);
+
+  /// No description provided for @pdfCheckWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'I know why my answer was not quite right.'**
+  String get pdfCheckWrong;
+
+  /// No description provided for @pdfCheckRight.
+  ///
+  /// In en, this message translates to:
+  /// **'I can explain why my answer is right.'**
+  String get pdfCheckRight;
+
+  /// No description provided for @pdfCheckTry.
+  ///
+  /// In en, this message translates to:
+  /// **'I have tried it at home with: {item}.'**
+  String pdfCheckTry(Object item);
+
+  /// No description provided for @pdfN4.
+  ///
+  /// In en, this message translates to:
+  /// **'4 · CHALLENGE'**
+  String get pdfN4;
+
+  /// No description provided for @pdfChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Retake the \"{item}\" quiz in ELIOS and earn +10 XP for this question.'**
+  String pdfChallenge(Object item);
+
+  /// No description provided for @pdfN5.
+  ///
+  /// In en, this message translates to:
+  /// **'5 · MY QUESTION FOR THE TEACHER'**
+  String get pdfN5;
+
+  /// No description provided for @pdfSign.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher / parent signature'**
+  String get pdfSign;
+
+  /// No description provided for @pdfDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get pdfDate;
+
+  /// No description provided for @pdfSticker.
+  ///
+  /// In en, this message translates to:
+  /// **'Stick a sticker'**
+  String get pdfSticker;
+
+  /// No description provided for @pdfThemeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF theme'**
+  String get pdfThemeLabel;
+
+  /// No description provided for @pdfThemeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get pdfThemeLight;
+
+  /// No description provided for @pdfThemeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get pdfThemeDark;
+
+  /// No description provided for @pdfReportExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export quiz report'**
+  String get pdfReportExport;
+
+  /// No description provided for @pdfReportSub.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} · {count} questions'**
+  String pdfReportSub(Object item, Object count);
 }
 
 class _AppLocalizationsDelegate
