@@ -462,6 +462,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _robotReplies?.cancel();
     _statusDebounceTimer?.cancel();
     _skeletonTimer?.cancel();
+    _baseTimer?.cancel();
     HardwareKeyboard.instance.removeHandler(_onKey);
     WidgetsBinding.instance.removeObserver(this);
     _gate.dispose(); // motor 0,0, heartbeat off
@@ -640,8 +641,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                       quizState: quizState,
                       missionDone: missionDone,
                       user: user,
-                      drive: (driveWord, driveColor),
-                      arm: (armWord, armColor),
                       stop: stop,
                       reconnect: reconnect,
                     )
@@ -857,8 +856,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     required WasteQuizUiState quizState,
     required int missionDone,
     required User? user,
-    required (String, Color) drive,
-    required (String, Color) arm,
     required VoidCallback stop,
     required VoidCallback reconnect,
   }) {
@@ -869,8 +866,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       stopped: _gate.stopped,
       stopReason: _gate.stopReason,
       skeleton: _skeleton,
-      driveLabel: drive,
-      armLabel: arm,
       speed: robotState.pwmSpeed,
       onSpeed: notifier.setPwmSpeed,
       onDirection: (dir) {
@@ -925,6 +920,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           _scheduleStatusRequest();
         }
       },
+      onBase: (dir) {
+        _baseTimer?.cancel();
+        _nudgeBase(dir * _baseStep);
+        _baseTimer = Timer.periodic(_baseRepeat, (_) => _nudgeBase(dir * _baseStep));
+      },
+      onBaseRelease: () => _baseTimer?.cancel(),
       onPower: link == ControlLink.disconnected
           ? reconnect
           : () => unawaited(ref.read(configLinkProvider.notifier).disconnect()),
@@ -1111,6 +1112,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       }
     });
   }
+
+  /// BASIS joystick (0229): while held, the base turns [_baseStep] degrees every [_baseRepeat].
+  Timer? _baseTimer;
+  static const _baseStep = 2.0;
+  static const _baseRepeat = Duration(milliseconds: 100);
 
   void _nudgeBase(double delta) {
     final angle = (ref.read(robotControlProvider).baseAngle + delta).clamp(0.0, 180.0);

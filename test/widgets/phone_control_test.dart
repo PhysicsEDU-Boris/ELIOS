@@ -6,6 +6,7 @@ import 'package:elio/models/control_session.dart';
 import 'package:elio/l10n/l10n.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/widgets/waste_quiz_popup.dart' show EliosAiBadge;
+import 'package:elio/widgets/control/r2_controls.dart' show ControlStatusChip;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -191,7 +192,7 @@ void main() {
       await t.tap(find.byKey(const ValueKey('toggle_Voice')));
       await t.tap(find.text('PICK UP'));
       await t.tap(find.text('RELEASE'));
-      await t.tap(find.byKey(const ValueKey('gear_100')));
+      await t.drag(find.byKey(const ValueKey('base_knob')), const Offset(60, 0));
       await t.drag(
         find.byKey(const ValueKey('joystick_knob')),
         const Offset(0, -60),
@@ -246,6 +247,30 @@ void main() {
       expect(find.byKey(const ValueKey('phone_quiz')), findsNothing);
     });
 
+    testWidgets('0229: BASIS joystick turns the base while held, stops on release', (t) async {
+      final rig = await pumpPhone(t, size);
+      final g = await t.startGesture(t.getCenter(find.byKey(const ValueKey('base_knob'))));
+      await g.moveBy(const Offset(40, 0));
+      await t.pump();
+      expect(taps['base'], 1);
+      expect(rig.robot.commands, contains(startsWith('servo base')));
+      await g.up();
+      await t.pump();
+      expect(taps['base stop'], 1);
+      expectOnScreen(t, find.byKey(const ValueKey('base_knob')), size, 'BASIS knob');
+    });
+
+    testWidgets('0229: keycaps sit in the drive card; no gears or card status chips', (t) async {
+      await pumpPhone(t, size);
+      expect(find.byKey(const ValueKey('gear_100')), findsNothing);
+      expect(find.byType(ControlStatusChip), findsNothing);
+      for (final k in ['phone_lock', 'phone_scan', 'robot_power']) {
+        expectOnScreen(t, find.byKey(ValueKey(k)), size, k);
+      }
+      await t.tap(find.byKey(const ValueKey('robot_power')));
+      expect(taps['power'], 1);
+    });
+
     testWidgets('0181: LOCK and SCAN tap through; locked reads UNLOCK', (t) async {
       await pumpPhone(t, size);
       await t.tap(find.byKey(const ValueKey('phone_lock')));
@@ -276,9 +301,11 @@ void main() {
       expect(box.height, closeTo(shown * 3 / 4 / 2, 2)); // not shown / 2: the frame is 4:3, not square
       expect(box.center.dy, closeTo(video.center.dy, 2));
 
-      // The name sits outside, on the box's top edge (owner, 4 Nov).
+      // The name sits outside, on the box's top edge (owner, 4 Nov); inside when the box
+      // touches the top of the video (the camera row is taller since 0229).
       final label = t.getRect(find.byKey(const ValueKey('phone_lock_label')));
-      expect(label.bottom, closeTo(box.top, 0.5));
+      final outside = box.top - video.top >= 17;
+      expect(outside ? label.bottom : label.top, closeTo(box.top, 0.5));
       expect(label.left, closeTo(box.left, 0.5));
       // Each new tracked box glides over ~the time between two (the camera tracks ~5 times a second).
       expect(t.widget<AnimatedPositioned>(find.byKey(const ValueKey('phone_lock_box'))).duration,

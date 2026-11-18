@@ -27,6 +27,11 @@ DriveDir? quantiseJoystick(
   return d.dy < 0 ? DriveDir.forward : DriveDir.back;
 }
 
+/// BASIS joystick (decision 0229): the knob's x offset from the centre as -1 (left, towards
+/// 0°), 1 (right, towards 180°) or 0 inside the same dead zone as the drive joystick.
+int baseJoystickDir(double dx, double halfTrack, {double deadZone = joystickDeadZone}) =>
+    halfTrack <= 0 || dx.abs() < halfTrack * deadZone ? 0 : dx.sign.toInt();
+
 /// The D-pad's motor command for [dir] at [speed] PWM, through the gate.
 bool driveCommand(MotionGate gate, DriveDir dir, int speed) => switch (dir) {
   DriveDir.forward => gate.motor(speed, speed),

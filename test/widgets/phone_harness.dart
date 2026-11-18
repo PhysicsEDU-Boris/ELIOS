@@ -220,14 +220,6 @@ Future<Rig> pumpPhone(
                           stopped: gate.stopped,
                           stopReason: gate.stopReason,
                           skeleton: skeleton,
-                          driveLabel: (
-                            gate.stopped ? 'Stopped' : 'Forward',
-                            Colors.green,
-                          ),
-                          armLabel: (
-                            gate.stopped ? 'Stopped' : 'Ready',
-                            Colors.green,
-                          ),
                           speed: state.pwmSpeed,
                           onSpeed: (v) {
                             tap('speed');
@@ -274,6 +266,11 @@ Future<Rig> pumpPhone(
                             tap('reach');
                             gate.servo('reach', (v * 180).toInt());
                           },
+                          onBase: (dir) {
+                            tap('base');
+                            gate.servo('base', 90 + dir * 2);
+                          },
+                          onBaseRelease: () => tap('base stop'),
                           onPower: () => tap('power'),
                           onConnect: () => tap('connect'),
                           onStop: stop,
