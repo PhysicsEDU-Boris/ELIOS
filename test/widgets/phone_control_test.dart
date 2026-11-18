@@ -210,10 +210,11 @@ void main() {
           t.getCenter(find.byKey(const ValueKey('joystick_knob'))),
         );
         await g.moveBy(const Offset(0, -50));
-        await t.pump();
+        await t.pump(const Duration(milliseconds: 500));
         expect(taps['drive'], 1); // the joystick took the touch
-        expect(rig.gate.blocked, greaterThan(before)); // the gate refused it
+        expect(rig.gate.blocked, before); // the joystick's own lock (0231): nothing reached the gate
         await g.up();
+        await t.pump(const Duration(milliseconds: 300));
         expect(
           rig.robot.commands.where(
             (c) => c.startsWith('motor') && c != 'motor 0,0',
@@ -251,12 +252,25 @@ void main() {
       final rig = await pumpPhone(t, size);
       final g = await t.startGesture(t.getCenter(find.byKey(const ValueKey('base_knob'))));
       await g.moveBy(const Offset(40, 0));
-      await t.pump();
-      expect(taps['base'], 1);
-      expect(rig.robot.commands, contains(startsWith('servo base')));
+      await t.pump(const Duration(milliseconds: 500));
+      expect(taps['base'], greaterThanOrEqualTo(1)); // every move reports the knob
+      List<int> base() => [
+        for (final c in rig.robot.commands)
+          if (c.startsWith('servo base=')) int.parse(c.substring(11)),
+      ];
+      final held = base();
+      expect(held, isNotEmpty);
+      expect(held.last, greaterThan(90), reason: 'right turns towards servo 180');
+      for (var i = 1; i < held.length; i++) {
+        expect(held[i], greaterThanOrEqualTo(held[i - 1]), reason: 'eases on, never jumps back');
+      }
       await g.up();
-      await t.pump();
-      expect(taps['base stop'], 1);
+      await t.pump(const Duration(milliseconds: 500));
+      expect(taps['base stop'], greaterThanOrEqualTo(1)); // the press at the centre reports 0 too
+      final after = base().skip(held.length).toList();
+      expect(after.length, lessThanOrEqualTo(4), reason: 'slows to a stop, then one hold and silence');
+      await t.pump(const Duration(milliseconds: 500));
+      expect(base().length, held.length + after.length, reason: 'nothing more once stopped');
       expectOnScreen(t, find.byKey(const ValueKey('base_knob')), size, 'BASIS knob');
     });
 

@@ -8,6 +8,7 @@ import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/robot_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
+import 'package:elio/services/robot/joystick_controller.dart';
 import 'package:elio/services/robot/motion_gate.dart';
 import 'package:elio/theme/elio_dark_theme.dart';
 import 'package:elio/theme/elio_light_theme.dart';
@@ -136,8 +137,9 @@ WasteQuizUiState essayInput() => WasteQuizUiState(
 );
 
 class _Disposes extends StatefulWidget {
-  const _Disposes(this.gate, this.child);
+  const _Disposes(this.gate, this.joystick, this.child);
   final MotionGate gate;
+  final JoystickController joystick;
   final Widget child;
   @override
   State<_Disposes> createState() => _DisposesState();
@@ -146,6 +148,7 @@ class _Disposes extends StatefulWidget {
 class _DisposesState extends State<_Disposes> {
   @override
   void dispose() {
+    widget.joystick.stop();
     widget.gate.dispose();
     super.dispose();
   }
@@ -186,12 +189,15 @@ Future<Rig> pumpPhone(
       ..linkRestored()
       ..linkLost();
   }
+  var pwm = 75.0;
+  final joystick = harnessJoystick(gate, () => pwm);
   final keys = List.generate(4, (_) => GlobalKey());
   var guideOpen = guideStep != null;
   final wrap = dark ? ElioDarkTheme.wrap : ElioLightTheme.wrap;
   await tester.pumpWidget(
     _Disposes(
       gate,
+      joystick,
       RepaintBoundary(
         key: shotKey,
         child: ProviderScope(
@@ -204,6 +210,7 @@ Future<Rig> pumpPhone(
               Consumer(
                 builder: (context, ref, _) {
                   final state = ref.watch(robotControlProvider);
+                  pwm = state.pwmSpeed;
                   final notifier = ref.read(robotControlProvider.notifier);
                   final q = ref.watch(wasteQuizProvider);
                   void stop() {
@@ -225,14 +232,9 @@ Future<Rig> pumpPhone(
                             tap('speed');
                             notifier.setPwmSpeed(v);
                           },
-                          onDirection: (d) {
-                            tap('drive');
-                            driveCommand(gate, d, state.pwmSpeed.toInt());
-                          },
-                          onRelease: () {
-                            tap('wheels stop');
-                            gate.stopWheels();
-                          },
+                          onStick: (v) => joystick.setDriveStick(v.dx, v.dy),
+                          onDirection: (_) => tap('drive'),
+                          onRelease: () => tap('wheels stop'),
                           frame: frame,
                           fps: 10,
                           scanQuizOn: true,
@@ -266,11 +268,10 @@ Future<Rig> pumpPhone(
                             tap('reach');
                             gate.servo('reach', (v * 180).toInt());
                           },
-                          onBase: (dir) {
-                            tap('base');
-                            gate.servo('base', 90 + dir * 2);
+                          onBaseStick: (x) {
+                            tap(x == 0 ? 'base stop' : 'base');
+                            joystick.setArmStick(x);
                           },
-                          onBaseRelease: () => tap('base stop'),
                           onPower: () => tap('power'),
                           onConnect: () => tap('connect'),
                           onStop: stop,
@@ -330,5 +331,5 @@ Future<Rig> pumpPhone(
   await tester.pump(const Duration(milliseconds: 500));
   robot.sent.clear();
   taps.clear();
-  return Rig(robot, gate);
+  return Rig(robot, gate, joystick);
 }

@@ -97,3 +97,4 @@ their status changed.
 - [0226](0226-quiz-review-bugs.md) Quiz review bugs: mute, coach language, back confirm, stable explanation
 - [0227](0227-essay-answer-review.md) Essay answer review, with motion, haptics and sound on the explanation pages
 - [0228](0228-pdf-export-redesign.md) Quiz PDF export redesign and light / dark PDF theme
+- [0231](0231-joystick-control.md) Joystick control: smooth drive and arm-base speed from the sticks (task J1)

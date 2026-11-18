@@ -34,6 +34,7 @@ class PhoneControlLayout extends StatelessWidget {
     required this.onSpeed,
     required this.onDirection,
     required this.onRelease,
+    this.onStick,
     required this.frame,
     required this.fps,
     required this.scanQuizOn,
@@ -49,8 +50,7 @@ class PhoneControlLayout extends StatelessWidget {
     required this.onHeight,
     required this.reach,
     required this.onReach,
-    required this.onBase,
-    required this.onBaseRelease,
+    required this.onBaseStick,
     required this.onPower,
     required this.onConnect,
     required this.onStop,
@@ -87,6 +87,9 @@ class PhoneControlLayout extends StatelessWidget {
   final ValueChanged<double> onSpeed;
   final ValueChanged<DriveDir> onDirection;
   final VoidCallback onRelease;
+
+  /// The drive knob's position (see [DriveJoystick.onStick]).
+  final ValueChanged<Offset>? onStick;
   final Uint8List? frame;
   final double fps;
   final bool scanQuizOn, voiceOn;
@@ -95,9 +98,8 @@ class PhoneControlLayout extends StatelessWidget {
   final double gripper, height, reach;
   final ValueChanged<double> onGripper, onHeight, onReach;
 
-  /// BASIS joystick (0229): held left (-1) or right (1); released stops the turn.
-  final ValueChanged<int> onBase;
-  final VoidCallback onBaseRelease;
+  /// BASIS joystick (0229, 0231): the knob's x in [-1, 1] on every move; 0 on let go.
+  final ValueChanged<double> onBaseStick;
   final VoidCallback onPower, onConnect, onStop, onGo;
   final int missionDone, trophies;
 
@@ -436,6 +438,7 @@ class PhoneControlLayout extends StatelessWidget {
                   enabled: true,
                   onDirection: onDirection,
                   onRelease: onRelease,
+                  onStick: onStick,
                 ),
               ),
             ),
@@ -808,7 +811,7 @@ class PhoneControlLayout extends StatelessWidget {
           const SizedBox(height: 4),
           SizedBox(
             height: 56,
-            child: _fade(BaseJoystick(onDirection: onBase, onRelease: onBaseRelease)),
+            child: _fade(BaseJoystick(onStick: onBaseStick)),
           ),
         ],
       ),
@@ -1409,11 +1412,13 @@ class PhoneGlowButton extends StatelessWidget {
 }
 
 /// BASIS joystick (Figma 885:31003, 0229): the drive joystick's style as a left-right capsule.
-/// Holding the knob left or right turns the base until it is let go; the centre line is forward.
+/// How far the knob is held left or right sets how fast the base turns (0231); the centre line
+/// is forward.
 class BaseJoystick extends StatefulWidget {
-  const BaseJoystick({super.key, required this.onDirection, required this.onRelease});
-  final ValueChanged<int> onDirection;
-  final VoidCallback onRelease;
+  const BaseJoystick({super.key, required this.onStick});
+
+  /// The knob's x in [-1, 1] on every move (positive right, towards servo 180); 0 on let go.
+  final ValueChanged<double> onStick;
 
   @override
   State<BaseJoystick> createState() => _BaseJoystickState();
@@ -1429,23 +1434,24 @@ class _BaseJoystickState extends State<BaseJoystick> {
     final dx = (x - width / 2).clamp(-half, half);
     final dir = baseJoystickDir(dx, half);
     setState(() => _dx = dx);
+    widget.onStick(half > 0 ? dx / half : 0);
     if (dir == _dir) return;
-    if (_dir != 0) widget.onRelease();
     _dir = dir;
-    if (dir != 0) {
-      controlFeedback();
-      widget.onDirection(dir);
-    }
+    if (dir != 0) controlFeedback();
   }
 
   void _end(PointerEvent e) {
     if (e.pointer != _pointer) return;
     _pointer = null;
     setState(() => _dx = 0);
-    if (_dir != 0) {
-      _dir = 0;
-      widget.onRelease();
-    }
+    _dir = 0;
+    widget.onStick(0);
+  }
+
+  @override
+  void dispose() {
+    if (_pointer != null) widget.onStick(0); // removed while held: let go
+    super.dispose();
   }
 
   @override

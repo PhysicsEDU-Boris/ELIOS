@@ -156,10 +156,20 @@ class _DecoPainter extends CustomPainter {
 /// release + press, and letting go (or going back to the dead zone) is
 /// [onRelease] (motor 0,0). Nothing is sent while the knob stays in the dead zone.
 class DriveJoystick extends StatefulWidget {
-  const DriveJoystick({super.key, required this.enabled, required this.onDirection, required this.onRelease});
+  const DriveJoystick({
+    super.key,
+    required this.enabled,
+    required this.onDirection,
+    required this.onRelease,
+    this.onStick,
+  });
   final bool enabled;
   final ValueChanged<DriveDir> onDirection;
   final VoidCallback onRelease;
+
+  /// The knob's position on every move, x right and y down, inside the unit circle (0231);
+  /// [Offset.zero] on let go.
+  final ValueChanged<Offset>? onStick;
 
   @override
   State<DriveJoystick> createState() => _DriveJoystickState();
@@ -171,10 +181,12 @@ class _DriveJoystickState extends State<DriveJoystick> {
   int? _pointer;
 
   void _move(Offset local, double radius) {
+    final travel = radius * 0.55;
     var d = local - Offset(radius, radius);
-    if (d.distance > radius * 0.55) d = d / d.distance * radius * 0.55;
+    if (d.distance > travel) d = d / d.distance * travel;
     final dir = quantiseJoystick(local - Offset(radius, radius), radius);
     setState(() => _knob = d);
+    widget.onStick?.call(d / travel);
     if (dir == _dir) return;
     if (_dir != null) widget.onRelease();
     _dir = dir;
@@ -188,10 +200,17 @@ class _DriveJoystickState extends State<DriveJoystick> {
     if (e.pointer != _pointer) return;
     _pointer = null;
     setState(() => _knob = Offset.zero);
+    widget.onStick?.call(Offset.zero);
     if (_dir != null) {
       _dir = null;
       widget.onRelease();
     }
+  }
+
+  @override
+  void dispose() {
+    if (_pointer != null) widget.onStick?.call(Offset.zero); // removed while held: let go
+    super.dispose();
   }
 
   @override
