@@ -398,7 +398,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
             OutlinedButton.icon(
               style: historyOutlineStyle(p),
               onPressed: () {
-                elioFeedback(ElioSfx.pop, ElioHaptics.light);
+                quizFeedback(ElioSfx.pop, ElioHaptics.light);
                 unawaited(_openExport());
               },
               icon: const Icon(Icons.description_outlined),
@@ -409,7 +409,7 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
                 style: historyPrimaryStyle(p),
                 iconAlignment: IconAlignment.end,
                 onPressed: () {
-                  elioFeedback(ElioSfx.tick, ElioHaptics.select);
+                  quizFeedback(ElioSfx.tick, ElioHaptics.select);
                   _stop();
                   setState(() => _index++);
                   if (_scroll.hasClients) _scroll.jumpTo(0);

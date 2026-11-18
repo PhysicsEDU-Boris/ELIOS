@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:elio/l10n/l10n.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -98,6 +100,15 @@ class QuizTtsService {
   /// Profile → Master volume (0..1), kept current by applySoundPrefs (0201).
   double volume = 1.0;
 
+  /// Quiz mute (kept current by applySoundPrefs): nothing is spoken while
+  /// on, and turning it on stops the voice at once.
+  bool get muted => _muted;
+  bool _muted = false;
+  set muted(bool v) {
+    if (v && !_muted) unawaited(stop());
+    _muted = v;
+  }
+
   /// Speaks [text]. Always stops whatever was playing first (one slot: the
   /// new utterance replaces the old one). Never throws — a missing/broken
   /// TTS engine on a device just means voice playback silently does nothing.
@@ -106,7 +117,7 @@ class QuizTtsService {
   /// (a record shown in its original language offline).
   Future<void> speak(String text, {String? lang}) async {
     final trimmed = speakableText(text);
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty || _muted) return;
     _started++;
     final epoch = ++_epoch;
     try {

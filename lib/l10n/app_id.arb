@@ -1604,5 +1604,12 @@
   "binWhyAnorganik": "{item} tidak membusuk. Masuk ke tempat sampah Anorganik agar bisa didaur ulang.",
   "binWhyB3": "{item} bisa mengandung bahan berbahaya. Masuk ke tempat sampah B3 agar ditangani dengan aman.",
   "binQuizNext": "Kuismu berikutnya",
-  "binGotIt": "Mengerti"
+  "binGotIt": "Mengerti",
+  "qzMute": "Matikan suara",
+  "qzUnmute": "Nyalakan suara",
+  "quizLeaveTitle": "Keluar dari kuis?",
+  "quizLeaveBody": "Progresmu akan hilang.",
+  "quizLeaveKeep": "Lanjutkan kuis",
+  "quizLeaveLeave": "Keluar",
+  "qzExplanationUnavailable": "Penjelasan belum tersedia"
 }

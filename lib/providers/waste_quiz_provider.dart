@@ -258,6 +258,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   /// True for MaixCAM2 scans (LOCK and live scan), false for the phone.
   bool _robotSession = false;
+
   /// Test override; null follows Profile → Essay questions (decision 0219).
   @visibleForTesting
   static bool? essayQuestions;
@@ -314,7 +315,15 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   ScanRecordStore? _sessionStore;
 
   @override
-  WasteQuizUiState build() => const WasteQuizUiState();
+  WasteQuizUiState build() {
+    // Voice follows the saved quiz mute (answer review speaker button).
+    ref.listen(appPreferencesProvider.select((p) => p.quizMuted), (_, muted) {
+      if (state.voiceOn == muted) state = state.copyWith(voiceOn: !muted);
+    });
+    return WasteQuizUiState(
+      voiceOn: !ref.read(appPreferencesProvider).quizMuted,
+    );
+  }
 
   /// Difficulty is read from Config Settings → Quiz at the start of each
   /// scan session, so a change applies to the next scan.
@@ -344,6 +353,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     // A new scan never writes its explanations into the previous scan's
     // History record (photo and robot scans kept the old id; decision 0225).
     _savedExplanationRecordId = null;
+    _explanationKeys.clear();
     return WasteQuizUiState(
       phase: phase,
       scan: scan,
@@ -1167,8 +1177,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final correct = index == q.correctIndex;
     // Figma 13 · 28: correct S4 + H-success, wrong S5 + H-error.
     correct
-        ? elioFeedback(ElioSfx.chime, ElioHaptics.success)
-        : elioFeedback(ElioSfx.knock, ElioHaptics.error);
+        ? quizFeedback(ElioSfx.chime, ElioHaptics.success)
+        : quizFeedback(ElioSfx.knock, ElioHaptics.error);
     _recordedQuestions.add(
       RecordQuestion(
         question: q.question,
@@ -1212,12 +1222,15 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final verdict = correct
         ? l10n.wqRight
         : l10n.wqWrong(q.options[q.correctIndex]);
+    // Not spoken here: the voice reads the explanation the review ends up
+    // showing (loadExplanation), never this first text.
     _appendAiReply(
       q.explanation.isEmpty || (q.bankId != null && !q.bankReviewed)
           ? verdict
           : '$verdict ${q.explanation}',
+      speak: false,
     );
-    unawaited(loadExplanation());
+    unawaited(loadExplanation(verdict: verdict));
   }
 
   Future<void> submitEssay(String answerText, {int? score}) async {
@@ -1419,6 +1432,8 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         trophies: 0,
         isEssay: isEssay,
         essayScore: isEssay ? 0 : null,
+        // A skipped question still has its explanation in History and the PDF.
+        explanation: _fallbackExplanation(q, null),
       ),
     );
     final skippedAlt = q.alt;
@@ -1465,7 +1480,61 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
   /// Saves the explanation into the last [RecordQuestion] in [_recordedQuestions].
   String? _savedExplanationRecordId;
 
-  Future<void> loadExplanation({EssayGrade? essayGrade}) async {
+  /// Bumped by every explanation request; a reply from an older request never
+  /// replaces what the review already shows.
+  int _explanationEpoch = 0;
+
+  /// Requests already made, as "session:question index:language": one request
+  /// per key, whatever rebuilds or calls again.
+  final _explanationKeys = <String>{};
+
+  @visibleForTesting
+  static Duration explanationTimeout = const Duration(seconds: 25);
+
+  /// The question's own explanation, for when the AI has none: the reviewed
+  /// bank text, else the generated question's text; unavailable when neither.
+  QuizExplanation _fallbackExplanation(GeneratedQuestion q, int? selected) {
+    final bank = QuizExplanationService.bankExplanation(
+      q,
+      selectedIndex: selected ?? -1,
+    );
+    if (!bank.isUnavailable) return bank;
+    if (q.bankId != null || q.explanation.trim().isEmpty) {
+      return QuizExplanation.unavailable;
+    }
+    QuizExplanation own(String text, String lang, QuizExplanation? alt) =>
+        QuizExplanation(
+          summary: text,
+          correctAnswerReason: text,
+          source: 'ai',
+          groundingStatus: GroundingStatus.gemmaUngrounded,
+          referenceAnswer: q.type == QuizQuestionType.essay ? text : null,
+          lang: lang,
+          alt: alt,
+        );
+    final alt = q.alt;
+    return own(
+      q.explanation,
+      q.lang,
+      alt == null || alt.explanation.trim().isEmpty
+          ? null
+          : own(alt.explanation, alt.lang, null),
+    );
+  }
+
+  /// The Retry button of the "not available yet" state.
+  Future<void> retryExplanation() {
+    if (state.phase != WasteQuizPhase.explaining) return Future.value();
+    state = state.copyWith(explanationLoading: true, clearExplanation: true);
+    return loadExplanation(retry: true);
+  }
+
+  /// [verdict] (right / wrong line) is read out before the explanation.
+  Future<void> loadExplanation({
+    EssayGrade? essayGrade,
+    String verdict = '',
+    bool retry = false,
+  }) async {
     final q = state.question;
     final scan = state.scan;
     if (q == null || scan == null) {
@@ -1477,22 +1546,38 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final saved = answeredIndex >= 0
         ? _recordedQuestions[answeredIndex].explanation
         : null;
-    if (saved != null && (saved.isComplete || saved.generatedAt != null)) {
+    if (!retry &&
+        saved != null &&
+        (saved.isComplete || saved.generatedAt != null)) {
       state = state.copyWith(
         currentExplanation: saved,
         explanationLoading: false,
       );
       return;
     }
-    final explanation = await QuizExplanationService.generate(
-      question: q,
-      scan: scan,
-      selectedIndex: state.selectedOption,
-      essayGrade: essayGrade,
-      difficulty: state.difficulty.name,
-      onlyWhenIdle: true,
-    );
+    final key = '$generation:${state.questionIndex}:${q.lang}';
+    if (!_explanationKeys.add(key) && !retry) return;
+    final epoch = ++_explanationEpoch;
+    QuizExplanation explanation;
+    try {
+      explanation = await QuizExplanationService.generate(
+        question: q,
+        scan: scan,
+        selectedIndex: state.selectedOption,
+        essayGrade: essayGrade,
+        difficulty: state.difficulty.name,
+        onlyWhenIdle: true,
+      ).timeout(explanationTimeout);
+    } on TimeoutException {
+      explanation = QuizExplanation.unavailable;
+    }
     if (generation != _generation) return; // session changed while generating
+    if (epoch != _explanationEpoch) return; // a newer request owns the review
+    // AI failed, timed out or was busy: the question's own explanation.
+    if (explanation.isUnavailable || explanation.summary.trim().isEmpty) {
+      final own = _fallbackExplanation(q, state.selectedOption);
+      if (!own.isUnavailable) explanation = own;
+    }
     // Attach to the answered question even if the student has advanced.
     if (answeredIndex >= 0 && answeredIndex < _recordedQuestions.length) {
       final answered = _recordedQuestions[answeredIndex];
@@ -1518,6 +1603,13 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       explanationLoading: false,
       recordedQuestions: List.unmodifiable(_recordedQuestions),
     );
+    // The voice reads the text now on screen, in the app language's side.
+    final shown = explanation.alt?.lang == l10n.localeName
+        ? explanation.alt!
+        : explanation;
+    if (q.type == QuizQuestionType.multipleChoice) {
+      _autoSpeak([verdict, shown.summary].where((t) => t.isNotEmpty).join(' '));
+    }
   }
 
   void _advance() {
@@ -1644,7 +1736,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     debugPrint('[WasteQuiz] rescan_tapped');
   }
 
-  void _appendAiReply(String text) {
+  void _appendAiReply(String text, {bool speak = true}) {
     state = state.copyWith(
       messages: [
         ...state.messages,
@@ -1652,6 +1744,10 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
       ],
       sendingChat: false,
     );
+    if (speak) _autoSpeak(text);
+  }
+
+  void _autoSpeak(String text) {
     if (state.voiceOn && text != _lastAutoSpokenText) {
       _lastAutoSpokenText = text;
       unawaited(QuizTtsService.instance.speak(text));
@@ -1671,7 +1767,15 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
 
   void listen(String text) => unawaited(QuizTtsService.instance.speak(text));
 
-  void toggleVoice() => state = state.copyWith(voiceOn: !state.voiceOn);
+  /// Mute / unmute: saved in the app preferences, so it holds across
+  /// questions, quizzes and restarts. Muting stops the voice at once.
+  void toggleVoice() {
+    final muted = state.voiceOn;
+    state = state.copyWith(voiceOn: !muted);
+    ref
+        .read(appPreferencesProvider.notifier)
+        .update((p) => p.copyWith(quizMuted: muted));
+  }
 
   /// Robot bin check: the first pick counts, later calls change nothing, so
   /// the 20 XP cannot be earned twice (rebuild, minimise, double tap).

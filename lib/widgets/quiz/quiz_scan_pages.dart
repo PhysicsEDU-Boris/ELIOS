@@ -77,6 +77,63 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
     super.dispose();
   }
 
+  bool _leaveOpen = false;
+
+  /// Back (system, swipe or the page's own button) during a quiz: confirm
+  /// first. Only "Leave" ends the quiz; the quiz state is never touched
+  /// otherwise, so the student returns to exactly the same place.
+  Future<void> _confirmLeave() async {
+    if (_leaveOpen) return;
+    _leaveOpen = true;
+    final p = context.elio;
+    final leave = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: p.surface,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          child: Column(
+            key: const ValueKey('quiz_leave_sheet'),
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Semantics(
+                header: true,
+                child: Text(
+                  l10n.quizLeaveTitle,
+                  style: _sq(ElioTokens.subhead, 600, p.textPrimary),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                l10n.quizLeaveBody,
+                style: ElioTokens.body.copyWith(color: p.textSecondary),
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                key: const ValueKey('quiz_leave_keep'),
+                autofocus: true,
+                onPressed: () => Navigator.of(sheet).pop(false),
+                child: Text(l10n.quizLeaveKeep),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                key: const ValueKey('quiz_leave_leave'),
+                onPressed: () => Navigator.of(sheet).pop(true),
+                child: Text(l10n.quizLeaveLeave),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    _leaveOpen = false;
+    if (leave == true && mounted) {
+      ref.read(wasteQuizProvider.notifier).dismiss();
+    }
+  }
+
   /// Robot bin check (decision 0224): the three bars, in Figma order.
   static const _bins = [
     ScanCategory.organic,
@@ -90,7 +147,7 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
   void _answerBin(int i) {
     final right = _bins[i] == ref.read(wasteQuizProvider).binAnswer;
     // Right: success cue. Wrong: the gentle knock.
-    elioFeedback(
+    quizFeedback(
       right ? ElioSfx.chime : ElioSfx.knock,
       right ? ElioHaptics.success : ElioHaptics.warning,
     );
@@ -140,6 +197,8 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
     final robot = widget.robot;
     // Robot: the quiz waits behind the Quiz button while the student drives.
     final close = robot ? n.minimize : n.dismiss;
+    // Phone: closing a question or its review would throw the quiz away.
+    final quizClose = robot ? n.minimize : _confirmLeave;
     void rescan() {
       if (robot) {
         n.logRescanTapped();
@@ -223,7 +282,7 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
                       (_hold && s.phase == WasteQuizPhase.explaining))) =>
         (
           'question-${s.questionIndex}',
-          _ScanQuestionPage(state: s, onClose: close, onAnswer: _answer),
+          _ScanQuestionPage(state: s, onClose: quizClose, onAnswer: _answer),
         ),
       // Hazardous (B3) item: the identified page with a caution note; the
       // quiz starts straight from its ticket (851:28659, 852:28687).
@@ -246,7 +305,7 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
       ),
       WasteQuizPhase.explaining when q != null => (
         'review-${s.questionIndex}',
-        _ScanReviewPage(state: s, onClose: close),
+        _ScanReviewPage(state: s, onClose: quizClose),
       ),
       _ => (
         'popup-${s.phase.name}',
@@ -290,10 +349,17 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
         ),
       ),
     );
-    return BlockSemantics(
-      child: robot
-          ? _ScanStart(key: ValueKey(_opens), grow: true, child: pages)
-          : pages,
+    final inQuiz = kind.startsWith('question-') || kind.startsWith('review-');
+    return PopScope(
+      canPop: !inQuiz,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmLeave();
+      },
+      child: BlockSemantics(
+        child: robot
+            ? _ScanStart(key: ValueKey(_opens), grow: true, child: pages)
+            : pages,
+      ),
     );
   }
 }
@@ -330,7 +396,7 @@ class _ScanStartState extends State<_ScanStart>
         _c.value = 1;
         return;
       }
-      if (_grow) elioFeedback(ElioSfx.blip, ElioHaptics.light);
+      if (_grow) quizFeedback(ElioSfx.blip, ElioHaptics.light);
       _c.forward();
     });
   }
@@ -465,7 +531,7 @@ class _RoundClose extends StatelessWidget {
         key: const ValueKey('scan_page_close'),
         tooltip: l10n.commonClose,
         onPressed: () {
-          elioFeedback(ElioSfx.tick, ElioHaptics.light);
+          quizFeedback(ElioSfx.tick, ElioHaptics.light);
           onTap();
         },
         style: IconButton.styleFrom(
@@ -537,12 +603,12 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
         old.onStart == null &&
         !widget.hazard &&
         widget.onGotIt == null) {
-      elioFeedback(ElioSfx.tick, ElioHaptics.select);
+      quizFeedback(ElioSfx.tick, ElioHaptics.select);
     }
   }
 
   // Figma 13 · 27: S2 when the buddy pops, H-light when the result shows.
-  void _cue() => elioFeedback(ElioSfx.pop, ElioHaptics.light);
+  void _cue() => quizFeedback(ElioSfx.pop, ElioHaptics.light);
 
   @override
   Widget build(BuildContext context) {
@@ -952,7 +1018,7 @@ class _HazardActions extends ConsumerWidget {
     final voiceOn = ref.watch(wasteQuizProvider.select((s) => s.voiceOn));
     final n = ref.read(wasteQuizProvider.notifier);
     void toggle() {
-      elioFeedback(ElioSfx.tick, ElioHaptics.select);
+      quizFeedback(ElioSfx.tick, ElioHaptics.select);
       n.toggleVoice();
     }
 
@@ -997,7 +1063,7 @@ class _HazardActions extends ConsumerWidget {
               key: const ValueKey('quiz_minimise'),
               tooltip: l10n.qzMinimiseQuiz,
               onPressed: () {
-                elioFeedback(ElioSfx.tick, ElioHaptics.light);
+                quizFeedback(ElioSfx.tick, ElioHaptics.light);
                 n.minimize();
               },
               style: IconButton.styleFrom(
@@ -1230,7 +1296,7 @@ class _BinTicket extends StatelessWidget {
                         key: const ValueKey('bin_got_it'),
                         onPressed: () {
                           // The ticket flips: a tick.
-                          elioFeedback(ElioSfx.tick, ElioHaptics.select);
+                          quizFeedback(ElioSfx.tick, ElioHaptics.select);
                           onGotIt();
                         },
                         style: FilledButton.styleFrom(
@@ -1443,7 +1509,7 @@ class _QuizTicket extends ConsumerWidget {
                           child: TextButton.icon(
                             key: const ValueKey('scan_retake'),
                             onPressed: () {
-                              elioFeedback(ElioSfx.pop, ElioHaptics.light);
+                              quizFeedback(ElioSfx.pop, ElioHaptics.light);
                               onRetake();
                             },
                             style: TextButton.styleFrom(
@@ -1470,7 +1536,7 @@ class _QuizTicket extends ConsumerWidget {
                             key: const ValueKey('scan_start_quiz'),
                             onPressed: ready
                                 ? () {
-                                    elioFeedback(
+                                    quizFeedback(
                                       ElioSfx.pop,
                                       ElioHaptics.medium,
                                     );
@@ -1625,7 +1691,7 @@ class _ScanFailedPage extends StatelessWidget {
                           child: FilledButton.icon(
                             key: const Key('result_card_close_button'),
                             onPressed: () {
-                              elioFeedback(ElioSfx.pop, ElioHaptics.light);
+                              quizFeedback(ElioSfx.pop, ElioHaptics.light);
                               onRetake();
                             },
                             style: FilledButton.styleFrom(
@@ -2186,7 +2252,7 @@ class _SkipButton extends ConsumerWidget {
     return TextButton(
       key: const ValueKey('quiz_skip'),
       onPressed: () {
-        elioFeedback(ElioSfx.tick, ElioHaptics.light);
+        quizFeedback(ElioSfx.tick, ElioHaptics.light);
         (onSkip ?? ref.read(wasteQuizProvider.notifier).skipQuestion)();
       },
       style: TextButton.styleFrom(
@@ -2264,11 +2330,11 @@ class _EssayAnswerState extends ConsumerState<_EssayAnswer> {
     final s = widget.state;
     if (_words == 0 || s.sendingChat || s.essaySubmitted) return;
     if (_words > _limit) {
-      elioFeedback(ElioSfx.knock, ElioHaptics.warning);
+      quizFeedback(ElioSfx.knock, ElioHaptics.warning);
       setState(() => _over++);
       return;
     }
-    elioFeedback(ElioSfx.pop, ElioHaptics.medium);
+    quizFeedback(ElioSfx.pop, ElioHaptics.medium);
     _focus.unfocus();
     ref.read(wasteQuizProvider.notifier).submitEssay(_text.text);
   }
@@ -2446,6 +2512,9 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
   String? _speaking;
   bool _chat = false;
 
+  /// The explanation text last built, to stop its voice when it changes.
+  String? _shownWhy;
+
   @override
   void initState() {
     super.initState();
@@ -2485,7 +2554,7 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
         child: IconButton(
           tooltip: tip,
           onPressed: () {
-            elioFeedback(ElioSfx.tick, ElioHaptics.light);
+            quizFeedback(ElioSfx.tick, ElioHaptics.light);
             onTap();
           },
           style: IconButton.styleFrom(
@@ -2518,10 +2587,22 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
     final category = ScanCategory.fromString(s.scan?.category?.id);
     final top = MediaQuery.paddingOf(context).top;
     // One explanation only; "why not my answer" is the coach's job.
-    final why = essay
+    // Nothing is shown until the final text is ready: no text that is later
+    // swapped (root cause in decision 0226).
+    final why = s.explanationLoading
+        ? ''
+        : essay
         ? (ex?.essayFeedback ?? '')
-        : ex?.summary ??
-              (q.bankId == null || q.bankReviewed ? q.explanation : '');
+        // "Unavailable" carries a placeholder sentence: it is the retry state.
+        : ex != null
+        ? (ex.summary == QuizExplanation.unavailable.summary ? '' : ex.summary)
+        : (q.bankId == null || q.bankReviewed ? q.explanation : '');
+    // The voice only ever reads the text on screen: a changed text (language
+    // switch) stops the old speech.
+    if ((_shownWhy ?? '').isNotEmpty && _shownWhy != why) {
+      unawaited(QuizTtsService.instance.stop());
+    }
+    _shownWhy = why;
     final answerText = essay
         ? (score == null ? l10n.qzNotGradedYet : l10n.qzScoreOf10(score))
         : q.options[q.correctIndex];
@@ -2581,11 +2662,22 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
               ),
               const SizedBox(width: 8),
               ..._stopPill(context),
-              _round(
-                p,
-                Icons.volume_up_outlined,
-                l10n.qzListenExplanation,
-                () => _listen(why.isEmpty ? q.question : why),
+              // Mute toggle: saved, stops the voice at once; unmuting reads
+              // the explanation on screen.
+              KeyedSubtree(
+                key: const ValueKey('scan_review_mute'),
+                child: _round(
+                  p,
+                  s.voiceOn
+                      ? Icons.volume_up_outlined
+                      : Icons.volume_off_outlined,
+                  s.voiceOn ? l10n.qzMute : l10n.qzUnmute,
+                  () {
+                    final unmuting = !s.voiceOn;
+                    n.toggleVoice();
+                    if (unmuting && why.isNotEmpty) _listen(why);
+                  },
+                ),
               ),
             ],
           ),
@@ -2895,16 +2987,7 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
           colorFilter: ColorFilter.mode(p.primary, BlendMode.srcIn),
         ),
         const SizedBox(height: 6),
-        if (essay)
-          Text(
-            [
-              why,
-              ex?.learningTakeaway ?? '',
-            ].where((t) => t.isNotEmpty).join('\n\n'),
-            key: const ValueKey('scan_essay_why'),
-            style: ElioTokens.body.copyWith(color: p.textSecondary),
-          )
-        else if (why.isEmpty && s.explanationLoading)
+        if (s.explanationLoading)
           ElioShimmer(
             child: Column(
               key: const ValueKey('scan_review_loading'),
@@ -2923,10 +3006,39 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
               ],
             ),
           )
+        else if (why.isEmpty)
+          // AI failed and the question has no explanation of its own.
+          Column(
+            key: const ValueKey('scan_review_unavailable'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.qzExplanationUnavailable,
+                style: ElioTokens.body.copyWith(color: p.textSecondary),
+              ),
+              TextButton.icon(
+                key: const ValueKey('scan_review_retry'),
+                onPressed: n.retryExplanation,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: Text(l10n.cfgRetry),
+              ),
+            ],
+          )
         else
-          Text(
-            why.isEmpty ? q.options[q.correctIndex] : why,
-            style: ElioTokens.body.copyWith(color: p.textSecondary),
+          // As tall as the loading block at least, so the page below it
+          // does not jump when the text arrives.
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 72),
+            child: Text(
+              essay
+                  ? [
+                      why,
+                      ex?.learningTakeaway ?? '',
+                    ].where((t) => t.isNotEmpty).join('\n\n')
+                  : why,
+              key: essay ? const ValueKey('scan_essay_why') : null,
+              style: ElioTokens.body.copyWith(color: p.textSecondary),
+            ),
           ),
       ],
     );
@@ -3026,7 +3138,7 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () {
-              elioFeedback(ElioSfx.pop, ElioHaptics.light);
+              quizFeedback(ElioSfx.pop, ElioHaptics.light);
               setState(() => _chat = true);
             },
             child: Padding(
@@ -3081,7 +3193,7 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
           onPressed: s.sendingChat
               ? null
               : () {
-                  elioFeedback(ElioSfx.pop, ElioHaptics.light);
+                  quizFeedback(ElioSfx.pop, ElioHaptics.light);
                   n.nextQuestion();
                 },
           style: FilledButton.styleFrom(
@@ -3335,7 +3447,7 @@ class _ScanDonePage extends StatelessWidget {
         child: FilledButton.icon(
           key: key,
           onPressed: () {
-            elioFeedback(ElioSfx.pop, ElioHaptics.light);
+            quizFeedback(ElioSfx.pop, ElioHaptics.light);
             onTap();
           },
           style: FilledButton.styleFrom(

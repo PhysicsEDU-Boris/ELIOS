@@ -3510,5 +3510,12 @@
   "binWhyB3": "{item} can hold harmful materials. It goes in the B3 bin so it is handled safely.",
   "@binWhyB3": {"placeholders": {"item": {}}},
   "binQuizNext": "Your quiz is next",
-  "binGotIt": "Got it"
+  "binGotIt": "Got it",
+  "qzMute": "Mute voice and sounds",
+  "qzUnmute": "Turn voice and sounds on",
+  "quizLeaveTitle": "Leave the quiz?",
+  "quizLeaveBody": "Your progress will be lost.",
+  "quizLeaveKeep": "Keep going",
+  "quizLeaveLeave": "Leave",
+  "qzExplanationUnavailable": "Explanation not available yet"
 }

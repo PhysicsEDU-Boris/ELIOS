@@ -429,6 +429,18 @@ OUTPUT
     return null;
   }
 
+  /// The language a coach reply is written in: the language of the student's
+  /// own [message] (more matching words wins), else [appLang] when it is too
+  /// short, unclear or a tie ("ok", "?", emoji, numbers).
+  static String messageLang(String message, String appLang) {
+    var id = 0, en = 0;
+    for (final w in message.toLowerCase().split(RegExp(r'[^a-z]+'))) {
+      if (_idWords.contains(w)) id++;
+      if (_enWords.contains(w)) en++;
+    }
+    return en > id ? 'en' : (id > en ? 'id' : appLang);
+  }
+
   void _log(String msg) => debugPrint('$_tag $msg');
 
   /// One backend call, signed with the student's Firebase ID token. [json] asks
@@ -1102,6 +1114,9 @@ OUTPUT
     final recent = history.length > 6
         ? history.sublist(history.length - 6)
         : history;
+    // Decided on the device from the student's own words, never guessed by
+    // the model.
+    final lang = messageLang(message, replyLang);
     final transcript = recent
         .map((m) => '${m.isUser ? 'Mahasiswa' : 'ELIOS'}: ${m.text}')
         .join('\n');
@@ -1110,8 +1125,9 @@ OUTPUT
         '${transcript.isEmpty ? '' : 'Percakapan sebelumnya:\n$transcript\n'}'
         'Pertanyaan mahasiswa sekarang: "$message"\n'
         'Jawab dengan 2-5 kalimat teks biasa tanpa markdown. '
+        'Bahasa jawaban: ${languageName(lang)} (reply language: $lang). '
+        'Sisi "$lang" wajib ditulis dalam ${languageName(lang)}, apa pun bahasa konteks di atas. '
         'Balas HANYA JSON {"id": {"reply": "..."}, "en": {"reply": "..."}}.';
-    final lang = replyLang;
     final raw = await _send(prompt, isUser: true);
     if (raw == null || raw == 'BUSY' || raw == 'CANCELLED') return null;
     // Chat replies are shown once, in the language the question was asked in.
