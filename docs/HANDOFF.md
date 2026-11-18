@@ -1,3 +1,8 @@
+## Robot arm sync — `feat/sim-sync` (0230, 19 Nov, from `feature/live-scan` 5443174)
+Synced with robotic_hand_sim `75ab797` (local `~/GITHUB/ELIO/robotic_hand_sim` fast-forwarded to it). Changed: `r1_constants.dart` (`armTimeout` 30 s, `waitCap` 180 s for the 30 deg/s Arm A/B), `simulated_robot.dart` comment, fake MaixCAM2 per-joint speeds + limits from the sim's `hil/config.py`. Docs: 0230 (new protocol, joint table, gripper map, MaixCAM2 UART2/UART1 wiring), 0027 / 0023 amended.
+Assumed, not seen on the robot: which ESP32 firmware is flashed, base at home at power-up, the MaixCAM2 pin names. Not built: MaixCAM2 bridge (R1-fw), wheel watchdog, 115200 baud.
+Tests: `test/robot/arm_timing_test.dart` (armTimeout test break-checked; waitCap test also passes the old values). Fake: 37 passed; `test_frame_fields_match_main_py_old_firmware` and `test_labels_match_main_py_and_app` failed before this change too. Not run on the robot.
+
 ## PDF export redesign — `feat/pdf-export-redesign` (0228, 17 Nov, branched from `feat/essay-explanation-review`; phase 3 of 3)
 Layout in `lib/services/quiz_pdf_design.dart` (part of `quiz_pdf_service.dart`): cover, page per question, single question + notes page, light/dark from ELIOS tokens. `QuestionPdfOptions.dark`; `PdfThemeChoice` in both sheets; `showQuizReportSheet` for full reports. Static Google Sans Flex weights in `assets/fonts/pdf/`. Photo re-encoded (640 px, JPEG 80). Renders: `docs/test-results/0228-pdf-export/`.
 Tests: `test/pdf_export_design_test.dart` (22, break-checked); older PDF tests read `QuizPdfService.debugTexts`. Not checked on phone or robot; not printed on paper.
