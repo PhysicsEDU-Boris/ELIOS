@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import '../l10n/l10n.dart';
+import '../models/quiz_explanation.dart';
 import '../models/scan_record.dart';
 import '../services/ai_quiz_service.dart';
 import '../theme/elio_motion.dart';
@@ -1625,15 +1626,39 @@ class HistoryResultHero extends StatelessWidget {
     required this.index,
     required this.total,
     required this.trophies,
+    this.essayScore,
+    this.animate = false,
   });
   final bool correct;
   final int index, total, trophies;
+
+  /// Essay (Figma 869:29312 / 29718 / 30073): 0-4 "not quite" (wrong
+  /// variant, sad robot), 5-9 "almost" (thinking), 10 "perfect" (excited).
+  final int? essayScore;
+
+  /// First reveal: the XP counts up and the robot does one small bounce.
+  final bool animate;
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context), t = context.l10n;
-    final (fill, on, hover) = correct
+    final score = essayScore;
+    final red = score == null ? !correct : score < 5;
+    final (fill, on, hover) = !red
         ? (p.primary, p.onPrimary, p.primaryHover)
         : (p.error, p.onError, p.destructiveHover);
+    final mood = score == null
+        ? (correct ? 'happy' : 'sad')
+        : (score < 5 ? 'sad' : (score < 10 ? 'thinking' : 'excited'));
+    final (title, body) = score == null
+        ? (
+            correct ? t.h3HeroRight : t.h3HeroWrong,
+            correct ? t.h3HeroRightBody : t.h3HeroWrongBody,
+          )
+        : score < 5
+        ? (t.h3HeroWrong, t.h3HeroEssayWrongBody(score))
+        : score < 10
+        ? (t.h3HeroAlmost, t.h3HeroEssayAlmostBody(score))
+        : (t.h3HeroPerfect, t.h3HeroEssayPerfectBody);
     return ClipRSuperellipse(
       borderRadius: BorderRadius.circular(20),
       child: ColoredBox(
@@ -1647,13 +1672,18 @@ class HistoryResultHero extends StatelessWidget {
                 right: 18,
                 top: 50,
                 // ELIO robot buddy (Figma 629:99756), as on Learn.
-                child: SvgPicture.asset(
-                  correct
-                      ? 'assets/illustrations/robot/robot_happy.svg'
-                      : 'assets/illustrations/robot/robot_sad.svg',
-                  width: 98,
-                  height: 112,
-                  excludeFromSemantics: true,
+                child: ElioAfterFirstFrame(
+                  builder: (context, ready) => ElioJump(
+                    trigger: animate && ready ? mood : null,
+                    height: 6,
+                    delay: const Duration(milliseconds: 200),
+                    child: SvgPicture.asset(
+                      'assets/illustrations/robot/robot_$mood.svg',
+                      width: 98,
+                      height: 112,
+                      excludeFromSemantics: true,
+                    ),
+                  ),
                 ),
               ),
               Positioned(right: 106, top: 34, child: HistorySparkle(18, on)),
@@ -1666,10 +1696,17 @@ class HistoryResultHero extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          t.h3QuestionOf(index + 1, total).toUpperCase(),
-                          style: ElioTokens.overline.copyWith(
-                            color: on.withValues(alpha: .8),
+                        Flexible(
+                          child: Text(
+                            [
+                              t.h3QuestionOf(index + 1, total),
+                              if (score != null) t.scanEssay,
+                            ].join(' · ').toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: ElioTokens.overline.copyWith(
+                              color: on.withValues(alpha: .8),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -1686,15 +1723,12 @@ class HistoryResultHero extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      correct ? t.h3HeroRight : t.h3HeroWrong,
-                      style: ElioTokens.headline.copyWith(color: on),
-                    ),
+                    Text(title, style: ElioTokens.headline.copyWith(color: on)),
                     const SizedBox(height: 8),
                     SizedBox(
                       width: 200,
                       child: Text(
-                        correct ? t.h3HeroRightBody : t.h3HeroWrongBody,
+                        body,
                         style: ElioTokens.bodySmall.copyWith(color: on),
                       ),
                     ),
@@ -1711,9 +1745,13 @@ class HistoryResultHero extends StatelessWidget {
                             excludeFromSemantics: true,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            t.h3PlusTrophies(trophies),
-                            style: historyButtonText.copyWith(color: on),
+                          ElioCountUp(
+                            value: trophies,
+                            play: animate,
+                            builder: (context, v) => Text(
+                              t.h3PlusTrophies(v),
+                              style: historyButtonText.copyWith(color: on),
+                            ),
                           ),
                         ],
                       ),
@@ -1726,6 +1764,195 @@ class HistoryResultHero extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Essay score card (Figma 869:29885): icon tile, verdict overline, "x / 10",
+/// XP pill, total bar, and the rubric rows with segment bars and AI hints.
+/// Rows are hidden when the grade has no rubric; hints when a row has none.
+class HistoryEssayScore extends StatelessWidget {
+  const HistoryEssayScore({
+    super.key,
+    required this.score,
+    required this.trophies,
+    this.rows = const [],
+    this.animate = false,
+  });
+  final int score, trophies;
+  final List<RubricRow> rows;
+
+  /// First reveal: the bar and segments fill and the score counts up.
+  final bool animate;
+
+  static String verdict(AppLocalizations t, int score) =>
+      score < 5 ? t.essayNotQuite : (score < 10 ? t.essayPartly : t.essayRight);
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context), t = context.l10n;
+    // Red at 0, amber for partial, green for full.
+    ({Color fill, Color text}) tone(int got, int max) => got >= max
+        ? (fill: p.primary, text: p.primaryText)
+        : got <= 0
+        ? (fill: p.error, text: p.errorText)
+        : (fill: p.secondaryText, text: p.secondaryText);
+    final total = score < 5
+        ? (fill: p.error, text: p.errorText)
+        : tone(score, 10);
+    final tile = historyTint(
+      p,
+      score < 5
+          ? HistoryTone.error
+          : (score < 10 ? HistoryTone.warning : HistoryTone.success),
+    );
+    String name(String criterion) => switch (criterion) {
+      'Accuracy' => t.rubricAccuracy,
+      'Key terms' => t.rubricKeyTerms,
+      'Completeness' => t.rubricCompleteness,
+      'Clarity' => t.rubricClarity,
+      _ => criterion,
+    };
+    Widget card(double v) => Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: ShapeDecoration(
+        color: p.surface,
+        shape: _cardShape(p, false),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              historyArtTile(
+                tile.bg,
+                Icon(Icons.help_outline, size: 24, color: p.textPrimary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      verdict(t, score).toUpperCase(),
+                      style: ElioTokens.overline.copyWith(color: total.text),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      t.essayScoreOf((score * v).round()),
+                      style: ElioTokens.headline.copyWith(color: p.textPrimary),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      t.essayCheckedBy,
+                      style: ElioTokens.caption.copyWith(
+                        color: p.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              HistoryTrophyPill('+$trophies'),
+            ],
+          ),
+          const SizedBox(height: 14),
+          // Total bar: the empty track stays visible in dark mode.
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: SizedBox(
+              height: 10,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ColoredBox(color: p.surfaceRaised),
+                  FractionallySizedBox(
+                    alignment: AlignmentDirectional.centerStart,
+                    widthFactor: (score / 10 * v).clamp(0.0, 1.0),
+                    child: DecoratedBox(
+                      decoration: ShapeDecoration(
+                        color: total.fill,
+                        shape: const StadiumBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (rows.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Divider(height: 1, thickness: 1, color: p.borderSubtle),
+            const SizedBox(height: 14),
+            Text(
+              t.essayBreakdown.toUpperCase(),
+              style: ElioTokens.overline.copyWith(color: p.textTertiary),
+            ),
+            for (final r in rows) ...[
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      name(r.criterion),
+                      style: ElioTokens.body.copyWith(color: p.textPrimary),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  for (var i = 0; i < r.maxScore; i++)
+                    Container(
+                      width: 22,
+                      height: 8,
+                      margin: EdgeInsets.only(left: i == 0 ? 0 : 4),
+                      decoration: ShapeDecoration(
+                        color: i < (r.awardedScore * v).round()
+                            ? tone(r.awardedScore, r.maxScore).fill
+                            : p.borderMedium,
+                        shape: const StadiumBorder(),
+                      ),
+                    ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 32,
+                    child: Text(
+                      '${r.awardedScore}/${r.maxScore}',
+                      textAlign: TextAlign.end,
+                      style: historyButtonText.copyWith(
+                        color: tone(r.awardedScore, r.maxScore).text,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (r.comment.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  r.comment,
+                  style: ElioTokens.caption.copyWith(color: p.textSecondary),
+                ),
+              ],
+            ],
+          ],
+          const SizedBox(height: 14),
+          Text(
+            t.essayAiNote,
+            style: ElioTokens.caption.copyWith(color: p.textTertiary),
+          ),
+        ],
+      ),
+    );
+    return Semantics(
+      container: true,
+      label: '${verdict(t, score)}, ${t.essayScoreOf(score)}',
+      child: !animate || ElioMotion.reduced(context)
+          ? card(1)
+          : TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 1),
+              duration: const Duration(milliseconds: 700),
+              curve: ElioMotion.standard,
+              builder: (context, v, _) => card(v),
+            ),
     );
   }
 }
@@ -1744,9 +1971,13 @@ class HistoryQuestionPanel extends StatelessWidget {
     super.key,
     required this.question,
     required this.listen,
+    this.essay = false,
   });
   final String question;
   final Widget listen;
+
+  /// "PERTANYAAN · ESAI".
+  final bool essay;
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context), info = historyTint(p, HistoryTone.info);
@@ -1771,7 +2002,10 @@ class HistoryQuestionPanel extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  context.l10n.h3TheQuestion.toUpperCase(),
+                  [
+                    context.l10n.h3TheQuestion,
+                    if (essay) context.l10n.scanEssay,
+                  ].join(' · ').toUpperCase(),
                   style: ElioTokens.overline.copyWith(color: p.textTertiary),
                 ),
               ),
@@ -2046,10 +2280,16 @@ class HistoryMission extends StatelessWidget {
     required this.steps,
     required this.active,
     required this.onListen,
+    this.title,
+    this.subtitle,
+    this.done,
   });
   final List<String> steps;
   final bool active;
   final VoidCallback onListen;
+
+  /// Essay "Tips for full marks" uses the same card with its own texts.
+  final String? title, subtitle, done;
   @override
   Widget build(BuildContext context) {
     final p = authPalette(context), t = context.l10n;
@@ -2079,11 +2319,11 @@ class HistoryMission extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    t.h3Mission,
+                    title ?? t.h3Mission,
                     style: ElioTokens.subhead.copyWith(color: p.textPrimary),
                   ),
                   Text(
-                    t.h3MissionSteps(steps.length),
+                    subtitle ?? t.h3MissionSteps(steps.length),
                     style: ElioTokens.caption.copyWith(color: p.textSecondary),
                   ),
                 ],
@@ -2137,7 +2377,7 @@ class HistoryMission extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                t.h3MissionDone,
+                done ?? t.h3MissionDone,
                 style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
               ),
             ),

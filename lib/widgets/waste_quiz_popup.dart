@@ -1,3 +1,6 @@
+import 'package:elio/Screens/question_explanation_screen.dart'
+    show QuestionExportSheet;
+import 'package:elio/widgets/quiz/essay_review.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -28,7 +31,13 @@ import '../services/elio_feedback.dart';
 import '../theme/elio_learning_colors.dart';
 import '../theme/elio_motion.dart';
 import '../theme/elio_tokens.dart';
-import 'history_ui.dart' show HistoryTone, historyTint;
+import 'history_ui.dart'
+    show
+        HistoryLoadingLayout,
+        HistorySkeleton,
+        HistoryTone,
+        historyOutlineStyle,
+        historyTint;
 import 'learn/learn_l3.dart' show L3Hero, RobotBuddy, RobotMood;
 import 'learn/learn_ui.dart' show LearnTheme;
 import 'package:elio/l10n/l10n.dart';

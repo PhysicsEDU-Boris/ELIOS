@@ -95,3 +95,4 @@ their status changed.
 - [0224](0224-robot-bin-check.md) Robot bin check before the quiz
 - [0225](0225-explanation-wrong-scan.md) A new scan no longer writes its explanations into the previous scan
 - [0226](0226-quiz-review-bugs.md) Quiz review bugs: mute, coach language, back confirm, stable explanation
+- [0227](0227-essay-answer-review.md) Essay answer review, with motion, haptics and sound on the explanation pages

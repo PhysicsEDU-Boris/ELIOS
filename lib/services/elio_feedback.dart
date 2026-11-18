@@ -182,6 +182,23 @@ void elioEntryCue(ElioSfx sfx, void Function() haptic) {
   unawaited(ElioSound.instance.play(sfx, gain: 0.5));
 }
 
+/// What an explanation page reveals (decision 0227).
+enum QuizReveal { correct, partial, wrong }
+
+/// One short cue per reveal: light haptic, then success on a correct answer or
+/// full marks and a soft tap on a wrong one; the sound respects the quiz mute.
+void quizRevealCue(QuizReveal r) {
+  final (sfx, haptic) = switch (r) {
+    QuizReveal.correct => (ElioSfx.chime, ElioHaptics.success),
+    QuizReveal.partial => (ElioSfx.pop, ElioHaptics.light),
+    QuizReveal.wrong => (ElioSfx.knock, ElioHaptics.light),
+  };
+  haptic();
+  if (!ElioSound.instance.quizMuted) {
+    unawaited(ElioSound.instance.play(sfx, gain: 0.5));
+  }
+}
+
 /// [elioFeedback] for the quiz and explanation pages: the haptic always, the
 /// sound unless the quiz is muted.
 void quizFeedback(ElioSfx sfx, void Function() haptic) {

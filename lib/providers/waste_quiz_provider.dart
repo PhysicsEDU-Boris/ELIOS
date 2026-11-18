@@ -1266,6 +1266,14 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         : (score >= 0 && score <= 10 ? EssayGrade(score: score) : null);
     final essayScore = grade?.score;
     final isCorrect = (essayScore ?? 0) >= 6;
+    // The reveal's cue, once: full marks, partial or wrong (0227).
+    if (essayScore != null) {
+      quizRevealCue(
+        essayScore >= 10
+            ? QuizReveal.correct
+            : (essayScore >= 5 ? QuizReveal.partial : QuizReveal.wrong),
+      );
+    }
     _recordedQuestions.add(
       RecordQuestion(
         question: q.question,
@@ -1671,6 +1679,23 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
         ...state.messages,
         ChatMessage(isUser: false, text: l10n.wqSavedNoQuiz),
       ],
+    );
+  }
+
+  /// The quiz so far as an unsaved record, for "Export PDF" in the review.
+  ScanRecord previewRecord() {
+    final scan = state.scan;
+    return ScanRecord(
+      id: 'preview',
+      time: DateTime.now(),
+      itemName: scan?.displayName ?? l10n.wasteGeneric,
+      category: ScanCategory.fromString(scan?.category?.id),
+      difficulty: state.difficulty,
+      questions: List.unmodifiable(_recordedQuestions),
+      trophies: _recordedQuestions.fold<int>(0, (sum, q) => sum + q.trophies),
+      lang: _recordLang,
+      translations: _recordTwins(scan?.displayName),
+      device: _robotSession ? 'elios' : 'phone',
     );
   }
 

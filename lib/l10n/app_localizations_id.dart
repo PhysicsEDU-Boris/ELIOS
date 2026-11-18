@@ -5592,4 +5592,90 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get qzExplanationUnavailable => 'Penjelasan belum tersedia';
+
+  @override
+  String get h3HeroAlmost => 'Hampir tepat!';
+
+  @override
+  String get h3HeroPerfect => 'Sempurna!';
+
+  @override
+  String h3HeroEssayWrongBody(Object score) {
+    return 'Skor $score/10. Yuk cari tahu alasannya.';
+  }
+
+  @override
+  String h3HeroEssayAlmostBody(Object score) {
+    return 'Skor $score/10. Sedikit lagi untuk skor penuh.';
+  }
+
+  @override
+  String get h3HeroEssayPerfectBody => 'Skor 10/10. Jawabanmu lengkap.';
+
+  @override
+  String get essayNotQuite => 'Kurang tepat';
+
+  @override
+  String get essayPartly => 'Sebagian tepat';
+
+  @override
+  String get essayRight => 'Tepat';
+
+  @override
+  String get essayCheckedBy => 'Diperiksa ELIOS AI · esai';
+
+  @override
+  String essayScoreOf(Object score) {
+    return '$score / 10';
+  }
+
+  @override
+  String get essayBreakdown => 'Rincian nilai';
+
+  @override
+  String get rubricAccuracy => 'Ketepatan';
+
+  @override
+  String get rubricKeyTerms => 'Istilah kunci';
+
+  @override
+  String get rubricCompleteness => 'Kelengkapan';
+
+  @override
+  String get rubricClarity => 'Kejelasan';
+
+  @override
+  String get essayAiNote =>
+      'Nilai dibuat otomatis oleh ELIOS AI dan bisa keliru. Ragu? Tanyakan ke gurumu.';
+
+  @override
+  String essayYourAnswer(Object verdict) {
+    return 'Jawabanmu · $verdict';
+  }
+
+  @override
+  String get essayRightAnswer => 'Jawaban yang benar';
+
+  @override
+  String get essaySkipped => 'Kamu melewati soal ini';
+
+  @override
+  String get essayFeedbackTitle => 'Masukan untuk jawabanmu';
+
+  @override
+  String get essayWhyTitle => 'Mengapa begitu';
+
+  @override
+  String get essayWhyRightTitle => 'Mengapa jawabanmu tepat';
+
+  @override
+  String get essayTipsTitle => 'Tips skor penuh';
+
+  @override
+  String essayTipsSub(Object count) {
+    return '$count langkah menulis jawaban esai';
+  }
+
+  @override
+  String get essayTipsDone => 'Gabungkan jadi 2–3 kalimat untuk skor 10/10.';
 }
