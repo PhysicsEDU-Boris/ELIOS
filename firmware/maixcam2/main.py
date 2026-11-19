@@ -402,8 +402,25 @@ try:
 except Exception as e:
     print("[Arm] UART unavailable, arm commands answer but nothing reaches the ESP32:", e)
 
+# Who is on UART2: "arduino" (codeMotorSlave.ino, L298N wheels, one char F/B/L/R/S) or "esp32" (arm).
+# Not both: arm frames carry digits 1-6 and CRC hex B/F, which the Arduino reads as polarity flips and drive.
+UART2_SLAVE = "arduino"
+
+def drive_char(left, right):
+    """App `motor` left/right (signed PWM) -> codeMotorSlave.ino command; mixed or zero -> S."""
+    if left > 0 and right > 0: return "F"
+    if left < 0 and right < 0: return "B"
+    if left < 0 < right: return "L"
+    if right < 0 < left: return "R"
+    return "S"
+
+def _drive_write(c):
+    if UART2_SLAVE == "arduino" and arm_uart is not None:
+        with arm_lock:
+            arm_uart.write_str(c)
+
 def _arm_write(text):
-    if arm_uart is not None:
+    if UART2_SLAVE == "esp32" and arm_uart is not None:
         arm_uart.write_str(text)
 
 try:
@@ -645,7 +662,9 @@ async def ws_handler(websocket):
                 elif cmd == "motor":
                     left  = data.get("left", 0)
                     right = data.get("right", 0)
-                    print("[WS] motor left={} right={}".format(left, right))
+                    c = drive_char(left, right)
+                    _drive_write(c)
+                    print("[WS] motor left={} right={} -> {}".format(left, right, c))
 
                 elif cmd == "servo":
                     part = data.get("part", "")
@@ -691,6 +710,7 @@ async def ws_handler(websocket):
         ws_status = "Client connected" if ws_clients else "Serving"
         if not ws_clients:
             ws_streaming = False
+            _drive_write("S")  # the Arduino latches the last command: no app, no wheels
             with arm_lock:
                 arm.client_gone()
         print("[WS] clients remaining:", len(ws_clients))

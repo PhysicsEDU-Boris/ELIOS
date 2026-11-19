@@ -1,3 +1,6 @@
+## MaixCAM2 Arduino drive — `feat/maixcam2-arduino-drive` (0237, 19 Nov, from `feature/live-scan` 806dcdf)
+`main.py`: `UART2_SLAVE="arduino"`, `drive_char()` maps app `motor` left/right → `F/B/L/R/S` on `/dev/ttyS2` 9600; last client gone → `S`; arm frames not written while the Arduino owns UART2. Deployed over SSH (root@10.136.181.84) 19 Nov, ping sha `550afa59…` verified; old main.py in `/root/backup/elios_clean_m2c_v1_2026-11-19_predrive/`.
+Tests: `firmware/maixcam2/test_drive_char.py` + arm bridge 21 passed. Open: wheels not seen moving yet (owner to drive from the phone), arm off until wheels move to UART1, no speed control.
 ## README refresh — `docs/readme-refresh` (19 Nov, from `feature/live-scan`)
 README rewritten: status table, architecture, Gemini identify + quiz flow, robot controls, run steps. Images exported from Figma (L4 scan, R3 control, architecture 79:135, bin check 860:28986) into `docs/readme/`. Docs only; no code or tests changed.
 ## Arm fader throttle — `feat/arm-fader-throttle` (0236, 19 Nov, from `feat/maixcam2-arm-bridge` 2d37825)
@@ -55,7 +58,3 @@ Merged build: `flutter analyze` clean, full suite 1949 passed / 20 skipped, secr
 | Bin check right + wrong, STOP | pass | n/a (robot only) | not run |
 | Sound + haptics on new taps | cues asserted in tests | not heard / felt | not run |
 | Reduce motion on new animations | pass | not run | not run |
-
-Found and fixed on its own branch: Profile settings text scrolled under the status bar (#130, `_StatusBarScrim`), re-checked on the phone.
-17 Nov, owner phone test: robot scans "Plastic bottle" / "Laptop" never translated in History. Their records were saved with English questions labelled `id` (the model wrote the "id" side in English). Fixed on #127: label follows the text for new replies and saved records (`AiQuizService.detectLang`, repair in `ScanRecord.fromJson`), and History translates the 3 newest scans in the background. Phone re-check with APK `a7f8860`: 3 scans translated in 16 s, detail opens in Indonesian in under 1 s.
-17 Nov: the explanation shown under another item is fixed in #136 (0225): photo / robot scans kept the previous record's id and saved their explanations into it too. Already mixed-up records are not repaired.
