@@ -17,7 +17,7 @@ class PwmWavePainter extends CustomPainter {
     final paintGrid = Paint()
       ..color = elioBorder.withValues(alpha: 0.5)
       ..strokeWidth = 1;
-    
+
     for (double x = 0; x <= width; x += 20) {
       canvas.drawLine(Offset(x, 0), Offset(x, height), paintGrid);
     }
@@ -31,26 +31,26 @@ class PwmWavePainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final path = Path();
-    
+
     final period = 100.0; // pixels per cycle
     final speed = 100.0; // pixels per second
-    
+
     // Shift left based on time
     final shift = (time * speed) % period;
 
     bool isFirst = true;
     final dRatio = dutyPercent / 100.0;
-    
+
     // Start drawing from just outside the left edge
     for (double x = -period; x <= width + period; x += period) {
       final startX = x - shift;
       final highWidth = period * dRatio;
-      
+
       // We draw the square wave:
       // (startX) go up to high
       // (startX + highWidth) go down to low
       // (startX + period) end of cycle low
-      
+
       final yLow = height - 10.0;
       final yHigh = 10.0;
 
@@ -60,7 +60,7 @@ class PwmWavePainter extends CustomPainter {
       } else {
         path.lineTo(startX, yLow);
       }
-      
+
       path.lineTo(startX, yHigh);
       path.lineTo(startX + highWidth, yHigh);
       path.lineTo(startX + highWidth, yLow);
@@ -108,11 +108,19 @@ class PwmWheelPainter extends CustomPainter {
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(angle);
-    
+
     // Cross shape
-    canvas.drawLine(Offset(-radius + 10, 0), Offset(radius - 10, 0), paintSpoke);
-    canvas.drawLine(Offset(0, -radius + 10), Offset(0, radius - 10), paintSpoke);
-    
+    canvas.drawLine(
+      Offset(-radius + 10, 0),
+      Offset(radius - 10, 0),
+      paintSpoke,
+    );
+    canvas.drawLine(
+      Offset(0, -radius + 10),
+      Offset(0, radius - 10),
+      paintSpoke,
+    );
+
     // Center dot
     canvas.drawCircle(Offset.zero, 8, Paint()..color = elioInk);
 

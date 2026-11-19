@@ -1,3 +1,4 @@
+import 'package:elio/l10n/l10n.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/app_notification.dart';
 import '../models/learning_progress.dart';
+import '../services/guide_progress.dart';
 import '../services/progress_service.dart';
 import 'app_notification_provider.dart';
 import 'auth_provider.dart';
@@ -25,6 +27,13 @@ final learningProgressProvider =
     AsyncNotifierProvider<LearningProgressNotifier, LearningProgress>(
       LearningProgressNotifier.new,
     );
+
+/// Daily Guide XP + lesson XP, added to the level total (decisions 0210, 0212).
+final learnXpProvider = Provider<int>(
+  (ref) =>
+      ref.watch(guideProgressProvider.select((s) => s.totalXp)) +
+      (ref.watch(learningProgressProvider).valueOrNull?.lessonXp ?? 0),
+);
 
 final progressSyncWarningProvider = Provider<bool>((ref) {
   final progress = ref.watch(learningProgressProvider);
@@ -188,8 +197,8 @@ class LearningProgressNotifier extends AsyncNotifier<LearningProgress> {
           .read(appNotificationProvider.notifier)
           .push(
             type: AppNotificationType.learning,
-            title: 'Video completed',
-            message: 'You completed a video lesson.',
+            title: l10n.notifVideoDone,
+            message: l10n.notifVideoDoneMsg,
             routeHint: 'learning',
           );
     }
@@ -289,8 +298,8 @@ class LearningProgressNotifier extends AsyncNotifier<LearningProgress> {
           .read(appNotificationProvider.notifier)
           .push(
             type: AppNotificationType.learning,
-            title: 'Guide completed',
-            message: 'You completed a guide.',
+            title: l10n.notifGuideDone,
+            message: l10n.notifGuideDoneMsg,
             routeHint: 'learning',
           );
     }
@@ -370,8 +379,8 @@ class LearningProgressNotifier extends AsyncNotifier<LearningProgress> {
         .read(appNotificationProvider.notifier)
         .push(
           type: AppNotificationType.quiz,
-          title: 'Quiz completed',
-          message: 'Your quiz result has been saved.',
+          title: l10n.notifQuizDone,
+          message: l10n.notifQuizDoneMsg,
           routeHint: 'quiz',
         );
     if (quizReview != null) {
@@ -379,8 +388,8 @@ class LearningProgressNotifier extends AsyncNotifier<LearningProgress> {
           .read(appNotificationProvider.notifier)
           .push(
             type: AppNotificationType.quiz,
-            title: 'Quiz review available',
-            message: 'You can now review your quiz answers.',
+            title: l10n.notifReview,
+            message: l10n.notifReviewMsg,
             routeHint: 'quizReview',
             metadata: {'moduleId': categoryId},
           );
@@ -417,9 +426,8 @@ class LearningProgressNotifier extends AsyncNotifier<LearningProgress> {
             .read(appNotificationProvider.notifier)
             .push(
               type: AppNotificationType.warning,
-              title: 'Progress sync issue',
-              message:
-                  'Your progress could not be synced. Check your connection.',
+              title: l10n.notifSync,
+              message: l10n.notifSyncMsg,
             );
       }
     } catch (e, st) {
@@ -435,9 +443,8 @@ class LearningProgressNotifier extends AsyncNotifier<LearningProgress> {
             .read(appNotificationProvider.notifier)
             .push(
               type: AppNotificationType.warning,
-              title: 'Progress sync issue',
-              message:
-                  'Your progress could not be synced. Check your connection.',
+              title: l10n.notifSync,
+              message: l10n.notifSyncMsg,
             );
       }
     }

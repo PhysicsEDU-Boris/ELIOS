@@ -8,14 +8,16 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_gemma/flutter_gemma.dart';
-import 'package:flutter_gemma_litertlm/flutter_gemma_litertlm.dart';
 
 import 'firebase_options_loader.dart';
+import 'l10n/l10n.dart';
+import 'widgets/elio_theme_reveal.dart';
+import 'providers/app_locale_provider.dart';
 import 'providers/app_preferences_provider.dart' show testerBuild;
 import 'services/tester_log.dart';
-import 'services/gemma_quiz_service.dart';
 import 'services/scan_record_store.dart';
+import 'services/history_cloud.dart';
+import 'services/quiz_tts_service.dart';
 import 'widgets/desktop_viewport.dart';
 import 'utils/system_ui.dart';
 import 'Screens/splash_screen.dart';
@@ -30,15 +32,16 @@ void main() async {
     await TesterLog.instance.init();
     final previous = FlutterError.onError;
     FlutterError.onError = (details) {
-      TesterLog.instance.log('error', '${details.exceptionAsString()}\n${details.stack}');
+      TesterLog.instance.log(
+        'error',
+        '${details.exceptionAsString()}\n${details.stack}',
+      );
       previous?.call(details);
     };
     PlatformDispatcher.instance.onError = (error, stack) {
       TesterLog.instance.log('error', 'uncaught $error\n$stack');
       return false;
     };
-    await GemmaQuizService.instance.checkPreviousRun();
-    GemmaQuizService.instance.startThermalWatch();
   }
 
   try {
@@ -72,22 +75,6 @@ void main() async {
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     applyTransparentSystemBars();
 
-    // flutter_gemma registers no inference engine by default — without this
-    // every Gemma call throws and the quiz silently falls back to offline
-    // questions. Isolated so a Gemma problem can never block app startup.
-    try {
-      await FlutterGemma.initialize(inferenceEngines: const [LiteRtLmEngine()]);
-      // One-time, offline copy of the bundled model, in the background at
-      // launch so it is done before the user drives the robot or scans.
-      // The tester build loads Gemma lazily instead (decision 0040).
-      if (!testerBuild) unawaited(GemmaQuizService.instance.prepare());
-    } catch (error) {
-      debugPrint('FlutterGemma.initialize failed: $error');
-    }
-
-    // Preload scan records from disk so trophies and history are immediately available.
-    unawaited(ScanRecordStore.instance.load());
-
     runApp(const ElioApp());
   } catch (error, stackTrace) {
     debugPrint('Startup failed: $error');
@@ -105,22 +92,80 @@ void main() async {
   }
 }
 
-class ElioApp extends StatelessWidget {
+class ElioApp extends StatefulWidget {
   final FirebaseAuth? auth;
   const ElioApp({super.key, this.auth});
 
   @override
+  State<ElioApp> createState() => _ElioAppState();
+}
+
+class _ElioAppState extends State<ElioApp> with WidgetsBindingObserver {
+  late final FirebaseAuth _auth = widget.auth ?? FirebaseAuth.instance;
+  StreamSubscription<User?>? _authSubscription;
+  Timer? _syncTimer;
+  String? _uid;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _selectUser(_auth.currentUser);
+    _authSubscription = _auth.authStateChanges().listen((user) {
+      if (user?.uid == _uid) return;
+      unawaited(QuizTtsService.instance.stop());
+      setState(() => _selectUser(user));
+    });
+    _syncTimer = Timer.periodic(const Duration(minutes: 1), (_) => _sync());
+  }
+
+  void _selectUser(User? user) {
+    _uid = user?.uid;
+    ScanRecordStore.selectAccount(
+      _uid,
+      cloud: user == null ? null : HistoryCloud.forUser(user),
+    );
+    unawaited(ScanRecordStore.instance.load());
+    _sync();
+  }
+
+  void _sync() => unawaited(ScanRecordStore.instance.sync());
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _sync();
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    _syncTimer?.cancel();
+    ScanRecordStore.instance.active = false;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ProviderScope(
-      child: MaterialApp(
-        title: 'ELIOS',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0F6E56)),
-          useMaterial3: true,
+      key: ValueKey(_uid),
+      child: Consumer(
+        builder: (context, ref, _) => MaterialApp(
+          title: 'ELIOS',
+          locale: ref.watch(appLocaleProvider),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0F6E56)),
+            useMaterial3: true,
+          ),
+          builder: (context, child) {
+            updateCurrentL10n(context);
+            return ThemeSwitchReveal(child: DesktopViewport(child: child!));
+          },
+          home: SplashScreen(auth: _auth),
         ),
-        builder: (context, child) => DesktopViewport(child: child!),
-        home: SplashScreen(auth: auth ?? FirebaseAuth.instance),
       ),
     );
   }

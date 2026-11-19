@@ -5,47 +5,47 @@ void main() {
   group('QuizGrade boundary tests', () {
     test('100% -> Sempurna', () {
       expect(QuizGrade.forPercent(100), QuizGrade.sempurna);
-      expect(QuizGrade.forPercent(100).label, 'Sempurna');
+      expect(QuizGrade.forPercent(100), QuizGrade.sempurna);
     });
 
     test('99% -> Hebat', () {
       expect(QuizGrade.forPercent(99), QuizGrade.hebat);
-      expect(QuizGrade.forPercent(99).label, 'Hebat');
+      expect(QuizGrade.forPercent(99), QuizGrade.hebat);
     });
 
     test('80% -> Hebat', () {
       expect(QuizGrade.forPercent(80), QuizGrade.hebat);
-      expect(QuizGrade.forPercent(80).label, 'Hebat');
+      expect(QuizGrade.forPercent(80), QuizGrade.hebat);
     });
 
     test('79% -> Bagus', () {
       expect(QuizGrade.forPercent(79), QuizGrade.bagus);
-      expect(QuizGrade.forPercent(79).label, 'Bagus');
+      expect(QuizGrade.forPercent(79), QuizGrade.bagus);
     });
 
     test('60% -> Bagus', () {
       expect(QuizGrade.forPercent(60), QuizGrade.bagus);
-      expect(QuizGrade.forPercent(60).label, 'Bagus');
+      expect(QuizGrade.forPercent(60), QuizGrade.bagus);
     });
 
     test('59% -> Belajar Lagi', () {
       expect(QuizGrade.forPercent(59), QuizGrade.belajarLagi);
-      expect(QuizGrade.forPercent(59).label, 'Belajar Lagi');
+      expect(QuizGrade.forPercent(59), QuizGrade.belajarLagi);
     });
 
     test('40% -> Belajar Lagi', () {
       expect(QuizGrade.forPercent(40), QuizGrade.belajarLagi);
-      expect(QuizGrade.forPercent(40).label, 'Belajar Lagi');
+      expect(QuizGrade.forPercent(40), QuizGrade.belajarLagi);
     });
 
     test('39% -> Coba Lagi', () {
       expect(QuizGrade.forPercent(39), QuizGrade.cobaLagi);
-      expect(QuizGrade.forPercent(39).label, 'Coba Lagi');
+      expect(QuizGrade.forPercent(39), QuizGrade.cobaLagi);
     });
 
     test('0% -> Coba Lagi', () {
       expect(QuizGrade.forPercent(0), QuizGrade.cobaLagi);
-      expect(QuizGrade.forPercent(0).label, 'Coba Lagi');
+      expect(QuizGrade.forPercent(0), QuizGrade.cobaLagi);
     });
 
     test('gradeFor calculates percent from trophies and question count', () {
@@ -58,87 +58,50 @@ void main() {
     });
   });
 
-  group('StudentLevel boundary tests', () {
-    test('99 trophies -> Lv1 Eco Starter', () {
-      final level = StudentLevel.forTotal(99);
+  group('StudentLevel boundary tests (decision 0210 thresholds)', () {
+    test('149 -> Lv1 Eco Starter', () {
+      final level = StudentLevel.forTotal(149);
       expect(level, StudentLevel.ecoStarter);
       expect(level.levelNumber, 1);
       expect(level.title, 'Eco Starter');
       expect(level.shortName, 'Lv1 Eco Starter');
       expect(level.levelAndTitle, 'Level 1 · Eco Starter');
-      // Progress: 99 / 100 = 0.99
-      expect(level.progress(99), closeTo(0.99, 0.001));
+      expect(level.progress(149), closeTo(149 / 150, 0.001));
+      expect(StudentLevel.forTotal(0), StudentLevel.ecoStarter);
     });
 
-    test('100 trophies -> Lv2 Waste Spotter', () {
-      final level = StudentLevel.forTotal(100);
+    test('150 -> Lv2 Waste Spotter, 374 stays Lv2', () {
+      final level = StudentLevel.forTotal(150);
       expect(level, StudentLevel.wasteSpotter);
-      expect(level.levelNumber, 2);
-      expect(level.title, 'Waste Spotter');
       expect(level.levelAndTitle, 'Level 2 · Waste Spotter');
-      // Progress at start of level 2 (min 100, next 250): 0.0
-      expect(level.progress(100), 0.0);
+      expect(level.progress(150), 0.0);
+      expect(StudentLevel.forTotal(374), StudentLevel.wasteSpotter);
+      expect(level.progress(374), closeTo(224 / 225, 0.001));
     });
 
-    test('249 trophies -> Lv2 Waste Spotter', () {
-      final level = StudentLevel.forTotal(249);
-      expect(level, StudentLevel.wasteSpotter);
-      expect(level.levelNumber, 2);
-      // Progress: (249 - 100) / (250 - 100) = 149 / 150 = 0.9933
-      expect(level.progress(249), closeTo(149 / 150, 0.001));
-    });
-
-    test('250 trophies -> Lv3 Bin Expert', () {
-      final level = StudentLevel.forTotal(250);
+    test('375 -> Lv3 Bin Expert, 749 stays Lv3', () {
+      final level = StudentLevel.forTotal(375);
       expect(level, StudentLevel.binExpert);
-      expect(level.levelNumber, 3);
-      expect(level.title, 'Bin Expert');
       expect(level.levelAndTitle, 'Level 3 · Bin Expert');
-      expect(level.progress(250), 0.0);
+      expect(level.progress(375), 0.0);
+      expect(StudentLevel.forTotal(749), StudentLevel.binExpert);
+      // (510 - 375) / (750 - 375) = 135 / 375 = 0.36
+      expect(level.progress(510), closeTo(0.36, 0.001));
     });
 
-    test('340 trophies -> Lv3 Bin Expert (Figma shows 340 · Level 4, but rule is Lv3)', () {
-      final level = StudentLevel.forTotal(340);
-      expect(level, StudentLevel.binExpert);
-      expect(level.levelNumber, 3);
-      expect(level.title, 'Bin Expert');
-      expect(level.levelAndTitle, 'Level 3 · Bin Expert');
-      // Progress: (340 - 250) / (500 - 250) = 90 / 250 = 0.36
-      expect(level.progress(340), closeTo(0.36, 0.001));
-    });
-
-    test('499 trophies -> Lv3 Bin Expert', () {
-      final level = StudentLevel.forTotal(499);
-      expect(level, StudentLevel.binExpert);
-      expect(level.levelNumber, 3);
-      // Progress: (499 - 250) / 250 = 249 / 250 = 0.996
-      expect(level.progress(499), closeTo(249 / 250, 0.001));
-    });
-
-    test('500 trophies -> Lv4 Eco Sorter', () {
-      final level = StudentLevel.forTotal(500);
+    test('750 -> Lv4 Eco Sorter, 1499 stays Lv4', () {
+      final level = StudentLevel.forTotal(750);
       expect(level, StudentLevel.ecoSorter);
-      expect(level.levelNumber, 4);
-      expect(level.title, 'Eco Sorter');
       expect(level.levelAndTitle, 'Level 4 · Eco Sorter');
-      expect(level.progress(500), 0.0);
+      expect(level.progress(750), 0.0);
+      expect(StudentLevel.forTotal(1499), StudentLevel.ecoSorter);
     });
 
-    test('999 trophies -> Lv4 Eco Sorter', () {
-      final level = StudentLevel.forTotal(999);
-      expect(level, StudentLevel.ecoSorter);
-      expect(level.levelNumber, 4);
-      // Progress: (999 - 500) / (1000 - 500) = 499 / 500 = 0.998
-      expect(level.progress(999), closeTo(499 / 500, 0.001));
-    });
-
-    test('1000 trophies -> Lv5 Planet Guardian', () {
-      final level = StudentLevel.forTotal(1000);
+    test('1500 -> Lv5 Planet Guardian', () {
+      final level = StudentLevel.forTotal(1500);
       expect(level, StudentLevel.planetGuardian);
-      expect(level.levelNumber, 5);
-      expect(level.title, 'Planet Guardian');
       expect(level.levelAndTitle, 'Level 5 · Planet Guardian');
-      expect(level.progress(1000), 1.0);
+      expect(level.progress(1500), 1.0);
     });
   });
 

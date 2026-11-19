@@ -1,7 +1,7 @@
 import 'package:elio/models/home_stats.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/trophy_rules.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _right = RecordQuestion(
@@ -238,26 +238,34 @@ void main() {
 
     test('bonus can move the level', () {
       final s = HomeStats.from([
-        rec(now, cat: ScanCategory.b3, qs: const [_right], trophies: 80),
+        rec(now, cat: ScanCategory.b3, qs: const [_right], trophies: 120),
       ], now);
-      expect(s.totalTrophies, 110);
+      expect(s.totalTrophies, 150);
       expect(s.level, StudentLevel.wasteSpotter);
     });
   });
 
   test('level progress from summed trophies', () {
     final s = HomeStats.from([
-      rec(now, trophies: 200),
-      rec(now, trophies: 140),
+      rec(now, trophies: 300),
+      rec(now, trophies: 210),
     ], now);
-    expect(s.totalTrophies, 340);
+    expect(s.totalTrophies, 510);
     expect(s.level, StudentLevel.binExpert);
-    expect(s.trophiesToNext, 160);
-    expect(s.levelProgress, closeTo(90 / 250, 1e-9));
+    expect(s.trophiesToNext, 240);
+    expect(s.levelProgress, closeTo(135 / 375, 1e-9));
 
-    final top = HomeStats.from([rec(now, trophies: 1200)], now);
+    final top = HomeStats.from([rec(now, trophies: 1600)], now);
     expect(top.trophiesToNext, isNull);
     expect(top.levelProgress, 1.0);
+  });
+
+  test('learning XP counts toward the level (0210, 0212)', () {
+    final records = [rec(now, trophies: 100)];
+    expect(HomeStats.from(records, now).level, StudentLevel.ecoStarter);
+    final s = HomeStats.from(records, now, learnXp: 60);
+    expect(s.totalTrophies, 160);
+    expect(s.level, StudentLevel.wasteSpotter);
   });
 
   test('year grid starts on a Sunday 16 weeks before this week', () {

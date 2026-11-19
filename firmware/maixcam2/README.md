@@ -1,13 +1,18 @@
-# M2c clean-image firmware
+# MaixCAM2 firmware (m2c-arm-v1)
 
-Deployed on the robot 16 Oct 2026: scan JSONL `firmwareSha256`
-`bbb3595e8070d4fab421ce38d5a9becbca26f6bcc8c34be4d7e29ed5c2ab79e6` matches
-`shasum -a 256 main.py`.
+Deployed on the MaixCAM2 19 Nov 2026 (over USB, `/maixapp/apps/elios_clean_m2c_v1`, v1.2.0):
+`{"cmd":"ping"}` returns `m2c-arm-v1` and `firmware_sha256`
+`17c1204f758f14e41687f3652a06f3e0adf93e98f0741e8928d5032d2a8d2230`, matching
+`shasum -a 256 main.py`. ESP32 not wired yet, so no `STAT` line seen. The board ran the
+floor-distance-guides build (0192, v1.1.0, sha256 `2149d09f…`, not on this branch; its tag id 2
+is the 80 mm floor tag). It is backed up on the board in
+`/root/backup/elios_clean_m2c_v1_2026-11-08/`; restore those files and remove `arm_bridge.py`
+and `bin_sequences.json` to roll back. Floor guides are off until 0192 is merged (tag id clash).
 
 ## MaixVision package
 
-`app.yaml` is the MaixVision app manifest (`elios_clean_m2c_v1` v1.0.0, files:
-`main.py`). The package `dist/maix-elios_clean_m2c_v1-v1.0.0.zip` is a build
+`app.yaml` is the MaixVision app manifest (`elios_clean_m2c_v1` v1.2.0, files:
+`main.py`, `arm_bridge.py`, `bin_sequences.json`; all three must be deployed together). The package `dist/maix-elios_clean_m2c_v1-v1.0.0.zip` is a build
 output (exactly `app.yaml` + `main.py`), so it is gitignored; rebuild it from
 these two files in MaixVision. Bump `version` when `main.py` changes.
 
@@ -25,11 +30,13 @@ verified byte-for-byte against the robot's currently installed script.
    those changes first so device-specific behavior is not lost. This reference's
    motor/servo handlers only print commands; it does not add hardware actuation.
 2. Deploy this directory's `main.py` to that confirmed active entry-point path,
-   retaining the robot's existing model `/root/models/elios_waste_seg.mud`,
-   MaixPy, numpy, websockets and AP configuration. Do not deploy the test file.
+   retaining `/root/models/mixformer_v2.mud`, `hand_landmarks.mud`, `hand_detector.mud`, `anchors.csv`,
+   MaixPy, numpy, websockets and AP configuration. Deploy `arm_bridge.py` and
+   `bin_sequences.json` next to `main.py`. Do not deploy the test files.
+   The arm's CONFIG (trims, inverted) is kept in `/root/elios_arm_config.json`.
    Do not run a second server beside the existing port-8765 process.
 3. Restart the existing robot application using your normal deployment workflow.
-   Its console must print `[Firmware] m2c-clean-v1 <sha256>`.
+   Its console must print `[Firmware] m2c-arm-v1 <sha256>` and `[Arm] UART /dev/ttyS2 9600 open`.
    Compare that hash with the local result of:
    `shasum -a 256 firmware/maixcam2/main.py`.
    The hash is also returned by `{"cmd":"ping"}` and included in scan JSONL
@@ -42,44 +49,38 @@ verified byte-for-byte against the robot's currently installed script.
    that old annotated-only stream; use the previous app only if needed for
    historical behavior, knowing it sends annotated pixels to Gemma.
 
-## Wire contract
+## Wire contract (m2c-track-v1, decision 0182)
 
-- `image`, `img_w`, `img_h`, `detections`: existing annotated preview contract.
+- No model draws on the frame: `image` is the clean camera JPEG (640x480).
 - `vision_protocol: 1`, increasing `frame_id`, `firmware_sha256`: every message.
-- `detection_frame_id == frame_id` plus `clean_detections`: only a successful
-  inference on this original capture. Fresh matched objects only; boxes held
-  through missed detections remain in the preview list, never the clean list.
-- `clean_image`: base64 JPEG encoded from that original capture BEFORE mask,
-  box and label drawing, only when `clean_detections` is nonempty. Identical
-  dimensions/orientation to preview; center XYWH geometry uses those pixels.
-- Between inference frames, detection_frame_id is null and clean fields are
-  omitted. No cached clean images are retransmitted. A fresh empty list counts
-  as an empty-scene observation; a preview-only frame does not.
+- `detections`: the tracked box (after `track_start`) plus `Human_Hand` boxes, centre
+  x/y, w, h, label, score; the tracked box also has `track_id`. Both are fresh on
+  detection frames and held in between (MixFormerV2 costs ~63 ms a call).
+- `arm_tags`: AprilTag TAG36H11 ids 0 and 1 seen at the last detection frame:
+  `id`, `cx`, `cy`, and `dist_mm` with `dist_rough: true` (nominal lens, not calibrated).
+- `image` is the live preview at JPEG quality 60. Every `DET_EVERY_N_FRAMES`-th frame:
+  `detection_frame_id == frame_id` and `clean_detections` (same list). At most every
+  `CLEAN_EVERY_MS` (700 ms) one of them also carries `clean_image`: the same frame at quality 80
+  for the AI (LOCK and refine use one up to 1 s old).
+- Commands: `{"cmd":"track_start","box":[x,y,w,h],"label":"kardus"}` (top-left x/y in
+  stream pixels) answers `{"event":"track_started","track_id":n}` or
+  `{"event":"track_error","error":...}`; `{"cmd":"track_stop"}` answers `track_stopped`.
+  A lost item is not dropped: after `TRACK_REFIND_AFTER` low-score calls the tracker searches
+  the whole frame, and the box comes back with the same `track_id` when it finds the item.
+- A `[FPS]` line every 5 s on the console gives fps and ms per stage.
 
-One extra JPEG is necessary on nonempty inference frames to retain the proven
-burned-in mask preview without inventing another mask-rendering protocol.
-There is no extra JPEG on intervening, empty or held-only frames. Encoding is
-once per capture, shared across clients; legacy clients ignore the added fields
-but still receive the larger inference messages. Bandwidth/FPS require hardware
-measurement; identification now samples fresh inference frames, not every preview.
-No cooldown, lock or score thresholds changed. No recoloring/inpainting is used.
+## Arm bridge (m2c-arm-v1, decision 0235)
 
-## Retest gate
-
-- Isolated phone and bottle: inspect exact saved `*-identify.jpg` files, not
-  preview screenshots. No synthetic red mask, green box or detector text may
-  appear. JSONL must show `imageSource: clean_image`, matching frame/detection
-  IDs and the deployed firmware hash. Record returned item/material/category.
-- Preview must retain segmentation and visibly move during Looking, B3
-  confirmation and quiz. Check FPS with the extra inference-frame encoding.
-- E_Waste must still force B3 confirmation when Gemma returns anorganik/residu;
-  Continue must open the quiz, Rescan must not open a late quiz.
-- Close during Looking, wait for the late result, then finish a later scan.
-  After quiz close wait 15 s plus >=2 s empty; hold an item 60 s without repeats.
-- Report crop, identify first-token/completion and question generation separately
-  from human confirmation wait. `hazard_continue` minus `resolved` elapsed time
-  gives confirmation wait. Total lock-to-question includes that wait.
-
-Local check: `python3 firmware/maixcam2/test_clean_stream.py`. This executes the
-actual stream function with fake camera/inference; it does not verify MaixPy's
-native encoder, deployment, performance, or recognition. M2c remains incomplete.
+- ESP32 `6-axis-esp32-twoway-tmc2208` in stream mode on UART2 (`/dev/ttyS2`, B0 TX, B1 RX), 9600 baud.
+  20 frames a second `F0..F5,CC` once the app has moved the arm; nothing before (the servos stay as
+  they booted). Every field is filled; the arm is never released by the MaixCAM2.
+- 0023 commands answer `ack`, then `motion_done` (with `servo`, the pose last sent) or `error`:
+  `STATUS` (also `at_home`, `servo`, `esp32_boot`, `esp32_stat`), `ARM_POSE` (0234), `HOME`
+  (planned around the tank), `MOVE_TO_BIN` / `DROP` (bin_sequences.json; B3 only for now),
+  `HOLD`, `STOP`, `CONFIG`, `LOCK_DRIVE` / `UNLOCK_DRIVE` (ack only, wheels later), `PICK`
+  (`not_implemented`: picking is manual).
+- Refusals: `invalid_path`, `out_of_range`, `tank` (checked again on the board), `busy`,
+  `pose_unknown` (after an ESP32 `BOOT`: HOME first), `no_sequence`, `not_at_bin`,
+  `bin_not_confirmed` (DROP guard: that bin's tag must be seen within 2 s at the state point),
+  `watchdog` (no app message for 1 s: the arm holds).
+- `arm_tags` also reports bin tags 2 (anorganik), 3 (organik), 4 (B3).

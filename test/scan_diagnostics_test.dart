@@ -6,7 +6,7 @@ import 'dart:typed_data';
 import 'package:elio/services/detection_crop.dart';
 import 'package:elio/services/detection_stabilizer.dart';
 import 'package:elio/services/frame_source/frame_source.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/scan_diagnostics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
@@ -20,7 +20,7 @@ void main() {
       final root = await Directory.systemTemp.createTemp('m2c-test-');
       final directory = Completer<Directory>();
       final diagnostics = ScanDiagnostics(directory: () => directory.future);
-      final service = GemmaQuizService.instance;
+      final service = AiQuizService.instance;
       final source = img.Image(width: 80, height: 40);
       img.fillRect(
         source,
@@ -50,9 +50,8 @@ void main() {
       expect(img.decodeJpg(crop.bytes!)!.getPixel(10, 10).r, greaterThan(240));
       Uint8List? supplied;
       service.mockSendExecute =
-          (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+          (prompt, {imageBytes, isUser = false}) async {
             supplied = imageBytes;
-            onToken?.call('{');
             return '{"item":"ponsel","material":"elektronik","category":"B3"}';
           };
       try {
@@ -80,18 +79,13 @@ void main() {
           events.map((e) => e['event']),
           containsAllInOrder([
             'identify_request',
-            'vision_mock',
-            'identify_first_token',
+            'vision_submit',
             'identify_complete',
           ]),
         );
         final completed = events.last;
         expect(completed['rawJson'], contains('ponsel'));
-        expect(completed['firstTokenMs'], isA<int>());
-        expect(
-          completed['requestMs'],
-          greaterThanOrEqualTo(completed['firstTokenMs']),
-        );
+        expect(completed['requestMs'], isA<int>());
       } finally {
         service.mockSendExecute = null;
         await service.cancel();

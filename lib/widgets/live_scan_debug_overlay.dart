@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/live_scan_controller.dart';
 import '../services/live_scan_state_machine.dart';
 import '../services/websocket_service.dart' show ArmTag;
+import 'package:elio/l10n/l10n.dart';
 
 /// Debug-only readout for the robot live scan (M2a): state, analysed fps,
 /// quiz starts ("identify calls"), asks refused as busy, utterances started
@@ -21,7 +22,7 @@ class LiveScanDebugOverlay extends StatelessWidget {
 
   final LiveScanController controller;
 
-  /// The current scan: Gemma's item and the detector class (decision 0025).
+  /// The current scan: the AI's item and the detector class (decision 0025).
   final String? scanLine;
 
   /// AprilTags on the arm from the camera (decision 0022/0027).
@@ -60,7 +61,7 @@ class LiveScanDebugOverlay extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                     side: const BorderSide(color: Colors.white54),
                   ),
-                  child: const Text('Reset scan (debug)'),
+                  child: Text(context.l10n.resetScanDebug),
                 ),
                 const SizedBox(height: 4),
                 Text(

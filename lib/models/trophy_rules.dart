@@ -1,3 +1,5 @@
+import 'package:elio/l10n/l10n.dart';
+
 /// Grade given based on quiz percentage (trophies / (questions * 10) * 100).
 /// Boundaries:
 /// - 100 %     : Sempurna
@@ -6,15 +8,21 @@
 /// - 40 - 59 % : Belajar Lagi
 /// - < 40 %    : Coba Lagi
 enum QuizGrade {
-  sempurna('Sempurna', 100, 100),
-  hebat('Hebat', 80, 99),
-  bagus('Bagus', 60, 79),
-  belajarLagi('Belajar Lagi', 40, 59),
-  cobaLagi('Coba Lagi', 0, 39);
+  sempurna(100, 100),
+  hebat(80, 99),
+  bagus(60, 79),
+  belajarLagi(40, 59),
+  cobaLagi(0, 39);
 
-  const QuizGrade(this.label, this.minPercent, this.maxPercent);
+  const QuizGrade(this.minPercent, this.maxPercent);
 
-  final String label;
+  String get label => switch (this) {
+    sempurna => l10n.gradePerfect,
+    hebat => l10n.gradeGreat,
+    bagus => l10n.gradeGood,
+    belajarLagi => l10n.gradeKeepLearning,
+    cobaLagi => l10n.gradeTryAgain,
+  };
   final int minPercent;
   final int maxPercent;
 
@@ -29,28 +37,35 @@ enum QuizGrade {
 
 /// Student level derived from total cumulative trophies.
 /// Boundaries:
-/// - Lv1 Eco Starter     : 0 - 99
-/// - Lv2 Waste Spotter   : 100 - 249
-/// - Lv3 Bin Expert      : 250 - 499
-/// - Lv4 Eco Sorter      : 500 - 999
-/// - Lv5 Planet Guardian : 1000+
+/// - Lv1 Eco Starter     : 0 - 149
+/// - Lv2 Waste Spotter   : 150 - 374
+/// - Lv3 Bin Expert      : 375 - 749
+/// - Lv4 Eco Sorter      : 750 - 1499
+/// - Lv5 Planet Guardian : 1500+
+/// Counts scan trophies + quest rewards + guide XP; ×1.5 of the old
+/// scan-only thresholds so adding guide XP does not lift everyone (decision 0210).
 enum StudentLevel {
-  ecoStarter(1, 'Eco Starter', 0, 99, 100),
-  wasteSpotter(2, 'Waste Spotter', 100, 249, 250),
-  binExpert(3, 'Bin Expert', 250, 499, 500),
-  ecoSorter(4, 'Eco Sorter', 500, 999, 1000),
-  planetGuardian(5, 'Planet Guardian', 1000, null, null);
+  ecoStarter(1, 0, 149, 150),
+  wasteSpotter(2, 150, 374, 375),
+  binExpert(3, 375, 749, 750),
+  ecoSorter(4, 750, 1499, 1500),
+  planetGuardian(5, 1500, null, null);
 
   const StudentLevel(
     this.levelNumber,
-    this.title,
     this.minTrophies,
     this.maxTrophies,
     this.nextLevelThreshold,
   );
 
   final int levelNumber;
-  final String title;
+  String get title => switch (this) {
+    ecoStarter => l10n.levelEcoStarter,
+    wasteSpotter => l10n.levelWasteSpotter,
+    binExpert => l10n.levelBinExpert,
+    ecoSorter => l10n.levelEcoSorter,
+    planetGuardian => l10n.levelPlanetGuardian,
+  };
   final int minTrophies;
   final int? maxTrophies;
   final int? nextLevelThreshold;
@@ -58,13 +73,10 @@ enum StudentLevel {
   String get shortName => 'Lv$levelNumber $title';
   String get levelAndTitle => 'Level $levelNumber · $title';
 
-  static StudentLevel forTotal(int trophies) {
-    if (trophies >= 1000) return StudentLevel.planetGuardian;
-    if (trophies >= 500) return StudentLevel.ecoSorter;
-    if (trophies >= 250) return StudentLevel.binExpert;
-    if (trophies >= 100) return StudentLevel.wasteSpotter;
-    return StudentLevel.ecoStarter;
-  }
+  static StudentLevel forTotal(int trophies) => values.lastWhere(
+    (l) => trophies >= l.minTrophies,
+    orElse: () => ecoStarter,
+  );
 
   /// Linear progress fraction [0.0, 1.0] towards the next level threshold.
   double progress(int totalTrophies) {
@@ -118,5 +130,7 @@ double gradePercent({required int trophies, required int totalQuestions}) {
 
 /// Returns the QuizGrade for given trophies and total question count.
 QuizGrade gradeFor({required int trophies, required int totalQuestions}) {
-  return QuizGrade.forPercent(gradePercent(trophies: trophies, totalQuestions: totalQuestions));
+  return QuizGrade.forPercent(
+    gradePercent(trophies: trophies, totalQuestions: totalQuestions),
+  );
 }

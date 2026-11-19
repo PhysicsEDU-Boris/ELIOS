@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/live_scan_controller.dart';
 import 'package:elio/services/detection_crop.dart';
 import 'package:elio/services/detection_stabilizer.dart' show TrackedDetection;
@@ -507,11 +507,11 @@ void main() {
 
   test('a chat message during ASKING gets the "Scan sampah dulu" reply and does not stall the machine', () async {
     final question = Completer<String?>();
-    GemmaQuizService.instance.mockSendExecute =
-        (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => question.future;
-    addTearDown(() => GemmaQuizService.instance.mockSendExecute = null);
+    AiQuizService.instance.mockSendExecute =
+        (prompt, {imageBytes, isUser = false}) => question.future;
+    addTearDown(() => AiQuizService.instance.mockSendExecute = null);
     // Needs a question that is still loading: only the opt-in Gemma path has one (decision 0017).
-    WasteQuizNotifier.sourceOverride = QuestionSource.gemma;
+    WasteQuizNotifier.sourceOverride = QuestionSource.ai;
     addTearDown(() => WasteQuizNotifier.sourceOverride = null);
 
     final container = ProviderContainer(overrides: [appPreferencesProvider.overrideWith(_SeededPrefs.new)]);
@@ -539,7 +539,7 @@ void main() {
     expect(container.read(wasteQuizProvider).phase, WasteQuizPhase.loadingQuestion);
 
     await quiz.sendChatMessage('ini sampah apa?');
-    expect(container.read(wasteQuizProvider).messages.last.text, startsWith('Scan sampah dulu'));
+    expect(container.read(wasteQuizProvider).messages.last.text, startsWith('Scan an item first'));
     expect(c.machine.state, LiveScanState.asking);
 
     question.complete('{"question": "Bahan utama botol ini?", "correct": "PET", "wrong": ["Kaca", "Logam", "Kertas"], '

@@ -1,0 +1,221 @@
+# 0182: The camera tracks the LOCK box; hands and arm tags; no waste model
+
+- Status: Accepted (owner, 3 Nov 2026: step 2 of "drop the .mud model, Gemini box on LOCK,
+  tracking after the lock, AprilTags for the arm"); robot-tested 4 Nov (see below)
+- Date: 2026-11-04
+- Builds on: [0181](0181-lock-button-ai-box.md) (LOCK box), [0180](0180-segmentation-and-fps-options.md)
+  (FPS), [0022](0022-detection-protocol-distance-tags.md) (`track_id`, `arm_tags`),
+  [0027](0027-arm-serial-protocol.md) (hand pause), [0178](0178-robot-wifi-qr-setup.md) (Wi-Fi QR, kept).
+
+## Decision
+
+`firmware/maixcam2/main.py` (`m2c-track-v1`, started from the camera's live `feat/wifi-qr-setup`
+file so the Wi-Fi QR setup stays):
+
+- **No waste model.** `elios_waste_seg.mud` is not loaded (it stays on the camera). Nothing is
+  drawn on frames, so `image` is the clean frame. Stream is 640x480 (was 640x640, the model's
+  input).
+- **Tracking.** `{"cmd":"track_start","box":[x,y,w,h],"label":"..."}` (top-left x/y, stream
+  pixels, validated and clipped) starts `nn.MixFormerV2` (`mixformer_v2.mud`) on the next
+  detection frame and answers `track_started` with a new `track_id`; `track_stop` ends it. The box
+  goes out in `detections` (centre x/y, w, h, label, score, `track_id`). Score < 0.5: not sent
+  that frame; 15 low calls in a row (~3 s): tracking stops, a new LOCK is needed. ByteTrack is
+  not used: it needs a detector on every frame.
+- **Hands.** `nn.HandLandmarks` (`hand_landmarks.mud`, which runs `hand_detector.mud`) at conf
+  0.7; each hand goes out as `Human_Hand`, boxed by its 21 landmarks (the model's own box is a
+  300-770 px square crop), so `r1_orchestrator`'s pause (score ≥ 0.5) keeps working.
+- **Arm tags.** `find_apriltags` TAG36H11 on a 320x240 copy (640x480 kills the process, no Python
+  error); ids 0 (arm5 bottom, 18.52 mm) and 1 (arm3 rear, 10 mm). `arm_tags` entries carry `id`,
+  `cx`, `cy` and a **rough** `dist_mm` with `dist_rough: true`: pinhole with the nominal 81°
+  FOV (`fx` ≈ 375 px), not calibrated. Replace `NOMINAL_FX` after the calibration in
+  robotic_hand_sim `docs/camera_calibration.md`.
+- **Cadence.** Tracker, hands and tags run every 2nd frame and are held in between. MixFormerV2
+  costs about 63 ms a call; on every frame the stream fell to 8 fps.
+- **Protocol.** `vision_protocol: 1` stays. On detection frames `clean_detections` = that frame's
+  list and, when it is nonempty, `clean_image` = the same JPEG as `image` (no second encode), so
+  0181 builds pair it as before. A `[FPS]` console line every 5 s gives ms per stage.
+
+## Robot test (4 Nov, real MaixCAM2 over Wi-Fi, Mac WebSocket client; the app does not send `track_start` yet)
+
+| Firmware | fps | detection frames/s | image (base64) |
+|---|---|---|---|
+| m2c-clean-v1 (seg model, 640x640) | 10.4 | 5.2 | 84 KB |
+| m2c-track-v1, nothing locked | 17.0–19.8 | 8.5–9.9 | 64–77 KB |
+| m2c-track-v1, tracker every frame | 8.2 | 4.1 | 77 KB |
+| m2c-track-v1, tracker every 2nd frame, locked | 10.5 | 5.3 | 73 KB |
+
+- A cigarette pack locked from a fresh frame: the box followed it while it was moved and lifted by
+  hand (score 0.65–1.0). An open palm over it lost the track; the box did not jump to the hand,
+  and tracking stopped 3 s later. (`docs/test-results/0182/track-pack-and-hand.jpg`)
+- A box sent from an older frame (the scene had shifted) was tracked on background at score 1.0:
+  MixFormerV2 follows whatever patch it gets. **App step 3 must send the box of the frame it gave
+  Gemini**, and the item should stay still until LOCK answers (~2 s).
+- Hands: 58 of 644 frames, score 0.81–0.996, but boxed by the model's square crop. After the
+  switch to landmark boxes: an open hand moved around in 162 of 259 frames (17.2 fps), each box
+  fitting the hand (`docs/test-results/0182/hand-landmark-boxes.jpg`).
+- AprilTags: none in view, so the tag path ran but `arm_tags` stayed empty; distance not checked.
+- AprilTags, screen test (4 Nov, [report](../test-results/0182/apriltag-screen-test.md)): ids 0
+  and 1 both decode, 100 % of frames when not glared, tags 88–97 px at 640; tags on 21 fps vs
+  45 off. Small tags on the printed arm and `dist_mm` against a real distance not tested yet.
+- Printed tags on a wall (4 Nov, [report](../test-results/0182/apriltag-print-readability-fx.md)):
+  measured fx 487 px (nominal 375 reads 23 % short); id 0 99 % to 200 mm, distance within 2 mm;
+  id 1 (6.17 mm black square) 98 % to 150 mm, 0 % at 200 mm in the half-size search, but
+  OpenCV full-frame reads it. Fix not built yet.
+
+## App step 3 (owner, 4 Nov: "Yes, step 3")
+
+- LOCK sends `track_start` with the AI's box in pixels of the frame it sent to the AI
+  (`lib/services/lock_tracking.dart`); UNLOCK sends `track_stop`. Old firmware ignores both.
+- The green box over the video follows the detection that has a `track_id` (only the locked item has
+  one); before the first one, and after the camera loses the item, it stays where it last was.
+- The live scan and its quiz skip the tracked box, so LOCK still opens no quiz (0181); hands still
+  reach it, so the arm pause is unchanged.
+- A box more than 2x larger or smaller in area than the previous box is dropped in the firmware
+  (`TRACK_MAX_GROWTH`), and the app hides the green box 1.5 s after the last tracked box
+  (`lockOverlayBox`).
+
+### Phone tests (4 Nov, Motorola, debug APK, real MaixCAM2; owner's screen recordings)
+
+- APK `4674d13`: LOCK boxed the pack ("Kardus"), and the box followed it. A hand lifting it from the top
+  stretched the box to twice the height, the camera then lost it, and the phone kept drawing that
+  stale box for 20 s. This led to the two fixes above.
+- APK `478cb47`, firmware `5adb4417`: the box followed the pack while it stood, was pushed, and
+  was lifted and carried up-left (20-35 s). At 36 s a fast lift with a twist lost it, and the box
+  disappeared as intended. With the pack back in place there was no box until a new LOCK.
+  The video read 10-12 fps while tracking and 16-21 fps otherwise
+  (`docs/test-results/0182/phone-lock-follow-retest.jpg`).
+- Firmware `ae18b046` (no give-up, whole-frame re-find after 5 misses): a lost pack came back in
+  under a second (22.0 -> 22.7 s, 86.0 -> 86.7 s). Box size stays approximate after a flip or
+  turn (half the pack, or too big): MixFormerV2 keeps the LOCK shape, it does not measure the
+  outline.
+- Firmware `763bef6c` (`steady()`: a box within 15 % shift and 30 % size of the last one is
+  blended 25 %): the box sat still on a still pack (51-57 s, 116-119 s); a pack laid flat was
+  lost and found again when stood up.
+- Measured on the camera with the pack still (69 boxes, 15 s): centre x +-0.5 px, width +-1 px,
+  centre y +-4.5 px, height +-7 px of 124. Owner: after LOCK a still item needs one fixed box;
+  moving may bounce, settling must not bounce much. So `steady()` became `hold()`: within 10 %
+  shift / 15 % size of the held box the held box is sent unchanged; beyond it the box follows at
+  once; after 5 still calls (~1 s) it moves once to their median if that is more than 3 px away.
+  The 3x size guard now compares with the previous box, not the LOCK box, so driving closer
+  after LOCK is followed.
+- Hold measured on the camera (68 boxes, 15 s, still pack): height range 14 -> 1 px, centre y
+  9 -> 1 px; the box changed 4 times, 3 of them width re-settles of 4-5 px, so the settle step
+  became 6 % of the box instead of 3 px.
+- With the 6 % settle (firmware `ff9918e9`): 69 boxes in 15 s on a still pack, all exactly the
+  same box (0 px change in x, y, w, h), score 0.998, 9.1 fps.
+- Owner: a flipped item must not bounce either. A move now needs two calls in a row beyond 10 %
+  shift or 30 % size of the held box (one odd box is ignored); smaller size changes, such as a
+  flip in place, only go through the ~1 s median settle. A flipped-pack sequence gave 9 different
+  boxes in 10 calls before, 2 now (one settle). Cost: a move shows one call (~0.2 s) later, and
+  while the robot drives closer the size can lag up to 30 % until ~1 s after it stops.
+- The item's name sits outside, on the box's top edge (owner); inside only when the box touches
+  the top of the video.
+- Robot check (firmware `f3f8073a`, 15 s): one fixed box for 8.3 s; flipped in the hand, lost
+  2 s, found again, one move and one settle, then fixed again. After a second loss the
+  whole-frame re-find took a box 2.8x the pack's area (a hand), so the per-call size guard went
+  from 3x to 2x (driving closer grows it ~1.3x a call).
+- Owner's video (11:04): with hold only, a sliding pack's box moved in steps and trailed it; a
+  pack laid flat kept the upright LOCK shape (too tall, half off). So `hold()` got a follow mode:
+  two odd boxes in a row switch to follow (every box sent, as before); five boxes in a row within
+  the band of their median (one odd allowed) switch back to hold on that median. The flat-pack
+  shape needs a fresh measurement (Gemini), not the tracker.
+- **Refine** (owner, 4 Nov: "yes, build it"): the camera adds `held` to the tracked box (true while
+  still). On `held` false -> true the app asks Gemini once for a tight box in a crop of the
+  tracked box with half its size around it, and sends `track_start` with it; if the item has had
+  no settled box for 2 s (lost, or a shape the tracker does not know: a pack laid flat never
+  settled), it asks in the whole frame. At most one call per 3 s; a late answer is dropped if
+  the lock changed or the item moved. Old firmware (no `held`) never refines.
+- Robot check (firmware `8369627a`, APK `4afd591`, 45 s of handling): upright pack held 92x138;
+  laid flat, lost, whole-frame refine at 13 s gave a flat 141x99 box; slid and settled, refine
+  156x99; moved again, refine at 38.7 s. 3 AI calls in 45 s, none while the pack sat still.
+- Owner video 11:23: after a refine the tracker often shrank onto half of a flat pack, and the
+  camera then held the tracker's half box. So the sent box is now the AI's box, moved and scaled
+  by the tracker's motion (`place()`); the tracker is trusted for motion only. While still the AI
+  box is sent unchanged; while moving it follows the tracker; when it settles it is held there and
+  the app asks the AI for the new shape.
+- Low fps in another room (2.4 fps unlocked on WIFIBOR at -58..-73 dBm, 13.3 fps on the owner's
+  hotspot at -46 dBm, same spot) was the Wi-Fi. To carry more frames on any link (owner: "better
+  fps without hurting the AI"): the preview is JPEG quality 60 (to_format gave 80; -37 % bytes on a
+  desk frame, hardly visible), and the AI picture `clean_image` stays at 80 but goes out at most
+  every 700 ms instead of as a second copy on every frame with a box. LOCK and refine use a clean
+  picture up to 1 s old. Estimate: -48 % data while locked, -22 % unlocked.
+- Measured on the hotspot (-46 dBm): unlocked 13.5 -> 15.3 fps, 760 -> 660 KB/s (preview 56 -> 38 KB);
+  locked 10.0 fps at 456 KB/s (old firmware ~840 KB/s at that rate). Locked fps is now the
+  camera's limit (MixFormerV2 ~63 ms every 2nd frame), not the Wi-Fi.
+- Step benchmark on the camera (4 Nov, app closed): camera read waits 32 ms (30 fps sensor), JPEG
+  q60 7.7 ms, pack 0.9 ms, hands 5.9 ms, **AprilTags 50 ms**, tracker 30 ms (Sipeed's figure). The
+  "63 ms" above was tags + tracker together. A tracker thread does not run in parallel (video
+  32.7 -> 16 fps). fps comes in steps of the 33 ms frame time, so 100 ms of work meant 10 fps.
+- Owner: AprilTags only around a grip, and the camera screen off while a phone is connected. The
+  app sends `{"cmd":"arm_tags","on":bool}`: on from R1 POSITION until the grip is done and for 5 s
+  after a manual PICK UP; the camera starts with tags off and turns them off when the stream
+  stops. The screen goes dark while a client is connected; a tap wakes it for 15 s and presses
+  nothing.
+- Result (firmware `6a70f542`, hotspot -36 dBm): **unlocked 32.7 fps** (was 15.3), **locked
+  17.3 fps** (was 10.0).
+- Owner checked the screen: dark while the phone is connected, a tap lights it, dark again after ~15 s.
+- **Back to the 11:04 tracking** (owner, 4 Nov: "I like that one: it doesn't burn much API and
+  follows smoothly"). The tracking code and tests are the `77a4b3e` version again (camera
+  `97acb390` at 11:04): the tracker's own box, `hold()` with two odd boxes in a row before a move
+  and a once-a-second median settle, 2x size guard, whole-frame re-find. The app makes **one AI
+  call per LOCK**: follow mode, the AI refine (`held`, settle and unsettled calls, ~8 calls/min while
+  handling) and "the AI box moved by the tracker" are removed. Kept: lighter JPEG, AI picture
+  every 0.7 s, tags only around a grip, screen off, the name above the box.
+- Owner video 15:21 (that setup, 1 AI call, 33 fps unlocked / ~20 locked): a hand holding the pack
+  made the tracker box grow over hand and pack (2-3x), and afterwards the real pack was refused by
+  the 2x guard for up to 15 s (it compared with that oversized box). Now a box is also taken when
+  it is within 2x of the LOCK box, and a box that grew more than 1.3x while a detected hand
+  overlaps it is not taken (the held box stays until the hand lets go). Hands now run before the
+  tracker on a detection frame so the tracker sees this frame's hands.
+- Owner video 15:36: boxes still ballooned over a hand from above. A 40 s log showed the hand
+  detected (0.80-0.99) on only about every other detection frame, and the box grew exactly on the
+  misses (158 -> 402 px tall). Now a hand counts for 1 s after it was seen, and a box that grew by
+  more than 1.3x against the last confirmed size (LOCK, a settle, a confirmed growth) is taken only
+  when 5 calls in a row agree on one size; plain moves still follow after 2 calls. Cost: a real
+  growth (driving closer) shows ~1 s late. Each tracked box now carries `raw`, the tracker's own
+  box, and `hand: true` when the hand rule kept the held box, for logs (the app ignores both).
+- Robot log (firmware `9cd825b3`, 40 s of grabbing from above, pushing, letting go): boxes over 250 px
+  tall sent 40 -> 4 (the tracker made 15; the hand rule kept the held box 97 times); a box on 339
+  of 344 detection frames (no long gaps); 17.2 fps locked with the logging client attached.
+- For an accurate pick box the plan is a fresh Gemini box once the item is still, before
+  picking (not built).
+
+## Shrink rule (4 Nov, phone video 21:12, decision 0183's branch)
+
+- **Seen.** A tag card slid over the locked bottle. Each tracker box was a bit smaller, every step
+  under the 2x size guard, and `hold()` took a smaller box after two in a row as an ordinary move.
+  The green box ended on a patch of floor (170–183 s).
+- **Rule.** A box more than `GROW_MIN` (1.3x) smaller than the confirmed size now needs
+  `SETTLE_CALLS` (5) agreeing boxes, the same as growth. While the item is covered, the held box
+  stays. An item that is really smaller (the robot drove away and stopped) is taken after about 1 s.
+- **Test.** `test_a_box_shrinking_under_a_cover_keeps_the_held_box`, break-checked.
+- **Phone re-test** (firmware `dcea9b1d`, 170 s, recorded over USB with the camera's own box log;
+  [screenshot](../test-results/0182/shrink-rule-phone-cover.jpg)):
+  - Cup locked and covered by hand and card for about 100 s: the box was on the cup in 767 of
+    791 sent frames (97 %). There was no tiny box. 87 times the held box stayed while the
+    tracker's own box was elsewhere. The box was hidden 23 % of the time (tracker score low
+    while covered).
+  - Earphone case covered by the card: 304 of 304 sent frames on the item.
+  - Left over: three short sideways jumps of the same size (0.3–0.4 s each, at 30, 34 and
+    104 s), where the tracker found a matching patch while the cup was fully covered, twice in
+    a row.
+  - App log: no errors. LIVE 19–21 fps with the Mac recorder as a second client.
+
+## Not in this step
+
+- The arm picking the tracked box (R1 still takes its target from the live scan's lock).
+- A lost item is not found again by itself: the green box goes away and the user presses UNLOCK and
+  LOCK again. No message says so yet.
+- Calibration (`dist_cm`, `lateral_cm`, exact `dist_mm`).
+
+## Tests
+
+`firmware/maixcam2/test_clean_stream.py`: box validation, tracker init/follow/lose, landmark hand
+boxes, tag ids and rough distance (no NaN on the wire), half-size tag search, and the real
+`ws_frame_pusher` with fakes (one JPEG per frame, `clean_image` == `image`, held boxes). The new
+tests fail on the old firmware (break-check). Wi-Fi and dashboard tests unchanged.
+
+## Rollback
+
+On the camera: `cp /root/main.py.pre-track.bak /maixapp/apps/elios_clean_m2c_v1/main.py` (and
+`/root/app.yaml.pre-track.bak` to `app.yaml`), then close and reopen ELIOS Clean Vision.

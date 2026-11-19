@@ -7,6 +7,8 @@ import '../services/scan_record_store.dart';
 import '../theme/elio_tokens.dart';
 import 'control/r2_controls.dart';
 import 'learn/learn_ui.dart' show LearnTheme;
+import 'package:elio/l10n/l10n.dart';
+import 'xp_icon.dart';
 
 /// The R2 gamified Control screen layout (Figma 358:2358, decision 0173; the
 /// STOP rules of 0026 hold at every size).
@@ -142,13 +144,13 @@ class ControlLayout extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Robot Control',
+                      l10n.ctlRobotControl,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: p.textPrimary, fontSize: 20, fontWeight: FontWeight.w700),
                     ),
                     Text(
-                      'Drive close, pick it up, sort it right!',
+                      l10n.ctlSubtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: p.textSecondary, fontSize: 13),
@@ -178,7 +180,7 @@ class ControlLayout extends StatelessWidget {
     padding: EdgeInsets.all(roomy ? 16 : 10),
     child: Column(
       children: [
-        _cardHeader(Icons.speed_rounded, 'DRIVE', driveStatus),
+        _cardHeader(Icons.speed_rounded, l10n.ctlDrive, driveStatus),
         SizedBox(height: roomy ? 8 : 4),
         Expanded(child: joystick),
         if (roomy && driveHint != null) ...[const SizedBox(height: 6), driveHint!],
@@ -201,7 +203,7 @@ class ControlLayout extends StatelessWidget {
       padding: EdgeInsets.all(roomy ? 16 : 10),
       child: Column(
         children: [
-          _cardHeader(Icons.precision_manufacturing_outlined, 'ARM', armStatus),
+          _cardHeader(Icons.precision_manufacturing_outlined, l10n.ctlArm, armStatus),
           SizedBox(height: roomy ? 8 : 4),
           Expanded(
             child: Row(
@@ -368,7 +370,8 @@ class ControlPill extends StatelessWidget {
         side: BorderSide(color: dashed ? p.borderStrong : p.borderMedium, width: dashed ? 1 : 1.5),
       ),
       child: InkWell(
-        onTap: onTap,
+        onTap: withFeedback(onTap),
+        enableFeedback: false,
         customBorder: const StadiumBorder(),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 40),
@@ -407,9 +410,9 @@ class StoppedPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.elio;
     final why = switch (reason) {
-      'link_lost' => 'link lost',
+      'link_lost' => l10n.ctlLinkLost,
       'button' => 'STOP',
-      'error' => 'robot error',
+      'error' => l10n.ctlRobotError,
       _ => reason ?? '-',
     };
     return DecoratedBox(
@@ -427,7 +430,7 @@ class StoppedPill extends StatelessWidget {
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                'Robot STOPPED · $why',
+                l10n.ctlRobotStoppedWhy(why),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: p.onError, fontWeight: FontWeight.w700, fontSize: 14),
@@ -482,6 +485,7 @@ class _HomeButtonState extends State<HomeButton> with SingleTickerProviderStateM
     _holdTimer?.cancel();
     _controller.forward(from: 0.0);
     _holdTimer = Timer(widget.holdDuration, () {
+      controlFeedback();
       widget.onConfirmed();
     });
   }
@@ -496,7 +500,7 @@ class _HomeButtonState extends State<HomeButton> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: 'Tahan 1 detik untuk HOME',
+      message: l10n.ctlHoldForHome,
       child: Listener(
         behavior: HitTestBehavior.opaque,
         onPointerDown: (_) => _onDown(),
@@ -535,7 +539,7 @@ class HistoryPill extends StatelessWidget {
         final p = context.elio;
         return ControlPill(
           icon: Icons.history_rounded,
-          label: 'History',
+          label: l10n.navHistory,
           onTap:
               onTap ??
               () {
@@ -550,7 +554,7 @@ class HistoryPill extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.emoji_events_rounded, size: 14, color: p.secondaryText),
+                  const XpIcon(14),
                   const SizedBox(width: 4),
                   Text(
                     '$total',
@@ -589,7 +593,7 @@ class EmergencyStopButton extends StatelessWidget {
       children: [
         Semantics(
           button: true,
-          label: 'Berhenti darurat',
+          label: l10n.ctlEmergencyStop,
           child: Container(
             width: d,
             height: d,
@@ -607,7 +611,8 @@ class EmergencyStopButton extends StatelessWidget {
               ),
               child: InkWell(
                 customBorder: const CircleBorder(),
-                onTap: onStop,
+                onTap: withFeedback(onStop),
+                enableFeedback: false,
                 // Scaled down, never wrapped, in whatever font the device has.
                 child: Padding(
                   padding: EdgeInsets.all(d * 0.16),
@@ -645,9 +650,9 @@ class StoppedBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final why = switch (reason) {
-      'link_lost' => 'koneksi terputus',
-      'button' => 'tombol STOP',
-      'error' => 'robot error',
+      'link_lost' => l10n.ctlLinkLost,
+      'button' => l10n.ctlStopButton,
+      'error' => l10n.ctlRobotError,
       _ => reason ?? '-',
     };
     final isShort = MediaQuery.maybeSizeOf(context)?.height != null && MediaQuery.sizeOf(context).height < 500;
@@ -661,7 +666,7 @@ class StoppedBanner extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'ROBOT DIHENTIKAN ($why). Pemindaian berhenti; kuis yang terbuka tetap bisa dijawab.',
+                l10n.ctlRobotStoppedLong(why),
                 maxLines: isShort ? 1 : 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: isShort ? 11.5 : 14),
@@ -678,7 +683,7 @@ class StoppedBanner extends StatelessWidget {
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: Text('Lanjutkan', style: TextStyle(fontSize: isShort ? 12 : 14)),
+              child: Text(context.l10n.commonContinue, style: TextStyle(fontSize: isShort ? 12 : 14)),
             ),
           ],
         ),

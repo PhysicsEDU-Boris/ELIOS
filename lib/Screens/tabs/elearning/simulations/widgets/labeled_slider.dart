@@ -31,16 +31,23 @@ class LabeledSlider extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(label, style: context.text.bodySmall?.copyWith(color: p.textSecondary)),
+              child: Text(
+                label,
+                style: context.text.bodySmall?.copyWith(color: p.textSecondary),
+              ),
             ),
-            Text(valueLabel, style: ElioTokens.code.copyWith(color: p.textPrimary)),
+            Text(
+              valueLabel,
+              style: ElioTokens.code.copyWith(color: p.textPrimary),
+            ),
           ],
         ),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             activeTrackColor: p.primary,
             inactiveTrackColor: p.borderSubtle,
-            thumbColor: p.primaryActive,
+            thumbColor: p.primaryText,
+            thumbShape: _RingThumb(p.surface),
             overlayColor: p.primary.withValues(alpha: 0.15),
             trackHeight: 4,
           ),
@@ -54,5 +61,34 @@ class LabeledSlider extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+/// Learn / Slider thumb: 20 px primary/text dot with a 3 px surface ring.
+class _RingThumb extends SliderComponentShape {
+  const _RingThumb(this.ring);
+  final Color ring;
+
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) => const Size(20, 20);
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    required bool isDiscrete,
+    required TextPainter labelPainter,
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required TextDirection textDirection,
+    required double value,
+    required double textScaleFactor,
+    required Size sizeWithOverflow,
+  }) {
+    final c = context.canvas;
+    c.drawCircle(center, 10, Paint()..color = ring);
+    c.drawCircle(center, 7, Paint()..color = sliderTheme.thumbColor!);
   }
 }

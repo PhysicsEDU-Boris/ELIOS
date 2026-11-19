@@ -15,15 +15,21 @@ import 'package:flutter/services.dart'
 import '../models/config_model.dart';
 import '../models/control_session.dart';
 import '../models/scanned_waste.dart';
+import '../providers/app_preferences_provider.dart';
 import '../providers/config_link_provider.dart';
 import '../providers/esp_config_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/robot_provider.dart';
 import '../providers/waste_quiz_provider.dart';
-import '../services/gemma_quiz_service.dart';
+import '../services/ai_quiz_service.dart';
 import '../services/live_scan_controller.dart';
+import '../services/lock_tracking.dart';
 import '../services/live_scan_state_machine.dart' show LiveScanState;
 import '../services/quiz_tts_service.dart';
+import '../services/robot/fader_throttle.dart';
+import '../services/robot/joystick_controller.dart';
+import '../services/robot/robot_settings.dart';
+import 'advanced_settings_screen.dart';
 import '../services/robot/motion_gate.dart';
 import '../services/robot/r1_orchestrator.dart';
 import '../services/robot/robot_controller.dart';
@@ -48,7 +54,11 @@ import '../widgets/segmentation_overlay_painter.dart';
 import '../widgets/waste_quiz_popup.dart';
 import '../services/frame_source/maix_cam_source.dart';
 import '../services/frame_source/frame_source.dart';
+import '../services/robot/arm_kinematics.dart' show ArmRefusal;
+import '../services/robot/arm_pose.dart';
+import '../services/robot/arm_tag_switch.dart';
 import 'login_screen.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// The MaixCAM2 already draws its box, mask and label into the video, so the
 /// app's own box is a debug aid, shown with the live-scan debug overlay only.
@@ -70,6 +80,19 @@ class ControlScreen extends ConsumerStatefulWidget {
 class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindingObserver {
   final MaixCamSource _source = MaixCamSource();
   CapturedFrame? _latestFrame;
+  /// The newest frame with an unannotated image, for LOCK (0181).
+  CapturedFrame? _lastCleanFrame;
+
+  /// LOCK (0181): the AI's answer shown on the video until UNLOCK or the next LOCK.
+  LockedItem? _locked;
+
+  /// The camera tracker's box for [_locked] (0182), as fractions; null until the first one.
+  Rect? _trackBox;
+  DateTime? _trackSeenAt;
+
+  /// AprilTags (0182, 0183): on while R1 grips, and for 5 s after PICK UP or HOME.
+  final _tagSwitch = ArmTagSwitch();
+  bool _locking = false;
   StreamSubscription<CapturedFrame>? _frameSubscription;
   ProviderSubscription<AsyncValue<String>>? _statusSubscription;
   late final RobotControlNotifier _robotNotifier;
@@ -91,6 +114,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// Every motor and servo command passes here (decision 0026): the
   /// emergency stop, STOPPED, R1's drive lock, the link, the heartbeat.
   late final MotionGate _gate;
+  late final JoystickController _joystick;
+
+  /// The commanded arm pose and its planner (0234): every manual arm key goes through it.
+  final _arm = ArmPose();
+  DateTime? _armRefusedAt;
+  final _fader = FaderThrottle(); // gripper, height, reach drags (0236)
 
   /// Set only with R1 (see [_r1Enabled]).
   R1Orchestrator? _r1;
@@ -127,6 +156,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _enterLandscapeFullscreen();
     _robotNotifier = ref.read(robotControlProvider.notifier);
     _quizNotifier = ref.read(wasteQuizProvider.notifier);
+    ref.read(appPreferencesProvider); // loads Sound effects before the first click
     _dropPending = ref.read(r1DropPendingProvider.notifier);
 
     setDesktopLandscape(true);
@@ -140,17 +170,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           ref.read(wasteQuizProvider.notifier).onRobotLocked(frame, detection);
           return true;
         },
-        firstTokenMs: () => GemmaQuizService.instance.lastFirstTokenMs.value,
+        firstTokenMs: () => AiQuizService.instance.lastReplyMs.value,
         ttsCount: () => QuizTtsService.instance.startedCount,
         nextWaitMs: () => ref.read(wasteQuizProvider.notifier).lastNextWaitMs,
       )..onQuizPhase(ref.read(wasteQuizProvider).phase); // a quiz may already be open (minimized)
-
-      // M2b: preload Gemma now, so the first quiz is fast instead of showing
-      // "Memuat model Gemma ke memori...". Fire-and-forget: ensureReady is
-      // single-flight and returns at once if already loading or loaded, and
-      // a failed preload just leaves the model to load as today, on the
-      // first quiz (see GemmaQuizService.warmUp/ensureReady).
-      GemmaQuizService.instance.warmUp(vision: true);
     }
 
     final ws = WebSocketService();
@@ -167,7 +190,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         debugPrint('[Control] $event $data');
         _liveScan?.logEvent(event, data);
       },
-      onStop: (reason) => _r1?.emergencyStop(reason),
+      onStop: (reason) {
+        _fader.cancel();
+        _arm.markUnknown(); // the arm holds wherever the STOP caught it
+        _r1?.emergencyStop(reason);
+        _gate.status(); // the MaixCAM2 answers with the pose it froze at (0235)
+      },
       onArmCommand: (motion) => _liveScan?.onArmCommand(motion),
       onHomeTimeout: () {
         if (mounted) {
@@ -183,11 +211,32 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         }
         if (mounted) setState(() {});
       });
+    _joystick = JoystickController(
+      // The speed fader is the top speed: a full push drives at its PWM.
+      sendDrive: (l, r) {
+        final s = ref.read(robotControlProvider).pwmSpeed;
+        _gate.motor((l * s).round(), (r * s).round());
+      },
+      // ponytail: a refused step is not fed back to the stick's integrator; the next accepted step
+      // is planned from the arm's real goal, so nothing jumps, but the knob's angle may run ahead.
+      sendArmBase: (servo) => _armMove(_arm.base(servo.toDouble())),
+      driveLocked: () => _gate.stopped || !_gate.linkUp || _gate.robot.driveLocked,
+      armLocked: () =>
+          _gate.stopped || !_gate.linkUp || (_gate.armBusy?.call() ?? false) || (_gate.handPaused?.call() ?? false),
+      baseServo: () => ref.read(robotControlProvider).baseAngle,
+      config: ref.read(robotSettingsProvider).joystick,
+    )..start();
+    _arm.gripClosedOffset = ref.read(robotSettingsProvider).gripClosedOffset;
     WidgetsBinding.instance.addObserver(this);
     HardwareKeyboard.instance.addHandler(_onKey);
 
     _robotReplies = ws.robotReplies.listen((msg) {
       robot.handleMessage(msg);
+      final servo = ArmPose.servoFrom(msg['servo']);
+      if (servo != null && msg['event'] != 'error') {
+        _arm.sync(servo);
+        _syncArmState();
+      }
       final reply = RobotReply.fromJson(msg);
       if (reply != null) {
         if (_gate.pendingHomeSeq != null && reply.seq == _gate.pendingHomeSeq) {
@@ -195,6 +244,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             final homeSuccess = _gate.onHomeReply(reply);
             if (homeSuccess) {
               ref.read(robotControlProvider.notifier).resetToHome();
+              _arm.markHome();
+              _syncArmState();
             }
           } else if (reply.kind == ReplyKind.error) {
             _gate.onHomeReply(reply);
@@ -227,12 +278,17 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       _r1 = R1Orchestrator(robot, onResume: (reason) {
         // A robot that misbehaved stops everything until "Lanjutkan" (0026).
         if (const {'robot_error', 'robot_unreachable', 'pick_failed'}.contains(reason)) _gate.emergencyStop('error');
+        // Wrong or unseen bin tag twice (0233): no DROP, the arm goes HOME by the usual gated path.
+        if (reason == 'bin_check_failed') _gate.home();
+        _gate.status(); // the arm's pose after the sort (0235)
       });
       _r1Ticker = Timer.periodic(const Duration(milliseconds: 250), (_) {
         final r1 = _r1!..tick();
         final text = r1.robotConnected ? 'robot terhubung' : r1.message ?? 'memeriksa robot...';
         if (mounted && text != _r1Status) setState(() => _r1Status = text);
+        _syncArmTags(DateTime.now());
         final dropPending = r1.state == R1State.sorting || r1.state == R1State.waitBoth;
+        if (dropPending) _arm.markUnknown(); // R1's PICK / bin sequence moves the arm (0233)
         if (ref.read(r1DropPendingProvider) != dropPending) {
           ref.read(r1DropPendingProvider.notifier).state = dropPending;
         }
@@ -260,8 +316,20 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
       setState(() {
         _latestFrame = frame;
+        if (frame.hasPairedCleanImage) _lastCleanFrame = frame;
         if (frame.detections != null) _hudDetections = frame.detections!;
+        if (_locked != null && frame.detections != null) {
+          final tracked = trackedBox(frame.detections!, frame.width.toDouble(), frame.height.toDouble());
+          if (tracked != null) {
+            _trackBox = tracked;
+            _trackSeenAt = now;
+          }
+        }
       });
+
+      // Every frame, not only the R1 tick: a build without R1 has no tick, and PICK UP / HOME
+      // never turned the tags on (phone test 4 Nov, 0183).
+      _syncArmTags(now);
 
       // Auto-generated waste quiz: only fed by the real MaixCAM2 stream, the
       // debug phone-camera path triggers it manually instead.
@@ -269,13 +337,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         final liveScan = _liveScan;
         if (liveScan != null) {
           liveScan.onDetections(
-            frame.detections!,
+            untracked(frame.detections!),
             frameSize: Size(frame.width.toDouble(), frame.height.toDouble()),
             armMoving: WebSocketService().armMoving, // same message as the frame (0026)
             capturedFrame: frame,
           );
         } else if (!_gate.stopped && _scanQuizOn) {
-          ref.read(wasteQuizProvider.notifier).onDetections(frame.detections!);
+          ref.read(wasteQuizProvider.notifier).onDetections(untracked(frame.detections!));
         }
       }
     });
@@ -342,9 +410,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// none starts a lock or a quiz. Never touches the stream or the robot.
   void _applyScanPause() => _liveScan?.setScanPaused(_gate.stopped || !_scanQuizOn);
 
-  /// Debug overlay: Gemma's item next to the detector class (decision 0025).
+  /// Debug overlay: the AI's item next to the detector class (decision 0025).
   static String? _scanLine(ScannedWaste? scan) =>
-      scan == null ? null : 'gemma "${scan.displayName}"   detektor ${scan.detectorLabel ?? '-'}';
+      scan == null ? null : 'AI "${scan.displayName}"   detektor ${scan.detectorLabel ?? '-'}';
 
   /// Once per (re)connection, from whichever path sees it first.
   void _onNewConnection() {
@@ -352,6 +420,26 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _liveScan?.onLinkRestored(); // 0020: a drop can't time absence; harmless on the first connect
     _r1?.linkUp(); // 0023: probe the command link (old firmware: "robot tidak terhubung")
     _gate.robot.status();
+    _tagSwitch.linkUp(); // the camera starts with tags off: say again what we want
+  }
+
+  void _syncArmTags(DateTime now) => _tagSwitch.sync(now,
+      connected: WebSocketService().isConnected,
+      r1Grips: _r1?.wantsArmTags ?? false,
+      send: WebSocketService().sendRobotCommand);
+
+  /// PICK UP or HOME: the arm moves, so the camera looks for its tags for a while.
+  void _armTagsFor(String why) {
+    _tagSwitch.press(DateTime.now());
+    _syncArmTags(DateTime.now());
+    debugPrint('[Control] arm_tags on for $why');
+  }
+
+  /// Debug builds: what the tag search sees while it is on (0183), over the video.
+  String? _tagLine() {
+    if (!kDebugMode || !_tagSwitch.wanted(DateTime.now(), r1Grips: _r1?.wantsArmTags ?? false)) return null;
+    final tags = WebSocketService().armTags ?? const [];
+    return tags.isEmpty ? 'Tags: searching...' : 'Tags: ${tags.map((t) => 'id ${t.id} · ${t.distMm.round()} mm').join('   ')}';
   }
 
   /// Escape, or space outside a text field: the emergency stop.
@@ -373,7 +461,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) => _gate.onAppLifecycle(state);
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) _joystick.letGo();
+    _gate.onAppLifecycle(state);
+  }
 
   void _enterLandscapeFullscreen() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -412,29 +503,36 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
   @override
   void dispose() {
+    _fader.cancel();
     _frameSubscription?.cancel();
     _statusSubscription?.close();
     _r1Ticker?.cancel();
     _robotReplies?.cancel();
     _statusDebounceTimer?.cancel();
     _skeletonTimer?.cancel();
+    _joystick.stop(); // no more ticks; the gate below sends motor 0,0
     HardwareKeyboard.instance.removeHandler(_onKey);
     WidgetsBinding.instance.removeObserver(this);
     _gate.dispose(); // motor 0,0, heartbeat off
 
-    // Disconnect when leaving the control screen (not a quiz pause: the
-    // stream stays up for the whole visit, M2b).
+    // Leaving Control stops the stream (motors are already 0 via the gate)
+    // but keeps a live link, so Home can offer "Resume robot control" (ELIOS 3,
+    // decision 0197). ELIOS setup's Disconnect ends the session.
     debugPrint('[Control] Stopping MaixCAM2 stream');
     _robotNotifier.stopStream();
-
-    debugPrint('[Control] Leaving robot control, disconnecting WebSocket');
-    unawaited(_robotNotifier.disconnect());
-    unawaited(GemmaQuizService.instance.dispose());
+    if (WebSocketService().isConnected) {
+      debugPrint('[Control] Leaving robot control, robot stays connected');
+    } else {
+      // Not connected: stop any reconnect loop, as before.
+      debugPrint('[Control] Leaving robot control, disconnecting WebSocket');
+      unawaited(_robotNotifier.disconnect());
+    }
+    unawaited(AiQuizService.instance.cancel());
     setDesktopLandscape(false);
     _liveScan?.dispose();
 
     // Riverpod refuses provider writes while the tree unmounts, and the throw
-    // used to skip the disconnect above: clear the drop flag and any open quiz
+    // used to skip the rest of dispose: clear the drop flag and any open quiz
     // (so it doesn't block future scans) once the tree is unlocked.
     final quiz = _quizNotifier;
     final dropPending = _dropPending;
@@ -459,6 +557,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     });
 
     // Resend resolution to the device whenever the user changes it mid-session.
+    // Advanced settings: new joystick constants from the next tick (0232).
+    ref.listen<RobotSettings>(robotSettingsProvider, (_, s) {
+      _joystick.config = s.joystick;
+      _arm.gripClosedOffset = s.gripClosedOffset;
+    });
     ref.listen<AsyncValue<EspConfig>>(espConfigProvider, (previous, next) {
       final prevPreset = previous?.valueOrNull?.resolutionPreset;
       final nextPreset = next.valueOrNull?.resolutionPreset;
@@ -502,22 +605,22 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       final p = context.elio;
       final tall = MediaQuery.sizeOf(context).height >= 700;
       final (driveWord, driveColor) = switch (link) {
-        ControlLink.waiting => ('Waiting', p.secondaryText),
-        ControlLink.disconnected => ('Offline', p.errorText),
-        _ when _gate.stopped => ('Stopped', p.errorText),
+        ControlLink.waiting => (l10n.ctlWaiting, p.secondaryText),
+        ControlLink.disconnected => (l10n.ctlOffline, p.errorText),
+        _ when _gate.stopped => (l10n.ctlStopped, p.errorText),
         _ => (switch (_driveDir) {
-            DriveDir.forward => 'Forward',
-            DriveDir.back => 'Back',
-            DriveDir.left => 'Left',
-            DriveDir.right => 'Right',
-            null => 'Ready',
+            DriveDir.forward => l10n.ctlForward,
+            DriveDir.back => l10n.ctlBack,
+            DriveDir.left => l10n.ctlLeft,
+            DriveDir.right => l10n.ctlRight,
+            null => l10n.ctlReady,
           }, p.primaryText),
       };
       final (armWord, armColor) = switch (link) {
-        ControlLink.waiting => ('Waiting', p.secondaryText),
-        ControlLink.disconnected => ('Offline', p.errorText),
-        _ when _gate.stopped => ('Stopped', p.errorText),
-        _ => (_gate.isHoming ? 'Homing' : 'Ready', p.primaryText),
+        ControlLink.waiting => (l10n.ctlWaiting, p.secondaryText),
+        ControlLink.disconnected => (l10n.ctlOffline, p.errorText),
+        _ when _gate.stopped => (l10n.ctlStopped, p.errorText),
+        _ => (_gate.isHoming ? l10n.ctlHoming : l10n.ctlReady, p.primaryText),
       };
       Widget hint(String art, String text) => Container(
             padding: const EdgeInsets.all(8),
@@ -591,18 +694,16 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                       quizState: quizState,
                       missionDone: missionDone,
                       user: user,
-                      drive: (driveWord, driveColor),
-                      arm: (armWord, armColor),
                       stop: stop,
                       reconnect: reconnect,
                     )
                   : ControlLayout(
                 stoppedBanner: _gate.stopped ? StoppedBanner(reason: _gate.stopReason, onResume: _resumeAfterStop) : null,
                 stoppedPill: _gate.stopped ? StoppedPill(reason: _gate.stopReason) : null,
-                exitButton: ControlPill(icon: Icons.arrow_back_rounded, label: 'Exit', onTap: () => Navigator.of(context).pop()),
+                exitButton: ControlPill(icon: Icons.arrow_back_rounded, label: l10n.ctlExit, onTap: () => Navigator.of(context).pop()),
                 debugScanButton: ControlPill(
                   icon: Icons.bug_report_outlined,
-                  label: 'Debug Scan',
+                  label: l10n.ctlDebugScan,
                   dashed: true,
                   onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
                 ),
@@ -613,27 +714,22 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                   isOperational,
                   DriveJoystick(
                     enabled: isOperational,
-                    onDirection: (dir) {
-                      driveCommand(_gate, dir, speed.toInt());
-                      setState(() => _driveDir = dir);
-                    },
-                    onRelease: () {
-                      _gate.stopWheels(); // motor 0,0, as every D-pad release
-                      setState(() => _driveDir = null);
-                    },
+                    onStick: (v) => _joystick.setDriveStick(v.dx, v.dy),
+                    onDirection: (dir) => setState(() => _driveDir = dir),
+                    onRelease: () => setState(() => _driveDir = null),
                   ),
                 ),
-                driveHint: hint('tyre_buddy', isOperational ? 'Push to drive · let go to stop' : 'Unlocks when the robot connects'),
+                driveHint: hint('tyre_buddy', isOperational ? l10n.ctlPushToDrive : l10n.ctlUnlocksOnConnect),
                 speed: controlEnabled(
                   isOperational,
                   Column(mainAxisSize: MainAxisSize.min, children: [
                     Row(children: [
-                      const Expanded(child: ControlCaps('SPEED (PWM)')),
+                      Expanded(child: ControlCaps(l10n.ctlSpeedPwm)),
                       Text('${speed.toInt()}%', style: TextStyle(color: p.primaryText, fontWeight: FontWeight.w700, fontSize: 14)),
                     ]),
                     SizedBox(
                       height: 40,
-                      child: ControlFader(value: speed, max: 100, semanticLabel: 'Speed', onChanged: isOperational ? notifier.setPwmSpeed : null),
+                      child: ControlFader(value: speed, max: 100, semanticLabel: l10n.ctlSpeed, onChanged: isOperational ? notifier.setPwmSpeed : null),
                     ),
                     const SizedBox(height: 4),
                     GearChips(speed: speed, onSelect: isOperational ? notifier.setPwmSpeed : null),
@@ -667,38 +763,34 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                   LayoutBuilder(builder: (context, c) {
                     final key = (c.maxHeight - 26).clamp(36.0, 64.0);
                     return Row(children: [
-                      HomeButton(onConfirmed: _gate.home, enabled: isOperational, size: key),
+                      HomeButton(
+                          onConfirmed: _armHome,
+                          enabled: isOperational,
+                          size: key),
                       const SizedBox(width: 10),
                       TransportKey(
                         icon: Icons.back_hand_outlined,
-                        label: 'PICK UP',
+                        label: l10n.ctlPickUp,
                         primary: true,
                         size: key,
                         onTap: isOperational
-                            ? () {
-                                if (_gate.servo('gripper', 100)) {
-                                  notifier.setGripperVal(100);
-                                  if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
-                                }
-                              }
+                            ? _pickUp
                             : null,
                       ),
                       const SizedBox(width: 10),
                       TransportKey(
                         icon: Icons.front_hand_outlined,
-                        label: 'RELEASE',
+                        label: l10n.ctlRelease,
                         size: key,
                         onTap: isOperational
-                            ? () {
-                                if (_gate.servo('gripper', 0)) notifier.setGripperVal(0);
-                              }
+                            ? () => _armMove(_arm.open())
                             : null,
                       ),
                       VerticalDivider(width: 24, color: p.borderSubtle),
                       Expanded(
                         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                           Row(children: [
-                            const Expanded(child: ControlCaps('GRIPPER')),
+                            Expanded(child: ControlCaps(l10n.ctlGripperCaps)),
                             Text('${robotState.gripperVal.round()}%',
                                 style: TextStyle(color: p.primaryText, fontWeight: FontWeight.w700, fontSize: 14)),
                           ]),
@@ -707,20 +799,17 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                             child: ControlFader(
                               value: robotState.gripperVal,
                               max: 100,
-                              semanticLabel: 'Gripper',
+                              semanticLabel: l10n.ctlGripper,
                               onChanged: isOperational
-                                  ? (value) {
-                                      final width = value.round();
-                                      if (_gate.servo('gripper', width)) notifier.setGripperVal(width.toDouble());
-                                    }
+                                  ? (value) => _fader(() => _armMove(_arm.gripper(value)))
                                   : null,
                             ),
                           ),
                           if (c.maxHeight >= 90)
                             Row(children: [
-                              Text('Open', style: TextStyle(color: p.textTertiary, fontSize: 11)),
+                              Text(context.l10n.controlGripOpen, style: TextStyle(color: p.textTertiary, fontSize: 11)),
                               const Spacer(),
-                              Text('Closed', style: TextStyle(color: p.textTertiary, fontSize: 11)),
+                              Text(context.l10n.controlGripClosed, style: TextStyle(color: p.textTertiary, fontSize: 11)),
                             ]),
                         ]),
                       ),
@@ -730,20 +819,14 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                 armStatus: ControlStatusChip(label: armWord, color: armColor),
                 armHeight: controlEnabled(
                   isOperational,
-                  armFader('HEIGHT', 'Up / Down', (robotState.heightValue / 180).clamp(0.0, 1.0), (value) {
-                    if (_gate.servo('height', (value * 180).toInt())) {
-                      notifier.setHeightValue(value * 180);
-                      _scheduleStatusRequest();
-                    }
+                  armFader(l10n.ctlHeight, l10n.ctlUpDown, (robotState.heightValue / 180).clamp(0.0, 1.0), (value) {
+                    _fader(() { if (_armMove(_arm.height(value))) _scheduleStatusRequest(); });
                   }),
                 ),
                 armReach: controlEnabled(
                   isOperational,
-                  armFader('REACH', 'Fwd / Back', (robotState.reachValue / 180).clamp(0.0, 1.0), (value) {
-                    if (_gate.servo('reach', (value * 180).toInt())) {
-                      notifier.setReachValue(value * 180);
-                      _scheduleStatusRequest();
-                    }
+                  armFader(l10n.ctlReach, l10n.ctlFwdBack, (robotState.reachValue / 180).clamp(0.0, 1.0), (value) {
+                    _fader(() { if (_armMove(_arm.reach(value))) _scheduleStatusRequest(); });
                   }),
                 ),
                 power: PowerGlowButton(
@@ -757,8 +840,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                 armTip: hint(
                   'gear_buddy',
                   isOperational
-                      ? 'Slide up to lift, slide forward to reach. The arm only moves when the robot is not STOPPED.'
-                      : 'Arm controls unlock when the robot is connected. STOP always works.',
+                      ? l10n.ctlArmHint
+                      : l10n.ctlArmLocked,
                 ),
                 bottomCards: [
                   MissionCard(done: missionDone),
@@ -775,13 +858,16 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                   onScanQuiz: onScanQuiz,
                   onVoice: onVoice,
                 ),
-                quiz: WasteQuizPopup(
-                  onStop: stop,
-                  showLauncher: false,
-                  onRescan: () {
-                    _liveScan?.logEvent('rescan_tapped', {});
-                    _liveScan?.rescan();
-                  },
+                // Full-screen scan pages (decision 0217).
+                quiz: Positioned.fill(
+                  child: ScanQuizPages(
+                    robot: true,
+                    onStop: stop,
+                    onRescan: () {
+                      _liveScan?.logEvent('rescan_tapped', {});
+                      _liveScan?.rescan();
+                    },
+                  ),
                 ),
               ),
             ),
@@ -798,8 +884,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     required WasteQuizUiState quizState,
     required int missionDone,
     required User? user,
-    required (String, Color) drive,
-    required (String, Color) arm,
     required VoidCallback stop,
     required VoidCallback reconnect,
   }) {
@@ -810,18 +894,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       stopped: _gate.stopped,
       stopReason: _gate.stopReason,
       skeleton: _skeleton,
-      driveLabel: drive,
-      armLabel: arm,
       speed: robotState.pwmSpeed,
       onSpeed: notifier.setPwmSpeed,
-      onDirection: (dir) {
-        driveCommand(_gate, dir, robotState.pwmSpeed.toInt());
-        setState(() => _driveDir = dir);
-      },
-      onRelease: () {
-        _gate.stopWheels();
-        setState(() => _driveDir = null);
-      },
+      onStick: (v) => _joystick.setDriveStick(v.dx, v.dy),
+      onDirection: (dir) => setState(() => _driveDir = dir),
+      onRelease: () => setState(() => _driveDir = null),
       frame: _latestFrame?.bytes,
       fps: _streamFps,
       scanQuizOn: _scanQuizOn,
@@ -831,37 +908,20 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       }),
       voiceOn: quizState.voiceOn,
       onVoice: (_) => ref.read(wasteQuizProvider.notifier).toggleVoice(),
-      onHome: _gate.home,
-      onPickUp: () {
-        if (_gate.servo('gripper', 100)) {
-          notifier.setGripperVal(100);
-          if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
-        }
-      },
-      onReleaseGripper: () {
-        if (_gate.servo('gripper', 0)) notifier.setGripperVal(0);
-      },
+      onHome: _armHome,
+      onPickUp: _pickUp,
+      onReleaseGripper: () => _armMove(_arm.open()),
       gripper: robotState.gripperVal,
-      onGripper: (value) {
-        final width = value.round();
-        if (_gate.servo('gripper', width)) {
-          notifier.setGripperVal(width.toDouble());
-        }
-      },
+      onGripper: (value) => _fader(() => _armMove(_arm.gripper(value))),
       height: robotState.heightValue,
       onHeight: (value) {
-        if (_gate.servo('height', (value * 180).toInt())) {
-          notifier.setHeightValue(value * 180);
-          _scheduleStatusRequest();
-        }
+        _fader(() { if (_armMove(_arm.height(value))) _scheduleStatusRequest(); });
       },
       reach: robotState.reachValue,
       onReach: (value) {
-        if (_gate.servo('reach', (value * 180).toInt())) {
-          notifier.setReachValue(value * 180);
-          _scheduleStatusRequest();
-        }
+        _fader(() { if (_armMove(_arm.reach(value))) _scheduleStatusRequest(); });
       },
+      onBaseStick: _joystick.setArmStick,
       onPower: link == ControlLink.disconnected
           ? reconnect
           : () => unawaited(ref.read(configLinkProvider.notifier).disconnect()),
@@ -885,16 +945,26 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onAvatar: () => _drawerKey.currentState?.open(),
       onBack: () => Navigator.of(context).pop(),
       onGuide: () => setState(() => _guideOpen = true),
+      onAdvanced: _openAdvanced,
       photoUrl: user?.photoURL,
+      onLock: _locked != null || (link == ControlLink.connected && _latestFrame != null && !_locking) ? _lockOrUnlock : null,
+      locked: _locked != null,
+      onScan: !quizOpen && !_locking && (_locked != null || (link == ControlLink.connected && _latestFrame != null)) ? _scan : null,
+      lockBox: _locked == null
+          ? null
+          : lockOverlayBox(aiBox: _locked!.box, trackBox: _trackBox, trackSeenAt: _trackSeenAt, now: DateTime.now()),
+      lockLabel: _locked == null ? null : ScannedWaste.fromLabel(_locked!.result.item!).displayName,
+      tagText: _tagLine(),
+      frameAspect: _latestFrame == null || _latestFrame!.height == 0 ? 4 / 3 : _latestFrame!.width / _latestFrame!.height,
       driveKey: _driveKey,
       stopKey: _stopKey,
       actionKey: _actionKey,
       quizKey: _quizKey,
       overlays: [
         Positioned.fill(
-          child: WasteQuizPopup(
+          child: ScanQuizPages(
+            robot: true,
             onStop: stop,
-            showLauncher: false,
             onRescan: () {
               _liveScan?.logEvent('rescan_tapped', {});
               _liveScan?.rescan();
@@ -916,6 +986,52 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     );
   }
 
+  /// LOCK (0181): a clean frame from the last second, else the live preview (it may carry the
+  /// firmware's own drawings until the firmware stops making them). UNLOCK clears the box.
+  Future<LockedItem?> _lockOrUnlock() async {
+    if (_locked != null) {
+      WebSocketService().sendRobotCommand(trackStopCommand);
+      setState(() {
+        _locked = null;
+        _trackBox = null;
+        _trackSeenAt = null;
+      });
+      return null;
+    }
+    final clean = _lastCleanFrame;
+    final fresh = clean != null && DateTime.now().difference(clean.timestamp) < const Duration(seconds: 1);
+    final frame = fresh ? clean : _latestFrame;
+    if (frame == null) return null;
+    setState(() => _locking = true);
+    final answer = await ref.read(wasteQuizProvider.notifier).lockItem(frame);
+    if (!mounted) return null;
+    final lock = answer.lock;
+    // The camera follows the box from here (0182). It is the box of this frame, ~2 s old by now.
+    if (lock?.box != null) {
+      WebSocketService().sendRobotCommand(trackStartCommand(lock!.box!, frame.width, frame.height, lock.result.item!));
+    }
+    setState(() {
+      _locking = false;
+      _locked = lock;
+      _trackBox = null;
+      _trackSeenAt = null;
+    });
+    if (answer.lock == null) {
+      ScaffoldMessenger.of(context)
+        ..removeCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(answer.failure == 'busy'
+            ? l10n.ctlAiBusy
+            : answer.failure ?? l10n.ctlNoItem)));
+    }
+    return answer.lock;
+  }
+
+  /// SCAN (0181): the quiz popup for the locked item; with nothing locked, LOCK first.
+  Future<void> _scan() async {
+    final lock = _locked ?? await _lockOrUnlock();
+    if (lock != null && mounted) ref.read(wasteQuizProvider.notifier).scanLocked(lock);
+  }
+
   /// Debug Scan (debug builds only): the live-scan readout, the question
   /// source and "Reset scan (debug)", off the student's screen.
   Widget _debugSheet(BuildContext context) {
@@ -927,15 +1043,15 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           padding: const EdgeInsets.all(12),
           children: [
             Row(mainAxisSize: MainAxisSize.min, children: [
-              const Text('Base', style: TextStyle(color: Colors.white)),
-              IconButton(onPressed: () => _nudgeBase(-2), icon: const Icon(Icons.chevron_left, color: Colors.white), tooltip: 'Base left'),
-              IconButton(onPressed: () => _nudgeBase(2), icon: const Icon(Icons.chevron_right, color: Colors.white), tooltip: 'Base right'),
+              Text(context.l10n.controlBase, style: TextStyle(color: Colors.white)),
+              IconButton(onPressed: () => _nudgeBase(-2), icon: const Icon(Icons.chevron_left, color: Colors.white), tooltip: l10n.ctlBaseLeft),
+              IconButton(onPressed: () => _nudgeBase(2), icon: const Icon(Icons.chevron_right, color: Colors.white), tooltip: l10n.ctlBaseRight),
               const SizedBox(width: 8),
               OutlinedButton.icon(
                 key: const ValueKey('debug_home_button'),
-                onPressed: () => _gate.home(),
+                onPressed: _armHome,
                 icon: const Icon(Icons.home_outlined, size: 18),
-                label: const Text('HOME'),
+                label: Text(context.l10n.controlHome),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: const BorderSide(color: Colors.white54),
@@ -955,7 +1071,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
               ),
             if (_r1 != null) ...[
               const SizedBox(height: 6),
-              Text('R1: ${_r1Status ?? 'memeriksa robot...'}',
+              Text(context.l10n.controlR1Status(_r1Status ?? context.l10n.controlCheckingRobot),
                   style: const TextStyle(color: Colors.white, fontSize: 12, backgroundColor: Colors.black54)),
             ],
             const SizedBox(height: 6),
@@ -964,7 +1080,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             Align(
               alignment: Alignment.centerLeft,
               child: OutlinedButton.icon(
-                // Gemma on a phone-camera photo, without the MaixCAM2.
+                // The AI on a phone-camera photo, without the MaixCAM2.
                 onPressed: () => showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
@@ -975,7 +1091,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                   builder: (_) => const DebugPhoneCameraSheet(),
                 ),
                 icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                label: const Text('Scan dengan kamera HP'),
+                label: Text(context.l10n.controlPhoneScan),
                 style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white54)),
               ),
             ),
@@ -994,9 +1110,80 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     });
   }
 
-  void _nudgeBase(double delta) {
-    final angle = (ref.read(robotControlProvider).baseAngle + delta).clamp(0.0, 180.0);
-    if (_gate.servo('base', angle.toInt())) _robotNotifier.setBaseAngle(angle);
+
+  /// Advanced settings (0232): the page asks for the teacher PIN; CONFIG goes out through the gate.
+  Future<void> _openAdvanced() async {
+    final esp = ref.read(espConfigProvider).valueOrNull;
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => AdvancedSettingsScreen(
+        linkUp: _gate.linkUp,
+        address: '${esp?.esp32IpAddress ?? '—'}:${EspConfig.maixCamPort}',
+        onSend: (config) {
+          if (!_gate.linkUp || _gate.stopped) return false;
+          _gate.robot.send('CONFIG', config);
+          return true;
+        },
+      ),
+    ));
+  }
+  /// Debug sheet's base chevrons: one 2 deg step each tap.
+  void _nudgeBase(double delta) => _armMove(_arm.base(_arm.baseServo + delta));
+
+  // ── Manual arm (0234): planned like robotic_hand_sim, sent as ARM_POSE ─────
+
+  /// Sends a planned move, or says why the arm can't go there. True when sent.
+  bool _armMove(ArmMove m) {
+    final refusal = m.refusal;
+    if (refusal != null) {
+      _showArmRefusal(refusal);
+      return false;
+    }
+    if (!_gate.armPose(m.path!, m.duration)) return false;
+    _arm.commit(m);
+    _syncArmState();
+    return true;
+  }
+
+  /// The sliders, the gripper and the base show the commanded pose.
+  void _syncArmState() => _robotNotifier
+    ..setBaseAngle(_arm.baseServo)
+    ..setHeightValue(_arm.heightFraction * 180)
+    ..setReachValue(_arm.reachFraction * 180)
+    ..setGripperVal(_arm.gripperWidth);
+
+  /// PICK closes the gripper to its closed angle (75 + the Advanced settings offset).
+  void _pickUp() {
+    if (!_armMove(_arm.close())) return;
+    _armTagsFor('PICK UP');
+    if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
+  }
+
+  /// HOME by the planned safe path; the firmware's own HOME when the arm's pose is unknown.
+  void _armHome() {
+    _armTagsFor('HOME');
+    if (!_arm.known) {
+      _gate.home();
+      return;
+    }
+    final m = _arm.home();
+    if (m.refusal != null) return _showArmRefusal(m.refusal!);
+    if (_gate.home(path: m.path, motion: m.duration)) _arm.commit(m);
+  }
+
+  void _showArmRefusal(ArmRefusal r) {
+    final now = DateTime.now();
+    if (!mounted || (_armRefusedAt != null && now.difference(_armRefusedAt!) < const Duration(seconds: 2))) return;
+    _armRefusedAt = now;
+    ScaffoldMessenger.of(context)
+      ..removeCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+          content: Text(switch (r) {
+        ArmRefusal.tank => l10n.armRefusedTank,
+        ArmRefusal.tankPath => l10n.armRefusedTankPath,
+        ArmRefusal.outOfReach => l10n.armRefusedReach,
+        ArmRefusal.jointLimits || ArmRefusal.baseLimit => l10n.armRefusedLimits,
+        ArmRefusal.unknownPose => l10n.armRefusedUnknown,
+      })));
   }
 }
 

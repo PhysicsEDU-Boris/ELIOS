@@ -10,12 +10,16 @@ import '../../../models/guide_lesson.dart';
 import '../../../providers/learning_progress_provider.dart';
 import '../../../widgets/learn/learn_ui.dart';
 import 'learn_content.dart';
-
+import 'package:elio/l10n/l10n.dart';
 
 Future<void> openGuideLesson({
   required BuildContext context,
   required WidgetRef ref,
   required GuideLesson lesson,
+
+  /// Daily guides keep their page in the guide progress store (0194): start page and page callback.
+  int? dailyInitialPage,
+  ValueChanged<int>? onDailyPage,
 }) async {
   debugPrint('[StartupDiag] opening WebView/PDF only after user action');
 
@@ -26,8 +30,13 @@ Future<void> openGuideLesson({
   }
 
   if (!context.mounted) return;
-  final progress = ref.read(learningProgressProvider).valueOrNull;
-  final initialPage = progress?.guideReadProgress[lesson.id] ?? 0;
+  final initialPage = onDailyPage == null
+      ? ref
+                .read(learningProgressProvider)
+                .valueOrNull
+                ?.guideReadProgress[lesson.id] ??
+            0
+      : dailyInitialPage ?? 0;
   await Navigator.of(context).push(
     learnRoute<void>(
       _GuidePdfPage(
@@ -38,15 +47,16 @@ Future<void> openGuideLesson({
         pageCount: lesson.pageCount,
         readTimeMinutes: lesson.readTimeMinutes,
         initialPage: initialPage,
+        onPage: onDailyPage,
       ),
     ),
   );
 }
 
 void _showGuideUnavailableMessage(BuildContext context) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Guide PDF is not available yet.')),
-  );
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(context.l10n.guidePdfUnavailable)));
 }
 
 class _GuidePdfPage extends ConsumerStatefulWidget {
@@ -57,6 +67,7 @@ class _GuidePdfPage extends ConsumerStatefulWidget {
   final int pageCount;
   final int readTimeMinutes;
   final int initialPage;
+  final ValueChanged<int>? onPage;
 
   const _GuidePdfPage({
     required this.title,
@@ -66,6 +77,7 @@ class _GuidePdfPage extends ConsumerStatefulWidget {
     required this.pageCount,
     required this.readTimeMinutes,
     required this.initialPage,
+    this.onPage,
   });
 
   @override
@@ -74,7 +86,7 @@ class _GuidePdfPage extends ConsumerStatefulWidget {
 
 class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
   late final PdfViewerController _controller;
-  late final LearningProgressNotifier _progressNotifier;
+  LearningProgressNotifier? _progressNotifier;
   File? _cachedFile;
   var _isDownloading = true;
   var _loadFailed = false;
@@ -85,7 +97,9 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
   @override
   void initState() {
     super.initState();
-    _progressNotifier = ref.read(learningProgressProvider.notifier);
+    if (widget.onPage == null) {
+      _progressNotifier = ref.read(learningProgressProvider.notifier);
+    }
     _controller = PdfViewerController();
     _effectivePageCount = widget.pageCount < 0 ? 0 : widget.pageCount;
     _latestPageReached = _initialPageNumber();
@@ -127,7 +141,11 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
   }
 
   void _saveProgressAfterDispose(int pageReached, {required int pageCount}) {
-    final notifier = _progressNotifier;
+    if (widget.onPage != null) {
+      _saveLocalProgress(pageReached);
+      return;
+    }
+    final notifier = _progressNotifier!;
     final guideId = widget.guideId;
     final moduleId = widget.moduleId;
     final readTimeMinutes = widget.readTimeMinutes;
@@ -145,9 +163,15 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
     });
   }
 
+  void _saveLocalProgress(int pageReached) => widget.onPage!(pageReached);
+
   void _saveProgress(int pageReached, {required int pageCount}) {
+    if (widget.onPage != null) {
+      _saveLocalProgress(pageReached);
+      return;
+    }
     unawaited(
-      _progressNotifier.updateGuideReadProgress(
+      _progressNotifier!.updateGuideReadProgress(
         widget.guideId,
         moduleId: widget.moduleId,
         pageReached: pageReached,
@@ -185,13 +209,13 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
     final ready = !_isDownloading && !_loadFailed && _cachedFile != null;
     final Widget body;
     if (_isDownloading) {
-      body = const Center(child: LearnSpinner(label: 'Loading guide'));
+      body = Center(child: LearnSpinner(label: l10n.lnLoadingGuide));
     } else if (!ready) {
-      body = const SingleChildScrollView(
+      body = SingleChildScrollView(
         child: LearnStateView(
           asset: LearnArt.stateOffline,
-          title: 'Guide PDF is not available yet.',
-          message: 'Check the connection and open the guide again.',
+          title: l10n.guidePdfUnavailable,
+          message: l10n.lnCheckOpenAgain,
         ),
       );
     } else {
@@ -233,26 +257,36 @@ class _GuidePdfPageState extends ConsumerState<_GuidePdfPage> {
               child: SafeArea(
                 top: false,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   child: Row(
                     children: [
                       IconButton(
-                        tooltip: 'Previous page',
-                        onPressed: _latestPageReached > 1 ? _controller.previousPage : null,
+                        tooltip: l10n.lnPrevPage,
+                        onPressed: _latestPageReached > 1
+                            ? _controller.previousPage
+                            : null,
                         icon: const Icon(Icons.chevron_left_rounded),
                       ),
                       Expanded(
                         child: Text(
                           _effectivePageCount > 0
-                              ? 'Page $_latestPageReached of $_effectivePageCount'
-                              : 'Page $_latestPageReached',
+                              ? l10n.lnPageOf(
+                                  _latestPageReached,
+                                  _effectivePageCount,
+                                )
+                              : l10n.lnPage(_latestPageReached),
                           textAlign: TextAlign.center,
                           style: context.text.labelLarge,
                         ),
                       ),
                       IconButton(
-                        tooltip: 'Next page',
-                        onPressed: _effectivePageCount == 0 || _latestPageReached < _effectivePageCount
+                        tooltip: l10n.lnNextPage,
+                        onPressed:
+                            _effectivePageCount == 0 ||
+                                _latestPageReached < _effectivePageCount
                             ? _controller.nextPage
                             : null,
                         icon: const Icon(Icons.chevron_right_rounded),

@@ -1,0 +1,128 @@
+{
+  "_comment": "Owner's bin state points from robotic_hand_sim's Sequences tab (calibration/hil_sequences.json, 19 Nov 2026), servo degrees. bins: MOVE_TO_BIN plays the steps up to and including state_point, the camera checks the bin tag there (0233); DROP plays from release to the end. A bin with state_point null has no complete sequence yet. Owner, 19 Nov: Left-Tank-Throw first, it is the B3 bin; Right-Tank-Throw is unfinished and not used.",
+  "bins": {
+    "b3": {
+      "sequence": "Left-Tank-Throw",
+      "state_point": "Pose 4",
+      "release": "Pose 5"
+    },
+    "organik": {
+      "sequence": null,
+      "state_point": null,
+      "release": null
+    },
+    "anorganik": {
+      "sequence": null,
+      "state_point": null,
+      "release": null
+    }
+  },
+  "sequences": [
+    {
+      "name": "Left-Tank-Throw",
+      "steps": [
+        {
+          "name": "Pose 1",
+          "hold": 0.5,
+          "servo": {
+            "Gripper": 85.0,
+            "Wrist Yaw": 90.0,
+            "Wrist Pitch": 67.36,
+            "Arm B": 135.05,
+            "Arm A": 67.59,
+            "Arm Base": 145.65
+          }
+        },
+        {
+          "name": "Pose 2",
+          "hold": 0.5,
+          "servo": {
+            "Gripper": 85.0,
+            "Wrist Yaw": 90.0,
+            "Wrist Pitch": 81.83,
+            "Arm B": 118.64,
+            "Arm A": 69.53,
+            "Arm Base": 197.8
+          }
+        },
+        {
+          "name": "Pose 3",
+          "hold": 0.5,
+          "servo": {
+            "Gripper": 85.0,
+            "Wrist Yaw": 90.0,
+            "Wrist Pitch": 98.74,
+            "Arm B": 110.88,
+            "Arm A": 60.39,
+            "Arm Base": 185.15
+          }
+        },
+        {
+          "name": "Pose 4",
+          "hold": 0.5,
+          "servo": {
+            "Gripper": 85.0,
+            "Wrist Yaw": 90.0,
+            "Wrist Pitch": 158.7,
+            "Arm B": 110.88,
+            "Arm A": 60.39,
+            "Arm Base": 213.15
+          }
+        },
+        {
+          "name": "Pose 5",
+          "hold": 2.0,
+          "servo": {
+            "Gripper": 180.0,
+            "Wrist Yaw": 90.0,
+            "Wrist Pitch": 158.7,
+            "Arm B": 110.88,
+            "Arm A": 60.39,
+            "Arm Base": 213.15
+          }
+        },
+        {
+          "name": "Pose 6",
+          "hold": 0.5,
+          "servo": {
+            "Gripper": 85.0,
+            "Wrist Yaw": 90.0,
+            "Wrist Pitch": 81.7,
+            "Arm B": 117.98,
+            "Arm A": 70.32,
+            "Arm Base": 163.9
+          }
+        },
+        {
+          "name": "Pose 7",
+          "hold": 0.5,
+          "servo": {
+            "Gripper": 180.0,
+            "Wrist Yaw": 90.0,
+            "Wrist Pitch": 0.0,
+            "Arm B": 180.0,
+            "Arm A": 90.0,
+            "Arm Base": 90.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Right-Tank-Throw",
+      "steps": [
+        {
+          "name": "Pose 1",
+          "hold": 0.5,
+          "servo": {
+            "Gripper": 85.0,
+            "Wrist Yaw": 90.0,
+            "Wrist Pitch": 44.5,
+            "Arm B": 131.01,
+            "Arm A": 94.49,
+            "Arm Base": 19.32
+          }
+        }
+      ]
+    }
+  ]
+}

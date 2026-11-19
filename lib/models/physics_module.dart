@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:elio/l10n/l10n.dart';
+
+enum PhysicsLevel { beginner, intermediate, advanced, all }
 
 enum PhysicsModuleId {
   density,
@@ -14,11 +17,8 @@ enum PhysicsModuleId {
 
 class PhysicsModule {
   final PhysicsModuleId id;
-  final String tag;
-  final String title;
-  final String description;
   final String formula;
-  final String level;
+  final PhysicsLevel physicsLevel;
   final int durationMinutes;
   final Color accent;
   final Color softColor;
@@ -27,17 +27,73 @@ class PhysicsModule {
 
   const PhysicsModule({
     required this.id,
-    required this.tag,
-    required this.title,
-    required this.description,
     required this.formula,
-    required this.level,
+    required PhysicsLevel level,
     required this.durationMinutes,
     required this.accent,
     required this.softColor,
     required this.icon,
     this.isAvailable = false,
-  });
+  }) : physicsLevel = level;
+
+  String get level => switch (physicsLevel) {
+    PhysicsLevel.beginner => l10n.physLevelBeginner,
+    PhysicsLevel.intermediate => l10n.physLevelIntermediate,
+    PhysicsLevel.advanced => l10n.physLevelAdvanced,
+    PhysicsLevel.all => l10n.physLevelAllLevels,
+  };
+
+  /// Card texts in the app language (decision 0185).
+  (String, String, String) get _texts => switch (id) {
+    PhysicsModuleId.density => (
+      l10n.physDensityTag,
+      l10n.physDensityTitle,
+      l10n.physDensityDesc,
+    ),
+    PhysicsModuleId.heat => (
+      l10n.physHeatTag,
+      l10n.physHeatTitle,
+      l10n.physHeatDesc,
+    ),
+    PhysicsModuleId.torque => (
+      l10n.physTorqueTag,
+      l10n.physTorqueTitle,
+      l10n.physTorqueDesc,
+    ),
+    PhysicsModuleId.workEnergy => (
+      l10n.physWorkEnergyTag,
+      l10n.physWorkEnergyTitle,
+      l10n.physWorkEnergyDesc,
+    ),
+    PhysicsModuleId.kinematics => (
+      l10n.physKinematicsTag,
+      l10n.physKinematicsTitle,
+      l10n.physKinematicsDesc,
+    ),
+    PhysicsModuleId.pwm => (
+      l10n.physPwmTag,
+      l10n.physPwmTitle,
+      l10n.physPwmDesc,
+    ),
+    PhysicsModuleId.power => (
+      l10n.physPowerTag,
+      l10n.physPowerTitle,
+      l10n.physPowerDesc,
+    ),
+    PhysicsModuleId.deepDive => (
+      l10n.physDeepDiveTag,
+      l10n.physDeepDiveTitle,
+      l10n.physDeepDiveDesc,
+    ),
+    PhysicsModuleId.quiz => (
+      l10n.physQuizTag,
+      l10n.physQuizTitle,
+      l10n.physQuizDesc,
+    ),
+  };
+  String get tag => _texts.$1;
+  String get title => _texts.$2;
+  String get description => _texts.$3;
 }
 
 /// Hardcoded per your answer — simulations are code anyway, no Firestore
@@ -46,12 +102,8 @@ class PhysicsModule {
 const List<PhysicsModule> physicsModules = [
   PhysicsModule(
     id: PhysicsModuleId.density,
-    tag: 'Modul A · Lingkungan',
-    title: 'Massa Jenis Sampah',
-    description:
-        'ELIO mengklasifikasi sampah anorganik berdasarkan densitas.',
     formula: 'ρ = m / V',
-    level: 'Pemula',
+    level: PhysicsLevel.beginner,
     durationMinutes: 6,
     accent: Color(0xFF2563EB),
     softColor: Color(0xFFDBEAFE),
@@ -60,11 +112,8 @@ const List<PhysicsModule> physicsModules = [
   ),
   PhysicsModule(
     id: PhysicsModuleId.heat,
-    tag: 'Modul B · Lingkungan',
-    title: 'Panas & Termodinamika Kompos',
-    description: 'Dekomposisi mikroba menghasilkan panas seiring waktu.',
     formula: 'Q = m · c · ΔT',
-    level: 'Pemula',
+    level: PhysicsLevel.beginner,
     durationMinutes: 7,
     accent: Color(0xFFDC2626),
     softColor: Color(0xFFFEE2E2),
@@ -73,11 +122,8 @@ const List<PhysicsModule> physicsModules = [
   ),
   PhysicsModule(
     id: PhysicsModuleId.torque,
-    tag: 'Modul C · Mekanika',
-    title: 'Torsi Bahu Robot',
-    description: 'Sendi bahu ELIO menahan torsi saat lengan menjulur.',
     formula: 'τ = r · F · sin(θ)',
-    level: 'Menengah',
+    level: PhysicsLevel.intermediate,
     durationMinutes: 8,
     accent: Color(0xFF00694C),
     softColor: Color(0xFFE6F2EC),
@@ -86,11 +132,8 @@ const List<PhysicsModule> physicsModules = [
   ),
   PhysicsModule(
     id: PhysicsModuleId.workEnergy,
-    tag: 'Modul D · Mekanika',
-    title: 'Usaha & Energi Potensial',
-    description: 'Mengangkat beban membutuhkan usaha yang terukur.',
     formula: 'W = m · g · h',
-    level: 'Menengah',
+    level: PhysicsLevel.intermediate,
     durationMinutes: 6,
     accent: Color(0xFF7C3AED),
     softColor: Color(0xFFEDE9FE),
@@ -99,11 +142,8 @@ const List<PhysicsModule> physicsModules = [
   ),
   PhysicsModule(
     id: PhysicsModuleId.kinematics,
-    tag: 'Modul E · Kinematika',
-    title: 'Kecepatan Gerak ELIO',
-    description: 'Gerak lurus beraturan menuju tumpukan sampah.',
     formula: 'v = s / t',
-    level: 'Pemula',
+    level: PhysicsLevel.beginner,
     durationMinutes: 5,
     accent: Color(0xFF0891B2),
     softColor: Color(0xFFCFFAFE),
@@ -112,11 +152,8 @@ const List<PhysicsModule> physicsModules = [
   ),
   PhysicsModule(
     id: PhysicsModuleId.pwm,
-    tag: 'Modul F · Elektronika',
-    title: 'PWM & Tegangan Motor',
-    description: 'Duty cycle mengatur tegangan rata-rata motor roda.',
     formula: 'V_avg = D · V_max',
-    level: 'Menengah',
+    level: PhysicsLevel.intermediate,
     durationMinutes: 7,
     accent: Color(0xFFCA8A04),
     softColor: Color(0xFFFEF9C3),
@@ -125,11 +162,8 @@ const List<PhysicsModule> physicsModules = [
   ),
   PhysicsModule(
     id: PhysicsModuleId.power,
-    tag: 'Modul G · Daya',
-    title: 'Daya & Baterai ELIO',
-    description: 'Manajemen konsumsi daya komponen robot.',
     formula: 'P = V · I',
-    level: 'Menengah',
+    level: PhysicsLevel.intermediate,
     durationMinutes: 7,
     accent: Color(0xFF059669),
     softColor: Color(0xFFECFDF5),
@@ -138,11 +172,8 @@ const List<PhysicsModule> physicsModules = [
   ),
   PhysicsModule(
     id: PhysicsModuleId.deepDive,
-    tag: 'Deep-Dive · Waste Physics',
-    title: 'Kartu Deep-Dive Sampah',
-    description: 'Eksplorasi mendalam: Organik, Inorganik, dan B3.',
     formula: 'O2, Hooke, NIR',
-    level: 'Lanjutan',
+    level: PhysicsLevel.advanced,
     durationMinutes: 10,
     accent: Color(0xFF6366F1),
     softColor: Color(0xFFEEF2FF),
@@ -151,11 +182,8 @@ const List<PhysicsModule> physicsModules = [
   ),
   PhysicsModule(
     id: PhysicsModuleId.quiz,
-    tag: 'Evaluasi',
-    title: 'Uji Pemahaman (Kuis)',
-    description: 'Uji pengetahuan Anda tentang fisika di balik robot ELIO.',
     formula: 'Quiz',
-    level: 'Semua Level',
+    level: PhysicsLevel.all,
     durationMinutes: 10,
     accent: Color(0xFFBE185D),
     softColor: Color(0xFFFCE7F3),

@@ -12,11 +12,13 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../models/control_session.dart';
 import '../../models/home_stats.dart' show HomeBin;
 import '../../providers/waste_quiz_provider.dart';
-import '../../services/robot/r1_constants.dart' show pickBandMaxCm, pickBandMinCm;
+import '../../services/robot/r1_constants.dart'
+    show pickBandMaxCm, pickBandMinCm;
 import '../../services/websocket_service.dart' show Detection;
 import '../../theme/elio_tokens.dart';
 import '../learn/learn_ui.dart' show LearnTheme;
 import 'r2_controls.dart';
+import 'package:elio/l10n/l10n.dart';
 
 // The camera overlay is the one place with fixed colours (dark glass on video).
 const _glass = Color(0xCC0F172A);
@@ -37,7 +39,8 @@ const _lensHeightCm = 8.62;
 const _halfVFovDeg = 25.5;
 
 /// The image row (0..1 of the height) where the floor is [cm] ahead.
-double floorRowFraction(double cm) => 0.5 + 0.5 * (_lensHeightCm / cm) / math.tan(_halfVFovDeg * math.pi / 180);
+double floorRowFraction(double cm) =>
+    0.5 + 0.5 * (_lensHeightCm / cm) / math.tan(_halfVFovDeg * math.pi / 180);
 
 /// The object to tag: the highest-score detection that is not a hand.
 Detection? hudTarget(List<Detection> detections) {
@@ -81,7 +84,8 @@ class ControlCameraHud extends StatelessWidget {
   Widget build(BuildContext context) {
     final live = link == ControlLink.connected && frame != null;
     final target = live ? hudTarget(detections) : null;
-    final showFloor = live && imageSize.width > 0 && detections.any((d) => d.distCm != null);
+    final showFloor =
+        live && imageSize.width > 0 && detections.any((d) => d.distCm != null);
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: ColoredBox(
@@ -92,22 +96,37 @@ class ControlCameraHud extends StatelessWidget {
             if (frame != null && link == ControlLink.connected)
               Image.memory(frame!, fit: BoxFit.cover, gaplessPlayback: true)
             else if (link == ControlLink.connected)
-              const Center(
-                child: _HudLine(icon: Icons.videocam_outlined, text: 'Connected. Waiting for camera frames...'),
+              Center(
+                child: _HudLine(
+                  icon: Icons.videocam_outlined,
+                  text: l10n.ctlWaitingFrames,
+                ),
               ),
             ?debugBoxes,
             if (live)
               CustomPaint(
-                painter: HudFloorPainter(imageSize: imageSize, showFloor: showFloor, target: target),
+                painter: HudFloorPainter(
+                  imageSize: imageSize,
+                  showFloor: showFloor,
+                  target: target,
+                ),
               ),
-            if (target != null) _TargetTag(target: target, imageSize: imageSize),
+            if (target != null)
+              _TargetTag(target: target, imageSize: imageSize),
             if (link == ControlLink.waiting) const _WaitingPanel(),
             if (link == ControlLink.disconnected)
-              _DisconnectedPanel(retry: retry, onReconnect: onReconnect, onWifiSettings: onWifiSettings),
+              _DisconnectedPanel(
+                retry: retry,
+                onReconnect: onReconnect,
+                onWifiSettings: onWifiSettings,
+              ),
             Positioned(
               left: 12,
               top: 12,
-              child: _HudChip(dot: live ? _hudRed : _hudMuted, text: live ? 'LIVE · ${fps.round()} fps' : 'NO VIDEO'),
+              child: _HudChip(
+                dot: live ? _hudRed : _hudMuted,
+                text: live ? l10n.ctlLiveFps(fps.round()) : l10n.ctlNoVideoCaps,
+              ),
             ),
             Positioned(
               right: 12,
@@ -119,14 +138,16 @@ class ControlCameraHud extends StatelessWidget {
                   ControlLink.disconnected => _hudRed,
                 },
                 text: switch (link) {
-                  ControlLink.connected => 'MaixCAM2 connected',
-                  ControlLink.waiting => 'Connecting...',
-                  ControlLink.disconnected => 'Disconnected',
+                  ControlLink.connected => l10n.ctlMaixConnected,
+                  ControlLink.waiting => l10n.ctlConnecting,
+                  ControlLink.disconnected => l10n.ctlDisconnected,
                 },
               ),
             ),
-            if (diagnostics != null) Positioned(left: 12, bottom: 12, child: diagnostics!),
-            if (quizButton != null) Positioned(right: 12, bottom: 12, child: quizButton!),
+            if (diagnostics != null)
+              Positioned(left: 12, bottom: 12, child: diagnostics!),
+            if (quizButton != null)
+              Positioned(right: 12, bottom: 12, child: quizButton!),
           ],
         ),
       ),
@@ -155,7 +176,11 @@ class _HudChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             text,
-            style: const TextStyle(color: _hudText, fontSize: 12, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              color: _hudText,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -186,12 +211,22 @@ class _HudLine extends StatelessWidget {
 /// Image coordinates -> widget coordinates for BoxFit.cover.
 ({double scale, Offset offset}) _cover(Size image, Size box) {
   final scale = math.max(box.width / image.width, box.height / image.height);
-  return (scale: scale, offset: Offset((box.width - image.width * scale) / 2, (box.height - image.height * scale) / 2));
+  return (
+    scale: scale,
+    offset: Offset(
+      (box.width - image.width * scale) / 2,
+      (box.height - image.height * scale) / 2,
+    ),
+  );
 }
 
 /// Floor bands, pick zone (only with dist_cm) and the tagged box's brackets.
 class HudFloorPainter extends CustomPainter {
-  HudFloorPainter({required this.imageSize, required this.showFloor, required this.target});
+  HudFloorPainter({
+    required this.imageSize,
+    required this.showFloor,
+    required this.target,
+  });
   final Size imageSize;
   final bool showFloor;
   final Detection? target;
@@ -200,7 +235,8 @@ class HudFloorPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (imageSize.width <= 0 || imageSize.height <= 0) return;
     final m = _cover(imageSize, size);
-    double rowY(double cm) => m.offset.dy + floorRowFraction(cm) * imageSize.height * m.scale;
+    double rowY(double cm) =>
+        m.offset.dy + floorRowFraction(cm) * imageSize.height * m.scale;
     if (showFloor) {
       final zoneTop = rowY(pickBandMaxCm), zoneBottom = rowY(pickBandMinCm);
       canvas.drawRect(
@@ -223,7 +259,9 @@ class HudFloorPainter extends CustomPainter {
           Offset(0, y),
           Offset(size.width, y),
           Paint()
-            ..color = (inZone ? _hudGreen : _hudText).withValues(alpha: inZone ? 0.9 : 0.6)
+            ..color = (inZone ? _hudGreen : _hudText).withValues(
+              alpha: inZone ? 0.9 : 0.6,
+            )
             ..strokeWidth = 1.2,
         );
         final tp = TextPainter(
@@ -244,13 +282,24 @@ class HudFloorPainter extends CustomPainter {
         tp.paint(canvas, at);
       }
       final tp = TextPainter(
-        text: const TextSpan(
-          text: 'PICK ZONE',
-          style: TextStyle(color: _hudGreen, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1),
+        text: TextSpan(
+          text: l10n.ctlPickZone,
+          style: TextStyle(
+            color: _hudGreen,
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1,
+          ),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
-      tp.paint(canvas, Offset(size.width - tp.width - 14, (zoneTop + zoneBottom) / 2 - tp.height / 2));
+      tp.paint(
+        canvas,
+        Offset(
+          size.width - tp.width - 14,
+          (zoneTop + zoneBottom) / 2 - tp.height / 2,
+        ),
+      );
     }
     final t = target;
     if (t == null) return;
@@ -290,29 +339,45 @@ class _TargetTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cm = target.distCm;
-    final text = cm == null ? target.label : '${target.label} · ${cm.round()} cm';
+    final text = cm == null
+        ? target.label
+        : '${target.label} · ${cm.round()} cm';
     return LayoutBuilder(
       builder: (context, c) {
         if (imageSize.width <= 0) return const SizedBox.shrink();
         final m = _cover(imageSize, c.biggest);
-        final centre = m.offset + Offset(target.x, target.y - target.h / 2) * m.scale;
+        final centre =
+            m.offset + Offset(target.x, target.y - target.h / 2) * m.scale;
         return Stack(
           children: [
             Positioned(
               left: (centre.dx - 90).clamp(0, math.max(0, c.maxWidth - 180)),
-              top: (centre.dy - 56).clamp(44, math.max(44, c.maxHeight - 30)), // above the firmware's own label
+              top: (centre.dy - 56).clamp(
+                44,
+                math.max(44, c.maxHeight - 30),
+              ), // above the firmware's own label
               width: 180,
               child: Center(
                 child: DecoratedBox(
                   key: const ValueKey('hud_target_tag'),
-                  decoration: const ShapeDecoration(color: _hudGreen, shape: StadiumBorder()),
+                  decoration: const ShapeDecoration(
+                    color: _hudGreen,
+                    shape: StadiumBorder(),
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 5,
+                    ),
                     child: Text(
                       text,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Color(0xFF0F172A), fontSize: 12, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
@@ -353,8 +418,13 @@ class _HudPanel extends StatelessWidget {
         child: FittedBox(
           fit: BoxFit.scaleDown,
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: math.min(440, math.max(240, c.maxWidth - 32))),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [if (c.maxHeight >= 300) art, ...children]),
+            constraints: BoxConstraints(
+              maxWidth: math.min(440, math.max(240, c.maxWidth - 32)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [if (c.maxHeight >= 300) art, ...children],
+            ),
           ),
         ),
       ),
@@ -362,7 +432,11 @@ class _HudPanel extends StatelessWidget {
   );
 }
 
-const _title = TextStyle(color: _hudText, fontSize: 20, fontWeight: FontWeight.w700);
+const _title = TextStyle(
+  color: _hudText,
+  fontSize: 20,
+  fontWeight: FontWeight.w700,
+);
 const _body = TextStyle(color: _hudMuted, fontSize: 14);
 
 class _WaitingPanel extends StatelessWidget {
@@ -370,26 +444,37 @@ class _WaitingPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _HudPanel(
-    art: Padding(padding: const EdgeInsets.only(bottom: 10), child: controlArt('elio_searching', height: 104)),
+    art: Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: controlArt('elio_searching', height: 104),
+    ),
     children: [
-      const Text('Looking for MaixCAM2...', style: _title, textAlign: TextAlign.center),
-      const SizedBox(height: 8),
-      const Text(
-        'Turn the robot on and keep this tablet on the ELIOS Wi-Fi.',
-        style: _body,
+      Text(
+        context.l10n.lookingForMaixcam,
+        style: _title,
         textAlign: TextAlign.center,
       ),
+      const SizedBox(height: 8),
+      Text(l10n.ctlKeepTabletOnWifi, style: _body, textAlign: TextAlign.center),
       const SizedBox(height: 12),
       const SizedBox(
         width: 220,
-        child: LinearProgressIndicator(color: _hudAmber, backgroundColor: Color(0x33F1F5F9), minHeight: 4),
+        child: LinearProgressIndicator(
+          color: _hudAmber,
+          backgroundColor: Color(0x33F1F5F9),
+          minHeight: 4,
+        ),
       ),
     ],
   );
 }
 
 class _DisconnectedPanel extends StatefulWidget {
-  const _DisconnectedPanel({required this.retry, required this.onReconnect, this.onWifiSettings});
+  const _DisconnectedPanel({
+    required this.retry,
+    required this.onReconnect,
+    this.onWifiSettings,
+  });
   final RetryInfo retry;
   final VoidCallback onReconnect;
   final VoidCallback? onWifiSettings;
@@ -405,7 +490,10 @@ class _DisconnectedPanelState extends State<_DisconnectedPanel> {
   @override
   void initState() {
     super.initState();
-    _tick = Timer.periodic(const Duration(milliseconds: 500), (_) => setState(() {}));
+    _tick = Timer.periodic(
+      const Duration(milliseconds: 500),
+      (_) => setState(() {}),
+    );
   }
 
   @override
@@ -420,30 +508,40 @@ class _DisconnectedPanelState extends State<_DisconnectedPanel> {
     final next = r.nextRetryAt;
     final String retryLine;
     if (next != null) {
-      final s = math.max(0, (next.difference(DateTime.now()).inMilliseconds / 1000).ceil());
-      retryLine = 'Retrying in $s s · attempt ${r.attempt} of ${r.maxAttempts}';
+      final s = math.max(
+        0,
+        (next.difference(DateTime.now()).inMilliseconds / 1000).ceil(),
+      );
+      retryLine = l10n.ctlRetryingIn(s, r.attempt, r.maxAttempts);
     } else if (!r.autoReconnect) {
-      retryLine = 'Auto-reconnect is off';
+      retryLine = l10n.ctlAutoReconnectOff;
     } else if (r.attempt >= r.maxAttempts) {
-      retryLine = 'Stopped retrying after ${r.maxAttempts} tries';
+      retryLine = l10n.ctlStoppedRetrying(r.maxAttempts);
     } else {
-      retryLine = 'Trying again · attempt ${r.attempt} of ${r.maxAttempts}';
+      retryLine = l10n.ctlTryingAgain(r.attempt, r.maxAttempts);
     }
     return _HudPanel(
-      art: Padding(padding: const EdgeInsets.only(bottom: 8), child: controlArt('elio_disconnected', height: 96)),
+      art: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: controlArt('elio_disconnected', height: 96),
+      ),
       children: [
-        const Text('Lost connection to ELIOS', style: _title, textAlign: TextAlign.center),
-        const SizedBox(height: 6),
-        const Text(
-          'The robot link dropped, so the robot stopped for safety.',
-          style: _body,
+        Text(
+          context.l10n.lostConnection,
+          style: _title,
           textAlign: TextAlign.center,
         ),
+        const SizedBox(height: 6),
+        Text(l10n.ctlLinkDropped, style: _body, textAlign: TextAlign.center),
         const SizedBox(height: 8),
         Text(
           retryLine,
           key: const ValueKey('retry_line'),
-          style: const TextStyle(color: _hudAmber, fontSize: 13, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            color: _hudAmber,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -453,9 +551,12 @@ class _DisconnectedPanelState extends State<_DisconnectedPanel> {
           children: [
             FilledButton.icon(
               onPressed: widget.onReconnect,
-              style: FilledButton.styleFrom(backgroundColor: _hudGreen, foregroundColor: const Color(0xFF0F172A)),
+              style: FilledButton.styleFrom(
+                backgroundColor: _hudGreen,
+                foregroundColor: const Color(0xFF0F172A),
+              ),
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Reconnect now'),
+              label: Text(context.l10n.reconnectNow),
             ),
             if (widget.onWifiSettings != null)
               OutlinedButton.icon(
@@ -466,7 +567,7 @@ class _DisconnectedPanelState extends State<_DisconnectedPanel> {
                   side: const BorderSide(color: _hudMuted),
                 ),
                 icon: const Icon(Icons.wifi_rounded),
-                label: const Text('Wi-Fi settings'),
+                label: Text(context.l10n.wifiSettings),
               ),
           ],
         ),
@@ -482,9 +583,11 @@ class QuizReopenButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(wasteQuizProvider);
-    if (state.phase == WasteQuizPhase.idle || !state.minimized) return const SizedBox.shrink();
+    if (state.phase == WasteQuizPhase.idle || !state.minimized) {
+      return const SizedBox.shrink();
+    }
     return Tooltip(
-      message: 'Buka kuis',
+      message: l10n.ctlOpenQuiz,
       child: SizedBox.square(
         dimension: 64,
         child: Stack(
@@ -493,12 +596,18 @@ class QuizReopenButton extends ConsumerWidget {
             Positioned.fill(
               child: Material(
                 color: ElioTokens.answerYellow,
-                shape: const CircleBorder(side: BorderSide(color: Color(0xFFB45309), width: 2)),
+                shape: const CircleBorder(
+                  side: BorderSide(color: Color(0xFFB45309), width: 2),
+                ),
                 elevation: 4,
                 child: InkWell(
                   customBorder: const CircleBorder(),
                   onTap: () => ref.read(wasteQuizProvider.notifier).restore(),
-                  child: const Icon(Icons.help_outline_rounded, color: ElioTokens.onAnswerYellow, size: 30),
+                  child: const Icon(
+                    Icons.help_outline_rounded,
+                    color: ElioTokens.onAnswerYellow,
+                    size: 30,
+                  ),
                 ),
               ),
             ),
@@ -516,7 +625,11 @@ class QuizReopenButton extends ConsumerWidget {
                 ),
                 child: const Text(
                   '1',
-                  style: TextStyle(color: _hudText, fontSize: 10, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    color: _hudText,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ),
@@ -529,10 +642,18 @@ class QuizReopenButton extends ConsumerWidget {
 
 // ── Bottom cards ────────────────────────────────────────────────────────────
 
-const _binArt = {HomeBin.organik: 'bin_organik', HomeBin.anorganik: 'bin_anorganik', HomeBin.b3: 'bin_b3'};
+const _binArt = {
+  HomeBin.organik: 'bin_organik',
+  HomeBin.anorganik: 'bin_anorganik',
+  HomeBin.b3: 'bin_b3',
+};
 
 Widget _bin(HomeBin b, {double size = 40}) => ExcludeSemantics(
-  child: SvgPicture.asset('assets/illustrations/home/${_binArt[b]}.svg', width: size, height: size),
+  child: SvgPicture.asset(
+    'assets/illustrations/home/${_binArt[b]}.svg',
+    width: size,
+    height: size,
+  ),
 );
 
 class MissionCard extends StatelessWidget {
@@ -554,12 +675,16 @@ class MissionCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const ControlCaps('MISSION'),
+                  ControlCaps(l10n.ctlMission),
                   const SizedBox(height: 4),
                   Text(
-                    'Sort $missionTarget items this drive',
+                    l10n.ctlSortItems(missionTarget),
                     maxLines: 2,
-                    style: TextStyle(color: p.textPrimary, fontSize: 17, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      color: p.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -572,7 +697,9 @@ class MissionCard extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: i < n ? p.primary : p.surfaceRaised,
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: i < n ? p.primaryActive : p.borderSubtle),
+                              border: Border.all(
+                                color: i < n ? p.primaryActive : p.borderSubtle,
+                              ),
                             ),
                           ),
                         ),
@@ -580,7 +707,10 @@ class MissionCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text('$n of $missionTarget done', style: TextStyle(color: p.textSecondary, fontSize: 13)),
+                  Text(
+                    context.l10n.missionProgress(n, missionTarget),
+                    style: TextStyle(color: p.textSecondary, fontSize: 13),
+                  ),
                 ],
               ),
             ),
@@ -607,11 +737,15 @@ class DriveTallyCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Expanded(child: ControlCaps('THIS DRIVE')),
+                Expanded(child: ControlCaps(l10n.ctlThisDrive)),
                 if (trophies > 0)
                   Text(
-                    '+$trophies trophies',
-                    style: TextStyle(color: p.secondaryText, fontSize: 13, fontWeight: FontWeight.w700),
+                    l10n.ctlPlusTrophies(trophies),
+                    style: TextStyle(
+                      color: p.secondaryText,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
               ],
             ),
@@ -633,13 +767,20 @@ class DriveTallyCard extends StatelessWidget {
                             children: [
                               Text(
                                 '${bins[b] ?? 0}',
-                                style: TextStyle(color: p.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
+                                style: TextStyle(
+                                  color: p.textPrimary,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                               Text(
                                 b.label,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: p.textSecondary, fontSize: 12),
+                                style: TextStyle(
+                                  color: p.textSecondary,
+                                  fontSize: 12,
+                                ),
                               ),
                             ],
                           ),
@@ -687,20 +828,27 @@ class ElioTipCard extends StatelessWidget {
           Expanded(
             child: Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(14)),
+              decoration: BoxDecoration(
+                color: p.surface,
+                borderRadius: BorderRadius.circular(14),
+              ),
               child: fitDown(
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ControlCaps('ELIO SAYS', color: p.primaryText),
+                    ControlCaps(l10n.ctlElioSays, color: p.primaryText),
                     const SizedBox(height: 4),
                     Text(
                       text,
                       key: const ValueKey('elio_tip'),
                       maxLines: 4,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: p.textPrimary, fontSize: 14, height: 1.35),
+                      style: TextStyle(
+                        color: p.textPrimary,
+                        fontSize: 14,
+                        height: 1.35,
+                      ),
                     ),
                   ],
                 ),
@@ -733,11 +881,16 @@ class ControlTogglesCard extends StatelessWidget {
         children: [
           RockerToggle(
             key: const ValueKey('toggle_scan_quiz'),
-            label: 'Scan quiz',
+            label: l10n.ctlScanQuiz,
             value: scanQuiz,
             onChanged: onScanQuiz,
           ),
-          RockerToggle(key: const ValueKey('toggle_voice'), label: 'Voice', value: voice, onChanged: onVoice),
+          RockerToggle(
+            key: const ValueKey('toggle_voice'),
+            label: l10n.ctlVoice,
+            value: voice,
+            onChanged: onVoice,
+          ),
         ],
       ),
       alignment: Alignment.centerRight,
@@ -767,15 +920,39 @@ class ControlCompactStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
-    final small = TextStyle(color: p.textPrimary, fontSize: 12, fontWeight: FontWeight.w600);
-    Widget toggle(String label, IconData icon, bool v, ValueChanged<bool> on, Key key) => MergeSemantics(
+    final small = TextStyle(
+      color: p.textPrimary,
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+    );
+    Widget toggle(
+      String label,
+      IconData icon,
+      bool v,
+      ValueChanged<bool> on,
+      Key key,
+    ) => MergeSemantics(
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: v ? p.primaryText : p.textTertiary, semanticLabel: label),
+          Icon(
+            icon,
+            size: 16,
+            color: v ? p.primaryText : p.textTertiary,
+            semanticLabel: label,
+          ),
           Transform.scale(
             scale: 0.7,
-            child: Switch(key: key, value: v, onChanged: on, activeTrackColor: p.primary, activeThumbColor: p.surface),
+            child: Switch(
+              key: key,
+              value: v,
+              onChanged: (x) {
+                controlFeedback();
+                on(x);
+              },
+              activeTrackColor: p.primary,
+              activeThumbColor: p.surface,
+            ),
           ),
         ],
       ),
@@ -789,7 +966,10 @@ class ControlCompactStrip extends StatelessWidget {
           Text(
             '${math.min(missionDone, missionTarget)}/$missionTarget',
             style: small,
-            semanticsLabel: 'Misi ${math.min(missionDone, missionTarget)} dari $missionTarget',
+            semanticsLabel: l10n.ctlMissionOf(
+              math.min(missionDone, missionTarget),
+              missionTarget,
+            ),
           ),
           const SizedBox(width: 10),
           for (final b in HomeBin.values) ...[
@@ -809,8 +989,20 @@ class ControlCompactStrip extends StatelessWidget {
               style: TextStyle(color: p.textPrimary, fontSize: 12, height: 1.2),
             ),
           ),
-          toggle('Scan quiz', Icons.quiz_outlined, scanQuiz, onScanQuiz, const ValueKey('toggle_scan_quiz')),
-          toggle('Voice', Icons.volume_up_outlined, voice, onVoice, const ValueKey('toggle_voice')),
+          toggle(
+            l10n.ctlScanQuiz,
+            Icons.quiz_outlined,
+            scanQuiz,
+            onScanQuiz,
+            const ValueKey('toggle_scan_quiz'),
+          ),
+          toggle(
+            'Voice',
+            Icons.volume_up_outlined,
+            voice,
+            onVoice,
+            const ValueKey('toggle_voice'),
+          ),
         ],
       ),
     );

@@ -1,59 +1,59 @@
-# Handoff — 2 Nov 2026
+## Arm fader throttle — `feat/arm-fader-throttle` (0236, 19 Nov, from `feat/maixcam2-arm-bridge` 2d37825)
+`FaderThrottle` (`lib/services/robot/fader_throttle.dart`): gripper / Height / Reach drags run `_armMove` at most every 100 ms, last value always; STOP and dispose drop a waiting one. BASIS, HOME, PICK, RELEASE unchanged.
+Tests: `test/robot/fader_throttle_test.dart` (break-checked), full suite 2095 passed / 20 skipped, analyze + secret scan clean. Phone APK `7c4a97c` vs the MaixCAM2 over USB: 7 ARM_POSE per drag (was 54–66), end pose unchanged. Not pushed, no PR.
+## MaixCAM2 arm bridge — `feat/maixcam2-arm-bridge` (0235, 19 Nov, from `feat/arm-kinematics` c7de9d1)
+Firmware m2c-arm-v1 (package v1.2.0, deployed on the MaixCAM2 19 Nov, ping sha `17c1204f…` verified; ESP32 not wired yet; old floor-guides v1.1.0 backed up in `/root/backup/` on the board, floor guides off): `arm_bridge.py` streams 20 Hz `F0..F5,CC` to the ESP32 (UART2 9600, stream mode, trims/invert from CONFIG), answers 0023 (STATUS, ARM_POSE, HOME planned, MOVE_TO_BIN/DROP from bin_sequences.json, HOLD, STOP, CONFIG; PICK not_implemented), re-checks limits + tank, DROP guard (bin tag within 2 s), watchdog hold, ESP32 BOOT → HOME first. App syncs its arm pose from `servo` in replies.
+Tests: firmware 50 passed (20 new, guards break-checked); app full suite + analyze + secret scan clean. Phone APK `e575271` installed 19 Nov and checked against the board over USB: arm keys send ARM_POSE, board replies motion_done + servo, HOME and STOP pose sync work. Open: UART2 to the ESP32 not tested (no STAT yet), fader ARM_POSE not throttled (~60 per drag), floor guides (0192) need a new tag id before merging, wheels later.
+## Arm keys planned in the app — `feat/arm-kinematics` (0234, 19 Nov, from `feat/bin-tag-check` 4960378)
+`arm_kinematics.dart` (port of sim hil/kinematics.py, golden-tested vs sim 75ab797) + `arm_pose.dart`: BASIS, Height/Reach (IK, pitch kept), gripper, PICK (75 + offset), RELEASE (180), HOME (planned path) all planned with joint limits + tank; sent as `ARM_POSE` path, refused moves show a snackbar. Unknown pose after STOP / R1 sort → only firmware HOME. Fake MaixCAM2 plays ARM_POSE.
+Tests: full suite 2092 passed / 20 skipped, analyze + secret scan clean; new arm tests break-checked; fake 37 passed (same 2 old failures). Open: real MaixCAM2 ignores ARM_POSE (firmware task next, with the DROP guard), fader sends not throttled, not run on phone or robot.
+## Bin tag check — `feat/bin-tag-check` (0233, 19 Nov, from `feat/advanced-settings` 1f16d8f)
+Bin AprilTags id 2 anorganik / 3 organik / 4 B3 (`Bin.tagId`, print `docs/print/apriltags-bins-id2-id3-id4-A4.pdf`, 30 mm like id 0). R1 arm step 3 = look for `robotBin`'s tag after MOVE_TO_BIN: right 0.5 s → DROP; wrong / none in 3 s → retry once → end `bin_check_failed`, no DROP, control screen sends HOME. Firmware `TAG_SIZES_MM` + ids 2–4; fake MaixCAM2 `--bin-tag right|wrong|none`.
+Tests: 5 new in `test/r1_orchestrator_test.dart` (4 break-checked), full suite 2076 passed / 20 skipped, analyze + secret scan clean; fake 33 passed, same 2 old failures. State points: `firmware/maixcam2/bin_sequences.json` (owner's Left-Tank-Throw = B3: Poses 1–4 to the state point, 5–7 drop + home; tank-safe in the sim); fake plays it via the sim planner. Open: Organik / Anorganik sequences, real firmware MOVE_TO_BIN, not run on the robot.
+## Advanced settings — `feat/advanced-settings` (0232, 19 Nov, = `feat/joystick-control` + merge of `feat/sim-sync`)
+Carries #141 (control v2), #142 (joysticks 0231) and #143 (sim sync 0230). New: `robot_settings.dart` (model + SharedPreferences `robot_settings_v1`, PIN), `advanced_settings_screen.dart` (6 sections, L2 v3 style), Advanced button beside Guide (phone only), joystick config live from settings, Save sends `CONFIG` (firmware ignores it until R1-fw). Safety and connection read only; no ESP32 STAT yet.
+Tests: `test/robot/robot_settings_test.dart`, `test/screens/advanced_settings_test.dart`, phone Advanced button test; break-checked.
+## Joystick control — `feat/joystick-control` (0231, 19 Nov, from `feat/control-v2-layout` 9c2fe3c)
+`JoystickController` (`lib/services/robot/joystick_*.dart`, 20 Hz): deadzone + quadratic curve + slew + mixer for the drive stick (fader = top PWM), rate-integrated base for BASIS (≤ 40 deg/s, ±90). Locks from MotionGate / R1 each tick; HOME resets base angle to 90. `DriveJoystick.onStick`, `BaseJoystick.onStick`; `driveCommand` removed. Departures from the spec in 0231 (no stick timeout, no serial builder).
+Tests: `test/robot/joystick_{math,controller}_test.dart` (26, break-checked), widget joystick tests rewritten for ramps. Assumed: app `motor` PWM = fader %, base servo 90 = centre. Not run on the phone or robot; constants untuned.
+## Control v2 — `feat/control-v2-layout` (0229, 19 Nov, from `feature/live-scan`)
+Phone landscape Control (`phone_control.dart`): LOCK / SCAN / power keycaps under the speed fader, no gear chips or card status chips, STOP/GO at the end of the camera row, BASIS left-right joystick (`BaseJoystick`, `baseJoystickDir`) turning `servo base` 2° / 100 ms while held (`control_screen.dart` `_baseTimer`). Figma 885:31003 (light), 892:31074 (dark).
+Tests: full suite 2018 passed / 20 skipped, analyze + secret scan clean; new BASIS test break-checked. Phone 19 Nov: APK `47287be` installed (data kept), checked with the fake MaixCAM2 in light and dark (layout connected + offline, BASIS turns both ways and stops): `docs/test-results/0229-control-v2/`. Saved robot address is now 127.0.0.1 (see build notes). Not checked on the real robot.
+## Robot arm sync — `feat/sim-sync` (0230, 19 Nov, from `feature/live-scan` 5443174)
+Synced with robotic_hand_sim `75ab797` (local `~/GITHUB/ELIO/robotic_hand_sim` fast-forwarded to it). Changed: `r1_constants.dart` (`armTimeout` 30 s, `waitCap` 180 s for the 30 deg/s Arm A/B), `simulated_robot.dart` comment, fake MaixCAM2 per-joint speeds + limits from the sim's `hil/config.py`. Docs: 0230 (new protocol, joint table, gripper map, MaixCAM2 UART2/UART1 wiring), 0027 / 0023 amended.
+Assumed, not seen on the robot: which ESP32 firmware is flashed, base at home at power-up, the MaixCAM2 pin names. Not built: MaixCAM2 bridge (R1-fw), wheel watchdog, 115200 baud.
+Tests: `test/robot/arm_timing_test.dart` (armTimeout test break-checked; waitCap test also passes the old values). Fake: 37 passed; `test_frame_fields_match_main_py_old_firmware` and `test_labels_match_main_py_and_app` failed before this change too. Not run on the robot.
 
-- Base: `feature/live-scan` at `c38809d` (#77 C1, #78 Control dispose, #79 theme toggle merged).
-- Merged: #51 U4b essay rubric; #53 banks (decision 0060); #52 History/PDF crops (0070); #54 Android tester build (0040); #55 E1 (0041), with the "Bukan ini?" picker and background load phone-verified.
-- Open PRs: #50 docs wrap-up (content carried into this docs sync); #47 firmware (motion disabled, `ARM_MOTION_ENABLED=false`); #24 (latency gate failed).
+## PDF export redesign — `feat/pdf-export-redesign` (0228, 17 Nov, branched from `feat/essay-explanation-review`; phase 3 of 3)
+Layout in `lib/services/quiz_pdf_design.dart` (part of `quiz_pdf_service.dart`): cover, page per question, single question + notes page, light/dark from ELIOS tokens. `QuestionPdfOptions.dark`; `PdfThemeChoice` in both sheets; `showQuizReportSheet` for full reports. Static Google Sans Flex weights in `assets/fonts/pdf/`. Photo re-encoded (640 px, JPEG 80). Renders: `docs/test-results/0228-pdf-export/`.
+Tests: `test/pdf_export_design_test.dart` (22, break-checked); older PDF tests read `QuizPdfService.debugTexts`. Not checked on phone or robot; not printed on paper.
 
-## Phone evidence — Edge 60 Fusion, GPU
+## Essay answer review — `feat/essay-explanation-review` (0227, 17 Nov, branched from `fix/quiz-review-bugs`; phase 2 of 3)
+`EssayReview` (`lib/widgets/quiz/essay_review.dart`) is the essay review in the live quiz, History and the old overlay, built from History widgets (`HistoryResultHero.essayScore`, `HistoryQuestionPanel.essay`, `HistoryMission` texts, new `HistoryEssayScore`). Grading reply now carries per-criterion hints, why, key idea, tips; saved in existing `QuizExplanation` fields. `quizRevealCue` for correct / partial / wrong. Renders: `docs/test-results/0227-essay-review/`.
+Tests: `test/essay_review_test.dart` (22, break-checked). Not checked on phone or robot; no real grading reply with the new fields seen yet. Mac build still blocked by signing (no profile for `com.boris.elio`).
 
-- Load: 4.3–9.2 s cached or 41–50 s cold; identify: 19.8–23.9 s with the shorter prompt; questions: 20–41 s; essay grading: 16.5–25.4 s; memory: 3.3–3.7 GB.
-- Thermal gate pauses at CRITICAL.
-- The tester build keeps Gemma loaded after the scan screen closes (about 1.6 GB held until the app closes).
-- Photo-size test: 512/384/256 px gave 24.8/24.3/23.6 s. Photo size does not change identify time in this test.
-- See [Lane A handoff](handoff/lane-a.md) for details; its earlier measurements and pre-PR status predate the summary above.
+## Quiz review bugs — `fix/quiz-review-bugs` (0226, 17 Nov, from `feature/live-scan` 953e25d; phase 1 of 3, phases 2 and 3 stack on it)
+Mute: saved `AppPreferences.quizMuted` → `QuizTtsService.muted` + `ElioSound.quizMuted` (`quizFeedback` in quiz / explanation pages); review speaker button toggles it. Coach: `AiQuizService.messageLang` picks the reply language from the message. Back: `PopScope` + "Leave the quiz?" sheet in `ScanQuizPages`. Explanation: loading block until the final text, one request per key + epoch + 25 s timeout, fallback to the question's own text, Retry state, voice reads the shown text, skipped questions keep an explanation. Root cause in the decision doc.
+Tests: `test/quiz_review_bugs_test.dart` (14, each break-checked). Not checked on the phone or robot. iOS swipe-back is blocked during a quiz but opens no sheet.
 
-## Owner data incident
+## Final QA, 16 Nov 2026 — `chore/final-qa` (merge of the 7 task branches on `feat/control-l4-figma`)
+PRs: #127 language switch (0218) · #128 essay switch (0219) · #129 XP icons (0220) · #130 profile header (0221) → base `feature/live-scan`; #131 hazard page (0222) · #132 essay explanation (0223) · #133 bin check (0224) → stacked on #126. Decision docs hold the details.
+Merged build: `flutter analyze` clean, full suite 1949 passed / 20 skipped, secret scan clean. Phone: Edge 60 Fusion, debug APK `d5ef58a` (LIVE_SCAN / TESTER_BUILD / DARK_MODE_OPTION), `adb install -r`, data kept, left light / English on Home (16 scans, 445 XP as found).
 
-- The 29 Oct owner History record was overwritten and is still unrecovered. Do not invent or reconstruct its missing answers from guesses.
+| Check | Widget tests | Phone | Robot |
+|---|---|---|---|
+| Language switch EN↔ID on changed screens | pass | pass: Profile, Learn (Today's Guide follows), History, scan detail | not run |
+| History reopen after a language switch | pass (network held) | pass: content in under 1 s, both ways (records had both languages cached; the "Translating…" note was not seen live) | not run |
+| Dark mode on changed screens | pass | pass: Profile header + settings | not run |
+| Essay switch on / off | pass | row shown below Difficulty (EN, ID, dark); quiz with it off not played | not run |
+| XP icons | pass | pass: Home hero, History rows | not run |
+| Profile header + entry animation | pass | pass (stills); animation not watched | not run |
+| Hazard B3 scan | pass | not run (needs a hazardous item) | not run |
+| Essay explanation | pass | not run (needs a real essay quiz) | not run |
+| Bin check right + wrong, STOP | pass | n/a (robot only) | not run |
+| Sound + haptics on new taps | cues asserted in tests | not heard / felt | not run |
+| Reduce motion on new animations | pass | not run | not run |
 
-## Next task — U4c combined native acceptance
-
-- Back up the owner's records and read-verify the backup first. Prove a separate test store is active before interacting; never seed or reset the owner store.
-- Complete real-Gemma/localhost-camera multi-question acceptance: MCQ explanation → next question, essay rubric during live frames, trophy math, quit/relaunch, saved review and complete native PDF export.
-- Follow `CLAUDE.md` Mac build hygiene: reuse the retained app/model, inventory before building and verify one app registration afterwards. No physical robot movement or sharing recipient selection.
-- Overall queue: U4c combined native acceptance, then U7 Firebase sync, then U8 documentation/Figma. See [NEXT_TASK.md](NEXT_TASK.md).
-
-## R2 gamified Control (2 Nov, draft PR on `feature/live-scan`)
-
-- Control rebuilt from Figma 358:2358 (light/dark): joystick for the same D-pad commands, faders, gear chips, power + round STOP, camera HUD (bands/pick zone/distance only with `dist_cm`), waiting/disconnected views with the real 2 s / 30-try retry, mission + "This drive" (real records, no reward), ELIO tip, Voice / Scan quiz toggles. Decision 0173; logic in `lib/models/control_session.dart`, UI in `lib/widgets/control/` + `control_layout.dart`.
-- Tests: `test/widgets/control_layout_test.dart` (226, 8 sizes × 3 states × light/dark), `test/screens/control_r2_test.dart`, `test/models/control_session_test.dart`; break-checked (joystick without the gate fails). `flutter test` +1015 ~20 -2 (the 2 known `elio_tokens_test`).
-- A/B fake log (`docs/test-results/r2/`): identical up to Exit; the base build did not disconnect on Exit (reproduced, cause not found), the new one does.
-- Phone: owner session read-only (27 scans unchanged, no quiz answered), fake via `adb reverse`. Phone has two Gemma copies (app files + external files), both pre-existing; not touched.
-- Owner questions: mission reward; HUD crop hides the 20 cm band on phones; base-build Exit not disconnecting.
-
-## Q3 quiz popups + camera scan (3 Nov, draft PR into `feat/r3-control-phone`)
-
-- One R3 popup everywhere (`lib/widgets/quiz/quiz_r3.dart`): question, loading (timer, 3 real steps), skeleton, essay input, review document + coach chat; explanation data from the bank (quote, section, page, id; wrongWhy optional, none written). Camera scan restyled, crop unchanged. Decision 0175.
-- Tests: `phone_control_test` (all popup states, 3 sizes × light/dark), `scan_screen_test` (crop break-checked), `q3_explanation_data_test` (break-checked). `flutter test` only the 2 known failures.
-- Phone: test store `scan_records_q3test.json` (deleted after), owner `scan_records.json` and the R3 test file byte-identical. **The phone runs the Q3 debug build, light mode, Phone camera, Question bank.** No real item was scanned (Gemma identify ran, nothing recognised). Results: `docs/test-results/q3/`.
-- Open: who writes wrongWhy; R2 GO/logo; result card and History detail still the older look.
-
-## R3 Control for phones (2 Nov, draft PR into `feat/r2-control-gamified`)
-
-- Phones in landscape (short side < 600 dp) get the R3 layout from Figma 393:2358 (`lib/widgets/control/phone/`: layout, quiz popups, Guide). One round STOP/GO button (GO = `MotionGate.resume` only), no logo in the top bar, nothing on the video, offline presses send nothing, skeleton, 5-step Guide (first run once per device, key `r3_phone_guide_shown`). R2 stays on tablets and the Mac. Decision 0174.
-- Tests: `test/widgets/phone_control_test.dart`, `test/screens/control_phone_test.dart`; GO test break-checked. Results, side-by-sides and the difference list: `docs/test-results/r3/`.
-- Phone (Edge 60 Fusion): debug build with `SCAN_RECORDS_FILE=scan_records_r3test.json` (separate store). Owner `scan_records.json` verified byte-identical (27 records); fake robot over `adb reverse`, removed after. Space/Esc not tested (no keyboard). The Gemma model was moved out and back for the builds; no copy.
-- Open: painted card art and SVG export, 3D joystick, ELIOS AI badge art; essay input / identifying / hazard popups still the old Indonesian popup; owner question: should GO and the logo removal also apply to R2 tablet and Mac?
-
-## Earlier on 2 Nov (merged)
-
-- Theme switch + Android icon (#79, decision 0146); C1 Config (#77, decision 0145; open: Sound effects/Timer UI only); #78 Control dispose disconnect.
-- N4 top bar/drawer (0143) and L1 Learn v2 (0170-0172) reached `feature/live-scan` via #75. L1 open: Kuis fisika score never saved (pre-existing).
-
-## H1v4 gamified Home (2 Nov, draft PR, on top of N4 catch-up #75)
-
-- #73 (N4) never reached `feature/live-scan`; #75 merges it (only `2dd92db`). #74 (L1 learn v2) was missing too; added to #75 on 2 Nov after the owner saw the old Learn on the phone.
-- New Home from Figma 321:2358 with real scan data only; maths in `lib/models/home_stats.dart`, UI in `home_screen.dart` + `lib/Screens/home/`. Decision 0144 (residu in Anorganik, tree per level). Owner: quest rewards count toward trophies and levels (derived per day from 2 Nov 2026, in `ScanRecordStore.totalTrophies`).
-- Tests: `test/models/home_stats_test.dart` (19, break-checked), `test/screens/home_screen_test.dart` (15). `flutter test` +741 ~20 -2 (the 2 known `elio_tokens_test` failures).
-- Phone (Edge 60 Fusion, tester APK, guest session, owner data untouched): Home = History (26 scans, 202 trophies, B3 8 / Anorganik 17 / Organik 1, 0 today; before the quest-bonus change, which adds nothing to Oct records). Shots in `docs/test-results/h1v4/`.
-- Build hygiene: the 2.59 GB Gemma model sits in `assets/models/` in this checkout and gets bundled; move it out for an APK build and back after.
+Found and fixed on its own branch: Profile settings text scrolled under the status bar (#130, `_StatusBarScrim`), re-checked on the phone.
+17 Nov, owner phone test: robot scans "Plastic bottle" / "Laptop" never translated in History. Their records were saved with English questions labelled `id` (the model wrote the "id" side in English). Fixed on #127: label follows the text for new replies and saved records (`AiQuizService.detectLang`, repair in `ScanRecord.fromJson`), and History translates the 3 newest scans in the background. Phone re-check with APK `a7f8860`: 3 scans translated in 16 s, detail opens in Indonesian in under 1 s.
+17 Nov: the explanation shown under another item is fixed in #136 (0225): photo / robot scans kept the previous record's id and saved their explanations into it too. Already mixed-up records are not repaired.

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:elio/l10n/l10n.dart';
 
 const _learningGreen = Color(0xFF00694C);
 const _learningBackground = Color(0xFFF8FAF9);
@@ -39,7 +40,7 @@ class ElioLearningAppBar extends StatelessWidget
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.arrow_back_rounded),
                 color: _learningGreen,
-                tooltip: 'Back to learning hub',
+                tooltip: l10n.lnBackToHub,
               ),
             )
           : const SizedBox(width: 64),
@@ -48,9 +49,9 @@ class ElioLearningAppBar extends StatelessWidget
         title,
         style: GoogleFonts.inter(
           color: _learningGreen,
-          fontSize: title == 'ELIO' ? 22 : 18,
+          fontSize: title == 'ELIOS' ? 22 : 18,
           fontWeight: FontWeight.w800,
-          letterSpacing: title == 'ELIO' ? -0.5 : -0.2,
+          letterSpacing: title == 'ELIOS' ? -0.5 : -0.2,
         ),
       ),
       actions: [

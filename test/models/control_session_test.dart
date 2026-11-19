@@ -7,6 +7,14 @@ ScanRecord _r(DateTime t, ScanCategory c, int trophies) =>
     ScanRecord(id: '$t$c', time: t, itemName: 'x', category: c, questions: const [], trophies: trophies);
 
 void main() {
+  test('0229: BASIS joystick: dead zone, then left (-1) or right (1)', () {
+    expect(baseJoystickDir(10, 100), 0);
+    expect(baseJoystickDir(-24, 100), 0);
+    expect(baseJoystickDir(-40, 100), -1);
+    expect(baseJoystickDir(60, 100), 1);
+    expect(baseJoystickDir(50, 0), 0);
+  });
+
   test('joystick: dead zone, then the four D-pad directions (no diagonals)', () {
     expect(quantiseJoystick(const Offset(10, -10), 100), isNull);
     expect(quantiseJoystick(const Offset(0, -40), 100), DriveDir.forward);

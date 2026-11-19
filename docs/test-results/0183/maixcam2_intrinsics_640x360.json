@@ -1,0 +1,51 @@
+{
+  "camera": "MaixCAM2 stream (clean_image, JPEG)",
+  "image_size": [
+    640,
+    360
+  ],
+  "views": 27,
+  "points": 613,
+  "rms_px": 0.285,
+  "fx": 374.227,
+  "fy": 374.247,
+  "cx": 303.884,
+  "cy": 182.995,
+  "dist_k1_k2_p1_p2_k3": [
+    -0.00409,
+    0.0169,
+    0.00015,
+    0.00128,
+    -0.03066
+  ],
+  "fov_h_deg": 81.067,
+  "fov_v_deg": 51.372,
+  "fov_d_deg": 88.906,
+  "coverage_3x3_points": [
+    [
+      13,
+      40,
+      22
+    ],
+    [
+      53,
+      223,
+      77
+    ],
+    [
+      33,
+      107,
+      45
+    ]
+  ],
+  "board": "ChArUco 7x10, DICT_4X4_50, shown full-screen on a MacBook Air (about 19.5 mm squares; intrinsics do not depend on the square size)",
+  "firmware": "26049b58 (decision 0183), clean_image JPEG quality 80",
+  "date": "2026-11-04",
+  "split_check": {
+    "even_views_fx": 377.8,
+    "odd_views_fx": 367.0,
+    "per_view_rms_px_median": 0.22,
+    "per_view_rms_px_max": 0.68
+  },
+  "note": "dist is OpenCV (k1,k2,p1,p2,k3); the image corner moves about 6 px when undistorted. For the 1289x720 sim image scale fx, fy, cx, cy by 720/360 = 2.0 (x by 1289/640 = 2.014)."
+}

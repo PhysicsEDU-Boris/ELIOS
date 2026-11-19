@@ -1,3 +1,4 @@
+import 'dart:async';
 // R2 gamified Control components (Figma 358:2358): joystick 358:2400,
 // faders 358:2360 / 358:2380, rocker toggle 358:2429, glow button 358:2446,
 // transport key 358:2495. Colours come only from the active ElioPalette; the
@@ -5,11 +6,30 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../models/control_session.dart';
+import '../../services/elio_feedback.dart';
 import '../../theme/elio_tokens.dart';
 import '../learn/learn_ui.dart' show LearnTheme;
+import 'package:elio/l10n/l10n.dart';
+
+/// Feel for every Control input (decision 0188): a light haptic tick plus the
+/// S1 tick through the one audio service (0201): off with Profile → Sound
+/// effects, scaled by Master volume, silent when the phone is on silent.
+void controlFeedback() {
+  HapticFeedback.selectionClick();
+  unawaited(ElioSound.instance.play(ElioSfx.tick));
+}
+
+/// [onTap] with [controlFeedback] first; null stays null (disabled).
+VoidCallback? withFeedback(VoidCallback? onTap) => onTap == null
+    ? null
+    : () {
+        controlFeedback();
+        onTap();
+      };
 
 /// Dimmed and inert: disabled controls send nothing (R2, waiting/disconnected).
 Widget controlEnabled(bool enabled, Widget child) => Opacity(
@@ -136,10 +156,20 @@ class _DecoPainter extends CustomPainter {
 /// release + press, and letting go (or going back to the dead zone) is
 /// [onRelease] (motor 0,0). Nothing is sent while the knob stays in the dead zone.
 class DriveJoystick extends StatefulWidget {
-  const DriveJoystick({super.key, required this.enabled, required this.onDirection, required this.onRelease});
+  const DriveJoystick({
+    super.key,
+    required this.enabled,
+    required this.onDirection,
+    required this.onRelease,
+    this.onStick,
+  });
   final bool enabled;
   final ValueChanged<DriveDir> onDirection;
   final VoidCallback onRelease;
+
+  /// The knob's position on every move, x right and y down, inside the unit circle (0231);
+  /// [Offset.zero] on let go.
+  final ValueChanged<Offset>? onStick;
 
   @override
   State<DriveJoystick> createState() => _DriveJoystickState();
@@ -151,24 +181,36 @@ class _DriveJoystickState extends State<DriveJoystick> {
   int? _pointer;
 
   void _move(Offset local, double radius) {
+    final travel = radius * 0.55;
     var d = local - Offset(radius, radius);
-    if (d.distance > radius * 0.55) d = d / d.distance * radius * 0.55;
+    if (d.distance > travel) d = d / d.distance * travel;
     final dir = quantiseJoystick(local - Offset(radius, radius), radius);
     setState(() => _knob = d);
+    widget.onStick?.call(d / travel);
     if (dir == _dir) return;
     if (_dir != null) widget.onRelease();
     _dir = dir;
-    if (dir != null) widget.onDirection(dir);
+    if (dir != null) {
+      controlFeedback();
+      widget.onDirection(dir);
+    }
   }
 
   void _end(PointerEvent e) {
     if (e.pointer != _pointer) return;
     _pointer = null;
     setState(() => _knob = Offset.zero);
+    widget.onStick?.call(Offset.zero);
     if (_dir != null) {
       _dir = null;
       widget.onRelease();
     }
+  }
+
+  @override
+  void dispose() {
+    if (_pointer != null) widget.onStick?.call(Offset.zero); // removed while held: let go
+    super.dispose();
   }
 
   @override
@@ -188,7 +230,7 @@ class _DriveJoystickState extends State<DriveJoystick> {
         );
         return Center(
           child: Semantics(
-            label: 'Joystick: geser untuk menyetir, lepas untuk berhenti',
+            label: l10n.r2JoystickHint,
             // Claims the drag first, so a scrolling page (portrait) doesn't move under the thumb.
             child: GestureDetector(
               onVerticalDragStart: (_) {},
@@ -310,6 +352,7 @@ class ControlFader extends StatelessWidget {
         value: value.clamp(0, max),
         max: max,
         onChanged: onChanged,
+        onChangeStart: onChanged == null ? null : (_) => controlFeedback(),
         semanticFormatterCallback: (v) => '${(v / max * 100).round()}%',
       ),
     );
@@ -388,7 +431,7 @@ class GearChips extends StatelessWidget {
             child: Semantics(
               button: true,
               selected: speed.round() == g,
-              label: 'Kecepatan $g',
+              label: l10n.r2SpeedValue(g),
               excludeSemantics: true,
               child: Material(
                 color: speed.round() == g ? p.primary : p.surfaceRaised,
@@ -399,7 +442,8 @@ class GearChips extends StatelessWidget {
                 child: InkWell(
                   key: ValueKey('gear_$g'),
                   borderRadius: BorderRadius.circular(10),
-                  onTap: onSelect == null ? null : () => onSelect!(g.toDouble()),
+                  onTap: onSelect == null ? null : withFeedback(() => onSelect!(g.toDouble())),
+                  enableFeedback: false,
                   child: SizedBox(
                     height: 32,
                     child: FittedBox(
@@ -445,6 +489,7 @@ class TransportKey extends StatelessWidget {
     this.primary = false,
     this.size = 60,
     this.progress = 0,
+    this.showLabel = true,
   });
 
   final IconData icon;
@@ -455,6 +500,9 @@ class TransportKey extends StatelessWidget {
 
   /// Hold-to-confirm fill (HOME), 0..1.
   final double progress;
+
+  /// False draws the circle only (short screens); screen readers still get [label].
+  final bool showLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -468,7 +516,8 @@ class TransportKey extends StatelessWidget {
       label: label,
       excludeSemantics: true,
       child: InkWell(
-        onTap: onTap,
+        onTap: withFeedback(onTap),
+        enableFeedback: false,
         borderRadius: BorderRadius.circular(12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -493,12 +542,14 @@ class TransportKey extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              maxLines: 1,
-              style: TextStyle(color: p.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1),
-            ),
+            if (showLabel) ...[
+              const SizedBox(height: 6),
+              Text(
+                label,
+                maxLines: 1,
+                style: TextStyle(color: p.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1),
+              ),
+            ],
           ],
         ),
       ),
@@ -519,15 +570,15 @@ class PowerGlowButton extends StatelessWidget {
     final p = context.elio;
     final on = link == ControlLink.connected;
     final (word, color) = switch (link) {
-      ControlLink.connected => ('Online', p.primaryText),
-      ControlLink.waiting => ('Connecting...', p.secondaryText),
-      ControlLink.disconnected => ('Offline', p.errorText),
+      ControlLink.connected => (l10n.cfgOnline, p.primaryText),
+      ControlLink.waiting => (l10n.ctlConnecting, p.secondaryText),
+      ControlLink.disconnected => (l10n.ctlOffline, p.errorText),
     };
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Tooltip(
-          message: on || link == ControlLink.waiting ? 'Putuskan robot' : 'Hubungkan robot',
+          message: on || link == ControlLink.waiting ? l10n.ctlDisconnectRobot : l10n.ctlConnectRobot,
           child: Container(
             width: size,
             height: size,
@@ -538,7 +589,8 @@ class PowerGlowButton extends StatelessWidget {
               child: InkWell(
                 key: const ValueKey('robot_power'),
                 customBorder: const CircleBorder(),
-                onTap: onTap,
+                onTap: withFeedback(onTap),
+                enableFeedback: false,
                 child: Icon(
                   Icons.power_settings_new_rounded,
                   size: size * 0.45,
@@ -555,7 +607,7 @@ class PowerGlowButton extends StatelessWidget {
             TextSpan(
               children: [
                 TextSpan(
-                  text: 'Robot ',
+                  text: l10n.r2RobotPrefix,
                   style: TextStyle(color: p.textSecondary),
                 ),
                 TextSpan(
@@ -604,7 +656,10 @@ class RockerToggle extends StatelessWidget {
           const SizedBox(width: 8),
           Switch(
             value: value,
-            onChanged: onChanged,
+            onChanged: (v) {
+              controlFeedback();
+              onChanged(v);
+            },
             activeThumbColor: p.surface,
             activeTrackColor: p.primary,
             inactiveThumbColor: p.textTertiary,

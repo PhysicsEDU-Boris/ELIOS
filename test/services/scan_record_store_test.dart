@@ -4,7 +4,7 @@ import 'package:elio/models/home_stats.dart' show questBonus;
 import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/trophy_rules.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/scan_record_store.dart';
 
 void main() {
@@ -171,11 +171,11 @@ void main() {
       expect(store2.totalTrophies, 40 + questBonus(store2.records));
     });
 
-    test('level updates to Lv3 Bin Expert at 340 trophies', () async {
+    test('level updates to Lv3 Bin Expert at 510 trophies', () async {
       final store = ScanRecordStore(customFile: testFile);
       await store.load();
 
-      // Add a high-score record to reach 340 trophies
+      // Add a high-score record to reach 510 trophies
       final record = ScanRecord(
         id: 'big-score',
         time: DateTime.now(),
@@ -183,17 +183,17 @@ void main() {
         category: ScanCategory.b3,
         difficulty: QuizDifficulty.hard,
         questions: const [],
-        trophies: 340,
+        trophies: 510,
       );
 
       await store.addRecord(record);
 
-      expect(store.totalTrophies, 340 + questBonus(store.records));
+      expect(store.totalTrophies, 510 + questBonus(store.records));
       expect(store.userLevel, StudentLevel.binExpert);
       expect(store.userLevel.levelNumber, 3);
       expect(store.userLevel.levelAndTitle, 'Level 3 · Bin Expert');
-      // Progress from 250 to 500: (340 - 250) / 250 = 90 / 250 = 0.36
-      expect(StudentLevel.binExpert.progress(340), closeTo(0.36, 0.001));
+      // Progress from 375 to 750: (510 - 375) / 375 = 0.36
+      expect(StudentLevel.binExpert.progress(510), closeTo(0.36, 0.001));
       expect(store.levelProgress, StudentLevel.binExpert.progress(store.totalTrophies));
     });
 
@@ -270,7 +270,7 @@ void main() {
       expect(store2.records.length, 1);
       final revived = store2.records.first;
       expect(revived.id, 'rec-exp');
-      expect(revived.schemaVersion, 3);
+      expect(revived.schemaVersion, 5);
       expect(revived.questions.first.explanation, isNotNull);
       final revivedExp = revived.questions.first.explanation!;
       expect(revivedExp.summary, 'Ringkasan edukasi botol PET');

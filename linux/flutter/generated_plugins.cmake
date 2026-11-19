@@ -3,7 +3,8 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  flutter_gemma
+  audioplayers_linux
+  file_selector_linux
   flutter_secure_storage_linux
   printing
   syncfusion_pdfviewer_linux

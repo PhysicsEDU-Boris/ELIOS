@@ -41,13 +41,8 @@ dependencies:
   # The `camera` plugin has no macOS implementation; this provides the Mac
   # webcam for the device-camera scan screen.
   camera_macos: ^0.1.1
-  # Locates the copied Gemma model on Android to report copy progress.
+  # App storage paths (scan records, tester log, PDF reports).
   path_provider: ^2.1.6
-
-  # On-device Gemma inference for the auto-generated waste-sorting quiz
-  # (same API/model as the ELIO-SANDBOX prototype's GemmaService).
-  flutter_gemma: ^1.9.0
-  flutter_gemma_litertlm: ^1.8.2
 
   # Voice playback for the quiz's AI Correction Assistant messages (same as
   # the ELIO-SANDBOX prototype's TtsService).
@@ -56,6 +51,14 @@ dependencies:
   # PDF generation and sharing for quiz session reports (decision 0031).
   pdf: ^3.11.0
   printing: ^5.13.1
+
+  # Robot Wi-Fi QR (decision 0178); already in the lock through `pdf`.
+  barcode: ^2.2.9
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  audioplayers: ^6.8.1
+  image_picker: ^1.2.4
 
 dev_dependencies:
   flutter_test:
@@ -70,6 +73,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
 
   assets:
     - .env.dev
@@ -77,19 +81,28 @@ flutter:
     - .env.example
     - assets/icon/
     - assets/illustrations/learn/
-    - assets/models/
+    - assets/illustrations/robot/
+    - assets/illustrations/guides/
+    - assets/models/robot-elio.glb
+    - assets/models/mobilElios5.glb
     - assets/module/
     - assets/quiz/
     - assets/illustrations/home/
     - assets/illustrations/control/
+    - assets/illustrations/scan/
+    - assets/illustrations/history/
+    - assets/sounds/
+    # Static Google Sans Flex weights for the PDF export (the pdf package
+    # cannot use the variable font's weight axis; decision 0228).
+    - assets/fonts/pdf/
 
   fonts:
-    - family: JetBrains Mono
+    - family: Google Sans Code
       fonts:
-        - asset: assets/fonts/JetBrainsMono-Variable.ttf
-    - family: Inter
+        - asset: assets/fonts/GoogleSansCode-Variable.ttf
+    - family: Google Sans Flex
       fonts:
-        - asset: assets/fonts/Inter-Variable.ttf
+        - asset: assets/fonts/GoogleSansFlex-Variable.ttf
 
 flutter_launcher_icons:
   android: "launcher_icon"

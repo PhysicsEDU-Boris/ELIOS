@@ -20,7 +20,7 @@ const pickBandMaxCm = 28.0;
 /// also covers an inference frame (~0.5 s) delaying the reply.
 const ackTimeout = Duration(seconds: 2);
 
-/// Proposed: Gemma's image identify takes 7-9 s to its first token (HANDOFF);
+/// Proposed: the AI's image identify takes 7-9 s to its first token (HANDOFF);
 /// 45 s leaves room for a slow full answer without hanging forever.
 const identifyTimeout = Duration(seconds: 45);
 
@@ -34,10 +34,11 @@ const revealDuration = Duration(seconds: 4);
 /// pressing a button takes well under a minute.
 const positionTimeout = Duration(seconds: 60);
 
-/// Proposed: one arm command, from its ack to motion_done. The longest joint
-/// travel (180 deg) takes 3 s at the 60 deg/s firmware limit; a PICK has about
-/// four such segments (approach, descend, grip, lift), so 15 s.
-const armTimeout = Duration(seconds: 15);
+/// Proposed: one arm command, from its ack to motion_done. The slowest joints
+/// (Arm A and Arm B) are limited to 30 deg/s by the ESP32 firmware (0230), so
+/// the longest travel (Arm B, 180 deg) takes 6 s; a PICK has about four such
+/// segments (approach, descend, grip, lift): 24 s, plus settling, so 30 s.
+const armTimeout = Duration(seconds: 30);
 
 /// Proposed: after the arm's last motion the servos and the camera (on J1)
 /// still settle; ~7 analysed frames at ~5 fps, the same as the stabilizer's
@@ -52,12 +53,19 @@ const pickVerifyTimeout = Duration(seconds: 2);
 /// stabilizer's dropout tolerance).
 const objectGoneFor = Duration(milliseconds: 600);
 
+/// Proposed (0233): at the bin state point the right bin's tag must be seen this long
+/// (about 2 tag frames at ~5 fps) before DROP; a wrong bin's tag this long fails the look.
+const binTagSeenFor = Duration(milliseconds: 500);
+
+/// Proposed (0233): one look for the bin tag; a failed look is retried once, then HOME.
+const binLookTimeout = Duration(seconds: 3);
+
 /// A hand must be out of view this long before a paused arm continues.
 const handClearFor = Duration(seconds: 1);
 
 /// Proposed: SORTING to RESUME, whatever happens (three arm commands of up to
-/// 15 s each, two 20 s questions, hand pauses): 120 s.
-const waitCap = Duration(seconds: 120);
+/// 30 s each, two 20 s questions, hand pauses): 180 s.
+const waitCap = Duration(seconds: 180);
 
 /// Proposed: wheel PWM cap while driving is unlocked for nudges in POSITION
 /// (the control screen's default speed is 75).

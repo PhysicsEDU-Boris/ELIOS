@@ -1,3 +1,4 @@
+import 'package:elio/l10n/l10n.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,7 +39,7 @@ extension AuthEmailOrUsernameSignIn on FirebaseAuth {
       if (snapshot.docs.isEmpty) {
         throw FirebaseAuthException(
           code: 'user-not-found',
-          message: 'No account found for that username.',
+          message: l10n.authNoUser,
         );
       }
 
@@ -48,7 +49,7 @@ extension AuthEmailOrUsernameSignIn on FirebaseAuth {
       if (email is! String || email.trim().isEmpty) {
         throw FirebaseAuthException(
           code: 'user-not-found',
-          message: 'No account found for that username.',
+          message: l10n.authNoUser,
         );
       }
 
@@ -61,7 +62,7 @@ extension AuthEmailOrUsernameSignIn on FirebaseAuth {
     } catch (_) {
       throw FirebaseAuthException(
         code: 'user-not-found',
-        message: 'No account found for that username.',
+        message: l10n.authNoUser,
       );
     }
   }

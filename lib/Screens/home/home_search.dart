@@ -6,17 +6,30 @@ import '../../models/home_stats.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/auth/auth_widgets.dart' show authPalette;
 import 'home_parts.dart';
+import 'package:elio/l10n/l10n.dart';
 
 enum SearchScope {
-  all('All', null),
-  lessons('Lessons', 'LESSONS'),
-  simulasi('Simulasi', 'SIMULASI'),
-  quiz('Quiz', 'QUIZ'),
-  scans('Scans', 'YOUR SCANS');
+  all,
+  lessons,
+  simulasi,
+  quiz,
+  scans;
 
-  const SearchScope(this.label, this.header);
-  final String label;
-  final String? header;
+  String get label => switch (this) {
+    all => l10n.searchAll,
+    lessons => l10n.searchLessons,
+    simulasi => l10n.searchSims,
+    quiz => l10n.searchQuiz,
+    scans => l10n.searchScans,
+  };
+
+  String? get header => switch (this) {
+    all => null,
+    lessons => l10n.searchLessonsHeader,
+    simulasi => l10n.searchSimsHeader,
+    quiz => l10n.searchQuizHeader,
+    scans => l10n.searchScansHeader,
+  };
 }
 
 class SearchItem {
@@ -27,7 +40,11 @@ class SearchItem {
     required this.onTap,
     this.icon,
     this.bin,
+    this.thumb,
   });
+
+  /// Cover shown in the row's thumbnail frame (Figma 739:30806).
+  final Widget? thumb;
 
   final SearchScope scope;
   final String title, subtitle;
@@ -74,9 +91,9 @@ class HomeSearchField extends StatelessWidget {
       style: ElioTokens.body.copyWith(color: p.textPrimary),
       decoration: InputDecoration(
         filled: true,
-        fillColor: p.field,
-        hintText: 'Search lessons, simulations, scans',
-        hintStyle: ElioTokens.body.copyWith(color: p.textTertiary),
+        fillColor: p.surface,
+        hintText: l10n.searchHint,
+        hintStyle: ElioTokens.bodySmall.copyWith(color: p.textTertiary),
         hintMaxLines: 1,
         contentPadding: const EdgeInsets.symmetric(vertical: 14),
         prefixIcon: Icon(
@@ -84,7 +101,7 @@ class HomeSearchField extends StatelessWidget {
           color: active ? p.primaryText : p.textSecondary,
         ),
         enabledBorder: border(
-          active ? p.primaryText : p.formBorder,
+          active ? p.primaryText : p.borderSubtle,
           active ? 2 : 1,
         ),
         focusedBorder: border(p.primaryText, 2),
@@ -92,12 +109,9 @@ class HomeSearchField extends StatelessWidget {
             ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    '$resultCount ${resultCount == 1 ? 'result' : 'results'}',
-                    style: homeSmall(p),
-                  ),
+                  Text(l10n.resultCount(resultCount ?? 0), style: homeSmall(p)),
                   IconButton(
-                    tooltip: 'Clear search',
+                    tooltip: l10n.clearSearch,
                     onPressed: controller.clear,
                     icon: Icon(Icons.close_rounded, color: p.textSecondary),
                   ),
@@ -106,7 +120,7 @@ class HomeSearchField extends StatelessWidget {
             : Padding(
                 padding: const EdgeInsets.only(right: 6),
                 child: PopupMenuButton<SearchScope>(
-                  tooltip: 'Search in',
+                  tooltip: l10n.searchIn,
                   initialValue: scope,
                   onSelected: onScope,
                   itemBuilder: (_) => [
@@ -217,7 +231,7 @@ class HomeSearchResults extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
             child: Text(
-              'No results for “${query.trim()}”.',
+              l10n.noResultsFor(query.trim()),
               textAlign: TextAlign.center,
               style: ElioTokens.body.copyWith(color: p.textSecondary),
             ),
@@ -251,7 +265,7 @@ class HomeSearchResults extends StatelessWidget {
                 minimumSize: const Size(48, 48),
                 foregroundColor: p.primaryText,
               ),
-              child: Text('See all ${items.length} results'),
+              child: Text(context.l10n.searchSeeAll(items.length)),
             ),
           ),
       ],
@@ -330,7 +344,7 @@ class _ResultRow extends StatelessWidget {
     return Semantics(
       button: true,
       label:
-          '${item.title}, ${item.subtitle}${item.bin == null ? '' : ', ${item.bin!.label}'}',
+          '${l10n.a11ySearchItem(item.title, item.subtitle)}${item.bin == null ? '' : ', ${item.bin!.label}'}',
       container: true,
       excludeSemantics: true,
       child: InkWell(
@@ -338,13 +352,16 @@ class _ResultRow extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 56),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
             child: Row(
               children: [
-                item.icon == null
-                    ? homeArt('scan_line_art', width: 24, height: 24)
-                    : Icon(item.icon, color: iconColor),
-                const SizedBox(width: 16),
+                if (item.thumb != null)
+                  HomeThumb(child: item.thumb!)
+                else if (item.icon == null)
+                  homeArt('scan_line_art', width: 24, height: 24)
+                else
+                  Icon(item.icon, color: iconColor),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

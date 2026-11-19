@@ -1,56 +1,51 @@
 // C1 Config screen pieces (decision 0145, Figma page 337:2358): ELIOS AI logo
 // and card, choice tile, status tile, card and buttons. Colours come from the
 // active palette only; the bulb is the shared Home illustration.
+import '../home/home_parts.dart' show homeWeight;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../services/gemma_quiz_service.dart';
+import '../../services/ai_quiz_service.dart';
 import '../../theme/elio_tokens.dart';
 import '../../widgets/learn/learn_ui.dart';
 import '../home/home_parts.dart' show homeArt, homeRadiusL;
+import 'package:elio/l10n/l10n.dart';
 
-TextStyle configTitle(ElioPalette p) =>
-    ElioTokens.bodyLarge.copyWith(fontSize: 19, fontWeight: FontWeight.w600, height: 1.3, color: p.textPrimary);
+TextStyle configTitle(ElioPalette p) => ElioTokens.bodyLarge.copyWith(
+  fontSize: 19,
+  fontWeight: FontWeight.w600,
+  height: 1.3,
+  color: p.textPrimary,
+);
 
 TextStyle configBody(ElioPalette p, {Color? color, FontWeight? weight}) =>
-    ElioTokens.bodySmall.copyWith(color: color ?? p.textSecondary, fontWeight: weight, height: 1.45);
+    ElioTokens.bodySmall.copyWith(
+      color: color ?? p.textSecondary,
+      fontWeight: weight,
+      height: 1.45,
+    );
 
-TextStyle configStrong(ElioPalette p, {Color? color}) =>
-    ElioTokens.bodySmall.copyWith(color: color ?? p.textPrimary, fontWeight: FontWeight.w700, height: 1.35);
+TextStyle configStrong(ElioPalette p, {Color? color}) => homeWeight(
+  ElioTokens.bodySmall,
+  700,
+).copyWith(color: color ?? p.textPrimary, height: 1.35);
 
-TextStyle configCaption(ElioPalette p, {Color? color}) =>
-    ElioTokens.caption.copyWith(color: color ?? p.textSecondary, fontWeight: FontWeight.w400);
+TextStyle configCaption(ElioPalette p, {Color? color}) => ElioTokens.caption
+    .copyWith(color: color ?? p.textSecondary, fontWeight: FontWeight.w400);
 
 /// In-card divider: dark borderSubtle equals the card fill, so it would vanish.
-Color configDivider(ElioPalette p) => p.isDark ? p.borderMedium : p.borderSubtle;
-
-/// Section heading outside the cards ("Camera source" + one line).
-class ConfigSectionHeader extends StatelessWidget {
-  const ConfigSectionHeader(this.title, this.subtitle, {super.key});
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.elio;
-    return Semantics(
-      header: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: configTitle(p)),
-          const SizedBox(height: 2),
-          Text(subtitle, style: configCaption(p)),
-        ],
-      ),
-    );
-  }
-}
+Color configDivider(ElioPalette p) =>
+    p.isDark ? p.borderMedium : p.borderSubtle;
 
 /// Surface card; [tint] gives the tinted AI-card look (fill + border).
 class ConfigCard extends StatelessWidget {
-  const ConfigCard({super.key, required this.child, this.tint, this.padding = 16});
+  const ConfigCard({
+    super.key,
+    required this.child,
+    this.tint,
+    this.padding = 16,
+  });
   final Widget child;
   final Color? tint;
   final double padding;
@@ -60,8 +55,13 @@ class ConfigCard extends StatelessWidget {
     final p = context.elio;
     return DecoratedBox(
       decoration: ShapeDecoration(
-        color: tint == null ? p.surface : Color.alphaBlend(tint!.withValues(alpha: 0.08), p.surface),
-        shape: learnShape(homeRadiusL, BorderSide(color: tint?.withValues(alpha: 0.45) ?? p.borderSubtle)),
+        color: tint == null
+            ? p.surface
+            : Color.alphaBlend(tint!.withValues(alpha: 0.08), p.surface),
+        shape: learnShape(
+          homeRadiusL,
+          BorderSide(color: tint?.withValues(alpha: 0.45) ?? p.borderSubtle),
+        ),
       ),
       child: Padding(padding: EdgeInsets.all(padding), child: child),
     );
@@ -70,7 +70,13 @@ class ConfigCard extends StatelessWidget {
 
 /// Round icon chip used in card headers and settings rows.
 class ConfigIconChip extends StatelessWidget {
-  const ConfigIconChip(this.icon, {super.key, this.size = 40, this.color, this.background});
+  const ConfigIconChip(
+    this.icon, {
+    super.key,
+    this.size = 40,
+    this.color,
+    this.background,
+  });
   final IconData icon;
   final double size;
   final Color? color;
@@ -82,160 +88,11 @@ class ConfigIconChip extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: ShapeDecoration(color: background ?? p.surfaceRaised, shape: const CircleBorder()),
+      decoration: ShapeDecoration(
+        color: background ?? p.surfaceRaised,
+        shape: const CircleBorder(),
+      ),
       child: Icon(icon, size: size * 0.5, color: color ?? p.primaryText),
-    );
-  }
-}
-
-/// Card header: icon chip, title, one line.
-class ConfigCardHeader extends StatelessWidget {
-  const ConfigCardHeader({super.key, required this.icon, required this.title, required this.subtitle});
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.elio;
-    return Row(
-      children: [
-        ConfigIconChip(icon),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: configStrong(p)),
-              Text(subtitle, style: configCaption(p)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Choice tile 337:2479: green fill and check when selected, ring otherwise;
-/// 50 % when disabled.
-class ChoiceTile extends StatelessWidget {
-  const ChoiceTile({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.selected,
-    required this.onTap,
-    this.enabled = true,
-    this.iconWidget,
-  });
-
-  final IconData icon;
-  final Widget? iconWidget;
-  final String title;
-  final String description;
-  final bool selected;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.elio;
-    final fg = selected ? p.onPrimary : p.textPrimary;
-    return Opacity(
-      opacity: enabled ? 1 : 0.5,
-      child: Semantics(
-        button: true,
-        inMutuallyExclusiveGroup: true,
-        selected: selected,
-        enabled: enabled,
-        label: '$title. $description',
-        onTap: enabled ? onTap : null,
-        excludeSemantics: true,
-        child: Material(
-          color: selected ? p.primary : p.surface,
-          shape: learnShape(learnRadiusL, selected ? BorderSide.none : BorderSide(color: p.borderSubtle)),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: enabled ? onTap : null,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 48),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        iconWidget ??
-                            ConfigIconChip(icon, color: p.textPrimary, background: selected ? p.surface : p.surfaceRaised),
-                        const Spacer(),
-                        selected
-                            ? Container(
-                                width: 24,
-                                height: 24,
-                                decoration: ShapeDecoration(color: p.onPrimary, shape: const CircleBorder()),
-                                child: Icon(Icons.check_rounded, size: 16, color: p.primary),
-                              )
-                            : Container(
-                                width: 24,
-                                height: 24,
-                                decoration: ShapeDecoration(
-                                  shape: CircleBorder(side: BorderSide(color: p.formBorder, width: 2)),
-                                ),
-                              ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(title, style: configStrong(p, color: fg)),
-                    const SizedBox(height: 4),
-                    Text(description, style: configCaption(p, color: selected ? p.onPrimary : p.textSecondary)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Hero status tile ("Status · Online").
-class StatusTile extends StatelessWidget {
-  const StatusTile({super.key, required this.label, required this.value, this.leading, this.semanticsValue});
-  final String label;
-  final String value;
-  final Widget? leading;
-
-  /// Read instead of [value] when the visible text is a symbol ("—").
-  final String? semanticsValue;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.elio;
-    return Semantics(
-      label: '$label: ${semanticsValue ?? value}',
-      excludeSemantics: true,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: ShapeDecoration(color: p.surface, shape: learnShape(learnRadiusM)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: configCaption(p), maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 2),
-            Row(
-              children: [
-                if (leading != null) ...[leading!, const SizedBox(width: 6)],
-                Flexible(
-                  child: Text(value, style: configStrong(p), maxLines: 1, overflow: TextOverflow.ellipsis),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -268,11 +125,14 @@ class ConfigButton extends StatelessWidget {
     final Widget? leading = busy
         ? SizedBox.square(
             dimension: 18,
-            child: CircularProgressIndicator(strokeWidth: 2.2, color: primary ? p.onPrimary : p.primaryText),
+            child: CircularProgressIndicator(
+              strokeWidth: 2.2,
+              color: primary ? p.onPrimary : p.primaryText,
+            ),
           )
         : icon == null
-            ? null
-            : Icon(icon, size: 20);
+        ? null
+        : Icon(icon, size: 20);
     final child = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -293,9 +153,16 @@ class ConfigButton extends StatelessWidget {
         minimumSize: size,
         backgroundColor: WidgetStatePropertyAll(p.surface),
         foregroundColor: WidgetStateProperty.resolveWith(
-            (s) => s.contains(WidgetState.disabled) ? c.withValues(alpha: dim) : c),
-        side: WidgetStateProperty.resolveWith((s) =>
-            BorderSide(color: s.contains(WidgetState.disabled) ? side.withValues(alpha: dim) : side)),
+          (s) =>
+              s.contains(WidgetState.disabled) ? c.withValues(alpha: dim) : c,
+        ),
+        side: WidgetStateProperty.resolveWith(
+          (s) => BorderSide(
+            color: s.contains(WidgetState.disabled)
+                ? side.withValues(alpha: dim)
+                : side,
+          ),
+        ),
       );
     }
     final button = primary
@@ -307,46 +174,30 @@ class ConfigButton extends StatelessWidget {
 
 // ── ELIOS AI ─────────────────────────────────────────────────────────────
 
-/// The five card states 343:3076.
-enum AiCardState { off, loading, active, error, paused }
+/// Card states 343:3076. Cloud AI has nothing to load or cool down, so the
+/// Figma Loading and Paused states are gone (decision 0179).
+enum AiCardState { off, active, error }
 
-AiCardState aiCardState(GemmaStatus status) => switch (status) {
-      GemmaStatus.idle => AiCardState.off,
-      GemmaStatus.installing || GemmaStatus.loading => AiCardState.loading,
-      GemmaStatus.ready => AiCardState.active,
-      GemmaStatus.error || GemmaStatus.killed || GemmaStatus.missing => AiCardState.error,
-      GemmaStatus.paused => AiCardState.paused,
-    };
+AiCardState aiCardState(AiStatus status) => switch (status) {
+  AiStatus.idle => AiCardState.off,
+  AiStatus.ready => AiCardState.active,
+  AiStatus.offline => AiCardState.error,
+};
 
-/// "Activate ELIOS AI" / "Try again": the existing copy-then-load path, with
-/// the image encoder (scans need it).
-Future<void> activateEliosAi() async {
-  final service = GemmaQuizService.instance;
-  if (service.progress.value.status == GemmaStatus.killed) service.clearKilled();
-  if (await service.prepare()) await service.ensureReady(vision: true);
-}
-
-/// ELIOS AI card 343:3076, driven by [GemmaQuizService.progress].
+/// ELIOS AI card 343:3076, driven by the last cloud call ([AiQuizService.status]).
 class EliosAiCard extends StatelessWidget {
-  const EliosAiCard({super.key, this.onActivate = activateEliosAi});
-  final Future<void> Function() onActivate;
+  const EliosAiCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final service = GemmaQuizService.instance;
-    return ValueListenableBuilder<GemmaProgress>(
-      valueListenable: service.progress,
-      builder: (context, progress, _) {
+    final service = AiQuizService.instance;
+    return ValueListenableBuilder<AiStatus>(
+      valueListenable: service.status,
+      builder: (context, status, _) {
         final p = context.elio;
-        final state = aiCardState(progress.status);
-        final tint = switch (state) {
-          AiCardState.error => p.error,
-          AiCardState.paused => p.secondaryText,
-          _ => p.tertiaryText,
-        };
-        final showBulb = state == AiCardState.off || state == AiCardState.loading || state == AiCardState.active;
+        final state = aiCardState(status);
         return ConfigCard(
-          tint: tint,
+          tint: state == AiCardState.error ? p.error : p.tertiaryText,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -362,21 +213,34 @@ class EliosAiCard extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Semantics(header: true, child: Text('ELIOS AI', style: configTitle(p))),
-                              Text('Gemma · on this phone, no internet', style: configCaption(p)),
+                              Semantics(
+                                header: true,
+                                child: Text('ELIOS AI', style: configTitle(p)),
+                              ),
+                              Text(
+                                context.l10n.aiNeedsInternet,
+                                style: configCaption(p),
+                              ),
                             ],
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Semantics(liveRegion: true, container: true, child: _body(context, p, state, progress, service)),
+                    Semantics(
+                      liveRegion: true,
+                      container: true,
+                      child: _body(context, p, state, service),
+                    ),
                   ],
                 ),
               ),
-              if (showBulb) ...[
+              if (state != AiCardState.error) ...[
                 const SizedBox(width: 8),
-                Padding(padding: const EdgeInsets.only(top: 40), child: homeArt('bulb_buddy', width: 56, height: 59)),
+                Padding(
+                  padding: const EdgeInsets.only(top: 40),
+                  child: homeArt('bulb_buddy', width: 56, height: 59),
+                ),
               ],
             ],
           ),
@@ -385,114 +249,76 @@ class EliosAiCard extends StatelessWidget {
     );
   }
 
-  Widget _body(BuildContext context, ElioPalette p, AiCardState state, GemmaProgress progress, GemmaQuizService service) {
-    switch (state) {
-      case AiCardState.off:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Turn it on to identify scans and write new quiz questions.', style: configBody(p)),
-            const SizedBox(height: 12),
-            ConfigButton(label: 'Activate ELIOS AI', icon: Icons.auto_awesome_rounded, onPressed: onActivate),
-            const SizedBox(height: 8),
-            Text('First start about 45 s, then 5 to 10 s', style: configCaption(p)),
-          ],
-        );
-      case AiCardState.loading:
-        final installing = progress.status == GemmaStatus.installing;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+  Widget _body(
+    BuildContext context,
+    ElioPalette p,
+    AiCardState state,
+    AiQuizService service,
+  ) => switch (state) {
+    AiCardState.off => Text(context.l10n.aiOffHint, style: configBody(p)),
+    AiCardState.active => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(context.l10n.aiActiveHint, style: configBody(p)),
+        const SizedBox(height: 12),
+        DecoratedBox(
+          decoration: ShapeDecoration(
+            shape: StadiumBorder(side: BorderSide(color: p.primaryText)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox.square(
-                    dimension: 16, child: CircularProgressIndicator(strokeWidth: 2, color: p.primaryText)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(installing ? 'Copying the AI model (one time)…' : 'Loading AI into memory…',
-                      style: configStrong(p)),
+                Icon(Icons.check_rounded, size: 16, color: p.primaryText),
+                const SizedBox(width: 4),
+                Text(
+                  context.l10n.aiActive(
+                    service.lastModel ?? context.l10n.aiCloud,
+                  ),
+                  style: configCaption(p, color: p.primaryText),
                 ),
-                if (installing) Text('${progress.installPercent}%', style: configStrong(p, color: p.primaryText)),
               ],
             ),
-            const SizedBox(height: 8),
-            // The engine reports no percent while loading; only the copy has one.
-            LinearProgressIndicator(
-              value: installing ? progress.installPercent / 100 : null,
-              minHeight: 6,
-              borderRadius: BorderRadius.circular(ElioTokens.radiusFull),
-              color: p.primary,
-              backgroundColor: p.surface,
-              semanticsLabel: 'ELIOS AI loading',
-              semanticsValue: installing ? '${progress.installPercent}%' : null,
-            ),
-            const SizedBox(height: 8),
-            Text('Keep the app open. The quiz uses the question bank until it is ready.', style: configCaption(p)),
-          ],
-        );
-      case AiCardState.active:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Identifying scans and writing quiz questions.', style: configBody(p)),
-            const SizedBox(height: 12),
-            DecoratedBox(
-              decoration: ShapeDecoration(shape: StadiumBorder(side: BorderSide(color: p.primaryText))),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.check_rounded, size: 16, color: p.primaryText),
-                    const SizedBox(width: 4),
-                    Text('Active · offline', style: configCaption(p, color: p.primaryText)),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      case AiCardState.error:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _alertLine(p, Icons.error_outline_rounded, 'ELIOS AI could not start', p.errorText),
-            Padding(
-              padding: const EdgeInsets.only(left: 28, top: 2),
-              child: Text('${progress.error ?? 'Unknown error.'} The quiz uses the question bank.',
-                  style: configCaption(p, color: p.textPrimary)),
-            ),
-            const SizedBox(height: 12),
-            ConfigButton(label: 'Try again', icon: Icons.refresh_rounded, primary: false, onPressed: onActivate),
-          ],
-        );
-      case AiCardState.paused:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _alertLine(p, Icons.thermostat_rounded, 'Paused, the phone is too hot', p.secondaryText),
-            Padding(
-              padding: const EdgeInsets.only(left: 28, top: 2),
-              child: Text(service.blockedReason ?? 'ELIOS AI resumes by itself when the phone cools down.',
-                  style: configCaption(p, color: p.textPrimary)),
-            ),
-          ],
-        );
-    }
-  }
+          ),
+        ),
+      ],
+    ),
+    AiCardState.error => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _alertLine(
+          p,
+          Icons.cloud_off_rounded,
+          l10n.cfgAiUnreachable,
+          p.errorText,
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 28, top: 2),
+          child: Text(
+            context.l10n.aiUnavailable,
+            style: configCaption(p, color: p.textPrimary),
+          ),
+        ),
+      ],
+    ),
+  };
 
-  Widget _alertLine(ElioPalette p, IconData icon, String text, Color color) => Row(
+  Widget _alertLine(ElioPalette p, IconData icon, String text, Color color) =>
+      Row(
         children: [
           Icon(icon, size: 20, color: color),
           const SizedBox(width: 8),
-          Expanded(child: Text(text, style: configStrong(p, color: color))),
+          Expanded(
+            child: Text(text, style: configStrong(p, color: color)),
+          ),
         ],
       );
 }
 
 /// ELIOS AI logo 347:4439: the centre leaf stays still, the small leaf orbits
 /// clockwise at constant speed and the outline opens where it passes.
-/// Active 3.6 s per orbit, Loading 1.2 s, other states and reduced motion
+/// Active 3.6 s per orbit; other states and reduced motion
 /// rest at Frame 01 (small leaf on the left).
 class EliosAiLogo extends StatefulWidget {
   const EliosAiLogo({super.key, required this.state, this.size = 48});
@@ -500,20 +326,22 @@ class EliosAiLogo extends StatefulWidget {
   final double size;
 
   static Duration? periodFor(AiCardState state) => switch (state) {
-        AiCardState.active => const Duration(milliseconds: 3600),
-        AiCardState.loading => const Duration(milliseconds: 1200),
-        _ => null,
-      };
+    AiCardState.active => const Duration(milliseconds: 3600),
+    _ => null,
+  };
 
   @override
   State<EliosAiLogo> createState() => _EliosAiLogoState();
 }
 
-class _EliosAiLogoState extends State<EliosAiLogo> with SingleTickerProviderStateMixin {
+class _EliosAiLogoState extends State<EliosAiLogo>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _orbit = AnimationController(vsync: this);
 
   void _sync() {
-    final period = context.reduceMotion ? null : EliosAiLogo.periodFor(widget.state);
+    final period = context.reduceMotion
+        ? null
+        : EliosAiLogo.periodFor(widget.state);
     if (period == null) {
       _orbit
         ..stop()
@@ -550,7 +378,11 @@ class _EliosAiLogoState extends State<EliosAiLogo> with SingleTickerProviderStat
       child: RepaintBoundary(
         child: CustomPaint(
           size: Size.square(widget.size),
-          painter: LeafOrbitPainter(_orbit, color: p.primaryText, glow: p.isDark),
+          painter: LeafOrbitPainter(
+            _orbit,
+            color: p.primaryText,
+            glow: p.isDark,
+          ),
         ),
       ),
     );
@@ -558,7 +390,8 @@ class _EliosAiLogoState extends State<EliosAiLogo> with SingleTickerProviderStat
 }
 
 class LeafOrbitPainter extends CustomPainter {
-  LeafOrbitPainter(this.progress, {required this.color, required this.glow}) : super(repaint: progress);
+  LeafOrbitPainter(this.progress, {required this.color, required this.glow})
+    : super(repaint: progress);
 
   final Animation<double> progress;
   final Color color;
@@ -635,10 +468,12 @@ class LeafOrbitPainter extends CustomPainter {
     }
 
     if (glow) {
-      canvas.drawPath(_centreLeaf,
-          Paint()
-            ..color = color.withValues(alpha: 0.35)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
+      canvas.drawPath(
+        _centreLeaf,
+        Paint()
+          ..color = color.withValues(alpha: 0.35)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+      );
     }
     canvas.drawPath(_centreLeaf, fill);
 
@@ -652,5 +487,6 @@ class LeafOrbitPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(LeafOrbitPainter old) => old.color != color || old.glow != glow || old.progress != progress;
+  bool shouldRepaint(LeafOrbitPainter old) =>
+      old.color != color || old.glow != glow || old.progress != progress;
 }

@@ -8,6 +8,7 @@ import '../detection_stabilizer.dart';
 import '../websocket_service.dart' show ArmTag, Detection;
 import 'r1_constants.dart';
 import 'robot_controller.dart';
+import 'package:elio/l10n/l10n.dart';
 
 enum R1State {
   searching,
@@ -64,13 +65,17 @@ class R1Orchestrator {
   /// What the screen tells the student ("Berhenti", "Maju sedikit", ...).
   String? message;
 
-  /// The bin the robot uses (detector, Gemma, hazard veto) and the student's guess.
+  /// The bin the robot uses (detector, the AI, hazard veto) and the student's guess.
   Bin? robotBin;
   Bin? studentBin;
 
   /// POSITION without a distance: show "Posisi sudah pas".
   bool get showPositionButton => _state == R1State.position && _manualPosition;
   bool get canAmbil => _state == R1State.ready;
+
+  /// The camera's AprilTag search is on only around a grip (owner, 4 Nov; 0182): from POSITION
+  /// until the arm is done. Elsewhere it would cost ~40 ms a detection frame for nothing.
+  bool get wantsArmTags => const {R1State.position, R1State.ready, R1State.sorting, R1State.waitBoth}.contains(_state);
 
   DateTime? _settleUntil;
 
@@ -92,7 +97,8 @@ class R1Orchestrator {
   bool _armDone = false;
   TrackedDetection? _spot;
   DateTime? _verifyUntil, _spotClearSince, _handSeenAt;
-  bool _handPaused = false;
+  DateTime? _lookUntil, _rightTagSince, _wrongTagSince;
+  bool _handPaused = false, _binLookRetried = false;
   int _questionsDone = 0;
   DateTime? _questionSlotStart;
 
@@ -121,9 +127,9 @@ class R1Orchestrator {
     _pending.clear();
     _connected = false;
     if (_state != R1State.searching) {
-      _end('link_lost', 'Koneksi ke robot terputus. Robot berhenti.', stop: false);
+      _end('link_lost', l10n.r1LinkLost, stop: false);
     } else {
-      message = 'robot tidak terhubung';
+      message = l10n.r1NotConnected;
     }
   }
 
@@ -132,7 +138,7 @@ class R1Orchestrator {
   /// until [resumeAfterStop] ("Lanjutkan").
   void emergencyStop(String reason) {
     if (_state != R1State.searching) {
-      _end('emergency_stop', 'Robot dihentikan ($reason). Tekan "Lanjutkan" jika sudah aman.',
+      _end('emergency_stop', l10n.r1Stopped(reason),
           stop: _armActive, keepLocked: true);
     }
     robot.driveLocked = true;
@@ -158,13 +164,13 @@ class R1Orchestrator {
     feedback.objectLeftFloor = null; // kept after the last session's end, for diagnostics
     robot.driveLocked = true;
     _await(robot.lockDrive(), 'LOCK_DRIVE');
-    message = 'Berhenti';
+    message = l10n.r1Stop;
     _enter(R1State.objectInView);
     return true;
   }
 
   /// Identification finished: the robot's bin, and whether a person must
-  /// confirm it (B3, or detector and Gemma disagree).
+  /// confirm it (B3, or detector and the AI disagree).
   void onIdentified(Bin bin, {bool needsConfirm = false}) {
     if (_state == R1State.objectInView) {
       _bufferedIdentify = (bin, needsConfirm);
@@ -200,7 +206,7 @@ class R1Orchestrator {
     _sortStart = _clock();
     _spot = _target;
     _questionSlotStart = _sortStart;
-    message = 'Robot mengambil benda';
+    message = l10n.r1Picking;
     if (_handInView) {
       _pause();
     } else {
@@ -260,6 +266,8 @@ class R1Orchestrator {
           _armStep = 2;
           _runArmStep();
         }
+      } else if (_armStep == 3 && !_handPaused) {
+        _lookForBinTag(armTags ?? const [], now);
       }
     }
     if (_state == R1State.position) _evaluatePosition();
@@ -291,33 +299,37 @@ class R1Orchestrator {
     final inState = now.difference(since);
     switch (_state) {
       case R1State.identifying when inState >= identifyTimeout:
-        _abort('timeout_identify', 'Benda tidak bisa dikenali. Silakan jalan lagi.');
+        _abort('timeout_identify', l10n.r1NotIdentified);
       case R1State.confirm when inState >= confirmTimeout:
-        _abort('timeout_confirm', 'Tidak ada konfirmasi. Robot tidak mengambil benda.');
+        _abort('timeout_confirm', l10n.r1NoConfirm);
       case R1State.askBin when inState >= binTimeout:
         _reveal(); // no answer: reveal anyway
       case R1State.reveal when inState >= revealDuration:
         _enterPosition();
       case R1State.position || R1State.ready when now.difference(_positionStart!) >= positionTimeout:
-        _abort('timeout_position', 'Waktu habis. Robot tidak mengambil benda.');
+        _abort('timeout_position', l10n.r1Timeout);
       case R1State.sorting || R1State.waitBoth:
         if (now.difference(_sortStart!) >= waitCap) {
-          _abort('timeout_wait_cap', 'Robot terlalu lama. Robot berhenti.');
+          _abort('timeout_wait_cap', l10n.r1TooLong);
           return;
         }
         if (_handPaused && !_handInView) {
           _handPaused = false;
-          message = 'Robot melanjutkan';
+          message = l10n.r1Resuming;
           _runArmStep(); // the interrupted step again, from its start
         }
         if (_armActive && _armStep == 1 && !_handPaused && !now.isBefore(_verifyUntil!)) {
           feedback.objectLeftFloor = false;
-          _abort('pick_failed', 'Benda tidak terambil. Robot berhenti.');
+          _abort('pick_failed', l10n.r1PickFailed);
+          return;
+        }
+        if (_armActive && _armStep == 3 && !_handPaused && !now.isBefore(_lookUntil!)) {
+          _binLookFailed('bin_tag_not_seen');
           return;
         }
         if (_questionsRunning && now.difference(_questionSlotStart!) >= questionTimeout) _completeQuestion();
         if (_state == R1State.waitBoth && _armDone && _questionsComplete && !_settling) {
-          _end('done', 'Selesai! Robot boleh jalan lagi.', stop: false);
+          _end('done', l10n.r1Done, stop: false);
         }
       default:
         break;
@@ -333,7 +345,7 @@ class R1Orchestrator {
   void _identified(Bin bin, bool needsConfirm) {
     robotBin = bin;
     if (needsConfirm) {
-      message = 'Konfirmasi dulu';
+      message = l10n.r1ConfirmFirst;
       _enter(R1State.confirm);
     } else {
       _askBin();
@@ -341,12 +353,12 @@ class R1Orchestrator {
   }
 
   void _askBin() {
-    message = 'Masuk tempat sampah mana?';
+    message = l10n.r1WhichBin;
     _enter(R1State.askBin);
   }
 
   void _reveal() {
-    message = 'Robot memilih: ${robotBin!.wire}';
+    message = l10n.r1RobotChose(robotBin!.wire);
     _enter(R1State.reveal);
   }
 
@@ -363,14 +375,14 @@ class R1Orchestrator {
     final d = _distCm;
     _manualPosition = d == null;
     if (d == null) {
-      message = 'Posisi sudah pas?';
+      message = l10n.r1PositionOk;
       return;
     }
     if (d >= pickBandMinCm && d <= pickBandMaxCm) {
       _ready();
       return;
     }
-    message = d > pickBandMaxCm ? 'Maju sedikit' : 'Mundur';
+    message = d > pickBandMaxCm ? l10n.r1Forward : l10n.r1Back;
     if (robot.driveLocked) {
       robot
         ..driveLocked = false
@@ -385,15 +397,16 @@ class R1Orchestrator {
         ..driveLocked = true
         ..nudgeOnly = false;
       _relocking = true;
-      message = 'Berhenti';
+      message = l10n.r1Stop;
       _await(robot.lockDrive(), 'LOCK_DRIVE');
       return;
     }
-    message = 'Tekan Ambil';
+    message = l10n.r1PressPick;
     _enter(R1State.ready);
   }
 
-  /// Arm steps: 0 PICK, 1 check the floor spot, 2 MOVE_TO_BIN, 3 DROP.
+  /// Arm steps: 0 PICK, 1 check the floor spot, 2 MOVE_TO_BIN (to the bin's state point),
+  /// 3 look for the bin's AprilTag (0233), 4 DROP.
   void _runArmStep() {
     assert(_state == R1State.sorting || _state == R1State.waitBoth, 'the arm never moves before REVEAL');
     final now = _clock();
@@ -408,9 +421,47 @@ class R1Orchestrator {
         _armSeq = robot.moveToBin(robotBin!);
         _await(_armSeq!, 'MOVE_TO_BIN', motion: true);
       case 3:
+        // At the state point the arm holds still (no command) while the camera looks.
+        _lookUntil = now.add(binLookTimeout);
+        _rightTagSince = _wrongTagSince = null;
+        message = _binLookRetried ? l10n.r1BinLookAgain : l10n.r1BinChecking;
+      case 4:
         _armSeq = robot.drop();
         _await(_armSeq!, 'DROP', motion: true);
     }
+  }
+
+  /// The right bin's tag for [binTagSeenFor]: DROP. Another bin's tag for as long: a failed look.
+  void _lookForBinTag(List<ArmTag> tags, DateTime now) {
+    final right = robotBin!.tagId;
+    final others = {for (final b in Bin.values) if (b != robotBin) b.tagId};
+    if (tags.any((t) => t.id == right)) {
+      _wrongTagSince = null;
+      if (now.difference(_rightTagSince ??= now) >= binTagSeenFor) {
+        onEvent?.call('r1_bin_check', {'result': 'ok', 'bin': robotBin!.wire, 'retried': _binLookRetried});
+        message = l10n.r1BinOk;
+        _armStep = 4;
+        _runArmStep();
+      }
+      return;
+    }
+    _rightTagSince = null;
+    if (!tags.any((t) => others.contains(t.id))) {
+      _wrongTagSince = null;
+    } else if (now.difference(_wrongTagSince ??= now) >= binTagSeenFor) {
+      _binLookFailed('wrong_bin_tag');
+    }
+  }
+
+  /// First failure: look once more. Second: end without DROP; the host sends the arm HOME.
+  void _binLookFailed(String why) {
+    onEvent?.call('r1_bin_check', {'result': why, 'bin': robotBin!.wire, 'retried': _binLookRetried});
+    if (!_binLookRetried) {
+      _binLookRetried = true;
+      _runArmStep();
+      return;
+    }
+    _end('bin_check_failed', l10n.r1BinCheckFailed, stop: false);
   }
 
   void _pause() {
@@ -419,7 +470,7 @@ class R1Orchestrator {
     if (seq != null) _pending.remove(seq); // re-sent after the hand is gone
     _armSeq = null;
     robot.hold();
-    message = 'Ada tangan! Robot berhenti sebentar.';
+    message = l10n.r1Hand;
   }
 
   void _armFinished() {
@@ -463,7 +514,7 @@ class R1Orchestrator {
         feedback.motionDoneSeq = reply.seq;
         if (reply.seq == _armSeq) {
           _armStep++;
-          if (_armStep == 4) {
+          if (_armStep == 5) {
             _armFinished();
           } else {
             _runArmStep();
@@ -478,7 +529,7 @@ class R1Orchestrator {
         _connected = true;
         if (_state == R1State.searching) message = null;
       case 'LOCK_DRIVE' when _state == R1State.objectInView:
-        message = 'Berhenti';
+        message = l10n.r1Stop;
         _enter(R1State.identifying);
         final buffered = _bufferedIdentify;
         if (buffered != null) _identified(buffered.$1, buffered.$2);
@@ -491,13 +542,13 @@ class R1Orchestrator {
   void _failed(String cmd, int seq, String reason) {
     if (cmd == 'STATUS') {
       _connected = false;
-      message = 'robot tidak terhubung';
+      message = l10n.r1NotConnected;
       return;
     }
     if (_state == R1State.searching) return;
     if (reason == 'timeout' && (cmd == 'LOCK_DRIVE' || cmd == 'UNLOCK_DRIVE')) _connected = false;
     _abort(cmd == 'LOCK_DRIVE' || cmd == 'UNLOCK_DRIVE' ? 'robot_unreachable' : 'robot_error',
-        'Robot tidak menjawab ($cmd: $reason). Robot berhenti.');
+        l10n.r1NoReply(cmd, reason));
   }
 
   // ── Exits ─────────────────────────────────────────────────────────────────
@@ -530,7 +581,7 @@ class R1Orchestrator {
     _target = _spot = null;
     _distCm = _lateralCm = null;
     _bufferedIdentify = null;
-    _manualPosition = _relocking = _armDone = _handPaused = false;
+    _manualPosition = _relocking = _armDone = _handPaused = _binLookRetried = false;
     _armStep = _questionsDone = 0;
     _armSeq = null;
     robotBin = studentBin = null;

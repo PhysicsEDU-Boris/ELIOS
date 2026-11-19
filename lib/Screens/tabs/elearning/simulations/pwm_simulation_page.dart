@@ -13,6 +13,7 @@ import 'widgets/labeled_slider.dart';
 import 'widgets/calc_box.dart';
 import 'widgets/deep_explain_card.dart';
 import 'widgets/simulation_page_scaffold.dart';
+import 'package:elio/l10n/l10n.dart';
 
 class PwmSimulationPage extends ConsumerStatefulWidget {
   const PwmSimulationPage({super.key});
@@ -21,7 +22,8 @@ class PwmSimulationPage extends ConsumerStatefulWidget {
   ConsumerState<PwmSimulationPage> createState() => _PwmSimulationPageState();
 }
 
-class _PwmSimulationPageState extends ConsumerState<PwmSimulationPage> with SingleTickerProviderStateMixin {
+class _PwmSimulationPageState extends ConsumerState<PwmSimulationPage>
+    with SingleTickerProviderStateMixin {
   late Ticker _ticker;
   double _time = 0.0;
   double _wheelAngle = 0.0;
@@ -36,14 +38,14 @@ class _PwmSimulationPageState extends ConsumerState<PwmSimulationPage> with Sing
 
   void _onTick(Duration elapsed) {
     if (!mounted) return;
-    
+
     final dt = (elapsed - _lastElapsed).inMicroseconds / 1000000.0;
     _lastElapsed = elapsed;
 
     if (dt <= 0) return;
 
     final state = ref.read(pwmProvider);
-    
+
     setState(() {
       _time += dt;
       // Convert RPM to radians per second: (RPM / 60) * 2π
@@ -66,19 +68,19 @@ class _PwmSimulationPageState extends ConsumerState<PwmSimulationPage> with Sing
 
     return SimulationPageScaffold(
       module: PhysicsModuleId.pwm,
-      appBarTitle: 'PWM & Motor',
-      header: const SimModuleHeader(
-        tag: 'MODUL F · MATERI',
-        title: 'PWM & Tegangan Efektif',
-        subtitle: 'Atur kecepatan motor ELIO tanpa membuang energi panas lewat resistor.',
+      appBarTitle: l10n.simPwm1,
+      header: SimModuleHeader(
+        tag: l10n.simPwm2,
+        title: l10n.simPwm3,
+        subtitle: l10n.simPwm12,
       ),
       formulaBox: FormulaBox(
-        title: 'TEGANGAN RATA-RATA EFEKTIF',
+        title: l10n.simPwm4,
         formulaText: TextSpan(
           children: [
             const TextSpan(text: 'V_avg = D · V_max = '),
             TextSpan(
-              text: '${state.averageVoltage.toStringAsFixed(1)} V',
+              text: '${fmtNum(state.averageVoltage, 1)} V',
               style: TextStyle(color: context.elio.secondaryText),
             ),
           ],
@@ -87,88 +89,110 @@ class _PwmSimulationPageState extends ConsumerState<PwmSimulationPage> with Sing
       ),
       simulationContent: [
         const SizedBox(height: 16),
-                  
-                  SimCanvasFrame(
-                    noteText: 'Gelombang Kotak (Sinyal PWM)',
-                    canvas: AspectRatio(
-                      aspectRatio: 340 / 100,
-                      child: CustomPaint(
-                        painter: PwmWavePainter(
-                          dutyPercent: state.dutyPercent,
-                          time: _time,
-                        ),
-                        size: Size.infinite,
+
+        SimCanvasFrame(
+          noteText: l10n.simPwm5,
+          canvas: AspectRatio(
+            aspectRatio: 340 / 100,
+            child: CustomPaint(
+              painter: PwmWavePainter(
+                dutyPercent: state.dutyPercent,
+                time: _time,
+              ),
+              size: Size.infinite,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Wheel and RPM Readout
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: context.elio.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: context.elio.borderSubtle),
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 80,
+                height: 80,
+                child: CustomPaint(
+                  painter: PwmWheelPainter(angle: _wheelAngle),
+                ),
+              ),
+              const SizedBox(width: 24),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.simMotorSpeed,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: context.elio.textSecondary,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Wheel and RPM Readout
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: context.elio.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: context.elio.borderSubtle),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${fmtNum(state.approxRpm, 0)} RPM',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: context.elio.primaryText,
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 80,
-                          height: 80,
-                          child: CustomPaint(
-                            painter: PwmWheelPainter(angle: _wheelAngle),
-                          ),
-                        ),
-                        const SizedBox(width: 24),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Kecepatan Motor (RPM)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.elio.textSecondary)),
-                              const SizedBox(height: 4),
-                              Text('${state.approxRpm.toStringAsFixed(0)} RPM', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: context.elio.primaryText)),
-                              const SizedBox(height: 4),
-                              // REQUIRED LABEL: DO NOT REMOVE
-                              Text('Perkiraan (aproksimasi linear)', style: TextStyle(fontSize: 10, color: context.elio.secondaryText, fontStyle: FontStyle.italic)),
-                            ],
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 4),
+                    // REQUIRED LABEL: DO NOT REMOVE
+                    Text(
+                      context.l10n.simLinearEstimate,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: context.elio.secondaryText,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
-                  ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
 
-                  const SizedBox(height: 16),
-                  // Sliders
-                  LabeledSlider(
-                    label: 'Duty Cycle (D)',
-                    valueLabel: '${state.dutyPercent.toStringAsFixed(0)}%',
-                    value: state.dutyPercent,
-                    min: 0.0,
-                    max: 100.0,
-                    onChanged: (v) => notifier.setDuty(v),
-                  ),
-                  const SizedBox(height: 16),
+        const SizedBox(height: 16),
+        // Sliders
+        LabeledSlider(
+          label: 'Duty Cycle (D)',
+          valueLabel: '${fmtNum(state.dutyPercent, 0)}%',
+          value: state.dutyPercent,
+          min: 0.0,
+          max: 100.0,
+          onChanged: (v) => notifier.setDuty(v),
+        ),
+        const SizedBox(height: 16),
 
-                  CalcBox(
-                    headerTitle: 'TEGANGAN MOTOR',
-                    formulaExpression: 'V_avg = ${(state.dutyPercent / 100.0).toStringAsFixed(2)} × 12.0 = ${state.averageVoltage.toStringAsFixed(1)} Volt',
-                    statusIcon: Icons.bolt_rounded,
-                    statusColor: context.elio.primaryText,
-                    statusText: 'Motor menerima setara ${state.averageVoltage.toStringAsFixed(1)}V',
-                  ),
+        CalcBox(
+          headerTitle: l10n.simPwm6,
+          formulaExpression:
+              'V_avg = ${fmtNum(state.dutyPercent / 100.0, 2)} × ${fmtNum(12, 1)} = ${fmtNum(state.averageVoltage, 1)} Volt',
+          statusIcon: Icons.bolt_rounded,
+          statusColor: context.elio.primaryText,
+          statusText: l10n.simPwmMotorGets(fmtNum(state.averageVoltage, 1)),
+        ),
       ],
-      deepExplainCard: const DeepExplainCard(
-                    title: 'Modul F — PWM & Tegangan Efektif Motor',
-                    bodyText: 'Motor DC pada ELIO (misalnya motor roda atau motor lengan) tidak selalu diberi tegangan penuh terus-menerus. Untuk mengatur kecepatan motor tanpa membuang energi sebagai panas, ELIO memakai teknik PWM (Pulse Width Modulation) — menyalakan dan mematikan tegangan penuh secara sangat cepat (ratusan hingga ribuan kali per detik), dan mengatur berapa lama proporsi waktu tegangan itu menyala dalam satu siklus.\n\nCara lama mengatur kecepatan motor adalah memakai pembagi tegangan resistif (resistor/potensiometer) untuk menurunkan tegangan secara langsung. Masalahnya, kelebihan energi pada metode ini dibuang sebagai panas di resistor — energi terbuang percuma dan komponen jadi panas.\n\nPWM tidak pernah benar-benar "menurunkan" tegangan — ia hanya menyalakan-mematikan tegangan penuh dengan sangat cepat. Karena motor punya inersia mekanis dan induktansi kumparan yang meredam "kedutan" on/off ini menjadi gerakan halus, hasil akhirnya terasa seperti tegangan lebih rendah, tapi tanpa membuang energi sebagai panas resistif — hanya rugi-rugi sambungan (switching loss) yang jauh lebih kecil.',
-                    bulletPoints: [
-                      'V_avg = D · V_max (Tegangan efektif rata-rata = Duty Cycle × Tegangan Maksimum).',
-                      'D (Duty Cycle) adalah persentase waktu sinyal dalam kondisi "menyala" dalam satu periode.',
-                      'Duty cycle 60% berarti menyala penuh 60% waktu dan mati 40% sisanya. Rata-ratanya 7.2V dari 12V maksimal.',
-                      'Batasan Model Linear (Penting): Perkiraan RPM pada simulasi ini adalah pendekatan linear. Pada motor nyata, hubungan duty cycle dan RPM aktual tidak sepenuhnya linear begitu motor dibebani torsi.',
-                      'Klaim "penurunan tegangan rata-rata = penurunan arus rata-rata secara proporsional" HANYA BENAR KALAU BEBAN MURNI RESISTIF. Pada motor (beban induktif + mekanis), penurunan arus tidak mengikuti penurunan tegangan secara linear sederhana.'
-                    ],
-                  ),
+      deepExplainCard: DeepExplainCard(
+        title: l10n.simPwm7,
+        bodyText: l10n.simPwm13,
+        bulletPoints: [
+          l10n.simPwm8,
+          l10n.simPwm9,
+          l10n.simPwm14,
+          l10n.simPwm10,
+          l10n.simPwm11,
+        ],
+      ),
     );
   }
 }

@@ -38,7 +38,12 @@ class CollapsibleSection extends StatelessWidget {
           children: [
             ExcludeSemantics(child: Text(iconEmoji)),
             const SizedBox(width: 8),
-            Expanded(child: Text(title, style: context.text.labelSmall?.copyWith(color: p.primaryText))),
+            Expanded(
+              child: Text(
+                title,
+                style: context.text.labelSmall?.copyWith(color: p.primaryText),
+              ),
+            ),
           ],
         ),
         children: [child],

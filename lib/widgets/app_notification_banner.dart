@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../models/app_notification.dart';
 import '../providers/app_notification_provider.dart';
+import 'package:elio/l10n/l10n.dart';
 
 class AppNotificationBannerHost extends ConsumerStatefulWidget {
   final Widget child;
@@ -157,7 +158,7 @@ class _AppNotificationBanner extends ConsumerWidget {
                     .dismissBanner(notification.id),
                 icon: const Icon(Icons.close_rounded, size: 18),
                 visualDensity: VisualDensity.compact,
-                tooltip: 'Dismiss notification',
+                tooltip: l10n.dismissNotification,
               ),
             ],
           ),

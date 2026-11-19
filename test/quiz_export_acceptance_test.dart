@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:elio/l10n/l10n.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:elio/models/home_stats.dart' show questBonus;
 import 'package:elio/Screens/scan_history_screen.dart';
@@ -10,7 +11,7 @@ import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/quiz_pdf_service.dart';
 import 'package:elio/services/quiz_tts_service.dart';
 import 'package:elio/widgets/quiz_explanation_overlay.dart';
@@ -36,6 +37,9 @@ const explanation = QuizExplanation(
 );
 
 void main() {
+  // H3 copy is asserted in Indonesian (decision 0185).
+  setUpAll(() => debugSetL10n(const Locale('id')));
+  tearDownAll(() => debugSetL10n(const Locale('en')));
   TestWidgetsFlutterBinding.ensureInitialized();
   GoogleFonts.config.allowRuntimeFetching = false;
   for (final size in [const Size(800, 600), const Size(844, 390)]) {
@@ -58,6 +62,9 @@ void main() {
         ProviderScope(
           overrides: [wasteQuizProvider.overrideWith(() => SeededQuiz(state))],
           child: const MaterialApp(
+        locale: Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(body: QuizExplanationOverlay()),
           ),
         ),
@@ -144,6 +151,8 @@ void main() {
     expect(state.phase, WasteQuizPhase.finished);
     expect(state.messages.last.text, contains('Jawaban benar: 1 dari 1.'));
     expect(store.totalTrophies, 8 + questBonus(store.records));
+    store.learnXp = 30; // learning XP counts too (0210, 0212)
+    expect(store.totalTrophies, 38 + questBonus(store.records));
   });
 
   test('new explanation phase still stops TTS before next question', () async {
@@ -197,6 +206,9 @@ void main() {
       ProviderScope(
         overrides: [wasteQuizProvider.overrideWith(() => SeededQuiz(state))],
         child: const MaterialApp(
+        locale: Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(body: QuizEssayExplanationOverlay()),
         ),
       ),
@@ -245,10 +257,13 @@ void main() {
     expect(reopened.records.single.questions.single.gradingPending, isTrue);
     expect(reopened.totalTrophies, 0);
     await tester.pumpWidget(
-      MaterialApp(home: ScanHistoryScreen(store: reopened)),
+      MaterialApp(
+        locale: const Locale('id'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,home: ScanHistoryScreen(store: reopened)),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Pending'), findsOneWidget);
+    expect(find.text('Pending'), findsNothing);
     expect(find.text('Menunggu penilaian'), findsOneWidget);
     expect(find.text('Wrong'), findsNothing);
   });

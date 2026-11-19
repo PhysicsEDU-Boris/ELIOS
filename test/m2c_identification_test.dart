@@ -5,11 +5,12 @@ import 'package:elio/models/scanned_waste.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:elio/services/scan_record_store.dart';
+import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/detection_crop.dart';
 import 'package:elio/services/detection_stabilizer.dart';
 import 'package:elio/services/frame_source/frame_source.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/live_scan_controller.dart';
 import 'package:elio/services/live_scan_state_machine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -95,7 +96,7 @@ void main() {
   );
 
   group('locked robot crop → identification → quiz', () {
-    final service = GemmaQuizService.instance;
+    final service = AiQuizService.instance;
     late ProviderContainer c;
     late WasteQuizNotifier quiz;
     late Completer<String?> identify;
@@ -106,10 +107,11 @@ void main() {
       identify = Completer<String?>();
       images = [];
       service.mockSendExecute =
-          (prompt, {imageBytes, fresh = false, isUser = false, onToken}) {
+          (prompt, {imageBytes, isUser = false}) {
             images.add(imageBytes);
             return imageBytes != null ? identify.future : Future.value(null);
           };
+      WasteQuizNotifier.sourceOverride = QuestionSource.bank; // the AI only identifies here (0017)
       c = ProviderContainer();
       quiz = c.read(wasteQuizProvider.notifier)..toggleVoice();
     });
@@ -119,7 +121,7 @@ void main() {
       await service.cancel();
       await pumpEventQueue();
       service.mockSendExecute = null;
-      service.mockBeforeSubmit = null;
+      WasteQuizNotifier.sourceOverride = null;
       c.dispose();
     });
 
@@ -149,7 +151,7 @@ void main() {
       expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.identifying);
       await _until(() => images.isNotEmpty);
       final crop = img.decodeImage(images.single!)!;
-      expect((crop.width, crop.height), (20, 10));
+      expect((crop.width, crop.height), (30, 16)); // padded 25 % per side for Gemini's box (0180)
       identify.complete(
         '{"item":"kaleng aluminium","material":"aluminium","category":"anorganik"}',
       );
@@ -161,7 +163,7 @@ void main() {
       expect(images.where((image) => image != null), hasLength(1));
     });
 
-    test('identification keeps the original crop while History saves the padded photo', () async {
+    test('Gemini gets the padded crop; with no box the popup and History keep the detector crops', () async {
       final root = await Directory.systemTemp.createTemp('d1-split-photo-');
       const channel = MethodChannel('plugins.flutter.io/path_provider');
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -183,7 +185,7 @@ void main() {
       final submitted = images.single!;
       final source = img.decodeImage(frame.cleanBytes!)!;
       expect(submitted, orderedEquals(img.encodeJpg(
-        img.copyCrop(source, x: 10, y: 5, width: 20, height: 10))));
+        img.copyCrop(source, x: 5, y: 2, width: 30, height: 16))));
       identify.complete('{"item":"botol plastik","material":"plastik","category":"anorganik"}');
       await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
       quiz.state = quiz.state.copyWith(
@@ -202,7 +204,98 @@ void main() {
       expect(saved, orderedEquals(prepareDetectionCrop((frame, _box)).historyBytes!));
       final decoded = img.decodeJpg(saved)!;
       expect((decoded.width, decoded.height), (22, 12));
-      expect(c.read(wasteQuizProvider).cropBytes, orderedEquals(submitted));
+      expect(c.read(wasteQuizProvider).cropBytes, orderedEquals(img.encodeJpg(
+        img.copyCrop(source, x: 10, y: 5, width: 20, height: 10))));
+    });
+
+    test('a Gemini box replaces the popup and History photo with its own crop', () async {
+      final root = await Directory.systemTemp.createTemp('d1-ai-box-');
+      const channel = MethodChannel('plugins.flutter.io/path_provider');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (_) async => root.path);
+      final store = ScanRecordStore(customFile: File('${root.path}/records.json'));
+      ScanRecordStore.setInstanceForTesting(store);
+      addTearDown(() async {
+        quiz.dismiss();
+        await service.cancel();
+        await pumpEventQueue();
+        ScanRecordStore.setInstanceForTesting(null);
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null);
+        await root.delete(recursive: true);
+      });
+      quiz.onRobotLocked(_frame(), _box);
+      await _until(() => images.isNotEmpty);
+      final submitted = images.single!;
+      identify.complete('{"item":"botol plastik","material":"plastik","category":"anorganik",'
+          '"box_2d":[0,0,500,500]}');
+      await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
+      final expected = cropToBox((submitted, const Rect.fromLTRB(0, 0, .5, .5)))!;
+      final shown = img.decodeJpg(c.read(wasteQuizProvider).cropBytes!)!;
+      expect((shown.width, shown.height), (16, 9)); // half of 30x16 plus a 5 % margin
+      expect(c.read(wasteQuizProvider).cropBytes, orderedEquals(expected));
+      quiz.state = quiz.state.copyWith(
+        difficulty: QuizDifficulty.easy, questionIndex: 0,
+        question: const GeneratedQuestion(
+          type: QuizQuestionType.multipleChoice, question: 'Pilah botol?',
+          options: ['Daur ulang', 'Bakar'], correctIndex: 0,
+        ),
+      );
+      quiz.selectOption(0);
+      quiz.nextQuestion();
+      await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.finished);
+      expect(File(store.records.single.cropPhotoPath!).readAsBytesSync(), orderedEquals(expected));
+    });
+
+    test('0181 LOCK: the whole clean frame goes to the AI; no quiz opens; SCAN starts it without a second call', () async {
+      final clean = Uint8List.fromList(img.encodePng(img.Image(width: 40, height: 20)));
+      final frame = CapturedFrame(bytes: Uint8List.fromList([1, 2, 3]), cleanBytes: clean,
+          frameId: 7, detectionFrameId: 7, width: 40, height: 20, timestamp: DateTime(2026));
+      String? prompt;
+      service.mockSendExecute = (p, {imageBytes, isUser = false}) {
+        prompt = p;
+        images.add(imageBytes);
+        return imageBytes != null ? identify.future : Future.value(null);
+      };
+      final pending = quiz.lockItem(frame);
+      await _until(() => images.isNotEmpty);
+      expect(images.single, orderedEquals(clean), reason: 'the paired clean image, not the preview');
+      expect(prompt, contains('tidak ada sampah'));
+      identify.complete('{"item":"botol plastik","category":"anorganik","box_2d":[0,0,500,500]}');
+      final answer = await pending;
+      expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.idle, reason: 'LOCK opens no quiz');
+      expect(answer.lock!.box, const Rect.fromLTRB(0, 0, .5, .5));
+      expect(answer.lock!.photo, orderedEquals(cropToBox((clean, const Rect.fromLTRB(0, 0, .5, .5)))!));
+      quiz.scanLocked(answer.lock!);
+      await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
+      expect(c.read(wasteQuizProvider).scan?.displayName, 'Botol plastik');
+      expect(c.read(wasteQuizProvider).cropBytes, orderedEquals(answer.lock!.photo));
+      expect(images.whereType<Uint8List>(), hasLength(1), reason: 'SCAN reuses the LOCK answer');
+    });
+
+    test('0181 LOCK: "tidak jelas" is a failure, no box keeps the whole preview', () async {
+      final preview = Uint8List.fromList(img.encodePng(img.Image(width: 40, height: 20)));
+      final frame = CapturedFrame(bytes: preview, width: 40, height: 20, timestamp: DateTime(2026));
+      final none = quiz.lockItem(frame);
+      await _until(() => images.isNotEmpty);
+      expect(images.single, orderedEquals(preview));
+      identify.complete('{"item":"tidak jelas"}');
+      expect((await none).lock, isNull);
+      identify = Completer<String?>();
+      final nobox = quiz.lockItem(frame);
+      await _until(() => images.length == 2);
+      identify.complete('{"item":"botol plastik","category":"anorganik"}');
+      final lock = (await nobox).lock!;
+      expect(lock.box, isNull);
+      expect(lock.photo, orderedEquals(preview));
+    });
+
+    test('parseBox reads box_2d and rejects bad or sliver boxes', () {
+      expect(AiQuizService.parseBox([100, 200, 600, 900]), const Rect.fromLTRB(.2, .1, .9, .6));
+      expect(AiQuizService.parseBox([-50, 0, 1200, 1000]), const Rect.fromLTRB(0, 0, 1, 1));
+      for (final bad in [null, 'x', [1, 2, 3], [0, 0, 'a', 10], [500, 0, 520, 1000], [0, 600, 1000, 600]]) {
+        expect(AiQuizService.parseBox(bad), isNull, reason: '$bad');
+      }
     });
 
     for (final detectorHazard in [true, false]) {
@@ -222,7 +315,8 @@ void main() {
           await _until(() => images.isNotEmpty);
           identify.complete(
             detectorHazard
-                ? '{"item":"kotak plastik","category":"residu"}'
+                // no bin from the AI: nothing clears the detector's E_Waste (0180)
+                ? '{"item":"kotak plastik"}'
                 : '{"item":"baterai","category":"B3"}',
           );
           await _until(
@@ -231,9 +325,6 @@ void main() {
                 WasteQuizPhase.confirmingHazard,
           );
           expect(c.read(wasteQuizProvider).scan?.category?.id, 'hazardous');
-          if (detectorHazard) {
-            expect(c.read(wasteQuizProvider).scan?.rawCategory, 'residu');
-          }
           expect(
             images,
             hasLength(1),
@@ -329,6 +420,16 @@ void main() {
         expect(logged('category_mismatch'), isEmpty);
       });
 
+      test('0180: E_Waste + AI "kardus" anorganik goes straight to the quiz, no hazard or mismatch card', () async {
+        quiz.onRobotLocked(_frame(), const TrackedDetection(label: 'E_Waste', x: 40, y: 20, w: 40, h: 20));
+        await _until(() => images.isNotEmpty);
+        identify.complete('{"item":"kardus","material":"kertas","category":"anorganik"}');
+        await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.active);
+        expect(c.read(wasteQuizProvider).scan?.category?.id, 'inorganic');
+        expect(logged('category_mismatch'), isEmpty);
+        expect(logged('resolved'), contains('"aiClearedHazard":true'));
+      });
+
       test('Scan ulang on the mismatch card leaves no late quiz', () async {
         await lockCardboard('organik');
         await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.confirmingMismatch);
@@ -386,36 +487,18 @@ void main() {
       expect(images, hasLength(1));
     });
 
-    test('close while the model is still loading never submits', () async {
-      final loading = Completer<void>();
-      var prepared = false;
-      service.mockBeforeSubmit = () {
-        prepared = true;
-        return loading.future;
-      };
-      quiz.onRobotLocked(_frame(), _box);
-      await _until(() => prepared);
-      quiz.dismiss();
-      loading.complete();
-      await pumpEventQueue();
-      expect(images, isEmpty);
-      expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.idle);
-    });
-
-    test('close after submit discards the result, slot busy until the call ends', () async {
+    test('close after submit discards the late result and frees the slot at once', () async {
       quiz.onRobotLocked(_frame(), _box);
       await _until(() => images.isNotEmpty);
       quiz.dismiss();
       await pumpEventQueue();
-      expect((await service.identifyItem(Uint8List(1))).failure, 'busy');
-      identify.complete('{"item":"baterai","category":"B3"}');
-      await pumpEventQueue();
-      expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.idle);
       final next = service.identifyItem(Uint8List(1));
       await pumpEventQueue();
-      expect(images, hasLength(2), reason: 'slot free once the running call ended');
-      identify = Completer<String?>()..complete('{"item":"botol"}');
-      expect((await next).failure, isNot('busy'));
+      expect(images, hasLength(2), reason: 'a cloud call holds no device resource, so the next one runs');
+      identify.complete('{"item":"botol"}');
+      expect((await next).item, 'botol');
+      await pumpEventQueue();
+      expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.idle, reason: 'the dismissed scan never shows');
     });
 
     test('user close is logged as cancelled, not as a failure', () async {
@@ -439,7 +522,7 @@ void main() {
       await _until(() => images.isNotEmpty);
       identify.complete(null);
       await _until(() => c.read(wasteQuizProvider).phase == WasteQuizPhase.finished);
-      expect(c.read(wasteQuizProvider).notice, GemmaQuizService.notReadyMessage);
+      expect(c.read(wasteQuizProvider).notice, AiQuizService.notReadyMessage);
     });
 
     test(

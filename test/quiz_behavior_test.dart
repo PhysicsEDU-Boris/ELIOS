@@ -4,11 +4,13 @@ import 'dart:typed_data';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/app_preferences_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/quiz_tts_service.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:elio/l10n/l10n.dart';
 
 class _SeededQuiz extends WasteQuizNotifier {
   _SeededQuiz(this.seed);
@@ -53,18 +55,20 @@ void main() {
   test('chat replies that come back as JSON are shown as plain text', () {
     const leaked = '{"hint": "Pikirkan tentang tempat penampungan sampah yang benar berdasarkan jenisnya.", '
         '"explanation": "Tempat pembuangan akhir yang tepat sangat penting."}';
-    final text = GemmaQuizService.toPlainText(leaked);
+    final text = AiQuizService.toPlainText(leaked);
     expect(text, contains('Pikirkan tentang tempat penampungan'));
     expect(text, isNot(contains('{')));
     expect(text, isNot(contains('"hint"')));
-    expect(GemmaQuizService.toPlainText('```json\n{"a": "Halo"}\n```'), 'Halo');
-    expect(GemmaQuizService.toPlainText('**Benar.** Kardus didaur ulang.'), 'Benar. Kardus didaur ulang.');
+    expect(AiQuizService.toPlainText('```json\n{"a": "Halo"}\n```'), 'Halo');
+    expect(AiQuizService.toPlainText('**Benar.** Kardus didaur ulang.'), 'Benar. Kardus didaur ulang.');
   });
 
-  test('Indonesian replies are spoken with the Indonesian voice', () {
-    expect(QuizTtsService.detectLanguage('Benar! Plastik dapat mencemari laut dan merusak ekosistem perairan.'), 'id-ID');
-    expect(QuizTtsService.detectLanguage('Benar!'), 'id-ID');
-    expect(QuizTtsService.detectLanguage('This is the correct answer because the plastic is recyclable.'), 'en-US');
+  test('the TTS voice follows the app language, or the text language when given', () {
+    debugSetL10n(const Locale('id'));
+    expect(QuizTtsService.voiceFor(), 'id-ID');
+    debugSetL10n(const Locale('en'));
+    expect(QuizTtsService.voiceFor(), 'en-US');
+    expect(QuizTtsService.voiceFor('id'), 'id-ID');
     expect(QuizTtsService.speakableText('Benar! 🎉 **Plastik**'), 'Benar! Plastik');
   });
 
@@ -86,7 +90,7 @@ void main() {
     await c.read(wasteQuizProvider.notifier).sendChatMessage('lalu dibuang kemana?');
     final last = c.read(wasteQuizProvider).messages.last;
     expect(last.isUser, isFalse);
-    expect(last.text, startsWith('Jawab soalnya dulu'));
+    expect(last.text, startsWith('Answer the question first'));
   });
 
   test('skip works only when "Skip Allowed" is on', () async {
@@ -102,17 +106,33 @@ void main() {
     expect(on.read(wasteQuizProvider).skippedCount, 1);
   });
 
-  group('GemmaQuizService single flight slot logic', () {
-    late GemmaQuizService service;
+  test('Timer running out ends the question even with Skip off, as "time\'s up"', () async {
+    final c = _container(skipAllowed: false);
+    c.read(wasteQuizProvider.notifier).timeUp();
+    await pumpEventQueue();
+    final st = c.read(wasteQuizProvider);
+    expect(st.phase, WasteQuizPhase.finished);
+    expect(st.recordedQuestions.single.yourAnswer, anyOf("(time's up)", '(waktu habis)'));
+    expect(st.recordedQuestions.single.isCorrect, isFalse);
+  });
+
+  test('an Indonesian difficulty saved by older builds still counts', () {
+    expect(AppPreferences.fromMap({'quizDifficulty': 'Sulit'}).quizDifficulty, 'Hard');
+    expect(AppPreferences.fromMap({'quizDifficulty': 'Mudah'}).quizDifficulty, 'Easy');
+    expect(AppPreferences.fromMap({'quizDifficulty': 'Easy'}).quizDifficulty, 'Easy');
+  });
+
+  group('AiQuizService single flight slot logic', () {
+    late AiQuizService service;
     
     setUp(() {
-      service = GemmaQuizService.instance;
+      service = AiQuizService.instance;
       service.cancel();
     });
 
     test('scan request rejected while busy', () async {
       final completer1 = Completer<String?>();
-      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => completer1.future;
+      service.mockSendExecute = (prompt, {imageBytes, isUser = false}) => completer1.future;
 
       final f1 = service.identifyItem(Uint8List(0));
       
@@ -128,7 +148,7 @@ void main() {
       final completer1 = Completer<String?>();
       final completer2 = Completer<String?>();
       var call = 0;
-      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) {
+      service.mockSendExecute = (prompt, {imageBytes, isUser = false}) {
         call++;
         return call == 1 ? completer1.future : completer2.future;
       };
@@ -140,7 +160,7 @@ void main() {
       
       final res1 = await f1;
       expect(res1.item, isNull);
-      completer1.complete(null); // the cancelled native call ends; only then the slot frees
+      completer1.complete(null); // the cancelled call's late reply is dropped
 
       completer2.complete('reply');
       final res2 = await f2;
@@ -149,7 +169,7 @@ void main() {
 
     test('stale result discarded after dismiss', () async {
       final completer = Completer<String?>();
-      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => completer.future;
+      service.mockSendExecute = (prompt, {imageBytes, isUser = false}) => completer.future;
 
       final f1 = service.identifyItem(Uint8List(0));
       service.cancel();
@@ -162,83 +182,20 @@ void main() {
     
     test('slot released after cancel/timeout/exception', () async {
       final completer1 = Completer<String?>();
-      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => completer1.future;
+      service.mockSendExecute = (prompt, {imageBytes, isUser = false}) => completer1.future;
       final f1 = service.identifyItem(Uint8List(0));
       service.cancel();
       await f1;
-      completer1.complete(null); // the cancelled native call ends
+      completer1.complete(null); // the cancelled call's late reply is dropped
       await pumpEventQueue();
 
       final completer2 = Completer<String?>();
-      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => completer2.future;
+      service.mockSendExecute = (prompt, {imageBytes, isUser = false}) => completer2.future;
       final f2 = service.identifyItem(Uint8List(0));
       completer2.complete('{"item": "kertas", "material": "kertas", "category": "organik"}');
       final res2 = await f2;
       expect(res2.item, 'kertas');
     });
-
-    test('cancel() awaits stopGeneration, and a throwing one does not escape', () async {
-      final stopCompleter = Completer<void>();
-      var stopCalled = 0;
-      service.mockStopGeneration = () {
-        stopCalled++;
-        return stopCompleter.future;
-      };
-      final gen = Completer<String?>();
-      service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => gen.future;
-      final f1 = service.identifyItem(Uint8List(0));
-
-      var cancelDone = false;
-      final cancelFuture = service.cancel().then((_) => cancelDone = true);
-      await Future<void>.delayed(Duration.zero); // let the mock get called
-      expect(stopCalled, 1);
-      expect(cancelDone, isFalse, reason: 'cancel() should still be awaiting stopGeneration');
-
-      stopCompleter.completeError(StateError('native stop failed')); // the throwing case
-      await cancelFuture; // must not throw despite the error
-      expect(cancelDone, isTrue);
-
-      final res1 = await f1;
-      expect(res1.item, isNull);
-      gen.complete(null); // end the call so the slot frees for the next test
-      await pumpEventQueue();
-      service.mockStopGeneration = null;
-    });
-
-    test('cancel() releases the active caller well before a slow native stop settles, '
-        'and _stopGeneration itself is capped at 2 s', () {
-      fakeAsync((async) {
-        final genCompleter = Completer<String?>();
-        service.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) => genCompleter.future;
-        var stopCalled = 0;
-        service.mockStopGeneration = () {
-          stopCalled++;
-          return Future<void>.delayed(const Duration(seconds: 5)); // "native" never returns quickly
-        };
-
-        PhotoIdentification? result;
-        service.identifyItem(Uint8List(0)).then((r) => result = r);
-        async.flushMicrotasks();
-        expect(result, isNull, reason: 'still generating');
-
-        var cancelSettled = false;
-        service.cancel().then((_) => cancelSettled = true);
-
-        async.elapse(const Duration(milliseconds: 50)); // well under 100 ms, on the fake clock
-        expect(stopCalled, 1);
-        expect(result, isNotNull, reason: 'the active caller must not be held up by the 5 s stop');
-        expect(result!.item, isNull);
-        expect(cancelSettled, isFalse, reason: 'cancel() itself is still awaiting the capped stop');
-
-        async.elapse(const Duration(seconds: 2)); // the cap in _stopGeneration
-        expect(cancelSettled, isTrue, reason: '_stopGeneration must give up at 2 s, not wait the full 5 s');
-
-        genCompleter.complete(null); // end the call so the slot frees for the next test
-        async.flushMicrotasks();
-        service.mockStopGeneration = null;
-      });
-    });
-
   });
 
   group('TTS: one slot, no repeat for the same text, closing stops it', () {
@@ -284,7 +241,7 @@ void main() {
       await pumpEventQueue();
 
       expect(spoken, hasLength(1), reason: 'identical text spoken only once per quiz');
-      expect(spoken.single, startsWith('Jawab soalnya dulu'));
+      expect(spoken.single, startsWith('Answer the question first'));
     });
 
     test('a genuinely different reply is still spoken', () async {
@@ -296,7 +253,7 @@ void main() {
       await pumpEventQueue(); // _appendAiReply's speak() is unawaited
 
       expect(spoken, hasLength(1));
-      expect(spoken.single, contains('Sesi selesai'));
+      expect(spoken.single, contains('Session done'));
     });
 
     test('closing the quiz stops speech', () async {
@@ -370,18 +327,18 @@ void main() {
 
   group('M2b part 3: background quiz prefetch (decision 0011)', () {
     setUp(() async {
-      // GemmaQuizService.instance is a process-wide singleton: flush any
+      // AiQuizService.instance is a process-wide singleton: flush any
       // leftover active/pending request from a previous test before this
       // one starts, so it never sees the slot as busy.
-      await GemmaQuizService.instance.cancel();
-      GemmaQuizService.instance.mockSendExecute = null;
+      await AiQuizService.instance.cancel();
+      AiQuizService.instance.mockSendExecute = null;
       // Prefetch is the opt-in Gemma question path (decision 0017 keeps it, off by default).
-      WasteQuizNotifier.sourceOverride = QuestionSource.gemma;
+      WasteQuizNotifier.sourceOverride = QuestionSource.ai;
       WasteQuizNotifier.essayQuestions = true;
       await pumpEventQueue();
     });
     tearDown(() {
-      GemmaQuizService.instance.mockSendExecute = null;
+      AiQuizService.instance.mockSendExecute = null;
       WasteQuizNotifier.sourceOverride = null;
       WasteQuizNotifier.essayQuestions = essayQuestionsEnabled;
     });
@@ -405,7 +362,8 @@ void main() {
     test('background prefetch fills questions 2 and 3 in order after question 1 shows', () async {
       var calls = 0;
       final prompts = <String>[];
-      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+      AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) async {
+        if (prompt.contains('why_correct')) return '{"correct_option":"Daur ulang", "why_correct":"Alasan AI.", "why_wrong":"", "key_idea":"Ide AI.", "steps":[]}';
         calls++;
         prompts.add(prompt);
         return fakeResponse(calls, prompt);
@@ -423,7 +381,8 @@ void main() {
 
     test('"Soal berikutnya" takes an already-buffered question instantly, no new generation', () async {
       var calls = 0;
-      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+      AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) async {
+        if (prompt.contains('why_correct')) return '{"correct_option":"Daur ulang", "why_correct":"Alasan AI.", "why_wrong":"", "key_idea":"Ide AI.", "steps":[]}';
         calls++;
         return fakeResponse(calls, prompt);
       };
@@ -447,7 +406,8 @@ void main() {
     test('a tap before the buffer is ready waits, then shows the question (never a fallback)', () async {
       var calls = 0;
       final pending = Completer<String?>();
-      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+      AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) async {
+        if (prompt.contains('why_correct')) return '{"correct_option":"Daur ulang", "why_correct":"Alasan AI.", "why_wrong":"", "key_idea":"Ide AI.", "steps":[]}';
         calls++;
         if (calls == 1) return mcJson; // question 1 resolves right away
         return pending.future; // question 2's background generation hangs
@@ -478,7 +438,8 @@ void main() {
       fakeAsync((async) {
         var calls = 0;
         final completers = <Completer<String?>>[];
-        GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) {
+        AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) {
+          if (prompt.contains('why_correct')) return Future.value('{"correct_option":"Daur ulang", "why_correct":"Alasan AI.", "why_wrong":"", "key_idea":"Ide AI.", "steps":[]}');
           calls++;
           final c = Completer<String?>();
           completers.add(c);
@@ -499,10 +460,9 @@ void main() {
         notifier.selectOption(0); // answers question 1, synchronous
         notifier.sendChatMessage('apa ini?'); // call 3 (isUser) cancels call 2 (prefetch)
         async.flushMicrotasks();
-        expect(calls, 2, reason: 'the chat waits until the cancelled prefetch has really ended');
-        completers[1].complete(null); // the native stop lands: call 2 ends
+        expect(calls, 3, reason: 'the chat runs at once: a cancelled cloud call holds nothing');
+        completers[1].complete(null); // the cancelled prefetch reply arrives late and is dropped
         async.flushMicrotasks();
-        expect(calls, 3, reason: 'the chat request pre-empted and ran despite the prefetch being active');
 
         completers[2].complete('balasan obrolan'); // the chat's own reply
         async.flushMicrotasks();
@@ -521,7 +481,7 @@ void main() {
 
         // Medium has a 3rd question: resolving question 2 just above kicks
         // off its own background prefetch (call 5, never scripted here).
-        // Settle it so the singleton GemmaQuizService isn't left mid-request
+        // Settle it so the singleton AiQuizService isn't left mid-request
         // for the next test.
         notifier.dismiss();
         for (final c in completers) {
@@ -535,7 +495,8 @@ void main() {
       fakeAsync((async) {
         var calls = 0;
         final completers = <Completer<String?>>[];
-        GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) {
+        AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) {
+          if (prompt.contains('why_correct')) return Future.value('{"correct_option":"Daur ulang", "why_correct":"Alasan AI.", "why_wrong":"", "key_idea":"Ide AI.", "steps":[]}');
           calls++;
           final c = Completer<String?>();
           completers.add(c);
@@ -563,14 +524,15 @@ void main() {
 
     test('a near-identical question is rejected and retried', () async {
       var calls = 0;
-      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+      AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) async {
+        if (prompt.contains('why_correct')) return '{"correct_option":"Daur ulang", "why_correct":"Alasan AI.", "why_wrong":"", "key_idea":"Ide AI.", "steps":[]}';
         calls++;
         return calls == 1
             ? '{"question": "Apa dampak plastik?", "explanation": "e"}' // near-duplicate of avoid[0]
             : '{"question": "Bagaimana proses daur ulang logam?", "explanation": "e"}';
       };
 
-      final result = await GemmaQuizService.instance.generateQuestionBackground(
+      final result = await AiQuizService.instance.generateQuestionBackground(
         waste: ScannedWaste.fromLabel('botol plastik'),
         type: QuizQuestionType.essay,
         difficulty: QuizDifficulty.easy,
@@ -584,12 +546,13 @@ void main() {
 
     test('an unparseable response is retried once in the background', () async {
       var calls = 0;
-      GemmaQuizService.instance.mockSendExecute = (prompt, {imageBytes, fresh = false, isUser = false, onToken}) async {
+      AiQuizService.instance.mockSendExecute = (prompt, {imageBytes, isUser = false}) async {
+        if (prompt.contains('why_correct')) return '{"correct_option":"Daur ulang", "why_correct":"Alasan AI.", "why_wrong":"", "key_idea":"Ide AI.", "steps":[]}';
         calls++;
         return calls == 1 ? 'not json at all' : '{"question": "Soal valid?", "explanation": "e"}';
       };
 
-      final result = await GemmaQuizService.instance.generateQuestionBackground(
+      final result = await AiQuizService.instance.generateQuestionBackground(
         waste: ScannedWaste.fromLabel('kardus'),
         type: QuizQuestionType.essay,
         difficulty: QuizDifficulty.easy,

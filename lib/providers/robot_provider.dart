@@ -139,6 +139,7 @@ class RobotControlNotifier extends Notifier<RobotState> {
   /// Only call this after verified HOME completion (motion_done).
   void resetToHome() {
     state = state.copyWith(
+      baseAngle: 90.0, // HOME is the all-zero pose: base centred (0027)
       reachValue: 90.0,
       heightValue: 90.0,
       gripperVal: 0.0,

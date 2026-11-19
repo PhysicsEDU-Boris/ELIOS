@@ -29,19 +29,19 @@ Uint8List _crop((Uint8List, double, double, double, double, double) a) {
 
 /// [jpeg] shrunk so its longest side is at most [maxSide]; the same bytes when
 /// it is already small enough or cannot be decoded.
-Future<Uint8List> downscaleJpeg(Uint8List jpeg, {required int maxSide}) =>
-    jpeg.isEmpty ? Future.value(jpeg) : compute(_downscale, (jpeg, maxSide));
+Future<Uint8List> downscaleJpeg(Uint8List jpeg, {required int maxSide, int quality = 85}) =>
+    jpeg.isEmpty ? Future.value(jpeg) : compute(_downscale, (jpeg, maxSide, quality));
 
-Uint8List _downscale((Uint8List, int) a) {
-  final (jpeg, maxSide) = a;
+Uint8List _downscale((Uint8List, int, int) a) {
+  final (jpeg, maxSide, quality) = a;
   try {
     final image = img.decodeJpg(jpeg);
     if (image == null || (image.width <= maxSide && image.height <= maxSide)) return jpeg;
     final small = image.width >= image.height
         ? img.copyResize(image, width: maxSide)
         : img.copyResize(image, height: maxSide);
-    return Uint8List.fromList(img.encodeJpg(small, quality: 85));
+    return Uint8List.fromList(img.encodeJpg(small, quality: quality));
   } catch (_) {
-    return jpeg; // a bad photo is Gemma's to refuse, not the resize's
+    return jpeg; // a bad photo is the AI's to refuse, not the resize's
   }
 }

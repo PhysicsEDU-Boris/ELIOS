@@ -1,6 +1,5 @@
 import 'package:elio/theme/elio_theme.dart';
 import 'package:elio/widgets/auth/auth_widgets.dart' show authPalette;
-import 'package:elio/widgets/elio_bottom_nav.dart';
 import 'package:elio/widgets/elio_drawer_host.dart';
 import 'package:elio/widgets/elio_sidebar.dart';
 import 'package:elio/widgets/elio_top_bar.dart';
@@ -251,25 +250,5 @@ void main() {
     final n = t.getSemantics(find.bySemanticsLabel('Open profile menu'));
     expect(n.flagsCollection.isButton, isTrue);
     h.dispose();
-  });
-
-  testWidgets('bottom nav has no Profile item', (t) async {
-    await pumpAt(
-      t,
-      ElioTheme.wrap(
-        Scaffold(
-          bottomNavigationBar: ElioBottomNav(
-            currentIndex: 0,
-            onSelectTab: (_) {},
-            onControl: () {},
-          ),
-        ),
-      ),
-      brightness: Brightness.light,
-    );
-    expect(find.text('Profile'), findsNothing);
-    for (final l in ['Home', 'Learn', 'Control', 'Config', 'History']) {
-      expect(find.text(l), findsOneWidget);
-    }
   });
 }

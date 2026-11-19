@@ -1,41 +1,73 @@
 // Copyright (c) Boris Agung, Irham Fajar
 
+import 'dart:math' as math;
+
 import 'package:elio/models/config_model.dart';
 import 'package:elio/services/websocket_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../providers/app_preferences_provider.dart';
 import '../providers/config_link_provider.dart';
 import '../providers/esp_config_provider.dart';
 import '../providers/robot_provider.dart';
-import '../services/gemma_quiz_service.dart';
+import '../services/robot_wifi.dart';
+import '../theme/elio_motion.dart';
 import '../theme/elio_theme.dart';
 import '../theme/elio_tokens.dart';
 import '../utils/system_ui.dart';
 import '../widgets/learn/learn_ui.dart';
-import '../widgets/tester_panel.dart';
 import 'config/config_parts.dart';
+import '../widgets/waste_quiz_popup.dart' show EliosAiBadge;
+import 'home/home_parts.dart' show homeArt, homeWeight;
+import 'config/config_settings_sheet.dart' show ConfigSegmented;
+import 'config/robot_wifi_qr_sheet.dart';
 import 'control_screen.dart';
-import 'device_scan_screen.dart';
+import 'package:elio/l10n/l10n.dart';
+import '../services/elio_feedback.dart';
 
 /// "Enter an IP like 192.168.4.1", or null when [value] is a dotted IPv4.
 String? validateIp(String? value) {
   final parts = (value ?? '').trim().split('.');
-  final ok = parts.length == 4 &&
-      parts.every((s) => s.isNotEmpty && s.length <= 3 && (int.tryParse(s) ?? 256) <= 255);
-  return ok ? null : 'Enter an IP like 192.168.4.1';
+  final ok =
+      parts.length == 4 &&
+      parts.every(
+        (s) => s.isNotEmpty && s.length <= 3 && (int.tryParse(s) ?? 256) <= 255,
+      );
+  return ok ? null : l10n.cfgIpHint;
 }
 
 String? validatePort(String? value) {
   final n = int.tryParse(value ?? '');
-  return n == null || n < 1 || n > 65535 ? 'Port 1 to 65535' : null;
+  return n == null || n < 1 || n > 65535 ? l10n.cfgPortRange : null;
 }
 
-/// C1 Config tab "Connect ELIO" (decision 0145, Figma 337:2358). The title and
-/// the Settings button sit in the shell's top bar.
+/// How each cable-stepper node looks (decision 0205).
+enum SetupStep { done, current, todo, problem }
+
+/// Node states for Join Wi-Fi → Find ELIOS → Connect. The app cannot see
+/// which Wi-Fi the phone is on, so step 1 counts as done once ELIOS has been
+/// found or a connection is underway.
+List<SetupStep> setupSteps(LinkView view, {required bool found}) {
+  final reached =
+      found || view == LinkView.connecting || view == LinkView.connected;
+  return [
+    reached ? SetupStep.done : SetupStep.current,
+    reached ? SetupStep.done : SetupStep.todo,
+    switch (view) {
+      LinkView.failed => SetupStep.problem,
+      LinkView.connecting || LinkView.connected => SetupStep.current,
+      LinkView.notConnected => reached ? SetupStep.current : SetupStep.todo,
+    },
+  ];
+}
+
+/// ELIOS setup body (Figma 629:91327): robot stage, camera row, the
+/// Connection cable stepper, video stream and robot quiz. The header and
+/// "Change" pill are in [EliosSetupScreen].
 class ConfigScreen extends ConsumerStatefulWidget {
   const ConfigScreen({super.key});
 
@@ -50,6 +82,11 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   final _connectionCard = GlobalKey();
 
   bool saveDefault = true;
+  bool _finding = false;
+
+  /// The last Find result: an IP, or "not found" after a search that failed.
+  String? _foundIp;
+  bool _notFound = false;
 
   /// Guards against stomping on user typing when espConfigProvider rebuilds.
   bool _configPopulated = false;
@@ -57,27 +94,17 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   void _populateControllersFromConfig(EspConfig config) {
     if (_configPopulated) return;
     _configPopulated = true;
-    _ip.text = config.esp32IpAddress;
-    if (config.port > 0) _port.text = config.port.toString();
+    // A live link (maybe to an unsaved address) wins over the saved default.
+    final ws = WebSocketService();
+    final live = ws.isConnected && ws.ip.isNotEmpty;
+    _ip.text = live ? ws.ip : config.esp32IpAddress;
+    final port = live ? ws.port : config.port;
+    if (port > 0) _port.text = '$port';
   }
 
-  Future<void> _openControlScreen() => _openLandscapeScreen(const ControlScreen());
-
-  Future<void> _openDeviceScan() => _openLandscapeScreen(const DeviceScanScreen());
-
-  Future<void> _openLandscapeScreen(Widget screen) async {
-    try {
-      await Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
-    } finally {
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      try {
-        await SystemChrome.setPreferredOrientations(const [DeviceOrientation.portraitUp]);
-        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-        applyTransparentSystemBars();
-      } catch (error) {
-        debugPrint('Unable to restore portrait mode: $error');
-      }
-    }
+  Future<void> _openControlScreen() {
+    elioFeedback(ElioSfx.blip, ElioHaptics.medium); // Figma 13 · 25
+    return pushLandscapeScreen(context, const ControlScreen());
   }
 
   Future<void> _connect() async {
@@ -87,21 +114,50 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     final save = saveDefault;
     // Read before the await: the attempt may finish after this tab is gone.
     final esp = ref.read(espConfigProvider.notifier);
-    final autoReconnect = ref.read(espConfigProvider).valueOrNull?.autoReconnect ?? true;
+    final autoReconnect =
+        ref.read(espConfigProvider).valueOrNull?.autoReconnect ?? true;
     debugPrint('[Config] Connecting to ws://$ip:$port');
-    final ok = await ref.read(configLinkProvider.notifier).connect(ip, port, autoReconnect: autoReconnect);
+    final ok = await ref
+        .read(configLinkProvider.notifier)
+        .connect(ip, port, autoReconnect: autoReconnect);
     debugPrint('[Config] Connect result: $ok');
-    if (ok && save) await esp.patch((c) => c.copyWith(esp32IpAddress: ip, port: port));
+    if (ok && save) {
+      await esp.patch((c) => c.copyWith(esp32IpAddress: ip, port: port));
+    }
     // As before C1: a successful connect goes straight to Control (owner, 2 Nov).
     if (ok && mounted) await _openControlScreen();
   }
 
-  void _disconnect() => ref.read(configLinkProvider.notifier).disconnect();
+  void _disconnect() {
+    ElioHaptics.heavy(); // H-heavy: Disconnect
+    ref.read(configLinkProvider.notifier).disconnect();
+  }
+
+  /// The phone hotspot gives the robot a new IP after a restart; look for it.
+  /// The result shows inline in step 2.
+  Future<void> _find() async {
+    setState(() => _finding = true);
+    final ip = await findRobot(
+      port: int.tryParse(_port.text) ?? EspConfig.maixCamPort,
+    );
+    if (!mounted) return;
+    setState(() {
+      _finding = false;
+      _foundIp = ip;
+      _notFound = ip == null;
+      if (ip != null) _ip.text = ip;
+    });
+    elioFeedback(
+      ip != null ? ElioSfx.chime : ElioSfx.knock,
+      ip != null ? ElioHaptics.success : ElioHaptics.error,
+    );
+  }
 
   /// The failure snackbar is only for a card the user scrolled away from;
   /// the inline alert already says it otherwise.
   bool _connectionCardOnScreen() {
-    final box = _connectionCard.currentContext?.findRenderObject() as RenderBox?;
+    final box =
+        _connectionCard.currentContext?.findRenderObject() as RenderBox?;
     if (box == null || !box.attached) return false;
     final top = box.localToGlobal(Offset.zero).dy;
     return top < MediaQuery.sizeOf(context).height && top + box.size.height > 0;
@@ -112,16 +168,22 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     final p = context.elio;
     messenger
       ..removeCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.error_outline_rounded, color: p.errorText),
-            const SizedBox(width: 12),
-            const Expanded(child: Text('Connection failed')),
-          ],
+      ..showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline_rounded, color: p.errorText),
+              const SizedBox(width: 12),
+              Expanded(child: Text(context.l10n.configConnectionFailed)),
+            ],
+          ),
+          action: SnackBarAction(
+            label: l10n.cfgRetry,
+            textColor: p.primaryText,
+            onPressed: _connect,
+          ),
         ),
-        action: SnackBarAction(label: 'Retry', textColor: p.primaryText, onPressed: _connect),
-      ));
+      );
   }
 
   @override
@@ -135,234 +197,674 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   Widget build(BuildContext context) {
     final espConfigAsync = ref.watch(espConfigProvider);
     espConfigAsync.whenData(_populateControllersFromConfig);
-    final cameraSource = espConfigAsync.valueOrNull?.cameraSource ?? CameraSource.maixCam2;
-    final deviceMode = cameraSource == CameraSource.device;
     final status = ref.watch(robotStatusProvider).valueOrNull ?? 'Disconnected';
     final link = ref.watch(configLinkProvider);
     final view = linkView(status, link);
 
     ref.listen(configLinkProvider, (prev, next) {
-      if (next.failure != null && next.failure != prev?.failure && !_connectionCardOnScreen()) {
-        _showFailureSnack();
+      if (next.failure != null && next.failure != prev?.failure) {
+        // Figma 13 · 23: failed = S5 + H-error.
+        elioFeedback(ElioSfx.knock, ElioHaptics.error);
+        if (!_connectionCardOnScreen()) _showFailureSnack();
       }
     });
     // The settings switch applies to a live link straight away.
-    ref.listen(espConfigProvider.select((c) => c.valueOrNull?.autoReconnect), (prev, next) {
+    ref.listen(espConfigProvider.select((c) => c.valueOrNull?.autoReconnect), (
+      prev,
+      next,
+    ) {
       final ws = WebSocketService();
-      if (next != null && prev != null && ws.isConnected) ws.setAutoReconnect(next);
+      if (next != null && prev != null && ws.isConnected) {
+        ws.setAutoReconnect(next);
+      }
     });
 
     return ElioTheme.wrap(
-      Builder(builder: (context) {
-        final p = context.elio;
-        return Scaffold(
-          backgroundColor: p.background,
-          body: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-            children: [
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _RobotHero(
-                        view: view,
-                        deviceMode: deviceMode,
-                        endpoint: '${_ip.text} : ${_port.text}',
-                      ),
-                      const SizedBox(height: 16),
-                      const EliosAiCard(),
-                      if (testerBuild) const TesterPanel(),
-                      const SizedBox(height: 24),
-                      const ConfigSectionHeader('Camera source', 'Which camera takes the scan photo'),
-                      const SizedBox(height: 12),
-                      _TilePair(
-                        left: ChoiceTile(
-                          icon: Icons.photo_camera_outlined,
-                          title: 'MaixCAM2',
-                          description: 'Robot camera over the ELIOS Wi-Fi',
-                          selected: !deviceMode,
-                          onTap: () => _setCameraSource(CameraSource.maixCam2),
-                        ),
-                        right: ChoiceTile(
-                          icon: Icons.smartphone_outlined,
-                          title: 'Phone camera',
-                          description: 'Scan with this phone, no robot needed',
-                          selected: deviceMode,
-                          onTap: () => _setCameraSource(CameraSource.device),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      if (deviceMode) _startScanCard(p) else _connectionCardFor(p, view, link),
-                      const SizedBox(height: 24),
-                      const ConfigSectionHeader('Quiz questions', 'Where the scan quiz gets its questions'),
-                      const SizedBox(height: 12),
-                      const _QuizSourceTiles(),
-                    ],
+      Builder(
+        builder: (context) {
+          final p = context.elio;
+          return Scaffold(
+            backgroundColor: p.background,
+            body: ListView(
+              padding: const EdgeInsets.fromLTRB(0, 4, 0, 32),
+              children: [
+                ElioPopIn(
+                  child: _RobotStage(
+                    view: view,
+                    endpoint: '${_ip.text} : ${_port.text}',
                   ),
                 ),
-              ),
-            ],
-          ),
-        );
-      }),
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 12),
+                          const ElioPopIn(index: 1, child: _CameraRow()),
+                          const SizedBox(height: 24),
+                          ElioPopIn(
+                            index: 2,
+                            child: _connectionSection(p, view, link),
+                          ),
+                          const SizedBox(height: 28),
+                          const ElioPopIn(index: 3, child: _VideoSection()),
+                          const SizedBox(height: 28),
+                          const ElioPopIn(index: 4, child: _QuizSection()),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
-  void _setCameraSource(CameraSource source) =>
-      ref.read(espConfigProvider.notifier).patch((c) => c.copyWith(cameraSource: source));
-
-  Widget _startScanCard(ElioPalette p) => ConfigCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('The robot is not used. Point the phone at one item and tap Start scan.', style: configBody(p)),
-            const SizedBox(height: 12),
-            ConfigButton(label: 'Start scan', icon: Icons.center_focus_strong_outlined, onPressed: _openDeviceScan),
-          ],
-        ),
-      );
-
-  Widget _connectionCardFor(ElioPalette p, LinkView view, ConfigLink link) {
+  Widget _connectionSection(ElioPalette p, LinkView view, ConfigLink link) {
+    final esp = ref.read(espConfigProvider).valueOrNull ?? const EspConfig();
     final connecting = view == LinkView.connecting;
+    final connected = view == LinkView.connected;
     final failed = view == LinkView.failed;
-    final (Widget first, Widget second) = switch (view) {
+    // Connected means ELIOS answered at the address in the fields.
+    final foundAt = _foundIp ?? (connected ? _ip.text.trim() : null);
+    final steps = setupSteps(view, found: foundAt != null);
+    // No link to cut: Disconnect is left out so Connect gets the full width.
+    final (Widget first, Widget? second) = switch (view) {
       LinkView.notConnected => (
-          ConfigButton(label: 'Connect now', icon: Icons.power_outlined, onPressed: _connect),
-          const ConfigButton(label: 'Disconnect', icon: Icons.link_off_rounded, primary: false, destructive: true, onPressed: null),
+        ConfigButton(
+          label: l10n.cfgConnectNow,
+          icon: Icons.power_outlined,
+          onPressed: _connect,
         ),
+        null,
+      ),
       LinkView.connecting => (
-          const ConfigButton(label: 'Connecting…', busy: true, onPressed: null),
-          ConfigButton(
-            label: 'Cancel',
-            icon: Icons.link_off_rounded,
-            primary: false,
-            onPressed: _disconnect,
-            semanticsLabel: 'Cancel connecting',
+        ConfigButton(label: l10n.cfgConnecting, busy: true, onPressed: null),
+        ConfigButton(
+          label: l10n.commonCancel,
+          icon: Icons.link_off_rounded,
+          primary: false,
+          onPressed: _disconnect,
+          semanticsLabel: l10n.cfgCancelConnecting,
+        ),
+      ),
+      LinkView.connected => (
+        // ELIOS 3: reopen Control while the robot stays connected.
+        ConfigButton(
+          label: l10n.setupOpenControl,
+          icon: Icons.sports_esports_outlined,
+          onPressed: _openControlScreen,
+        ),
+        ConfigButton(
+          label: l10n.cfgDisconnect,
+          icon: Icons.link_off_rounded,
+          primary: false,
+          destructive: true,
+          onPressed: _disconnect,
+        ),
+      ),
+      LinkView.failed => (
+        ConfigButton(
+          label: l10n.cfgTryAgain,
+          icon: Icons.refresh_rounded,
+          onPressed: _connect,
+        ),
+        null,
+      ),
+    };
+    final saved =
+        connected &&
+        esp.esp32IpAddress == _ip.text.trim() &&
+        '${esp.port}' == _port.text.trim();
+    final stepTitle = setupStepTitle(p);
+
+    final step1 = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.setupJoinWifi, style: stepTitle),
+        const SizedBox(height: 6),
+        Text(l10n.setupJoinWifiBody, style: configBody(p)),
+        const SizedBox(height: 10),
+        ConfigButton(
+          label: l10n.setupShowWifiQr,
+          icon: Icons.qr_code_2_rounded,
+          primary: false,
+          onPressed: () {
+            elioFeedback(ElioSfx.pop, ElioHaptics.light);
+            showRobotWifiQrSheet(context);
+          },
+        ),
+      ],
+    );
+
+    final Widget? findResult = _finding
+        ? Row(
+            key: const ValueKey('finding'),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox.square(
+                dimension: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: p.primaryText,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(l10n.cfgSearching, style: configCaption(p)),
+            ],
+          )
+        : foundAt != null
+        ? _ResultChip(
+            key: const ValueKey('found'),
+            ok: true,
+            text: l10n.setupFoundAt(foundAt),
+          )
+        : _notFound
+        ? _ResultChip(
+            key: const ValueKey('not-found'),
+            ok: false,
+            text: l10n.cfgNotFound,
+          )
+        : null;
+    final step2 = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.cfgFindElio, style: stepTitle),
+        const SizedBox(height: 6),
+        Semantics(
+          liveRegion: true,
+          child: AnimatedSwitcher(
+            duration: ElioMotion.reduced(context)
+                ? Duration.zero
+                : ElioMotion.base,
+            switchInCurve: ElioMotion.pop,
+            transitionBuilder: (child, a) => FadeTransition(
+              opacity: a,
+              child: ScaleTransition(
+                scale: a,
+                alignment: Alignment.centerLeft,
+                child: child,
+              ),
+            ),
+            child: findResult ?? const SizedBox.shrink(),
           ),
         ),
-      LinkView.connected => (
-          const ConfigButton(label: 'Connected', icon: Icons.check_rounded, onPressed: null),
-          ConfigButton(label: 'Disconnect', icon: Icons.link_off_rounded, primary: false, destructive: true, onPressed: _disconnect),
+        TextButton.icon(
+          onPressed: connecting || _finding ? null : _find,
+          style: TextButton.styleFrom(
+            foregroundColor: p.primaryText,
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            minimumSize: const Size(48, 44),
+            textStyle: configStrong(p),
+          ),
+          icon: const Icon(Icons.search_rounded, size: 18),
+          label: Text(
+            foundAt != null || _notFound
+                ? l10n.setupSearchAgain
+                : l10n.setupSearch,
+          ),
         ),
-      LinkView.failed => (
-          ConfigButton(label: 'Try again', icon: Icons.refresh_rounded, onPressed: _connect),
-          const ConfigButton(label: 'Disconnect', icon: Icons.link_off_rounded, primary: false, destructive: true, onPressed: null),
-        ),
+      ],
+    );
+
+    final step3Title = switch (view) {
+      LinkView.connected => l10n.cfgConnected,
+      LinkView.connecting => l10n.cfgConnecting,
+      LinkView.failed => l10n.cfgCouldNotReach,
+      LinkView.notConnected => l10n.setupConnectStep,
     };
-    return ConfigCard(
-      key: _connectionCard,
-      child: Form(
-        key: _form,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    final step3 = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
           children: [
-            const ConfigCardHeader(icon: Icons.wifi_rounded, title: 'Connection', subtitle: 'ELIO WebSocket address'),
-            if (failed) ...[
-              const SizedBox(height: 16),
-              Semantics(
-                liveRegion: true,
-                container: true,
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: ShapeDecoration(
-                    color: Color.alphaBlend(p.error.withValues(alpha: 0.08), p.surface),
-                    shape: learnShape(learnRadiusM, BorderSide(color: p.error.withValues(alpha: 0.45))),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.error_outline_rounded, size: 20, color: p.errorText),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Couldn't reach ELIO", style: configStrong(p, color: p.errorText)),
-                            Text(link.failure!, style: configCaption(p, color: p.textPrimary)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+            Flexible(
+              child: Text(
+                step3Title,
+                style: failed
+                    ? stepTitle.copyWith(color: p.errorText)
+                    : stepTitle,
               ),
-            ],
-            const SizedBox(height: 16),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _AddressField(
-                    label: 'IP address',
-                    controller: _ip,
-                    icon: Icons.dns_outlined,
-                    enabled: !connecting,
-                    error: failed,
-                    validator: validateIp,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    formatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')), LengthLimitingTextInputFormatter(15)],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 116,
-                  child: _AddressField(
-                    label: 'Port',
-                    controller: _port,
-                    icon: Icons.tag_rounded,
-                    enabled: !connecting,
-                    error: failed,
-                    validator: validatePort,
-                    keyboardType: TextInputType.number,
-                    formatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(5)],
-                  ),
-                ),
-              ],
             ),
-            if (view == LinkView.notConnected) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: ShapeDecoration(color: p.surfaceRaised, shape: learnShape(learnRadiusM)),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.info_outline_rounded, size: 20, color: p.textSecondary),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text('Join the ELIOS Wi-Fi on this phone first, then tap Connect now.',
-                          style: configCaption(p)),
-                    ),
-                  ],
+            if (connected) ...[
+              const SizedBox(width: 8),
+              DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: p.primary,
+                  shape: const StadiumBorder(),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  child: Text(
+                    l10n.cfgOnline,
+                    style: ElioTokens.label.copyWith(color: p.onPrimary),
+                  ),
                 ),
               ),
             ],
-            const SizedBox(height: 16),
-            MergeSemantics(
+          ],
+        ),
+        if (failed) ...[
+          const SizedBox(height: 8),
+          Semantics(
+            liveRegion: true,
+            container: true,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: ShapeDecoration(
+                color: Color.alphaBlend(
+                  p.error.withValues(alpha: 0.08),
+                  p.surface,
+                ),
+                shape: learnShape(
+                  learnRadiusM,
+                  BorderSide(color: p.error.withValues(alpha: 0.45)),
+                ),
+              ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Icon(
+                    Icons.error_outline_rounded,
+                    size: 20,
+                    color: p.errorText,
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Save as default config', style: configStrong(p)),
-                        Text('Use this address next time', style: configCaption(p)),
-                      ],
+                    child: Text(
+                      link.failure!,
+                      style: configCaption(p, color: p.textPrimary),
                     ),
                   ),
-                  Switch(value: saveDefault, onChanged: connecting ? null : (v) => setState(() => saveDefault = v)),
                 ],
               ),
             ),
-            Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Divider(color: configDivider(p))),
-            Row(
+          ),
+        ],
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _AddressField(
+                label: l10n.cfgIpAddress,
+                controller: _ip,
+                icon: Icons.dns_outlined,
+                enabled: !connecting,
+                error: failed,
+                validator: validateIp,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                formatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                  LengthLimitingTextInputFormatter(15),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 104,
+              child: _AddressField(
+                label: l10n.cfgPort,
+                controller: _port,
+                icon: Icons.tag_rounded,
+                enabled: !connecting,
+                error: failed,
+                validator: validatePort,
+                keyboardType: TextInputType.number,
+                formatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(5),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        if (saved)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
               children: [
-                Expanded(child: first),
-                const SizedBox(width: 12),
-                Expanded(child: second),
+                Icon(Icons.check_rounded, size: 16, color: p.primaryText),
+                const SizedBox(width: 6),
+                Text(l10n.setupSavedDefault, style: configCaption(p)),
               ],
+            ),
+          )
+        else
+          MergeSemantics(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: connecting
+                  ? null
+                  : () {
+                      elioFeedback(ElioSfx.tick, ElioHaptics.select);
+                      setState(() => saveDefault = !saveDefault);
+                    },
+              child: Row(
+                children: [
+                  Checkbox(
+                    value: saveDefault,
+                    onChanged: connecting
+                        ? null
+                        : (v) => setState(() => saveDefault = v ?? true),
+                  ),
+                  Expanded(
+                    child: Text(l10n.setupSaveDefault, style: configCaption(p)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        _SwitchLine(
+          title: l10n.setAutoReconnect,
+          subtitle: l10n.setAutoReconnectSub,
+          value: esp.autoReconnect,
+          onChanged: (v) => ref
+              .read(espConfigProvider.notifier)
+              .patch((c) => c.copyWith(autoReconnect: v)),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: first),
+            if (second != null) ...[
+              const SizedBox(width: 8),
+              Expanded(child: second),
+            ],
+          ],
+        ),
+      ],
+    );
+
+    return Form(
+      key: _form,
+      child: Column(
+        key: _connectionCard,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SetupSectionTitle(l10n.cfgConnection, squiggle: true),
+          const SizedBox(height: 4),
+          Text(l10n.setupWsOverWifi, style: configCaption(p)),
+          const SizedBox(height: 16),
+          for (final (i, body) in [step1, step2, step3].indexed)
+            _CableStep(
+              n: i + 1,
+              state: steps[i],
+              last: i == 2,
+              // Searching (step 2) or connecting (step 3): the node pulses.
+              busy: (i == 1 && _finding) || (i == 2 && connecting),
+              child: body,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Step titles in the cable stepper and the video rows.
+TextStyle setupStepTitle(ElioPalette p) => homeWeight(
+  ElioTokens.body,
+  600,
+).copyWith(fontSize: 18, height: 1.5, color: p.textPrimary);
+
+/// "Connection", "Video stream", "Quiz" (optionally with the green squiggle).
+class SetupSectionTitle extends StatelessWidget {
+  const SetupSectionTitle(this.title, {super.key, this.squiggle = false});
+  final String title;
+  final bool squiggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    return Semantics(
+      header: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: homeWeight(
+              ElioTokens.body,
+              700,
+            ).copyWith(fontSize: 22, height: 1.25, color: p.textPrimary),
+          ),
+          if (squiggle)
+            ExcludeSemantics(
+              child: SvgPicture.asset(
+                'assets/illustrations/scan/squiggle.svg',
+                width: 84,
+                height: 10,
+                colorFilter: ColorFilter.mode(p.primary, BlendMode.srcIn),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One step on the cable: the node, the wire down to the next node and the
+/// step's content (Figma "Cable stepper").
+class _CableStep extends StatelessWidget {
+  const _CableStep({
+    required this.n,
+    required this.state,
+    required this.last,
+    required this.child,
+    this.busy = false,
+  });
+
+  final int n;
+  final SetupStep state;
+  final bool last, busy;
+  final Widget child;
+
+  static const _rail = 56.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    return Stack(
+      children: [
+        if (!last)
+          Positioned(
+            left: 0,
+            top: 16,
+            bottom: 0,
+            width: 48,
+            child: ExcludeSemantics(
+              // Step done: the wire "charges" down to the next node like
+              // current (400 ms). Failed: it flickers to error twice.
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(end: state == SetupStep.done ? 1 : 0),
+                duration: ElioMotion.reduced(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+                builder: (context, charge, _) => TweenAnimationBuilder<double>(
+                  key: ValueKey(state == SetupStep.problem),
+                  tween: Tween(
+                    begin:
+                        state == SetupStep.problem &&
+                            !ElioMotion.reduced(context)
+                        ? 0
+                        : 1,
+                    end: 1,
+                  ),
+                  duration: const Duration(milliseconds: 300),
+                  builder: (context, f, _) => CustomPaint(
+                    painter: _WirePainter(
+                      f < 1 && (f * 2) % 1 < 0.5 ? p.error : p.borderMedium,
+                      p.primary,
+                      charge,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        Positioned(
+          left: 8,
+          top: 0,
+          child: _StepNode(n: n, state: state, busy: busy),
+        ),
+        Padding(
+          padding: EdgeInsets.only(left: _rail, top: 2, bottom: last ? 0 : 28),
+          child: child,
+        ),
+      ],
+    );
+  }
+}
+
+/// The gently wavy cable between two nodes.
+class _WirePainter extends CustomPainter {
+  _WirePainter(this.color, this.live, this.charge);
+  final Color color, live;
+
+  /// 0..1: how far down the live colour has run.
+  final double charge;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const x = 24.0;
+    final path = Path()..moveTo(x, 0);
+    for (var y = 4.0; y <= size.height; y += 4) {
+      path.lineTo(x + 3 * math.sin(y / 48 * math.pi), y);
+    }
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(path, paint);
+    if (charge <= 0) return;
+    final m = path.computeMetrics().first;
+    canvas.drawPath(m.extractPath(0, m.length * charge), paint..color = live);
+  }
+
+  @override
+  bool shouldRepaint(_WirePainter old) =>
+      old.color != color || old.charge != charge || old.live != live;
+}
+
+class _StepNode extends StatelessWidget {
+  const _StepNode({required this.n, required this.state, this.busy = false});
+  final int n;
+  final SetupStep state;
+  final bool busy;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    final stateText = switch (state) {
+      SetupStep.done => l10n.setupStepDone,
+      SetupStep.current => l10n.setupStepNow,
+      SetupStep.todo => l10n.setupStepTodo,
+      SetupStep.problem => l10n.setupStepProblem,
+    };
+    final Widget node = switch (state) {
+      SetupStep.done => Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(color: p.primary, shape: BoxShape.circle),
+        // The check draws left to right (220 ms).
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: ElioMotion.reduced(context) ? 1 : 0, end: 1),
+          duration: ElioMotion.base,
+          builder: (context, v, child) => ClipRect(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              widthFactor: v,
+              child: child,
+            ),
+          ),
+          child: Icon(Icons.check_rounded, size: 20, color: p.onPrimary),
+        ),
+      ),
+      SetupStep.current => Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: p.background,
+          shape: BoxShape.circle,
+          border: Border.all(color: p.primary, width: 3),
+        ),
+        alignment: Alignment.center,
+        child: Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(color: p.primary, shape: BoxShape.circle),
+        ),
+      ),
+      SetupStep.todo => Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: p.background,
+          shape: BoxShape.circle,
+          border: Border.all(color: p.borderMedium, width: 2),
+        ),
+        alignment: Alignment.center,
+        child: Text('$n', style: configStrong(p, color: p.textTertiary)),
+      ),
+      SetupStep.problem => Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(color: p.error, shape: BoxShape.circle),
+        child: Icon(Icons.priority_high_rounded, size: 20, color: p.onError),
+      ),
+    };
+    return Semantics(
+      key: ValueKey('setup-step-$n-${state.name}'),
+      label: l10n.setupStepState(n, stateText),
+      excludeSemantics: true,
+      // Failed: the node shakes x ±4.
+      child: ElioShake(
+        trigger: state == SetupStep.problem ? state : null,
+        distance: 4,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            // Searching / connecting: pulse ring 1 → 1.6 + fade (1200 loop).
+            if (busy)
+              ElioIdleLoop(
+                period: const Duration(milliseconds: 1200),
+                length: const Duration(minutes: 2),
+                builder: (context, w, child) => Transform.scale(
+                  scale: 1 + 0.6 * w,
+                  child: Opacity(opacity: 0.5 * (1 - w), child: child),
+                ),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: p.primary, width: 3),
+                  ),
+                ),
+              ),
+            AnimatedSwitcher(
+              duration: ElioMotion.reduced(context)
+                  ? Duration.zero
+                  : ElioMotion.slow,
+              switchInCurve: ElioMotion.pop,
+              transitionBuilder: (child, a) =>
+                  ScaleTransition(scale: a, child: child),
+              child: KeyedSubtree(key: ValueKey(state), child: node),
             ),
           ],
         ),
@@ -371,18 +873,42 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   }
 }
 
-class _TilePair extends StatelessWidget {
-  const _TilePair({required this.left, required this.right});
-  final Widget left;
-  final Widget right;
+/// "✓ Found at 192.168.4.1" / "ELIOS not found on this Wi-Fi".
+class _ResultChip extends StatelessWidget {
+  const _ResultChip({super.key, required this.ok, required this.text});
+  final bool ok;
+  final String text;
 
   @override
-  Widget build(BuildContext context) => IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [Expanded(child: left), const SizedBox(width: 12), Expanded(child: right)],
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    final c = ok ? p.primaryText : p.errorText;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: ShapeDecoration(
+        color: (ok ? p.primary : p.error).withValues(alpha: 0.12),
+        shape: StadiumBorder(
+          side: BorderSide(
+            color: (ok ? p.primary : p.error).withValues(alpha: 0.4),
+          ),
         ),
-      );
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            ok ? Icons.check_rounded : Icons.error_outline_rounded,
+            size: 14,
+            color: c,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(text, style: ElioTokens.label.copyWith(color: c)),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Input 337:2480: label above, leading icon, red border after a failure.
@@ -411,9 +937,9 @@ class _AddressField extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.elio;
     OutlineInputBorder border(Color c, [double w = 1]) => OutlineInputBorder(
-          borderRadius: BorderRadius.circular(learnRadiusM),
-          borderSide: BorderSide(color: c, width: w),
-        );
+      borderRadius: BorderRadius.circular(learnRadiusM),
+      borderSide: BorderSide(color: c, width: w),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -430,7 +956,10 @@ class _AddressField extends StatelessWidget {
             hintText: label,
             prefixIcon: Icon(icon, color: p.textSecondary),
             constraints: const BoxConstraints(minHeight: 48),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
             border: border(p.formBorder),
             enabledBorder: border(error ? p.error : p.formBorder),
             focusedBorder: border(error ? p.error : p.primaryText, 2),
@@ -444,151 +973,574 @@ class _AddressField extends StatelessWidget {
   }
 }
 
-/// Robot hero: name, address line, the real 3D model and status tiles.
-class _RobotHero extends StatelessWidget {
-  const _RobotHero({required this.view, required this.deviceMode, required this.endpoint});
+/// Robot stage (Figma "Robot stage"): spotlight, the real 3D model on a floor
+/// shadow, "Drag to rotate", Status and Camera orbit bubbles and the name tag.
+/// The robot does not report its battery, so there is no Battery bubble.
+class _RobotStage extends StatelessWidget {
+  const _RobotStage({required this.view, required this.endpoint});
   final LinkView view;
-  final bool deviceMode;
   final String endpoint;
+
+  static const _w = 390.0, _h = 380.0;
 
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
-    final connected = !deviceMode && view == LinkView.connected;
-    final onHero = connected ? p.onPrimary : p.textPrimary;
-    final subtitle = deviceMode
-        ? 'Robot not used'
-        : switch (view) {
-            LinkView.connected => '$endpoint · MaixCAM2',
-            LinkView.connecting => 'Connecting to $endpoint',
-            LinkView.failed => 'Last try failed',
-            LinkView.notConnected => 'Not connected yet',
-          };
-    final (statusText, dot) = deviceMode
-        ? ('Not used', p.textTertiary)
-        : switch (view) {
-            LinkView.connected => ('Online', p.primaryText),
-            LinkView.connecting => ('Connecting', p.secondaryText),
-            LinkView.failed => ('Offline', p.errorText),
-            LinkView.notConnected => ('Offline', p.textTertiary),
-          };
-    return DecoratedBox(
-      decoration: ShapeDecoration(
-        color: connected ? p.primary : p.surfaceRaised,
-        shape: learnShape(learnRadiusXl, connected ? BorderSide.none : BorderSide(color: p.borderSubtle)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Semantics(
-                        header: true,
-                        child: Text('ELIO',
-                            style: ElioTokens.bodyLarge.copyWith(
-                                fontSize: 28, fontWeight: FontWeight.w800, height: 1.15, color: onHero)),
-                      ),
-                      Text(subtitle, style: configCaption(p, color: connected ? p.onPrimary : p.textSecondary)),
-                    ],
+    final connected = view == LinkView.connected;
+    // Robots always use MaixCAM2 (ELIOS 3); the phone scans from the Scan hub.
+    final subtitle = switch (view) {
+      LinkView.connected => '$endpoint · MaixCAM2',
+      LinkView.connecting => l10n.cfgConnectingTo(endpoint),
+      LinkView.failed => l10n.cfgLastTryFailed,
+      LinkView.notConnected => l10n.cfgNotConnectedYet,
+    };
+    final (statusText, dot) = switch (view) {
+      LinkView.connected => (l10n.cfgOnline, p.primaryText),
+      LinkView.connecting => (l10n.cfgConnectingShort, p.secondaryText),
+      LinkView.failed => (l10n.cfgOffline, p.errorText),
+      LinkView.notConnected => (l10n.cfgOffline, p.textTertiary),
+    };
+    final stage = SizedBox(
+      width: _w,
+      height: _h,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: 30,
+            top: 6,
+            // Orbit motion: the glow breathes while the page is idle.
+            child: ElioIdleLoop(
+              period: const Duration(milliseconds: 2400),
+              builder: (context, w, child) =>
+                  Transform.scale(scale: 1 + 0.03 * w, child: child),
+              child: _Disc(
+                330,
+                p.primary.withValues(alpha: p.isDark ? 0.16 : 0.12),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 68,
+            top: 44,
+            child: AnimatedContainer(
+              duration: ElioMotion.reduced(context)
+                  ? Duration.zero
+                  : ElioMotion.slow,
+              curve: ElioMotion.standard,
+              width: 254,
+              height: 254,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: connected
+                    ? p.primary
+                    : p.primary.withValues(alpha: p.isDark ? 0.28 : 0.24),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 115,
+            top: 266,
+            // Pedestal: bounces once when ELIOS comes online.
+            child: ElioJump(
+              trigger: connected ? view : null,
+              height: 4,
+              child: Container(
+                width: 160,
+                height: 22,
+                decoration: ShapeDecoration(
+                  color: p.primaryActive.withValues(
+                    alpha: connected ? 1 : 0.45,
                   ),
+                  shape: const OvalBorder(),
                 ),
-                const SizedBox(width: 8),
-                DecoratedBox(
-                  decoration: ShapeDecoration(color: p.surface, shape: const StadiumBorder()),
+              ),
+            ),
+          ),
+          const Positioned(
+            left: 68,
+            top: 44,
+            width: 254,
+            height: 254,
+            child: ClipOval(child: _ElioModelViewer()),
+          ),
+          if (view == LinkView.connecting)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 276,
+              child: Center(
+                child: DecoratedBox(
+                  decoration: ShapeDecoration(
+                    color: p.surfaceRaised,
+                    shape: const StadiumBorder(),
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.threesixty_rounded, size: 18, color: p.textPrimary),
-                        const SizedBox(width: 6),
-                        Text('Drag to rotate', style: configCaption(p, color: p.textPrimary)),
+                        SizedBox.square(
+                          dimension: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: p.secondaryText,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          context.l10n.configLookingForElio,
+                          style: configCaption(p, color: p.textPrimary),
+                        ),
                       ],
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
-            const SizedBox(height: 12),
-            Container(
-              height: 196,
-              clipBehavior: Clip.antiAlias,
-              decoration: ShapeDecoration(color: p.surface, shape: learnShape(learnRadiusL)),
-              child: Stack(
-                children: [
-                  const Positioned.fill(child: _ElioModelViewer()),
-                  if (view == LinkView.connecting && !deviceMode)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 8,
-                      child: Center(
-                        child: DecoratedBox(
-                          decoration: ShapeDecoration(color: p.surfaceRaised, shape: const StadiumBorder()),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox.square(
-                                  dimension: 14,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: p.secondaryText),
-                                ),
-                                const SizedBox(width: 8),
-                                Text('Looking for ELIO…', style: configCaption(p, color: p.textPrimary)),
-                              ],
-                            ),
-                          ),
-                        ),
+          Positioned(
+            left: 18,
+            top: 20,
+            // The hint tag rocks a little, then rests.
+            child: ElioIdleLoop(
+              builder: (context, w, child) =>
+                  Transform.rotate(angle: 0.14 - 0.08 * w, child: child),
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: p.surface,
+                  shape: StadiumBorder(side: BorderSide(color: p.borderSubtle)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 7,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.threesixty_rounded,
+                        size: 18,
+                        color: p.textPrimary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        context.l10n.configDragToRotate,
+                        style: configCaption(p, color: p.textPrimary),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 8,
+            top: 226,
+            child: Semantics(
+              liveRegion: true,
+              label: '${l10n.cfgStatus}: $statusText',
+              excludeSemantics: true,
+              child: _OrbitBubble(
+                // Pops again whenever the link state changes ("Online").
+                bump: view,
+                size: 92,
+                label: l10n.cfgStatus,
+                value: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: dot,
+                        shape: BoxShape.circle,
                       ),
                     ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        statusText,
+                        style: configStrong(
+                          p,
+                          color: connected ? p.primaryText : null,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 274,
+            top: 226,
+            child: Semantics(
+              label: l10n.setupCameraAuto,
+              excludeSemantics: true,
+              child: _OrbitBubble(
+                phase: 1,
+                size: 108,
+                label: l10n.cfgCamera,
+                value: Text('MaixCAM2', style: configStrong(p)),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 20,
+            right: 20,
+            top: 318,
+            child: Column(
+              children: [
+                Semantics(
+                  header: true,
+                  child: Text(
+                    'ELIOS',
+                    style: homeWeight(
+                      ElioTokens.headline,
+                      700,
+                    ).copyWith(height: 1.25, color: p.textPrimary),
+                  ),
+                ),
+                // Nametag line cross-fades with the link state.
+                AnimatedSwitcher(
+                  duration: ElioMotion.reduced(context)
+                      ? Duration.zero
+                      : ElioMotion.base,
+                  child: Text(
+                    subtitle,
+                    key: ValueKey(subtitle),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: configCaption(p),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    // Narrow phones scale the stage down instead of cutting the bubbles off.
+    return LayoutBuilder(
+      builder: (context, c) => Center(
+        child: c.maxWidth >= _w
+            ? stage
+            : SizedBox(
+                width: c.maxWidth,
+                height: _h * c.maxWidth / _w,
+                child: FittedBox(child: stage),
+              ),
+      ),
+    );
+  }
+}
+
+class _Disc extends StatelessWidget {
+  const _Disc(this.size, this.color);
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  );
+}
+
+class _OrbitBubble extends StatelessWidget {
+  const _OrbitBubble({
+    required this.size,
+    required this.label,
+    required this.value,
+    this.phase = 0,
+    this.bump,
+  });
+  final double size;
+  final String label;
+  final Widget value;
+
+  /// 0 or 1: the two bubbles float out of step.
+  final int phase;
+
+  /// A new value makes the bubble hop (status changed).
+  final Object? bump;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    // Orbit bubbles pop in, then float ±3 px for a few seconds.
+    return ElioPopIn(
+      rise: 0,
+      scale: 0.6,
+      curve: ElioMotion.pop,
+      delay: Duration(milliseconds: 180 + 120 * phase),
+      child: ElioIdleLoop(
+        period: Duration(milliseconds: 2200 + 500 * phase),
+        builder: (context, w, child) => Transform.translate(
+          offset: Offset(0, (phase == 0 ? -3 : 3) * w),
+          child: child,
+        ),
+        child: ElioJump(trigger: bump, height: 10, child: _bubble(p)),
+      ),
+    );
+  }
+
+  Widget _bubble(ElioPalette p) {
+    return Container(
+      width: size,
+      height: size,
+      padding: const EdgeInsets.all(10),
+      decoration: ShapeDecoration(
+        color: p.isDark ? p.surfaceRaised : p.surface,
+        shape: CircleBorder(side: BorderSide(color: p.borderSubtle)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: configCaption(p),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          value,
+        ],
+      ),
+    );
+  }
+}
+
+/// "Camera: MaixCAM2 · Automatic": robots always use MaixCAM2 (0196).
+class _CameraRow extends StatelessWidget {
+  const _CameraRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      decoration: ShapeDecoration(
+        color: p.surfaceRaised,
+        shape: const StadiumBorder(),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.photo_camera_outlined, size: 20, color: p.textPrimary),
+          const SizedBox(width: 10),
+          Expanded(child: Text(l10n.setupCameraAuto, style: configStrong(p))),
+          Text(
+            l10n.setupAutomatic,
+            style: configStrong(p, color: p.textTertiary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Video stream (Figma "Section · Video"): resolution and FPS overlay.
+class _VideoSection extends ConsumerWidget {
+  const _VideoSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.elio;
+    final esp = ref.watch(espConfigProvider).valueOrNull ?? const EspConfig();
+    void patch(EspConfig Function(EspConfig) f) =>
+        ref.read(espConfigProvider.notifier).patch(f);
+    final divider = Divider(height: 1, color: configDivider(p));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            ExcludeSemantics(
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: p.secondaryText.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.desktop_windows_outlined,
+                  size: 18,
+                  color: p.secondaryText,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: SetupSectionTitle(l10n.setupVideoStream)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        divider,
+        const SizedBox(height: 13),
+        Text(l10n.setResolution, style: setupStepTitle(p)),
+        Text(l10n.setResolutionSub, style: configCaption(p)),
+        const SizedBox(height: 10),
+        ConfigSegmented(
+          label: l10n.setResolution,
+          options: const ['480p', '720p'],
+          selected: esp.resolutionPreset,
+          onSelected: (v) => patch((c) => c.copyWith(resolutionPreset: v)),
+        ),
+        const SizedBox(height: 12),
+        divider,
+        const SizedBox(height: 8),
+        _SwitchLine(
+          title: l10n.setShowFps,
+          subtitle: l10n.setShowFpsSub,
+          value: esp.showFpsOverlay,
+          large: true,
+          onChanged: (v) => patch((c) => c.copyWith(showFpsOverlay: v)),
+        ),
+      ],
+    );
+  }
+}
+
+/// Robot quiz (0198): on/off and Question bank | ELIOS AI, with the bulb
+/// buddy peeking over the card. ELIOS AI can be chosen at any time; with no
+/// AI answer a scan uses the bank (decision 0179). Phone scans use Profile.
+class _QuizSection extends ConsumerWidget {
+  const _QuizSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final shown = ref.watch(
+      appPreferencesProvider.select((p) => p.robotQuestionSource),
+    );
+    final on = ref.watch(
+      appPreferencesProvider.select((p) => p.robotQuizEnabled),
+    );
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          right: 18,
+          top: -20,
+          child: ExcludeSemantics(
+            child: ElioIdleLoop(
+              builder: (context, wave, child) => Transform.translate(
+                offset: Offset(0, -3 * wave),
+                child: child,
+              ),
+              child: homeArt('bulb_buddy', width: 56, height: 64),
+            ),
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SetupSectionTitle(l10n.quizWord),
+            const SizedBox(height: 12),
+            ConfigCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _SwitchLine(
+                    title: l10n.setupQuizAfterScan,
+                    subtitle: on ? null : l10n.wqSavedNoQuiz,
+                    value: on,
+                    large: true,
+                    onChanged: (v) => ref
+                        .read(appPreferencesProvider.notifier)
+                        .update((prefs) => prefs.copyWith(robotQuizEnabled: v)),
+                  ),
+                  // Quiz off: the source switch collapses (height 220 ms,
+                  // fade 150 ms) and the note above fades in.
+                  AnimatedSize(
+                    duration: ElioMotion.reduced(context)
+                        ? Duration.zero
+                        : ElioMotion.base,
+                    curve: ElioMotion.standard,
+                    alignment: Alignment.topCenter,
+                    child: AnimatedOpacity(
+                      opacity: on ? 1 : 0,
+                      duration: ElioMotion.fast,
+                      child: !on
+                          ? const SizedBox(width: double.infinity)
+                          : Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: ConfigSegmented(
+                                label: l10n.cfgQuizQuestions,
+                                neutral: true,
+                                leading: [
+                                  // Bank chosen: the database icon drops 2 px.
+                                  ElioJump(
+                                    trigger: shown == QuestionSource.bank
+                                        ? shown
+                                        : null,
+                                    height: -2,
+                                    child: Icon(
+                                      Icons.storage_rounded,
+                                      size: 18,
+                                      color: shown == QuestionSource.bank
+                                          ? (context.elio.isDark
+                                                ? context.elio.background
+                                                : context.elio.textPrimary)
+                                          : context.elio.textSecondary,
+                                    ),
+                                  ),
+                                  // AI chosen: the badge leaf spins 0 → 20° → 0.
+                                  TweenAnimationBuilder<double>(
+                                    key: ValueKey(shown),
+                                    tween: Tween(
+                                      begin:
+                                          shown == QuestionSource.ai &&
+                                              !ElioMotion.reduced(context)
+                                          ? 0
+                                          : 1,
+                                      end: 1,
+                                    ),
+                                    duration: ElioMotion.expressive,
+                                    curve: ElioMotion.pop,
+                                    builder: (context, v, child) =>
+                                        Transform.rotate(
+                                          angle:
+                                              math.sin(v * math.pi) *
+                                              20 *
+                                              math.pi /
+                                              180,
+                                          child: child,
+                                        ),
+                                    child: const EliosAiBadge(size: 20),
+                                  ),
+                                ],
+                                options: [
+                                  for (final s in QuestionSource.values) s.name,
+                                ],
+                                labels: [l10n.questionBank, 'ELIOS AI'],
+                                selected: shown.name,
+                                onSelected: (v) => ref
+                                    .read(appPreferencesProvider.notifier)
+                                    .update(
+                                      (prefs) => prefs.copyWith(
+                                        robotQuestionSource: QuestionSource
+                                            .values
+                                            .byName(v),
+                                      ),
+                                    ),
+                              ),
+                            ),
+                    ),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Semantics(
-                    liveRegion: true,
-                    child: StatusTile(
-                      label: 'Status',
-                      value: statusText,
-                      leading: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: ShapeDecoration(color: dot, shape: const CircleBorder()),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // The robot does not report its battery: never show a made-up value.
-                Expanded(
-                  child: StatusTile(
-                    label: 'Battery',
-                    value: '—',
-                    semanticsValue: 'not reported',
-                    leading: RotatedBox(
-                      quarterTurns: 1,
-                      child: Icon(Icons.battery_3_bar_rounded, size: 16, color: p.textSecondary),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(child: StatusTile(label: 'Camera', value: deviceMode ? 'Phone' : 'MaixCAM2')),
-              ],
-            ),
           ],
         ),
-      ),
+      ],
     );
   }
 }
@@ -609,9 +1561,13 @@ class _ElioModelViewerState extends State<_ElioModelViewer> {
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
-    if (_hasError) return Center(child: Icon(Icons.smart_toy_rounded, size: 72, color: p.primaryText));
+    if (_hasError) {
+      return Center(
+        child: Icon(Icons.smart_toy_rounded, size: 72, color: p.primaryText),
+      );
+    }
     return Semantics(
-      label: 'ELIO robot 3D model, drag to rotate',
+      label: l10n.cfgRobotModel,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -632,7 +1588,10 @@ class _ElioModelViewerState extends State<_ElioModelViewer> {
           if (!_isLoaded)
             SizedBox.square(
               dimension: 24,
-              child: CircularProgressIndicator(strokeWidth: 2.5, color: p.primaryText),
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: p.primaryText,
+              ),
             ),
         ],
       ),
@@ -640,51 +1599,57 @@ class _ElioModelViewerState extends State<_ElioModelViewer> {
   }
 }
 
-/// Question bank / ELIOS AI (saved choice, decision 0145). The ELIOS AI tile
-/// needs a loaded model; a saved ELIOS AI choice shows (and quizzes use) the
-/// bank until then.
-class _QuizSourceTiles extends ConsumerWidget {
-  const _QuizSourceTiles();
+class _SwitchLine extends StatelessWidget {
+  const _SwitchLine({
+    required this.title,
+    required this.value,
+    required this.onChanged,
+    this.subtitle,
+    this.large = false,
+  });
+
+  final String title;
+  final String? subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  /// Section-row title size (Figma video / quiz rows).
+  final bool large;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final chosen = ref.watch(appPreferencesProvider.select((p) => p.questionSource));
-    return ValueListenableBuilder<GemmaProgress>(
-      valueListenable: GemmaQuizService.instance.progress,
-      builder: (context, progress, _) {
-        final p = context.elio;
-        final aiReady = progress.status == GemmaStatus.ready &&
-            effectiveQuestionSource(QuestionSource.gemma) == QuestionSource.gemma;
-        final shown = aiReady ? chosen : QuestionSource.bank;
-        void choose(QuestionSource s) =>
-            ref.read(appPreferencesProvider.notifier).update((prefs) => prefs.copyWith(questionSource: s));
-        return _TilePair(
-          left: ChoiceTile(
-            icon: Icons.storage_rounded,
-            title: 'Question bank',
-            description: 'Checked questions, instant',
-            selected: shown == QuestionSource.bank,
-            onTap: () => choose(QuestionSource.bank),
-          ),
-          right: ChoiceTile(
-            icon: Icons.auto_awesome_rounded,
-            iconWidget: Container(
-              width: 40,
-              height: 40,
-              decoration: ShapeDecoration(
-                color: shown == QuestionSource.gemma ? p.surface : p.surfaceRaised,
-                shape: const CircleBorder(),
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    void flip(bool v) {
+      elioFeedback(
+        v ? ElioSfx.toggleOn : ElioSfx.toggleOff,
+        ElioHaptics.select,
+      );
+      onChanged(v);
+    }
+
+    return MergeSemantics(
+      child: InkWell(
+        onTap: () => flip(!value),
+        borderRadius: BorderRadius.circular(12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: large ? setupStepTitle(p) : configStrong(p),
+                  ),
+                  if (subtitle != null)
+                    Text(subtitle!, style: configCaption(p)),
+                ],
               ),
-              child: Center(child: EliosAiLogo(state: aiCardState(progress.status), size: 26)),
             ),
-            title: 'ELIOS AI',
-            description: aiReady ? 'New questions each scan, 20 to 40 s' : 'Needs ELIOS AI active',
-            selected: shown == QuestionSource.gemma,
-            enabled: aiReady,
-            onTap: () => choose(QuestionSource.gemma),
-          ),
-        );
-      },
+            Switch(value: value, onChanged: flip),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -5,7 +5,7 @@ import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/robot_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/detection_stabilizer.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/robot/r1_constants.dart';
 import 'package:elio/services/robot/r1_orchestrator.dart';
 import 'package:elio/services/robot/robot_controller.dart';
@@ -107,17 +107,17 @@ void main() {
 
       // Check item name & correct counts
       expect(find.text('Botol plastik'), findsWidgets);
-      expect(find.text('1 dari 1 benar'), findsOneWidget);
+      expect(find.text('1 of 1 correct'), findsOneWidget);
 
       // Check trophies (+10 Piala)
-      expect(find.text('+10 Piala'), findsOneWidget);
+      expect(find.text('+10 XP'), findsOneWidget);
 
       // Check grade Sempurna
-      expect(find.text('Sempurna'), findsOneWidget);
+      expect(find.text('Perfect'), findsOneWidget);
 
       // Check action buttons
-      expect(find.text('Scan lagi'), findsOneWidget);
-      expect(find.text('Tutup'), findsOneWidget);
+      expect(find.text('Scan again'), findsOneWidget);
+      expect(find.text('Close'), findsOneWidget);
     });
 
     testWidgets('essay score out of 10 awarded directly as trophies', (tester) async {
@@ -136,11 +136,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Check correct count & trophies (+8 Piala)
-      expect(find.text('1 dari 1 benar'), findsOneWidget);
-      expect(find.text('+8 Piala'), findsOneWidget);
+      expect(find.text('1 of 1 correct'), findsOneWidget);
+      expect(find.text('+8 XP'), findsOneWidget);
 
       // Check grade Hebat
-      expect(find.text('Hebat'), findsOneWidget);
+      expect(find.text('Great'), findsOneWidget);
     });
   });
 
@@ -238,16 +238,16 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       // Drop notice shown
-      expect(find.text('Robot sedang membuang ke tempat sampah...'), findsOneWidget);
+      expect(find.text('The robot is dropping it in the bin...'), findsOneWidget);
 
       // Scan lagi is disabled
       final scanLagiButton = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Scan lagi'),
+        find.widgetWithText(FilledButton, 'Scan again'),
       );
       expect(scanLagiButton.onPressed, isNull);
 
       // Tap should do nothing
-      await tester.tap(find.widgetWithText(FilledButton, 'Scan lagi'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Scan again'));
       await tester.pump();
       expect(rescanCalled, isFalse);
     });
@@ -274,15 +274,15 @@ void main() {
       await tester.pumpAndSettle();
 
       // Drop notice is not shown
-      expect(find.text('Robot sedang membuang ke tempat sampah...'), findsNothing);
+      expect(find.text('The robot is dropping it in the bin...'), findsNothing);
 
       // Scan lagi is enabled and tappable
       final scanLagiButton = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Scan lagi'),
+        find.widgetWithText(FilledButton, 'Scan again'),
       );
       expect(scanLagiButton.onPressed, isNotNull);
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Scan lagi'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Scan again'));
       await tester.pump();
       expect(rescanCalled, isTrue);
     });
@@ -388,10 +388,10 @@ void main() {
         expect(tester.takeException(), isNull);
 
         // 2. Scan lagi is reachable and on top
-        await _expectTappable(tester, find.widgetWithText(FilledButton, 'Scan lagi'), 'Scan lagi button');
+        await _expectTappable(tester, find.widgetWithText(FilledButton, 'Scan again'), 'Scan lagi button');
 
         // 3. Tutup is reachable and on top
-        await _expectTappable(tester, find.widgetWithText(OutlinedButton, 'Tutup'), 'Tutup button');
+        await _expectTappable(tester, find.widgetWithText(OutlinedButton, 'Close'), 'Tutup button');
 
         // 4. STOP button in quiz header is reachable and on top (decision 0026)
         final quizStop = find.descendant(of: find.byType(WasteQuizPopup), matching: find.text('STOP'));
@@ -401,7 +401,7 @@ void main() {
         expect(stoppedTapped, isTrue);
 
         // 5. Buttons invoke callbacks
-        await tester.tap(find.widgetWithText(FilledButton, 'Scan lagi'));
+        await tester.tap(find.widgetWithText(FilledButton, 'Scan again'));
         await tester.pump();
         expect(rescanTapped, isTrue);
       });

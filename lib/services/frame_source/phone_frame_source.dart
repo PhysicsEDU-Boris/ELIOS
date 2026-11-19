@@ -1,6 +1,7 @@
+import 'package:elio/l10n/l10n.dart';
 import 'dart:async';
 import 'package:camera/camera.dart';
-import 'package:camera_macos/camera_macos.dart';
+import 'package:camera_macos/camera_macos.dart' hide FlashMode;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show DeviceOrientation;
@@ -9,35 +10,85 @@ import 'frame_source.dart';
 import 'yuv_jpeg.dart';
 
 /// Android reads photos from the image stream only (the latest YUV frame, turned
-  /// into a JPEG in an isolate); `takePicture` is never mixed with the stream
-  /// because CameraX rebinds its use cases between the two (decision 0040).
+/// into a JPEG in an isolate); `takePicture` is never mixed with the stream
+/// because CameraX rebinds its use cases between the two (decision 0040).
 class PhoneFrameSource extends FrameSource {
-  final bool _useStream = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  /// Config → Settings → Resolution ('480p' / '720p'); null keeps the platform
+  /// default (Android 720p, others 480p).
+  PhoneFrameSource({this.resolutionPreset});
+
+  final String? resolutionPreset;
+
+  /// Camera frames seen so far (Android image stream only), for the FPS overlay.
+  int frameCount = 0;
+
+  /// The preview size the camera picked, or null before it opens / on macOS.
+  Size? get previewSize => _controller?.value.previewSize;
+
+  final bool _useStream =
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
   CameraImage? _latest;
-  final bool _useMacCamera = !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
-  
+  final bool _useMacCamera =
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
+
   CameraController? _controller;
   CameraMacOSController? _macController;
-  
+
   List<CameraDescription> _cameras = const [];
   int _cameraIndex = 0;
-  
+
   String? _errorMsg;
   bool _initialized = false;
   bool _macPaused = false;
-  
-  final StreamController<CapturedFrame> _frameController = StreamController<CapturedFrame>.broadcast();
-  
+
+  final StreamController<CapturedFrame> _frameController =
+      StreamController<CapturedFrame>.broadcast();
+
   @override
   bool get isInitialized => _useMacCamera ? _initialized : _controller != null;
 
   /// Which camera is showing, for the scan screen's chip.
   String get cameraName => _useMacCamera
       ? 'Mac camera'
-      : (_cameras.isNotEmpty && _cameras[_cameraIndex].lensDirection == CameraLensDirection.front ? 'Front camera' : 'Back camera');
-  
+      : (_cameras.isNotEmpty &&
+                _cameras[_cameraIndex].lensDirection ==
+                    CameraLensDirection.front
+            ? 'Front camera'
+            : 'Back camera');
+
   @override
   String? get error => _errorMsg;
+
+  /// The phone's light, for dim rooms (Scan & quiz flash button).
+  bool torch = false;
+  Future<void> toggleTorch() async {
+    final c = _controller;
+    if (c == null || !c.value.isInitialized) return;
+    try {
+      await c.setFlashMode(torch ? FlashMode.off : FlashMode.torch);
+      torch = !torch;
+    } catch (_) {
+      torch = false; // no flash unit (front camera, some tablets)
+    }
+    notifyListeners();
+  }
+
+  /// Camera zoom (Scan & quiz): 1 up to [maxZoom]; the photo is zoomed too.
+  double zoom = 1;
+  double maxZoom = 1;
+  Future<void> setZoom(double value) async {
+    final c = _controller;
+    if (c == null || !c.value.isInitialized) return;
+    final z = value.clamp(1.0, maxZoom);
+    if (z == zoom) return;
+    zoom = z;
+    notifyListeners();
+    try {
+      await c.setZoomLevel(z);
+    } catch (_) {
+      // The preview stays as it was; the next change tries again.
+    }
+  }
 
   @override
   Stream<CapturedFrame> get frames => _frameController.stream;
@@ -52,13 +103,15 @@ class PhoneFrameSource extends FrameSource {
       notifyListeners();
       return;
     }
-    
+
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
         throw CameraException('none', 'No camera found');
       }
-      final back = cameras.indexWhere((c) => c.lensDirection == CameraLensDirection.back);
+      final back = cameras.indexWhere(
+        (c) => c.lensDirection == CameraLensDirection.back,
+      );
       _cameras = cameras;
       await _openCamera(back >= 0 ? back : 0);
     } catch (e) {
@@ -72,15 +125,35 @@ class PhoneFrameSource extends FrameSource {
     _controller = null;
     _cameraIndex = index;
     notifyListeners();
-    
+
     await old?.dispose();
-    
+
     _latest = null;
-    final controller = CameraController(_cameras[index], _useStream ? ResolutionPreset.high : ResolutionPreset.medium,
-        enableAudio: false, imageFormatGroup: _useStream ? ImageFormatGroup.yuv420 : null);
+    final controller = CameraController(
+      _cameras[index],
+      switch (resolutionPreset) {
+        '720p' => ResolutionPreset.high,
+        '480p' => ResolutionPreset.medium,
+        _ => _useStream ? ResolutionPreset.high : ResolutionPreset.medium,
+      },
+      enableAudio: false,
+      imageFormatGroup: _useStream ? ImageFormatGroup.yuv420 : null,
+    );
     try {
       await controller.initialize();
-      if (_useStream) await controller.startImageStream((image) => _latest = image);
+      if (_useStream) {
+        await controller.startImageStream((image) {
+          _latest = image;
+          frameCount++;
+        });
+      }
+      zoom = 1;
+      try {
+        // ponytail: digital zoom past 5× is too soft for the AI to read.
+        maxZoom = (await controller.getMaxZoomLevel()).clamp(1.0, 5.0);
+      } catch (_) {
+        maxZoom = 1;
+      }
       _controller = controller;
       _errorMsg = null;
       notifyListeners();
@@ -90,7 +163,7 @@ class PhoneFrameSource extends FrameSource {
       notifyListeners();
     }
   }
-  
+
   @override
   void switchCamera() {
     if (_useMacCamera || _cameras.isEmpty) return;
@@ -104,7 +177,7 @@ class PhoneFrameSource extends FrameSource {
       final Uint8List? bytes;
       int width = 0;
       int height = 0;
-      
+
       if (_useMacCamera) {
         final pic = await _macController!.takePicture();
         bytes = pic?.bytes;
@@ -120,9 +193,9 @@ class PhoneFrameSource extends FrameSource {
         width = _controller!.value.previewSize?.width.toInt() ?? 0;
         height = _controller!.value.previewSize?.height.toInt() ?? 0;
       }
-      
+
       if (bytes == null) throw StateError('Kamera tidak mengembalikan foto');
-      
+
       final frame = CapturedFrame(
         bytes: bytes,
         width: width,
@@ -140,7 +213,9 @@ class PhoneFrameSource extends FrameSource {
   Future<({Uint8List bytes, int width, int height})> _jpegFromLatest() async {
     final image = _latest;
     final controller = _controller!;
-    if (image == null || image.planes.length < 3) throw StateError('Kamera belum mengirim gambar');
+    if (image == null || image.planes.length < 3) {
+      throw StateError('Kamera belum mengirim gambar');
+    }
     final yPlane = image.planes[0];
     final degrees = switch (controller.value.deviceOrientation) {
       DeviceOrientation.landscapeLeft => 90,
@@ -179,7 +254,9 @@ class PhoneFrameSource extends FrameSource {
     } else {
       if (_controller != null && _controller!.value.isInitialized) {
         // Stop the stream too: nothing needs frames while the quiz covers the preview.
-        if (_useStream && _controller!.value.isStreamingImages) await _controller!.stopImageStream();
+        if (_useStream && _controller!.value.isStreamingImages) {
+          await _controller!.stopImageStream();
+        }
         await _controller!.pausePreview();
       }
     }
@@ -240,7 +317,7 @@ class PhoneFrameSource extends FrameSource {
                 : Padding(
                     padding: const EdgeInsets.all(24),
                     child: Text(
-                      'Kamera Mac tidak bisa dibuka ($error).',
+                      l10n.camMacFailed(error),
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.white),
                     ),
@@ -253,8 +330,11 @@ class PhoneFrameSource extends FrameSource {
         // previewSize is always sensor-landscape (w > h); CameraPreview rotates
         // itself, so only swap the box when the device is held upright.
         final value = _controller!.value;
-        final landscape = (value.lockedCaptureOrientation ?? value.deviceOrientation) == DeviceOrientation.landscapeLeft ||
-            (value.lockedCaptureOrientation ?? value.deviceOrientation) == DeviceOrientation.landscapeRight;
+        final landscape =
+            (value.lockedCaptureOrientation ?? value.deviceOrientation) ==
+                DeviceOrientation.landscapeLeft ||
+            (value.lockedCaptureOrientation ?? value.deviceOrientation) ==
+                DeviceOrientation.landscapeRight;
         final ps = value.previewSize;
         return ClipRect(
           child: FittedBox(
@@ -278,7 +358,9 @@ class PhoneFrameSource extends FrameSource {
           ),
         );
       } else {
-        return const Center(child: CircularProgressIndicator(color: Colors.white));
+        return const Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        );
       }
     }
   }

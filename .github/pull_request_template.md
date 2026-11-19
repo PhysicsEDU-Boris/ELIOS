@@ -28,7 +28,7 @@ M?
 ## Acceptance checks touched
 
 <!-- From Notion section 3 "Acceptance checks". -->
-- [ ] Same object held 60 s: exactly 1 Gemma identify and 1 TTS line
+- [ ] Same object held 60 s: exactly 1 AI identify and 1 TTS line
 - [ ] Object removed, different one shown: new lock and one new identify
 - [ ] Two scans back to back: second rejected as busy, no queue, no crash
 - [ ] Quiz opens: camera preview keeps running

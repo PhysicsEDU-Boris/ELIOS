@@ -13,6 +13,8 @@ import '../../elio_top_bar.dart' show ElioAvatar;
 import '../../waste_quiz_popup.dart' show QuizButton;
 import '../r2_controls.dart';
 import '../../learn/learn_ui.dart' show LearnTheme;
+import 'package:elio/l10n/l10n.dart';
+import '../../xp_icon.dart';
 
 /// Phones in landscape: the shortest side is under 600 dp. Tablets and the Mac keep R2.
 bool isPhoneLandscape(BuildContext context) {
@@ -28,12 +30,11 @@ class PhoneControlLayout extends StatelessWidget {
     required this.stopped,
     required this.stopReason,
     required this.skeleton,
-    required this.driveLabel,
-    required this.armLabel,
     required this.speed,
     required this.onSpeed,
     required this.onDirection,
     required this.onRelease,
+    this.onStick,
     required this.frame,
     required this.fps,
     required this.scanQuizOn,
@@ -49,6 +50,7 @@ class PhoneControlLayout extends StatelessWidget {
     required this.onHeight,
     required this.reach,
     required this.onReach,
+    required this.onBaseStick,
     required this.onPower,
     required this.onConnect,
     required this.onStop,
@@ -62,8 +64,16 @@ class PhoneControlLayout extends StatelessWidget {
     required this.onAvatar,
     required this.onBack,
     required this.onGuide,
+    this.onAdvanced,
     this.photoUrl,
     this.overlays = const [],
+    this.onLock,
+    this.locked = false,
+    this.onScan,
+    this.lockBox,
+    this.lockLabel,
+    this.tagText,
+    this.frameAspect = 4 / 3,
     this.driveKey,
     this.stopKey,
     this.actionKey,
@@ -74,11 +84,13 @@ class PhoneControlLayout extends StatelessWidget {
   final bool stopped;
   final String? stopReason;
   final bool skeleton;
-  final (String, Color) driveLabel, armLabel;
   final double speed;
   final ValueChanged<double> onSpeed;
   final ValueChanged<DriveDir> onDirection;
   final VoidCallback onRelease;
+
+  /// The drive knob's position (see [DriveJoystick.onStick]).
+  final ValueChanged<Offset>? onStick;
   final Uint8List? frame;
   final double fps;
   final bool scanQuizOn, voiceOn;
@@ -86,6 +98,9 @@ class PhoneControlLayout extends StatelessWidget {
   final VoidCallback onHome, onPickUp, onReleaseGripper;
   final double gripper, height, reach;
   final ValueChanged<double> onGripper, onHeight, onReach;
+
+  /// BASIS joystick (0229, 0231): the knob's x in [-1, 1] on every move; 0 on let go.
+  final ValueChanged<double> onBaseStick;
   final VoidCallback onPower, onConnect, onStop, onGo;
   final int missionDone, trophies;
 
@@ -95,6 +110,9 @@ class PhoneControlLayout extends StatelessWidget {
   /// The question is still being prepared: the Quiz button shows Waiting.
   final bool quizWaiting;
   final VoidCallback onQuiz, onHistory, onAvatar, onBack, onGuide;
+
+  /// Advanced settings (0232), beside Guide; hidden when null.
+  final VoidCallback? onAdvanced;
   final String? photoUrl;
 
   /// Where the Guide's spotlight points (steps 1-4).
@@ -102,6 +120,24 @@ class PhoneControlLayout extends StatelessWidget {
 
   /// The quiz popup and the guide, over everything. They keep STOP reachable themselves.
   final List<Widget> overlays;
+
+  /// LOCK (0181): the AI boxes and names the item in the current frame; null greys the key out.
+  /// With [locked] the same key reads UNLOCK and clears the box.
+  final VoidCallback? onLock;
+  final bool locked;
+
+  /// SCAN (0181): opens the quiz popup for the locked item; null greys the key out.
+  final VoidCallback? onScan;
+
+  /// The locked item's box, as fractions (0..1) of the frame, and its name.
+  final Rect? lockBox;
+  final String? lockLabel;
+
+  /// Debug builds: the arm-tag search's reading while it is on, shown at the top of the video.
+  final String? tagText;
+
+  /// The camera frame's width / height, for placing [lockBox] (MaixCAM2 streams 640x480).
+  final double frameAspect;
 
   /// GO replaces STOP only with a live link: offline always shows STOP (Figma 397:2604).
   bool get _showGo => stopped && link == ControlLink.connected;
@@ -198,8 +234,6 @@ class PhoneControlLayout extends StatelessWidget {
                                 block(14, 14, 7),
                                 const SizedBox(width: 6),
                                 block(36, 10, 5),
-                                const Spacer(),
-                                block(78, 22, 11),
                               ],
                             ),
                             const SizedBox(height: 10),
@@ -216,10 +250,8 @@ class PhoneControlLayout extends StatelessWidget {
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                for (var i = 0; i < 4; i++) ...[
-                                  if (i > 0) const SizedBox(width: 6),
-                                  Expanded(child: block(null, 28, 14)),
-                                ],
+                                for (var i = 0; i < 3; i++)
+                                  Expanded(child: Center(child: block(36, 36, 18))),
                               ],
                             ),
                           ],
@@ -231,13 +263,15 @@ class PhoneControlLayout extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                block(90, 24, 12),
-                                const SizedBox(width: 6),
-                                block(60, 24, 12),
-                                const SizedBox(width: 6),
-                                block(60, 24, 12),
-                                const Spacer(),
                                 block(80, 24, 12),
+                                const SizedBox(width: 6),
+                                block(52, 24, 12),
+                                const SizedBox(width: 6),
+                                block(52, 24, 12),
+                                const Spacer(),
+                                block(64, 24, 12),
+                                const SizedBox(width: 8),
+                                _stopOrGo(),
                               ],
                             ),
                             const SizedBox(height: 6),
@@ -292,42 +326,17 @@ class PhoneControlLayout extends StatelessWidget {
                                 block(14, 14, 7),
                                 const SizedBox(width: 6),
                                 block(30, 10, 5),
-                                const Spacer(),
-                                block(70, 22, 11),
                               ],
                             ),
                             const SizedBox(height: 10),
                             Expanded(
                               child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  block(48, 0, 18),
-                                  const SizedBox(width: 8),
-                                  block(48, 0, 18),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        block(44, 44, 22),
-                                        const SizedBox(height: 6),
-                                        block(44, 14, 7),
-                                        const SizedBox(height: 18),
-                                        KeyedSubtree(
-                                          key: stopKey,
-                                          child: PhoneGlowButton(
-                                            key: const ValueKey('phone_stop'),
-                                            kind: GlowKind.stop,
-                                            size: 76,
-                                            onTap: onStop,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [block(48, double.infinity, 18), block(48, double.infinity, 18)],
                               ),
                             ),
+                            const SizedBox(height: 10),
+                            block(null, 56, 28),
                           ],
                         ),
                       ),
@@ -350,7 +359,7 @@ class PhoneControlLayout extends StatelessWidget {
       children: [
         PhonePill(
           key: const ValueKey('phone_back'),
-          semantic: 'Exit',
+          semantic: l10n.ctlExit,
           onTap: onBack,
           padding: const EdgeInsets.all(10),
           child: Icon(
@@ -361,7 +370,7 @@ class PhoneControlLayout extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Text(
-          'Robot Control',
+          l10n.ctlRobotControl,
           maxLines: 1,
           style: TextStyle(
             color: context.elio.textPrimary,
@@ -371,6 +380,10 @@ class PhoneControlLayout extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         _GuideButton(onTap: onGuide),
+        if (onAdvanced != null) ...[
+          const SizedBox(width: 6),
+          _AdvancedButton(onTap: onAdvanced!, compact: narrow),
+        ],
         Expanded(
           child: Align(
             alignment: Alignment.centerRight,
@@ -389,7 +402,7 @@ class PhoneControlLayout extends StatelessWidget {
         ],
         PhonePill(
           key: const ValueKey('phone_history'),
-          semantic: 'History',
+          semantic: l10n.navHistory,
           onTap: onHistory,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: Row(
@@ -423,11 +436,7 @@ class PhoneControlLayout extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _CardHeader(
-            icon: Icons.speed_rounded,
-            title: 'DRIVE',
-            status: driveLabel,
-          ),
+          _CardHeader(icon: Icons.speed_rounded, title: l10n.ctlDrive),
           const SizedBox(height: 8),
           Expanded(
             child: KeyedSubtree(
@@ -437,6 +446,7 @@ class PhoneControlLayout extends StatelessWidget {
                   enabled: true,
                   onDirection: onDirection,
                   onRelease: onRelease,
+                  onStick: onStick,
                 ),
               ),
             ),
@@ -449,7 +459,7 @@ class PhoneControlLayout extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Expanded(child: ControlCaps('SPEED (PWM)')),
+                    Expanded(child: ControlCaps(l10n.ctlSpeedPwm)),
                     Text(
                       '${speed.round()}%',
                       style: TextStyle(
@@ -465,17 +475,64 @@ class PhoneControlLayout extends StatelessWidget {
                   child: ControlFader(
                     value: speed,
                     max: 100,
-                    semanticLabel: 'Speed',
+                    semanticLabel: l10n.ctlSpeed,
                     onChanged: onSpeed,
                   ),
                 ),
-                const SizedBox(height: 4),
-                GearChips(speed: speed, onSelect: onSpeed),
               ],
             ),
           ),
+          const SizedBox(height: 6),
+          _armActions(context),
         ],
       ),
+    );
+  }
+
+  /// KUNCI, SCAN and power as keycaps under the speed fader (Figma 885:31003, 0229).
+  /// Short phones (800x360) drop the captions; screen readers still get them.
+  Widget _armActions(BuildContext context) {
+    final on = link == ControlLink.connected;
+    final shortScreen = MediaQuery.sizeOf(context).height < 400;
+    final size = shortScreen ? 30.0 : 36.0;
+    final powerLabel = on
+        ? l10n.cfgOnline
+        : (link == ControlLink.waiting ? l10n.ctlConnecting : l10n.ctlOffline);
+    Widget slot(Widget k) => Expanded(child: Center(child: k));
+    return Row(
+      children: [
+        slot(TransportKey(
+          key: const ValueKey('phone_lock'),
+          icon: locked ? Icons.center_focus_weak : Icons.center_focus_strong,
+          label: locked ? l10n.ctlUnlock : l10n.ctlLock,
+          size: size,
+          showLabel: !shortScreen,
+          onTap: onLock,
+        )),
+        slot(TransportKey(
+          key: const ValueKey('phone_scan'),
+          icon: Icons.quiz_outlined,
+          label: l10n.ctlScan,
+          primary: true,
+          size: size,
+          showLabel: !shortScreen,
+          onTap: onScan,
+        )),
+        slot(Tooltip(
+          message: on || link == ControlLink.waiting
+              ? l10n.ctlDisconnectRobot
+              : l10n.ctlConnectRobot,
+          child: TransportKey(
+            key: const ValueKey('robot_power'),
+            icon: Icons.power_settings_new_rounded,
+            label: powerLabel,
+            primary: on,
+            size: size,
+            showLabel: !shortScreen,
+            onTap: onPower,
+          ),
+        )),
+      ],
     );
   }
 
@@ -483,17 +540,17 @@ class PhoneControlLayout extends StatelessWidget {
     final p = context.elio;
     final live = link == ControlLink.connected && frame != null;
     final liveText = live
-        ? (stopped ? 'LIVE · scan paused' : 'LIVE · ${fps.round()} fps')
-        : 'No video';
+        ? (stopped ? l10n.ctlLiveScanPaused : l10n.ctlLiveFps(fps.round()))
+        : l10n.ctlNoVideo;
     final (connText, connColor) = switch (link) {
-      ControlLink.connected => ('Connected', p.primary),
-      ControlLink.waiting => ('Connecting...', p.secondaryText),
-      ControlLink.disconnected => ('Offline', p.borderStrong),
+      ControlLink.connected => (l10n.cfgConnected, p.primary),
+      ControlLink.waiting => (l10n.ctlConnecting, p.secondaryText),
+      ControlLink.disconnected => (l10n.ctlOffline, p.borderStrong),
     };
     return Column(
       children: [
         SizedBox(
-          height: 30,
+          height: _stopSize,
           child: skeleton
               ? const SizedBox.shrink()
               : Row(
@@ -505,14 +562,14 @@ class PhoneControlLayout extends StatelessWidget {
                     const SizedBox(width: 6),
                     _IconToggle(
                       icon: Icons.center_focus_strong_outlined,
-                      label: 'Scan quiz',
+                      label: l10n.ctlScanQuiz,
                       value: scanQuizOn,
                       onChanged: onScanQuiz,
                     ),
                     const SizedBox(width: 6),
                     _IconToggle(
                       icon: Icons.volume_up_outlined,
-                      label: 'Voice',
+                      label: l10n.ctlVoice,
                       value: voiceOn,
                       onChanged: onVoice,
                     ),
@@ -522,6 +579,8 @@ class PhoneControlLayout extends StatelessWidget {
                         child: _InfoChip(dot: connColor, text: connText),
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    _stopOrGo(),
                   ],
                 ),
         ),
@@ -544,7 +603,7 @@ class PhoneControlLayout extends StatelessWidget {
     } else if (link == ControlLink.waiting) {
       body = Center(
         child: Text(
-          'Connecting...',
+          l10n.ctlConnecting,
           style: TextStyle(color: p.textSecondary, fontSize: 14),
         ),
       );
@@ -552,10 +611,28 @@ class PhoneControlLayout extends StatelessWidget {
       body = SizedBox.expand(
         child: Image.memory(frame!, fit: BoxFit.cover, gaplessPlayback: true),
       );
+      if (lockBox != null) body = Stack(children: [body, Positioned.fill(child: _lockOverlay())]);
+      if (tagText != null) {
+        body = Stack(children: [
+          body,
+          Positioned(
+            key: const ValueKey('phone_tag_text'),
+            left: 8,
+            top: 8,
+            child: ColoredBox(
+              color: Colors.black54,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                child: Text(tagText!, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ),
+        ]);
+      }
     } else {
       body = Center(
         child: Text(
-          'Connected. Waiting for camera frames...',
+          l10n.ctlWaitingFrames,
           style: TextStyle(color: p.textSecondary, fontSize: 13),
         ),
       );
@@ -575,6 +652,50 @@ class PhoneControlLayout extends StatelessWidget {
     );
   }
 
+  /// The locked item's box over the video. The frame is shown with BoxFit.cover, so the box is
+  /// scaled like the frame and shifted by the cropped margin. It glides to each new tracked box
+  /// over about the time between two (the camera tracks every 2nd frame, ~5 times a second).
+  Widget _lockOverlay() => LayoutBuilder(builder: (context, c) {
+    final fw = c.maxWidth / c.maxHeight > frameAspect ? c.maxWidth : c.maxHeight * frameAspect;
+    final fh = fw / frameAspect;
+    final dx = (c.maxWidth - fw) / 2, dy = (c.maxHeight - fh) / 2;
+    final b = lockBox!;
+    final left = dx + b.left * fw, top = dy + b.top * fh;
+    const green = Color(0xFF22C55E);
+    return Stack(children: [
+      AnimatedPositioned(
+        key: const ValueKey('phone_lock_box'),
+        duration: const Duration(milliseconds: 200),
+        left: left,
+        top: top,
+        width: b.width * fw,
+        height: b.height * fh,
+        child: const DecoratedBox(
+          decoration: BoxDecoration(border: Border.fromBorderSide(BorderSide(color: green, width: 3))),
+        ),
+      ),
+      // The name sits on the box's top edge, outside it (owner, 4 Nov); inside only when the box
+      // touches the top of the video, so it is never cut off.
+      if (lockLabel != null)
+        AnimatedPositioned(
+          key: const ValueKey('phone_lock_label'),
+          duration: const Duration(milliseconds: 200),
+          left: left,
+          top: top >= _lockLabelHeight ? top - _lockLabelHeight : top,
+          height: _lockLabelHeight,
+          child: ColoredBox(
+            color: green,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              child: Text(lockLabel!, style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.2, fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ),
+    ]);
+  });
+
+  static const _lockLabelHeight = 17.0;
+
   Widget _actionBar(BuildContext context) {
     final p = context.elio;
     return KeyedSubtree(
@@ -590,7 +711,7 @@ class PhoneControlLayout extends StatelessWidget {
                     const SizedBox(width: 12),
                     TransportKey(
                       icon: Icons.back_hand_outlined,
-                      label: 'PICK UP',
+                      label: l10n.ctlPickUp,
                       primary: true,
                       size: 48,
                       onTap: onPickUp,
@@ -598,7 +719,7 @@ class PhoneControlLayout extends StatelessWidget {
                     const SizedBox(width: 12),
                     TransportKey(
                       icon: Icons.front_hand_outlined,
-                      label: 'RELEASE',
+                      label: l10n.ctlRelease,
                       size: 48,
                       onTap: onReleaseGripper,
                     ),
@@ -611,7 +732,7 @@ class PhoneControlLayout extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              const Expanded(child: ControlCaps('GRIPPER')),
+                              Expanded(child: ControlCaps(l10n.ctlGripperCaps)),
                               Text(
                                 '${gripper.round()}%',
                                 style: TextStyle(
@@ -627,7 +748,7 @@ class PhoneControlLayout extends StatelessWidget {
                             child: ControlFader(
                               value: gripper,
                               max: 100,
-                              semanticLabel: 'Gripper',
+                              semanticLabel: l10n.ctlGripper,
                               onChanged: onGripper,
                             ),
                           ),
@@ -643,10 +764,8 @@ class PhoneControlLayout extends StatelessWidget {
 
   Widget _armCard(BuildContext context) {
     final p = context.elio;
-    final on = link == ControlLink.connected;
     Widget fader(String label, double value, ValueChanged<double> onChanged) =>
-        SizedBox(
-          width: 48,
+        Expanded(
           child: Column(
             children: [
               Text(
@@ -659,11 +778,14 @@ class PhoneControlLayout extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Expanded(
-                child: ControlFader(
-                  vertical: true,
-                  value: value,
-                  semanticLabel: label,
-                  onChanged: onChanged,
+                child: SizedBox(
+                  width: 48,
+                  child: ControlFader(
+                    vertical: true,
+                    value: value,
+                    semanticLabel: label,
+                    onChanged: onChanged,
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
@@ -677,76 +799,52 @@ class PhoneControlLayout extends StatelessWidget {
         children: [
           _CardHeader(
             icon: Icons.precision_manufacturing_outlined,
-            title: 'ARM',
-            status: armLabel,
+            title: l10n.ctlArm,
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _fade(
-                  fader('HEIGHT', (height / 180).clamp(0.0, 1.0), onHeight),
-                ),
-                const SizedBox(width: 8),
-                _fade(fader('REACH', (reach / 180).clamp(0.0, 1.0), onReach)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Tooltip(
-                        message: on || link == ControlLink.waiting
-                            ? 'Putuskan robot'
-                            : 'Hubungkan robot',
-                        child: PhoneGlowButton(
-                          key: const ValueKey('robot_power'),
-                          kind: on ? GlowKind.powerOn : GlowKind.powerOff,
-                          size: 44,
-                          onTap: onPower,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        on
-                            ? 'Online'
-                            : (link == ControlLink.waiting
-                                  ? 'Connecting...'
-                                  : 'Offline'),
-                        maxLines: 1,
-                        style: TextStyle(
-                          color: on ? p.primaryText : p.textSecondary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      KeyedSubtree(
-                        key: stopKey,
-                        child: _showGo
-                            ? PhoneGlowButton(
-                                key: const ValueKey('phone_go'),
-                                kind: GlowKind.go,
-                                size: 76,
-                                onTap: onGo,
-                              )
-                            : PhoneGlowButton(
-                                key: const ValueKey('phone_stop'),
-                                kind: GlowKind.stop,
-                                size: 76,
-                                onTap: onStop,
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            child: _fade(
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  fader(l10n.ctlHeight, (height / 180).clamp(0.0, 1.0), onHeight),
+                  const SizedBox(width: 8),
+                  fader(l10n.ctlReach, (reach / 180).clamp(0.0, 1.0), onReach),
+                ],
+              ),
             ),
+          ),
+          const SizedBox(height: 8),
+          ControlCaps(l10n.controlBase.toUpperCase()),
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 56,
+            child: _fade(BaseJoystick(onStick: onBaseStick)),
           ),
         ],
       ),
     );
   }
+
+  static const _stopSize = 44.0;
+
+  /// STOP (GO after a stop with a live link) at the end of the camera row (0229).
+  Widget _stopOrGo() => KeyedSubtree(
+    key: stopKey,
+    child: _showGo
+        ? PhoneGlowButton(
+            key: const ValueKey('phone_go'),
+            kind: GlowKind.go,
+            size: _stopSize,
+            onTap: onGo,
+          )
+        : PhoneGlowButton(
+            key: const ValueKey('phone_stop'),
+            kind: GlowKind.stop,
+            size: _stopSize,
+            onTap: onStop,
+          ),
+  );
 }
 
 /// A card with the R2 shape: 20 dp radius, 4 dp bottom lip.
@@ -815,7 +913,8 @@ class PhonePill extends StatelessWidget {
         ),
         child: InkWell(
           customBorder: const StadiumBorder(),
-          onTap: onTap,
+          onTap: withFeedback(onTap),
+          enableFeedback: false,
           child: Padding(padding: padding, child: child),
         ),
       ),
@@ -852,7 +951,7 @@ class _GuideButton extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            'Guide',
+            l10n.ctlGuide,
             style: TextStyle(
               color: p.textPrimary,
               fontWeight: FontWeight.w700,
@@ -861,6 +960,32 @@ class _GuideButton extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// "Advanced" (Figma Phone/Advanced settings button): opens the teacher's robot settings.
+class _AdvancedButton extends StatelessWidget {
+  const _AdvancedButton({required this.onTap, this.compact = false});
+  final VoidCallback onTap;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    final icon = Icon(Icons.tune_rounded, size: 20, color: p.primaryText);
+    return PhonePill(
+      key: const ValueKey('phone_advanced'),
+      semantic: l10n.advButton,
+      onTap: onTap,
+      padding: compact ? const EdgeInsets.all(9) : const EdgeInsets.fromLTRB(10, 7, 14, 7),
+      child: compact
+          ? icon
+          : Row(mainAxisSize: MainAxisSize.min, children: [
+              icon,
+              const SizedBox(width: 6),
+              Text(l10n.advButton, style: TextStyle(color: p.textPrimary, fontWeight: FontWeight.w700, fontSize: 14)),
+            ]),
     );
   }
 }
@@ -944,7 +1069,7 @@ class _StoppedPill extends StatelessWidget {
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                'Robot stopped · scanning paused',
+                l10n.ctlStoppedPaused,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -979,11 +1104,7 @@ class TrophyCount extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.emoji_events_rounded,
-              size: 14,
-              color: ElioTokens.answerYellow,
-            ),
+            const XpIcon(14),
             const SizedBox(width: 3),
             Text(
               '$count',
@@ -1000,15 +1121,11 @@ class TrophyCount extends StatelessWidget {
   }
 }
 
+/// Card title only: the link status lives in the camera row (0229).
 class _CardHeader extends StatelessWidget {
-  const _CardHeader({
-    required this.icon,
-    required this.title,
-    required this.status,
-  });
+  const _CardHeader({required this.icon, required this.title});
   final IconData icon;
   final String title;
-  final (String, Color) status;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -1016,13 +1133,6 @@ class _CardHeader extends StatelessWidget {
       Icon(icon, size: 16, color: context.elio.primaryText),
       const SizedBox(width: 6),
       ControlCaps(title),
-      const Spacer(),
-      Flexible(
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: ControlStatusChip(label: status.$1, color: status.$2),
-        ),
-      ),
     ],
   );
 }
@@ -1098,7 +1208,7 @@ class _IconToggle extends StatelessWidget {
       child: GestureDetector(
         key: ValueKey('toggle_$label'),
         behavior: HitTestBehavior.opaque,
-        onTap: () => onChanged(!value),
+        onTap: withFeedback(() => onChanged(!value)),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: p.surface,
@@ -1158,7 +1268,7 @@ class _OfflinePanel extends StatelessWidget {
             controlArt('elio_disconnected', height: 84),
             const SizedBox(height: 6),
             Text(
-              'Robot offline',
+              l10n.ctlRobotOffline,
               style: TextStyle(
                 color: p.textPrimary,
                 fontSize: 18,
@@ -1167,13 +1277,13 @@ class _OfflinePanel extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Turn on the robot and join the ELIOS Wi-Fi.',
+              l10n.ctlTurnOnRobot,
               style: TextStyle(color: p.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 8),
             PhonePill(
               key: const ValueKey('phone_connect'),
-              semantic: 'Connect',
+              semantic: l10n.ctlConnect,
               green: true,
               onTap: onConnect,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
@@ -1187,7 +1297,7 @@ class _OfflinePanel extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Connect',
+                    l10n.ctlConnect,
                     style: TextStyle(
                       color: p.primaryText,
                       fontWeight: FontWeight.w700,
@@ -1272,9 +1382,9 @@ class PhoneGlowButton extends StatelessWidget {
     };
     final power = kind == GlowKind.powerOn || kind == GlowKind.powerOff;
     final label = switch (kind) {
-      GlowKind.stop => 'Berhenti darurat',
+      GlowKind.stop => l10n.ctlEmergencyStop,
       GlowKind.go => 'GO',
-      _ => 'Power',
+      _ => l10n.ctlPower,
     };
     return Semantics(
       button: true,
@@ -1298,7 +1408,8 @@ class PhoneGlowButton extends StatelessWidget {
           ),
           child: InkWell(
             customBorder: const CircleBorder(),
-            onTap: onTap,
+            onTap: withFeedback(onTap),
+            enableFeedback: false,
             child: Center(
               child: power
                   ? Icon(
@@ -1330,6 +1441,139 @@ class PhoneGlowButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// BASIS joystick (Figma 885:31003, 0229): the drive joystick's style as a left-right capsule.
+/// How far the knob is held left or right sets how fast the base turns (0231); the centre line
+/// is forward.
+class BaseJoystick extends StatefulWidget {
+  const BaseJoystick({super.key, required this.onStick});
+
+  /// The knob's x in [-1, 1] on every move (positive right, towards servo 180); 0 on let go.
+  final ValueChanged<double> onStick;
+
+  @override
+  State<BaseJoystick> createState() => _BaseJoystickState();
+}
+
+class _BaseJoystickState extends State<BaseJoystick> {
+  double _dx = 0;
+  int _dir = 0;
+  int? _pointer;
+
+  void _move(double x, double width, double knob) {
+    final half = (width - knob) / 2;
+    final dx = (x - width / 2).clamp(-half, half);
+    final dir = baseJoystickDir(dx, half);
+    setState(() => _dx = dx);
+    widget.onStick(half > 0 ? dx / half : 0);
+    if (dir == _dir) return;
+    _dir = dir;
+    if (dir != 0) controlFeedback();
+  }
+
+  void _end(PointerEvent e) {
+    if (e.pointer != _pointer) return;
+    _pointer = null;
+    setState(() => _dx = 0);
+    _dir = 0;
+    widget.onStick(0);
+  }
+
+  @override
+  void dispose() {
+    if (_pointer != null) widget.onStick(0); // removed while held: let go
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    return LayoutBuilder(
+      builder: (context, c) {
+        final w = c.maxWidth, h = c.maxHeight;
+        final knob = h * 0.72;
+        Widget chevron(IconData icon, Alignment a) => Align(
+          alignment: a,
+          child: Icon(icon, size: 18, color: p.textSecondary),
+        );
+        return Semantics(
+          label: '${l10n.ctlBaseLeft} / ${l10n.ctlBaseRight}',
+          child: GestureDetector(
+            onHorizontalDragStart: (_) {}, // claims the drag, like the drive joystick
+            child: Listener(
+              behavior: HitTestBehavior.opaque,
+              onPointerDown: (e) {
+                if (_pointer != null) return;
+                _pointer = e.pointer;
+                _move(e.localPosition.dx, w, knob);
+              },
+              onPointerMove: (e) {
+                if (e.pointer == _pointer) _move(e.localPosition.dx, w, knob);
+              },
+              onPointerUp: _end,
+              onPointerCancel: _end,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: p.surfaceRaised,
+                        borderRadius: BorderRadius.circular(h / 2),
+                        border: Border.all(color: p.borderMedium, width: 2),
+                        boxShadow: [BoxShadow(color: p.borderMedium, offset: const Offset(0, 4))],
+                      ),
+                    ),
+                  ),
+                  Positioned.fill(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: h * 0.3, vertical: h * 0.14),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: p.surface,
+                          borderRadius: BorderRadius.circular(h),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Center(child: Container(width: 2, height: h * 0.5, color: p.primary.withValues(alpha: 0.5))),
+                  chevron(Icons.keyboard_arrow_left_rounded, Alignment.centerLeft),
+                  chevron(Icons.keyboard_arrow_right_rounded, Alignment.centerRight),
+                  Positioned(
+                    left: (w - knob) / 2 + _dx,
+                    top: (h - knob) / 2,
+                    child: Container(
+                      key: const ValueKey('base_knob'),
+                      width: knob,
+                      height: knob,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: p.primary,
+                        border: Border.all(color: p.primaryActive, width: 2),
+                        boxShadow: [
+                          BoxShadow(color: p.primaryActive, offset: const Offset(0, 3)),
+                          if (_dir != 0) ...ElioGlow.medium,
+                        ],
+                      ),
+                      child: Icon(
+                        switch (_dir) {
+                          -1 => Icons.keyboard_arrow_left_rounded,
+                          1 => Icons.keyboard_arrow_right_rounded,
+                          _ => Icons.code_rounded,
+                        },
+                        color: p.onPrimary,
+                        size: knob * 0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

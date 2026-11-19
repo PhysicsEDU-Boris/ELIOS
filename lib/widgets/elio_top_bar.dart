@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/elio_tokens.dart';
 import 'auth/auth_widgets.dart' show authPalette;
+import 'package:elio/l10n/l10n.dart';
 
 const _barHeight = 56.0;
 const _tapTarget = 48.0;
@@ -19,6 +20,7 @@ class ElioTopBar extends StatelessWidget {
     this.photoUrl,
     this.avatarFocusNode,
     this.trailing,
+    this.foreground,
   });
 
   final String title;
@@ -31,6 +33,9 @@ class ElioTopBar extends StatelessWidget {
 
   /// Optional actions after the title (Home: trophy pill and bell).
   final Widget? trailing;
+
+  /// Title and subtitle colour on a coloured bar (Learn: on the green header).
+  final Color? foreground;
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +63,7 @@ class ElioTopBar extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: ElioTokens.body.copyWith(
-                      color: p.textPrimary,
+                      color: foreground ?? p.textPrimary,
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                       height: 1.25,
@@ -70,7 +75,7 @@ class ElioTopBar extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: ElioTokens.bodySmall.copyWith(
-                        color: p.textSecondary,
+                        color: foreground?.withValues(alpha: 0.8) ?? p.textSecondary,
                       ),
                     ),
                 ],
@@ -106,7 +111,7 @@ class _AvatarState extends State<ElioAvatar> {
     final hasPhoto = photo != null && photo.isNotEmpty;
     return Semantics(
       button: true,
-      label: 'Open profile menu',
+      label: l10n.openProfileMenu,
       excludeSemantics: true,
       onTap: widget.onTap,
       child: InkResponse(

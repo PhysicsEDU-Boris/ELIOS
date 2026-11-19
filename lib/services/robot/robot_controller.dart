@@ -8,12 +8,15 @@ import 'r1_constants.dart';
 
 /// The robot's three bins, with their wire names (0023).
 enum Bin {
-  organik('organik'),
-  anorganik('anorganik'),
-  b3('b3');
+  organik('organik', 3),
+  anorganik('anorganik', 2),
+  b3('b3', 4);
 
-  const Bin(this.wire);
+  const Bin(this.wire, this.tagId);
   final String wire;
+
+  /// The tag36h11 id on this bin (docs/print/apriltags-bins-id2-id3-id4-A4.pdf, 0233).
+  final int tagId;
 
   /// From a waste category id (`organic`, `inorganic`, `hazardous`); null otherwise.
   static Bin? fromCategoryId(String? id) => switch (id) {
@@ -135,6 +138,11 @@ abstract class RobotController {
   int pick({double? distCm, double? lateralCm}) => send('PICK', {'dist_cm': distCm, 'lateral_cm': lateralCm});
   int moveToBin(Bin bin) => send('MOVE_TO_BIN', {'bin': bin.wire});
   int drop() => send('DROP');
+
+  /// A planned manual arm move (0234): one six-servo pose (F0..F5, servo degrees, before trim)
+  /// per leg; the MaixCAM2 sends them to the ESP32 in order. Replies ack, then motion_done.
+  int armPose(List<List<double>> path) =>
+      send('ARM_POSE', {'path': [for (final p in path) [for (final v in p) (v * 10).round() / 10]]});
 
   /// Resend the current angles (freeze the arm where it is); never detaches a servo.
   int hold() => send('HOLD');

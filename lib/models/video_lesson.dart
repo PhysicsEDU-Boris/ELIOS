@@ -1,16 +1,25 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'content_i18n.dart';
+import 'content_media.dart';
+
 class VideoLesson {
+  /// Translated fields by language (decision 0185); empty when none.
+  final Map<String, dynamic> i18n;
   final String id;
   final String moduleId;
-  final String sectionTitle;
-  final String title;
-  final String description;
+  final String _sectionTitle;
+  String get sectionTitle => contentText(i18n, 'sectionTitle', _sectionTitle);
+  final String _title;
+  String get title => contentText(i18n, 'title', _title);
+  final String _description;
+  String get description => contentText(i18n, 'description', _description);
   final int durationMinutes;
   final int durationSeconds;
   final String durationLabel;
   final String videoUrl;
-  final String thumbnailUrl;
+  final String _thumbnailUrl;
+  String get thumbnailUrl => contentMediaUrl(_thumbnailUrl);
   final String youtubeId;
   final String level;
   final String moduleLabel;
@@ -22,14 +31,14 @@ class VideoLesson {
   const VideoLesson({
     required this.id,
     required this.moduleId,
-    required this.sectionTitle,
-    required this.title,
-    required this.description,
+    required String sectionTitle,
+    required String title,
+    required String description,
     required this.durationMinutes,
     this.durationSeconds = 0,
     required this.durationLabel,
     required this.videoUrl,
-    required this.thumbnailUrl,
+    required String thumbnailUrl,
     required this.youtubeId,
     required this.level,
     required this.moduleLabel,
@@ -37,7 +46,11 @@ class VideoLesson {
     required this.isFeatured,
     required this.order,
     required this.isPublished,
-  });
+    this.i18n = const {},
+  }) : _thumbnailUrl = thumbnailUrl,
+       _sectionTitle = sectionTitle,
+       _title = title,
+       _description = description;
 
   factory VideoLesson.fromMap(Map<String, dynamic> map, String documentId) {
     final rawId = map['id'];
@@ -55,6 +68,7 @@ class VideoLesson {
     final thumbnailUrl = _readString(map, 'thumbnailUrl') ?? '';
 
     return VideoLesson(
+      i18n: contentI18n(map),
       id: parsedId,
       moduleId: map['moduleId'] is String ? map['moduleId'] as String : '',
       sectionTitle: map['sectionTitle'] is String
@@ -94,16 +108,17 @@ class VideoLesson {
 
   Map<String, dynamic> toMap() {
     return {
+      if (i18n.isNotEmpty) 'i18n': i18n,
       'id': id,
       'moduleId': moduleId,
-      'sectionTitle': sectionTitle,
-      'title': title,
-      'description': description,
+      'sectionTitle': _sectionTitle,
+      'title': _title,
+      'description': _description,
       'durationMinutes': durationMinutes,
       'durationSeconds': durationSeconds,
       'durationLabel': durationLabel,
       'videoUrl': videoUrl,
-      'thumbnailUrl': thumbnailUrl,
+      'thumbnailUrl': _thumbnailUrl,
       'youtubeId': youtubeId,
       'level': level,
       'moduleLabel': moduleLabel,

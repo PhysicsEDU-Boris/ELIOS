@@ -1,7 +1,7 @@
 import 'package:elio/models/chat_message.dart';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/widgets/waste_quiz_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

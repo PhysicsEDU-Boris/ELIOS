@@ -1,12 +1,14 @@
+import 'dart:typed_data';
 // The R3 phone layout wired like ControlScreen._phoneLayout: every motion goes
 // through a real MotionGate into the recording fake robot (reuses the R2 rig).
 import 'package:elio/models/chat_message.dart';
 import 'package:elio/models/control_session.dart';
 import 'package:elio/models/quiz_explanation.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/robot_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
+import 'package:elio/services/robot/joystick_controller.dart';
 import 'package:elio/services/robot/motion_gate.dart';
 import 'package:elio/theme/elio_dark_theme.dart';
 import 'package:elio/theme/elio_light_theme.dart';
@@ -135,8 +137,9 @@ WasteQuizUiState essayInput() => WasteQuizUiState(
 );
 
 class _Disposes extends StatefulWidget {
-  const _Disposes(this.gate, this.child);
+  const _Disposes(this.gate, this.joystick, this.child);
   final MotionGate gate;
+  final JoystickController joystick;
   final Widget child;
   @override
   State<_Disposes> createState() => _DisposesState();
@@ -145,6 +148,7 @@ class _Disposes extends StatefulWidget {
 class _DisposesState extends State<_Disposes> {
   @override
   void dispose() {
+    widget.joystick.stop();
     widget.gate.dispose();
     super.dispose();
   }
@@ -163,6 +167,10 @@ Future<Rig> pumpPhone(
   bool skeleton = false,
   WasteQuizUiState quiz = const WasteQuizUiState(),
   int? guideStep,
+  Uint8List? frame,
+  Rect? lockBox,
+  double frameAspect = 4 / 3,
+  bool locked = false,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -181,12 +189,15 @@ Future<Rig> pumpPhone(
       ..linkRestored()
       ..linkLost();
   }
+  var pwm = 75.0;
+  final joystick = harnessJoystick(gate, () => pwm);
   final keys = List.generate(4, (_) => GlobalKey());
   var guideOpen = guideStep != null;
   final wrap = dark ? ElioDarkTheme.wrap : ElioLightTheme.wrap;
   await tester.pumpWidget(
     _Disposes(
       gate,
+      joystick,
       RepaintBoundary(
         key: shotKey,
         child: ProviderScope(
@@ -199,6 +210,7 @@ Future<Rig> pumpPhone(
               Consumer(
                 builder: (context, ref, _) {
                   final state = ref.watch(robotControlProvider);
+                  pwm = state.pwmSpeed;
                   final notifier = ref.read(robotControlProvider.notifier);
                   final q = ref.watch(wasteQuizProvider);
                   void stop() {
@@ -215,28 +227,15 @@ Future<Rig> pumpPhone(
                           stopped: gate.stopped,
                           stopReason: gate.stopReason,
                           skeleton: skeleton,
-                          driveLabel: (
-                            gate.stopped ? 'Stopped' : 'Forward',
-                            Colors.green,
-                          ),
-                          armLabel: (
-                            gate.stopped ? 'Stopped' : 'Ready',
-                            Colors.green,
-                          ),
                           speed: state.pwmSpeed,
                           onSpeed: (v) {
                             tap('speed');
                             notifier.setPwmSpeed(v);
                           },
-                          onDirection: (d) {
-                            tap('drive');
-                            driveCommand(gate, d, state.pwmSpeed.toInt());
-                          },
-                          onRelease: () {
-                            tap('wheels stop');
-                            gate.stopWheels();
-                          },
-                          frame: null,
+                          onStick: (v) => joystick.setDriveStick(v.dx, v.dy),
+                          onDirection: (_) => tap('drive'),
+                          onRelease: () => tap('wheels stop'),
+                          frame: frame,
                           fps: 10,
                           scanQuizOn: true,
                           onScanQuiz: (_) => tap('scan quiz'),
@@ -269,6 +268,10 @@ Future<Rig> pumpPhone(
                             tap('reach');
                             gate.servo('reach', (v * 180).toInt());
                           },
+                          onBaseStick: (x) {
+                            tap(x == 0 ? 'base stop' : 'base');
+                            joystick.setArmStick(x);
+                          },
                           onPower: () => tap('power'),
                           onConnect: () => tap('connect'),
                           onStop: stop,
@@ -285,10 +288,17 @@ Future<Rig> pumpPhone(
                           onAvatar: () => tap('avatar'),
                           onBack: () => tap('exit'),
                           onGuide: () => setState(() => guideOpen = true),
+                          onAdvanced: () => tap('advanced'),
                           driveKey: keys[0],
                           stopKey: keys[1],
                           actionKey: keys[2],
                           quizKey: keys[3],
+                          onLock: () => tap('lock'),
+                          locked: locked,
+                          onScan: () => tap('scan'),
+                          lockBox: lockBox,
+                          lockLabel: lockBox == null ? null : 'Kardus',
+                          frameAspect: frameAspect,
                           overlays: [
                             Positioned.fill(
                               child: WasteQuizPopup(onStop: stop, showLauncher: false),
@@ -322,5 +332,5 @@ Future<Rig> pumpPhone(
   await tester.pump(const Duration(milliseconds: 500));
   robot.sent.clear();
   taps.clear();
-  return Rig(robot, gate);
+  return Rig(robot, gate, joystick);
 }

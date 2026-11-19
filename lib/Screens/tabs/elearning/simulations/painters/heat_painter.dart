@@ -92,14 +92,19 @@ class ThermometerPainter extends CustomPainter {
     canvas.drawRRect(tubeRect, paintOutline);
 
     // Fill
-    final fillPaint = Paint()..color = temp >= 60 ? Colors.red : (temp >= 55 ? Colors.orange : Colors.blue);
+    final fillPaint = Paint()
+      ..color = temp >= 60
+          ? Colors.red
+          : (temp >= 55 ? Colors.orange : Colors.blue);
     canvas.drawCircle(bulbCenter, bulbRadius - 2, fillPaint);
 
     // Fill rect
     final minTemp = 25.0;
     final maxTemp = 65.0;
     final clampedTemp = temp.clamp(minTemp, maxTemp);
-    final fillHeight = ((clampedTemp - minTemp) / (maxTemp - minTemp)) * (height - bulbRadius * 2);
+    final fillHeight =
+        ((clampedTemp - minTemp) / (maxTemp - minTemp)) *
+        (height - bulbRadius * 2);
     final tubeInnerRect = Rect.fromLTWH(
       tubeLeft + 2,
       height - bulbRadius * 1.5 - fillHeight,
@@ -107,16 +112,28 @@ class ThermometerPainter extends CustomPainter {
       fillHeight + bulbRadius, // Connect down to bulb
     );
     canvas.drawRect(tubeInnerRect, fillPaint);
-    
+
     // Draw tick marks
-    final tickPaint = Paint()..color = elioMuted..strokeWidth = 1;
+    final tickPaint = Paint()
+      ..color = elioMuted
+      ..strokeWidth = 1;
     final ticks = [25, 35, 45, 55, 65];
     for (final t in ticks) {
-      final y = height - bulbRadius * 1.5 - ((t - minTemp) / (maxTemp - minTemp)) * (height - bulbRadius * 2);
-      canvas.drawLine(Offset(tubeLeft + tubeWidth, y), Offset(tubeLeft + tubeWidth + 5, y), tickPaint);
-      
+      final y =
+          height -
+          bulbRadius * 1.5 -
+          ((t - minTemp) / (maxTemp - minTemp)) * (height - bulbRadius * 2);
+      canvas.drawLine(
+        Offset(tubeLeft + tubeWidth, y),
+        Offset(tubeLeft + tubeWidth + 5, y),
+        tickPaint,
+      );
+
       // Text
-      final textSpan = TextSpan(text: '$t°', style: const TextStyle(color: elioMuted, fontSize: 10));
+      final textSpan = TextSpan(
+        text: '$t°',
+        style: const TextStyle(color: elioMuted, fontSize: 10),
+      );
       final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr);
       tp.layout();
       tp.paint(canvas, Offset(tubeLeft + tubeWidth + 8, y - tp.height / 2));

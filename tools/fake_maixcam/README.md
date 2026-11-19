@@ -49,6 +49,11 @@ Options:
 - `--port` (default 8765)
 - `--fps` (default: the scenario's, else 10)
 - `--old-firmware`
+- `--bin-tag right|wrong|none` (default right): the AprilTag seen at a bin's state point after `MOVE_TO_BIN` (0233)
+
+`ARM_POSE` (0234) plays the app's planned legs; a leg over the tank is logged as a warning.
+`MOVE_TO_BIN` / `DROP` play the bin's saved sequence from `firmware/maixcam2/bin_sequences.json`
+(B3 for now) through the sim's tank planner; other bins use the placeholder `BIN_TARGETS`.
 - `--seed` (sets the photo choice and the noise; the same seed repeats a run)
 - `--check-labels`: compares `labels.yaml` with `main.py`'s `LABELS` and the app's
   `ScannedWaste.detectorLabels`, then exits. Exit code 1 means a mismatch.
@@ -126,7 +131,7 @@ Loading a scenario checks both, and prints `[Scenario] WARNING ...` (it is not a
 | `label_change_same_box` | Paper becomes Cardboard on the same box at 30 s. |
 | `link_drop_mid_quiz` | Keep the first quiz open; the link goes silent at 30 s for 12 s (longer than the 8 s watchdog): reconnect. |
 | `old_firmware` | No P1 fields: behaviour identical to `single_item_60s`. |
-| `j1_sweep_item_in_view` | From 25 s, J1 turns to 25, -25 and 0 at 60 deg/s; the box slides out and back. |
+| `j1_sweep_item_in_view` | From 25 s, J1 turns to 25, -25 and 0 at 40 deg/s; the box slides out and back. |
 | `organic_items`, `organic_mango` | The owner's organic checks, now on dataset crops: a cut fruit (the closest to a mango), then a peel at 38 s. |
 | `r1_full_sort` | Plastic PICK → organik bin → DROP. |
 | `r1_b3_sort` | E_Waste phone for the B3 hazard-confirmation path. |
@@ -160,7 +165,7 @@ events:                   # t in seconds from start_stream; tested events at t >
   - {t: 30, do: set_label, item: bottle, label: Metal}
   - {t: 30, do: noise, flicker: 0.2}
   - {t: 30, do: link_drop, for_s: 12}    # silent, and new connections refused, for 12 s
-  - {t: 25, do: arm, j1: 25}             # J1 moves there at 60 deg/s
+  - {t: 25, do: arm, j1: 25}             # J1 moves there at 40 deg/s
 ```
 
 A label must be one of the 10 detector classes. Unknown labels, items or events are refused when
@@ -185,14 +190,14 @@ reconnect you can read STOP and `motor left=0 right=0` coming first.
 - Answered:
   - `STATUS`: ack, with `drive_locked`, `ee_mm: [x,y,z]` and `at_home` (commanded target is all
     zero joints and gripper open; this is not physical position feedback);
-  - `HOME`: ack, then motion_done after the simulated joints reach zero at 60 deg/s; opens the
+  - `HOME`: ack, then motion_done after the simulated joints reach zero at the firmware speeds; opens the
     gripper to its D2 home value;
   - `LOCK_DRIVE` / `UNLOCK_DRIVE`: ack; `motor` is logged as dropped while locked;
   - `HOLD`: ack, then motion_done;
   - `STOP`: ack;
   - `J1_SWEEP {"to": deg}`: fake only, not part of 0023. Ack, then motion_done when J1 arrives at
-    60 deg/s.
-- `PICK`, `MOVE_TO_BIN` and `DROP`: use the simulator's IK and 60 deg/s joint motion; ACK is
+    the firmware speeds.
+- `PICK`, `MOVE_TO_BIN` and `DROP`: use the simulator's IK and per-joint firmware speeds (base 40, Arm A/B 30, pitch/yaw 45 deg/s, decision 0230); ACK is
   immediate and `motion_done` follows arrival. PICK matches supplied distance/lateral to a visible
   card; unreachable targets return `error: unreachable`. The carried card follows the gripper and
   is hidden after DROP.

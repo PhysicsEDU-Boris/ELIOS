@@ -1,4 +1,12 @@
+import 'dart:math' as math;
+
+import 'package:elio/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../services/elio_feedback.dart';
+import '../../../../theme/elio_motion.dart';
+import '../../../../theme/elio_tokens.dart';
+import '../../../../widgets/learn/learn_l3.dart';
 import '../../../../widgets/learn/learn_ui.dart';
 import '../../../../models/physics_module.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,7 +17,6 @@ import '../../../../../physics/density/density_notifier.dart';
 import 'painters/density_painter.dart';
 import 'widgets/sim_module_header.dart';
 import 'widgets/formula_box.dart';
-import 'widgets/sim_canvas_frame.dart';
 import 'widgets/labeled_slider.dart';
 import 'widgets/calc_box.dart';
 import 'widgets/threshold_banner.dart';
@@ -20,21 +27,25 @@ class DensitySimulationPage extends ConsumerStatefulWidget {
   const DensitySimulationPage({super.key});
 
   @override
-  ConsumerState<DensitySimulationPage> createState() => _DensitySimulationPageState();
+  ConsumerState<DensitySimulationPage> createState() =>
+      _DensitySimulationPageState();
 }
 
 class _DensitySimulationPageState extends ConsumerState<DensitySimulationPage> {
-  // Logic for tap-to-sort shake rejection
-  WasteCategory? _shakingBin;
+  WasteCategory? _picked;
+  int _wrong = 0;
+  int _done = 0;
 
+  /// Right bin: chime, success, and the Done sticker bounces. Wrong: knock,
+  /// error, and the bubble shakes (card 20g).
   void _onBinTapped(WasteCategory binType, WasteCategory currentClass) {
-    if (binType != currentClass) {
-      setState(() => _shakingBin = binType);
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          setState(() => _shakingBin = null);
-        }
-      });
+    setState(() => _picked = binType);
+    if (binType == currentClass) {
+      _done++;
+      elioFeedback(ElioSfx.chime, ElioHaptics.success);
+    } else {
+      _wrong++;
+      elioFeedback(ElioSfx.knock, ElioHaptics.error);
     }
   }
 
@@ -43,130 +54,140 @@ class _DensitySimulationPageState extends ConsumerState<DensitySimulationPage> {
     final state = ref.watch(densityProvider);
     final rho = state.density;
     final classification = state.classification;
+    // ρ entering a new material band: one tick (not every pixel).
+    ref.listen(densityProvider.select((s) => s.classification), (a, b) {
+      if (a != b) elioFeedback(ElioSfx.tick, ElioHaptics.select);
+    });
+    final formula = TextSpan(
+      children: [
+        const TextSpan(text: 'ρ = m / V = '),
+        TextSpan(
+          text: fmtNum(rho, 2),
+          style: TextStyle(color: context.elio.secondaryText),
+        ),
+        const TextSpan(text: ' g/cm³'),
+      ],
+    );
 
     return SimulationPageScaffold(
       module: PhysicsModuleId.density,
-      appBarTitle: 'Densitas & Klasifikasi',
-      header: const SimModuleHeader(
-        tag: 'MODUL A · MATERI',
-        title: 'Densitas & Klasifikasi',
-        subtitle: 'Benda dengan massa jenis berbeda diklasifikasikan ke kategori yang sesuai.',
+      heroCanvas: _DensityCanvas(state: state),
+      doneSignal: _done,
+      appBarTitle: l10n.simDensity1,
+      header: SimModuleHeader(
+        tag: l10n.simDensity2,
+        title: l10n.simDensity1,
+        subtitle: l10n.simDensity3,
       ),
       formulaBox: FormulaBox(
-        title: 'RUMUS DENSITAS',
-        formulaText: TextSpan(
-          children: [
-            const TextSpan(text: 'ρ = m / V = '),
-            TextSpan(
-              text: rho.toStringAsFixed(2),
-              style: const TextStyle(color: Color(0xFFFFE08A)),
-            ),
-            const TextSpan(text: ' g/cm³'),
-          ],
-        ),
-        subtitle: 'm = massa · V = volume',
+        title: l10n.simDensity4,
+        formulaText: formula,
+        subtitle: l10n.simDensity5,
       ),
       simulationContent: [
-                  const SizedBox(height: 16),
-                  SimCanvasFrame(
-                    noteText: 'Ubah slider untuk melihat benda berubah',
-                    canvas: _DensityCanvas(state: state),
-                  ),
-                  const SizedBox(height: 16),
-                  Column(
-                    children: [
-                      LabeledSlider(
-                        label: 'Massa (m)',
-                        valueLabel: '${state.massGrams.toStringAsFixed(0)} g',
-                        value: state.massGrams,
-                        min: 100.0,
-                        max: 2000.0,
-                        onChanged: (v) => ref.read(densityProvider.notifier).setMass(v),
-                      ),
-                      const SizedBox(height: 14),
-                      LabeledSlider(
-                        label: 'Volume (V)',
-                        valueLabel: '${state.volumeCm3.toStringAsFixed(0)} cm³',
-                        value: state.volumeCm3,
-                        min: 100.0,
-                        max: 1000.0,
-                        onChanged: (v) => ref.read(densityProvider.notifier).setVolume(v),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  CalcBox(
-                    headerTitle: 'HASIL KLASIFIKASI',
-                    formulaExpression: 'ρ = ${state.massGrams.toStringAsFixed(0)} / ${state.volumeCm3.toStringAsFixed(0)} = ${rho.toStringAsFixed(2)} g/cm³',
-                    statusIcon: classification == WasteCategory.outOfRange
-                        ? Icons.help_outline_rounded
-                        : Icons.check_circle_rounded,
-                    statusColor: classification == WasteCategory.outOfRange
-                        ? context.elio.secondaryText
-                        : context.elio.primaryText,
-                    statusText: classification == WasteCategory.outOfRange
-                        ? 'Material tidak dikenal'
-                        : 'Material: ${_getCategoryName(classification)}',
-                  ),
-                  ThresholdBanner(
-                    visible: classification == WasteCategory.outOfRange,
-                    text: 'Densitas di luar rentang database (bukan plastik, kaca, atau logam yang dikenal).',
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Bins
-                  Text(
-                    'Pilih Tong Sampah:',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.elio.textSecondary),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _BinWidget(
-                        type: WasteCategory.plastic,
-                        label: 'Plastik',
-                        isHighlighted: classification == WasteCategory.plastic,
-                        isShaking: _shakingBin == WasteCategory.plastic,
-                        onTap: () => _onBinTapped(WasteCategory.plastic, classification),
-                      ),
-                      _BinWidget(
-                        type: WasteCategory.glass,
-                        label: 'Kaca',
-                        isHighlighted: classification == WasteCategory.glass,
-                        isShaking: _shakingBin == WasteCategory.glass,
-                        onTap: () => _onBinTapped(WasteCategory.glass, classification),
-                      ),
-                      _BinWidget(
-                        type: WasteCategory.metal,
-                        label: 'Logam',
-                        isHighlighted: classification == WasteCategory.metal,
-                        isShaking: _shakingBin == WasteCategory.metal,
-                        onTap: () => _onBinTapped(WasteCategory.metal, classification),
-                      ),
-                    ],
-                  ),
+        Text(
+          l10n.simDensity4,
+          style: context.text.labelSmall?.copyWith(
+            color: context.elio.primaryText,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text.rich(
+          formula,
+          style: ElioTokens.code.copyWith(
+            fontSize: 20,
+            color: context.elio.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Column(
+          children: [
+            LabeledSlider(
+              label: l10n.simDensity7,
+              valueLabel: '${fmtNum(state.massGrams, 0)} g',
+              value: state.massGrams,
+              min: 100.0,
+              max: 2000.0,
+              onChanged: (v) => ref.read(densityProvider.notifier).setMass(v),
+            ),
+            const SizedBox(height: 14),
+            LabeledSlider(
+              label: 'Volume (V)',
+              valueLabel: '${fmtNum(state.volumeCm3, 0)} cm³',
+              value: state.volumeCm3,
+              min: 100.0,
+              max: 1000.0,
+              onChanged: (v) => ref.read(densityProvider.notifier).setVolume(v),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        CalcBox(
+          headerTitle: l10n.simDensity8,
+          formulaExpression:
+              'ρ = ${fmtNum(state.massGrams, 0)} / ${fmtNum(state.volumeCm3, 0)} = ${fmtNum(rho, 2)} g/cm³',
+          statusIcon: classification == WasteCategory.outOfRange
+              ? Icons.help_outline_rounded
+              : Icons.check_circle_rounded,
+          statusColor: classification == WasteCategory.outOfRange
+              ? context.elio.secondaryText
+              : context.elio.primaryText,
+          statusText: classification == WasteCategory.outOfRange
+              ? l10n.simDensity9
+              : l10n.simDensityMaterial(_getCategoryName(classification)),
+        ),
+        ThresholdBanner(
+          visible: classification == WasteCategory.outOfRange,
+          text: l10n.simDensity10,
+        ),
+        const SizedBox(height: 16),
+
+        Text(l10n.simDensity11, style: context.text.labelLarge),
+        const SizedBox(height: 14),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            for (final (type, label, angle) in [
+              (WasteCategory.plastic, l10n.simDensity12, -4.0),
+              (WasteCategory.glass, l10n.simDensity13, 0.0),
+              (WasteCategory.metal, l10n.simDensity14, 4.0),
+            ])
+              _BinChoice(
+                label: label,
+                angle: angle,
+                picked: _picked == type && type == classification,
+                shake: _picked == type && type != classification
+                    ? _wrong
+                    : null,
+                onTap: () => _onBinTapped(type, classification),
+              ),
+          ],
+        ),
       ],
-      deepExplainCard: const DeepExplainCard(
-                    title: 'Modul A — Densitas & Klasifikasi Sampah',
-                    bodyText: 'Densitas (massa jenis) adalah ukuran seberapa "padat" materi tersusun di dalam suatu benda. Dua benda bisa punya ukuran (volume) yang sama tapi berat yang jauh berbeda — itu karena partikel penyusunnya dikemas dengan kerapatan berbeda. Besi terasa berat digenggam bukan karena besi "lebih banyak," tapi karena atom-atomnya lebih rapat per satuan ruang dibanding, katakanlah, plastik.\n\nKonsep ini penting untuk ELIO karena densitas adalah salah satu sinyal paling murah dan paling cepat untuk menebak jenis material — jauh lebih murah dibanding, misalnya, menganalisis spektrum inframerah tiap benda.',
-                    bulletPoints: [
-                      'ρ = m / V (Densitas = massa / volume). Air murni punya ρ = 1.0 g/cm³ sebagai titik referensi.',
-                      'Rentang: Plastik (0.9–1.4), Kaca (2.4–2.6), Logam (≥ 2.7).',
-                      'Plastik dengan ρ < 1.0 (HDPE, PP) mengapung di air. Plastik dengan ρ > 1.0 (PET, PVC) tenggelam. Ini teknik pemilahan flotasi sungguhan di industri!',
-                      'Miskonsepsi sering menukar posisi m dan V menjadi V/m, mengubah hasil drastis. Densitas adalah massa per volume.',
-                      'Beban tipikal organik ELIO adalah $kTypicalOrganicLoadKg kg. Karena organik jauh lebih padat dari plastik, mengangkat volume organik yang sama membutuhkan usaha energi lebih besar (Lihat Modul D).'
-                    ],
-                  ),
+      deepExplainCard: DeepExplainCard(
+        title: l10n.simDensity15,
+        bodyText: l10n.simDensity16,
+        bulletPoints: [
+          l10n.simDensity17,
+          l10n.simDensity23,
+          l10n.simDensity24,
+          l10n.simDensity18,
+          l10n.simDensityLoad(fmtNum(kTypicalOrganicLoadKg, 1)),
+        ],
+      ),
     );
   }
 
   String _getCategoryName(WasteCategory category) {
     switch (category) {
-      case WasteCategory.plastic: return 'Plastik (0.9 - 1.4 g/cm³)';
-      case WasteCategory.glass: return 'Kaca (2.4 - 2.6 g/cm³)';
-      case WasteCategory.metal: return 'Logam (≥ 2.7 g/cm³)';
-      default: return 'Tidak diketahui';
+      case WasteCategory.plastic:
+        return l10n.simDensity19;
+      case WasteCategory.glass:
+        return l10n.simDensity20;
+      case WasteCategory.metal:
+        return l10n.simDensity21;
+      default:
+        return l10n.simDensity22;
     }
   }
 }
@@ -177,114 +198,97 @@ class _DensityCanvas extends StatelessWidget {
   const _DensityCanvas({required this.state});
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return AspectRatio(
-          aspectRatio: 340 / 300,
-          child: CustomPaint(
-            painter: DensityPainter(
-              activeVolumeCm3: state.volumeCm3,
-              activeDensity: state.density,
-              refVolumeCm3: 500,
-              refDensity: 2.5, // Kaca
-            ),
-            size: Size.infinite,
-          ),
-        );
-      },
-    );
-  }
+  Widget build(BuildContext context) => FittedBox(
+    // The painter's own 340 × 300 frame, fitted into the hero polaroid.
+    child: SizedBox(
+      width: 340,
+      height: 300,
+      child: CustomPaint(
+        painter: DensityPainter(
+          activeVolumeCm3: state.volumeCm3,
+          activeDensity: state.density,
+          refVolumeCm3: 500,
+          refDensity: 2.5, // Kaca
+        ),
+      ),
+    ),
+  );
 }
 
-class _BinWidget extends StatefulWidget {
-  final WasteCategory type;
-  final String label;
-  final bool isHighlighted;
-  final bool isShaking;
-  final VoidCallback onTap;
-
-  const _BinWidget({
-    required this.type,
+class _BinChoice extends StatelessWidget {
+  const _BinChoice({
     required this.label,
-    required this.isHighlighted,
-    required this.isShaking,
+    required this.angle,
+    required this.picked,
+    required this.shake,
     required this.onTap,
   });
-
-  @override
-  State<_BinWidget> createState() => _BinWidgetState();
-}
-
-class _BinWidgetState extends State<_BinWidget> with SingleTickerProviderStateMixin {
-  late AnimationController _shakeController;
-  late Animation<Offset> _shakeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _shakeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _shakeAnimation = TweenSequence<Offset>([
-      TweenSequenceItem(tween: Tween(begin: Offset.zero, end: const Offset(-0.2, 0)), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: const Offset(-0.2, 0), end: const Offset(0.2, 0)), weight: 2),
-      TweenSequenceItem(tween: Tween(begin: const Offset(0.2, 0), end: const Offset(-0.2, 0)), weight: 2),
-      TweenSequenceItem(tween: Tween(begin: const Offset(-0.2, 0), end: Offset.zero), weight: 1),
-    ]).animate(CurvedAnimation(parent: _shakeController, curve: Curves.linear));
-  }
-
-  @override
-  void didUpdateWidget(_BinWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isShaking && !oldWidget.isShaking) {
-      _shakeController.forward(from: 0.0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _shakeController.dispose();
-    super.dispose();
-  }
+  final String label;
+  final double angle;
+  final bool picked;
+  final int? shake;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: SlideTransition(
-        position: _shakeAnimation,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: 80,
-          height: 100,
-          decoration: BoxDecoration(
-            color: widget.isHighlighted ? context.elio.primaryText.withValues(alpha: 0.1) : context.elio.surface,
-            border: Border.all(
-              color: widget.isHighlighted ? context.elio.primaryText : context.elio.borderSubtle,
-              width: widget.isHighlighted ? 3 : 1,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.delete_outline,
-                size: 32,
-                color: widget.isHighlighted ? context.elio.primaryText : context.elio.textSecondary,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: widget.isHighlighted ? context.elio.primaryText : context.elio.textSecondary,
+    final p = context.elio;
+    final fg = picked ? p.primaryText : p.textPrimary;
+    return Semantics(
+      button: true,
+      selected: picked,
+      label: label,
+      excludeSemantics: true,
+      onTap: onTap,
+      child: GestureDetector(
+        onTap: onTap,
+        child: ElioShake(
+          trigger: shake,
+          distance: 4,
+          child: SizedBox(
+            width: 84,
+            child: Column(
+              children: [
+                TweenAnimationBuilder<double>(
+                  key: ValueKey(picked),
+                  tween: Tween(begin: picked ? 1.08 : 1, end: 1),
+                  duration: ElioMotion.slow,
+                  curve: ElioMotion.pop,
+                  builder: (context, s, child) =>
+                      Transform.scale(scale: s, child: child),
+                  child: Transform.rotate(
+                    angle: picked ? 0 : angle * math.pi / 180,
+                    child: AnimatedContainer(
+                      duration: ElioMotion.base,
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: picked
+                            ? toneBg(p, LearnTone.success)
+                            : p.background,
+                        border: Border.all(
+                          color: picked ? p.primaryText : p.borderSubtle,
+                          width: picked ? 2.5 : 1,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(18),
+                        child: SvgPicture.asset(
+                          'assets/illustrations/learn/icon_bin_anorganik.svg',
+                          colorFilter: ColorFilter.mode(fg, BlendMode.srcIn),
+                          excludeFromSemantics: true,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  style: context.text.labelLarge?.copyWith(color: fg),
+                ),
+              ],
+            ),
           ),
         ),
       ),

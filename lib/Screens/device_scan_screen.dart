@@ -8,12 +8,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../providers/app_preferences_provider.dart';
+import '../providers/esp_config_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/waste_quiz_provider.dart';
 import '../services/frame_source/phone_frame_source.dart';
 import '../services/frame_source/viewfinder_crop.dart';
-import '../services/gemma_quiz_service.dart';
+import '../services/ai_quiz_service.dart';
 import '../services/scan_record_store.dart';
 import '../theme/elio_theme.dart';
 import '../theme/elio_tokens.dart';
@@ -29,9 +29,10 @@ import '../widgets/learn/learn_ui.dart' show LearnTheme;
 import '../widgets/waste_quiz_popup.dart';
 import 'login_screen.dart';
 import 'scan_history_screen.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// Scan waste with this device's own camera (no robot needed) and get the
-/// offline Gemma quiz. Figma: "Device Scan · Kamera perangkat (landscape)".
+/// ELIOS AI quiz. Figma: "Device Scan · Kamera perangkat (landscape)".
 class DeviceScanScreen extends ConsumerStatefulWidget {
   const DeviceScanScreen({super.key});
 
@@ -61,7 +62,10 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
 
   final _drawerKey = GlobalKey<ElioDrawerHostState>();
 
-  final PhoneFrameSource _source = PhoneFrameSource();
+  // Config → Settings → Resolution, read when the screen opens.
+  late final PhoneFrameSource _source = PhoneFrameSource(
+    resolutionPreset: ref.read(espConfigProvider).valueOrNull?.resolutionPreset,
+  );
   bool _capturing = false;
   late final WasteQuizNotifier _quiz;
 
@@ -81,9 +85,6 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
         await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       } catch (_) {}
     });
-    // No robot video here, so it's safe to load the model (with the image
-    // encoder, since scans are photos) while the user frames the shot.
-    GemmaQuizService.instance.warmUp(vision: true, scanScreen: true);
     _source.initialize();
   }
 
@@ -98,7 +99,7 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
     try {
       final frame = await _source.capture();
       if (frame == null) throw StateError('kamera tidak mengembalikan foto');
-      // Gemma and Scan History get only what is inside the viewfinder box: a
+      // The AI and Scan History get only what is inside the viewfinder box: a
       // small battery in a wide frame was misread as a can (A1 phone test).
       final g = cropGeometry(screen);
       final photo = await cropToViewfinder(
@@ -106,46 +107,16 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
         panel: g.panel,
         box: g.box,
       );
-      if (await GemmaQuizService.instance.modelMissing()) {
-        await _pickItemWithoutModel(photo);
-        return;
-      }
       _quiz.onPhotoCaptured(photo);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Gagal memotret: $e')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.photoFailed(e))));
       }
     } finally {
       if (mounted) setState(() => _capturing = false);
     }
-  }
-
-  /// No model file: the photo can't be named, so the user picks the item and
-  /// the photo still goes to Scan History. The quiz uses the bank.
-  Future<void> _pickItemWithoutModel(Uint8List photo) async {
-    if (!mounted) return;
-    final label = await showDialog<String>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: const Text('Model belum ada'),
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-            child: Text(
-              'Pilih bendanya. Foto tetap disimpan di riwayat, soal dari bank.',
-            ),
-          ),
-          for (final l in _sampleLabels)
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(context, l),
-              child: Text(l),
-            ),
-        ],
-      ),
-    );
-    if (label != null) _quiz.startForLabel(label, photo: photo);
   }
 
   @override
@@ -153,13 +124,7 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
     _source.removeListener(_onSourceChanged);
     _source.dispose();
     Future.microtask(_quiz.dismiss);
-    // Tester build keeps the model loaded so reopening the screen does not reload it (E1);
-    // it stops any running generation but holds ~1.6 GB until the app closes.
-    if (testerBuild) {
-      unawaited(GemmaQuizService.instance.cancel());
-    } else {
-      unawaited(GemmaQuizService.instance.dispose());
-    }
+    unawaited(AiQuizService.instance.cancel());
     setDesktopLandscape(false);
     unawaited(
       SystemChrome.setPreferredOrientations(const [
@@ -171,7 +136,7 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
   }
 
   /// The live preview is stopped while the quiz popup covers it (saves CPU
-  /// and battery for Gemma) and comes back when the popup is closed or
+  /// and battery for the AI) and comes back when the popup is closed or
   /// minimized.
   void _onQuizCoverChanged(bool covered) {
     if (covered) {
@@ -252,6 +217,9 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen> {
                     testLabels: kDebugMode ? _sampleLabels : null,
                     onTestLabel: _quiz.startForLabel,
                   ),
+                  // Config → Settings → Show FPS overlay (decision 0189).
+                  if (ref.watch(espConfigProvider.select((c) => c.valueOrNull?.showFpsOverlay ?? false)))
+                    Positioned(left: 28, bottom: 24, child: SafeArea(child: PhoneFpsOverlay(source: _source))),
                   // The photo is being taken and cropped: the popup is opening, no quiz state yet.
                   if (_capturing)
                     const Positioned.fill(
@@ -282,8 +250,7 @@ abstract final class DeviceScanScreenTestHook {
       _DeviceScanScreenState.cropGeometry(screen);
 }
 
-/// The R3 phone camera scan screen (Figma 423:8162 ready, 423:8325 model loading,
-/// 423:8441 skeleton). [cropGeometry] places the preview and the white corners where
+/// The R3 phone camera scan screen (Figma 423:8162 ready, 423:8441 skeleton). [cropGeometry] places the preview and the white corners where
 /// the identify crop is, unchanged from before (decisions 0041, 0070).
 class ScanScreenLayout extends StatelessWidget {
   const ScanScreenLayout({
@@ -301,7 +268,7 @@ class ScanScreenLayout extends StatelessWidget {
     required this.onSwitchCamera,
     required this.testLabels,
     required this.onTestLabel,
-    this.gemma,
+    this.ai,
   });
 
   final bool ready, capturing;
@@ -316,59 +283,23 @@ class ScanScreenLayout extends StatelessWidget {
   final List<String>? testLabels;
   final ValueChanged<String> onTestLabel;
 
-  /// For tests; the live model status otherwise.
-  final ValueListenable<GemmaProgress>? gemma;
+  /// For tests; the last cloud call's status otherwise.
+  final ValueListenable<AiStatus>? ai;
 
   static const _sideWidth = 271.0;
 
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
-    return ValueListenableBuilder<GemmaProgress>(
-      valueListenable: gemma ?? GemmaQuizService.instance.progress,
-      builder: (context, g, _) {
+    return ValueListenableBuilder<AiStatus>(
+      valueListenable: ai ?? AiQuizService.instance.status,
+      builder: (context, status, _) {
         if (!ready && error == null) return _skeleton(context);
-        // Missing model, an error or a killed model scan in bank mode, as before; only a
-        // model on its way blocks Scan until it is ready.
-        final waiting = const {
-          GemmaStatus.idle,
-          GemmaStatus.installing,
-          GemmaStatus.loading,
-          GemmaStatus.paused,
-        }.contains(g.status);
-        final canScan = ready && error == null && !capturing && !waiting;
-        final (chipText, chipColor, percent) = switch (g.status) {
-          GemmaStatus.ready => ('ELIOS AI ready', p.primary, null),
-          GemmaStatus.installing => (
-            'ELIOS AI loading · ${g.installPercent}%',
-            ElioTokens.answerYellow,
-            g.installPercent / 100,
-          ),
-          GemmaStatus.loading || GemmaStatus.idle => (
-            'ELIOS AI loading',
-            ElioTokens.answerYellow,
-            -1.0,
-          ),
-          GemmaStatus.paused => (
-            'Phone is hot · ELIOS AI paused',
-            ElioTokens.answerYellow,
-            null,
-          ),
-          GemmaStatus.missing => (
-            'No model · question bank',
-            p.borderStrong,
-            null,
-          ),
-          GemmaStatus.killed => (
-            'ELIOS AI stopped · question bank',
-            p.error,
-            null,
-          ),
-          GemmaStatus.error => (
-            'ELIOS AI not ready · question bank',
-            p.error,
-            null,
-          ),
+        // The AI never blocks Scan: with no AI answer the quiz uses the bank (decision 0179).
+        final canScan = ready && error == null && !capturing;
+        final (chipText, chipColor) = switch (status) {
+          AiStatus.offline => (l10n.dsAiOffline, p.error),
+          _ => (l10n.dsAiReady, p.primary),
         };
         return LayoutBuilder(
           builder: (context, c) {
@@ -445,7 +376,7 @@ class ScanScreenLayout extends StatelessWidget {
                             children: [
                               PhonePill(
                                 key: const ValueKey('scan_back'),
-                                semantic: 'Back',
+                                semantic: l10n.dsBack,
                                 onTap: onBack,
                                 padding: const EdgeInsets.all(10),
                                 child: Icon(
@@ -456,7 +387,7 @@ class ScanScreenLayout extends StatelessWidget {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Scan an item',
+                                l10n.homeScanItem,
                                 style: TextStyle(
                                   color: p.textPrimary,
                                   fontSize: 18,
@@ -470,7 +401,7 @@ class ScanScreenLayout extends StatelessWidget {
                                 animation: ScanRecordStore.instance,
                                 builder: (context, _) => PhonePill(
                                   key: const ValueKey('scan_history'),
-                                  semantic: 'History',
+                                  semantic: l10n.navHistory,
                                   onTap: onHistory,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 12,
@@ -516,8 +447,8 @@ class ScanScreenLayout extends StatelessWidget {
                                                 ? p.error
                                                 : p.borderStrong,
                                             text: ready && error == null
-                                                ? 'LIVE'
-                                                : 'No camera',
+                                                ? l10n.dsLive
+                                                : l10n.dsNoCamera,
                                           ),
                                           const SizedBox(width: 6),
                                           _Chip(
@@ -534,7 +465,6 @@ class ScanScreenLayout extends StatelessWidget {
                                                 ),
                                                 text: chipText,
                                                 color: chipColor,
-                                                progress: percent,
                                               ),
                                             ),
                                           ),
@@ -549,7 +479,7 @@ class ScanScreenLayout extends StatelessWidget {
                               SizedBox(
                                 width: _sideWidth,
                                 child: _ScanCard(
-                                  status: g.status,
+                                  status: status,
                                   canScan: canScan,
                                   capturing: capturing,
                                   onScan: onScan,
@@ -730,18 +660,15 @@ class _Chip extends StatelessWidget {
   }
 }
 
-/// The ELIOS AI status from the real GemmaStatus. [progress]: null none, -1 indeterminate,
-/// else the installer's real percentage (the loader itself reports none).
+/// The ELIOS AI status from the last cloud call.
 class _AiChip extends StatelessWidget {
   const _AiChip({
     super.key,
     required this.text,
     required this.color,
-    required this.progress,
   });
   final String text;
   final Color color;
-  final double? progress;
 
   @override
   Widget build(BuildContext context) {
@@ -785,22 +712,6 @@ class _AiChip extends StatelessWidget {
                 ),
               ),
             ),
-            if (progress != null) ...[
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 60,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(
-                    key: const ValueKey('scan_ai_progress'),
-                    value: progress! < 0 ? null : progress,
-                    minHeight: 5,
-                    color: color,
-                    backgroundColor: p.surfaceRaised,
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -818,7 +729,7 @@ class _ScanCard extends StatelessWidget {
     required this.testLabels,
     required this.onTestLabel,
   });
-  final GemmaStatus status;
+  final AiStatus status;
   final bool canScan, capturing;
   final VoidCallback onScan;
   final VoidCallback? onSwitchCamera;
@@ -828,18 +739,9 @@ class _ScanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
-    final loading = const {
-      GemmaStatus.idle,
-      GemmaStatus.installing,
-      GemmaStatus.loading,
-    }.contains(status);
-    final paused = status == GemmaStatus.paused;
-    final (word, wordColor) = switch (status) {
-      GemmaStatus.ready => ('Ready', p.primaryText),
-      _ when loading => ('Loading', p.secondaryText),
-      GemmaStatus.paused => ('Paused', p.secondaryText),
-      _ => ('Bank mode', p.textSecondary),
-    };
+    final (word, wordColor) = status == AiStatus.offline
+        ? (l10n.dsBankMode, p.textSecondary)
+        : (l10n.ctlReady, p.primaryText);
     return PhoneCard(
       child: LayoutBuilder(
         builder: (context, c) {
@@ -856,7 +758,7 @@ class _ScanCard extends StatelessWidget {
                     color: p.primaryText,
                   ),
                   const SizedBox(width: 6),
-                  const ControlCaps('SCAN'),
+                  ControlCaps(l10n.ctlScan),
                   const Spacer(),
                   ControlStatusChip(label: word, color: wordColor),
                 ],
@@ -879,9 +781,7 @@ class _ScanCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        loading || paused
-                            ? 'You can line up the item now. Scan unlocks when ELIOS AI is ready.'
-                            : 'Put one item inside the white box, then tap Scan.',
+                        l10n.dsPutItem,
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -898,7 +798,7 @@ class _ScanCard extends StatelessWidget {
               Semantics(
                 button: true,
                 enabled: canScan,
-                label: 'Scan and make quiz',
+                label: l10n.dsScanMakeQuiz,
                 excludeSemantics: true,
                 child: GestureDetector(
                   key: const ValueKey('scan_button'),
@@ -939,15 +839,11 @@ class _ScanCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                loading
-                    ? 'Getting ELIOS AI ready…'
-                    : (paused
-                          ? 'Phone is hot, ELIOS AI paused'
-                          : 'Scan & make quiz'),
+                l10n.dsScanMakeQuizShort,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: loading || paused ? p.secondaryText : p.primaryText,
+                  color: p.primaryText,
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                 ),
@@ -963,9 +859,7 @@ class _ScanCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    loading
-                        ? 'First start can take up to 50 s'
-                        : 'About 20–30 s · works offline',
+                    l10n.dsTiming,
                     style: TextStyle(color: p.textSecondary, fontSize: 11),
                   ),
                 ],
@@ -977,7 +871,7 @@ class _ScanCard extends StatelessWidget {
                     flex: 5,
                     child: PhonePill(
                       key: const ValueKey('scan_switch_camera'),
-                      semantic: 'Switch camera',
+                      semantic: l10n.dsSwitchCamera,
                       onTap: onSwitchCamera ?? () {},
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -994,7 +888,7 @@ class _ScanCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
-                              'Switch camera',
+                              l10n.dsSwitchCamera,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -1014,7 +908,7 @@ class _ScanCard extends StatelessWidget {
                       flex: 4,
                       child: PopupMenuButton<String>(
                         key: const ValueKey('scan_test_mode'),
-                        tooltip: 'Test mode: quiz without the camera',
+                        tooltip: l10n.dsTestModeHint,
                         onSelected: onTestLabel,
                         itemBuilder: (context) => [
                           for (final l in testLabels!)
@@ -1041,7 +935,7 @@ class _ScanCard extends StatelessWidget {
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  'Test mode',
+                                  l10n.dsTestMode,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -1100,4 +994,54 @@ class _CornersPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Camera FPS (Android image stream; '-' elsewhere) and preview size, once a second.
+class PhoneFpsOverlay extends StatefulWidget {
+  const PhoneFpsOverlay({super.key, required this.source});
+  final PhoneFrameSource source;
+
+  @override
+  State<PhoneFpsOverlay> createState() => _PhoneFpsOverlayState();
+}
+
+class _PhoneFpsOverlayState extends State<PhoneFpsOverlay> {
+  late final Timer _tick;
+  int _lastCount = 0;
+  int _fps = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _lastCount = widget.source.frameCount;
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      final n = widget.source.frameCount;
+      setState(() {
+        _fps = n - _lastCount;
+        _lastCount = n;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = widget.source.previewSize;
+    final res = size == null ? 'Pending' : '${size.width.toInt()}x${size.height.toInt()}';
+    final fps = _lastCount == 0 ? '-' : '$_fps'; // no image stream: no count
+    return Container(
+      key: const ValueKey('phone_fps_overlay'),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(color: const Color(0xFF474747), borderRadius: BorderRadius.circular(12)),
+      child: Text(
+        'FPS $fps • $res',
+        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
 }

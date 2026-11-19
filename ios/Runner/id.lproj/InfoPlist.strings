@@ -1,0 +1,4 @@
+/* Teks izin iOS dalam Bahasa Indonesia (keputusan 0185). */
+"CFBundleDisplayName" = "ELIOS";
+"NSCameraUsageDescription" = "ELIOS memerlukan akses kamera untuk mode uji kamera lokal dan pratinjau deteksi benda.";
+"NSLocalNetworkUsageDescription" = "ELIOS memerlukan akses jaringan lokal untuk terhubung ke robot lewat Wi-Fi.";

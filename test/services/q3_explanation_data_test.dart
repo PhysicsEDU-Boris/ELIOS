@@ -6,7 +6,7 @@ import 'package:elio/models/essay_grade.dart';
 import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/scanned_waste.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/question_bank.dart';
 import 'package:elio/services/quiz_explanation_service.dart';
 import 'package:elio/services/quiz_pdf_service.dart';
@@ -36,6 +36,9 @@ QuestionBank _bank() => QuestionBank.fromJson(
     );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => AiQuizService.instance.mockSendExecute = (_, {imageBytes, isUser = false}) async => null);
+  tearDown(() => AiQuizService.instance.mockSendExecute = null);
   final scan = ScannedWaste.fromLabel('botol-plastik');
 
   test('the bank carries quote, section, page, id and wrongWhy into the question', () {
@@ -54,10 +57,11 @@ void main() {
     expect(q.sourcePage, '21, 22');
   });
 
-  test('right answer: bin reference rows, quote, section, page and id; no wrong-answer text', () async {
+  test('right answer: reviewed bank reason and metadata, no local table or takeaway', () async {
     final q = _bank().questionsFor(scan, QuizQuestionType.multipleChoice).single;
     final e = await QuizExplanationService.generate(question: q, scan: scan, selectedIndex: q.correctIndex);
-    expect(e.comparisonRows, isNotEmpty);
+    expect(e.comparisonRows, isEmpty);
+    expect(e.learningTakeaway, isEmpty);
     expect(e.selectedAnswerFeedback, isEmpty);
     expect((e.quote, e.sourceSection, e.sourcePage, e.bankId), ('Botol minuman dari PET.', '4.2', '21', 'botol-mc-01'));
     expect(e.groundingStatus, GroundingStatus.bankGrounded);
@@ -111,7 +115,22 @@ void main() {
 
   test('History and the PDF cite the section, page and bank id', () {
     const e = QuizExplanation(summary: 's', correctAnswerReason: 'r', sourceTitle: 'Bank Soal ELIO', sourceSection: '1.3', sourcePage: '6', bankId: 'organik-mc-01');
-    expect(QuizPdfService.sourceLine(e), 'Sumber: Bank Soal ELIO · bagian 1.3 · hal. 6 · organik-mc-01');
+    // Legacy stored title 'Bank Soal ELIO' is shown as the localized ELIOS bank name.
+    expect(QuizPdfService.sourceLine(e), 'Source: ELIOS Question Bank · section 1.3 · p. 6 · organik-mc-01');
     expect(QuizPdfService.sourceLine(const QuizExplanation(summary: 's', correctAnswerReason: 'r')), isNull);
   });
+  test('debug draft bank text never becomes an offline explanation', () async {
+    final draft = {..._mc, 'status': 'draft'};
+    final bank = QuestionBank.fromJson(jsonEncode({'objects': [
+      {'object': 'botol', 'synonyms': ['botol'], 'label': 'Plastic', 'pool': 'plastik', 'items': [draft]},
+    ]}), jsonEncode({'pools': {'plastik': ['Plastic']}, 'items': []}));
+    final q = bank.questionsFor(scan, QuizQuestionType.multipleChoice, includeDrafts: true).single;
+    expect(q.bankReviewed, isFalse);
+    final e = await QuizExplanationService.generate(question: q, scan: scan,
+      selectedIndex: q.options.indexOf('PVC'));
+    expect(e.isUnavailable, isTrue); expect(e.correctAnswerReason, isEmpty);
+    expect(e.selectedAnswerFeedback, isEmpty);
+    expect(e.bankId, 'botol-mc-01'); expect(e.quote, 'Botol minuman dari PET.');
+  });
+
 }

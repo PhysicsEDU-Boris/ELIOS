@@ -1,13 +1,27 @@
+import '../../../models/clovers.dart';
 import '../../../models/guide_lesson.dart';
 import '../../../models/learning_progress.dart';
 import '../../../models/physics_module.dart';
 import '../../../models/video_lesson.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// Bundled L1 v2 illustrations (Figma 293:2359). Placeholders and fallbacks
 /// only: real thumbnails come from Firestore URLs (decision 0171).
 abstract final class LearnArt {
   static const _dir = 'assets/illustrations/learn';
-  static const mascot = '$_dir/elio_quiz_mascot.svg';
+
+  /// ELIO robot buddy, Thinking (replaces the old quiz mascot, Figma 674:26769).
+  static const mascot = 'assets/illustrations/robot/robot_thinking.svg';
+  static const quizPaper = '$_dir/quiz_paper.svg';
+  static const miniLab = '$_dir/minilab_thermometer.svg';
+  static const quizThumb = '$_dir/thumb_quiz.svg';
+
+  /// Guide page thumbnail for Discover more when a guide has no cover.
+  static String guideThumb(String moduleId) => switch (moduleId) {
+    'inorganic' => '$_dir/thumb_guide_anorganik.svg',
+    'hazardous' => '$_dir/thumb_guide_b3.svg',
+    _ => '$_dir/thumb_guide_organik.svg',
+  };
   static const coverOrganik = '$_dir/cover_organik.svg';
   static const coverAnorganik = '$_dir/cover_anorganik.svg';
   static const coverB3 = '$_dir/cover_b3.svg';
@@ -23,12 +37,13 @@ abstract final class LearnArt {
 
   /// Module cover; [alt] picks the second cover of the module (Biogas,
   /// Reuse, Safe handling) so neighbouring cards differ.
-  static String cover(String moduleId, {bool alt = false}) => switch (moduleId) {
-    'organic' => alt ? coverBiogas : coverOrganik,
-    'inorganic' => alt ? coverReuse : coverAnorganik,
-    'hazardous' => alt ? coverSafeHandling : coverB3,
-    _ => coverIntro,
-  };
+  static String cover(String moduleId, {bool alt = false}) =>
+      switch (moduleId) {
+        'organic' => alt ? coverBiogas : coverOrganik,
+        'inorganic' => alt ? coverReuse : coverAnorganik,
+        'hazardous' => alt ? coverSafeHandling : coverB3,
+        _ => coverIntro,
+      };
 
   static String bin(String moduleId) => switch (moduleId) {
     'inorganic' => binAnorganik,
@@ -89,7 +104,8 @@ class LearnLesson {
   /// fails: foundation lessons get Intro, others alternate the module's two
   /// covers by order.
   String get fallbackArt {
-    final tag = '${video?.sectionTitle ?? ''} ${video?.level ?? ''}'.toLowerCase();
+    final tag = '${video?.sectionTitle ?? ''} ${video?.level ?? ''}'
+        .toLowerCase();
     if (tag.contains('foundation')) return LearnArt.coverIntro;
     return LearnArt.cover(moduleId, alt: order.isEven);
   }
@@ -98,9 +114,9 @@ class LearnLesson {
   String get meta {
     if (video case final v?) {
       final tag = v.level.trim().isNotEmpty ? v.level : v.sectionTitle;
-      return tag.trim().isEmpty ? 'Video' : 'Video · $tag';
+      return tag.trim().isEmpty ? l10n.lnVideo : l10n.lnVideoTag(tag);
     }
-    return 'Guide · Part ${guide!.order}';
+    return l10n.lnGuidePart(guide!.order);
   }
 
   /// "7:22" for videos, "12 min" or "8 pages" for guides, else empty.
@@ -130,9 +146,8 @@ class LearnLesson {
     return g.pageCount > 0 ? (page / g.pageCount).clamp(0.0, 0.99) : 0;
   }
 
-  DateTime? lastAccessed(LearningProgress? p) => isVideo
-      ? p?.videoLastAccessed[id]
-      : p?.guideLastAccessed[id];
+  DateTime? lastAccessed(LearningProgress? p) =>
+      isVideo ? p?.videoLastAccessed[id] : p?.guideLastAccessed[id];
 
   LessonState state(LearningProgress? p) {
     final value = progress(p);
@@ -142,9 +157,9 @@ class LearnLesson {
   }
 
   String actionLabel(LearningProgress? p) => switch (state(p)) {
-    LessonState.start => 'Start',
-    LessonState.inProgress => 'Continue',
-    LessonState.done => isVideo ? 'Watch again' : 'Read again',
+    LessonState.start => l10n.lnStart,
+    LessonState.inProgress => l10n.lnContinue,
+    LessonState.done => isVideo ? l10n.lnWatchAgain : l10n.lnReadAgain,
   };
 }
 
@@ -152,10 +167,9 @@ class LearnLesson {
 List<LearnLesson> mergeLessons(
   Iterable<GuideLesson> guides,
   Iterable<VideoLesson> videos,
-) => [
-  ...guides.map(LearnLesson.guide),
-  ...videos.map(LearnLesson.video),
-]..sort((a, b) => a.order.compareTo(b.order));
+) =>
+    [...guides.map(LearnLesson.guide), ...videos.map(LearnLesson.video)]
+      ..sort((a, b) => a.order.compareTo(b.order));
 
 /// In-progress lessons, newest access first (hub "Continue learning").
 List<LearnLesson> inProgressLessons(
@@ -173,16 +187,23 @@ List<LearnLesson> inProgressLessons(
   return list;
 }
 
-/// Module progress 0..1 as the share of finished lessons plus the quiz.
+/// Module progress 0..1 = the module's clovers earned / possible (decision
+/// 0214): its finished videos and guides, and its quiz (70 % and 100 %).
 double moduleProgress(
   String moduleId,
   List<LearnLesson> lessons,
   LearningProgress? p,
 ) {
-  final own = lessons.where((l) => l.moduleId == moduleId).toList();
-  final quizDone = p?.completedQuizModules.contains(moduleId) ?? false;
-  final total = own.length + 1;
-  final sum = own.fold<double>(0, (s, l) => s + l.progress(p)) +
-      (quizDone ? 1 : 0);
-  return (sum / total).clamp(0.0, 1.0);
+  final own = lessons.where((l) => l.moduleId == moduleId);
+  return CloverTally.from(
+    videoIds: own.where((l) => l.isVideo).map((l) => l.id),
+    completedVideoIds: p?.completedVideoIds ?? const {},
+    guideIds: own.where((l) => !l.isVideo).map((l) => l.id),
+    completedGuideIds: p?.completedGuideIds ?? const {},
+    quizModuleIds: [moduleId],
+    quizBestPercent: p?.quizScores ?? const {},
+    simulationIds: const [],
+    viewedSimulationIds: const {},
+    issues: const [],
+  ).fraction;
 }

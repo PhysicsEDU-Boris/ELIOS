@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/elio_dark_theme.dart';
 import '../../theme/elio_tokens.dart';
 import '../splash/elio_leaf.dart';
+import 'package:elio/l10n/l10n.dart';
 
 // Design file 0091: radius/m for inputs and banners, Full (pill) for buttons and links.
 const _radiusM = 12.0;
@@ -154,7 +155,7 @@ class AuthVisibilityToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => IconButton(
     onPressed: onPressed,
-    tooltip: obscured ? 'Show password' : 'Hide password',
+    tooltip: obscured ? l10n.qrShowPassword : l10n.qrHidePassword,
     constraints: const BoxConstraints.tightFor(width: 48, height: 48),
     icon: Icon(
       obscured ? Icons.visibility_outlined : Icons.visibility_off_outlined,
@@ -255,7 +256,7 @@ class AuthPrimaryButton extends StatelessWidget {
             ),
         child: loading
             ? Semantics(
-                label: 'Please wait',
+                label: l10n.authPleaseWait,
                 child: SizedBox(
                   width: 22,
                   height: 22,
@@ -361,9 +362,9 @@ class AuthLink extends StatelessWidget {
 
 /// "Atau" divider.
 class AuthDivider extends StatelessWidget {
-  const AuthDivider({super.key, this.label = 'Atau'});
+  const AuthDivider({super.key, this.label});
 
-  final String label;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -375,9 +376,16 @@ class AuthDivider extends StatelessWidget {
           Expanded(child: Divider(color: p.borderMedium)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(
-              label,
-              style: ElioTokens.caption.copyWith(color: p.textSecondary),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElioMark(size: 14, color: p.primaryText),
+                const SizedBox(width: 6),
+                Text(
+                  label ?? l10n.authOr,
+                  style: ElioTokens.caption.copyWith(color: p.textSecondary),
+                ),
+              ],
             ),
           ),
           Expanded(child: Divider(color: p.borderMedium)),
@@ -455,4 +463,133 @@ class _RingsPainter extends CustomPainter {
 void authDismissKeyboard() {
   FocusManager.instance.primaryFocus?.unfocus();
   SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+}
+
+/// ELIOS 3 login header (Figma L4 644:24854): green field with a curved
+/// bottom, the leaf logo in a white circle, the wordmark, bin buddies and the
+/// robot. Decorative only.
+class AuthOrganicHeader extends StatelessWidget {
+  const AuthOrganicHeader({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = authPalette(context);
+    final top = MediaQuery.paddingOf(context).top;
+    Widget dot(double size, Color c) => Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+    );
+    Widget bin(String name) => SvgPicture.asset(
+      'assets/illustrations/home/$name.svg',
+      height: 50,
+      excludeFromSemantics: true,
+    );
+    return ExcludeSemantics(
+      child: ClipPath(
+        clipper: _WaveClipper(),
+        child: ColoredBox(
+          color: p.primary,
+          child: SizedBox(
+            height: 230 + top,
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -60,
+                  top: -50,
+                  child: dot(200, p.primaryHover),
+                ),
+                Positioned(
+                  left: 20,
+                  top: top + 110,
+                  child: dot(32, p.primaryHover),
+                ),
+                for (final (l, t, s) in [
+                  (60.0, 50.0, 10.0),
+                  (300.0, 80.0, 12.0),
+                  (280.0, 140.0, 8.0),
+                ])
+                  Positioned(
+                    left: l,
+                    top: top + t,
+                    child: Icon(
+                      Icons.auto_awesome,
+                      size: s,
+                      color: p.onPrimary,
+                    ),
+                  ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: top + 20,
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 92,
+                        height: 92,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: p.isDark ? p.background : p.surface,
+                          shape: BoxShape.circle,
+                        ),
+                        child: ElioMark(size: 56, color: p.primaryText),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'ELIOS',
+                        style: ElioTokens.display.copyWith(
+                          color: p.onPrimary,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  left: 20,
+                  bottom: 22,
+                  child: Row(
+                    children: [
+                      bin('bin_organik'),
+                      const SizedBox(width: 4),
+                      bin('bin_anorganik'),
+                      const SizedBox(width: 4),
+                      bin('bin_b3'),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  right: 18,
+                  bottom: 14,
+                  child: SvgPicture.asset(
+                    'assets/illustrations/scan/elios_robot.svg',
+                    height: 64,
+                    excludeFromSemantics: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WaveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size s) => Path()
+    ..lineTo(0, s.height - 24)
+    ..quadraticBezierTo(
+      s.width * .25,
+      s.height - 40,
+      s.width * .5,
+      s.height - 20,
+    )
+    ..quadraticBezierTo(s.width * .78, s.height, s.width, s.height - 30)
+    ..lineTo(s.width, 0)
+    ..close();
+
+  @override
+  bool shouldReclip(_WaveClipper old) => false;
 }

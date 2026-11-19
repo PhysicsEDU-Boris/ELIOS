@@ -247,7 +247,7 @@ def test_command_link_0023_shape(tmp_path):
             assert fake.world.motor == (0, 0)
             await send({"cmd": "UNLOCK_DRIVE"}, 1)
             await send({"cmd": "HOLD"}, 2)
-            await send({"cmd": "J1_SWEEP", "to": 6}, 2)  # 6 deg at 60 deg/s: done in ~0.1 s
+            await send({"cmd": "J1_SWEEP", "to": 6}, 2)  # 6 deg at 40 deg/s: done in ~0.15 s
             await send({"cmd": "STOP"}, 1)
             await send({"cmd": "PICK", "dist_cm": 24.0, "lateral_cm": None}, 2)
             await send({"cmd": "FLY"}, 1)
@@ -323,6 +323,11 @@ def test_r1_pick_bin_drop_and_drive_servo(tmp_path):
             assert fake.held_item == "bottle" and fake.world.gripper_closed
             await motion({"cmd": "MOVE_TO_BIN", "bin": "organik"}, 2)
             assert fake.held_bin == "organik"
+            assert fake.bin_tags() == [{"id": 3, "dist_mm": fm.BIN_TAG_DIST_MM}]
+            fake.bin_tag = "wrong"
+            assert fake.bin_tags()[0]["id"] != 3
+            fake.bin_tag = "none"
+            assert fake.bin_tags() == []
             await motion({"cmd": "DROP"}, 3)
             assert fake.held_item is None and not fake.items["bottle"]["on"]
 
@@ -344,6 +349,97 @@ def test_r1_pick_bin_drop_and_drive_servo(tmp_path):
             return fake.world.angles[0]
 
     assert run(tmp_path, {"items": [BOTTLE]}, body) == pytest.approx(30, abs=1)
+
+
+def test_bin_paths_from_owner_sequences():
+    """0233: Left-Tank-Throw is the B3 bin; MOVE_TO_BIN stops at Pose 4, DROP is Poses 5-7."""
+    paths = fm.bin_paths()
+    assert set(paths) == {"b3"}, "organik and anorganik have no sequence yet"
+    move, drop = paths["b3"]
+    assert [m["Arm Base"] for m in move] == [145.65, 197.8, 185.15, 213.15]
+    assert [d["Gripper"] for d in drop] == [180.0, 85.0, 180.0]
+
+
+@needs_sim
+def test_b3_sequence_is_tank_safe(tmp_path):
+    """Every saved B3 leg, and the HOME after a failed bin check, pass the sim's tank planner as one move."""
+    world = fm.SimWorld(SIM, fm.load_scenario(_scenario(tmp_path), fm.load_labels()),
+                        images_dir=tmp_path / "x", log=lambda *_: None)
+    try:
+        move, drop = fm.bin_paths()["b3"]
+        poses = [np.zeros(5)] + [world.servo_pose(st) for st in move + drop]
+        lims = world.hil_config.joint_limits()
+        for a, b in zip(poses, poses[1:]):
+            assert all(lo - 1e-6 <= v <= hi + 1e-6 for v, (lo, hi) in zip(b, lims))
+            assert world.kinematics.path_unsafe(a, b, step=0.5) is None
+        state_point = world.servo_pose(move[-1])
+        assert world.kinematics.path_unsafe(state_point, np.zeros(5), step=0.5) is None, "HOME from the state point"
+    finally:
+        world.close()
+
+
+def _scenario(tmp_path):
+    path = tmp_path / "s.yaml"
+    path.write_text(yaml.safe_dump({"name": "test", "items": [BOTTLE]}))
+    return path
+
+
+@needs_sim
+def test_r1_b3_bin_sequence_state_point_and_drop(tmp_path):
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            async def heartbeat():
+                while True:
+                    await ws.send(json.dumps({"cmd": "HEARTBEAT"}))
+                    await asyncio.sleep(0.2)
+            keepalive = asyncio.create_task(heartbeat())
+
+            async def motion(cmd, seq):
+                await ws.send(json.dumps({**cmd, "seq": seq}))
+                got = [json.loads(await asyncio.wait_for(ws.recv(), 40)) for _ in range(2)]
+                assert got == [{"event": "ack", "seq": seq}, {"event": "motion_done", "seq": seq}]
+
+            dist, lateral = fake.world.distance("bottle")
+            await motion({"cmd": "PICK", "dist_cm": dist, "lateral_cm": lateral}, 1)
+            await motion({"cmd": "MOVE_TO_BIN", "bin": "b3"}, 2)
+            move, _ = fm.bin_paths()["b3"]
+            assert fake.world.angles == pytest.approx(fake.world.servo_pose(move[-1]), abs=0.5)
+            assert fake.held_bin == "b3" and fake.held_item == "bottle" and fake.world.gripper_closed
+            assert fake.bin_tags() == [{"id": 4, "dist_mm": fm.BIN_TAG_DIST_MM}]
+            await motion({"cmd": "DROP"}, 3)
+            assert fake.held_item is None and fake.held_bin is None and not fake.items["bottle"]["on"]
+            assert fake.world.angles == pytest.approx(np.zeros(5), abs=0.5), "Pose 7 is home"
+            keepalive.cancel()
+
+    run(tmp_path, {"items": [BOTTLE]}, body, fps=50.0)
+
+
+@needs_sim
+def test_arm_pose_plays_the_apps_path(tmp_path):
+    """0234: ARM_POSE legs in servo degrees end at the last pose; F0 sets the gripper; bad paths are refused."""
+    raised = [75.0, 90.0, 30.0, 120.0, 100.0, 90.0]
+    turned = [75.0, 90.0, 30.0, 120.0, 100.0, 300.0 - 90.0]
+
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            async def heartbeat():
+                while True:
+                    await ws.send(json.dumps({"cmd": "HEARTBEAT"}))
+                    await asyncio.sleep(0.2)
+            keepalive = asyncio.create_task(heartbeat())
+            await ws.send(json.dumps({"cmd": "ARM_POSE", "seq": 1, "path": [raised, turned]}))
+            got = [json.loads(await asyncio.wait_for(ws.recv(), 30)) for _ in range(2)]
+            assert got == [{"event": "ack", "seq": 1}, {"event": "motion_done", "seq": 1}]
+            names = [a.name for a in fake.world.hil_config.AXES]
+            assert fake.world.angles == pytest.approx(fake.world.servo_pose(dict(zip(names, turned))), abs=0.5)
+            assert fake.world.gripper_closed
+            await ws.send(json.dumps({"cmd": "ARM_POSE", "seq": 2, "path": [[1, 2, 3]]}))
+            assert json.loads(await asyncio.wait_for(ws.recv(), 5)) == {"event": "error", "seq": 2, "reason": "invalid_path"}
+            keepalive.cancel()
+
+    run(tmp_path, {"items": [BOTTLE]}, body, fps=50.0)
 
 
 @needs_sim
@@ -390,8 +486,9 @@ def world_for(tmp_path, items, images_dir=None, occlusion=True, log=None):
 def test_fake_uses_robot_sim_effective_joint_limits(tmp_path):
     world = world_for(tmp_path, [])
     try:
-        assert world.cc.ase.JOINT_LIMITS == [(-90.0, 90.0), (-50.0, 50.0),
-                                            (-180.0, 0.0), (-25.0, 90.0),
+        # robotic_hand_sim 75ab797 hil/config.py: stepper base, pitch home at servo 0 (decision 0230).
+        assert world.cc.ase.JOINT_LIMITS == [(-180.0, 180.0), (-50.0, 50.0),
+                                            (-180.0, 0.0), (0.0, 180.0),
                                             (-90.0, 90.0)]
     finally:
         world.close()
@@ -624,7 +721,7 @@ def test_arm_moving_while_j1_turns(tmp_path):
 
     moving = run(tmp_path, {"items": [BOTTLE], "events": [{"t": 0.3, "do": "arm", "j1": 20}]}, body)
     assert moving[0] is False, "still at first"
-    assert True in moving, "true while J1 turns (20 deg at 60 deg/s)"
+    assert True in moving, "true while J1 turns (20 deg at 40 deg/s)"
     assert moving[-1] is False, "false again once it arrived"
     old = run(tmp_path, {"items": [BOTTLE], "events": [{"t": 0.3, "do": "arm", "j1": 20}]}, body, p1=False)
     assert set(old) == {None}, "old firmware: no arm_moving field"

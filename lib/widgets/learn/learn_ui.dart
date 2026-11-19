@@ -1,10 +1,13 @@
+import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../theme/elio_theme.dart';
+import '../../theme/elio_motion.dart';
 import '../../theme/elio_tokens.dart';
+import 'package:elio/l10n/l10n.dart';
 
 /// L1 v2 Learn components (Figma 295:2372 to 300:3329). Colours come only
 /// from the active [ElioPalette]; text from the theme's [TextTheme].
@@ -17,8 +20,9 @@ extension LearnTheme on BuildContext {
 }
 
 /// Pushes a Learn page inside the ELIO theme (routes do not inherit it).
+/// Learn sub-pages slide in 24 px and fade (ELIOS 3 motion, Figma 13 · 10).
 Route<T> learnRoute<T>(Widget page) =>
-    MaterialPageRoute<T>(builder: (_) => ElioTheme.wrap(page));
+    ElioPageRoute<T>(builder: (_) => ElioTheme.wrap(page));
 
 // M3 shape scale with continuous corners.
 const learnRadiusM = 12.0;
@@ -55,7 +59,10 @@ class LearnCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
-    final shape = learnShape(radius, BorderSide(color: borderColor ?? p.borderSubtle));
+    final shape = learnShape(
+      radius,
+      BorderSide(color: borderColor ?? p.borderSubtle),
+    );
     return Semantics(
       button: onTap != null,
       label: semanticLabel,
@@ -100,7 +107,10 @@ class LearnSectionHeader extends StatelessWidget {
             ),
           ),
           if (actionLabel != null && onAction == null)
-            Text(actionLabel!, style: context.text.labelLarge?.copyWith(color: p.primaryText))
+            Text(
+              actionLabel!,
+              style: context.text.labelLarge?.copyWith(color: p.primaryText),
+            )
           else if (actionLabel != null)
             TextButton(
               onPressed: onAction,
@@ -128,7 +138,11 @@ Color _toneFg(ElioPalette p, LearnTone t) => switch (t) {
 
 /// Level chip 300:3146 (tinted pill).
 class LevelChip extends StatelessWidget {
-  const LevelChip({super.key, required this.label, this.tone = LearnTone.success});
+  const LevelChip({
+    super.key,
+    required this.label,
+    this.tone = LearnTone.success,
+  });
 
   final String label;
   final LearnTone tone;
@@ -171,7 +185,12 @@ class LearnProgressBar extends StatelessWidget {
 
 /// Icon + text pair ("7:22", "Done").
 class LearnMeta extends StatelessWidget {
-  const LearnMeta({super.key, required this.icon, required this.label, this.color});
+  const LearnMeta({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.color,
+  });
 
   final IconData icon;
   final String label;
@@ -234,7 +253,12 @@ class LearnThumbnail extends StatelessWidget {
 
 /// Bundled SVG illustration; decorative, so excluded from semantics.
 class LearnIllustration extends StatelessWidget {
-  const LearnIllustration(this.asset, {super.key, this.fit = BoxFit.contain, this.height});
+  const LearnIllustration(
+    this.asset, {
+    super.key,
+    this.fit = BoxFit.contain,
+    this.height,
+  });
 
   final String asset;
   final BoxFit fit;
@@ -253,7 +277,12 @@ class LearnIllustration extends StatelessWidget {
 
 /// Rounded cover area of a card.
 class LearnCover extends StatelessWidget {
-  const LearnCover({super.key, required this.child, this.aspectRatio = 16 / 9, this.badge});
+  const LearnCover({
+    super.key,
+    required this.child,
+    this.aspectRatio = 16 / 9,
+    this.badge,
+  });
 
   final Widget child;
   final double aspectRatio;
@@ -275,14 +304,19 @@ class LearnCover extends StatelessWidget {
                 right: 6,
                 bottom: 6,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: ShapeDecoration(
                     color: p.tooltipBg,
                     shape: learnShape(6),
                   ),
                   child: Text(
                     badge!,
-                    style: context.text.labelMedium?.copyWith(color: p.tooltipText),
+                    style: context.text.labelMedium?.copyWith(
+                      color: p.tooltipText,
+                    ),
                   ),
                 ),
               ),
@@ -314,7 +348,7 @@ class BinCard extends StatelessWidget {
     final fg = selected ? p.onPrimary : p.textPrimary;
     return LearnCard(
       onTap: onTap,
-      semanticLabel: 'Module $label',
+      semanticLabel: l10n.lnModuleLabel(label),
       color: selected ? p.primary : null,
       borderColor: selected ? p.primary : null,
       padding: const EdgeInsets.all(12),
@@ -326,7 +360,10 @@ class BinCard extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: context.text.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w700),
+              style: context.text.titleSmall?.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             Align(
               alignment: Alignment.bottomRight,
@@ -395,14 +432,18 @@ class LessonCard extends StatelessWidget {
                   meta,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: context.text.labelMedium?.copyWith(color: p.textSecondary),
+                  style: context.text.labelMedium?.copyWith(
+                    color: p.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   title,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: context.text.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                  style: context.text.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 if (leading != null || trailing != null) ...[
                   const SizedBox(height: 6),
@@ -444,7 +485,12 @@ class LessonCard extends StatelessWidget {
 /// Lesson card grid 295:2420: two columns on phones, each row as tall as
 /// its tallest card (text scale 1.3 never clips).
 class LessonCardGrid extends StatelessWidget {
-  const LessonCardGrid({super.key, required this.children, this.columns = 2, this.gap = 12});
+  const LessonCardGrid({
+    super.key,
+    required this.children,
+    this.columns = 2,
+    this.gap = 12,
+  });
 
   final List<Widget> children;
   final int columns;
@@ -461,7 +507,11 @@ class LessonCardGrid extends StatelessWidget {
             children: [
               for (var c = 0; c < columns; c++) ...[
                 if (c > 0) SizedBox(width: gap),
-                Expanded(child: i + c < children.length ? children[i + c] : const SizedBox()),
+                Expanded(
+                  child: i + c < children.length
+                      ? children[i + c]
+                      : const SizedBox(),
+                ),
               ],
             ],
           ),
@@ -475,7 +525,11 @@ class LessonCardGrid extends StatelessWidget {
 
 /// Horizontal carousel of fixed-width cards.
 class LearnCarousel extends StatelessWidget {
-  const LearnCarousel({super.key, required this.children, this.itemWidth = 220});
+  const LearnCarousel({
+    super.key,
+    required this.children,
+    this.itemWidth = 220,
+  });
 
   final List<Widget> children;
   final double itemWidth;
@@ -492,7 +546,10 @@ class LearnCarousel extends StatelessWidget {
           children: [
             for (var i = 0; i < children.length; i++) ...[
               if (i > 0) const SizedBox(width: 12),
-              SizedBox(width: itemWidth * scale.clamp(1.0, 1.3), child: children[i]),
+              SizedBox(
+                width: itemWidth * scale.clamp(1.0, 1.3),
+                child: children[i],
+              ),
             ],
           ],
         ),
@@ -525,7 +582,7 @@ class ProgressSummaryCard extends StatelessWidget {
     final p = context.elio;
     return LearnCard(
       onTap: onTap,
-      semanticLabel: '$title, ${(value * 100).round()} percent',
+      semanticLabel: context.l10n.a11yPercent(title, (value * 100).round()),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -540,21 +597,28 @@ class ProgressSummaryCard extends StatelessWidget {
                     Text(title, style: context.text.titleSmall),
                     Text(
                       subtitle,
-                      style: context.text.labelMedium?.copyWith(color: p.textSecondary),
+                      style: context.text.labelMedium?.copyWith(
+                        color: p.textSecondary,
+                      ),
                     ),
                   ],
                 ),
               ),
               Text(
                 '${(value * 100).round()}%',
-                style: context.text.headlineLarge?.copyWith(color: p.primaryText),
+                style: context.text.headlineLarge?.copyWith(
+                  color: p.primaryText,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           LearnProgressBar(value: value),
           const SizedBox(height: 8),
-          Text(footer, style: context.text.labelMedium?.copyWith(color: p.textSecondary)),
+          Text(
+            footer,
+            style: context.text.labelMedium?.copyWith(color: p.textSecondary),
+          ),
         ],
       ),
     );
@@ -624,7 +688,9 @@ class GuideLessonRow extends StatelessWidget {
                       if (subtitle.isNotEmpty)
                         Text(
                           subtitle,
-                          style: context.text.labelMedium?.copyWith(color: p.textSecondary),
+                          style: context.text.labelMedium?.copyWith(
+                            color: p.textSecondary,
+                          ),
                         ),
                     ],
                   ),
@@ -670,7 +736,7 @@ class DoneCheck extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.elio;
     return Semantics(
-      label: 'Done',
+      label: l10n.lnDone,
       child: Container(
         width: 24,
         height: 24,
@@ -703,7 +769,7 @@ class VideoCard extends StatelessWidget {
     final p = context.elio;
     return Semantics(
       button: true,
-      label: 'Video $title',
+      label: l10n.lnVideoLabel(title),
       child: InkWell(
         onTap: onTap,
         customBorder: learnShape(learnRadiusM),
@@ -715,11 +781,19 @@ class VideoCard extends StatelessWidget {
               badge: duration,
               child: Stack(
                 fit: StackFit.expand,
-                children: [thumbnail, const Center(child: PlayBadge())],
+                children: [
+                  thumbnail,
+                  const Center(child: PlayBadge()),
+                ],
               ),
             ),
             const SizedBox(height: 6),
-            Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.text.titleSmall),
+            Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: context.text.titleSmall,
+            ),
             Text(
               subtitle,
               maxLines: 1,
@@ -747,7 +821,11 @@ class PlayBadge extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(color: p.surface, shape: BoxShape.circle),
-        child: Icon(Icons.play_arrow_rounded, color: p.textPrimary, size: size * 0.6),
+        child: Icon(
+          Icons.play_arrow_rounded,
+          color: p.textPrimary,
+          size: size * 0.6,
+        ),
       ),
     );
   }
@@ -774,14 +852,25 @@ class QuizCard extends StatelessWidget {
     return LearnCard(
       child: Row(
         children: [
-          const SizedBox(width: 48, child: LearnIllustration('assets/illustrations/learn/elio_quiz_mascot.svg', height: 48)),
+          const SizedBox(
+            width: 48,
+            child: LearnIllustration(
+              'assets/illustrations/robot/robot_thinking.svg',
+              height: 48,
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: context.text.titleSmall),
-                Text(subtitle, style: context.text.labelMedium?.copyWith(color: p.textSecondary)),
+                Text(
+                  subtitle,
+                  style: context.text.labelMedium?.copyWith(
+                    color: p.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -821,7 +910,7 @@ class SimulationRow extends StatelessWidget {
     final p = context.elio;
     return LearnCard(
       onTap: onTap,
-      semanticLabel: 'Simulation $title',
+      semanticLabel: l10n.lnSimLabel(title),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -836,14 +925,24 @@ class SimulationRow extends StatelessWidget {
                   runSpacing: 4,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Text(tag, style: context.text.labelMedium?.copyWith(color: p.errorText)),
-                    if (done) const LevelChip(label: 'Selesai'),
+                    Text(
+                      tag,
+                      style: context.text.labelMedium?.copyWith(
+                        color: p.errorText,
+                      ),
+                    ),
+                    if (done) LevelChip(label: l10n.lnDone),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(title, style: context.text.titleSmall),
                 const SizedBox(height: 4),
-                Text(description, style: context.text.labelMedium?.copyWith(color: p.textSecondary)),
+                Text(
+                  description,
+                  style: context.text.labelMedium?.copyWith(
+                    color: p.textSecondary,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -851,7 +950,10 @@ class SimulationRow extends StatelessWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     FormulaChip(formula: formula),
-                    LearnMeta(icon: Icons.schedule_rounded, label: '$minutes min'),
+                    LearnMeta(
+                      icon: Icons.schedule_rounded,
+                      label: l10n.lnMinutes(minutes),
+                    ),
                   ],
                 ),
               ],
@@ -875,7 +977,10 @@ class FormulaChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: ShapeDecoration(color: p.surfaceRaised, shape: learnShape(6)),
-      child: Text('Σ  $formula', style: ElioTokens.chip.copyWith(color: p.textPrimary)),
+      child: Text(
+        'Σ  $formula',
+        style: ElioTokens.chip.copyWith(color: p.textPrimary),
+      ),
     );
   }
 }
@@ -907,9 +1012,16 @@ class SimulationCard extends StatelessWidget {
       cover: LearnIllustration(canvasAsset, fit: BoxFit.cover),
       meta: tag,
       title: title,
-      leading: LearnMeta(icon: Icons.schedule_rounded, label: '$minutes min'),
+      leading: LearnMeta(
+        icon: Icons.schedule_rounded,
+        label: l10n.lnMinutes(minutes),
+      ),
       trailing: done
-          ? LearnMeta(icon: Icons.check_rounded, label: 'Selesai', color: p.primaryText)
+          ? LearnMeta(
+              icon: Icons.check_rounded,
+              label: l10n.lnDone,
+              color: p.primaryText,
+            )
           : null,
     );
   }
@@ -936,7 +1048,10 @@ class LearnSegmented extends StatelessWidget {
     final p = context.elio;
     return Container(
       padding: const EdgeInsets.all(4),
-      decoration: ShapeDecoration(color: p.surfaceRaised, shape: const StadiumBorder()),
+      decoration: ShapeDecoration(
+        color: p.surfaceRaised,
+        shape: const StadiumBorder(),
+      ),
       child: Row(
         children: [
           for (var i = 0; i < labels.length; i++)
@@ -947,7 +1062,9 @@ class LearnSegmented extends StatelessWidget {
                 child: Material(
                   color: i == selected ? p.surface : Colors.transparent,
                   shape: StadiumBorder(
-                    side: i == selected ? BorderSide(color: p.borderMedium) : BorderSide.none,
+                    side: i == selected
+                        ? BorderSide(color: p.borderMedium)
+                        : BorderSide.none,
                   ),
                   child: InkWell(
                     customBorder: const StadiumBorder(),
@@ -956,7 +1073,10 @@ class LearnSegmented extends StatelessWidget {
                       constraints: const BoxConstraints(minHeight: 48),
                       child: Center(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 6,
+                          ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -969,7 +1089,9 @@ class LearnSegmented extends StatelessWidget {
                                   labels[i],
                                   textAlign: TextAlign.center,
                                   style: context.text.labelLarge?.copyWith(
-                                    color: i == selected ? p.textPrimary : p.textSecondary,
+                                    color: i == selected
+                                        ? p.textPrimary
+                                        : p.textSecondary,
                                   ),
                                 ),
                               ),
@@ -1028,7 +1150,10 @@ class LearnPageScaffold extends StatelessWidget {
               ),
               child: SafeArea(
                 top: false,
-                child: Padding(padding: const EdgeInsets.all(16), child: bottom),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: bottom,
+                ),
               ),
             ),
     );
@@ -1045,7 +1170,14 @@ class LearnListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final list = ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      // In the Learn tab (no top bar since ELIOS 3) this clears the status
+      // bar; under an AppBar the inset is already 0.
+      padding: EdgeInsets.fromLTRB(
+        16,
+        8 + MediaQuery.paddingOf(context).top,
+        16,
+        32,
+      ),
       children: [
         for (final c in children)
           Center(
@@ -1057,13 +1189,20 @@ class LearnListView extends StatelessWidget {
           ),
       ],
     );
-    return onRefresh == null ? list : RefreshIndicator(onRefresh: onRefresh!, child: list);
+    return onRefresh == null
+        ? list
+        : RefreshIndicator(onRefresh: onRefresh!, child: list);
   }
 }
 
 /// Skeleton block shown while a Firestore stream has no first value.
 class LearnSkeleton extends StatelessWidget {
-  const LearnSkeleton({super.key, this.height = 80, this.width, this.radius = learnRadiusL});
+  const LearnSkeleton({
+    super.key,
+    this.height = 80,
+    this.width,
+    this.radius = learnRadiusL,
+  });
 
   final double height;
   final double? width;
@@ -1086,7 +1225,7 @@ class LearnHubSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: 'Loading learning modules',
+    label: l10n.lnLoadingModules,
     child: const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1116,15 +1255,15 @@ class LearnHubSkeleton extends StatelessWidget {
 
 /// Spinner that stays static under reduced motion (lesson loading 312:6239).
 class LearnSpinner extends StatelessWidget {
-  const LearnSpinner({super.key, this.label = 'Loading lesson'});
+  const LearnSpinner({super.key, this.label});
 
-  final String label;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
     return Semantics(
-      label: label,
+      label: label ?? l10n.lnLoadingLesson,
       child: SizedBox.square(
         dimension: 40,
         child: CircularProgressIndicator(
@@ -1168,7 +1307,11 @@ class LearnStateView extends StatelessWidget {
         children: [
           LearnIllustration(asset, height: 160),
           const SizedBox(height: 24),
-          Text(title, textAlign: TextAlign.center, style: context.text.titleLarge),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: context.text.titleLarge,
+          ),
           if (message != null) ...[
             const SizedBox(height: 8),
             Text(
@@ -1218,9 +1361,20 @@ class LearnHintCard extends StatelessWidget {
       borderColor: p.borderMedium,
       child: Row(
         children: [
-          const SizedBox(width: 48, child: LearnIllustration('assets/illustrations/learn/elio_quiz_mascot.svg', height: 40)),
+          const SizedBox(
+            width: 48,
+            child: LearnIllustration(
+              'assets/illustrations/robot/robot_thinking.svg',
+              height: 40,
+            ),
+          ),
           const SizedBox(width: 12),
-          Expanded(child: Text(text, style: context.text.bodySmall?.copyWith(color: p.textSecondary))),
+          Expanded(
+            child: Text(
+              text,
+              style: context.text.bodySmall?.copyWith(color: p.textSecondary),
+            ),
+          ),
         ],
       ),
     );
@@ -1249,9 +1403,13 @@ class QuizProgressHeader extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(counter, style: context.text.bodySmall?.copyWith(color: p.textSecondary)),
+              child: Text(
+                counter,
+                style: context.text.bodySmall?.copyWith(color: p.textSecondary),
+              ),
             ),
-            if (level.isNotEmpty) LevelChip(label: level, tone: LearnTone.error),
+            if (level.isNotEmpty)
+              LevelChip(label: level, tone: LearnTone.error),
           ],
         ),
         const SizedBox(height: 12),
@@ -1261,8 +1419,9 @@ class QuizProgressHeader extends StatelessWidget {
   }
 }
 
-/// Answer option with the fixed quiz letter colours (A red, B blue,
-/// C green, D yellow with navy text).
+/// QQ / Answer option (Figma 653:35): leaf 22/8/22/8, round letter in the
+/// fixed quiz colours (A red, B blue, C yellow with navy text, D green).
+/// States: Default, Selected (info), Correct (success), Wrong (error).
 class QuizAnswerOption extends StatelessWidget {
   const QuizAnswerOption({
     super.key,
@@ -1272,6 +1431,7 @@ class QuizAnswerOption extends StatelessWidget {
     required this.isCorrect,
     required this.answered,
     required this.onTap,
+    this.minHeight = 56,
   });
 
   final int index;
@@ -1281,17 +1441,20 @@ class QuizAnswerOption extends StatelessWidget {
   final bool answered;
   final VoidCallback onTap;
 
+  /// 64 on full-page quizzes (Kuis fisika); the guide quiz deck keeps 56.
+  final double minHeight;
+
   static const _fills = [
     ElioTokens.answerRed,
     ElioTokens.answerBlue,
-    ElioTokens.answerGreen,
     ElioTokens.answerYellow,
+    ElioTokens.answerGreen,
   ];
   static const _onFills = [
     ElioTokens.onAnswerRed,
     ElioTokens.onAnswerBlue,
-    ElioTokens.onAnswerGreen,
     ElioTokens.onAnswerYellow,
+    ElioTokens.onAnswerGreen,
   ];
 
   @override
@@ -1299,54 +1462,105 @@ class QuizAnswerOption extends StatelessWidget {
     final p = context.elio;
     final revealCorrect = answered && isCorrect;
     final revealWrong = answered && selected && !isCorrect;
-    final edge = revealCorrect
-        ? p.primaryText
+    Color tint(Color c, double a) => Color.alphaBlend(c.withValues(alpha: a), p.surface);
+    final (fill, side) = revealCorrect
+        ? (tint(p.primaryText, 0.10), BorderSide(color: p.primaryText.withValues(alpha: 0.35), width: 2))
         : revealWrong
-        ? p.errorText
+        ? (tint(p.errorText, 0.10), BorderSide(color: p.errorText.withValues(alpha: 0.35), width: 2))
         : selected
-        ? p.textPrimary
-        : p.borderMedium;
-    final fill = revealCorrect
-        ? p.primaryText.withValues(alpha: 0.08)
-        : revealWrong
-        ? p.errorText.withValues(alpha: 0.08)
-        : p.surface;
+        ? (tint(p.tertiaryText, 0.10), BorderSide(color: p.tertiaryText, width: 2.5))
+        : (p.surface, BorderSide(color: p.borderSubtle, width: 1.5));
     final letter = String.fromCharCode(65 + index);
-    final shape = learnShape(learnRadiusL, BorderSide(color: edge, width: selected || revealCorrect ? 2 : 1));
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: 'Answer $letter: $label${revealCorrect ? ', correct' : revealWrong ? ', wrong' : ''}',
-      excludeSemantics: true,
-      child: Material(
-        color: fill,
-        shape: shape,
-        child: InkWell(
-          onTap: answered ? null : onTap,
-          customBorder: shape,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 56),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    alignment: Alignment.center,
-                    decoration: ShapeDecoration(color: _fills[index % 4], shape: learnShape(8)),
-                    child: Text(
-                      letter,
-                      style: context.text.labelLarge?.copyWith(color: _onFills[index % 4]),
-                    ),
+    final shape = RoundedRectangleBorder(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(22),
+        topRight: Radius.circular(8),
+        bottomRight: Radius.circular(22),
+        bottomLeft: Radius.circular(8),
+      ),
+      side: side,
+    );
+    final reduced = ElioMotion.reduced(context);
+    // Figma 13 · 28: a wrong pick shakes x ±6 × 3; the right answer pulses
+    // once (1.04) when it was not the one chosen; the check pops in.
+    final pulse = revealCorrect && !selected && !reduced;
+    return ElioShake(
+      trigger: revealWrong ? label : null,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: pulse ? 1 : 0),
+        duration: ElioMotion.slow,
+        builder: (context, v, child) => Transform.scale(
+          scale: 1 + 0.04 * math.sin(v * math.pi),
+          child: child,
+        ),
+        child: Semantics(
+          button: true,
+          selected: selected,
+          label:
+              l10n.lnAnswerLabel(letter, label) +
+              (revealCorrect
+                  ? l10n.lnCorrectSuffix
+                  : revealWrong
+                  ? l10n.lnWrongSuffix
+                  : ''),
+          excludeSemantics: true,
+          child: AnimatedContainer(
+            duration: ElioMotion.base,
+            curve: ElioMotion.soft,
+            decoration: ShapeDecoration(color: fill, shape: shape),
+            child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: answered ? null : onTap,
+              customBorder: shape,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: minHeight),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(label, style: context.text.bodyMedium)),
-                  if (revealCorrect) Icon(Icons.check_circle_rounded, color: p.primaryText),
-                  if (revealWrong) Icon(Icons.cancel_rounded, color: p.errorText),
-                ],
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: _fills[index % 4],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          letter,
+                          style: context.text.labelLarge?.copyWith(
+                            color: _onFills[index % 4],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(label, style: context.text.bodyMedium),
+                      ),
+                      if (revealCorrect)
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.4, end: 1),
+                          duration: reduced ? Duration.zero : ElioMotion.slow,
+                          curve: ElioMotion.pop,
+                          builder: (context, s, child) =>
+                              Transform.scale(scale: s, child: child),
+                          child: Icon(
+                            Icons.check_rounded,
+                            color: p.primaryText,
+                          ),
+                        ),
+                      if (revealWrong)
+                        Icon(Icons.close_rounded, color: p.errorText),
+                    ],
+                  ),
+                ),
               ),
             ),
+          ),
           ),
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
@@ -9,9 +10,9 @@ import 'package:elio/providers/auth_provider.dart';
 import 'package:elio/theme/elio_theme.dart';
 import 'package:elio/theme/elio_tokens.dart';
 import 'package:elio/widgets/auth/auth_widgets.dart';
-import 'package:elio/widgets/splash/elio_leaf.dart';
 
 import 'home_shell.dart';
+import 'package:elio/l10n/l10n.dart';
 
 class LoginScreen extends StatefulWidget {
   final FirebaseAuth auth;
@@ -106,31 +107,31 @@ class _LoginScreenState extends State<LoginScreen> {
   String _mapError(String code) {
     switch (code) {
       case 'user-not-found':
-        return 'No account found with this email or username.';
+        return l10n.authUserNotFound;
       case 'wrong-password':
-        return 'Incorrect password.';
+        return l10n.authWrongPassword;
       case 'email-already-in-use':
-        return 'This email is already registered.';
+        return l10n.authEmailInUse;
       case 'weak-password':
-        return 'Password must be at least 6 characters.';
+        return l10n.authWeakPassword;
       case 'invalid-email':
-        return 'Enter a valid email address.';
+        return l10n.authInvalidEmail;
       case 'too-many-requests':
-        return 'Too many attempts. Try again later.';
+        return l10n.authTooMany;
       case 'network-request-failed':
-        return 'No internet connection.';
+        return l10n.authNoInternet;
       case 'missing-google-id-token':
-        return 'Google sign-in is not configured correctly. Check Android/iOS Firebase setup.';
+        return l10n.authGoogleConfig;
       case 'account-exists-with-different-credential':
-        return 'This email is already registered with another sign-in method.';
+        return l10n.authOtherMethod;
       case 'credential-already-in-use':
-        return 'This Google account is already linked to another user.';
+        return l10n.authGoogleLinked;
       case 'invalid-credential':
-        return 'Google credential is invalid. Check Firebase configuration.';
+        return l10n.authGoogleInvalid;
       case 'operation-not-allowed':
-        return 'Google sign-in is not enabled in Firebase Authentication.';
+        return l10n.authGoogleDisabled;
       default:
-        return 'Something went wrong. Please try again.';
+        return l10n.authGeneric;
     }
   }
 
@@ -162,12 +163,12 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text,
         _passwordController.text,
       );
-      _showSnack('Welcome back!');
+      _showSnack(l10n.authWelcomeBack);
       _goHome();
     } on FirebaseAuthException catch (e) {
       _setError(_mapError(e.code));
     } catch (_) {
-      _setError('Sign in failed.');
+      _setError(l10n.authSignInFailed);
     }
   }
 
@@ -183,12 +184,12 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text,
       );
       await cred.user?.updateDisplayName(_nameController.text.trim());
-      _showSnack('Account created!');
+      _showSnack(l10n.authAccountCreated);
       _goHome();
     } on FirebaseAuthException catch (e) {
       _setError(_mapError(e.code));
     } catch (_) {
-      _setError('Account creation failed.');
+      _setError(l10n.authCreateFailed);
     }
   }
 
@@ -238,8 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (googleAuth.idToken == null) {
         throw FirebaseAuthException(
           code: 'missing-google-id-token',
-          message:
-              'Google Sign-In returned no idToken. Check Firebase platform config.',
+          message: l10n.authNoIdToken,
         );
       }
 
@@ -256,7 +256,7 @@ class _LoginScreenState extends State<LoginScreen> {
         'email=${userCredential.user?.email}',
       );
 
-      _showSnack('Welcome back!');
+      _showSnack(l10n.authWelcomeBack);
       _goHome();
     } on FirebaseAuthException catch (e, stackTrace) {
       debugPrint(
@@ -271,11 +271,11 @@ class _LoginScreenState extends State<LoginScreen> {
         'code=${e.code}, message=${e.message}, details=${e.details}',
       );
       debugPrintStack(stackTrace: stackTrace);
-      _setError('Google sign-in failed: ${e.code}');
+      _setError(l10n.authGoogleFailedCode(e.code));
     } catch (e, stackTrace) {
       debugPrint('[AuthDiag] Unknown Google sign-in error: $e');
       debugPrintStack(stackTrace: stackTrace);
-      _setError('Google sign-in failed. Check debug logs.');
+      _setError(l10n.authGoogleFailed);
     }
   }
 
@@ -285,12 +285,12 @@ class _LoginScreenState extends State<LoginScreen> {
     _setLoading(true);
     try {
       await widget.auth.signInAnonymously();
-      _showSnack('Entered guest mode.');
+      _showSnack(l10n.authGuestEntered);
       _goHome();
     } on FirebaseAuthException catch (e) {
       _setError(_mapError(e.code));
     } catch (_) {
-      _setError('Guest mode failed.');
+      _setError(l10n.authGuestFailed);
     }
   }
 
@@ -301,7 +301,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = _emailController.text.trim();
     if (email.isEmpty ||
         !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-      _showSnack('Enter a valid email first.', isError: true);
+      _showSnack(l10n.authEmailFirst, isError: true);
       return;
     }
     try {
@@ -311,39 +311,39 @@ class _LoginScreenState extends State<LoginScreen> {
         _resetSent = true;
         _errorMessage = null;
       });
-      _showSnack('Reset link sent to your email.');
+      _showSnack(l10n.authResetSent);
     } on FirebaseAuthException catch (e) {
       _setError(_mapError(e.code));
     } catch (_) {
-      _setError('Failed to send reset email.');
+      _setError(l10n.authResetFailed);
     }
   }
 
   // ── Validators ────────────────────────────────────────────
   String? _emailValidator(String? v) {
     if (v == null || v.trim().isEmpty) {
-      return _isSignUp ? 'Email is required' : 'Email or username is required';
+      return _isSignUp ? l10n.authEmailRequired : l10n.authEmailOrUserRequired;
     }
 
     final value = v.trim();
     if (_isSignUp || value.contains('@')) {
       if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-        return 'Enter a valid email';
+        return l10n.authValidEmail;
       }
     }
     return null;
   }
 
   String? _passwordValidator(String? v) {
-    if (v == null || v.isEmpty) return 'Password is required';
-    if (v.length < 6) return 'Min 6 characters';
+    if (v == null || v.isEmpty) return l10n.authPasswordRequired;
+    if (v.length < 6) return l10n.authMin6;
     return null;
   }
 
   String? _nameValidator(String? v) {
     if (!_isSignUp) return null;
-    if (v == null || v.trim().isEmpty) return 'Name is required';
-    if (v.trim().length < 2) return 'Min 2 characters';
+    if (v == null || v.trim().isEmpty) return l10n.authNameRequired;
+    if (v.trim().length < 2) return l10n.authMin2;
     return null;
   }
 
@@ -384,15 +384,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                   )
-                : SafeArea(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        24,
-                        32,
-                        24,
-                        24,
-                      ),
-                      child: form,
+                // ELIOS 3 (L4): the curved green header scrolls with the form.
+                : SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      bottom: 24 + MediaQuery.paddingOf(context).bottom,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const AuthOrganicHeader(),
+                        Padding(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                            24,
+                            8,
+                            24,
+                            0,
+                          ),
+                          child: form,
+                        ),
+                      ],
                     ),
                   ),
           );
@@ -403,28 +413,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildForm(ElioPalette p, bool wide) {
     final title = _isForgot
-        ? 'Forgot password?'
+        ? l10n.authForgot
         : _isSignUp
-        ? 'Create Account'
-        : 'Welcome Back';
+        ? l10n.authCreateAccount
+        : l10n.authWelcomeTitle;
     final subtitle = _isForgot
         ? null
         : _isSignUp
-        ? 'Join ELIOS to start sorting'
-        : 'Sign in to control ELIOS';
+        ? l10n.authJoin
+        : l10n.authSignInSub;
     return AutofillGroup(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: ElioTokens.space24,
         children: [
-          if (!wide)
-            Row(
-              spacing: 12,
-              children: [
-                ElioMark(size: 48, color: p.primaryText),
-                Text('ELIOS', style: authBrandStyle(p, large: false)),
-              ],
-            ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: ElioTokens.space4,
@@ -435,6 +437,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   title,
                   style: ElioTokens.headline.copyWith(color: p.textPrimary),
                 ),
+              ),
+              SvgPicture.asset(
+                'assets/illustrations/scan/squiggle.svg',
+                width: 72,
+                height: 10,
+                excludeFromSemantics: true,
+                colorFilter: ColorFilter.mode(p.primary, BlendMode.srcIn),
               ),
               if (subtitle != null)
                 Text(
@@ -469,10 +478,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _emailField() => AuthField(
     controller: _emailController,
     validator: _isForgot ? null : _emailValidator,
-    label: _isSignUp || _isForgot ? 'Email' : 'Email / Username',
-    hint: _isSignUp || _isForgot
-        ? 'you@example.com'
-        : 'you@example.com or username',
+    label: _isSignUp || _isForgot ? l10n.authEmail : l10n.authEmailOrUser,
+    hint: _isSignUp || _isForgot ? 'you@example.com' : l10n.authEmailOrUserHint,
     icon: Icons.mail_outline,
     keyboardType: TextInputType.emailAddress,
     focusNode: _emailFocusNode,
@@ -493,20 +500,20 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_errorMessage != null)
       AuthBanner(kind: AuthBannerKind.error, message: _errorMessage!)
     else if (_resetSent)
-      const AuthBanner(
-        kind: AuthBannerKind.success,
-        message: 'Reset link sent to your email.',
-      ),
+      AuthBanner(kind: AuthBannerKind.success, message: l10n.authResetSent),
     _emailField(),
   ]);
 
   List<Widget> _forgotActions() => [
     AuthPrimaryButton(
-      label: 'Send reset link',
+      label: l10n.authSendReset,
       onPressed: _resetSent ? null : _resetPassword,
     ),
     Center(
-      child: AuthLink(label: 'Sign In', onPressed: () => _setForgot(false)),
+      child: AuthLink(
+        label: l10n.authSignIn,
+        onPressed: () => _setForgot(false),
+      ),
     ),
   ];
 
@@ -517,8 +524,8 @@ class _LoginScreenState extends State<LoginScreen> {
       AuthField(
         controller: _nameController,
         validator: _nameValidator,
-        label: 'Full Name',
-        hint: 'John Doe',
+        label: l10n.authFullName,
+        hint: l10n.authFullNameHint,
         icon: Icons.person_outline,
         keyboardType: TextInputType.name,
         textInputAction: TextInputAction.next,
@@ -536,8 +543,8 @@ class _LoginScreenState extends State<LoginScreen> {
           child: AuthField(
             controller: _passwordController,
             validator: _passwordValidator,
-            label: 'Password',
-            hint: 'Enter your password',
+            label: l10n.authPassword,
+            hint: l10n.authPasswordHint,
             icon: Icons.lock_outline,
             obscure: _obscurePassword,
             focusNode: _passwordFocusNode,
@@ -564,7 +571,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Opacity(
               opacity: _isLoading ? ElioTokens.disabledOpacity : 1,
               child: AuthLink(
-                label: 'Forgot password?',
+                label: l10n.authForgot,
                 onPressed: _isLoading ? null : () => _setForgot(true),
               ),
             ),
@@ -585,22 +592,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
   List<Widget> _signActions(ElioPalette p) => [
     AuthPrimaryButton(
-      label: _isSignUp ? 'Create Account' : 'Sign In',
+      label: _isSignUp ? l10n.authCreateAccount : l10n.authSignIn,
       loading: _isLoading,
       onPressed: _isSignUp ? _signUpWithEmail : _handleEmailAuth,
     ),
     const AuthDivider(),
     AuthSecondaryButton(
       google: true,
-      label: 'Continue with Google',
+      label: l10n.authGoogle,
       onPressed: _isLoading ? null : _signInWithGoogle,
     ),
     AuthSecondaryButton(
-      label: 'Continue as Guest',
+      label: l10n.authGuest,
       onPressed: _isLoading ? null : _signInAsGuest,
     ),
     Text(
-      'Guest mode saves data locally only. Sign in to sync progress.',
+      l10n.authGuestNote,
       textAlign: TextAlign.center,
       style: ElioTokens.caption.copyWith(color: p.textTertiary),
     ),
@@ -609,11 +616,11 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
-          _isSignUp ? 'Already have an account? ' : "Don't have an account? ",
+          _isSignUp ? l10n.authHaveAccount : l10n.authNoAccount,
           style: ElioTokens.bodySmall.copyWith(color: p.textSecondary),
         ),
         AuthLink(
-          label: _isSignUp ? 'Sign In' : 'Sign Up',
+          label: _isSignUp ? l10n.authSignIn : l10n.authSignUp,
           onPressed: _isLoading ? null : _toggleSignUp,
         ),
       ],

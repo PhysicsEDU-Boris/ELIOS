@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' show ImageByteFormat;
 
 import 'package:elio/Screens/home/home_activity.dart';
+import 'package:elio/Screens/home/home_parts.dart';
 import 'package:elio/Screens/home_screen.dart';
 import 'package:elio/models/guide_lesson.dart';
 import 'package:elio/models/home_stats.dart';
@@ -13,8 +14,11 @@ import 'package:elio/models/video_lesson.dart';
 import 'package:elio/providers/auth_provider.dart';
 import 'package:elio/providers/learning_progress_provider.dart';
 import 'package:elio/providers/navigation_provider.dart';
+import 'package:elio/providers/robot_provider.dart';
 import 'package:elio/services/elearning_content_service.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/elio_feedback.dart';
+import 'package:elio/widgets/history_ui.dart' show HistoryScanCard;
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/scan_record_store.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -24,6 +28,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'auth_test_support.dart';
+import 'package:elio/widgets/xp_icon.dart';
 
 /// H1 v4 gamified Home (decision 0144). Firestore is a fake content service;
 /// the scan store is in memory; "now" is fixed to Saturday 31 Oct 2026 15:00.
@@ -168,6 +173,7 @@ Future<void> _pump(
   User? user,
   bool disableAnimations = false,
   bool shot = false,
+  bool settle = true,
 }) async {
   homeContentServiceForTest = _FakeContent();
   homeClock = () => _now;
@@ -197,6 +203,10 @@ Future<void> _pump(
     ],
   );
   await t.pump(const Duration(milliseconds: 50));
+  // Let the entrance finish (it never does while the skeleton shimmers).
+  for (var i = 0; settle && data != _Data.loading && i < 30; i++) {
+    await t.pump(const Duration(milliseconds: 100));
+  }
 }
 
 final _signedIn = MockUser(isAnonymous: false, uid: 'u1', displayName: 'Sam');
@@ -233,11 +243,25 @@ void main() {
         user: _signedIn,
         size: const Size(390, 3200),
       );
+      // Numbers count up on first show (ELIOS 3 motion, 0202).
+      await t.pump(const Duration(seconds: 1));
       expect(t.takeException(), isNull);
       expect(find.text('25'), findsWidgets); // total scans
-      expect(find.text('Waste Spotter'), findsOneWidget); // 140 trophies
-      expect(find.text('140 trophies'), findsOneWidget);
-      expect(find.text('110 to Lv3'), findsOneWidget);
+      expect(find.text('Eco Starter'), findsOneWidget); // 140 < 150 (0210)
+      expect(find.text('140 XP'), findsOneWidget);
+      expect(
+        find.text(
+          '10 XP to Level 2 · your tree grows as you earn XP',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Lv 1'), findsOneWidget);
+      expect(find.text('Lv 2'), findsOneWidget);
+      expect(
+        find.text('ELIOS robot'.toUpperCase()),
+        findsNothing,
+        reason: 'no robot connected',
+      );
       expect(find.text('Scan activity'), findsOneWidget);
       expect(find.text('Bin buddies'), findsOneWidget);
       expect(
@@ -245,7 +269,8 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Medals'), findsOneWidget);
-      expect(find.text('DID YOU KNOW?'), findsOneWidget);
+      expect(find.text('DID YOU KNOW?'), findsNothing);
+      expect(find.text('Open History'), findsOneWidget);
       expect(find.textContaining('Guest progress'), findsNothing);
       expect(find.textContaining('Drag to rotate'), findsNothing);
       expect(find.text('Quick Actions'), findsNothing);
@@ -280,13 +305,16 @@ void main() {
       );
       expect(find.text('Eco Starter'), findsOneWidget);
       expect(
-        find.text('Plant your first trophy: scan an item.'),
+        find.text('Earn your first XP: scan an item.'),
         findsOneWidget,
       );
       expect(find.text('No scans in the last 17 weeks'), findsOneWidget);
       expect(find.text('Your first scan lights up today'), findsOneWidget);
       expect(find.text('Your bins are hungry: scan an item'), findsOneWidget);
-      expect(find.text('Residu scans count toward Anorganik.'), findsOneWidget);
+      expect(
+        find.textContaining('Residu scans count toward Anorganik'),
+        findsOneWidget,
+      );
       expect(find.text('—'), findsWidgets);
       expect(find.text('0 of 3 done · resets at midnight'), findsOneWidget);
     });
@@ -307,7 +335,7 @@ void main() {
         t.element(find.byType(HomeScreen)),
       );
       await t.tap(find.text('Scan an item'));
-      expect(container.read(navigationIndexProvider), 3);
+      expect(container.read(navigationIndexProvider), 2, reason: 'Scan hub');
     },
   );
 
@@ -334,12 +362,12 @@ void main() {
       await _pump(t, user: _signedIn, size: const Size(390, 1600));
       await t.enterText(find.byType(TextField), 'plas');
       await t.pump(const Duration(milliseconds: 100));
-      expect(find.text('YOUR SCANS'), findsNothing); // still debouncing
+      expect(find.text('Bin buddies'), findsOneWidget); // still debouncing
       await t.pump(const Duration(milliseconds: 200));
       // 1 video + 1 quiz + 2 scans; no simulation mentions "plas".
       expect(find.text('4 results'), findsOneWidget);
       expect(find.text('All 4'), findsOneWidget);
-      expect(find.text('Simulasi 0'), findsOneWidget);
+      expect(find.text('Simulations 0'), findsOneWidget);
       expect(find.text('Lessons 1'), findsOneWidget);
       expect(find.text('Scans 2'), findsOneWidget);
       expect(find.text('YOUR SCANS'), findsOneWidget);
@@ -381,7 +409,7 @@ void main() {
     await t.pump();
     expect(find.text('October 2026'), findsOneWidget);
     expect(find.text('Saturday, 31 October · 1 scan'), findsOneWidget);
-    expect(find.text('Baterai bekas'), findsOneWidget);
+    expect(find.text('Baterai bekas'), findsWidgets); // day list + fan
   });
 
   testWidgets('month view: select a day, list its scans, open History', (
@@ -394,8 +422,8 @@ void main() {
     await t.tap(find.bySemanticsLabel('30 October, 2 scans'));
     await t.pump();
     expect(find.text('Friday, 30 October · 2 scans'), findsOneWidget);
-    expect(find.text('Botol plastik'), findsOneWidget);
-    expect(find.text('Kulit pisang'), findsOneWidget);
+    expect(find.text('Botol plastik'), findsWidgets);
+    expect(find.text('Kulit pisang'), findsWidgets);
     expect(t.takeException(), isNull);
     final container = ProviderScope.containerOf(
       t.element(find.byType(HomeScreen)),
@@ -439,23 +467,173 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('header actions: trophy total and bell are 48 dp', (t) async {
-    final store = _FakeStore(_sample());
+  testWidgets(
+    'header actions: only the 48 dp bell (trophies are on the hero)',
+    (t) async {
+      await pumpAt(
+        t,
+        Scaffold(
+          body: Center(child: HomeHeaderActions(onOpenLearning: () {})),
+        ),
+        overrides: [currentUserProvider.overrideWithValue(null)],
+      );
+      expect(find.byType(XpIcon), findsNothing);
+      final bell = t.getSize(find.byTooltip('Open notifications'));
+      expect(bell.width, greaterThanOrEqualTo(48));
+      await t.tap(find.byTooltip('Open notifications'));
+      await t.pump(const Duration(milliseconds: 400));
+      expect(find.text('Notifications'), findsOneWidget);
+    },
+  );
+
+  testWidgets('entrance replays on every open; still under reduced motion', (
+    t,
+  ) async {
+    final sounds = <ElioSfx>[];
+    ElioSound.instance
+      ..sink = ((sfx, _) => sounds.add(sfx))
+      ..isSilent = (() async => false)
+      ..clock = (() => t.binding.clock.now());
+    addTearDown(() => ElioSound.instance.sink = null);
+    // "25" on the first screen is the scans pebble.
+    int count() => find.text('25').evaluate().length;
+    for (var visit = 0; visit < 2; visit++) {
+      sounds.clear();
+      await _pump(t, user: _signedIn, settle: false);
+      expect(count(), 0, reason: 'visit $visit starts counting from 0');
+      for (var i = 0; i < 30; i++) {
+        await t.pump(const Duration(milliseconds: 100));
+      }
+      expect(count(), 1, reason: 'counted up to 25');
+      expect(sounds, [
+        ElioSfx.pop,
+        ElioSfx.chime,
+        ElioSfx.sparkleShort,
+      ], reason: 'tree, dial and sticker beats');
+      await t.pumpWidget(const SizedBox());
+    }
+    sounds.clear();
+    await _pump(
+      t,
+      user: _signedIn,
+      size: const Size(390, 3200),
+      disableAnimations: true,
+    );
+    expect(count(), greaterThanOrEqualTo(2), reason: 'at rest at once');
+    expect(t.binding.hasScheduledFrame, isFalse);
+    expect(sounds, isEmpty);
+  });
+
+  testWidgets('tree, sticker, pebbles and quest cards react to a tap', (
+    t,
+  ) async {
+    final sounds = <ElioSfx>[];
+    var now = DateTime(2026);
+    ElioSound.instance
+      ..sink = ((sfx, _) => sounds.add(sfx))
+      ..isSilent = (() async => false)
+      ..clock = (() => now);
+    addTearDown(() => ElioSound.instance.sink = null);
+    await _pump(t, user: _signedIn, size: const Size(390, 1200));
+    sounds.clear();
+    for (final target in [
+      find.byType(HomeBoing).first, // the eco tree
+      find.text('140 XP'),
+      find.text('Day streak'),
+      find.text('Scan 3 items today'),
+    ]) {
+      now = now.add(const Duration(seconds: 1));
+      await t.tap(target, warnIfMissed: false);
+      await t.pump(const Duration(milliseconds: 100));
+      expect(t.binding.hasScheduledFrame, isTrue, reason: 'springing');
+      await t.pump(const Duration(seconds: 1));
+    }
+    expect(sounds, [
+      ElioSfx.pop,
+      ElioSfx.sparkleShort,
+      ElioSfx.tick,
+      ElioSfx.pop,
+    ]);
+    expect(find.byType(HomeBoing), findsNWidgets(8));
+  });
+
+  testWidgets('search results and the selected day show thumbnails', (t) async {
+    await _pump(t, user: _signedIn, disableAnimations: true);
+    await t.enterText(find.byType(TextField), 'plas');
+    await t.pump(const Duration(milliseconds: 300));
+    expect(find.byType(HomeThumb), findsNWidgets(4)); // every result row
+    expect(t.getSize(find.byType(HomeThumb).first), const Size(70, 44));
+    await t.pumpWidget(const SizedBox());
+    await _pump(
+      t,
+      user: _signedIn,
+      size: const Size(390, 2300),
+      disableAnimations: true,
+    );
+    await t.tap(find.text('Month'));
+    await t.pump();
+    await t.tap(find.bySemanticsLabel('30 October, 2 scans'));
+    await t.pump();
+    expect(find.byType(HomeThumb), findsNWidgets(2));
+  });
+
+  testWidgets('lower sections play when scrolled into view', (t) async {
+    await _pump(t, user: _signedIn);
+    await t.pump(const Duration(seconds: 3));
+    double opacity() => t
+        .widget<Opacity>(
+          find
+              .ancestor(of: find.text('Medals'), matching: find.byType(Opacity))
+              .first,
+        )
+        .opacity;
+    expect(opacity(), 0, reason: 'below the fold: waiting');
+    await _scrollToEnd(t);
+    await t.pump(const Duration(seconds: 2));
+    await t.pump(const Duration(seconds: 2));
+    expect(opacity(), 1);
+  });
+
+  testWidgets('Recent scans: the three latest, Open History opens History', (
+    t,
+  ) async {
+    await _pump(
+      t,
+      user: _signedIn,
+      size: const Size(390, 3200),
+      disableAnimations: true,
+    );
+    expect(find.byType(HistoryScanCard), findsNWidgets(3));
+    expect(find.textContaining('Latest: Baterai bekas'), findsOneWidget);
+    final container = ProviderScope.containerOf(
+      t.element(find.byType(HomeScreen)),
+    );
+    await t.tap(find.text('Open History'));
+    expect(container.read(navigationIndexProvider), 4);
+  });
+
+  testWidgets('resume control shows only while a robot is connected', (
+    t,
+  ) async {
+    final status = StreamController<String>.broadcast();
+    addTearDown(status.close);
     await pumpAt(
       t,
-      Scaffold(
-        body: Center(
-          child: HomeHeaderActions(onOpenLearning: () {}, store: store),
-        ),
-      ),
-      overrides: [currentUserProvider.overrideWithValue(null)],
+      const Scaffold(body: Center(child: HomeResumeControl())),
+      overrides: [robotStatusProvider.overrideWith((ref) => status.stream)],
     );
-    expect(find.text('${store.totalTrophies}'), findsOneWidget);
-    final bell = t.getSize(find.byTooltip('Open notifications'));
-    expect(bell.width, greaterThanOrEqualTo(48));
-    await t.tap(find.byTooltip('Open notifications'));
-    await t.pump(const Duration(milliseconds: 400));
-    expect(find.text('Notifications'), findsOneWidget);
+    expect(find.text('Still connected'), findsNothing);
+    status.add('Connected');
+    await t.pump();
+    expect(find.text('Still connected'), findsOneWidget);
+    final container = ProviderScope.containerOf(
+      t.element(find.byType(HomeResumeControl)),
+    );
+    await t.tap(find.text('Continue'));
+    expect(container.read(navigationIndexProvider), 3, reason: 'opens Control');
+    status.add('Disconnected');
+    await t.pump();
+    expect(find.text('Still connected'), findsNothing);
   });
 
   const shots = [

@@ -1,4 +1,5 @@
 // R1 orchestration (decisions 0021, 0023), on the simulated robot.
+import 'package:elio/l10n/l10n.dart';
 import 'package:elio/services/detection_stabilizer.dart';
 import 'package:elio/services/robot/r1_constants.dart';
 import 'package:elio/services/robot/r1_orchestrator.dart';
@@ -36,7 +37,7 @@ class _Rig {
     for (final end = now + ms; now < end;) {
       now += 100;
       robot.tick();
-      frames ? r1.onFrame(robot.frame()) : r1.tick();
+      frames ? r1.onFrame(robot.frame(), armTags: robot.armTags()) : r1.tick();
     }
   }
 
@@ -134,12 +135,21 @@ void main() {
   });
 
   group('POSITION', () {
+    test('0182: AprilTags are wanted only from POSITION through the grip', () {
+      final r = _Rig(setup: (s) => s.objectDistCm = null);
+      expect(r.r1.wantsArmTags, isFalse); // searching
+      r.toPosition();
+      expect(r.r1.wantsArmTags, isTrue);
+      r.r1.onPositionConfirmed();
+      expect((r.r1.state, r.r1.wantsArmTags), (R1State.ready, true));
+    });
+
     test('no dist_cm (current firmware): the manual button, then READY', () {
       final r = _Rig(setup: (s) => s.objectDistCm = null);
       r.toPosition();
       expect(r.r1.state, R1State.position);
       expect(r.r1.showPositionButton, isTrue);
-      expect(r.r1.message, 'Posisi sudah pas?');
+      expect(r.r1.message, 'Is the position right?');
       r.r1.onPositionConfirmed();
       expect(r.r1.state, R1State.ready);
       expect(r.count('UNLOCK_DRIVE'), 0);
@@ -148,7 +158,7 @@ void main() {
     test('too far: "Maju sedikit", nudges at capped speed, re-locked inside the band', () {
       final r = _Rig(setup: (s) => s.objectDistCm = 31);
       r.toPosition();
-      expect(r.r1.message, 'Maju sedikit');
+      expect(r.r1.message, 'Forward a little');
       expect(r.cmds.last, 'UNLOCK_DRIVE');
       expect(r.robot.driveLocked, isFalse);
       r.run(300);
@@ -166,7 +176,7 @@ void main() {
     test('too close: "Mundur"', () {
       final r = _Rig(setup: (s) => s.objectDistCm = 17);
       r.toPosition();
-      expect(r.r1.message, 'Mundur');
+      expect(r.r1.message, 'Back up');
     });
 
     test('driving stays locked from the lock to READY: DRIVE is never sent', () {
@@ -340,12 +350,70 @@ void main() {
     });
   });
 
+  group('bin tag check at the bin state point (0233)', () {
+    // PICK 4.1 s + floor check ~0.7 s + MOVE_TO_BIN 3.1 s: the arm is at the state point by 8.5 s.
+    _Rig atBin({int? Function(Bin bin)? seen}) {
+      final r = _Rig(setup: (s) => s.binTagSeen = seen ?? s.binTagSeen);
+      r.toSorting();
+      r.answerQuestions();
+      r.run(8500 - 1000);
+      expect(r.count('MOVE_TO_BIN'), 1);
+      return r;
+    }
+
+    test('right tag: DROP after it was seen for binTagSeenFor', () {
+      final r = atBin();
+      expect(r.count('DROP'), 1, reason: 'tag 2 (anorganik) was seen at the state point');
+      expect(r.r1.message, l10n.r1BinOk);
+      r.run(5000);
+      expect(r.cmds, ['STATUS', 'LOCK_DRIVE', 'PICK', 'MOVE_TO_BIN', 'DROP', 'UNLOCK_DRIVE']);
+      r.expectSafeExit('done', stopped: false);
+    });
+
+    test('no tag: one more look, then end without DROP for HOME', () {
+      final r = atBin(seen: (_) => null);
+      r.run(binLookTimeout.inMilliseconds);
+      expect(r.r1.message, l10n.r1BinLookAgain);
+      expect(r.resumes, isEmpty, reason: 'the first failed look is retried');
+      r.run(binLookTimeout.inMilliseconds);
+      expect(r.count('DROP'), 0);
+      expect(r.r1.message, l10n.r1BinCheckFailed);
+      r.expectSafeExit('bin_check_failed', stopped: false);
+    });
+
+    test('wrong tag twice: no DROP', () {
+      final r = atBin(seen: (_) => Bin.b3.tagId);
+      r.run(2000);
+      expect(r.count('DROP'), 0);
+      r.expectSafeExit('bin_check_failed', stopped: false);
+    });
+
+    test('wrong tag, then the right one on the retry: DROP', () {
+      var looks = 0;
+      final r = atBin(seen: (bin) => looks++ < 8 ? Bin.organik.tagId : bin.tagId);
+      r.run(5000);
+      expect(r.count('DROP'), 1);
+      expect(r.resumes, ['done']);
+    });
+
+    test('a hand during the look holds the arm and does not use the retry', () {
+      final r = atBin(seen: (_) => null);
+      r.robot.handInView = true;
+      r.run(binLookTimeout.inMilliseconds + 500);
+      expect(r.count('HOLD'), 1);
+      expect(r.resumes, isEmpty);
+      r.robot.handInView = false;
+      r.run(handClearFor.inMilliseconds + 300);
+      expect(r.r1.message, l10n.r1BinChecking, reason: 'the look starts over, not as the retry');
+    });
+  });
+
   group('camera turns with J1', () {
     test('locks ignored while SORTING, WAIT_BOTH and ARM_SETTLE after an arm stop', () {
       final r = _Rig(setup: (s) => s.failures['DROP'] = 'busy');
       r.toSorting();
       expect(r.r1.onLock(_lockBox), isFalse);
-      r.run(8000); // PICK, verify, MOVE_TO_BIN, DROP fails: stop, safe exit
+      r.run(9000); // PICK, verify, MOVE_TO_BIN, bin tag look, DROP fails: stop, safe exit
       expect(r.resumes, ['robot_error']);
       expect(r.r1.ignoresLiveScanLocks, isTrue, reason: 'settling');
       expect(r.r1.onLock(_lockBox), isFalse);
@@ -357,7 +425,7 @@ void main() {
       final r = _Rig();
       r.toSorting();
       r.answerQuestions();
-      r.run(10000); // PICK 4.1 s, verify ~0.7 s, MOVE 3.1 s, DROP 2.1 s
+      r.run(10000); // PICK 4.1 s, verify ~0.7 s, MOVE 3.1 s, bin tag ~0.6 s, DROP 2.1 s
       expect(r.r1.state, R1State.waitBoth);
       r.run(armSettle.inMilliseconds + 200);
       expect(r.resumes, ['done']);
@@ -382,7 +450,7 @@ void main() {
       expect(r.r1.onLock(_lockBox), isFalse, reason: 'still probing');
       r.run(ackTimeout.inMilliseconds + 200);
       expect(r.r1.robotConnected, isFalse);
-      expect(r.r1.message, 'robot tidak terhubung');
+      expect(r.r1.message, 'robot not connected');
       expect(r.r1.onLock(_lockBox), isFalse);
       expect(r.cmds, ['STATUS']);
       expect(r.robot.drive(75, 75), isTrue, reason: 'driving works as today');
@@ -495,7 +563,7 @@ void main() {
       r3.run(200);
       expect(r3.r1.handInView, isTrue);
       expect(r3.r1.home(), isFalse, reason: 'hand in view pauses HOME');
-      expect(r3.r1.message, contains('Ada tangan!'));
+      expect(r3.r1.message, contains('A hand!'));
       expect(r3.count('HOLD'), greaterThanOrEqualTo(1));
     });
   });

@@ -8,6 +8,7 @@ import '../models/app_notification.dart';
 import '../providers/app_notification_provider.dart';
 import '../providers/navigation_provider.dart';
 import 'elio_colors.dart';
+import 'package:elio/l10n/l10n.dart';
 
 const _ink = Color(0xFF191C1C);
 const _muted = Color(0xFF6D7A73);
@@ -105,7 +106,7 @@ class _NotificationsEmptyState extends StatelessWidget {
           const Icon(Icons.notifications_none_rounded, color: _muted, size: 30),
           const SizedBox(height: 10),
           Text(
-            'No notifications right now.',
+            l10n.notifNone,
             textAlign: TextAlign.center,
             style: GoogleFonts.manrope(
               color: _ink,
@@ -115,7 +116,7 @@ class _NotificationsEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Learning reminders, quiz review updates, and progress alerts will appear here.',
+            l10n.notifEmptyHint,
             textAlign: TextAlign.center,
             style: GoogleFonts.manrope(
               color: _muted,
@@ -139,7 +140,7 @@ void showNotificationsSheet({
   showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
-    barrierLabel: 'Dismiss notifications',
+    barrierLabel: l10n.notifDismiss,
     barrierColor: Colors.black.withValues(alpha: 0.18),
     transitionDuration: const Duration(milliseconds: 260),
     pageBuilder: (dialogContext, animation, secondaryAnimation) {
@@ -210,7 +211,7 @@ void showNotificationsSheet({
                               children: [
                                 Expanded(
                                   child: Text(
-                                    'Notifications',
+                                    l10n.notifTitle,
                                     style: GoogleFonts.sora(
                                       fontSize: 17,
                                       fontWeight: FontWeight.w700,
@@ -226,13 +227,13 @@ void showNotificationsSheet({
                                     size: 20,
                                   ),
                                   visualDensity: VisualDensity.compact,
-                                  tooltip: 'Close notifications',
+                                  tooltip: l10n.notifClose,
                                 ),
                               ],
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Learning updates and reminders from ELIO.',
+                              l10n.notifSubtitle,
                               style: GoogleFonts.manrope(
                                 fontSize: 11,
                                 height: 1.4,
@@ -295,7 +296,7 @@ void showNotificationsSheet({
                                         visualDensity: VisualDensity.compact,
                                       ),
                                       child: Text(
-                                        'Mark all read',
+                                        l10n.notifMarkAllRead,
                                         style: GoogleFonts.manrope(
                                           fontWeight: FontWeight.w800,
                                         ),
@@ -313,7 +314,7 @@ void showNotificationsSheet({
                                         visualDensity: VisualDensity.compact,
                                       ),
                                       child: Text(
-                                        'Clear all',
+                                        l10n.notifClearAll,
                                         style: GoogleFonts.manrope(
                                           fontWeight: FontWeight.w800,
                                         ),
@@ -338,7 +339,7 @@ void showNotificationsSheet({
                                 ),
                                 icon: const Icon(Icons.check_rounded, size: 18),
                                 label: Text(
-                                  'Done',
+                                  l10n.notifDone,
                                   style: GoogleFonts.manrope(
                                     fontWeight: FontWeight.w800,
                                   ),
@@ -395,9 +396,9 @@ String? _notificationActionLabel(AppNotification notification) {
     case 'learning':
     case 'quiz':
     case 'quizReview':
-      return 'Open Learning';
+      return l10n.notifOpenLearning;
     case 'robot':
-      return 'Open Config';
+      return l10n.notifOpenConfig;
     default:
       return null;
   }
@@ -441,11 +442,11 @@ Color _notificationColor(AppNotificationType type) {
 
 String _relativeTime(DateTime timestamp) {
   final difference = DateTime.now().difference(timestamp);
-  if (difference.isNegative || difference.inMinutes < 1) return 'Just now';
-  if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
-  if (difference.inHours < 24) return '${difference.inHours}h ago';
-  if (difference.inDays < 7) return '${difference.inDays}d ago';
-  if (difference.inDays < 30) return '${difference.inDays ~/ 7}w ago';
-  if (difference.inDays < 365) return '${difference.inDays ~/ 30}mo ago';
-  return '${difference.inDays ~/ 365}y ago';
+  if (difference.isNegative || difference.inMinutes < 1) return l10n.timeJustNow;
+  if (difference.inMinutes < 60) return l10n.timeMinutesAgo(difference.inMinutes);
+  if (difference.inHours < 24) return l10n.timeHoursAgo(difference.inHours);
+  if (difference.inDays < 7) return l10n.timeDaysAgo(difference.inDays);
+  if (difference.inDays < 30) return l10n.timeWeeksAgo(difference.inDays ~/ 7);
+  if (difference.inDays < 365) return l10n.timeMonthsAgo(difference.inDays ~/ 30);
+  return l10n.timeYearsAgo(difference.inDays ~/ 365);
 }

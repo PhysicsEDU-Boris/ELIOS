@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:elio/models/essay_grade.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/scanned_waste.dart';
-import 'package:elio/services/gemma_quiz_service.dart';
+import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/quiz_explanation_service.dart';
 import 'package:elio/services/quiz_pdf_service.dart';
 
@@ -34,6 +34,8 @@ void main() {
       1,
     ]);
     expect(explanation.summary, 'Penjelasan tepat.');
+    expect(explanation.source, 'ai');
+    expect(explanation.generatedAt, isNotNull);
     expect(
       explanation.learningTakeaway,
       'Untuk nilai penuh: Tambahkan contoh konkret.',

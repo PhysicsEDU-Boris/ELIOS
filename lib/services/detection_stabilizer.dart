@@ -1,7 +1,7 @@
 /// Turns a noisy per-frame detection stream into one "lock" per object:
 /// the same object must stay in view for [DetectionStabilizer.lockTime]
 /// before it counts, and a locked object can't lock again until it is
-/// re-armed. Pure logic: no timers, no camera, no Gemma. See
+/// re-armed. Pure logic: no timers, no camera, no AI. See
 /// docs/decisions/0007-stabilizer.md.
 library;
 

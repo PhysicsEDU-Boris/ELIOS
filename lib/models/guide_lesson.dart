@@ -1,13 +1,25 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'content_i18n.dart';
+import 'content_media.dart';
+
 class GuideLesson {
+  /// Translated fields by language (decision 0185); empty when none.
+  final Map<String, dynamic> i18n;
   final String id;
   final String moduleId;
-  final String moduleTitle;
-  final String title;
-  final String description;
-  final String pdfUrl;
-  final String coverUrl;
+  final String _moduleTitle;
+  String get moduleTitle =>
+      guideContentText(contentText(i18n, 'moduleTitle', _moduleTitle));
+  final String _title;
+  String get title => guideContentText(contentText(i18n, 'title', _title));
+  final String _description;
+  String get description =>
+      guideContentText(contentText(i18n, 'description', _description));
+  final String _pdfUrl;
+  String get pdfUrl => guideMediaUrl(contentText(i18n, 'pdfUrl', _pdfUrl));
+  final String _coverUrl;
+  String get coverUrl => contentMediaUrl(_coverUrl);
   final int pageCount;
   final int readTimeMinutes;
   final int order;
@@ -16,16 +28,21 @@ class GuideLesson {
   const GuideLesson({
     required this.id,
     required this.moduleId,
-    required this.moduleTitle,
-    required this.title,
-    required this.description,
-    required this.pdfUrl,
-    required this.coverUrl,
+    required String moduleTitle,
+    required String title,
+    required String description,
+    required String pdfUrl,
+    required String coverUrl,
     this.pageCount = 0,
     this.readTimeMinutes = 0,
     required this.order,
     required this.isPublished,
-  });
+    this.i18n = const {},
+  }) : _coverUrl = coverUrl,
+       _pdfUrl = pdfUrl,
+       _moduleTitle = moduleTitle,
+       _title = title,
+       _description = description;
 
   factory GuideLesson.fromMap(Map<String, dynamic> map, String documentId) {
     final rawId = map['id'];
@@ -37,6 +54,7 @@ class GuideLesson {
     final coverUrl = _readString(map, 'coverUrl') ?? '';
 
     return GuideLesson(
+      i18n: contentI18n(map),
       id: parsedId,
       moduleId: map['moduleId'] is String ? map['moduleId'] as String : '',
       moduleTitle: map['moduleTitle'] is String
@@ -70,13 +88,14 @@ class GuideLesson {
 
   Map<String, dynamic> toMap() {
     return {
+      if (i18n.isNotEmpty) 'i18n': i18n,
       'id': id,
       'moduleId': moduleId,
-      'moduleTitle': moduleTitle,
-      'title': title,
-      'description': description,
-      'pdfUrl': pdfUrl,
-      'coverUrl': coverUrl,
+      'moduleTitle': _moduleTitle,
+      'title': _title,
+      'description': _description,
+      'pdfUrl': _pdfUrl,
+      'coverUrl': _coverUrl,
       'pageCount': pageCount,
       'readTimeMinutes': readTimeMinutes,
       'order': order,
