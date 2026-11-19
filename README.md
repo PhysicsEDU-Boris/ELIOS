@@ -9,20 +9,38 @@ The camera can be the phone's own camera or the **MaixCAM2** on the robot. The
 AI is **Google Gemini**, called through a small backend so the API key never
 ships in the app.
 
-<p align="center">
-  <img src="docs/readme/scan-hub.png" width="220" alt="Scan hub">
-  <img src="docs/readme/scan-camera.png" width="220" alt="Scan and quiz: camera">
-  <img src="docs/readme/scan-identified.png" width="220" alt="Scan result: Plastic bottle, anorganik bin">
-  <img src="docs/readme/scan-question.png" width="220" alt="Quiz question">
-</p>
+### Phone app
 
 <p align="center">
-  <img src="docs/readme/control-light.png" width="600" alt="Robot control screen (light)">
-  <img src="docs/readme/control-dark.png" width="600" alt="Robot control screen (dark)">
+  <img src="docs/readme/login.png" width="180" alt="Sign in">
+  <img src="docs/readme/home.png" width="180" alt="Home">
+  <img src="docs/readme/learn.png" width="180" alt="Learn">
+  <img src="docs/readme/history.png" width="180" alt="History">
+  <img src="docs/readme/profile.png" width="180" alt="Profile">
 </p>
 
-Screens are from the [Figma file](https://www.figma.com/design/J2jSbARJSyJCStNFeWkWDj/)
-(pages L4 and R3). The app follows them; small differences can exist.
+### Scan and quiz with the phone
+
+<p align="center">
+  <img src="docs/readme/scan-hub.png" width="180" alt="Scan hub">
+  <img src="docs/readme/scan-camera.png" width="180" alt="Scan and quiz: camera">
+  <img src="docs/readme/scan-identified.png" width="180" alt="Scan result: Plastic bottle, anorganik bin">
+  <img src="docs/readme/scan-question.png" width="180" alt="Quiz question">
+  <img src="docs/readme/scan-essay.png" width="180" alt="Essay question">
+</p>
+
+### Robot control (phone landscape)
+
+<p align="center">
+  <img src="docs/readme/control-light.png" width="440" alt="Robot control, driving (light)">
+  <img src="docs/readme/control-dark.png" width="440" alt="Robot control, driving (dark)">
+  <img src="docs/readme/robot-identified.png" width="440" alt="Robot scan: item identified">
+  <img src="docs/readme/answer-review.png" width="440" alt="ELIOS AI answer review">
+</p>
+
+Screens are from the **ELIOS 3** page of the
+[Figma file](https://www.figma.com/design/J2jSbARJSyJCStNFeWkWDj/?node-id=628-2360).
+The app follows them; small differences can exist.
 
 ## Current status (19 Nov 2026)
 
@@ -115,7 +133,8 @@ wrong or missing tag stops the sort and sends the arm HOME. Hands in view
 pause the arm.
 
 <p align="center">
-  <img src="docs/readme/robot-bin-check.png" width="600" alt="Robot bin check before the quiz">
+  <img src="docs/readme/robot-guide.png" width="440" alt="Control guide, step 1: drive the robot">
+  <img src="docs/readme/robot-bin-check.png" width="440" alt="Robot bin check before the quiz">
 </p>
 
 Protocol and safety details: decisions

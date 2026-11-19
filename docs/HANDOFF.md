@@ -1,5 +1,5 @@
 ## README refresh — `docs/readme-refresh` (19 Nov, from `feature/live-scan`)
-README rewritten: status table, architecture, Gemini identify + quiz flow, robot controls, run steps. Images exported from Figma (L4 scan, R3 control, architecture 79:135, bin check 860:28986) into `docs/readme/`. Docs only; no code or tests changed.
+README rewritten: status table, architecture, Gemini identify + quiz flow, robot controls, run steps. Images exported from the Figma ELIOS 3 page (login, home, learn, history, profile, scan flow, R3 control, guide, bin check) plus architecture 79:135 into `docs/readme/`. Docs only; no code or tests changed.
 ## Arm fader throttle — `feat/arm-fader-throttle` (0236, 19 Nov, from `feat/maixcam2-arm-bridge` 2d37825)
 `FaderThrottle` (`lib/services/robot/fader_throttle.dart`): gripper / Height / Reach drags run `_armMove` at most every 100 ms, last value always; STOP and dispose drop a waiting one. BASIS, HOME, PICK, RELEASE unchanged.
 Tests: `test/robot/fader_throttle_test.dart` (break-checked), full suite 2095 passed / 20 skipped, analyze + secret scan clean. Phone APK `7c4a97c` vs the MaixCAM2 over USB: 7 ARM_POSE per drag (was 54–66), end pose unchanged. Not pushed, no PR.
