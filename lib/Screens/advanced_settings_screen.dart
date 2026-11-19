@@ -17,83 +17,6 @@ import '../widgets/learn/learn_ui.dart' show LearnTheme;
 import '../widgets/history_ui.dart' show HistoryTone, historyTint;
 import '../widgets/learn/learn_l3.dart' show LearnSquiggle;
 
-/// Asks for the teacher PIN (or sets one the first time). True when the settings may open.
-Future<bool> confirmTeacherPin(BuildContext context, WidgetRef ref) async {
-  final saved = ref.read(robotSettingsProvider).teacherPin;
-  final pin = await showDialog<String>(
-    context: context,
-    builder: (_) => _PinDialog(saved: saved),
-  );
-  if (pin == null) return false;
-  if (saved == null) {
-    ref.read(robotSettingsProvider.notifier).save(ref.read(robotSettingsProvider).copyWith(teacherPin: pin));
-  }
-  return true;
-}
-
-/// Pops with the PIN once it is valid: any 4 digits when creating, the saved one otherwise.
-class _PinDialog extends StatefulWidget {
-  const _PinDialog({required this.saved});
-  final String? saved;
-  @override
-  State<_PinDialog> createState() => _PinDialogState();
-}
-
-class _PinDialogState extends State<_PinDialog> {
-  final _controller = TextEditingController();
-  bool _wrong = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final pin = _controller.text;
-    if (widget.saved == null ? pin.length == 4 : pin == widget.saved) {
-      Navigator.pop(context, pin);
-    } else if (widget.saved != null) {
-      setState(() => _wrong = true);
-      _controller.clear();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final create = widget.saved == null;
-    return AlertDialog(
-      title: Text(create ? l10n.advPinCreate : l10n.advPinEnter),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (create) Text(l10n.advPinCreateBody),
-          TextField(
-            key: const ValueKey('adv_pin_field'),
-            controller: _controller,
-            autofocus: true,
-            obscureText: true,
-            maxLength: 4,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            onSubmitted: (_) => _submit(),
-            decoration: InputDecoration(errorText: _wrong ? l10n.advPinWrong : null),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.advCancel)),
-        FilledButton(
-          key: const ValueKey('adv_pin_ok'),
-          onPressed: _submit,
-          child: Text(create ? l10n.advPinSave : l10n.advPinOpen),
-        ),
-      ],
-    );
-  }
-}
-
 class AdvancedSettingsScreen extends ConsumerStatefulWidget {
   const AdvancedSettingsScreen({super.key, required this.linkUp, required this.address, required this.onSend});
 
@@ -119,6 +42,24 @@ const _axes = [
 class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen> {
   late RobotSettings _draft = ref.read(robotSettingsProvider);
   int _section = 0;
+
+  /// The teacher PIN pad shows until the right PIN (or a new one) is entered (0232).
+  bool _unlocked = false;
+  bool _changingPin = false;
+
+  bool get _creatingPin => _changingPin || _saved.teacherPin == null;
+
+  /// True when [pin] opens the settings; a new PIN is saved first.
+  bool _submitPin(String pin) {
+    if (_creatingPin) {
+      ref.read(robotSettingsProvider.notifier).save(_saved.copyWith(teacherPin: pin));
+    } else if (pin != _saved.teacherPin) {
+      return false;
+    }
+    setState(() => _unlocked = true);
+    _changingPin = false;
+    return true;
+  }
 
   RobotSettings get _saved => ref.read(robotSettingsProvider);
   bool get _dirty => _draft.copyWith(teacherPin: _saved.teacherPin) != _saved;
@@ -181,14 +122,29 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
                     _topBar(context),
                     const SizedBox(height: 14),
                     Expanded(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(width: 176, child: _rail(context)),
-                          const SizedBox(width: 8),
-                          Expanded(child: _card(context)),
-                        ],
-                      ),
+                      child: _unlocked
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(width: 176, child: _rail(context)),
+                                const SizedBox(width: 8),
+                                Expanded(child: _card(context)),
+                              ],
+                            )
+                          : Center(
+                              child: _PinPad(
+                                // A new key per mode resets the typed digits.
+                                key: ValueKey('adv_pin_pad_$_creatingPin'),
+                                create: _creatingPin,
+                                onSubmit: _submitPin,
+                                onCancel: _changingPin
+                                    ? () => setState(() {
+                                        _unlocked = true;
+                                        _changingPin = false;
+                                      })
+                                    : null,
+                              ),
+                            ),
                     ),
                   ],
                 ),
@@ -247,18 +203,19 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
         const Spacer(),
         _StatusStrip(linkUp: widget.linkUp, address: widget.address),
         const SizedBox(width: 8),
-        Opacity(
-          opacity: _dirty ? 1 : 0.6,
-          child: _Pill(
-            key: const ValueKey('adv_save'),
-            icon: Icons.check_rounded,
-            label: l10n.advSave,
-            onTap: _save,
-            fill: p.surface,
-            fg: p.primaryText,
-            shadow: true,
+        if (_unlocked)
+          Opacity(
+            opacity: _dirty ? 1 : 0.6,
+            child: _Pill(
+              key: const ValueKey('adv_save'),
+              icon: Icons.check_rounded,
+              label: l10n.advSave,
+              onTap: _save,
+              fill: p.surface,
+              fg: p.primaryText,
+              shadow: true,
+            ),
           ),
-        ),
       ],
     );
   }
@@ -734,13 +691,10 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
               fill: p.surface,
               fg: p.textPrimary,
               border: p.borderMedium,
-              onTap: () async {
-                final n = ref.read(robotSettingsProvider.notifier);
-                final keep = _saved;
-                // Clearing the PIN makes the dialog ask for a new one; Cancel puts the old one back.
-                n.save(RobotSettings.fromMap(keep.toMap()));
-                if (!await confirmTeacherPin(context, ref)) n.save(keep);
-              },
+              onTap: () => setState(() {
+                _unlocked = false;
+                _changingPin = true;
+              }),
             ),
           ],
         ),
@@ -1328,4 +1282,168 @@ class _Dashes extends CustomPainter {
 
   @override
   bool shouldRepaint(_Dashes old) => old.color != color;
+}
+
+/// The teacher PIN on its own keypad (no system keyboard: in landscape it would cover the page).
+/// [create]: any 4 digits become the new PIN. [onSubmit] returns false for a wrong PIN.
+class _PinPad extends StatefulWidget {
+  const _PinPad({super.key, required this.create, required this.onSubmit, this.onCancel});
+  final bool create;
+  final bool Function(String pin) onSubmit;
+  final VoidCallback? onCancel;
+  @override
+  State<_PinPad> createState() => _PinPadState();
+}
+
+class _PinPadState extends State<_PinPad> {
+  String _pin = '';
+  bool _wrong = false;
+
+  void _press(String d) {
+    if (_pin.length >= 4) return;
+    setState(() {
+      _wrong = false;
+      _pin += d;
+    });
+    if (_pin.length < 4) return;
+    if (!widget.onSubmit(_pin)) {
+      HapticFeedback.heavyImpact();
+      setState(() {
+        _wrong = true;
+        _pin = '';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    Widget key(String label, {IconData? icon, VoidCallback? onTap, Key? k}) => Padding(
+      padding: const EdgeInsets.all(4),
+      child: Material(
+        key: k,
+        color: onTap == null ? Colors.transparent : p.surfaceRaised,
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            width: 46,
+            height: 46,
+            child: Center(
+              child: icon != null
+                  ? Icon(icon, size: 20, color: p.textPrimary)
+                  : Text(
+                      label,
+                      style: TextStyle(color: p.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final digits = [
+      for (final d in ['1', '2', '3', '4', '5', '6', '7', '8', '9'])
+        key(d, k: ValueKey('adv_pin_$d'), onTap: () => _press(d)),
+      key(
+        '',
+        icon: widget.onCancel == null ? null : Icons.close_rounded,
+        k: const ValueKey('adv_pin_cancel'),
+        onTap: widget.onCancel,
+      ),
+      key('0', k: const ValueKey('adv_pin_0'), onTap: () => _press('0')),
+      key(
+        '',
+        icon: Icons.backspace_outlined,
+        k: const ValueKey('adv_pin_back'),
+        onTap: _pin.isEmpty ? null : () => setState(() => _pin = _pin.substring(0, _pin.length - 1)),
+      ),
+    ];
+    return Container(
+      padding: const EdgeInsets.fromLTRB(28, 18, 20, 18),
+      decoration: BoxDecoration(
+        color: p.surface,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(10),
+          bottomRight: Radius.circular(30),
+          bottomLeft: Radius.circular(10),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: p.isDark ? .3 : .08),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 240,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(color: historyTint(p, HistoryTone.warning).bg, shape: BoxShape.circle),
+                  child: Icon(Icons.lock_outline_rounded, size: 20, color: p.secondaryText),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  widget.create ? l10n.advPinCreate : l10n.advPinEnter,
+                  style: TextStyle(color: p.textPrimary, fontSize: 17, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 2),
+                const LearnSquiggle(width: 70),
+                const SizedBox(height: 6),
+                if (widget.create)
+                  Text(
+                    l10n.advPinCreateBody,
+                    style: TextStyle(color: p.textSecondary, fontSize: 11, fontWeight: FontWeight.w500),
+                  ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    for (var i = 0; i < 4; i++)
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 120),
+                        margin: const EdgeInsets.only(right: 12),
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: i < _pin.length ? p.primary : Colors.transparent,
+                          border: Border.all(
+                            color: _wrong ? p.error : (i < _pin.length ? p.primary : p.borderStrong),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                SizedBox(
+                  height: 20,
+                  child: _wrong
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            l10n.advPinWrong,
+                            style: TextStyle(color: p.errorText, fontSize: 12, fontWeight: FontWeight.w700),
+                          ),
+                        )
+                      : null,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          SizedBox(width: 162, child: Wrap(children: digits)),
+        ],
+      ),
+    );
+  }
 }

@@ -14,8 +14,10 @@
 
 ## What a teacher can do
 
-"Advanced" sits beside Guide on the phone Control top bar (icon only under 860 dp). It asks for a 4-digit
-teacher PIN; the first time, the PIN is set. Six sections:
+"Advanced" sits beside Guide on the phone Control top bar (icon only under 860 dp). The page opens on a
+4-digit teacher PIN pad; the first time, the PIN is set. The pad is its own keypad, not a text field: on the
+phone in landscape the system keyboard covered a PIN dialog and squeezed the Control screen behind it
+(found on the Edge 60 Fusion, 19 Nov). Six sections:
 
 | Section | Editable | Where it takes effect |
 |---|---|---|
@@ -55,8 +57,12 @@ The MaixCAM2 must map `CONFIG` to the sim protocol: trims and INV as the `C,SEQ,
 - `test/robot/robot_settings_test.dart`: defaults equal 0231, flips and limits reach the joystick config,
   JSON round trip, untrusted paste falls back, PIN never shared, gripper map, persistence, live config
   change without a jump.
+- Phone (Edge 60 Fusion, fake MaixCAM2 over `adb reverse`, 19 Nov): PIN create / wrong / right, all six
+  sections, trim + Save sent `CONFIG` (fake answers `unknown_cmd`), discard prompt, saved trim kept and
+  discarded drive edits dropped. Settings and test PIN removed afterwards (prefs identical to the backup).
 - `test/screens/advanced_settings_test.dart`: every section at 915×412 and 844×390, light and dark, without
   overflow; jog + Save stores and sends `CONFIG`; offline Save keeps it on the phone; discard on back;
-  drive edits reach the joystick config; reset keeps the PIN; PIN create, wrong, right, too short, cancel.
+  drive edits reach the joystick config; reset keeps the PIN; PIN create, wrong, right, backspace, back
+  while locked, change PIN with cancel.
 - `test/widgets/phone_control_test.dart`: Advanced is on screen beside Guide and taps through.
 - Break-checks: accepting any PIN, not sending on Save, and dropping the paste range check each fail a test.

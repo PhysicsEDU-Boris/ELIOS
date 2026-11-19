@@ -8,6 +8,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+Future<void> enterPin(WidgetTester t, String pin) async {
+  for (final d in pin.split('')) {
+    await t.tap(find.byKey(ValueKey('adv_pin_$d')));
+    await t.pump();
+  }
+  await t.pumpAndSettle();
+}
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
@@ -16,6 +24,7 @@ void main() {
     Size size = const Size(915, 412),
     bool linkUp = true,
     bool dark = false,
+    String? pin = '1234',
   }) async {
     t.view.devicePixelRatio = 1;
     t.view.physicalSize = size;
@@ -54,6 +63,7 @@ void main() {
     );
     await t.tap(find.text('open'));
     await t.pumpAndSettle();
+    if (pin != null) await enterPin(t, pin);
     return (c, sent);
   }
 
@@ -131,6 +141,7 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.text('open'));
     await t.pumpAndSettle();
+    await enterPin(t, '1111');
     await t.tap(find.byKey(const ValueKey('adv_tab_5')));
     await t.pumpAndSettle();
     await t.tap(find.byKey(const ValueKey('adv_reset')));
@@ -143,60 +154,55 @@ void main() {
   });
 
   group('teacher PIN', () {
-    Future<(ProviderContainer, List<bool>)> gate(WidgetTester t) async {
-      final results = <bool>[];
-      final c = ProviderContainer();
-      addTearDown(c.dispose);
-      await t.pumpWidget(
-        UncontrolledProviderScope(
-          container: c,
-          child: MaterialApp(
-            home: Consumer(
-              builder: (context, ref, _) => FilledButton(
-                onPressed: () async => results.add(await confirmTeacherPin(context, ref)),
-                child: const Text('gate'),
-              ),
-            ),
-          ),
-        ),
-      );
-      return (c, results);
-    }
-
-    testWidgets('first use sets the PIN; then only the right PIN opens', (t) async {
-      final (c, results) = await gate(t);
-      await t.tap(find.text('gate'));
-      await t.pumpAndSettle();
+    testWidgets('first open sets the PIN; then only the right PIN opens', (t) async {
+      final (c, _) = await pump(t, pin: null);
       expect(find.text('Set a teacher PIN'), findsOneWidget);
-      await t.enterText(find.byKey(const ValueKey('adv_pin_field')), '2468');
-      await t.tap(find.byKey(const ValueKey('adv_pin_ok')));
-      await t.pumpAndSettle();
-      expect(results, [true]);
+      expect(find.byKey(const ValueKey('adv_tab_0')), findsNothing, reason: 'locked');
+      expect(find.byKey(const ValueKey('adv_save')), findsNothing);
+      await enterPin(t, '2468');
       expect(c.read(robotSettingsProvider).teacherPin, '2468');
+      expect(find.byKey(const ValueKey('adv_tab_0')), findsOneWidget);
 
-      await t.tap(find.text('gate'));
+      await t.tap(find.byKey(const ValueKey('adv_back')));
       await t.pumpAndSettle();
-      await t.enterText(find.byKey(const ValueKey('adv_pin_field')), '1111');
-      await t.tap(find.byKey(const ValueKey('adv_pin_ok')));
-      await t.pump();
+      await t.tap(find.text('open'));
+      await t.pumpAndSettle();
+      expect(find.text('Teacher PIN'), findsOneWidget);
+      await enterPin(t, '1111');
       expect(find.text('Wrong PIN'), findsOneWidget);
-      await t.enterText(find.byKey(const ValueKey('adv_pin_field')), '2468');
-      await t.tap(find.byKey(const ValueKey('adv_pin_ok')));
-      await t.pumpAndSettle();
-      expect(results, [true, true]);
+      expect(find.byKey(const ValueKey('adv_tab_0')), findsNothing);
+      await enterPin(t, '2468');
+      expect(find.byKey(const ValueKey('adv_tab_0')), findsOneWidget);
     });
 
-    testWidgets('a PIN shorter than 4 digits is not accepted; Cancel opens nothing', (t) async {
-      final (c, results) = await gate(t);
-      await t.tap(find.text('gate'));
-      await t.pumpAndSettle();
-      await t.enterText(find.byKey(const ValueKey('adv_pin_field')), '12');
-      await t.tap(find.byKey(const ValueKey('adv_pin_ok')));
+    testWidgets('backspace removes a digit; back while locked saves no PIN', (t) async {
+      final (c, _) = await pump(t, pin: null);
+      await enterPin(t, '12');
+      await t.tap(find.byKey(const ValueKey('adv_pin_back')));
       await t.pump();
-      expect(c.read(robotSettingsProvider).teacherPin, isNull);
-      await t.tap(find.text('Cancel'));
+      await enterPin(t, '9');
+      expect(c.read(robotSettingsProvider).teacherPin, isNull, reason: 'only 2 digits typed');
+      await t.tap(find.byKey(const ValueKey('adv_back')));
       await t.pumpAndSettle();
-      expect(results, [false]);
+      expect(find.byType(AdvancedSettingsScreen), findsNothing);
+      expect(c.read(robotSettingsProvider).teacherPin, isNull);
+    });
+
+    testWidgets('change PIN asks for a new one; the close key keeps the old one', (t) async {
+      final (c, _) = await pump(t);
+      await t.tap(find.byKey(const ValueKey('adv_tab_5')));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('adv_change_pin')));
+      await t.pumpAndSettle();
+      expect(find.text('Set a teacher PIN'), findsOneWidget);
+      await t.tap(find.byKey(const ValueKey('adv_pin_cancel')));
+      await t.pumpAndSettle();
+      expect(c.read(robotSettingsProvider).teacherPin, '1234');
+      await t.tap(find.byKey(const ValueKey('adv_change_pin')));
+      await t.pumpAndSettle();
+      await enterPin(t, '1357');
+      expect(c.read(robotSettingsProvider).teacherPin, '1357');
+      expect(find.byKey(const ValueKey('adv_tab_0')), findsOneWidget);
     });
   });
 }

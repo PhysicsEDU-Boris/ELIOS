@@ -1124,9 +1124,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   }
 
 
-  /// Advanced settings (0232): teacher PIN first; CONFIG goes out through the gate's command link.
+  /// Advanced settings (0232): the page asks for the teacher PIN; CONFIG goes out through the gate.
   Future<void> _openAdvanced() async {
-    if (!await confirmTeacherPin(context, ref) || !mounted) return;
     final esp = ref.read(espConfigProvider).valueOrNull;
     await Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => AdvancedSettingsScreen(
