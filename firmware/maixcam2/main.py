@@ -7,7 +7,7 @@ from maix import image, display, camera, touchscreen, nn, app, network, time as 
 import json, asyncio, websockets, base64, math, hashlib, os, subprocess, threading, textwrap
 
 # vision_protocol 1 is kept, so older apps still pair clean_image (decision 0182).
-FIRMWARE_VERSION = "m2c-track-v1"
+FIRMWARE_VERSION = "m2c-arm-v1"
 with open(__file__, "rb") as source:
     FIRMWARE_SHA256 = hashlib.sha256(source.read()).hexdigest()
 print("[Firmware]", FIRMWARE_VERSION, FIRMWARE_SHA256)
@@ -384,6 +384,62 @@ def find_arm_tags(frame):
     small = frame.resize(frame.width() // TAG_SCALE, frame.height() // TAG_SCALE)
     return arm_tags(small.find_apriltags(families=image.ApriltagFamilies.TAG36H11), TAG_SCALE)
 
+# ── Arm bridge (decision 0235): app ARM_POSE / HOME / MOVE_TO_BIN / DROP -> ESP32 on UART2 ──
+# ESP32: robotic_hand_sim slave_code/6-axis-esp32-twoway-tmc2208 in stream mode, 9600 baud,
+# MaixCAM2 B0 TX / B1 RX (owner, 19 Nov). Wheels (UART1) are a later task.
+import arm_bridge
+ARM_UART = "/dev/ttyS2"
+ARM_BAUD = 9600
+ARM_CONFIG = "/root/elios_arm_config.json"
+ARM_CMDS = {"STATUS", "LOCK_DRIVE", "UNLOCK_DRIVE", "HOME", "PICK", "MOVE_TO_BIN", "DROP", "HOLD", "STOP",
+            "ARM_POSE", "CONFIG", "HEARTBEAT"}
+arm_lock = threading.Lock()
+arm_uart = None
+try:
+    from maix import uart
+    arm_uart = uart.UART(ARM_UART, ARM_BAUD)
+    print("[Arm] UART", ARM_UART, ARM_BAUD, "open")
+except Exception as e:
+    print("[Arm] UART unavailable, arm commands answer but nothing reaches the ESP32:", e)
+
+def _arm_write(text):
+    if arm_uart is not None:
+        arm_uart.write_str(text)
+
+try:
+    _arm_sequences = arm_bridge.load_sequences(os.path.join(os.path.dirname(os.path.abspath(__file__)), "bin_sequences.json"))
+except Exception as e:
+    print("[Arm] bin_sequences.json not loaded, MOVE_TO_BIN answers no_sequence:", e)
+    _arm_sequences = {}
+arm = arm_bridge.ArmBridge(_arm_write, sequences=_arm_sequences, config_path=ARM_CONFIG)
+
+def _arm_send(owner, reply):
+    if owner is not None and _ws_loop is not None:
+        asyncio.run_coroutine_threadsafe(owner.send(json.dumps(reply)), _ws_loop)
+
+def arm_loop():
+    """20 Hz: advance the arm, one frame to the ESP32, read its BOOT / STAT lines."""
+    buf = b""
+    while not app.need_exit():
+        t0 = mtime.ticks_ms()
+        try:
+            with arm_lock:
+                out = arm.tick()
+                if arm_uart is not None:
+                    chunk = arm_uart.read(-1, 0)
+                    if chunk:
+                        buf += chunk
+                        *lines, buf = buf.split(b"\n")
+                        for line in lines:
+                            arm.on_line(line.decode("ascii", "replace"))
+            for owner, reply in out:
+                _arm_send(owner, reply)
+        except Exception as e:
+            print("[Arm] loop error:", e)
+        mtime.sleep_ms(max(1, int(arm_bridge.TICK_S * 1000) - (mtime.ticks_ms() - t0)))
+
+threading.Thread(target=arm_loop, daemon=True).start()
+
 model_name = "MixFormerV2 + hands" if model_loaded else "Not loaded"
 
 # ── Colours ───────────────────────────────────────────────────────────────────
@@ -554,7 +610,15 @@ async def ws_handler(websocket):
                 data = json.loads(message)
                 cmd  = data.get("cmd", "")
 
-                if cmd == "ping":
+                if cmd in ARM_CMDS:
+                    with arm_lock:
+                        replies = arm.handle(data, websocket)
+                    for reply in replies:
+                        await websocket.send(json.dumps(reply))
+                    if cmd != "HEARTBEAT":
+                        print("[Arm]", cmd, data.get("seq"), [r["event"] + "/" + str(r.get("reason", "")) for r in replies])
+
+                elif cmd == "ping":
                     await websocket.send(json.dumps({"event": "pong", "firmware_version": FIRMWARE_VERSION, "firmware_sha256": FIRMWARE_SHA256}))
                     print("[WS] pong sent")
 
@@ -627,6 +691,8 @@ async def ws_handler(websocket):
         ws_status = "Client connected" if ws_clients else "Serving"
         if not ws_clients:
             ws_streaming = False
+            with arm_lock:
+                arm.client_gone()
         print("[WS] clients remaining:", len(ws_clients))
 
 async def ws_frame_pusher():
@@ -664,6 +730,9 @@ async def ws_frame_pusher():
                     try:
                         last_hands = hand_dets(frame) if hands is not None else []
                         last_tags = find_arm_tags(frame) if tags["on"] else []
+                        if last_tags:
+                            with arm_lock:
+                                arm.on_tags([t["id"] for t in last_tags])
                         detection_frame_id = frame_id
                     except Exception as de:
                         print("[AI] detect error:", de)

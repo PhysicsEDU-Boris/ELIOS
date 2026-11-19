@@ -86,4 +86,15 @@ void main() {
     final to = [...armHome]..[3] = 0;
     expect(legSeconds(armHome, to), closeTo(11.25, 1e-9));
   });
+
+  test('the pose the MaixCAM2 reports makes the arm known again (0235)', () {
+    final arm = _arm()..markUnknown();
+    expect(ArmPose.servoFrom(null), isNull);
+    expect(ArmPose.servoFrom([1, 2, 3]), isNull);
+    final reported = ArmPose.servoFrom([75, 90, 30.5, 120, 100, 90])!;
+    arm.sync(reported);
+    expect(arm.known, isTrue);
+    expect(arm.goal, [75, 90, 30.5, 120, 100, 90]);
+    expect(arm.home().refusal, isNull, reason: 'HOME is planned from the reported pose');
+  });
 }

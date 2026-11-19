@@ -1,13 +1,18 @@
-# MaixCAM2 firmware (m2c-track-v1)
+# MaixCAM2 firmware (m2c-arm-v1)
 
-Deployed on the robot 16 Oct 2026: scan JSONL `firmwareSha256`
-`bbb3595e8070d4fab421ce38d5a9becbca26f6bcc8c34be4d7e29ed5c2ab79e6` matches
-`shasum -a 256 main.py`.
+Deployed on the MaixCAM2 19 Nov 2026 (over USB, `/maixapp/apps/elios_clean_m2c_v1`, v1.2.0):
+`{"cmd":"ping"}` returns `m2c-arm-v1` and `firmware_sha256`
+`17c1204f758f14e41687f3652a06f3e0adf93e98f0741e8928d5032d2a8d2230`, matching
+`shasum -a 256 main.py`. ESP32 not wired yet, so no `STAT` line seen. The board ran the
+floor-distance-guides build (0192, v1.1.0, sha256 `2149d09f…`, not on this branch; its tag id 2
+is the 80 mm floor tag). It is backed up on the board in
+`/root/backup/elios_clean_m2c_v1_2026-11-08/`; restore those files and remove `arm_bridge.py`
+and `bin_sequences.json` to roll back. Floor guides are off until 0192 is merged (tag id clash).
 
 ## MaixVision package
 
-`app.yaml` is the MaixVision app manifest (`elios_clean_m2c_v1` v1.0.0, files:
-`main.py`). The package `dist/maix-elios_clean_m2c_v1-v1.0.0.zip` is a build
+`app.yaml` is the MaixVision app manifest (`elios_clean_m2c_v1` v1.2.0, files:
+`main.py`, `arm_bridge.py`, `bin_sequences.json`; all three must be deployed together). The package `dist/maix-elios_clean_m2c_v1-v1.0.0.zip` is a build
 output (exactly `app.yaml` + `main.py`), so it is gitignored; rebuild it from
 these two files in MaixVision. Bump `version` when `main.py` changes.
 
@@ -26,10 +31,12 @@ verified byte-for-byte against the robot's currently installed script.
    motor/servo handlers only print commands; it does not add hardware actuation.
 2. Deploy this directory's `main.py` to that confirmed active entry-point path,
    retaining `/root/models/mixformer_v2.mud`, `hand_landmarks.mud`, `hand_detector.mud`, `anchors.csv`,
-   MaixPy, numpy, websockets and AP configuration. Do not deploy the test file.
+   MaixPy, numpy, websockets and AP configuration. Deploy `arm_bridge.py` and
+   `bin_sequences.json` next to `main.py`. Do not deploy the test files.
+   The arm's CONFIG (trims, inverted) is kept in `/root/elios_arm_config.json`.
    Do not run a second server beside the existing port-8765 process.
 3. Restart the existing robot application using your normal deployment workflow.
-   Its console must print `[Firmware] m2c-track-v1 <sha256>`.
+   Its console must print `[Firmware] m2c-arm-v1 <sha256>` and `[Arm] UART /dev/ttyS2 9600 open`.
    Compare that hash with the local result of:
    `shasum -a 256 firmware/maixcam2/main.py`.
    The hash is also returned by `{"cmd":"ping"}` and included in scan JSONL
@@ -61,3 +68,19 @@ verified byte-for-byte against the robot's currently installed script.
   A lost item is not dropped: after `TRACK_REFIND_AFTER` low-score calls the tracker searches
   the whole frame, and the box comes back with the same `track_id` when it finds the item.
 - A `[FPS]` line every 5 s on the console gives fps and ms per stage.
+
+## Arm bridge (m2c-arm-v1, decision 0235)
+
+- ESP32 `6-axis-esp32-twoway-tmc2208` in stream mode on UART2 (`/dev/ttyS2`, B0 TX, B1 RX), 9600 baud.
+  20 frames a second `F0..F5,CC` once the app has moved the arm; nothing before (the servos stay as
+  they booted). Every field is filled; the arm is never released by the MaixCAM2.
+- 0023 commands answer `ack`, then `motion_done` (with `servo`, the pose last sent) or `error`:
+  `STATUS` (also `at_home`, `servo`, `esp32_boot`, `esp32_stat`), `ARM_POSE` (0234), `HOME`
+  (planned around the tank), `MOVE_TO_BIN` / `DROP` (bin_sequences.json; B3 only for now),
+  `HOLD`, `STOP`, `CONFIG`, `LOCK_DRIVE` / `UNLOCK_DRIVE` (ack only, wheels later), `PICK`
+  (`not_implemented`: picking is manual).
+- Refusals: `invalid_path`, `out_of_range`, `tank` (checked again on the board), `busy`,
+  `pose_unknown` (after an ESP32 `BOOT`: HOME first), `no_sequence`, `not_at_bin`,
+  `bin_not_confirmed` (DROP guard: that bin's tag must be seen within 2 s at the state point),
+  `watchdog` (no app message for 1 s: the arm holds).
+- `arm_tags` also reports bin tags 2 (anorganik), 3 (organik), 4 (B3).
