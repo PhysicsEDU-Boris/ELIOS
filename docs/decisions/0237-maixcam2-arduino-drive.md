@@ -19,6 +19,8 @@ never moved. UART2 was also the ESP32 arm port (0235); the ESP32 is not wired.
 - Lines from the Arduino are logged as `[Drive] Arduino: …`; a `READY` while driving means it reset
   (motor start pulling its 5 V down).
 - The last client leaving sends `S` (the Arduino keeps the last command).
+- Watchdog: a moving command with no `motor` message for 500 ms → `S` (the app resends every 50 ms
+  while the stick is held). Log is line-buffered and prints `[Drive] old -> new` on changes only.
 
 ## Consequences
 Arm and wheels cannot share UART2. Running both needs the wheels on another UART (UART1) or a

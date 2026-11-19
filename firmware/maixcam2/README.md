@@ -2,7 +2,7 @@
 
 Deployed on the MaixCAM2 19 Nov 2026 (over USB, `/maixapp/apps/elios_clean_m2c_v1`, v1.2.0):
 `{"cmd":"ping"}` returns `m2c-arm-v1` and `firmware_sha256`
-`05366224675a552ed4f40f2f57431caf4368e94e3b00c14e1b46b5905aa11c1d` (Arduino drive, 0237, deployed over SSH 19 Nov), matching
+`16bbc99eb61902237ae2b133ab4c768bbd08e8a8c43294accb9c6e9079fe5411` (Arduino drive, 0237, deployed over SSH 19 Nov), matching
 `shasum -a 256 main.py`. ESP32 not wired yet, so no `STAT` line seen. The board ran the
 floor-distance-guides build (0192, v1.1.0, sha256 `2149d09f…`, not on this branch; its tag id 2
 is the 80 mm floor tag). It is backed up on the board in
@@ -71,7 +71,7 @@ verified byte-for-byte against the robot's currently installed script.
 
 ## Wheels (decision 0237)
 
-- `UART2_SLAVE = "arduino"`: app `motor` → Arduino `codeMotorSlave.ino` on UART2 as one char `F/B/L/R/S` (bigger of forward/turn wins, deadband 10); last client gone → `S`. Arm frames are not sent while the Arduino owns UART2 (set `esp32` for the arm).
+- `UART2_SLAVE = "arduino"`: app `motor` → Arduino `codeMotorSlave.ino` on UART2 as one char `F/B/L/R/S` (bigger of forward/turn wins, deadband 10); last client gone or no `motor` for 500 ms → `S`; console `[Drive] F -> S …` on changes. Arm frames are not sent while the Arduino owns UART2 (set `esp32` for the arm).
 
 ## Arm bridge (m2c-arm-v1, decision 0235)
 
