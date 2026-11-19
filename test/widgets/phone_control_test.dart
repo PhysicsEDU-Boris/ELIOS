@@ -274,6 +274,15 @@ void main() {
       expectOnScreen(t, find.byKey(const ValueKey('base_knob')), size, 'BASIS knob');
     });
 
+    testWidgets('0232: Advanced sits beside Guide, on screen, and taps through', (t) async {
+      await pumpPhone(t, size);
+      final adv = find.byKey(const ValueKey('phone_advanced'));
+      expectOnScreen(t, adv, size, 'Advanced');
+      expect(t.getTopLeft(adv).dx, greaterThan(t.getTopRight(find.byKey(const ValueKey('phone_guide'))).dx));
+      await t.tap(adv);
+      expect(taps['advanced'], 1);
+    });
+
     testWidgets('0229: keycaps sit in the drive card; no gears or card status chips', (t) async {
       await pumpPhone(t, size);
       expect(find.byKey(const ValueKey('gear_100')), findsNothing);

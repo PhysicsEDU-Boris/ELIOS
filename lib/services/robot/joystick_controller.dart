@@ -13,8 +13,9 @@ class JoystickController {
     required this.driveLocked,
     required this.armLocked,
     required this.baseServo,
-    this.config = const JoystickConfig(),
-  })  : _driveV = SlewLimiter(up: config.slewUp, down: config.slewDown),
+    JoystickConfig config = const JoystickConfig(),
+  })  : _config = config,
+        _driveV = SlewLimiter(up: config.slewUp, down: config.slewDown),
         _driveW = SlewLimiter(up: config.slewUp, down: config.slewDown),
         _arm = SlewLimiter(up: config.slewUp, down: config.slewDown),
         _base = ArmBaseIntegrator(config);
@@ -34,9 +35,22 @@ class JoystickController {
   /// The base servo value the app last commanded, by anyone.
   final double Function() baseServo;
 
-  final JoystickConfig config;
-  final SlewLimiter _driveV, _driveW, _arm;
-  final ArmBaseIntegrator _base;
+  JoystickConfig _config;
+  SlewLimiter _driveV, _driveW, _arm;
+  ArmBaseIntegrator _base;
+
+  JoystickConfig get config => _config;
+
+  /// Advanced settings changed (0232): new constants from the next tick, keeping the current
+  /// outputs and base angle so nothing jumps.
+  set config(JoystickConfig c) {
+    SlewLimiter keep(SlewLimiter s) => SlewLimiter(up: c.slewUp, down: c.slewDown)..reset(s.value);
+    _driveV = keep(_driveV);
+    _driveW = keep(_driveW);
+    _arm = keep(_arm);
+    _base = ArmBaseIntegrator(c, initialDeg: _base.angleDeg)..syncTo(_base.angleDeg);
+    _config = c;
+  }
 
   double _dx = 0, _dy = 0, _ax = 0;
   bool _wasDriving = false, _wasArmMoving = false;

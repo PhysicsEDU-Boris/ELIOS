@@ -10344,6 +10344,588 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{item} · {count} questions'**
   String pdfReportSub(Object item, Object count);
+
+  /// No description provided for @advButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get advButton;
+
+  /// No description provided for @advTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced settings'**
+  String get advTitle;
+
+  /// No description provided for @advTeacherMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher mode · robot calibration & settings'**
+  String get advTeacherMode;
+
+  /// No description provided for @advSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to robot'**
+  String get advSave;
+
+  /// No description provided for @advSavedSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved and sent to the robot'**
+  String get advSavedSent;
+
+  /// No description provided for @advSavedLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this phone. Connect the robot to send it.'**
+  String get advSavedLocal;
+
+  /// No description provided for @advDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get advDiscardTitle;
+
+  /// No description provided for @advDiscardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your changes are not saved yet.'**
+  String get advDiscardBody;
+
+  /// No description provided for @advDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get advDiscard;
+
+  /// No description provided for @advKeepEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get advKeepEditing;
+
+  /// No description provided for @advConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get advConnected;
+
+  /// No description provided for @advOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get advOffline;
+
+  /// No description provided for @advSecAxes.
+  ///
+  /// In en, this message translates to:
+  /// **'Arm axes'**
+  String get advSecAxes;
+
+  /// No description provided for @advSecGripper.
+  ///
+  /// In en, this message translates to:
+  /// **'Gripper'**
+  String get advSecGripper;
+
+  /// No description provided for @advSecDrive.
+  ///
+  /// In en, this message translates to:
+  /// **'Drive & joystick'**
+  String get advSecDrive;
+
+  /// No description provided for @advSecLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection'**
+  String get advSecLink;
+
+  /// No description provided for @advSecSafety.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety'**
+  String get advSecSafety;
+
+  /// No description provided for @advSecBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup'**
+  String get advSecBackup;
+
+  /// No description provided for @advAxesSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Match the real arm to the home pose in the simulator. INV reverses a servo.'**
+  String get advAxesSub;
+
+  /// No description provided for @advColAxis.
+  ///
+  /// In en, this message translates to:
+  /// **'AXIS'**
+  String get advColAxis;
+
+  /// No description provided for @advColTrim.
+  ///
+  /// In en, this message translates to:
+  /// **'OFFSET (TRIM)'**
+  String get advColTrim;
+
+  /// No description provided for @advColInv.
+  ///
+  /// In en, this message translates to:
+  /// **'INV'**
+  String get advColInv;
+
+  /// No description provided for @advColHome.
+  ///
+  /// In en, this message translates to:
+  /// **'HOME'**
+  String get advColHome;
+
+  /// No description provided for @advColRange.
+  ///
+  /// In en, this message translates to:
+  /// **'RANGE'**
+  String get advColRange;
+
+  /// No description provided for @advColSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'SPEED'**
+  String get advColSpeed;
+
+  /// No description provided for @advAxisBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Base (J1)'**
+  String get advAxisBase;
+
+  /// No description provided for @advAxisArmA.
+  ///
+  /// In en, this message translates to:
+  /// **'Arm A (J2)'**
+  String get advAxisArmA;
+
+  /// No description provided for @advAxisArmB.
+  ///
+  /// In en, this message translates to:
+  /// **'Arm B (J3)'**
+  String get advAxisArmB;
+
+  /// No description provided for @advAxisPitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrist pitch (J4)'**
+  String get advAxisPitch;
+
+  /// No description provided for @advAxisYaw.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrist yaw (J5)'**
+  String get advAxisYaw;
+
+  /// No description provided for @advAxesTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Offset up to ±15°. Need more? Move the servo horn one tooth (≈14°). Power the robot on with the base at 90°.'**
+  String get advAxesTip;
+
+  /// No description provided for @advTips.
+  ///
+  /// In en, this message translates to:
+  /// **'TIPS'**
+  String get advTips;
+
+  /// No description provided for @advImportant.
+  ///
+  /// In en, this message translates to:
+  /// **'IMPORTANT'**
+  String get advImportant;
+
+  /// No description provided for @advDanger.
+  ///
+  /// In en, this message translates to:
+  /// **'DANGER ZONE'**
+  String get advDanger;
+
+  /// No description provided for @advGripSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Where the gripper closes. Open stays at 180°.'**
+  String get advGripSub;
+
+  /// No description provided for @advGripOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed offset'**
+  String get advGripOffset;
+
+  /// No description provided for @advGripOffsetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to ±15°. Only the closed position moves.'**
+  String get advGripOffsetHint;
+
+  /// No description provided for @advGripInv.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse open/close (INV)'**
+  String get advGripInv;
+
+  /// No description provided for @advGripInvHint.
+  ///
+  /// In en, this message translates to:
+  /// **'PICK UP and RELEASE keep their meaning.'**
+  String get advGripInvHint;
+
+  /// No description provided for @advGripMap.
+  ///
+  /// In en, this message translates to:
+  /// **'APP WIDTH → SERVO'**
+  String get advGripMap;
+
+  /// No description provided for @advGripOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'0 % (release)'**
+  String get advGripOpen;
+
+  /// No description provided for @advGripClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'100 % (pick up)'**
+  String get advGripClosed;
+
+  /// No description provided for @advGripTip.
+  ///
+  /// In en, this message translates to:
+  /// **'The gripper squeezes too hard or the servo hums? Lower the closed offset.'**
+  String get advGripTip;
+
+  /// No description provided for @advDriveSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting values (0231). Test with the wheels lifted first.'**
+  String get advDriveSub;
+
+  /// No description provided for @advCapResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'JOYSTICK RESPONSE'**
+  String get advCapResponse;
+
+  /// No description provided for @advCapSmooth.
+  ///
+  /// In en, this message translates to:
+  /// **'SMOOTHING'**
+  String get advCapSmooth;
+
+  /// No description provided for @advCapBase.
+  ///
+  /// In en, this message translates to:
+  /// **'ARM BASE'**
+  String get advCapBase;
+
+  /// No description provided for @advDeadzone.
+  ///
+  /// In en, this message translates to:
+  /// **'Dead zone'**
+  String get advDeadzone;
+
+  /// No description provided for @advDeadzoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise it if the robot creeps at rest.'**
+  String get advDeadzoneHint;
+
+  /// No description provided for @advCurve.
+  ///
+  /// In en, this message translates to:
+  /// **'Curve (quadratic)'**
+  String get advCurve;
+
+  /// No description provided for @advCurveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher: a light push is slower.'**
+  String get advCurveHint;
+
+  /// No description provided for @advTurnGain.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn gain'**
+  String get advTurnGain;
+
+  /// No description provided for @advTurnGainHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning speed on the spot.'**
+  String get advTurnGainHint;
+
+  /// No description provided for @advSlewUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed up'**
+  String get advSlewUp;
+
+  /// No description provided for @advSlewUpHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How quickly the robot gets going.'**
+  String get advSlewUpHint;
+
+  /// No description provided for @advSlewDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow down'**
+  String get advSlewDown;
+
+  /// No description provided for @advSlewDownHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How quickly it stops.'**
+  String get advSlewDownHint;
+
+  /// No description provided for @advMinOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum output (P0)'**
+  String get advMinOutput;
+
+  /// No description provided for @advMinOutputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Smallest value that turns the wheels on the floor.'**
+  String get advMinOutputHint;
+
+  /// No description provided for @advBaseRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Base max speed'**
+  String get advBaseRate;
+
+  /// No description provided for @advBaseRateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Firmware limit 40°/s.'**
+  String get advBaseRateHint;
+
+  /// No description provided for @advBaseLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Base limit'**
+  String get advBaseLimit;
+
+  /// No description provided for @advBaseLimitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Past ±90° the arm can hit the tank.'**
+  String get advBaseLimitHint;
+
+  /// No description provided for @advFlipTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse turning'**
+  String get advFlipTurn;
+
+  /// No description provided for @advFlipTurnHint.
+  ///
+  /// In en, this message translates to:
+  /// **'If the robot turns the wrong way.'**
+  String get advFlipTurnHint;
+
+  /// No description provided for @advFlipBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse base'**
+  String get advFlipBase;
+
+  /// No description provided for @advFlipBaseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'If BASIS turns the wrong way.'**
+  String get advFlipBaseHint;
+
+  /// No description provided for @advLinkSub.
+  ///
+  /// In en, this message translates to:
+  /// **'App → Wi-Fi → MaixCAM2. The arm and wheel boards sit behind the MaixCAM2.'**
+  String get advLinkSub;
+
+  /// No description provided for @advAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'MaixCAM2 address'**
+  String get advAddress;
+
+  /// No description provided for @advLinkStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get advLinkStatus;
+
+  /// No description provided for @advLinkTip.
+  ///
+  /// In en, this message translates to:
+  /// **'ESP32 health and firmware versions will show here once the MaixCAM2 forwards them.'**
+  String get advLinkTip;
+
+  /// No description provided for @advSafetySub.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in limits that protect the robot and students.'**
+  String get advSafetySub;
+
+  /// No description provided for @advReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Read only'**
+  String get advReadOnly;
+
+  /// No description provided for @advArmTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'One arm move, max'**
+  String get advArmTimeout;
+
+  /// No description provided for @advSortCap.
+  ///
+  /// In en, this message translates to:
+  /// **'One sort, max'**
+  String get advSortCap;
+
+  /// No description provided for @advHeartbeat.
+  ///
+  /// In en, this message translates to:
+  /// **'App heartbeat'**
+  String get advHeartbeat;
+
+  /// No description provided for @advNudge.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow approach, max'**
+  String get advNudge;
+
+  /// No description provided for @advStopRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'STOP repeated'**
+  String get advStopRepeat;
+
+  /// No description provided for @advHandPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Arm pauses when a hand is in view'**
+  String get advHandPause;
+
+  /// No description provided for @advSafetyTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Locking the drive is not an emergency stop. The red STOP always works and can\'t be turned off here.'**
+  String get advSafetyTip;
+
+  /// No description provided for @advBackupSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy the settings to another phone, or start again.'**
+  String get advBackupSub;
+
+  /// No description provided for @advExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy settings'**
+  String get advExport;
+
+  /// No description provided for @advImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste settings'**
+  String get advImport;
+
+  /// No description provided for @advCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings copied'**
+  String get advCopied;
+
+  /// No description provided for @advImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings pasted. Save to keep them.'**
+  String get advImported;
+
+  /// No description provided for @advImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'No valid settings on the clipboard.'**
+  String get advImportFailed;
+
+  /// No description provided for @advChangePin.
+  ///
+  /// In en, this message translates to:
+  /// **'Change teacher PIN'**
+  String get advChangePin;
+
+  /// No description provided for @advReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get advReset;
+
+  /// No description provided for @advResetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Put every robot setting back to its default. Scan history stays.'**
+  String get advResetBody;
+
+  /// No description provided for @advResetConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset all robot settings?'**
+  String get advResetConfirm;
+
+  /// No description provided for @advPinCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a teacher PIN'**
+  String get advPinCreate;
+
+  /// No description provided for @advPinCreateBody.
+  ///
+  /// In en, this message translates to:
+  /// **'4 digits. Students can\'t open these settings without it.'**
+  String get advPinCreateBody;
+
+  /// No description provided for @advPinEnter.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher PIN'**
+  String get advPinEnter;
+
+  /// No description provided for @advPinWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong PIN'**
+  String get advPinWrong;
+
+  /// No description provided for @advPinOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get advPinOpen;
+
+  /// No description provided for @advPinSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save PIN'**
+  String get advPinSave;
+
+  /// No description provided for @advCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get advCancel;
 }
 
 class _AppLocalizationsDelegate

@@ -288,6 +288,7 @@ Future<Rig> pumpPhone(
                           onAvatar: () => tap('avatar'),
                           onBack: () => tap('exit'),
                           onGuide: () => setState(() => guideOpen = true),
+                          onAdvanced: () => tap('advanced'),
                           driveKey: keys[0],
                           stopKey: keys[1],
                           actionKey: keys[2],

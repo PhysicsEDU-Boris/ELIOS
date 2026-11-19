@@ -64,6 +64,7 @@ class PhoneControlLayout extends StatelessWidget {
     required this.onAvatar,
     required this.onBack,
     required this.onGuide,
+    this.onAdvanced,
     this.photoUrl,
     this.overlays = const [],
     this.onLock,
@@ -109,6 +110,9 @@ class PhoneControlLayout extends StatelessWidget {
   /// The question is still being prepared: the Quiz button shows Waiting.
   final bool quizWaiting;
   final VoidCallback onQuiz, onHistory, onAvatar, onBack, onGuide;
+
+  /// Advanced settings (0232), beside Guide; hidden when null.
+  final VoidCallback? onAdvanced;
   final String? photoUrl;
 
   /// Where the Guide's spotlight points (steps 1-4).
@@ -376,6 +380,10 @@ class PhoneControlLayout extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         _GuideButton(onTap: onGuide),
+        if (onAdvanced != null) ...[
+          const SizedBox(width: 6),
+          _AdvancedButton(onTap: onAdvanced!, compact: narrow),
+        ],
         Expanded(
           child: Align(
             alignment: Alignment.centerRight,
@@ -952,6 +960,32 @@ class _GuideButton extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// "Advanced" (Figma Phone/Advanced settings button): opens the teacher's robot settings.
+class _AdvancedButton extends StatelessWidget {
+  const _AdvancedButton({required this.onTap, this.compact = false});
+  final VoidCallback onTap;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    final icon = Icon(Icons.tune_rounded, size: 20, color: p.primaryText);
+    return PhonePill(
+      key: const ValueKey('phone_advanced'),
+      semantic: l10n.advButton,
+      onTap: onTap,
+      padding: compact ? const EdgeInsets.all(9) : const EdgeInsets.fromLTRB(10, 7, 14, 7),
+      child: compact
+          ? icon
+          : Row(mainAxisSize: MainAxisSize.min, children: [
+              icon,
+              const SizedBox(width: 6),
+              Text(l10n.advButton, style: TextStyle(color: p.textPrimary, fontWeight: FontWeight.w700, fontSize: 14)),
+            ]),
     );
   }
 }

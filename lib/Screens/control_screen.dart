@@ -27,6 +27,8 @@ import '../services/lock_tracking.dart';
 import '../services/live_scan_state_machine.dart' show LiveScanState;
 import '../services/quiz_tts_service.dart';
 import '../services/robot/joystick_controller.dart';
+import '../services/robot/robot_settings.dart';
+import 'advanced_settings_screen.dart';
 import '../services/robot/motion_gate.dart';
 import '../services/robot/r1_orchestrator.dart';
 import '../services/robot/robot_controller.dart';
@@ -209,6 +211,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       armLocked: () =>
           _gate.stopped || !_gate.linkUp || (_gate.armBusy?.call() ?? false) || (_gate.handPaused?.call() ?? false),
       baseServo: () => ref.read(robotControlProvider).baseAngle,
+      config: ref.read(robotSettingsProvider).joystick,
     )..start();
     WidgetsBinding.instance.addObserver(this);
     HardwareKeyboard.instance.addHandler(_onKey);
@@ -528,6 +531,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     });
 
     // Resend resolution to the device whenever the user changes it mid-session.
+    // Advanced settings: new joystick constants from the next tick (0232).
+    ref.listen<RobotSettings>(robotSettingsProvider, (_, s) => _joystick.config = s.joystick);
     ref.listen<AsyncValue<EspConfig>>(espConfigProvider, (previous, next) {
       final prevPreset = previous?.valueOrNull?.resolutionPreset;
       final nextPreset = next.valueOrNull?.resolutionPreset;
@@ -953,6 +958,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onAvatar: () => _drawerKey.currentState?.open(),
       onBack: () => Navigator.of(context).pop(),
       onGuide: () => setState(() => _guideOpen = true),
+      onAdvanced: _openAdvanced,
       photoUrl: user?.photoURL,
       onLock: _locked != null || (link == ControlLink.connected && _latestFrame != null && !_locking) ? _lockOrUnlock : null,
       locked: _locked != null,
@@ -1117,6 +1123,23 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     });
   }
 
+
+  /// Advanced settings (0232): teacher PIN first; CONFIG goes out through the gate's command link.
+  Future<void> _openAdvanced() async {
+    if (!await confirmTeacherPin(context, ref) || !mounted) return;
+    final esp = ref.read(espConfigProvider).valueOrNull;
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => AdvancedSettingsScreen(
+        linkUp: _gate.linkUp,
+        address: '${esp?.esp32IpAddress ?? '—'}:${EspConfig.maixCamPort}',
+        onSend: (config) {
+          if (!_gate.linkUp || _gate.stopped) return false;
+          _gate.robot.send('CONFIG', config);
+          return true;
+        },
+      ),
+    ));
+  }
   /// Debug sheet's base chevrons: one 2 deg step each tap.
   void _nudgeBase(double delta) {
     final angle = (ref.read(robotControlProvider).baseAngle + delta).clamp(0.0, 180.0);
