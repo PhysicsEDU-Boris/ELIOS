@@ -4,7 +4,7 @@
 /// replies are delivered by [tick].
 library;
 
-import '../websocket_service.dart' show Detection;
+import '../websocket_service.dart' show ArmTag, Detection;
 import 'robot_controller.dart';
 
 class SimulatedRobot extends RobotController {
@@ -46,6 +46,12 @@ class SimulatedRobot extends RobotController {
   bool objectOnFloor = true;
   bool handInView = false;
 
+  /// The tag id the camera sees at a bin's state point (0233): that bin's own by default;
+  /// return another id for a wrong bin, null for no tag.
+  int? Function(Bin bin) binTagSeen = (bin) => bin.tagId;
+  Bin? _atBin;
+  (DateTime, Bin)? _binReachedAt;
+
   /// Each drive message moves the robot this far (forward shortens the distance).
   double cmPerDriveMessage = 1;
 
@@ -84,6 +90,8 @@ class SimulatedRobot extends RobotController {
     final done = now.add(ackDelay + motion);
     _due.add((done, RobotReply(ReplyKind.motionDone, seq)));
     if (cmd == 'PICK' && !pickMisses) _pickedAt = done;
+    if (cmd == 'MOVE_TO_BIN') _binReachedAt = (done, Bin.values.firstWhere((b) => b.wire == message['bin']));
+    if (cmd == 'DROP' || cmd == 'HOME') _atBin = null;
     if (cmd == 'HOME') {
       atHome = false;
       _homedAt = done;
@@ -110,6 +118,11 @@ class SimulatedRobot extends RobotController {
       objectOnFloor = false;
       _pickedAt = null;
     }
+    final reached = _binReachedAt;
+    if (reached != null && !now.isBefore(reached.$1)) {
+      _atBin = reached.$2;
+      _binReachedAt = null;
+    }
     final homed = _homedAt;
     if (homed != null && !now.isBefore(homed)) {
       atHome = true;
@@ -121,6 +134,12 @@ class SimulatedRobot extends RobotController {
     for (final (_, reply) in ready) {
       if (linkUp) onReply?.call(reply);
     }
+  }
+
+  /// This frame's AprilTags: the bin tag while the arm is at a bin's state point.
+  List<ArmTag> armTags() {
+    final id = _atBin == null ? null : binTagSeen(_atBin!);
+    return [if (id != null) ArmTag(id: id, distMm: 150)];
   }
 
   /// One analysed frame: the object on its floor spot (centred, at [objectDistCm]), and a hand.

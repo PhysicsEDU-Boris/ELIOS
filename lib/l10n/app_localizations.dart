@@ -5161,6 +5161,30 @@ abstract class AppLocalizations {
   /// **'The item was not picked up. The robot stopped.'**
   String get r1PickFailed;
 
+  /// No description provided for @r1BinChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the bin\'s tag…'**
+  String get r1BinChecking;
+
+  /// No description provided for @r1BinLookAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Bin not confirmed yet. Looking again…'**
+  String get r1BinLookAgain;
+
+  /// No description provided for @r1BinOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Right bin! Dropping the item'**
+  String get r1BinOk;
+
+  /// No description provided for @r1BinCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not the right bin. The robot is going home. Take the item out of the gripper.'**
+  String get r1BinCheckFailed;
+
   /// No description provided for @r1Done.
   ///
   /// In en, this message translates to:

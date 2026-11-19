@@ -45,11 +45,17 @@ WHEEL_TRACK_MM = 250.0
 PICK_MATCH_TOLERANCE_MM = 100.0
 IK_TOLERANCE_MM = 5.0
 GRIPPER_MAX_GAP_MM = 60.0
+# ponytail: placeholder bin state points (EE mm). Replace with the owner's saved poses from
+# robotic_hand_sim calibration/hil_sequences.json once they exist (0233).
 BIN_TARGETS = {
     "organik": (0.0, -150.0, 80.0),
     "anorganik": (100.0, -150.0, 80.0),
     "b3": (-100.0, -150.0, 80.0),
 }
+# The tag on each bin (0233, docs/print/apriltags-bins-id2-id3-id4-A4.pdf). At a bin's state point
+# the fake reports that bin's tag (--bin-tag right), another bin's (wrong) or none.
+BIN_TAG_IDS = {"anorganik": 2, "organik": 3, "b3": 4}
+BIN_TAG_DIST_MM = 150.0
 HAND_AXES = {
     "reach": np.array([0.0, 1.0, 0.0]),
     "height": np.array([0.0, 0.0, 1.0]),
@@ -460,8 +466,9 @@ class SimWorld:
 # ── Server ───────────────────────────────────────────────────────────────────
 
 class FakeMaixCam:
-    def __init__(self, world, scenario, labels, fps=10.0, p1=None, seed=0, log=print):
+    def __init__(self, world, scenario, labels, fps=10.0, p1=None, seed=0, log=print, bin_tag="right"):
         self.world, self.scenario, self.labels = world, scenario, labels
+        self.bin_tag = bin_tag
         self.fps = fps
         self.p1 = scenario["p1"] if p1 is None else p1
         self.noise = dict(scenario["noise"])
@@ -771,6 +778,15 @@ class FakeMaixCam:
             return
         await self._begin_motion(ws, data, target, lambda: setattr(self, "held_bin", bin_name))
 
+    def bin_tags(self):
+        """The tag seen at the bin state point, per --bin-tag."""
+        if self.held_bin is None or self.bin_tag == "none":
+            return []
+        tid = BIN_TAG_IDS[self.held_bin]
+        if self.bin_tag == "wrong":
+            tid = next(t for t in BIN_TAG_IDS.values() if t != tid)
+        return [{"id": tid, "dist_mm": BIN_TAG_DIST_MM}]
+
     async def _cmd_drop(self, ws, data):
         if self.motion is not None:
             await self._reply(ws, "error", data, reason="busy")
@@ -840,7 +856,7 @@ class FakeMaixCam:
                     "detections": last_dets,
                 }
                 if self.p1:
-                    tags = self.world.arm_tags()
+                    tags = self.world.arm_tags() + self.bin_tags()
                     if tags:
                         message["arm_tags"] = tags
                     message["arm_moving"] = not arrived  # decision 0026
@@ -899,6 +915,8 @@ def main():
     ap.add_argument("--port", type=int, default=WS_PORT)
     ap.add_argument("--fps", type=float, help="frames per second (default: the scenario's, else 10)")
     ap.add_argument("--old-firmware", action="store_true", help="send no P1 fields (track_id, dist_cm, lateral_cm, arm_tags)")
+    ap.add_argument("--bin-tag", choices=("right", "wrong", "none"), default="right",
+                    help="bin AprilTag seen at the bin state point (0233)")
     ap.add_argument("--seed", type=int, default=0, help="photo choice and noise; the same seed repeats a run")
     ap.add_argument("--check-labels", action="store_true", help="compare labels.yaml, main.py and the app, then exit")
     args = ap.parse_args()
@@ -915,7 +933,7 @@ def main():
         print(f"[Scenario] WARNING {w}")
     world = SimWorld(args.sim_path, scenario, seed=args.seed)
     fake = FakeMaixCam(world, scenario, labels, fps=args.fps or scenario.get("fps", 10.0),
-                       p1=False if args.old_firmware else None, seed=args.seed)
+                       p1=False if args.old_firmware else None, seed=args.seed, bin_tag=args.bin_tag)
     print(f"[Fake] {FIRMWARE_VERSION} scenario {scenario['name']} on ws://{args.host}:{args.port}")
     try:
         asyncio.run(fake.serve(args.host, args.port))

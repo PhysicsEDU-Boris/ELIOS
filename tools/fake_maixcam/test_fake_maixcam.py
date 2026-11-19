@@ -323,6 +323,11 @@ def test_r1_pick_bin_drop_and_drive_servo(tmp_path):
             assert fake.held_item == "bottle" and fake.world.gripper_closed
             await motion({"cmd": "MOVE_TO_BIN", "bin": "organik"}, 2)
             assert fake.held_bin == "organik"
+            assert fake.bin_tags() == [{"id": 3, "dist_mm": fm.BIN_TAG_DIST_MM}]
+            fake.bin_tag = "wrong"
+            assert fake.bin_tags()[0]["id"] != 3
+            fake.bin_tag = "none"
+            assert fake.bin_tags() == []
             await motion({"cmd": "DROP"}, 3)
             assert fake.held_item is None and not fake.items["bottle"]["on"]
 

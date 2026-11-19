@@ -200,8 +200,9 @@ HAND_CONF_TH   = 0.7
 HAND_LABEL     = "Human_Hand"   # r1_orchestrator / motion_gate pause on this label
 
 # Black-square edge of each arm tag, ruler-measured on the print (owner, 4 Nov): id 0 arm5
-# bottom, id 1 arm3 rear (a 10 mm print, so 6.17 mm black).
-TAG_SIZES_MM = {0: 18.52, 1: 6.17}
+# bottom, id 1 arm3 rear (a 10 mm print, so 6.17 mm black). Bin tags (0233): id 2 anorganik,
+# 3 organik, 4 B3, printed 30 mm like id 0 (docs/print/apriltags-bins-id2-id3-id4-A4.pdf).
+TAG_SIZES_MM = {0: 18.52, 1: 6.17, 2: 18.52, 3: 18.52, 4: 18.52}
 # fx in px at STREAM_RESOLUTION 640x360 from the ChArUco board solve (27 views, 0.29 px RMS,
 # docs/test-results/0183/maixcam2_intrinsics_640x360.json): 81.1 x 51.4 deg like the sim.
 # ponytail: pinhole only (no tilt, no distortion; the corner is off by ~6 px), so arm_tags keep
@@ -356,7 +357,7 @@ def hand_dets(frame):
     return out
 
 def arm_tags(tags, scale=1):
-    """0022 arm_tags from find_apriltags results (on a 1/scale image): ids 0 and 1, rough distance."""
+    """0022 arm_tags from find_apriltags results (on a 1/scale image): arm ids 0, 1 and bin ids 2-4 (0233), rough distance."""
     out = []
     for t in tags:
         size = TAG_SIZES_MM.get(t.id())

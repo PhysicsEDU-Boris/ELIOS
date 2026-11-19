@@ -2920,6 +2920,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get r1PickFailed => 'The item was not picked up. The robot stopped.';
 
   @override
+  String get r1BinChecking => 'Checking the bin\'s tag…';
+
+  @override
+  String get r1BinLookAgain => 'Bin not confirmed yet. Looking again…';
+
+  @override
+  String get r1BinOk => 'Right bin! Dropping the item';
+
+  @override
+  String get r1BinCheckFailed =>
+      'Not the right bin. The robot is going home. Take the item out of the gripper.';
+
+  @override
   String get r1Done => 'Done! The robot can drive again.';
 
   @override

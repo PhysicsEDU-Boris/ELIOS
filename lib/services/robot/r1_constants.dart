@@ -53,6 +53,13 @@ const pickVerifyTimeout = Duration(seconds: 2);
 /// stabilizer's dropout tolerance).
 const objectGoneFor = Duration(milliseconds: 600);
 
+/// Proposed (0233): at the bin state point the right bin's tag must be seen this long
+/// (about 2 tag frames at ~5 fps) before DROP; a wrong bin's tag this long fails the look.
+const binTagSeenFor = Duration(milliseconds: 500);
+
+/// Proposed (0233): one look for the bin tag; a failed look is retried once, then HOME.
+const binLookTimeout = Duration(seconds: 3);
+
 /// A hand must be out of view this long before a paused arm continues.
 const handClearFor = Duration(seconds: 1);
 
