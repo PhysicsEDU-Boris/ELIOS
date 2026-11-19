@@ -227,7 +227,7 @@ class TrackFrameTest(unittest.TestCase):
 
 class StreamTest(unittest.TestCase):
     def test_clean_frames_tracked_box_hands_and_tags(self):
-        frames, messages, encodes, searched = [], [], [], []
+        frames, messages, encodes, searched, arm_tags_seen = [], [], [], [], []
 
         class Frame:
             def __init__(self, number):
@@ -269,6 +269,7 @@ class StreamTest(unittest.TestCase):
         M = load(asyncio=asyncio, json=json, base64=base64, print=lambda *a: None,
                  stream_cam=Camera(), ws_streaming=True, ws_clients={Client()},
                  cam_lock=threading.Lock(), setup={'stage': None},
+                 arm_lock=threading.Lock(), arm=SimpleNamespace(on_tags=arm_tags_seen.append),
                  FIRMWARE_SHA256='test-hash',
                  mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)),
                  tracker=FakeTracker([0.9, 0.9, 0.9]),
@@ -284,6 +285,8 @@ class StreamTest(unittest.TestCase):
         # A quality-60 preview per frame; the quality-80 AI picture only on the first detection frame:
         # the second comes ~0.2 s later, within CLEAN_EVERY_MS.
         self.assertEqual(encodes, [(1, 60), (2, 60), (2, 80), (3, 60), (4, 60)])
+        self.assertTrue(arm_tags_seen and all(isinstance(ids, list) for ids in arm_tags_seen),
+                        'each detection frame with tags feeds the DROP guard (0235)')
         for m in messages:
             self.assertEqual(m['vision_protocol'], 1)
             self.assertEqual((m['img_w'], m['img_h']), (640, 360))  # the wide 16:9 view (0183)
@@ -340,6 +343,7 @@ class StreamTest(unittest.TestCase):
         M = load(asyncio=asyncio, json=json, base64=base64, print=lambda *a: None,
                  stream_cam=SimpleNamespace(read=Frame), ws_streaming=True, ws_clients={Client()},
                  cam_lock=threading.Lock(), setup={'stage': None},
+                 arm_lock=threading.Lock(), arm=SimpleNamespace(on_tags=lambda ids: None),
                  FIRMWARE_SHA256='test-hash',
                  mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)),
                  tracker=None, hands=None,

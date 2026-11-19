@@ -191,6 +191,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onStop: (reason) {
         _arm.markUnknown(); // the arm holds wherever the STOP caught it
         _r1?.emergencyStop(reason);
+        _gate.status(); // the MaixCAM2 answers with the pose it froze at (0235)
       },
       onArmCommand: (motion) => _liveScan?.onArmCommand(motion),
       onHomeTimeout: () {
@@ -228,6 +229,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
     _robotReplies = ws.robotReplies.listen((msg) {
       robot.handleMessage(msg);
+      final servo = ArmPose.servoFrom(msg['servo']);
+      if (servo != null && msg['event'] != 'error') {
+        _arm.sync(servo);
+        _syncArmState();
+      }
       final reply = RobotReply.fromJson(msg);
       if (reply != null) {
         if (_gate.pendingHomeSeq != null && reply.seq == _gate.pendingHomeSeq) {
@@ -271,6 +277,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         if (const {'robot_error', 'robot_unreachable', 'pick_failed'}.contains(reason)) _gate.emergencyStop('error');
         // Wrong or unseen bin tag twice (0233): no DROP, the arm goes HOME by the usual gated path.
         if (reason == 'bin_check_failed') _gate.home();
+        _gate.status(); // the arm's pose after the sort (0235)
       });
       _r1Ticker = Timer.periodic(const Duration(milliseconds: 250), (_) {
         final r1 = _r1!..tick();

@@ -97,6 +97,18 @@ class ArmPose {
   /// firmware's own) is allowed until the arm is home again.
   bool get known => _known;
   void markUnknown() => _known = false;
+
+  /// The MaixCAM2 reported the pose it last sent to the ESP32 (0235: motion_done, STATUS).
+  void sync(ServoPose servo) {
+    _goal = [...servo];
+    _known = true;
+  }
+
+  /// [sync]'s input from a reply's `servo` field, or null when it has none (old firmware, ESP32 reset).
+  static ServoPose? servoFrom(Object? raw) =>
+      raw is List && raw.length == armAxes.length && raw.every((v) => v is num)
+          ? [for (final v in raw) (v as num).toDouble()]
+          : null;
   void markHome() {
     _goal = [...armHome];
     _known = true;
