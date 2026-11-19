@@ -2875,6 +2875,20 @@ class AppLocalizationsId extends AppLocalizations {
   String get r1PickFailed => 'Benda tidak terambil. Robot berhenti.';
 
   @override
+  String get r1BinChecking => 'Memeriksa tag tempat sampah…';
+
+  @override
+  String get r1BinLookAgain =>
+      'Tempat sampah belum terkonfirmasi. Mencari lagi…';
+
+  @override
+  String get r1BinOk => 'Tempat sampah benar! Benda dijatuhkan';
+
+  @override
+  String get r1BinCheckFailed =>
+      'Bukan tempat sampah yang benar. Robot kembali ke posisi awal. Ambil benda dari capit.';
+
+  @override
   String get r1Done => 'Selesai! Robot boleh jalan lagi.';
 
   @override

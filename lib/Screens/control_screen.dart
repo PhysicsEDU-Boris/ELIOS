@@ -257,6 +257,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       _r1 = R1Orchestrator(robot, onResume: (reason) {
         // A robot that misbehaved stops everything until "Lanjutkan" (0026).
         if (const {'robot_error', 'robot_unreachable', 'pick_failed'}.contains(reason)) _gate.emergencyStop('error');
+        // Wrong or unseen bin tag twice (0233): no DROP, the arm goes HOME by the usual gated path.
+        if (reason == 'bin_check_failed') _gate.home();
       });
       _r1Ticker = Timer.periodic(const Duration(milliseconds: 250), (_) {
         final r1 = _r1!..tick();

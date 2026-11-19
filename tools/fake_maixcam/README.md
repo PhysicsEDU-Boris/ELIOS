@@ -49,6 +49,10 @@ Options:
 - `--port` (default 8765)
 - `--fps` (default: the scenario's, else 10)
 - `--old-firmware`
+- `--bin-tag right|wrong|none` (default right): the AprilTag seen at a bin's state point after `MOVE_TO_BIN` (0233)
+
+`MOVE_TO_BIN` / `DROP` play the bin's saved sequence from `firmware/maixcam2/bin_sequences.json`
+(B3 for now) through the sim's tank planner; other bins use the placeholder `BIN_TARGETS`.
 - `--seed` (sets the photo choice and the noise; the same seed repeats a run)
 - `--check-labels`: compares `labels.yaml` with `main.py`'s `LABELS` and the app's
   `ScannedWaste.detectorLabels`, then exits. Exit code 1 means a mismatch.

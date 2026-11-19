@@ -97,7 +97,8 @@ class R1Orchestrator {
   bool _armDone = false;
   TrackedDetection? _spot;
   DateTime? _verifyUntil, _spotClearSince, _handSeenAt;
-  bool _handPaused = false;
+  DateTime? _lookUntil, _rightTagSince, _wrongTagSince;
+  bool _handPaused = false, _binLookRetried = false;
   int _questionsDone = 0;
   DateTime? _questionSlotStart;
 
@@ -265,6 +266,8 @@ class R1Orchestrator {
           _armStep = 2;
           _runArmStep();
         }
+      } else if (_armStep == 3 && !_handPaused) {
+        _lookForBinTag(armTags ?? const [], now);
       }
     }
     if (_state == R1State.position) _evaluatePosition();
@@ -318,6 +321,10 @@ class R1Orchestrator {
         if (_armActive && _armStep == 1 && !_handPaused && !now.isBefore(_verifyUntil!)) {
           feedback.objectLeftFloor = false;
           _abort('pick_failed', l10n.r1PickFailed);
+          return;
+        }
+        if (_armActive && _armStep == 3 && !_handPaused && !now.isBefore(_lookUntil!)) {
+          _binLookFailed('bin_tag_not_seen');
           return;
         }
         if (_questionsRunning && now.difference(_questionSlotStart!) >= questionTimeout) _completeQuestion();
@@ -398,7 +405,8 @@ class R1Orchestrator {
     _enter(R1State.ready);
   }
 
-  /// Arm steps: 0 PICK, 1 check the floor spot, 2 MOVE_TO_BIN, 3 DROP.
+  /// Arm steps: 0 PICK, 1 check the floor spot, 2 MOVE_TO_BIN (to the bin's state point),
+  /// 3 look for the bin's AprilTag (0233), 4 DROP.
   void _runArmStep() {
     assert(_state == R1State.sorting || _state == R1State.waitBoth, 'the arm never moves before REVEAL');
     final now = _clock();
@@ -413,9 +421,47 @@ class R1Orchestrator {
         _armSeq = robot.moveToBin(robotBin!);
         _await(_armSeq!, 'MOVE_TO_BIN', motion: true);
       case 3:
+        // At the state point the arm holds still (no command) while the camera looks.
+        _lookUntil = now.add(binLookTimeout);
+        _rightTagSince = _wrongTagSince = null;
+        message = _binLookRetried ? l10n.r1BinLookAgain : l10n.r1BinChecking;
+      case 4:
         _armSeq = robot.drop();
         _await(_armSeq!, 'DROP', motion: true);
     }
+  }
+
+  /// The right bin's tag for [binTagSeenFor]: DROP. Another bin's tag for as long: a failed look.
+  void _lookForBinTag(List<ArmTag> tags, DateTime now) {
+    final right = robotBin!.tagId;
+    final others = {for (final b in Bin.values) if (b != robotBin) b.tagId};
+    if (tags.any((t) => t.id == right)) {
+      _wrongTagSince = null;
+      if (now.difference(_rightTagSince ??= now) >= binTagSeenFor) {
+        onEvent?.call('r1_bin_check', {'result': 'ok', 'bin': robotBin!.wire, 'retried': _binLookRetried});
+        message = l10n.r1BinOk;
+        _armStep = 4;
+        _runArmStep();
+      }
+      return;
+    }
+    _rightTagSince = null;
+    if (!tags.any((t) => others.contains(t.id))) {
+      _wrongTagSince = null;
+    } else if (now.difference(_wrongTagSince ??= now) >= binTagSeenFor) {
+      _binLookFailed('wrong_bin_tag');
+    }
+  }
+
+  /// First failure: look once more. Second: end without DROP; the host sends the arm HOME.
+  void _binLookFailed(String why) {
+    onEvent?.call('r1_bin_check', {'result': why, 'bin': robotBin!.wire, 'retried': _binLookRetried});
+    if (!_binLookRetried) {
+      _binLookRetried = true;
+      _runArmStep();
+      return;
+    }
+    _end('bin_check_failed', l10n.r1BinCheckFailed, stop: false);
   }
 
   void _pause() {
@@ -468,7 +514,7 @@ class R1Orchestrator {
         feedback.motionDoneSeq = reply.seq;
         if (reply.seq == _armSeq) {
           _armStep++;
-          if (_armStep == 4) {
+          if (_armStep == 5) {
             _armFinished();
           } else {
             _runArmStep();
@@ -535,7 +581,7 @@ class R1Orchestrator {
     _target = _spot = null;
     _distCm = _lateralCm = null;
     _bufferedIdentify = null;
-    _manualPosition = _relocking = _armDone = _handPaused = false;
+    _manualPosition = _relocking = _armDone = _handPaused = _binLookRetried = false;
     _armStep = _questionsDone = 0;
     _armSeq = null;
     robotBin = studentBin = null;
