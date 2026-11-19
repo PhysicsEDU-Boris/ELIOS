@@ -2889,6 +2889,24 @@ class AppLocalizationsId extends AppLocalizations {
       'Bukan tempat sampah yang benar. Robot kembali ke posisi awal. Ambil benda dari capit.';
 
   @override
+  String get armRefusedTank =>
+      'Lengan tidak bisa ke sana: akan menabrak tangki di belakang robot.';
+
+  @override
+  String get armRefusedTankPath =>
+      'Jalannya melewati tangki terlalu rendah. Naikkan lengan dulu.';
+
+  @override
+  String get armRefusedReach => 'Lengan tidak bisa menjangkau sejauh itu.';
+
+  @override
+  String get armRefusedLimits => 'Itu melewati batas sendi lengan.';
+
+  @override
+  String get armRefusedUnknown =>
+      'Posisi lengan tidak diketahui setelah berhenti atau menyortir. Tekan HOME dulu.';
+
+  @override
   String get r1Done => 'Selesai! Robot boleh jalan lagi.';
 
   @override

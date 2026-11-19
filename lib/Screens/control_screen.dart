@@ -53,6 +53,8 @@ import '../widgets/segmentation_overlay_painter.dart';
 import '../widgets/waste_quiz_popup.dart';
 import '../services/frame_source/maix_cam_source.dart';
 import '../services/frame_source/frame_source.dart';
+import '../services/robot/arm_kinematics.dart' show ArmRefusal;
+import '../services/robot/arm_pose.dart';
 import '../services/robot/arm_tag_switch.dart';
 import 'login_screen.dart';
 import 'package:elio/l10n/l10n.dart';
@@ -112,6 +114,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// emergency stop, STOPPED, R1's drive lock, the link, the heartbeat.
   late final MotionGate _gate;
   late final JoystickController _joystick;
+
+  /// The commanded arm pose and its planner (0234): every manual arm key goes through it.
+  final _arm = ArmPose();
+  DateTime? _armRefusedAt;
 
   /// Set only with R1 (see [_r1Enabled]).
   R1Orchestrator? _r1;
@@ -182,7 +188,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         debugPrint('[Control] $event $data');
         _liveScan?.logEvent(event, data);
       },
-      onStop: (reason) => _r1?.emergencyStop(reason),
+      onStop: (reason) {
+        _arm.markUnknown(); // the arm holds wherever the STOP caught it
+        _r1?.emergencyStop(reason);
+      },
       onArmCommand: (motion) => _liveScan?.onArmCommand(motion),
       onHomeTimeout: () {
         if (mounted) {
@@ -204,15 +213,16 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         final s = ref.read(robotControlProvider).pwmSpeed;
         _gate.motor((l * s).round(), (r * s).round());
       },
-      sendArmBase: (servo) {
-        if (_gate.servo('base', servo)) _robotNotifier.setBaseAngle(servo.toDouble());
-      },
+      // ponytail: a refused step is not fed back to the stick's integrator; the next accepted step
+      // is planned from the arm's real goal, so nothing jumps, but the knob's angle may run ahead.
+      sendArmBase: (servo) => _armMove(_arm.base(servo.toDouble())),
       driveLocked: () => _gate.stopped || !_gate.linkUp || _gate.robot.driveLocked,
       armLocked: () =>
           _gate.stopped || !_gate.linkUp || (_gate.armBusy?.call() ?? false) || (_gate.handPaused?.call() ?? false),
       baseServo: () => ref.read(robotControlProvider).baseAngle,
       config: ref.read(robotSettingsProvider).joystick,
     )..start();
+    _arm.gripClosedOffset = ref.read(robotSettingsProvider).gripClosedOffset;
     WidgetsBinding.instance.addObserver(this);
     HardwareKeyboard.instance.addHandler(_onKey);
 
@@ -225,6 +235,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             final homeSuccess = _gate.onHomeReply(reply);
             if (homeSuccess) {
               ref.read(robotControlProvider.notifier).resetToHome();
+              _arm.markHome();
+              _syncArmState();
             }
           } else if (reply.kind == ReplyKind.error) {
             _gate.onHomeReply(reply);
@@ -266,6 +278,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         if (mounted && text != _r1Status) setState(() => _r1Status = text);
         _syncArmTags(DateTime.now());
         final dropPending = r1.state == R1State.sorting || r1.state == R1State.waitBoth;
+        if (dropPending) _arm.markUnknown(); // R1's PICK / bin sequence moves the arm (0233)
         if (ref.read(r1DropPendingProvider) != dropPending) {
           ref.read(r1DropPendingProvider.notifier).state = dropPending;
         }
@@ -534,7 +547,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
     // Resend resolution to the device whenever the user changes it mid-session.
     // Advanced settings: new joystick constants from the next tick (0232).
-    ref.listen<RobotSettings>(robotSettingsProvider, (_, s) => _joystick.config = s.joystick);
+    ref.listen<RobotSettings>(robotSettingsProvider, (_, s) {
+      _joystick.config = s.joystick;
+      _arm.gripClosedOffset = s.gripClosedOffset;
+    });
     ref.listen<AsyncValue<EspConfig>>(espConfigProvider, (previous, next) {
       final prevPreset = previous?.valueOrNull?.resolutionPreset;
       final nextPreset = next.valueOrNull?.resolutionPreset;
@@ -737,10 +753,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                     final key = (c.maxHeight - 26).clamp(36.0, 64.0);
                     return Row(children: [
                       HomeButton(
-                          onConfirmed: () {
-                            _armTagsFor('HOME');
-                            _gate.home();
-                          },
+                          onConfirmed: _armHome,
                           enabled: isOperational,
                           size: key),
                       const SizedBox(width: 10),
@@ -750,13 +763,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                         primary: true,
                         size: key,
                         onTap: isOperational
-                            ? () {
-                                if (_gate.servo('gripper', 100)) {
-                                  _armTagsFor('PICK UP');
-                                  notifier.setGripperVal(100);
-                                  if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
-                                }
-                              }
+                            ? _pickUp
                             : null,
                       ),
                       const SizedBox(width: 10),
@@ -765,9 +772,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                         label: l10n.ctlRelease,
                         size: key,
                         onTap: isOperational
-                            ? () {
-                                if (_gate.servo('gripper', 0)) notifier.setGripperVal(0);
-                              }
+                            ? () => _armMove(_arm.open())
                             : null,
                       ),
                       VerticalDivider(width: 24, color: p.borderSubtle),
@@ -785,10 +790,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                               max: 100,
                               semanticLabel: l10n.ctlGripper,
                               onChanged: isOperational
-                                  ? (value) {
-                                      final width = value.round();
-                                      if (_gate.servo('gripper', width)) notifier.setGripperVal(width.toDouble());
-                                    }
+                                  ? (value) => _armMove(_arm.gripper(value))
                                   : null,
                             ),
                           ),
@@ -807,19 +809,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                 armHeight: controlEnabled(
                   isOperational,
                   armFader(l10n.ctlHeight, l10n.ctlUpDown, (robotState.heightValue / 180).clamp(0.0, 1.0), (value) {
-                    if (_gate.servo('height', (value * 180).toInt())) {
-                      notifier.setHeightValue(value * 180);
-                      _scheduleStatusRequest();
-                    }
+                    if (_armMove(_arm.height(value))) _scheduleStatusRequest();
                   }),
                 ),
                 armReach: controlEnabled(
                   isOperational,
                   armFader(l10n.ctlReach, l10n.ctlFwdBack, (robotState.reachValue / 180).clamp(0.0, 1.0), (value) {
-                    if (_gate.servo('reach', (value * 180).toInt())) {
-                      notifier.setReachValue(value * 180);
-                      _scheduleStatusRequest();
-                    }
+                    if (_armMove(_arm.reach(value))) _scheduleStatusRequest();
                   }),
                 ),
                 power: PowerGlowButton(
@@ -901,40 +897,18 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       }),
       voiceOn: quizState.voiceOn,
       onVoice: (_) => ref.read(wasteQuizProvider.notifier).toggleVoice(),
-      onHome: () {
-        _armTagsFor('HOME');
-        _gate.home();
-      },
-      onPickUp: () {
-        if (_gate.servo('gripper', 100)) {
-          _armTagsFor('PICK UP');
-          notifier.setGripperVal(100);
-          if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
-        }
-      },
-      onReleaseGripper: () {
-        if (_gate.servo('gripper', 0)) notifier.setGripperVal(0);
-      },
+      onHome: _armHome,
+      onPickUp: _pickUp,
+      onReleaseGripper: () => _armMove(_arm.open()),
       gripper: robotState.gripperVal,
-      onGripper: (value) {
-        final width = value.round();
-        if (_gate.servo('gripper', width)) {
-          notifier.setGripperVal(width.toDouble());
-        }
-      },
+      onGripper: (value) => _armMove(_arm.gripper(value)),
       height: robotState.heightValue,
       onHeight: (value) {
-        if (_gate.servo('height', (value * 180).toInt())) {
-          notifier.setHeightValue(value * 180);
-          _scheduleStatusRequest();
-        }
+        if (_armMove(_arm.height(value))) _scheduleStatusRequest();
       },
       reach: robotState.reachValue,
       onReach: (value) {
-        if (_gate.servo('reach', (value * 180).toInt())) {
-          notifier.setReachValue(value * 180);
-          _scheduleStatusRequest();
-        }
+        if (_armMove(_arm.reach(value))) _scheduleStatusRequest();
       },
       onBaseStick: _joystick.setArmStick,
       onPower: link == ControlLink.disconnected
@@ -1064,7 +1038,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
               const SizedBox(width: 8),
               OutlinedButton.icon(
                 key: const ValueKey('debug_home_button'),
-                onPressed: () => _gate.home(),
+                onPressed: _armHome,
                 icon: const Icon(Icons.home_outlined, size: 18),
                 label: Text(context.l10n.controlHome),
                 style: OutlinedButton.styleFrom(
@@ -1142,9 +1116,63 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     ));
   }
   /// Debug sheet's base chevrons: one 2 deg step each tap.
-  void _nudgeBase(double delta) {
-    final angle = (ref.read(robotControlProvider).baseAngle + delta).clamp(0.0, 180.0);
-    if (_gate.servo('base', angle.toInt())) _robotNotifier.setBaseAngle(angle);
+  void _nudgeBase(double delta) => _armMove(_arm.base(_arm.baseServo + delta));
+
+  // ── Manual arm (0234): planned like robotic_hand_sim, sent as ARM_POSE ─────
+
+  /// Sends a planned move, or says why the arm can't go there. True when sent.
+  bool _armMove(ArmMove m) {
+    final refusal = m.refusal;
+    if (refusal != null) {
+      _showArmRefusal(refusal);
+      return false;
+    }
+    if (!_gate.armPose(m.path!, m.duration)) return false;
+    _arm.commit(m);
+    _syncArmState();
+    return true;
+  }
+
+  /// The sliders, the gripper and the base show the commanded pose.
+  void _syncArmState() => _robotNotifier
+    ..setBaseAngle(_arm.baseServo)
+    ..setHeightValue(_arm.heightFraction * 180)
+    ..setReachValue(_arm.reachFraction * 180)
+    ..setGripperVal(_arm.gripperWidth);
+
+  /// PICK closes the gripper to its closed angle (75 + the Advanced settings offset).
+  void _pickUp() {
+    if (!_armMove(_arm.close())) return;
+    _armTagsFor('PICK UP');
+    if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
+  }
+
+  /// HOME by the planned safe path; the firmware's own HOME when the arm's pose is unknown.
+  void _armHome() {
+    _armTagsFor('HOME');
+    if (!_arm.known) {
+      _gate.home();
+      return;
+    }
+    final m = _arm.home();
+    if (m.refusal != null) return _showArmRefusal(m.refusal!);
+    if (_gate.home(path: m.path, motion: m.duration)) _arm.commit(m);
+  }
+
+  void _showArmRefusal(ArmRefusal r) {
+    final now = DateTime.now();
+    if (!mounted || (_armRefusedAt != null && now.difference(_armRefusedAt!) < const Duration(seconds: 2))) return;
+    _armRefusedAt = now;
+    ScaffoldMessenger.of(context)
+      ..removeCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+          content: Text(switch (r) {
+        ArmRefusal.tank => l10n.armRefusedTank,
+        ArmRefusal.tankPath => l10n.armRefusedTankPath,
+        ArmRefusal.outOfReach => l10n.armRefusedReach,
+        ArmRefusal.jointLimits || ArmRefusal.baseLimit => l10n.armRefusedLimits,
+        ArmRefusal.unknownPose => l10n.armRefusedUnknown,
+      })));
   }
 }
 

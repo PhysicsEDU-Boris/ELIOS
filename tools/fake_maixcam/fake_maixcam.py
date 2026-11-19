@@ -550,6 +550,7 @@ class FakeMaixCam:
             "J1_SWEEP": self._cmd_j1_sweep,  # fake only (tests, scenarios): not part of 0023
             "PICK": self._cmd_pick,
             "MOVE_TO_BIN": self._cmd_move_to_bin,
+            "ARM_POSE": self._cmd_arm_pose,
             "DROP": self._cmd_drop,
         }
 
@@ -856,6 +857,27 @@ class FakeMaixCam:
             await self._reply(ws, "error", data, reason="unreachable")
             return
         await self._begin_motion(ws, data, target, lambda: setattr(self, "held_bin", bin_name))
+
+    async def _cmd_arm_pose(self, ws, data):
+        """0234: the app's planned manual move, one six-servo pose per leg (F0..F5, servo degrees)."""
+        path = data.get("path")
+        ok = isinstance(path, list) and path and all(
+            isinstance(p, list) and len(p) == 6 and all(
+                isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) for v in p)
+            for p in path)
+        if not ok:
+            await self._reply(ws, "error", data, reason="invalid_path")
+            return
+        if self.motion is not None and self.motion[1].get("cmd") == "ARM_POSE":
+            self.motion = None  # a newer manual move replaces the one in flight, like the sim's go_path
+        names = [a.name for a in self.world.hil_config.AXES]
+        legs = [(self.world.servo_pose(dict(zip(names, p))), dict(zip(names, p))) for p in path]
+        at = self.world.target.copy()
+        for target, _ in legs:  # the app plans; the fake only reports a path the sim would refuse
+            if self.world.kinematics.path_unsafe(at, target):
+                self.log(f"[R1] WARNING ARM_POSE seq={data.get('seq')} passes over the tank")
+            at = target
+        await self._play(ws, data, legs, self._set_grip, lambda: None)
 
     def bin_tags(self):
         """The tag seen at the bin state point, per --bin-tag."""

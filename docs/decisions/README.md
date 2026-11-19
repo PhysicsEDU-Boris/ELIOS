@@ -101,3 +101,4 @@ their status changed.
 - [0231](0231-joystick-control.md) Joystick control: smooth drive and arm-base speed from the sticks (task J1)
 - [0232](0232-advanced-settings.md) Advanced settings on the phone Control screen (teacher PIN, arm trims, joystick tuning)
 - [0233](0233-bin-tag-check.md) Bin AprilTag check at the bin state point before DROP
+- [0234](0234-arm-kinematics-in-app.md) Manual arm keys planned in the app like robotic_hand_sim (ARM_POSE)

@@ -29,6 +29,7 @@ class SimulatedRobot extends RobotController {
     'MOVE_TO_BIN': const Duration(seconds: 3),
     'DROP': const Duration(seconds: 2),
     'HOME': const Duration(seconds: 2),
+    'ARM_POSE': const Duration(seconds: 1),
     'HOLD': Duration.zero,
   };
 

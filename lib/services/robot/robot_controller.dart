@@ -139,6 +139,11 @@ abstract class RobotController {
   int moveToBin(Bin bin) => send('MOVE_TO_BIN', {'bin': bin.wire});
   int drop() => send('DROP');
 
+  /// A planned manual arm move (0234): one six-servo pose (F0..F5, servo degrees, before trim)
+  /// per leg; the MaixCAM2 sends them to the ESP32 in order. Replies ack, then motion_done.
+  int armPose(List<List<double>> path) =>
+      send('ARM_POSE', {'path': [for (final p in path) [for (final v in p) (v * 10).round() / 10]]});
+
   /// Resend the current angles (freeze the arm where it is); never detaches a servo.
   int hold() => send('HOLD');
   int stop() => send('STOP');

@@ -5185,6 +5185,36 @@ abstract class AppLocalizations {
   /// **'Not the right bin. The robot is going home. Take the item out of the gripper.'**
   String get r1BinCheckFailed;
 
+  /// No description provided for @armRefusedTank.
+  ///
+  /// In en, this message translates to:
+  /// **'The arm can\'t go there: it would hit the tank behind the robot.'**
+  String get armRefusedTank;
+
+  /// No description provided for @armRefusedTankPath.
+  ///
+  /// In en, this message translates to:
+  /// **'The way there passes over the tank too low. Raise the arm first.'**
+  String get armRefusedTankPath;
+
+  /// No description provided for @armRefusedReach.
+  ///
+  /// In en, this message translates to:
+  /// **'The arm can\'t reach that far.'**
+  String get armRefusedReach;
+
+  /// No description provided for @armRefusedLimits.
+  ///
+  /// In en, this message translates to:
+  /// **'That is past the arm\'s joint limits.'**
+  String get armRefusedLimits;
+
+  /// No description provided for @armRefusedUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'The arm\'s position is unknown after a stop or a sort. Press HOME first.'**
+  String get armRefusedUnknown;
+
   /// No description provided for @r1Done.
   ///
   /// In en, this message translates to:
