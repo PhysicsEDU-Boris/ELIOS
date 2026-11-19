@@ -33,9 +33,11 @@ FIRMWARE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 WS_PORT = 8765
 IMG_W, IMG_H = 640, 480
 DET_EVERY_N_FRAMES = 2  # main.py: detections refresh every 2nd frame, held in between
-JOINT_SPEED_DPS = 60.0
+# Firmware speed limit per sim joint (base, Arm A, Arm B, pitch, yaw), deg/s: AXIS_MAX_SPEED_DEG_PER_SEC
+# in robotic_hand_sim slave_code/6-axis-esp32-twoway-tmc2208 (decision 0230).
+JOINT_SPEED_DPS = (40.0, 30.0, 30.0, 45.0, 45.0)
 WATCHDOG_S = 1.0  # decision 0026 b: no app message this long -> wheels 0, arm hold
-HIDDEN_FRACTION = 0.6  # a card covered more than this by nearer cards gets no box  # ESP32 firmware limit, per joint (0021e)
+HIDDEN_FRACTION = 0.6  # a card covered more than this by nearer cards gets no box
 P1_KEYS = ("track_id", "dist_cm", "lateral_cm")
 # shortcut: fixed wheel speed and track width, calibrate when robot wheel measurements exist.
 DRIVE_MM_PER_PWM_S = 2.0
@@ -187,10 +189,12 @@ class SimWorld:
         sys.path.insert(0, str(Path(sim_path).resolve()))
         import pyvista as pv
         from hil_toolkit import calibration_camera as cc
-        from hil_toolkit.hardware_mapping import apply_effective_limits
+        from hil import config as hil_config
         from hil_toolkit.tags_toolkit.tag_model import TAGS
         self.cc, self.tags = cc, TAGS
-        apply_effective_limits()
+        # Effective limits from the sim's active hil/ package, not the legacy hil_toolkit (decision 0230).
+        hil_config.apply_sim_limits(cc.ase.JOINT_LIMITS)
+        cc.ase.JOINT_LIMITS[:] = hil_config.joint_limits()
         self.cam = cc.SimCalibrationCamera(IMG_W, IMG_H)
         self.angles = np.zeros(5)
         self.target = np.zeros(5)
@@ -242,7 +246,8 @@ class SimWorld:
         distance = (left + right) / 2 * DRIVE_MM_PER_PWM_S * dt
         self.robot_xy += distance * np.array([math.sin(heading), -math.cos(heading)])
         self.robot_yaw += turn
-        delta = np.clip(self.target - self.angles, -JOINT_SPEED_DPS * dt, JOINT_SPEED_DPS * dt)
+        step = np.array(JOINT_SPEED_DPS) * dt
+        delta = np.clip(self.target - self.angles, -step, step)
         self.angles += delta
         self._sync_cards()
         self._sync_gripper()

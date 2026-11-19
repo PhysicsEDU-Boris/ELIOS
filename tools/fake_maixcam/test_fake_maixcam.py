@@ -247,7 +247,7 @@ def test_command_link_0023_shape(tmp_path):
             assert fake.world.motor == (0, 0)
             await send({"cmd": "UNLOCK_DRIVE"}, 1)
             await send({"cmd": "HOLD"}, 2)
-            await send({"cmd": "J1_SWEEP", "to": 6}, 2)  # 6 deg at 60 deg/s: done in ~0.1 s
+            await send({"cmd": "J1_SWEEP", "to": 6}, 2)  # 6 deg at 40 deg/s: done in ~0.15 s
             await send({"cmd": "STOP"}, 1)
             await send({"cmd": "PICK", "dist_cm": 24.0, "lateral_cm": None}, 2)
             await send({"cmd": "FLY"}, 1)
@@ -390,8 +390,9 @@ def world_for(tmp_path, items, images_dir=None, occlusion=True, log=None):
 def test_fake_uses_robot_sim_effective_joint_limits(tmp_path):
     world = world_for(tmp_path, [])
     try:
-        assert world.cc.ase.JOINT_LIMITS == [(-90.0, 90.0), (-50.0, 50.0),
-                                            (-180.0, 0.0), (-25.0, 90.0),
+        # robotic_hand_sim 75ab797 hil/config.py: stepper base, pitch home at servo 0 (decision 0230).
+        assert world.cc.ase.JOINT_LIMITS == [(-180.0, 180.0), (-50.0, 50.0),
+                                            (-180.0, 0.0), (0.0, 180.0),
                                             (-90.0, 90.0)]
     finally:
         world.close()
@@ -624,7 +625,7 @@ def test_arm_moving_while_j1_turns(tmp_path):
 
     moving = run(tmp_path, {"items": [BOTTLE], "events": [{"t": 0.3, "do": "arm", "j1": 20}]}, body)
     assert moving[0] is False, "still at first"
-    assert True in moving, "true while J1 turns (20 deg at 60 deg/s)"
+    assert True in moving, "true while J1 turns (20 deg at 40 deg/s)"
     assert moving[-1] is False, "false again once it arrived"
     old = run(tmp_path, {"items": [BOTTLE], "events": [{"t": 0.3, "do": "arm", "j1": 20}]}, body, p1=False)
     assert set(old) == {None}, "old firmware: no arm_moving field"

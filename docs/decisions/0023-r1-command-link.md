@@ -2,6 +2,8 @@
 
 - Status: Accepted for the app side (built and tested on the simulator). The firmware side
   (`firmware/maixcam2/main.py`) is a later task, R1-fw; the current firmware has no command link.
+  Amended by [0230](0230-sync-robotic-hand-sim.md): the arm ESP32 now reports `BOOT` / `STAT` and
+  has a two-way mode with `DONE`.
 - Date: 2026-10-24
 - Builds on: [0020](0020-lock-rearm-rule.md), [0021](0021-manual-driving-orchestration.md)
   (with amendments a-f), [0022](0022-detection-protocol-distance-tags.md),
