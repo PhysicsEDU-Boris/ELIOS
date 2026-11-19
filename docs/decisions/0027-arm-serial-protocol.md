@@ -1,6 +1,7 @@
 # 0027: Arm serial protocol, home, Cartesian hand controls and tags
 
-- Status: Accepted for G2a; ESP32 implementation remains L2.
+- Status: Accepted for G2a; ESP32 implementation remains L2. The "MaixCAM2 to ESP32" section and
+  its joint table are superseded by [0230](0230-sync-robotic-hand-sim.md) (robotic_hand_sim 75ab797).
 - Date: 2026-10-26
 - Builds on: [0023](0023-r1-command-link.md), [0026](0026-emergency-stop-motion-gate.md),
   [0029](0029-arm-reach-gripper.md).

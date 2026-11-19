@@ -5976,4 +5976,306 @@ class AppLocalizationsId extends AppLocalizations {
   String pdfReportSub(Object item, Object count) {
     return '$item · $count soal';
   }
+
+  @override
+  String get advButton => 'Lanjutan';
+
+  @override
+  String get advTitle => 'Pengaturan lanjutan';
+
+  @override
+  String get advTeacherMode => 'Mode guru · kalibrasi & setelan robot';
+
+  @override
+  String get advSave => 'Simpan ke robot';
+
+  @override
+  String get advSavedSent => 'Tersimpan dan dikirim ke robot';
+
+  @override
+  String get advSavedLocal =>
+      'Tersimpan di ponsel ini. Hubungkan robot untuk mengirimnya.';
+
+  @override
+  String get advDiscardTitle => 'Buang perubahan?';
+
+  @override
+  String get advDiscardBody => 'Perubahan belum disimpan.';
+
+  @override
+  String get advDiscard => 'Buang';
+
+  @override
+  String get advKeepEditing => 'Lanjut mengubah';
+
+  @override
+  String get advConnected => 'Terhubung';
+
+  @override
+  String get advOffline => 'Offline';
+
+  @override
+  String get advSecAxes => 'Sumbu lengan';
+
+  @override
+  String get advSecGripper => 'Penjepit';
+
+  @override
+  String get advSecDrive => 'Kemudi & joystick';
+
+  @override
+  String get advSecLink => 'Koneksi';
+
+  @override
+  String get advSecSafety => 'Keselamatan';
+
+  @override
+  String get advSecBackup => 'Cadangan';
+
+  @override
+  String get advAxesSub =>
+      'Samakan lengan asli dengan posisi awal di simulasi. INV membalik arah servo.';
+
+  @override
+  String get advColAxis => 'SUMBU';
+
+  @override
+  String get advColTrim => 'OFFSET (TRIM)';
+
+  @override
+  String get advColInv => 'INV';
+
+  @override
+  String get advColHome => 'AWAL';
+
+  @override
+  String get advColRange => 'RENTANG';
+
+  @override
+  String get advColSpeed => 'LAJU';
+
+  @override
+  String get advAxisBase => 'Basis (J1)';
+
+  @override
+  String get advAxisArmA => 'Lengan A (J2)';
+
+  @override
+  String get advAxisArmB => 'Lengan B (J3)';
+
+  @override
+  String get advAxisPitch => 'Pitch pergelangan (J4)';
+
+  @override
+  String get advAxisYaw => 'Yaw pergelangan (J5)';
+
+  @override
+  String get advAxesTip =>
+      'Offset maks ±15°. Lebih dari itu, geser horn servo 1 gigi (≈14°). Nyalakan robot saat basis di 90°.';
+
+  @override
+  String get advTips => 'TIPS';
+
+  @override
+  String get advImportant => 'PENTING';
+
+  @override
+  String get advDanger => 'ZONA BAHAYA';
+
+  @override
+  String get advGripSub => 'Posisi tutup penjepit. Posisi buka tetap 180°.';
+
+  @override
+  String get advGripOffset => 'Offset tutup';
+
+  @override
+  String get advGripOffsetHint =>
+      'Maks ±15°. Hanya posisi tutup yang bergeser.';
+
+  @override
+  String get advGripInv => 'Balik buka/tutup (INV)';
+
+  @override
+  String get advGripInvHint => 'Tombol AMBIL dan LEPAS tetap sama.';
+
+  @override
+  String get advGripMap => 'LEBAR APLIKASI → SERVO';
+
+  @override
+  String get advGripOpen => '0 % (lepas)';
+
+  @override
+  String get advGripClosed => '100 % (ambil)';
+
+  @override
+  String get advGripTip =>
+      'Penjepit menekan terlalu keras atau servo berdengung? Kurangi offset tutup.';
+
+  @override
+  String get advDriveSub => 'Nilai awal (0231). Uji dengan roda diangkat dulu.';
+
+  @override
+  String get advCapResponse => 'RESPON JOYSTICK';
+
+  @override
+  String get advCapSmooth => 'HALUS';
+
+  @override
+  String get advCapBase => 'BASIS LENGAN';
+
+  @override
+  String get advDeadzone => 'Zona mati';
+
+  @override
+  String get advDeadzoneHint => 'Naikkan jika robot merayap saat diam.';
+
+  @override
+  String get advCurve => 'Kurva (kuadrat)';
+
+  @override
+  String get advCurveHint => 'Lebih tinggi: dorongan ringan lebih pelan.';
+
+  @override
+  String get advTurnGain => 'Penguatan belok';
+
+  @override
+  String get advTurnGainHint => 'Kecepatan belok di tempat.';
+
+  @override
+  String get advSlewUp => 'Percepatan';
+
+  @override
+  String get advSlewUpHint => 'Seberapa cepat robot mulai melaju.';
+
+  @override
+  String get advSlewDown => 'Perlambatan';
+
+  @override
+  String get advSlewDownHint => 'Seberapa cepat robot berhenti.';
+
+  @override
+  String get advMinOutput => 'Output minimum (P0)';
+
+  @override
+  String get advMinOutputHint => 'Nilai terkecil yang memutar roda di lantai.';
+
+  @override
+  String get advBaseRate => 'Laju maks basis';
+
+  @override
+  String get advBaseRateHint => 'Batas firmware 40°/s.';
+
+  @override
+  String get advBaseLimit => 'Batas basis';
+
+  @override
+  String get advBaseLimitHint => 'Lebih dari ±90° lengan bisa kena tangki.';
+
+  @override
+  String get advFlipTurn => 'Balik arah belok';
+
+  @override
+  String get advFlipTurnHint => 'Jika robot belok terbalik.';
+
+  @override
+  String get advFlipBase => 'Balik arah basis';
+
+  @override
+  String get advFlipBaseHint => 'Jika BASIS berputar terbalik.';
+
+  @override
+  String get advLinkSub =>
+      'Aplikasi → Wi-Fi → MaixCAM2. Papan lengan dan roda ada di belakang MaixCAM2.';
+
+  @override
+  String get advAddress => 'Alamat MaixCAM2';
+
+  @override
+  String get advLinkStatus => 'Status';
+
+  @override
+  String get advLinkTip =>
+      'Kesehatan ESP32 dan versi firmware akan tampil di sini setelah MaixCAM2 meneruskannya.';
+
+  @override
+  String get advSafetySub => 'Batas bawaan yang menjaga robot dan siswa.';
+
+  @override
+  String get advReadOnly => 'Hanya baca';
+
+  @override
+  String get advArmTimeout => 'Batas satu gerak lengan';
+
+  @override
+  String get advSortCap => 'Batas satu sortir';
+
+  @override
+  String get advHeartbeat => 'Heartbeat aplikasi';
+
+  @override
+  String get advNudge => 'Dorongan pelan maks';
+
+  @override
+  String get advStopRepeat => 'STOP diulang';
+
+  @override
+  String get advHandPause => 'Lengan berhenti saat tangan terlihat';
+
+  @override
+  String get advSafetyTip =>
+      'Kunci kemudi bukan tombol darurat. STOP merah selalu aktif dan tidak bisa dimatikan di sini.';
+
+  @override
+  String get advBackupSub =>
+      'Salin setelan ke ponsel lain, atau mulai dari awal.';
+
+  @override
+  String get advExport => 'Salin setelan';
+
+  @override
+  String get advImport => 'Tempel setelan';
+
+  @override
+  String get advCopied => 'Setelan disalin';
+
+  @override
+  String get advImported => 'Setelan ditempel. Simpan untuk memakainya.';
+
+  @override
+  String get advImportFailed => 'Tidak ada setelan yang valid di papan klip.';
+
+  @override
+  String get advChangePin => 'Ganti PIN guru';
+
+  @override
+  String get advReset => 'Reset';
+
+  @override
+  String get advResetBody =>
+      'Kembalikan semua setelan robot ke bawaan. Riwayat scan tidak terhapus.';
+
+  @override
+  String get advResetConfirm => 'Reset semua setelan robot?';
+
+  @override
+  String get advPinCreate => 'Buat PIN guru';
+
+  @override
+  String get advPinCreateBody =>
+      '4 angka. Siswa tidak bisa membuka setelan ini tanpanya.';
+
+  @override
+  String get advPinEnter => 'PIN guru';
+
+  @override
+  String get advPinWrong => 'PIN salah';
+
+  @override
+  String get advPinOpen => 'Buka';
+
+  @override
+  String get advPinSave => 'Simpan PIN';
+
+  @override
+  String get advCancel => 'Batal';
 }

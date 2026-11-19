@@ -6072,4 +6072,308 @@ class AppLocalizationsEn extends AppLocalizations {
   String pdfReportSub(Object item, Object count) {
     return '$item · $count questions';
   }
+
+  @override
+  String get advButton => 'Advanced';
+
+  @override
+  String get advTitle => 'Advanced settings';
+
+  @override
+  String get advTeacherMode => 'Teacher mode · robot calibration & settings';
+
+  @override
+  String get advSave => 'Save to robot';
+
+  @override
+  String get advSavedSent => 'Saved and sent to the robot';
+
+  @override
+  String get advSavedLocal =>
+      'Saved on this phone. Connect the robot to send it.';
+
+  @override
+  String get advDiscardTitle => 'Discard changes?';
+
+  @override
+  String get advDiscardBody => 'Your changes are not saved yet.';
+
+  @override
+  String get advDiscard => 'Discard';
+
+  @override
+  String get advKeepEditing => 'Keep editing';
+
+  @override
+  String get advConnected => 'Connected';
+
+  @override
+  String get advOffline => 'Offline';
+
+  @override
+  String get advSecAxes => 'Arm axes';
+
+  @override
+  String get advSecGripper => 'Gripper';
+
+  @override
+  String get advSecDrive => 'Drive & joystick';
+
+  @override
+  String get advSecLink => 'Connection';
+
+  @override
+  String get advSecSafety => 'Safety';
+
+  @override
+  String get advSecBackup => 'Backup';
+
+  @override
+  String get advAxesSub =>
+      'Match the real arm to the home pose in the simulator. INV reverses a servo.';
+
+  @override
+  String get advColAxis => 'AXIS';
+
+  @override
+  String get advColTrim => 'OFFSET (TRIM)';
+
+  @override
+  String get advColInv => 'INV';
+
+  @override
+  String get advColHome => 'HOME';
+
+  @override
+  String get advColRange => 'RANGE';
+
+  @override
+  String get advColSpeed => 'SPEED';
+
+  @override
+  String get advAxisBase => 'Base (J1)';
+
+  @override
+  String get advAxisArmA => 'Arm A (J2)';
+
+  @override
+  String get advAxisArmB => 'Arm B (J3)';
+
+  @override
+  String get advAxisPitch => 'Wrist pitch (J4)';
+
+  @override
+  String get advAxisYaw => 'Wrist yaw (J5)';
+
+  @override
+  String get advAxesTip =>
+      'Offset up to ±15°. Need more? Move the servo horn one tooth (≈14°). Power the robot on with the base at 90°.';
+
+  @override
+  String get advTips => 'TIPS';
+
+  @override
+  String get advImportant => 'IMPORTANT';
+
+  @override
+  String get advDanger => 'DANGER ZONE';
+
+  @override
+  String get advGripSub => 'Where the gripper closes. Open stays at 180°.';
+
+  @override
+  String get advGripOffset => 'Closed offset';
+
+  @override
+  String get advGripOffsetHint => 'Up to ±15°. Only the closed position moves.';
+
+  @override
+  String get advGripInv => 'Reverse open/close (INV)';
+
+  @override
+  String get advGripInvHint => 'PICK UP and RELEASE keep their meaning.';
+
+  @override
+  String get advGripMap => 'APP WIDTH → SERVO';
+
+  @override
+  String get advGripOpen => '0 % (release)';
+
+  @override
+  String get advGripClosed => '100 % (pick up)';
+
+  @override
+  String get advGripTip =>
+      'The gripper squeezes too hard or the servo hums? Lower the closed offset.';
+
+  @override
+  String get advDriveSub =>
+      'Starting values (0231). Test with the wheels lifted first.';
+
+  @override
+  String get advCapResponse => 'JOYSTICK RESPONSE';
+
+  @override
+  String get advCapSmooth => 'SMOOTHING';
+
+  @override
+  String get advCapBase => 'ARM BASE';
+
+  @override
+  String get advDeadzone => 'Dead zone';
+
+  @override
+  String get advDeadzoneHint => 'Raise it if the robot creeps at rest.';
+
+  @override
+  String get advCurve => 'Curve (quadratic)';
+
+  @override
+  String get advCurveHint => 'Higher: a light push is slower.';
+
+  @override
+  String get advTurnGain => 'Turn gain';
+
+  @override
+  String get advTurnGainHint => 'Turning speed on the spot.';
+
+  @override
+  String get advSlewUp => 'Speed up';
+
+  @override
+  String get advSlewUpHint => 'How quickly the robot gets going.';
+
+  @override
+  String get advSlewDown => 'Slow down';
+
+  @override
+  String get advSlewDownHint => 'How quickly it stops.';
+
+  @override
+  String get advMinOutput => 'Minimum output (P0)';
+
+  @override
+  String get advMinOutputHint =>
+      'Smallest value that turns the wheels on the floor.';
+
+  @override
+  String get advBaseRate => 'Base max speed';
+
+  @override
+  String get advBaseRateHint => 'Firmware limit 40°/s.';
+
+  @override
+  String get advBaseLimit => 'Base limit';
+
+  @override
+  String get advBaseLimitHint => 'Past ±90° the arm can hit the tank.';
+
+  @override
+  String get advFlipTurn => 'Reverse turning';
+
+  @override
+  String get advFlipTurnHint => 'If the robot turns the wrong way.';
+
+  @override
+  String get advFlipBase => 'Reverse base';
+
+  @override
+  String get advFlipBaseHint => 'If BASIS turns the wrong way.';
+
+  @override
+  String get advLinkSub =>
+      'App → Wi-Fi → MaixCAM2. The arm and wheel boards sit behind the MaixCAM2.';
+
+  @override
+  String get advAddress => 'MaixCAM2 address';
+
+  @override
+  String get advLinkStatus => 'Status';
+
+  @override
+  String get advLinkTip =>
+      'ESP32 health and firmware versions will show here once the MaixCAM2 forwards them.';
+
+  @override
+  String get advSafetySub =>
+      'Built-in limits that protect the robot and students.';
+
+  @override
+  String get advReadOnly => 'Read only';
+
+  @override
+  String get advArmTimeout => 'One arm move, max';
+
+  @override
+  String get advSortCap => 'One sort, max';
+
+  @override
+  String get advHeartbeat => 'App heartbeat';
+
+  @override
+  String get advNudge => 'Slow approach, max';
+
+  @override
+  String get advStopRepeat => 'STOP repeated';
+
+  @override
+  String get advHandPause => 'Arm pauses when a hand is in view';
+
+  @override
+  String get advSafetyTip =>
+      'Locking the drive is not an emergency stop. The red STOP always works and can\'t be turned off here.';
+
+  @override
+  String get advBackupSub =>
+      'Copy the settings to another phone, or start again.';
+
+  @override
+  String get advExport => 'Copy settings';
+
+  @override
+  String get advImport => 'Paste settings';
+
+  @override
+  String get advCopied => 'Settings copied';
+
+  @override
+  String get advImported => 'Settings pasted. Save to keep them.';
+
+  @override
+  String get advImportFailed => 'No valid settings on the clipboard.';
+
+  @override
+  String get advChangePin => 'Change teacher PIN';
+
+  @override
+  String get advReset => 'Reset';
+
+  @override
+  String get advResetBody =>
+      'Put every robot setting back to its default. Scan history stays.';
+
+  @override
+  String get advResetConfirm => 'Reset all robot settings?';
+
+  @override
+  String get advPinCreate => 'Set a teacher PIN';
+
+  @override
+  String get advPinCreateBody =>
+      '4 digits. Students can\'t open these settings without it.';
+
+  @override
+  String get advPinEnter => 'Teacher PIN';
+
+  @override
+  String get advPinWrong => 'Wrong PIN';
+
+  @override
+  String get advPinOpen => 'Open';
+
+  @override
+  String get advPinSave => 'Save PIN';
+
+  @override
+  String get advCancel => 'Cancel';
 }

@@ -23,7 +23,7 @@ class SimulatedRobot extends RobotController {
 
   Duration ackDelay = const Duration(milliseconds: 100);
 
-  /// Time from ack to motion_done (the firmware knows it from the 60 deg/s limit).
+  /// Time from ack to motion_done (the firmware knows it from its per-joint speed limits, 0230).
   Map<String, Duration> motionTime = {
     'PICK': const Duration(seconds: 4),
     'MOVE_TO_BIN': const Duration(seconds: 3),

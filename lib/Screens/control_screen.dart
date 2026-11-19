@@ -26,6 +26,9 @@ import '../services/live_scan_controller.dart';
 import '../services/lock_tracking.dart';
 import '../services/live_scan_state_machine.dart' show LiveScanState;
 import '../services/quiz_tts_service.dart';
+import '../services/robot/joystick_controller.dart';
+import '../services/robot/robot_settings.dart';
+import 'advanced_settings_screen.dart';
 import '../services/robot/motion_gate.dart';
 import '../services/robot/r1_orchestrator.dart';
 import '../services/robot/robot_controller.dart';
@@ -108,6 +111,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// Every motor and servo command passes here (decision 0026): the
   /// emergency stop, STOPPED, R1's drive lock, the link, the heartbeat.
   late final MotionGate _gate;
+  late final JoystickController _joystick;
 
   /// Set only with R1 (see [_r1Enabled]).
   R1Orchestrator? _r1;
@@ -194,6 +198,21 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         }
         if (mounted) setState(() {});
       });
+    _joystick = JoystickController(
+      // The speed fader is the top speed: a full push drives at its PWM.
+      sendDrive: (l, r) {
+        final s = ref.read(robotControlProvider).pwmSpeed;
+        _gate.motor((l * s).round(), (r * s).round());
+      },
+      sendArmBase: (servo) {
+        if (_gate.servo('base', servo)) _robotNotifier.setBaseAngle(servo.toDouble());
+      },
+      driveLocked: () => _gate.stopped || !_gate.linkUp || _gate.robot.driveLocked,
+      armLocked: () =>
+          _gate.stopped || !_gate.linkUp || (_gate.armBusy?.call() ?? false) || (_gate.handPaused?.call() ?? false),
+      baseServo: () => ref.read(robotControlProvider).baseAngle,
+      config: ref.read(robotSettingsProvider).joystick,
+    )..start();
     WidgetsBinding.instance.addObserver(this);
     HardwareKeyboard.instance.addHandler(_onKey);
 
@@ -417,7 +436,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) => _gate.onAppLifecycle(state);
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) _joystick.letGo();
+    _gate.onAppLifecycle(state);
+  }
 
   void _enterLandscapeFullscreen() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -462,6 +484,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _robotReplies?.cancel();
     _statusDebounceTimer?.cancel();
     _skeletonTimer?.cancel();
+    _joystick.stop(); // no more ticks; the gate below sends motor 0,0
     HardwareKeyboard.instance.removeHandler(_onKey);
     WidgetsBinding.instance.removeObserver(this);
     _gate.dispose(); // motor 0,0, heartbeat off
@@ -508,6 +531,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     });
 
     // Resend resolution to the device whenever the user changes it mid-session.
+    // Advanced settings: new joystick constants from the next tick (0232).
+    ref.listen<RobotSettings>(robotSettingsProvider, (_, s) => _joystick.config = s.joystick);
     ref.listen<AsyncValue<EspConfig>>(espConfigProvider, (previous, next) {
       final prevPreset = previous?.valueOrNull?.resolutionPreset;
       final nextPreset = next.valueOrNull?.resolutionPreset;
@@ -640,8 +665,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                       quizState: quizState,
                       missionDone: missionDone,
                       user: user,
-                      drive: (driveWord, driveColor),
-                      arm: (armWord, armColor),
                       stop: stop,
                       reconnect: reconnect,
                     )
@@ -662,14 +685,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                   isOperational,
                   DriveJoystick(
                     enabled: isOperational,
-                    onDirection: (dir) {
-                      driveCommand(_gate, dir, speed.toInt());
-                      setState(() => _driveDir = dir);
-                    },
-                    onRelease: () {
-                      _gate.stopWheels(); // motor 0,0, as every D-pad release
-                      setState(() => _driveDir = null);
-                    },
+                    onStick: (v) => _joystick.setDriveStick(v.dx, v.dy),
+                    onDirection: (dir) => setState(() => _driveDir = dir),
+                    onRelease: () => setState(() => _driveDir = null),
                   ),
                 ),
                 driveHint: hint('tyre_buddy', isOperational ? l10n.ctlPushToDrive : l10n.ctlUnlocksOnConnect),
@@ -857,8 +875,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     required WasteQuizUiState quizState,
     required int missionDone,
     required User? user,
-    required (String, Color) drive,
-    required (String, Color) arm,
     required VoidCallback stop,
     required VoidCallback reconnect,
   }) {
@@ -869,18 +885,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       stopped: _gate.stopped,
       stopReason: _gate.stopReason,
       skeleton: _skeleton,
-      driveLabel: drive,
-      armLabel: arm,
       speed: robotState.pwmSpeed,
       onSpeed: notifier.setPwmSpeed,
-      onDirection: (dir) {
-        driveCommand(_gate, dir, robotState.pwmSpeed.toInt());
-        setState(() => _driveDir = dir);
-      },
-      onRelease: () {
-        _gate.stopWheels();
-        setState(() => _driveDir = null);
-      },
+      onStick: (v) => _joystick.setDriveStick(v.dx, v.dy),
+      onDirection: (dir) => setState(() => _driveDir = dir),
+      onRelease: () => setState(() => _driveDir = null),
       frame: _latestFrame?.bytes,
       fps: _streamFps,
       scanQuizOn: _scanQuizOn,
@@ -925,6 +934,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           _scheduleStatusRequest();
         }
       },
+      onBaseStick: _joystick.setArmStick,
       onPower: link == ControlLink.disconnected
           ? reconnect
           : () => unawaited(ref.read(configLinkProvider.notifier).disconnect()),
@@ -948,6 +958,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onAvatar: () => _drawerKey.currentState?.open(),
       onBack: () => Navigator.of(context).pop(),
       onGuide: () => setState(() => _guideOpen = true),
+      onAdvanced: _openAdvanced,
       photoUrl: user?.photoURL,
       onLock: _locked != null || (link == ControlLink.connected && _latestFrame != null && !_locking) ? _lockOrUnlock : null,
       locked: _locked != null,
@@ -1112,6 +1123,23 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     });
   }
 
+
+  /// Advanced settings (0232): the page asks for the teacher PIN; CONFIG goes out through the gate.
+  Future<void> _openAdvanced() async {
+    final esp = ref.read(espConfigProvider).valueOrNull;
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => AdvancedSettingsScreen(
+        linkUp: _gate.linkUp,
+        address: '${esp?.esp32IpAddress ?? '—'}:${EspConfig.maixCamPort}',
+        onSend: (config) {
+          if (!_gate.linkUp || _gate.stopped) return false;
+          _gate.robot.send('CONFIG', config);
+          return true;
+        },
+      ),
+    ));
+  }
+  /// Debug sheet's base chevrons: one 2 deg step each tap.
   void _nudgeBase(double delta) {
     final angle = (ref.read(robotControlProvider).baseAngle + delta).clamp(0.0, 180.0);
     if (_gate.servo('base', angle.toInt())) _robotNotifier.setBaseAngle(angle);

@@ -11,6 +11,7 @@ import 'package:elio/models/scanned_waste.dart';
 import 'package:elio/providers/robot_provider.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/services/ai_quiz_service.dart';
+import 'package:elio/services/robot/joystick_controller.dart';
 import 'package:elio/services/robot/motion_gate.dart';
 import 'package:elio/services/robot/robot_controller.dart';
 import 'package:elio/theme/elio_dark_theme.dart';
@@ -64,10 +65,25 @@ final taps = <String, int>{};
 void tap(String what) => taps[what] = (taps[what] ?? 0) + 1;
 final shotKey = GlobalKey();
 
-/// Disposes the gate with the tree, as ControlScreen does (heartbeat off).
+/// ControlScreen._joystick over [gate]: [speed] is the speed fader, [baseServo] the last base value.
+JoystickController harnessJoystick(MotionGate gate, double Function() speed) {
+  var base = 90.0;
+  return JoystickController(
+    sendDrive: (l, r) => gate.motor((l * speed()).round(), (r * speed()).round()),
+    sendArmBase: (v) {
+      if (gate.servo('base', v)) base = v.toDouble();
+    },
+    driveLocked: () => gate.stopped || !gate.linkUp || gate.robot.driveLocked,
+    armLocked: () => gate.stopped || !gate.linkUp,
+    baseServo: () => base,
+  )..start();
+}
+
+/// Disposes the joystick and gate with the tree, as ControlScreen does (motor 0,0, heartbeat off).
 class _DisposesGate extends StatefulWidget {
-  const _DisposesGate({required this.gate, required this.child});
+  const _DisposesGate({required this.gate, required this.joystick, required this.child});
   final MotionGate gate;
+  final JoystickController joystick;
   final Widget child;
 
   @override
@@ -77,6 +93,7 @@ class _DisposesGate extends StatefulWidget {
 class _DisposesGateState extends State<_DisposesGate> {
   @override
   void dispose() {
+    widget.joystick.stop();
     widget.gate.dispose();
     super.dispose();
   }
@@ -85,10 +102,17 @@ class _DisposesGateState extends State<_DisposesGate> {
   Widget build(BuildContext context) => widget.child;
 }
 
+/// The motor commands the fake robot got, as (left, right).
+List<(int, int)> motors(Rig rig) => [
+  for (final c in rig.robot.commands)
+    if (c.startsWith('motor ')) (int.parse(c.substring(6).split(',')[0]), int.parse(c.split(',')[1])),
+];
+
 class Rig {
-  Rig(this.robot, this.gate);
+  Rig(this.robot, this.gate, this.joystick);
   final RecordingRobot robot;
   final MotionGate gate;
+  final JoystickController joystick;
 }
 
 /// Pumps the layout at [size]. [link] sets the gate's link; [stopped] adds
@@ -122,6 +146,8 @@ Future<Rig> pumpControl(
     Quiz.minimised => openQuiz.copyWith(minimized: true),
   };
   final enabled = link == ControlLink.connected;
+  var pwm = 75.0;
+  final joystick = harnessJoystick(gate, () => pwm);
   void stop() {
     tap('stop');
     gate.emergencyStop('button');
@@ -131,6 +157,7 @@ Future<Rig> pumpControl(
   await tester.pumpWidget(
     _DisposesGate(
       gate: gate,
+      joystick: joystick,
       child: RepaintBoundary(
         key: shotKey,
         child: ProviderScope(
@@ -142,7 +169,7 @@ Future<Rig> pumpControl(
                 builder: (context, ref, _) {
                   final state = ref.watch(robotControlProvider);
                   final notifier = ref.read(robotControlProvider.notifier);
-                  final speed = state.pwmSpeed;
+                  final speed = pwm = state.pwmSpeed;
                   final p = Theme.of(context).brightness;
                   return ListenableBuilder(
                     listenable: gate,
@@ -176,14 +203,9 @@ Future<Rig> pumpControl(
                           enabled,
                           DriveJoystick(
                             enabled: enabled,
-                            onDirection: (d) {
-                              tap('drive');
-                              driveCommand(gate, d, speed.toInt());
-                            },
-                            onRelease: () {
-                              tap('wheels stop');
-                              gate.stopWheels();
-                            },
+                            onStick: (v) => joystick.setDriveStick(v.dx, v.dy),
+                            onDirection: (_) => tap('drive'),
+                            onRelease: () => tap('wheels stop'),
                           ),
                         ),
                         driveHint: const Text('Push to drive · let go to stop'),
@@ -377,7 +399,7 @@ Future<Rig> pumpControl(
   await tester.pump(const Duration(milliseconds: 500)); // the stop repeats
   robot.sent.clear();
   taps.clear();
-  return Rig(robot, gate);
+  return Rig(robot, gate, joystick);
 }
 
 /// On top at its centre: its own render object (or a descendant) is on the

@@ -171,11 +171,14 @@ void main() {
         await tester.pump();
         final g = await tester.startGesture(tester.getCenter(joy));
         await g.moveBy(const Offset(0, -60));
-        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
         await g.up();
-        await tester.pump();
-        expect((taps['drive'], taps['wheels stop']), (1, 1), reason: 'motor on push, 0,0 on let go');
-        expect(rig.robot.commands, ['motor 75,75', 'motor 0,0']);
+        await tester.pump(const Duration(milliseconds: 500));
+        expect((taps['drive'], taps['wheels stop']), (1, 1), reason: 'the joystick took the push and the let go');
+        final m = motors(rig);
+        expect(m, isNotEmpty);
+        expect(m.every((lr) => lr.$1 == lr.$2 && lr.$1 >= 0), isTrue, reason: 'straight forward only: $m');
+        expect(m.last, (0, 0), reason: 'ramps down to 0,0 after let go');
         await tapOnce(find.byKey(const ValueKey('height_fader')), 'height');
         await tapOnce(find.byKey(const ValueKey('reach_fader')), 'reach');
         await tapOnce(find.byKey(const ValueKey('speed_fader')), 'speed');
@@ -244,48 +247,63 @@ void main() {
   }
 
   group('joystick', () {
-    testWidgets('dragging inside the dead zone sends nothing, not even 0,0', (tester) async {
+    testWidgets('a tiny wobble inside the dead zone sends nothing, not even 0,0', (tester) async {
       final rig = await pumpControl(tester, const Size(1366, 768));
-      final joy = find.byType(DriveJoystick);
-      final g = await tester.startGesture(tester.getCenter(joy));
-      await g.moveBy(const Offset(8, -8));
-      await tester.pump();
+      final g = await tester.startGesture(tester.getCenter(find.byType(DriveJoystick)));
+      await g.moveBy(const Offset(2, -2));
+      await tester.pump(const Duration(milliseconds: 500));
       await g.up();
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
       expect(rig.robot.commands, isEmpty);
     });
 
-    testWidgets('each direction is the D-pad command; turning is release + press; let go is 0,0', (tester) async {
+    // A full push in each direction, held 1 s, then let go (0231).
+    for (final (name, push, steady) in [
+      ('forward', const Offset(0, -200), (75, 75)),
+      ('back', const Offset(0, 200), (-75, -75)),
+      ('left', const Offset(-200, 0), (-45, 45)), // turn gain 0.6
+      ('right', const Offset(200, 0), (45, -45)),
+    ]) {
+      testWidgets('$name: eases up to $steady, eases down to 0,0, then silence', (tester) async {
+        final rig = await pumpControl(tester, const Size(1366, 768));
+        final g = await tester.startGesture(tester.getCenter(find.byType(DriveJoystick)));
+        await g.moveBy(push);
+        await tester.pump(const Duration(seconds: 1));
+        final held = motors(rig);
+        expect(held.last, steady);
+        expect(held.first.$1.abs(), lessThan(steady.$1.abs()), reason: 'no jump to full speed: $held');
+        await g.up();
+        await tester.pump(const Duration(milliseconds: 250));
+        final all = motors(rig);
+        expect(all.last, (0, 0));
+        expect(all.length - held.length, lessThanOrEqualTo(4), reason: 'stops within 4 ticks');
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(motors(rig).length, all.length, reason: 'nothing more once stopped');
+      });
+    }
+
+    testWidgets('reversing brakes to 0 before driving the other way', (tester) async {
       final rig = await pumpControl(tester, const Size(1366, 768));
       final g = await tester.startGesture(tester.getCenter(find.byType(DriveJoystick)));
-      await g.moveBy(const Offset(0, -80)); // forward
-      await g.moveBy(const Offset(0, -10)); // still forward: nothing new
-      await g.moveBy(const Offset(-120, 90)); // left
-      await g.moveBy(const Offset(120, 0)); // dead zone
-      await g.moveBy(const Offset(80, 0)); // right
-      await g.moveBy(const Offset(-80, 80)); // back
-      await g.up();
-      await tester.pump();
-      expect(rig.robot.commands, [
-        'motor 75,75',
-        'motor 0,0',
-        'motor -75,75',
-        'motor 0,0',
-        'motor 75,-75',
-        'motor 0,0',
-        'motor -75,-75',
-        'motor 0,0',
-      ]);
+      await g.moveBy(const Offset(0, -200));
+      await tester.pump(const Duration(seconds: 1));
+      await g.moveBy(const Offset(0, 400));
+      await tester.pump(const Duration(seconds: 1));
+      final v = [for (final m in motors(rig)) m.$1];
+      final firstBack = v.indexWhere((x) => x < 0);
+      expect(v[firstBack - 1], 0, reason: 'passes through 0: $v');
+      expect(v.last, -75);
     });
 
-    testWidgets('STOPPED: the joystick is blocked by the MotionGate (break-check target)', (tester) async {
+    testWidgets('STOPPED: the joystick sends no drive command (break-check target)', (tester) async {
       final rig = await pumpControl(tester, const Size(1366, 768), stopped: true);
+      final before = motors(rig).length;
       final g = await tester.startGesture(tester.getCenter(find.byType(DriveJoystick)));
       await g.moveBy(const Offset(0, -80));
+      await tester.pump(const Duration(milliseconds: 500));
       await g.up();
-      await tester.pump();
-      expect(rig.robot.commands, ['motor 0,0'], reason: 'only the let-go 0,0, never a drive command');
-      expect(rig.gate.blocked, 1);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(motors(rig).skip(before).where((m) => m != (0, 0)), isEmpty);
     });
 
     testWidgets('a gear chip sets the speed the joystick drives at; the fader still sets any value', (tester) async {
@@ -295,10 +313,11 @@ void main() {
       final c = ProviderScope.containerOf(tester.element(find.byType(ControlLayout)));
       expect(c.read(robotControlProvider).pwmSpeed, 50);
       final g = await tester.startGesture(tester.getCenter(find.byType(DriveJoystick)));
-      await g.moveBy(const Offset(0, -80));
+      await g.moveBy(const Offset(0, -200));
+      await tester.pump(const Duration(seconds: 1));
+      expect(motors(rig).last, (50, 50), reason: 'a full push drives at the gear');
       await g.up();
-      await tester.pump();
-      expect(rig.robot.commands, ['motor 50,50', 'motor 0,0']);
+      await tester.pump(const Duration(milliseconds: 500));
       c.read(robotControlProvider.notifier).setPwmSpeed(63);
       await tester.pump();
       expect(find.text('63%'), findsOneWidget);
