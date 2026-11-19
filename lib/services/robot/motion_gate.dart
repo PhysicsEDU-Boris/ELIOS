@@ -109,23 +109,38 @@ class MotionGate extends ChangeNotifier {
     return true;
   }
 
+  /// A planned manual arm move (0234, [RobotController.armPose]) taking about [motion].
+  /// Blocked like [servo]; a hand in view holds the arm instead.
+  bool armPose(List<List<double>> path, Duration motion) {
+    if (_stopped || !_linkUp || (armBusy?.call() ?? false)) return _block('arm_pose', {});
+    if (handPaused?.call() ?? false) {
+      robot.hold();
+      return _block('arm_pose', {'reason': 'hand_paused'});
+    }
+    onArmCommand?.call(motion);
+    robot.armPose(path);
+    return true;
+  }
+
   /// Arm HOME request (student screen with hold-to-confirm, debug sheet instant).
+  /// With [path] (0234) the app's planned way home is sent as ARM_POSE, tracked like HOME;
+  /// without it the firmware's own HOME (the arm's pose is unknown).
   /// Blocked while STOPPED, without link, while arm is busy (e.g. R1 sorting),
   /// or paused by hand (decision 0027).
-  bool home() {
+  bool home({List<List<double>>? path, Duration motion = const Duration(seconds: 2)}) {
     if (_stopped || !_linkUp || (armBusy?.call() ?? false)) return _block('home', {});
     if (handPaused?.call() ?? false) {
       robot.hold();
       return _block('home', {'reason': 'hand_paused'});
     }
-    onArmCommand?.call(const Duration(seconds: 2));
+    onArmCommand?.call(motion);
     _homeTimeoutTimer?.cancel();
-    final seq = robot.home();
+    final seq = path == null ? robot.home() : robot.armPose(path);
     _lastHomeSeq = seq;
     _pendingHomeSeq = seq;
     _homeAcked = false;
     robot.atHome = false;
-    _homeTimeoutTimer = Timer(homeTimeoutDuration, () {
+    _homeTimeoutTimer = Timer(homeTimeoutDuration + (path == null ? Duration.zero : motion), () {
       if (_pendingHomeSeq == seq) {
         _pendingHomeSeq = null;
         _homeAcked = false;

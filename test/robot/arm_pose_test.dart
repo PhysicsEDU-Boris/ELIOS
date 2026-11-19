@@ -1,0 +1,89 @@
+// The manual arm keys as sim-style planned moves (decision 0234).
+import 'package:elio/services/robot/arm_kinematics.dart';
+import 'package:elio/services/robot/arm_pose.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+ArmPose _arm() => ArmPose();
+
+void main() {
+  test('home: the sim home pose, safe, already there', () {
+    final m = _arm().home();
+    expect(m.path, [armHome]);
+    expect(m.duration, Duration.zero);
+    expect(armHome, [180, 90, 0, 180, 90, 90]);
+  });
+
+  test('BASIS: a quarter turn is fine, turning the low arm over the tank is refused', () {
+    final arm = _arm();
+    final ok = arm.base(150);
+    expect(ok.refusal, isNull);
+    arm.commit(ok);
+    expect(arm.baseServo, 150);
+    expect(arm.base(270).refusal, ArmRefusal.tank, reason: 'home arm at base 180 sim: J4 behind, z 90 < 167');
+  });
+
+  test('raised arm may turn behind; the planner keeps it clear of the tank', () {
+    final arm = _arm();
+    final up = arm.height(1);
+    expect(up.refusal, isNull, reason: '${up.refusal}');
+    arm.commit(up);
+    final turn = arm.base(270);
+    expect(turn.refusal, isNull, reason: '${turn.refusal}');
+    for (final leg in turn.path!) {
+      expect(unsafePose(armToSim(leg)), isFalse);
+    }
+  });
+
+  test('servo goals are clamped to each axis range', () {
+    final arm = _arm();
+    arm.commit(arm.plan([...armHome]..[0] = 0));
+    expect(arm.goal[0], 60, reason: 'gripper servo range 60..180');
+    expect(arm.base(-200).refusal, ArmRefusal.tank, reason: 'clamped to -90 (sim -180): the low arm is behind');
+  });
+
+  test('PICK closes to 75 + offset, RELEASE opens to 180, width maps between', () {
+    final arm = _arm()..gripClosedOffset = 5;
+    arm.commit(arm.close());
+    expect(arm.goal[0], 80);
+    expect(arm.gripperWidth, 100);
+    arm.commit(arm.gripper(50));
+    expect(arm.goal[0], 130);
+    arm.commit(arm.open());
+    expect(arm.goal[0], 180);
+    expect(arm.gripperWidth, 0);
+  });
+
+  test('reach and height move the end effector along one axis, keeping the other', () {
+    final arm = _arm();
+    final h0 = arm.heightMm;
+    final m = arm.reach(0.5);
+    expect(m.refusal, isNull, reason: '${m.refusal}');
+    arm.commit(m);
+    expect(arm.reachFraction, closeTo(0.5, 1e-3));
+    expect(arm.heightMm, closeTo(h0, 0.5));
+    final r0 = arm.reachMm;
+    arm.commit(arm.height(0.6));
+    expect(arm.heightFraction, closeTo(0.6, 1e-3));
+    expect(arm.reachMm, closeTo(r0, 0.5));
+  });
+
+  test('an unreachable point is refused and nothing changes', () {
+    final arm = _arm();
+    final before = arm.goal;
+    expect(arm.reach(1).refusal, isNotNull, reason: '320 mm forward at z 90 is outside the joint limits');
+    expect(arm.goal, before);
+  });
+
+  test('after a STOP or an R1 sort only the firmware HOME may move the arm', () {
+    final arm = _arm()..markUnknown();
+    expect(arm.home().refusal, ArmRefusal.unknownPose);
+    expect(arm.reach(0.5).refusal, ArmRefusal.unknownPose);
+    arm.markHome();
+    expect(arm.base(120).refusal, isNull);
+  });
+
+  test('move time follows the sim: Arm B 180 deg takes 1.5 * 180 / (30 * 0.8) s', () {
+    final to = [...armHome]..[3] = 0;
+    expect(legSeconds(armHome, to), closeTo(11.25, 1e-9));
+  });
+}

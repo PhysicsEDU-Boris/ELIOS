@@ -51,6 +51,7 @@ Options:
 - `--old-firmware`
 - `--bin-tag right|wrong|none` (default right): the AprilTag seen at a bin's state point after `MOVE_TO_BIN` (0233)
 
+`ARM_POSE` (0234) plays the app's planned legs; a leg over the tank is logged as a warning.
 `MOVE_TO_BIN` / `DROP` play the bin's saved sequence from `firmware/maixcam2/bin_sequences.json`
 (B3 for now) through the sim's tank planner; other bins use the placeholder `BIN_TARGETS`.
 - `--seed` (sets the photo choice and the noise; the same seed repeats a run)

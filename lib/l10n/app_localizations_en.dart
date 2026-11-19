@@ -2933,6 +2933,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'Not the right bin. The robot is going home. Take the item out of the gripper.';
 
   @override
+  String get armRefusedTank =>
+      'The arm can\'t go there: it would hit the tank behind the robot.';
+
+  @override
+  String get armRefusedTankPath =>
+      'The way there passes over the tank too low. Raise the arm first.';
+
+  @override
+  String get armRefusedReach => 'The arm can\'t reach that far.';
+
+  @override
+  String get armRefusedLimits => 'That is past the arm\'s joint limits.';
+
+  @override
+  String get armRefusedUnknown =>
+      'The arm\'s position is unknown after a stop or a sort. Press HOME first.';
+
+  @override
   String get r1Done => 'Done! The robot can drive again.';
 
   @override

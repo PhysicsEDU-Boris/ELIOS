@@ -18,9 +18,14 @@ class _Wire {
   final events = <(String, Map<String, Object?>)>[];
   final stops = <String>[];
   final armMotions = <Duration>[];
+  final messages = <Map<String, Object?>>[];
+  bool hand = false;
   late final MaixCamRobot robot = MaixCamRobot(
     sink: (m) {
-      if (gate.allowsCommand(m)) sent.add(m['cmd'] as String);
+      if (gate.allowsCommand(m)) {
+        sent.add(m['cmd'] as String);
+        messages.add(m);
+      }
     },
     motor: (l, r) => sent.add('motor $l,$r'),
   );
@@ -30,6 +35,7 @@ class _Wire {
     onEvent: (e, d) => events.add((e, d)),
     onStop: stops.add,
     onArmCommand: armMotions.add,
+    handPaused: () => hand,
   );
 
   List<String> since(int n) => sent.sublist(n);
@@ -267,5 +273,50 @@ void main() {
 
     w.gate.dispose();
     await tester.pump(const Duration(seconds: 1));
+  });
+
+  group('planned manual arm moves (0234)', () {
+    const path = [
+      [180.0, 90.0, 12.345, 180.0, 90.0, 90.0],
+      [180.0, 90.0, 12.345, 150.0, 90.0, 210.06],
+    ];
+
+    testWidgets('ARM_POSE carries the path in servo degrees, one decimal; blocked while STOPPED or a hand is in view',
+        (tester) async {
+      final w = _Wire()..gate.linkRestored();
+      expect(w.gate.armPose(path, const Duration(seconds: 3)), isTrue);
+      expect(w.messages.last['cmd'], 'ARM_POSE');
+      expect(w.messages.last['path'], [
+        [180, 90, 12.3, 180, 90, 90],
+        [180, 90, 12.3, 150, 90, 210.1],
+      ]);
+      expect(w.armMotions.last, const Duration(seconds: 3), reason: 'J1 guard for the whole move');
+      w.hand = true;
+      expect(w.gate.armPose(path, Duration.zero), isFalse);
+      expect(w.sent.last, 'HOLD');
+      w.hand = false;
+      w.gate.emergencyStop('button');
+      final n = w.sent.length;
+      expect(w.gate.armPose(path, Duration.zero), isFalse);
+      expect(w.sent.length, n);
+      w.gate.dispose();
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets('HOME with a planned path is ARM_POSE, tracked like HOME; its timeout covers the move', (tester) async {
+      final w = _Wire()..gate.linkRestored();
+      expect(w.gate.home(path: path, motion: const Duration(seconds: 8)), isTrue);
+      expect(w.messages.last['cmd'], 'ARM_POSE');
+      final seq = w.messages.last['seq'] as int;
+      expect(w.gate.pendingHomeSeq, seq);
+      await tester.pump(w.gate.homeTimeoutDuration + const Duration(seconds: 7));
+      expect(w.gate.isHoming, isTrue, reason: 'still inside 5 s + the 8 s move');
+      expect(w.gate.onHomeReply(RobotReply(ReplyKind.motionDone, seq)), isTrue);
+      expect(w.gate.isHoming, isFalse);
+      expect(w.gate.home(), isTrue);
+      expect(w.sent.last, 'HOME', reason: "without a path: the firmware's own HOME");
+      w.gate.dispose();
+      await tester.pump(const Duration(seconds: 10));
+    });
   });
 }

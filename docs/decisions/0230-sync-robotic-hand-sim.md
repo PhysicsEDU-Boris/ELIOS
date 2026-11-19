@@ -47,7 +47,7 @@ Gripper: the app keeps sending width 0..100 (0 open). The MaixCAM2 maps it to
 ## 3. What the app changes
 
 - The app-to-MaixCAM2 JSON (0023, 0027 "App to MaixCAM2") is **unchanged**. The app never sends
-  servo frames itself.
+  servo frames itself. *(Amended by 0234: manual arm keys now send planned `ARM_POSE` poses.)*
 - `armTimeout` 15 → 30 s and `waitCap` 120 → 180 s (`lib/services/robot/r1_constants.dart`): a full
   Arm B travel now takes 6 s, not 3 s, so a four-segment PICK needs about 24 s plus settling.
   Pinned by `test/robot/arm_timing_test.dart`.

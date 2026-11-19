@@ -416,6 +416,33 @@ def test_r1_b3_bin_sequence_state_point_and_drop(tmp_path):
 
 
 @needs_sim
+def test_arm_pose_plays_the_apps_path(tmp_path):
+    """0234: ARM_POSE legs in servo degrees end at the last pose; F0 sets the gripper; bad paths are refused."""
+    raised = [75.0, 90.0, 30.0, 120.0, 100.0, 90.0]
+    turned = [75.0, 90.0, 30.0, 120.0, 100.0, 300.0 - 90.0]
+
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            async def heartbeat():
+                while True:
+                    await ws.send(json.dumps({"cmd": "HEARTBEAT"}))
+                    await asyncio.sleep(0.2)
+            keepalive = asyncio.create_task(heartbeat())
+            await ws.send(json.dumps({"cmd": "ARM_POSE", "seq": 1, "path": [raised, turned]}))
+            got = [json.loads(await asyncio.wait_for(ws.recv(), 30)) for _ in range(2)]
+            assert got == [{"event": "ack", "seq": 1}, {"event": "motion_done", "seq": 1}]
+            names = [a.name for a in fake.world.hil_config.AXES]
+            assert fake.world.angles == pytest.approx(fake.world.servo_pose(dict(zip(names, turned))), abs=0.5)
+            assert fake.world.gripper_closed
+            await ws.send(json.dumps({"cmd": "ARM_POSE", "seq": 2, "path": [[1, 2, 3]]}))
+            assert json.loads(await asyncio.wait_for(ws.recv(), 5)) == {"event": "error", "seq": 2, "reason": "invalid_path"}
+            keepalive.cancel()
+
+    run(tmp_path, {"items": [BOTTLE]}, body, fps=50.0)
+
+
+@needs_sim
 def test_r1_unreachable_pick_is_rejected(tmp_path):
     async def body(url, fake):
         async with websockets.connect(url) as ws:
