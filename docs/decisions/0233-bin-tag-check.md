@@ -38,15 +38,23 @@ The arm steps in SORTING / WAIT_BOTH become:
   retry is not used up.
 - Events: `r1_bin_check` {result `ok` / `wrong_bin_tag` / `bin_tag_not_seen`, bin, retried}.
 
-## State points and safe zone (not done, owner to supply)
+## State points (owner, 19 Nov)
 
-- The owner's state points are not in `robotic_hand_sim` 75ab797 (origin/main, fetched 19 Nov):
-  the sim saves pose sequences to `calibration/hil_sequences.json`, which is git-ignored and not
-  on this Mac. The fake MaixCAM2 still uses its placeholder `BIN_TARGETS` (marked `ponytail:`).
-  The real firmware has no `PICK` / `MOVE_TO_BIN` / `DROP` yet (R1-fw, 0230 §4).
-- "Safe zone behaviour after reaching the state point" is, for now, only: hold still while
-  looking, `HOLD` on a hand, never `DROP` on a failed check, `HOME` after the second failure.
-  A move to a safe pose before `HOME` needs the owner's pose and goes where the state points go.
+- `firmware/maixcam2/bin_sequences.json` holds the owner's sequences from robotic_hand_sim's
+  Sequences tab (servo degrees, sim format) plus a `bins` map. **Only Left-Tank-Throw is used, and
+  it is the B3 bin**: `MOVE_TO_BIN b3` = Poses 1–4, the tag check at Pose 4 (state point), `DROP` =
+  Pose 5 (gripper opens) then Poses 6–7 (Pose 7 = home, gripper open). Right-Tank-Throw (one pose,
+  unfinished) is stored but unused; Organik and Anorganik have no sequence yet.
+- Checked in the sim: every pose is inside `hil/config.py` joint limits, every leg and the HOME
+  from Pose 4 pass `kinematics.path_unsafe` (tank keep-out) as one straight joint-space move.
+- The fake MaixCAM2 plays these steps through `kinematics.plan` (as the sim's playback does);
+  bins without a sequence keep the placeholder `BIN_TARGETS`. Its joints now start and arrive
+  together, the straight joint-space move the planner assumes. Hold times are not waited.
+- The real MaixCAM2 still has no `PICK` / `MOVE_TO_BIN` / `DROP` (R1-fw, 0230 §4); it should read
+  the same file.
+- Safe zone after the state point, for now: hold still while looking, `HOLD` on a hand, never
+  `DROP` on a failed check, `HOME` after the second failure. More behaviour comes with the owner's
+  next sequences.
 
 ## Not handled
 
@@ -61,4 +69,6 @@ The arm steps in SORTING / WAIT_BOTH become:
 `test/r1_orchestrator_test.dart` group "bin tag check": right tag → DROP; no tag → retry then
 `bin_check_failed` without DROP; wrong tag twice; wrong then right on the retry → DROP; hand
 during the look. Break-checked against the old orchestrator: 4 of 5 fail (the wrong-then-right
-case also passes on the old code, which always dropped). Fake MaixCAM2: `bin_tags()` per `--bin-tag`.
+case also passes on the old code, which always dropped). Fake MaixCAM2: `bin_tags()` per `--bin-tag`; `bin_paths` data check; B3 sequence tank-safe in the
+sim; PICK → MOVE_TO_BIN b3 ends at Pose 4 with tag 4 seen → DROP releases and ends home (break-checked:
+fails without the sequences).

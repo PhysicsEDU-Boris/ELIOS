@@ -52,6 +52,31 @@ BIN_TARGETS = {
     "anorganik": (100.0, -150.0, 80.0),
     "b3": (-100.0, -150.0, 80.0),
 }
+# The owner's bin state points (0233): MOVE_TO_BIN plays a bin's steps up to its state point,
+# DROP from its release step to the end. Bins without a sequence use BIN_TARGETS above.
+BIN_SEQUENCES_FILE = HERE.parents[1] / "firmware" / "maixcam2" / "bin_sequences.json"
+GRIP_HALFWAY = (180.0 + 75.0) / 2  # hil/config.py GRIP_OPEN, GRIP_CLOSED: above = open
+
+
+def bin_paths(path=BIN_SEQUENCES_FILE):
+    """{bin: (move_steps, drop_steps)} for bins with a complete sequence; a step is its servo dict."""
+    data = json.loads(Path(path).read_text())
+    seqs = {q["name"]: q["steps"] for q in data["sequences"]}
+    out = {}
+    for name, b in data["bins"].items():
+        if not (b.get("sequence") and b.get("state_point") and b.get("release")):
+            continue
+        names = [st["name"] for st in seqs[b["sequence"]]]
+        at, rel = names.index(b["state_point"]), names.index(b["release"])
+        steps = [st["servo"] for st in seqs[b["sequence"]]]
+        move, drop = steps[:at + 1], steps[rel:]
+        # The item must stay gripped until DROP: an open gripper before the state point would drop it early.
+        assert all(st["Gripper"] < GRIP_HALFWAY for st in move), f"{name}: gripper opens before the state point"
+        assert rel == at + 1 and drop[0]["Gripper"] > GRIP_HALFWAY, f"{name}: release must open the gripper right after the state point"
+        out[name] = (move, drop)
+    return out
+
+
 # The tag on each bin (0233, docs/print/apriltags-bins-id2-id3-id4-A4.pdf). At a bin's state point
 # the fake reports that bin's tag (--bin-tag right), another bin's (wrong) or none.
 BIN_TAG_IDS = {"anorganik": 2, "organik": 3, "b3": 4}
@@ -196,6 +221,8 @@ class SimWorld:
         import pyvista as pv
         from hil_toolkit import calibration_camera as cc
         from hil import config as hil_config
+        from hil import kinematics
+        self.hil_config, self.kinematics = hil_config, kinematics
         from hil_toolkit.tags_toolkit.tag_model import TAGS
         self.cc, self.tags = cc, TAGS
         # Effective limits from the sim's active hil/ package, not the legacy hil_toolkit (decision 0230).
@@ -252,9 +279,10 @@ class SimWorld:
         distance = (left + right) / 2 * DRIVE_MM_PER_PWM_S * dt
         self.robot_xy += distance * np.array([math.sin(heading), -math.cos(heading)])
         self.robot_yaw += turn
-        step = np.array(JOINT_SPEED_DPS) * dt
-        delta = np.clip(self.target - self.angles, -step, step)
-        self.angles += delta
+        # All joints start and arrive together (a straight joint-space move), as the sim's planner assumes.
+        left = self.target - self.angles
+        need = float(np.max(np.abs(left) / np.array(JOINT_SPEED_DPS)))
+        self.angles += left if need <= dt else left * (dt / need)
         self._sync_cards()
         self._sync_gripper()
         return bool(np.allclose(self.angles, self.target))
@@ -340,6 +368,26 @@ class SimWorld:
         normal = np.cross(corners[1] - corners[0], corners[2] - corners[0])
         normal /= np.linalg.norm(normal)
         return corners.mean(axis=0) + normal * 5.0
+
+    def servo_pose(self, servo):
+        """Sim joint angles for a saved step's servo degrees (hil/config.py Axis.to_sim)."""
+        angles = np.zeros(5)
+        for ax in self.hil_config.AXES:
+            if ax.joint is not None:
+                angles[ax.joint] = ax.to_sim(servo[ax.name])
+        return angles
+
+    def plan_steps(self, steps):
+        """[(target, servo)] legs through the sim's tank-aware planner, from the current target; None if refused."""
+        legs, at = [], self.target.copy()
+        for servo in steps:
+            goal = self.servo_pose(servo)
+            way, why = self.kinematics.plan(at, goal)
+            if way is None:
+                return None
+            legs += [(w, None) for w in way[:-1]] + [(way[-1], servo)]
+            at = goal
+        return legs
 
     def solve_ik(self, point):
         ase = self.cc.ase
@@ -469,6 +517,7 @@ class FakeMaixCam:
     def __init__(self, world, scenario, labels, fps=10.0, p1=None, seed=0, log=print, bin_tag="right"):
         self.world, self.scenario, self.labels = world, scenario, labels
         self.bin_tag = bin_tag
+        self.bin_paths = bin_paths()
         self.fps = fps
         self.p1 = scenario["p1"] if p1 is None else p1
         self.noise = dict(scenario["noise"])
@@ -717,14 +766,37 @@ class FakeMaixCam:
         await self._reply(ws, "ack", data)
         await self._reply(ws, "motion_done", data)
 
-    async def _begin_motion(self, ws, data, target, on_arrival=None):
+    async def _begin_motion(self, ws, data, target, on_arrival=None, rest=()):
+        """rest: further (target, on_arrival) legs; motion_done after the last."""
         if self.motion is not None:
             await self._reply(ws, "error", data, reason="busy")
             return False
         self.world.target[:] = target
         await self._reply(ws, "ack", data)
-        self.motion = (ws, data, on_arrival)
+        self.motion = (ws, data, on_arrival, list(rest))
         return True
+
+    async def _play(self, ws, data, legs, on_step, on_done):
+        """Plays planned legs; on_step(servo) at each saved step, on_done() at the end.
+        ponytail: a step's hold time is not waited; add it if a test needs the timing."""
+        calls = [(t, (lambda sv=sv: on_step(sv)) if sv is not None else None) for t, sv in legs]
+        last_target, last_call = calls[-1]
+        calls[-1] = (last_target, lambda: (last_call and last_call(), on_done()))
+        (target, first), *rest = calls
+        await self._begin_motion(ws, data, target, first, rest)
+
+    def _set_grip(self, servo):
+        """A saved step's gripper: opening at a bin drops the held item into it."""
+        closed = servo["Gripper"] < GRIP_HALFWAY
+        self.world.gripper_width = 100 if closed else 0
+        self.world.gripper_closed = closed
+        self.world._sync_gripper()
+        if not closed and self.held_item is not None and self.held_bin is not None:
+            item_id = self.held_item
+            self.world.release_item()
+            self._set_visible(self.items[item_id], False)
+            self.held_item = None
+            self.log(f"[R1] dropped {item_id} in {self.held_bin}")
 
     async def _cmd_pick(self, ws, data):
         if self.motion is not None or self.held_item is not None:
@@ -772,6 +844,13 @@ class FakeMaixCam:
         if not isinstance(bin_name, str) or bin_name not in BIN_TARGETS:
             await self._reply(ws, "error", data, reason="invalid_bin")
             return
+        if bin_name in self.bin_paths:
+            legs = self.world.plan_steps(self.bin_paths[bin_name][0])
+            if legs is None:
+                await self._reply(ws, "error", data, reason="unreachable")
+                return
+            await self._play(ws, data, legs, self._set_grip, lambda: setattr(self, "held_bin", bin_name))
+            return
         target = self.world.solve_ik(BIN_TARGETS[bin_name])
         if target is None:
             await self._reply(ws, "error", data, reason="unreachable")
@@ -780,7 +859,7 @@ class FakeMaixCam:
 
     def bin_tags(self):
         """The tag seen at the bin state point, per --bin-tag."""
-        if self.held_bin is None or self.bin_tag == "none":
+        if self.held_bin is None or self.held_item is None or self.bin_tag == "none":
             return []
         tid = BIN_TAG_IDS[self.held_bin]
         if self.bin_tag == "wrong":
@@ -793,6 +872,13 @@ class FakeMaixCam:
             return
         if self.held_item is None or self.held_bin is None:
             await self._reply(ws, "error", data, reason="not_at_bin")
+            return
+        if self.held_bin in self.bin_paths:
+            legs = self.world.plan_steps(self.bin_paths[self.held_bin][1])
+            if legs is None:
+                await self._reply(ws, "error", data, reason="unreachable")
+                return
+            await self._play(ws, data, legs, self._set_grip, lambda: setattr(self, "held_bin", None))
             return
         item_id, bin_name = self.held_item, self.held_bin
         await self._reply(ws, "ack", data)
@@ -816,15 +902,20 @@ class FakeMaixCam:
             last = started
             self._watchdog(started)
             if arrived and self.motion is not None:
-                ws, data, on_arrival = self.motion
+                ws, data, on_arrival, rest = self.motion
                 self.motion = None
                 if not self.link_down():
                     if on_arrival is not None:
                         on_arrival()
-                    try:
-                        await self._reply(ws, "motion_done", data)
-                    except websockets.ConnectionClosed:
-                        pass
+                    if rest:
+                        (target, nxt), *more = rest
+                        self.world.target[:] = target
+                        self.motion = (ws, data, nxt, more)
+                    else:
+                        try:
+                            await self._reply(ws, "motion_done", data)
+                        except websockets.ConnectionClosed:
+                            pass
                 else:
                     self.world.target[:] = self.world.angles
             if self.streaming and self.clients and not self.link_down():
