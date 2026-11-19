@@ -103,3 +103,4 @@ their status changed.
 - [0233](0233-bin-tag-check.md) Bin AprilTag check at the bin state point before DROP
 - [0234](0234-arm-kinematics-in-app.md) Manual arm keys planned in the app like robotic_hand_sim (ARM_POSE)
 - [0235](0235-maixcam2-arm-bridge.md) MaixCAM2 arm bridge to the ESP32 (stream mode) with the DROP guard
+- [0236](0236-arm-fader-throttle.md) Arm fader drags send ARM_POSE at most every 100 ms

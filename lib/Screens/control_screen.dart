@@ -26,6 +26,7 @@ import '../services/live_scan_controller.dart';
 import '../services/lock_tracking.dart';
 import '../services/live_scan_state_machine.dart' show LiveScanState;
 import '../services/quiz_tts_service.dart';
+import '../services/robot/fader_throttle.dart';
 import '../services/robot/joystick_controller.dart';
 import '../services/robot/robot_settings.dart';
 import 'advanced_settings_screen.dart';
@@ -118,6 +119,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// The commanded arm pose and its planner (0234): every manual arm key goes through it.
   final _arm = ArmPose();
   DateTime? _armRefusedAt;
+  final _fader = FaderThrottle(); // gripper, height, reach drags (0236)
 
   /// Set only with R1 (see [_r1Enabled]).
   R1Orchestrator? _r1;
@@ -189,6 +191,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         _liveScan?.logEvent(event, data);
       },
       onStop: (reason) {
+        _fader.cancel();
         _arm.markUnknown(); // the arm holds wherever the STOP caught it
         _r1?.emergencyStop(reason);
         _gate.status(); // the MaixCAM2 answers with the pose it froze at (0235)
@@ -500,6 +503,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
   @override
   void dispose() {
+    _fader.cancel();
     _frameSubscription?.cancel();
     _statusSubscription?.close();
     _r1Ticker?.cancel();
@@ -797,7 +801,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                               max: 100,
                               semanticLabel: l10n.ctlGripper,
                               onChanged: isOperational
-                                  ? (value) => _armMove(_arm.gripper(value))
+                                  ? (value) => _fader(() => _armMove(_arm.gripper(value)))
                                   : null,
                             ),
                           ),
@@ -816,13 +820,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                 armHeight: controlEnabled(
                   isOperational,
                   armFader(l10n.ctlHeight, l10n.ctlUpDown, (robotState.heightValue / 180).clamp(0.0, 1.0), (value) {
-                    if (_armMove(_arm.height(value))) _scheduleStatusRequest();
+                    _fader(() { if (_armMove(_arm.height(value))) _scheduleStatusRequest(); });
                   }),
                 ),
                 armReach: controlEnabled(
                   isOperational,
                   armFader(l10n.ctlReach, l10n.ctlFwdBack, (robotState.reachValue / 180).clamp(0.0, 1.0), (value) {
-                    if (_armMove(_arm.reach(value))) _scheduleStatusRequest();
+                    _fader(() { if (_armMove(_arm.reach(value))) _scheduleStatusRequest(); });
                   }),
                 ),
                 power: PowerGlowButton(
@@ -908,14 +912,14 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onPickUp: _pickUp,
       onReleaseGripper: () => _armMove(_arm.open()),
       gripper: robotState.gripperVal,
-      onGripper: (value) => _armMove(_arm.gripper(value)),
+      onGripper: (value) => _fader(() => _armMove(_arm.gripper(value))),
       height: robotState.heightValue,
       onHeight: (value) {
-        if (_armMove(_arm.height(value))) _scheduleStatusRequest();
+        _fader(() { if (_armMove(_arm.height(value))) _scheduleStatusRequest(); });
       },
       reach: robotState.reachValue,
       onReach: (value) {
-        if (_armMove(_arm.reach(value))) _scheduleStatusRequest();
+        _fader(() { if (_armMove(_arm.reach(value))) _scheduleStatusRequest(); });
       },
       onBaseStick: _joystick.setArmStick,
       onPower: link == ControlLink.disconnected
