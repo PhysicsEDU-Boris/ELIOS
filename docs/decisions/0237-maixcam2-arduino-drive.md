@@ -12,8 +12,12 @@ never moved. UART2 was also the ESP32 arm port (0235); the ESP32 is not wired.
 - `UART2_SLAVE = "arduino"` in `main.py` picks who owns UART2. With `arduino`, arm frames are not
   written (their digits 1–6 and CRC hex `B`/`F` would flip the Arduino's polarity and drive it);
   arm commands still answer. Set `esp32` to go back to the arm.
-- `drive_char(left, right)`: both > 0 `F`, both < 0 `B`, left < 0 < right `L`, right < 0 < left `R`,
-  anything else `S`. Speed is ignored (the sketch drives ENA/ENB full on).
+- `drive_char(left, right)` works like WASD: forward `(l+r)/2` vs turn `(l-r)/2`, the bigger wins
+  (`F`/`B` or `R`/`L`); both under `DRIVE_DEADBAND` (10) → `S`. First version used the signs of
+  left/right only: on the robot, stick jitter and ramp tails (`3,-3`, `17,-1`) became spins and the
+  wheels flipped F→R→B, so they only nudged. Speed is ignored (the sketch drives ENA/ENB full on).
+- Lines from the Arduino are logged as `[Drive] Arduino: …`; a `READY` while driving means it reset
+  (motor start pulling its 5 V down).
 - The last client leaving sends `S` (the Arduino keeps the last command).
 
 ## Consequences

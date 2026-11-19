@@ -406,13 +406,15 @@ except Exception as e:
 # Not both: arm frames carry digits 1-6 and CRC hex B/F, which the Arduino reads as polarity flips and drive.
 UART2_SLAVE = "arduino"
 
+DRIVE_DEADBAND = 10  # app PWM units: ramp tails and stick jitter (3,-3) must not flip the wheels
+
 def drive_char(left, right):
-    """App `motor` left/right (signed PWM) -> codeMotorSlave.ino command; mixed or zero -> S."""
-    if left > 0 and right > 0: return "F"
-    if left < 0 and right < 0: return "B"
-    if left < 0 < right: return "L"
-    if right < 0 < left: return "R"
-    return "S"
+    """App `motor` left/right (signed PWM) -> codeMotorSlave.ino command, like WASD: the bigger of
+    forward (l+r)/2 and turn (l-r)/2 wins; both under the deadband -> S."""
+    v, w = (left + right) / 2, (left - right) / 2
+    if max(abs(v), abs(w)) < DRIVE_DEADBAND: return "S"
+    if abs(v) >= abs(w): return "F" if v > 0 else "B"
+    return "R" if w > 0 else "L"
 
 def _drive_write(c):
     if UART2_SLAVE == "arduino" and arm_uart is not None:
@@ -448,6 +450,9 @@ def arm_loop():
                         buf += chunk
                         *lines, buf = buf.split(b"\n")
                         for line in lines:
+                            if UART2_SLAVE == "arduino":
+                                print("[Drive] Arduino:", line.decode("ascii", "replace").strip())  # READY = it reset
+                                continue
                             arm.on_line(line.decode("ascii", "replace"))
             for owner, reply in out:
                 _arm_send(owner, reply)
