@@ -1,11 +1,13 @@
 # MaixCAM2 firmware (m2c-arm-v1)
 
-**m2c-arm-v1 (0235, 19 Nov 2026) is not deployed yet.** It adds the arm bridge to the ESP32
-(`arm_bridge.py`, `bin_sequences.json`); the deployment record below is for m2c-track-v1.
-
-Deployed on the robot 16 Oct 2026: scan JSONL `firmwareSha256`
-`bbb3595e8070d4fab421ce38d5a9becbca26f6bcc8c34be4d7e29ed5c2ab79e6` matches
-`shasum -a 256 main.py`.
+Deployed on the MaixCAM2 19 Nov 2026 (over USB, `/maixapp/apps/elios_clean_m2c_v1`, v1.2.0):
+`{"cmd":"ping"}` returns `m2c-arm-v1` and `firmware_sha256`
+`17c1204f758f14e41687f3652a06f3e0adf93e98f0741e8928d5032d2a8d2230`, matching
+`shasum -a 256 main.py`. ESP32 not wired yet, so no `STAT` line seen. The board ran the
+floor-distance-guides build (0192, v1.1.0, sha256 `2149d09f…`, not on this branch; its tag id 2
+is the 80 mm floor tag). It is backed up on the board in
+`/root/backup/elios_clean_m2c_v1_2026-11-08/`; restore those files and remove `arm_bridge.py`
+and `bin_sequences.json` to roll back. Floor guides are off until 0192 is merged (tag id clash).
 
 ## MaixVision package
 
