@@ -236,7 +236,7 @@ export async function handleGuides(request, env, deps = {}) {
         const next = passed ? award(r, 'quiz') : r;
         if (next !== r) xp = XP.quiz;
         const quiz = { attempts: (r.quiz?.attempts ?? 0) + 1, best: Math.max(score, r.quiz?.best ?? 0),
-          first: r.quiz?.first ?? { score, answers: results.map(({ qid, correct }) => ({ qid, correct })) } };
+          first: r.quiz?.first ?? { score, answers: results.map(({ qid, correct }, i) => ({ qid, correct, choice: answers[i].choice })) } };
         return { ...next, quiz };
       });
       return reply({ results, score, passed, xp_awarded: xp, progress: await summary() });

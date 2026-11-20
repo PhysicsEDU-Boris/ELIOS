@@ -106,6 +106,8 @@ test('quiz is graded from the published JSON with explanations; XP only on the f
   assert.equal(again.score, 3);
   assert.equal(again.xp_awarded, 0);
   assert.equal(again.progress.total_xp, 10);
+  // The first attempt keeps the picked option so the Insights dashboard can show the A-D split.
+  assert.deepEqual(world.tables.guide_progress[0].quiz.first.answers.map((a) => a.choice), ['a', 'b', 'c']);
   assert.equal(world.calls.pages, 2, 'manifest and content are cached by revision');
   const bad = await call(world, { op: 'quiz', id: 'quiz-0004', date: '2026-11-08', answers: [{ qid: 'pool-9', choice: 'a' }, { qid: 'p1', choice: 'a' }, { qid: 'p2', choice: 'a' }] });
   assert.equal(bad.status, 400);
