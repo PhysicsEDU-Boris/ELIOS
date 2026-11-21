@@ -1,5 +1,6 @@
 // ELIOS 3 Select vehicle (Figma 629:90849): ELIOS is ready; the drone is
 // shown in colour but locked ("Coming soon"). Use ELIOS opens ELIOS setup.
+import '../../widgets/tour/app_tour.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -207,158 +208,98 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
             ),
           );
 
-          return Scaffold(
-            backgroundColor: p.background,
-            body: SafeArea(
-              child: Stack(
-                children: [
-                  ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                    children: [
-                      ElioPageTitle(
-                        title: l10n.scanSelectVehicle,
-                        onBack: () => Navigator.of(context).maybePop(),
-                      ),
-                      const SizedBox(height: 8),
-                      ExcludeSemantics(
-                        child: Center(
-                          child: FittedBox(fit: BoxFit.scaleDown, child: stage),
+          return TourTip(
+            id: 'select_vehicle',
+            label: () => l10n.tourLblVehicle,
+            steps: (k) => [TourStep(k[0], l10n.tipVehicleT, l10n.tipVehicleB)],
+            builder: (context, k) => Scaffold(
+              backgroundColor: p.background,
+              body: SafeArea(
+                child: Stack(
+                  children: [
+                    ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                      children: [
+                        ElioPageTitle(
+                          title: l10n.scanSelectVehicle,
+                          onBack: () => Navigator.of(context).maybePop(),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        height: 200,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ElioPopIn(
-                              index: 0,
-                              stagger: const Duration(milliseconds: 60),
-                              delay: const Duration(milliseconds: 160),
-                              child: Padding(
-                                padding: const EdgeInsets.only(top: 16),
+                        const SizedBox(height: 8),
+                        ExcludeSemantics(
+                          child: Center(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: stage,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          key: k[0],
+                          height: 200,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ElioPopIn(
+                                index: 0,
+                                stagger: const Duration(milliseconds: 60),
+                                delay: const Duration(milliseconds: 160),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 16),
+                                  child: _VehicleTile(
+                                    name: l10n.vehicleDrone,
+                                    art: '$scanArt/drone.svg',
+                                    locked: true,
+                                    trigger: _locked == 0 ? null : _locked,
+                                    onTap: _lockedTap,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              ElioPopIn(
+                                index: 1,
+                                stagger: const Duration(milliseconds: 60),
+                                delay: const Duration(milliseconds: 160),
                                 child: _VehicleTile(
-                                  name: l10n.vehicleDrone,
-                                  art: '$scanArt/drone.svg',
-                                  locked: true,
-                                  trigger: _locked == 0 ? null : _locked,
-                                  onTap: _lockedTap,
+                                  name: 'ELIOS',
+                                  art: '$scanArt/elios_robot.svg',
+                                  locked: false,
+                                  trigger: pick,
+                                  onTap: _select,
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            ElioPopIn(
-                              index: 1,
-                              stagger: const Duration(milliseconds: 60),
-                              delay: const Duration(milliseconds: 160),
-                              child: _VehicleTile(
-                                name: 'ELIOS',
-                                art: '$scanArt/elios_robot.svg',
-                                locked: false,
-                                trigger: pick,
-                                onTap: _select,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      ElioPopIn(
-                        delay: const Duration(milliseconds: 280),
-                        child: ElioPress(
-                          child: SizedBox(
-                            height: 52,
-                            child: FilledButton(
-                              onPressed: _useElios,
-                              style: FilledButton.styleFrom(
-                                backgroundColor: p.primary,
-                                foregroundColor: p.onPrimary,
-                                shape: const StadiumBorder(),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    l10n.vehicleUse('ELIOS'),
-                                    style: homeWeight(
-                                      ElioTokens.button,
-                                      600,
-                                    ).copyWith(color: p.onPrimary, height: 1.4),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Icon(
-                                    Icons.chevron_right_rounded,
-                                    size: 18,
-                                  ),
-                                ],
-                              ),
-                            ),
+                            ],
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.photo_camera_outlined,
-                            size: 16,
-                            color: p.textSecondary,
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              l10n.vehicleMaixNote,
-                              style: ElioTokens.caption.copyWith(
-                                color: p.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  // Locked drone: "Coming soon" toast slides up.
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 24,
-                    child: IgnorePointer(
-                      child: Center(
-                        child: AnimatedSlide(
-                          offset: _toast ? Offset.zero : const Offset(0, 1.5),
-                          duration: ElioMotion.base,
-                          curve: ElioMotion.emphasized,
-                          child: AnimatedOpacity(
-                            opacity: _toast ? 1 : 0,
-                            duration: ElioMotion.fast,
-                            child: Semantics(
-                              liveRegion: _toast,
-                              child: Container(
-                                key: const ValueKey('vehicle_locked_toast'),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 10,
-                                ),
-                                decoration: ShapeDecoration(
-                                  color: p.textPrimary,
+                        const SizedBox(height: 24),
+                        ElioPopIn(
+                          delay: const Duration(milliseconds: 280),
+                          child: ElioPress(
+                            child: SizedBox(
+                              height: 52,
+                              child: FilledButton(
+                                onPressed: _useElios,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: p.primary,
+                                  foregroundColor: p.onPrimary,
                                   shape: const StadiumBorder(),
                                 ),
                                 child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(
-                                      Icons.lock_rounded,
-                                      size: 16,
-                                      color: p.background,
+                                    Text(
+                                      l10n.vehicleUse('ELIOS'),
+                                      style: homeWeight(ElioTokens.button, 600)
+                                          .copyWith(
+                                            color: p.onPrimary,
+                                            height: 1.4,
+                                          ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Text(
-                                      '${l10n.vehicleDrone} · ${l10n.vehicleComingSoon}',
-                                      style: homeWeight(
-                                        ElioTokens.button,
-                                        600,
-                                      ).copyWith(color: p.background),
+                                    const Icon(
+                                      Icons.chevron_right_rounded,
+                                      size: 18,
                                     ),
                                   ],
                                 ),
@@ -366,10 +307,80 @@ class _SelectVehicleScreenState extends State<SelectVehicleScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.photo_camera_outlined,
+                              size: 16,
+                              color: p.textSecondary,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                l10n.vehicleMaixNote,
+                                style: ElioTokens.caption.copyWith(
+                                  color: p.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    // Locked drone: "Coming soon" toast slides up.
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 24,
+                      child: IgnorePointer(
+                        child: Center(
+                          child: AnimatedSlide(
+                            offset: _toast ? Offset.zero : const Offset(0, 1.5),
+                            duration: ElioMotion.base,
+                            curve: ElioMotion.emphasized,
+                            child: AnimatedOpacity(
+                              opacity: _toast ? 1 : 0,
+                              duration: ElioMotion.fast,
+                              child: Semantics(
+                                liveRegion: _toast,
+                                child: Container(
+                                  key: const ValueKey('vehicle_locked_toast'),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  decoration: ShapeDecoration(
+                                    color: p.textPrimary,
+                                    shape: const StadiumBorder(),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.lock_rounded,
+                                        size: 16,
+                                        color: p.background,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '${l10n.vehicleDrone} · ${l10n.vehicleComingSoon}',
+                                        style: homeWeight(
+                                          ElioTokens.button,
+                                          600,
+                                        ).copyWith(color: p.background),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );

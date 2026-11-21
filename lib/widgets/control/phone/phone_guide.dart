@@ -4,10 +4,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../../theme/elio_tokens.dart';
 import '../../learn/learn_ui.dart' show LearnTheme;
+import '../../tour/app_tour.dart';
 import 'package:elio/l10n/l10n.dart';
 
 class _Step {
@@ -105,7 +104,7 @@ class _PhoneGuideState extends State<PhoneGuide> {
                 behavior: HitTestBehavior.opaque,
                 onTap: () {},
                 child: CustomPaint(
-                  painter: _ScrimPainter(
+                  painter: TourScrimPainter(
                     hole: hole,
                     scrim: (p.isDark ? Colors.black : p.textPrimary).withValues(
                       alpha: p.isDark ? 0.62 : 0.5,
@@ -175,110 +174,6 @@ class _PhoneGuideState extends State<PhoneGuide> {
   }
 }
 
-class _ScrimPainter extends CustomPainter {
-  _ScrimPainter({
-    required this.hole,
-    required this.scrim,
-    required this.ring,
-    required this.radius,
-  });
-  final Rect? hole;
-  final Color scrim, ring;
-  final double radius;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final path = Path()..addRect(Offset.zero & size);
-    if (hole != null) {
-      final r = RRect.fromRectAndRadius(
-        hole!,
-        Radius.circular(math.min(radius, hole!.shortestSide / 2)),
-      );
-      path
-        ..addRRect(r)
-        ..fillType = PathFillType.evenOdd;
-      canvas.drawPath(path, Paint()..color = scrim);
-      // Dashed spotlight ring.
-      final ringPath = Path()..addRRect(r);
-      for (final m in ringPath.computeMetrics()) {
-        var d = 0.0;
-        while (d < m.length) {
-          canvas.drawPath(
-            m.extractPath(d, math.min(d + 6, m.length)),
-            Paint()
-              ..color = ring
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 2.5
-              ..strokeCap = StrokeCap.round,
-          );
-          d += 10;
-        }
-      }
-    } else {
-      canvas.drawPath(path, Paint()..color = scrim);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_ScrimPainter old) =>
-      old.hole != hole || old.scrim != scrim || old.radius != radius;
-}
-
-BoxDecoration _cardDecoration(ElioPalette p) => BoxDecoration(
-  color: p.surface,
-  borderRadius: BorderRadius.circular(20),
-  border: Border.all(color: p.primary, width: 2),
-  boxShadow: [BoxShadow(color: p.borderMedium, offset: const Offset(0, 4))],
-);
-
-Widget _robot(ElioPalette p, double size) => Container(
-  width: size,
-  height: size,
-  clipBehavior: Clip.antiAlias,
-  decoration: BoxDecoration(color: p.primary, shape: BoxShape.circle),
-  child: ExcludeSemantics(
-    child: SvgPicture.asset(
-      'assets/illustrations/control/elio_robot.svg',
-      fit: BoxFit.cover,
-    ),
-  ),
-);
-
-class _GreenButton extends StatelessWidget {
-  const _GreenButton({required this.label, required this.onTap, super.key});
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.elio;
-    return Container(
-      decoration: BoxDecoration(
-        color: p.primary,
-        borderRadius: BorderRadius.circular(9999),
-        boxShadow: [
-          BoxShadow(color: p.primaryActive, offset: const Offset(0, 3)),
-        ],
-      ),
-      child: InkWell(
-        customBorder: const StadiumBorder(),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: p.onPrimary,
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _StepCard extends StatelessWidget {
   const _StepCard({
     required this.step,
@@ -289,92 +184,16 @@ class _StepCard extends StatelessWidget {
   final VoidCallback onSkip, onNext;
 
   @override
-  Widget build(BuildContext context) {
-    final p = context.elio;
-    final s = _steps[step];
-    return Container(
-      key: ValueKey('guide_step_${step + 1}'),
-      padding: const EdgeInsets.all(14),
-      decoration: _cardDecoration(p),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _robot(p, 36),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.guideStepOf(step + 1, guideStepCount),
-                      style: TextStyle(
-                        color: p.primaryText,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                    Text(
-                      s.title,
-                      style: TextStyle(
-                        color: p.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            s.body,
-            style: TextStyle(color: p.textSecondary, fontSize: 14, height: 1.4),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              for (var i = 0; i < guideStepCount; i++) ...[
-                if (i > 0) const SizedBox(width: 3),
-                Container(
-                  width: i == step ? 18 : 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: i <= step ? p.primary : p.borderMedium,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-              ],
-              const Spacer(),
-              TextButton(
-                key: const ValueKey('guide_skip'),
-                onPressed: onSkip,
-                style: TextButton.styleFrom(
-                  foregroundColor: p.primaryText,
-                  backgroundColor: Colors.transparent,
-                  minimumSize: const Size(44, 36),
-                ),
-                child: Text(
-                  l10n.guideSkip,
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-              const SizedBox(width: 4),
-              _GreenButton(
-                key: const ValueKey('guide_next'),
-                label: l10n.guideNext,
-                onTap: onNext,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => TourCard(
+    step: step,
+    count: guideStepCount,
+    label: '',
+    title: _steps[step].title,
+    body: _steps[step].body,
+    nextLabel: l10n.guideNext,
+    onSkip: onSkip,
+    onNext: onNext,
+  );
 }
 
 class _FinalCard extends StatelessWidget {
@@ -382,45 +201,13 @@ class _FinalCard extends StatelessWidget {
   final VoidCallback onDone;
 
   @override
-  Widget build(BuildContext context) {
-    final p = context.elio;
-    return Container(
-      key: const ValueKey('guide_step_5'),
-      width: 360,
-      padding: const EdgeInsets.fromLTRB(24, 14, 24, 16),
-      decoration: _cardDecoration(p),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ExcludeSemantics(
-            child: SvgPicture.asset(
-              'assets/illustrations/control/elio_robot.svg',
-              height: 84,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.guideReady,
-            style: TextStyle(
-              color: p.textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            l10n.guideIntro,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: p.textSecondary, fontSize: 13, height: 1.4),
-          ),
-          const SizedBox(height: 12),
-          _GreenButton(
-            key: const ValueKey('guide_done'),
-            label: l10n.guideGo,
-            onTap: onDone,
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => KeyedSubtree(
+    key: const ValueKey('guide_step_5'),
+    child: TourFinishCard(
+      title: l10n.guideReady,
+      body: l10n.guideIntro,
+      buttonLabel: l10n.guideGo,
+      onDone: onDone,
+    ),
+  );
 }

@@ -1,5 +1,6 @@
 // Learn hub L2 v3 "organic" (Figma 570:5147, decision 0195): curved green
 // header, Today's Guide ticket, shortcut bubbles, Explore with leaf cards.
+import '../../../widgets/tour/app_tour.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -137,12 +138,15 @@ class LearnCurvedHeader extends StatelessWidget {
                             rise: 0,
                             scale: 0.8,
                             curve: ElioMotion.pop,
-                            child: _ModuleRing(
-                              values: moduleValues,
-                              tones: [
-                                for (final m in modules) moduleTone(m.id),
-                              ],
-                              overall: overall,
+                            child: KeyedSubtree(
+                              key: TourKeys.learnRing,
+                              child: _ModuleRing(
+                                values: moduleValues,
+                                tones: [
+                                  for (final m in modules) moduleTone(m.id),
+                                ],
+                                overall: overall,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 16),

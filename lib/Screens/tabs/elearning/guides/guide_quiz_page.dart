@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../../widgets/tour/app_tour.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -166,25 +167,41 @@ class _GuideQuizPageState extends ConsumerState<GuideQuizPage> {
                         message: l10n.lnCheckOpenAgain,
                       ),
               )
-            : Column(
-                // Full width: a short hint line must not shrink the page and push the deck left.
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _Dots(deck: deck),
-                  Expanded(child: _deckView(deck, lang)),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(32, 0, 32, 12),
-                    child: Text(
-                      deck.finished
-                          ? l10n.g4QuizResultHint
-                          : l10n.g4QuizParkedHint,
-                      textAlign: TextAlign.center,
-                      style: context.text.labelMedium?.copyWith(
-                        color: p.textSecondary,
+            : TourTip(
+                id: 'guide_quiz',
+                label: () => l10n.tourLblQuickQuiz,
+                steps: (k) => [
+                  TourStep(k[0], l10n.tipQq1T, l10n.tipQq1B),
+                  TourStep(k[1], l10n.tipQq2T, l10n.tipQq2B),
+                ],
+                builder: (context, k) => Column(
+                  // Full width: a short hint line must not shrink the page and push the deck left.
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    KeyedSubtree(
+                      key: k[0],
+                      child: _Dots(deck: deck),
+                    ),
+                    Expanded(
+                      child: KeyedSubtree(
+                        key: k[1],
+                        child: _deckView(deck, lang),
                       ),
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(32, 0, 32, 12),
+                      child: Text(
+                        deck.finished
+                            ? l10n.g4QuizResultHint
+                            : l10n.g4QuizParkedHint,
+                        textAlign: TextAlign.center,
+                        style: context.text.labelMedium?.copyWith(
+                          color: p.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
       ),
     );
@@ -218,22 +235,28 @@ class _GuideQuizPageState extends ConsumerState<GuideQuizPage> {
                   }
                 },
         );
-        final result = _ResultCard(
+        final result = TourTip(
           key: const ValueKey('result'),
-          deck: deck,
-          width: cardW,
-          guide: widget.guide,
-          server: _server,
-          sending: _sending,
-          firstPass: !_wasPassed,
-          onReview: (i) => setState(() => deck.review(i)),
-          onRetry: () => setState(() {
-            _retry = true;
-            final data = ref
-                .read(guideContentProvider((widget.guide, lang)))
-                .valueOrNull;
-            if (data != null) _start(data);
-          }),
+          id: 'guide_quiz_result',
+          label: () => l10n.tourLblQuickQuiz,
+          steps: (k) => [TourStep(k[0], l10n.tipQq3T, l10n.tipQq3B)],
+          builder: (context, k) => _ResultCard(
+            key: k[0],
+            deck: deck,
+            width: cardW,
+            guide: widget.guide,
+            server: _server,
+            sending: _sending,
+            firstPass: !_wasPassed,
+            onReview: (i) => setState(() => deck.review(i)),
+            onRetry: () => setState(() {
+              _retry = true;
+              final data = ref
+                  .read(guideContentProvider((widget.guide, lang)))
+                  .valueOrNull;
+              if (data != null) _start(data);
+            }),
+          ),
         );
         if (reduce) {
           // Reduced motion: a 150 ms cross-fade between the front card and the result.

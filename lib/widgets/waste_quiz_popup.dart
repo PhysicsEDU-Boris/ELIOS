@@ -1,5 +1,6 @@
 import 'package:elio/Screens/question_explanation_screen.dart'
     show QuestionExportSheet, showQuizReportSheet;
+import 'tour/app_tour.dart';
 import 'package:elio/widgets/quiz/essay_review.dart';
 import 'dart:async';
 import 'dart:math' as math;

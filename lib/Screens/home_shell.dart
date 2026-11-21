@@ -20,6 +20,9 @@ import '../theme/elio_theme.dart';
 import '../theme/elio_tokens.dart';
 import '../widgets/app_notification_banner.dart';
 import '../widgets/elio_bottom_nav.dart';
+import '../widgets/tour/app_tour.dart';
+import '../widgets/tour/main_tour.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
 import 'scan_history_screen.dart';
@@ -74,10 +77,58 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       });
     }
 
+    AppTour.request.addListener(_onTourRequest);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeWelcome());
+
     _homeScreen = HomeScreen(
       auth: widget.auth,
       onOpenLearning: () => _onBottomNavigationTap(1),
     );
+  }
+
+  @override
+  void dispose() {
+    AppTour.request.removeListener(_onTourRequest);
+    super.dispose();
+  }
+
+  /// First launch on this device: Welcome pages, then (if chosen) the tour.
+  Future<void> _maybeWelcome() async {
+    await AppTour.load();
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted || (prefs.getBool(AppTour.welcomeSeenKey) ?? false)) return;
+    await prefs.setBool(AppTour.welcomeSeenKey, true);
+    if (!mounted) return;
+    final start = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => ElioTheme.wrap(const WelcomeScreen())),
+    );
+    if (start == true && mounted) await _runTour('all');
+  }
+
+  void _onTourRequest() {
+    final which = AppTour.request.value;
+    if (which == null) return;
+    AppTour.request.value = null;
+    _runTour(which);
+  }
+
+  /// Runs the whole tour ('all') or one part, switching tab before each part.
+  Future<void> _runTour(String which) async {
+    if (AppTour.running) return;
+    for (final part in mainTourParts) {
+      if (which != 'all' && part.id != which) continue;
+      await _onBottomNavigationTap(part.tab);
+      // Let the tab's entrance animation settle before measuring targets.
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      if (!mounted) return;
+      final finished = await AppTour.run(
+        context,
+        part.steps(),
+        label: part.label(),
+      );
+      if (!finished || !mounted) return;
+    }
+    if (which == 'all' && mounted) await showTourFinish(context);
   }
 
   Widget _buildCurrentScreen() {
@@ -282,6 +333,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         ),
         bottomNavigationBar: ElioTheme.wrap(
           ElioBottomNav(
+            key: TourKeys.nav,
             currentIndex: _currentIndex,
             onSelectTab: _onBottomNavigationTap,
             photoUrl: guest ? null : user.photoURL,

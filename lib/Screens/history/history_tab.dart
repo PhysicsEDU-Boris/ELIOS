@@ -1,6 +1,7 @@
 // ELIOS 3 History tab (Figma 629:99388 light, 629:100097 dark; decision 0215):
 // curved green hero, leaf tiles, the latest 3 scans, By device and Questions
 // to review. The entrance plays on every open, like Home (0209).
+import '../../widgets/tour/app_tour.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -155,9 +156,10 @@ class _HistoryTabState extends State<HistoryTab>
         _Hero(store: widget.store, a: _intro),
         ?widget.banner,
         const SizedBox(height: 20),
-        Padding(padding: _side, child: _tiles(all)),
+        Padding(key: TourKeys.historyBins, padding: _side, child: _tiles(all)),
         const SizedBox(height: 24),
         HomeReveal(
+          key: TourKeys.historyRecent,
           id: 'recent',
           seen: _seen,
           delay: const Duration(milliseconds: 700),
@@ -310,6 +312,7 @@ class _HistoryTabState extends State<HistoryTab>
         if (toReview.isNotEmpty) ...[
           const SizedBox(height: 28),
           HomeReveal(
+            key: TourKeys.historyReview,
             id: 'review',
             seen: _seen,
             cues: [(0.3, () => _cue(ElioSfx.tick, ElioHaptics.select))],

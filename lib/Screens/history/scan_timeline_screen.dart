@@ -1,6 +1,7 @@
 // ELIOS 3 Scan timeline by device (Figma 629:99557, decision 0199): tabs All /
 // Phone / ELIOS / Drone (locked), a device hero and day groups on a rail.
 // "All" also holds older records, which never stored a device.
+import '../../widgets/tour/app_tour.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
@@ -108,150 +109,165 @@ class _ScanTimelineScreenState extends State<ScanTimelineScreen> {
             }
           }
           var n = 0;
-          return Scaffold(
-            backgroundColor: p.background,
-            body: SafeArea(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                children: [
-                  // Header (629:99559-64): round Back, title, subtitle under it.
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: ElioPress(
-                          child: Material(
-                            color: p.surface,
-                            shape: CircleBorder(
-                              side: BorderSide(color: p.borderSubtle),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: IconButton(
-                              tooltip: t.h3Back,
-                              constraints: const BoxConstraints.tightFor(
-                                width: 44,
-                                height: 44,
+          return TourTip(
+            id: 'scan_timeline',
+            label: () => l10n.tourLblTimeline,
+            steps: (k) => [
+              TourStep(k[0], l10n.tipTl1T, l10n.tipTl1B),
+              TourStep(k[1], l10n.tipTl2T, l10n.tipTl2B),
+              TourStep(k[2], l10n.tipTl3T, l10n.tipTl3B),
+            ],
+            builder: (context, k) => Scaffold(
+              backgroundColor: p.background,
+              body: SafeArea(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                  children: [
+                    // Header (629:99559-64): round Back, title, subtitle under it.
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: ElioPress(
+                            child: Material(
+                              color: p.surface,
+                              shape: CircleBorder(
+                                side: BorderSide(color: p.borderSubtle),
                               ),
-                              padding: EdgeInsets.zero,
-                              onPressed: () {
-                                elioFeedback(ElioSfx.tick, ElioHaptics.select);
-                                Navigator.of(context).maybePop();
-                              },
-                              icon: Icon(
-                                Icons.arrow_back_rounded,
-                                size: 22,
-                                color: p.textPrimary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Semantics(
-                              header: true,
-                              child: Text(
-                                t.histTimeline,
-                                style: ElioTokens.headline.copyWith(
+                              clipBehavior: Clip.antiAlias,
+                              child: IconButton(
+                                tooltip: t.h3Back,
+                                constraints: const BoxConstraints.tightFor(
+                                  width: 44,
+                                  height: 44,
+                                ),
+                                padding: EdgeInsets.zero,
+                                onPressed: () {
+                                  elioFeedback(
+                                    ElioSfx.tick,
+                                    ElioHaptics.select,
+                                  );
+                                  Navigator.of(context).maybePop();
+                                },
+                                icon: Icon(
+                                  Icons.arrow_back_rounded,
+                                  size: 22,
                                   color: p.textPrimary,
                                 ),
                               ),
                             ),
-                            Text(
-                              t.histTimelineSub,
-                              style: ElioTokens.bodySmall.copyWith(
-                                color: p.textSecondary,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _Tabs(
-                    selected: _device,
-                    onSelect: (d) {
-                      elioFeedback(ElioSfx.tick, ElioHaptics.select);
-                      setState(() => _device = d);
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  if (_device != null) ...[
-                    // Pops in again for each device.
-                    ElioPopIn(
-                      key: ValueKey(_device),
-                      scale: 0.9,
-                      curve: ElioMotion.pop,
-                      child: _DeviceHero(
-                        device: _device!,
-                        count: records.length,
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Semantics(
+                                header: true,
+                                child: Text(
+                                  t.histTimeline,
+                                  style: ElioTokens.headline.copyWith(
+                                    color: p.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                t.histTimelineSub,
+                                style: ElioTokens.bodySmall.copyWith(
+                                  color: p.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
-                  ] else ...[
-                    Text(
-                      t.histNoDevice,
-                      style: ElioTokens.caption.copyWith(
-                        color: p.textSecondary,
-                      ),
+                    _Tabs(
+                      key: k[0],
+                      selected: _device,
+                      onSelect: (d) {
+                        elioFeedback(ElioSfx.tick, ElioHaptics.select);
+                        setState(() => _device = d);
+                      },
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  // Section 12 skeleton while History is still loading.
-                  if (!widget.store.isLoaded)
-                    const SizedBox(
-                      height: 480,
-                      child: HistorySkeleton(HistoryLoadingLayout.list),
-                    )
-                  else if (records.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        t.histNoScansYet,
-                        textAlign: TextAlign.center,
-                        style: ElioTokens.bodySmall.copyWith(
+                    const SizedBox(height: 16),
+                    if (_device != null) ...[
+                      // Pops in again for each device.
+                      ElioPopIn(
+                        key: ValueKey(_device),
+                        scale: 0.9,
+                        curve: ElioMotion.pop,
+                        child: _DeviceHero(
+                          key: k[1],
+                          device: _device!,
+                          count: records.length,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ] else ...[
+                      Text(
+                        t.histNoDevice,
+                        style: ElioTokens.caption.copyWith(
                           color: p.textSecondary,
                         ),
                       ),
-                    ),
-                  // Day pills and rows rise in one after another, again on
-                  // a device change.
-                  for (final group in groups) ...[
-                    ElioPopIn(
-                      key: ValueKey('$_device-day-${group.first.id}'),
-                      index: n++,
-                      scale: 0.8,
-                      curve: ElioMotion.pop,
-                      child: _DayPill(historyDay(t, group.first.time)),
-                    ),
-                    for (final (i, r) in group.indexed)
-                      ElioPopIn(
-                        key: ValueKey('$_device-${r.id}'),
-                        index: n++,
-                        child: ElioPress(
-                          child: _RailRow(
-                            first: identical(r, records.first),
-                            last: i == group.length - 1,
-                            child: _Item(
-                              record: r,
-                              highlighted: identical(r, records.first),
-                              showDevice: _device == null,
-                              time: DateFormat.Hm(
-                                dateLocaleOf(t),
-                              ).format(r.time),
-                              onTap: () => _open(r),
-                            ),
+                      const SizedBox(height: 12),
+                    ],
+                    // Section 12 skeleton while History is still loading.
+                    if (!widget.store.isLoaded)
+                      const SizedBox(
+                        height: 480,
+                        child: HistorySkeleton(HistoryLoadingLayout.list),
+                      )
+                    else if (records.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          t.histNoScansYet,
+                          textAlign: TextAlign.center,
+                          style: ElioTokens.bodySmall.copyWith(
+                            color: p.textSecondary,
                           ),
                         ),
                       ),
-                    const SizedBox(height: 12),
+                    // Day pills and rows rise in one after another, again on
+                    // a device change.
+                    for (final group in groups) ...[
+                      ElioPopIn(
+                        key: ValueKey('$_device-day-${group.first.id}'),
+                        index: n++,
+                        scale: 0.8,
+                        curve: ElioMotion.pop,
+                        child: _DayPill(historyDay(t, group.first.time)),
+                      ),
+                      for (final (i, r) in group.indexed)
+                        ElioPopIn(
+                          key: ValueKey('$_device-${r.id}'),
+                          index: n++,
+                          child: ElioPress(
+                            key: identical(r, records.first) ? k[2] : null,
+                            child: _RailRow(
+                              first: identical(r, records.first),
+                              last: i == group.length - 1,
+                              child: _Item(
+                                record: r,
+                                highlighted: identical(r, records.first),
+                                showDevice: _device == null,
+                                time: DateFormat.Hm(
+                                  dateLocaleOf(t),
+                                ).format(r.time),
+                                onTap: () => _open(r),
+                              ),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           );
@@ -262,7 +278,7 @@ class _ScanTimelineScreenState extends State<ScanTimelineScreen> {
 }
 
 class _Tabs extends StatelessWidget {
-  const _Tabs({required this.selected, required this.onSelect});
+  const _Tabs({super.key, required this.selected, required this.onSelect});
   final HistoryDevice? selected;
   final ValueChanged<HistoryDevice?> onSelect;
 
@@ -346,7 +362,7 @@ class _Tabs extends StatelessWidget {
 }
 
 class _DeviceHero extends StatelessWidget {
-  const _DeviceHero({required this.device, required this.count});
+  const _DeviceHero({super.key, required this.device, required this.count});
   final HistoryDevice device;
   final int count;
 

@@ -73,6 +73,9 @@ void main() {
         of: find.text(title),
         matching: find.byType(MergeSemantics),
       );
+      // The App tour section (0238) pushes the lower rows below the fold.
+      await t.ensureVisible(row);
+      await t.pumpAndSettle();
       await t.tap(find.descendant(of: row, matching: find.byType(Switch)));
       await t.pumpAndSettle();
     }

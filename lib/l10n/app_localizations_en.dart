@@ -6407,4 +6407,518 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get advCancel => 'Cancel';
+
+  @override
+  String get tourGotIt => 'Got it';
+
+  @override
+  String get tourAppTour => 'App tour';
+
+  @override
+  String get tourTakeTour => 'Take the tour';
+
+  @override
+  String get tourTakeTourSub => 'See every tab in about 2 minutes';
+
+  @override
+  String get tourStart => 'Start';
+
+  @override
+  String get tourReplayOne => 'Replay one screen';
+
+  @override
+  String get tourTips => 'Show tips on new screens';
+
+  @override
+  String get tourTipsSub => 'A short tip the first time you open a screen';
+
+  @override
+  String get tourRobotControl => 'Robot control';
+
+  @override
+  String get tourRobotNext =>
+      'The robot guide opens next time you open robot control.';
+
+  @override
+  String get tourW1Title => 'Hi! I\'m ELIOS';
+
+  @override
+  String get tourW1Body =>
+      'I help you sort waste, learn the science behind it, and earn XP while you do it.';
+
+  @override
+  String get tourW2Title => 'Three ways to play';
+
+  @override
+  String get tourW2Body => 'Pick the one you like. You can switch any time.';
+
+  @override
+  String get tourWayLearn => 'Learn';
+
+  @override
+  String get tourWayScan => 'Scan';
+
+  @override
+  String get tourWayRobot => 'Robot';
+
+  @override
+  String get tourW3Title => 'Take a quick tour?';
+
+  @override
+  String get tourW3Body =>
+      'About 2 minutes. You can replay it any time in Profile ▸ App tour.';
+
+  @override
+  String get tourStartTour => 'Start the tour';
+
+  @override
+  String get tourMaybeLater => 'Maybe later';
+
+  @override
+  String get tourDoneTitle => 'You\'re ready, Eco Explorer!';
+
+  @override
+  String get tourDoneBody =>
+      'Scan your first item to earn XP. Replay this tour any time in Profile ▸ App tour.';
+
+  @override
+  String get tourLblHome => 'HOME';
+
+  @override
+  String get tourLblLearn => 'LEARN';
+
+  @override
+  String get tourLblScan => 'SCAN';
+
+  @override
+  String get tourLblHistory => 'HISTORY';
+
+  @override
+  String get tourLblProfile => 'PROFILE';
+
+  @override
+  String get tourHome1T => 'Your eco tree';
+
+  @override
+  String get tourHome1B =>
+      'Every scan and right answer earns XP. The ring fills and your tree grows a level.';
+
+  @override
+  String get tourHome2T => 'Your stats';
+
+  @override
+  String get tourHome2B =>
+      'Scans, quiz accuracy and your day streak. Come back every day to keep the flame alive.';
+
+  @override
+  String get tourHome3T => 'Daily quests';
+
+  @override
+  String get tourHome3B =>
+      'Three small goals each day. Finish them for bonus XP. They reset at midnight.';
+
+  @override
+  String get tourHome4T => 'Bin buddies';
+
+  @override
+  String get tourHome4B =>
+      'Organik, Anorganik and B3. Each scan feeds the right bin, so you learn where waste goes.';
+
+  @override
+  String get tourHome5T => 'Search and alerts';
+
+  @override
+  String get tourHome5B =>
+      'Find lessons, simulations and old scans. The bell shows robot and quiz alerts.';
+
+  @override
+  String get tourHome6T => 'Five tabs, one big button';
+
+  @override
+  String get tourHome6B =>
+      'Home, Learn, Scan, History and Profile. The green button starts a scan from anywhere.';
+
+  @override
+  String get tourLearn1T => 'Your Learn progress';
+
+  @override
+  String get tourLearn1B =>
+      'The ring fills as you finish modules. Clovers come from Daily Guides.';
+
+  @override
+  String get tourLearn2T => 'Today\'s guide';
+
+  @override
+  String get tourLearn2B =>
+      'A new short guide every day: read it, take a quick quiz, try the mini lab. Up to +60 XP.';
+
+  @override
+  String get tourLearn3T => 'From the archive';
+
+  @override
+  String get tourLearn3B =>
+      'Missed a day? Your last 3 guides wait here. Swipe the photos.';
+
+  @override
+  String get tourLearn4T => 'Shortcuts';
+
+  @override
+  String get tourLearn4B =>
+      'Quiz, Mini lab, Archive and Progress, one tap away.';
+
+  @override
+  String get tourLearn5T => 'Explore modules';
+
+  @override
+  String get tourLearn5B =>
+      'Organik, Anorganik and B3 modules, each with lessons, videos and a simulation.';
+
+  @override
+  String get tourScan1T => 'Scan & quiz';
+
+  @override
+  String get tourScan1B =>
+      'Use your phone camera. ELIOS names the item and makes a quiz about it.';
+
+  @override
+  String get tourScan2T => 'Robot scan';
+
+  @override
+  String get tourScan2B =>
+      'Pick a vehicle, connect the ELIOS robot and drive it to sort real waste.';
+
+  @override
+  String get tourScan3T => 'Scan to contribute';
+
+  @override
+  String get tourScan3B =>
+      'Film yourself putting waste in the right bin. You earn XP and help train ELIOS.';
+
+  @override
+  String get tourHist1T => 'Your bins';
+
+  @override
+  String get tourHist1B => 'Tap a bin to see only those scans.';
+
+  @override
+  String get tourHist2T => 'Recent scans';
+
+  @override
+  String get tourHist2B =>
+      'Open a scan to see its photo, questions and score. See timeline shows them all.';
+
+  @override
+  String get tourHist3T => 'Review missed questions';
+
+  @override
+  String get tourHist3B =>
+      'Practice the questions you got wrong until they stick.';
+
+  @override
+  String get tourProf1T => 'Replay any time';
+
+  @override
+  String get tourProf1B =>
+      'Watch the whole tour again, or just one screen. You can turn the first-visit tips off here too.';
+
+  @override
+  String get tourLblModule => 'MODULE';
+
+  @override
+  String get tourLblLesson => 'LESSON';
+
+  @override
+  String get tourLblSim => 'SIMULATION';
+
+  @override
+  String get tourLblQuiz => 'QUIZ';
+
+  @override
+  String get tourLblGuide => 'GUIDE ISSUE';
+
+  @override
+  String get tourLblQuickQuiz => 'QUICK QUIZ';
+
+  @override
+  String get tourLblMiniLab => 'MINI LAB';
+
+  @override
+  String get tourLblCamera => 'CAMERA';
+
+  @override
+  String get tourLblResult => 'SCAN RESULT';
+
+  @override
+  String get tourLblQuestion => 'QUESTION';
+
+  @override
+  String get tourLblContribute => 'CONTRIBUTE';
+
+  @override
+  String get tourLblVehicle => 'SELECT VEHICLE';
+
+  @override
+  String get tourLblSetup => 'ELIOS SETUP';
+
+  @override
+  String get tourLblWifiQr => 'WI-FI QR';
+
+  @override
+  String get tourLblDetail => 'SCAN DETAIL';
+
+  @override
+  String get tourLblExplain => 'EXPLANATION';
+
+  @override
+  String get tourLblAi => 'ELIOS AI';
+
+  @override
+  String get tourLblPdf => 'EXPORT PDF';
+
+  @override
+  String get tourLblTimeline => 'TIMELINE';
+
+  @override
+  String get tipModuleT => 'Pick a lesson';
+
+  @override
+  String get tipModuleB =>
+      'Lessons open in order. Finish one to unlock the next and fill the module ring.';
+
+  @override
+  String get tipLessonT => 'Watch, then check';
+
+  @override
+  String get tipLessonB =>
+      'Watch the short video, then tap the button to answer and earn XP.';
+
+  @override
+  String get tipSimT => 'Theory, then play';
+
+  @override
+  String get tipSimB =>
+      'Read Materi first, then open the simulation tab and change the values. There is no wrong move here.';
+
+  @override
+  String get tipQuizT => 'Answer for XP';
+
+  @override
+  String get tipQuizB =>
+      '+10 XP for a right answer. Wrong? ELIOS explains why.';
+
+  @override
+  String get tipGuide1T => 'Today\'s story';
+
+  @override
+  String get tipGuide1B =>
+      'A short real-world story with photos. Read it first: the quiz and mini lab are about it.';
+
+  @override
+  String get tipGuide2T => 'Your language, or a PDF';
+
+  @override
+  String get tipGuide2B =>
+      'Switch between English and Bahasa Indonesia, or save the guide as a PDF.';
+
+  @override
+  String get tipGuide3T => 'Your quest map';
+
+  @override
+  String get tipGuide3B =>
+      'Three stops: the story, the physics, your mission. Each stop gives XP.';
+
+  @override
+  String get tipGuide4T => 'Continue';
+
+  @override
+  String get tipGuide4B =>
+      'Tap Continue to go to the next stop. You can come back any time today.';
+
+  @override
+  String get tipQq1T => 'Your cards';
+
+  @override
+  String get tipQq1B => 'One dot per question. Green means answered.';
+
+  @override
+  String get tipQq2T => 'Pick, then check';
+
+  @override
+  String get tipQq2B =>
+      'Choose an answer, then tap Check. Swipe for the next card.';
+
+  @override
+  String get tipQq3T => 'Your result';
+
+  @override
+  String get tipQq3B =>
+      'See your score and XP. Missed one? Try again, there is no limit.';
+
+  @override
+  String get tipLabT => 'Mini lab';
+
+  @override
+  String get tipLabB =>
+      'Try the small experiment at home and add a photo. ELIOS checks it and gives you a badge.';
+
+  @override
+  String get tipCamT => 'Fill the frame';
+
+  @override
+  String get tipCamB =>
+      'Hold one item inside the green corners, then tap the shutter.';
+
+  @override
+  String get tipRes1T => 'What ELIOS saw';
+
+  @override
+  String get tipRes1B =>
+      'The photo of your item. The bin buddy shows where it goes.';
+
+  @override
+  String get tipRes2T => 'Which bin and why';
+
+  @override
+  String get tipRes2B => 'The item name, its bin and how sure ELIOS is.';
+
+  @override
+  String get tipRes3T => 'Start your quiz';
+
+  @override
+  String get tipRes3B =>
+      'Questions about this exact item. Right answers earn XP.';
+
+  @override
+  String get tipQuestionT => 'Pick your answer';
+
+  @override
+  String get tipQuestionB =>
+      'Tap one answer before the timer runs out. Right answers earn XP.';
+
+  @override
+  String get tipContribT => 'Record';
+
+  @override
+  String get tipContribB =>
+      'Tap to start. Keep the bin label in view while you drop the item in.';
+
+  @override
+  String get tipVehicleT => 'Choose a vehicle';
+
+  @override
+  String get tipVehicleB =>
+      'The ELIOS ground robot is ready. The drone is coming soon.';
+
+  @override
+  String get tipSetupT => 'Connect step by step';
+
+  @override
+  String get tipSetupB =>
+      'Power on the robot, scan its Wi-Fi QR, then tap Connect. The steps turn green as you go.';
+
+  @override
+  String get tipQr1T => 'Robot Wi-Fi QR';
+
+  @override
+  String get tipQr1B =>
+      'This QR holds your Wi-Fi name and password, so you never type them on the robot.';
+
+  @override
+  String get tipQr2T => 'Show it to the robot';
+
+  @override
+  String get tipQr2B =>
+      'Hold the phone in front of the robot camera. When it beeps, it joins your Wi-Fi.';
+
+  @override
+  String get tipDetailT => 'Export PDF';
+
+  @override
+  String get tipDetailB =>
+      'Save this quiz report as a PDF to share with your teacher.';
+
+  @override
+  String get tipExp1T => 'Your verdict';
+
+  @override
+  String get tipExp1B => 'Right or wrong, and the XP you earned.';
+
+  @override
+  String get tipExp2T => 'The why';
+
+  @override
+  String get tipExp2B => 'The physics behind the answer, in short steps.';
+
+  @override
+  String get tipExp3T => 'Listen';
+
+  @override
+  String get tipExp3B => 'Tap to hear the explanation read aloud.';
+
+  @override
+  String get tipExp4T => 'Export or go on';
+
+  @override
+  String get tipExp4B =>
+      'Save this explanation as a PDF, or move to the next question.';
+
+  @override
+  String get tipAi1T => 'Why it is right or wrong';
+
+  @override
+  String get tipAi1B =>
+      'Every answer gets a short explanation you can read before moving on.';
+
+  @override
+  String get tipAi2T => 'Ask ELIOS AI';
+
+  @override
+  String get tipAi2B =>
+      'Still unsure? ELIOS AI explains it another way. Type or tap a suggested question.';
+
+  @override
+  String get tipAi3T => 'Next question';
+
+  @override
+  String get tipAi3B => 'Ready? Move on to the next question.';
+
+  @override
+  String get tipPdf1T => 'Preview';
+
+  @override
+  String get tipPdf1B =>
+      'This is the file you will get: an A4 report with your answers.';
+
+  @override
+  String get tipPdf2T => 'Choose what goes in';
+
+  @override
+  String get tipPdf2B =>
+      'Tick what to include, like the explanation, the scan photo or space for notes.';
+
+  @override
+  String get tipPdf3T => 'Save or share';
+
+  @override
+  String get tipPdf3B => 'Save to your phone or share it with your teacher.';
+
+  @override
+  String get tipTl1T => 'Pick a device';
+
+  @override
+  String get tipTl1B =>
+      'Your phone and the ELIOS robot each have their own timeline.';
+
+  @override
+  String get tipTl2T => 'Device summary';
+
+  @override
+  String get tipTl2B =>
+      'How many scans this device made and when it last scanned.';
+
+  @override
+  String get tipTl3T => 'Every scan, newest first';
+
+  @override
+  String get tipTl3B => 'Tap a scan to open its photo, questions and score.';
 }

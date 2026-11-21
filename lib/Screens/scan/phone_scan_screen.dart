@@ -1,6 +1,7 @@
 // ELIOS 3 Scan & quiz with the phone, portrait (Figma 629:90736): full-screen
 // camera, viewfinder corners, shutter and the question-source chip. The
 // identify → quiz steps are the full-screen ScanQuizPages (decision 0216).
+import '../../widgets/tour/app_tour.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -175,15 +176,21 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
                           )
                         : const CircularProgressIndicator(),
                   ),
-                Center(
-                  child: SizedBox.fromSize(
-                    size: phoneScanBox,
-                    // Searching: the brackets breathe 1 ↔ 1.02 (1.6 s).
-                    child: ElioIdleLoop(
-                      period: const Duration(milliseconds: 1600),
-                      builder: (context, w, child) =>
-                          Transform.scale(scale: 1 + 0.02 * w, child: child),
-                      child: CustomPaint(painter: _Corners(p.primary)),
+                TourTip(
+                  id: 'scan_camera',
+                  label: () => l10n.tourLblCamera,
+                  steps: (k) => [TourStep(k[0], l10n.tipCamT, l10n.tipCamB)],
+                  builder: (context, k) => Center(
+                    child: SizedBox.fromSize(
+                      key: k[0],
+                      size: phoneScanBox,
+                      // Searching: the brackets breathe 1 ↔ 1.02 (1.6 s).
+                      child: ElioIdleLoop(
+                        period: const Duration(milliseconds: 1600),
+                        builder: (context, w, child) =>
+                            Transform.scale(scale: 1 + 0.02 * w, child: child),
+                        child: CustomPaint(painter: _Corners(p.primary)),
+                      ),
                     ),
                   ),
                 ),

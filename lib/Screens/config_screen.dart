@@ -1,5 +1,6 @@
 // Copyright (c) Boris Agung, Irham Fajar
 
+import '../widgets/tour/app_tour.dart';
 import 'dart:math' as math;
 
 import 'package:elio/models/config_model.dart';
@@ -223,42 +224,48 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
       Builder(
         builder: (context) {
           final p = context.elio;
-          return Scaffold(
-            backgroundColor: p.background,
-            body: ListView(
-              padding: const EdgeInsets.fromLTRB(0, 4, 0, 32),
-              children: [
-                ElioPopIn(
-                  child: _RobotStage(
-                    view: view,
-                    endpoint: '${_ip.text} : ${_port.text}',
+          return TourTip(
+            id: 'elios_setup',
+            label: () => l10n.tourLblSetup,
+            steps: (k) => [TourStep(k[0], l10n.tipSetupT, l10n.tipSetupB)],
+            builder: (context, k) => Scaffold(
+              backgroundColor: p.background,
+              body: ListView(
+                padding: const EdgeInsets.fromLTRB(0, 4, 0, 32),
+                children: [
+                  ElioPopIn(
+                    child: _RobotStage(
+                      view: view,
+                      endpoint: '${_ip.text} : ${_port.text}',
+                    ),
                   ),
-                ),
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 600),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: 12),
-                          const ElioPopIn(index: 1, child: _CameraRow()),
-                          const SizedBox(height: 24),
-                          ElioPopIn(
-                            index: 2,
-                            child: _connectionSection(p, view, link),
-                          ),
-                          const SizedBox(height: 28),
-                          const ElioPopIn(index: 3, child: _VideoSection()),
-                          const SizedBox(height: 28),
-                          const ElioPopIn(index: 4, child: _QuizSection()),
-                        ],
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 600),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const SizedBox(height: 12),
+                            const ElioPopIn(index: 1, child: _CameraRow()),
+                            const SizedBox(height: 24),
+                            ElioPopIn(
+                              key: k[0],
+                              index: 2,
+                              child: _connectionSection(p, view, link),
+                            ),
+                            const SizedBox(height: 28),
+                            const ElioPopIn(index: 3, child: _VideoSection()),
+                            const SizedBox(height: 28),
+                            const ElioPopIn(index: 4, child: _QuizSection()),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },

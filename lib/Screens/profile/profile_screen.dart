@@ -18,6 +18,9 @@ import '../../theme/elio_tokens.dart';
 import '../../widgets/elio_theme_reveal.dart';
 import '../../widgets/learn/learn_ui.dart';
 import '../../widgets/splash/elio_leaf.dart';
+import '../../widgets/control/phone/phone_guide.dart' show controlGuideShownKey;
+import '../../widgets/tour/app_tour.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../config/config_settings_sheet.dart' show ConfigSegmented;
 import '../../services/elio_feedback.dart';
 
@@ -193,6 +196,21 @@ class ProfileScreen extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
+                    KeyedSubtree(
+                      key: TourKeys.profileTour,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _Section(
+                            icon: Icons.auto_awesome_outlined,
+                            tone: p.primaryText,
+                            title: l10n.tourAppTour,
+                          ),
+                          const _AppTourRows(),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     _Section(
                       icon: Icons.help_outline_rounded,
                       tone: p.errorText,
@@ -261,6 +279,94 @@ class ProfileScreen extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Profile ▸ App tour (Figma 18 · I): replay the whole tour or one part, and
+/// turn the first-visit screen tours on or off.
+class _AppTourRows extends StatelessWidget {
+  const _AppTourRows();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.elio;
+    final chips = [
+      ('home', l10n.navHome),
+      ('learn', l10n.navLearn),
+      ('scan', l10n.navScan),
+      ('history', l10n.navHistory),
+      ('robot', l10n.tourRobotControl),
+      ('profile', l10n.navProfile),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _RowTitle(
+                title: l10n.tourTakeTour,
+                subtitle: l10n.tourTakeTourSub,
+              ),
+            ),
+            TourGreenButton(
+              key: const ValueKey('profile_tour_start'),
+              label: l10n.tourStart,
+              onTap: () => AppTour.request.value = 'all',
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Text(l10n.tourReplayOne, style: _rowTitle(p)),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final (id, label) in chips)
+              ActionChip(
+                key: ValueKey('profile_tour_$id'),
+                label: Text(label),
+                labelStyle: TextStyle(
+                  color: p.primaryText,
+                  fontWeight: FontWeight.w600,
+                ),
+                backgroundColor: p.surface,
+                side: BorderSide(color: p.borderMedium, width: 1.5),
+                shape: const StadiumBorder(),
+                onPressed: () async {
+                  if (id != 'robot') {
+                    AppTour.request.value = id;
+                    return;
+                  }
+                  // The Control guide opens by itself next time Control opens.
+                  final messenger = ScaffoldMessenger.maybeOf(context);
+                  await (await SharedPreferences.getInstance()).remove(
+                    controlGuideShownKey,
+                  );
+                  messenger?.showSnackBar(
+                    SnackBar(content: Text(l10n.tourRobotNext)),
+                  );
+                },
+              ),
+          ],
+        ),
+        const _Rule(),
+        ValueListenableBuilder<bool>(
+          valueListenable: AppTour.tipsOn,
+          builder: (context, on, _) => _SwitchRow(
+            title: l10n.tourTips,
+            subtitle: l10n.tourTipsSub,
+            value: on,
+            onChanged: (v) async {
+              await AppTour.setTipsEnabled(v);
+              // Turning tips back on shows each screen's tour once more.
+              if (v) await AppTour.resetTips();
+            },
+          ),
+        ),
+      ],
     );
   }
 }
