@@ -195,9 +195,122 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
                   ),
                 ),
                 SafeArea(
-                  child: Column(
-                    children: [
-                      Padding(
+                  child: LayoutBuilder(
+                    builder: (context, box) {
+                      final gallery = _noGallery
+                          ? null
+                          : ElioPopIn(
+                              rise: 12,
+                              delay: const Duration(milliseconds: 180),
+                              child: ElioPress(
+                                pressed: 0.92,
+                                child: IconButton(
+                                  key: const ValueKey('scan_gallery'),
+                                  tooltip: l10n.scanGallery,
+                                  onPressed: _pickFromGallery,
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: scrim,
+                                    minimumSize: const Size.square(52),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.photo_library_rounded,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            );
+                      final shutter = Semantics(
+                        button: true,
+                        label: l10n.scanTakePhoto,
+                        excludeSemantics: true,
+                        onTap: ready ? _capture : null,
+                        child: GestureDetector(
+                          onTap: ready ? _capture : null,
+                          onTapDown: (_) => setState(() => _down = true),
+                          onTapUp: (_) => setState(() => _down = false),
+                          onTapCancel: () => setState(() => _down = false),
+                          child: Container(
+                            width: 76,
+                            height: 76,
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 4),
+                            ),
+                            // Shutter: the inner circle scales 0.85 (90 ms).
+                            child: AnimatedScale(
+                              scale: _down || _capturing ? 0.85 : 1,
+                              duration: ElioMotion.instant,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: _capturing || !ready
+                                      ? p.primary.withValues(alpha: 0.5)
+                                      : p.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                      final sourcePill = ElioPopIn(
+                        rise: 12,
+                        delay: const Duration(milliseconds: 180),
+                        child: _Pill(
+                          text: source == QuestionSource.ai
+                              ? l10n.scanAiQuiz
+                              : l10n.questionBank,
+                          color: scrim,
+                          icon: source == QuestionSource.ai
+                              ? null
+                              : Icons.storage_rounded,
+                          leading: source == QuestionSource.ai
+                              ? const EliosAiBadge(size: 20)
+                              : null,
+                        ),
+                      );
+                      final zoomSteps = ready && _source.maxZoom >= 2
+                          ? Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const ShapeDecoration(
+                                  color: scrim,
+                                  shape: StadiumBorder(),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    for (final z in const [1.0, 2.0, 3.0, 5.0])
+                                      if (z <= _source.maxZoom)
+                                        _ZoomStep(
+                                          zoom: z,
+                                          selected: _source.zoom.round() == z,
+                                          label: _source.zoom.round() == z
+                                              ? _source.zoom
+                                              : z,
+                                          onTap: () {
+                                            elioFeedback(
+                                              ElioSfx.tick,
+                                              ElioHaptics.select,
+                                            );
+                                            _source.setZoom(z);
+                                          },
+                                        ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : null;
+                      final hint = ElioPopIn(
+                        rise: 12,
+                        delay: const Duration(milliseconds: 120),
+                        child: _Pill(text: l10n.scanHoldSteady, color: scrim),
+                      );
+                      // Phone landscape: the hint sits in the top bar and the
+                      // shutter column on the right, so nothing runs off screen.
+                      // Close, title, (hint in landscape), flash.
+                      Widget header({Widget? middle}) => Padding(
                         padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
                         child: Row(
                           children: [
@@ -224,6 +337,7 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
                               ),
                             ),
                             const Spacer(),
+                            if (middle != null) ...[middle, const Spacer()],
                             // Flash (629:90736): lights dim rooms, glows when on.
                             IconButton(
                               key: const ValueKey('scan_flash'),
@@ -265,147 +379,67 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
                             ),
                           ],
                         ),
-                      ),
-                      const Spacer(),
-                      ElioPopIn(
-                        rise: 12,
-                        delay: const Duration(milliseconds: 120),
-                        child: _Pill(text: l10n.scanHoldSteady, color: scrim),
-                      ),
-                      SizedBox(height: phoneScanBox.height + 48),
-                      const Spacer(),
-                      // Zoom steps the camera can do; a pinch lands between.
-                      if (ready && _source.maxZoom >= 2)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const ShapeDecoration(
-                              color: scrim,
-                              shape: StadiumBorder(),
+                      );
+                      if (box.maxWidth > box.maxHeight) {
+                        return Stack(
+                          children: [
+                            header(middle: hint),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    ?gallery,
+                                    const SizedBox(height: 16),
+                                    shutter,
+                                    const SizedBox(height: 16),
+                                    sourcePill,
+                                  ],
+                                ),
+                              ),
                             ),
+                            if (zoomSteps != null)
+                              Align(
+                                alignment: Alignment.bottomCenter,
+                                child: zoomSteps,
+                              ),
+                          ],
+                        );
+                      }
+                      return Column(
+                        children: [
+                          header(),
+                          const Spacer(),
+                          hint,
+                          SizedBox(height: phoneScanBox.height + 48),
+                          const Spacer(),
+                          ?zoomSteps,
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                             child: Row(
-                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                for (final z in const [1.0, 2.0, 3.0, 5.0])
-                                  if (z <= _source.maxZoom)
-                                    _ZoomStep(
-                                      zoom: z,
-                                      selected: _source.zoom.round() == z,
-                                      label: _source.zoom.round() == z
-                                          ? _source.zoom
-                                          : z,
-                                      onTap: () {
-                                        elioFeedback(
-                                          ElioSfx.tick,
-                                          ElioHaptics.select,
-                                        );
-                                        _source.setZoom(z);
-                                      },
-                                    ),
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: gallery,
+                                  ),
+                                ),
+                                shutter,
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: sourcePill,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                // The sandboxed Mac build cannot open files.
-                                child: _noGallery
-                                    ? null
-                                    : ElioPopIn(
-                                        rise: 12,
-                                        delay: const Duration(
-                                          milliseconds: 180,
-                                        ),
-                                        child: ElioPress(
-                                          pressed: 0.92,
-                                          child: IconButton(
-                                            key: const ValueKey('scan_gallery'),
-                                            tooltip: l10n.scanGallery,
-                                            onPressed: _pickFromGallery,
-                                            style: IconButton.styleFrom(
-                                              backgroundColor: scrim,
-                                              minimumSize: const Size.square(
-                                                52,
-                                              ),
-                                            ),
-                                            icon: const Icon(
-                                              Icons.photo_library_rounded,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                              ),
-                            ),
-                            Semantics(
-                              button: true,
-                              label: l10n.scanTakePhoto,
-                              excludeSemantics: true,
-                              onTap: ready ? _capture : null,
-                              child: GestureDetector(
-                                onTap: ready ? _capture : null,
-                                onTapDown: (_) => setState(() => _down = true),
-                                onTapUp: (_) => setState(() => _down = false),
-                                onTapCancel: () =>
-                                    setState(() => _down = false),
-                                child: Container(
-                                  width: 76,
-                                  height: 76,
-                                  padding: const EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 4,
-                                    ),
-                                  ),
-                                  // Shutter: the inner circle scales 0.85 (90 ms).
-                                  child: AnimatedScale(
-                                    scale: _down || _capturing ? 0.85 : 1,
-                                    duration: ElioMotion.instant,
-                                    child: DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        color: _capturing || !ready
-                                            ? p.primary.withValues(alpha: 0.5)
-                                            : p.primary,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: ElioPopIn(
-                                  rise: 12,
-                                  delay: const Duration(milliseconds: 180),
-                                  child: _Pill(
-                                    text: source == QuestionSource.ai
-                                        ? l10n.scanAiQuiz
-                                        : l10n.questionBank,
-                                    color: scrim,
-                                    icon: source == QuestionSource.ai
-                                        ? null
-                                        : Icons.storage_rounded,
-                                    leading: source == QuestionSource.ai
-                                        ? const EliosAiBadge(size: 20)
-                                        : null,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                 ),
                 // Shutter flash: white 0 → 60 % → 0 over 180 ms.
