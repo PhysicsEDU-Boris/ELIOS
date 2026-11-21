@@ -79,9 +79,13 @@ WasteQuizUiState _active(GeneratedQuestion q, {bool voiceOn = false}) =>
       voiceOn: voiceOn,
     );
 
-Future<void> _pumpPages(WidgetTester t, ProviderContainer c) async {
+Future<void> _pumpPages(
+  WidgetTester t,
+  ProviderContainer c, {
+  Size size = const Size(390, 844),
+}) async {
   t.view.devicePixelRatio = 1;
-  t.view.physicalSize = const Size(390, 844);
+  t.view.physicalSize = size;
   addTearDown(t.view.reset);
   await t.pumpWidget(
     UncontrolledProviderScope(
@@ -286,6 +290,21 @@ void main() {
       await _settle(t);
       expect(find.text('Leave the quiz?'), findsNothing);
       expect(c.read(wasteQuizProvider), same(before));
+    });
+
+    testWidgets('phone landscape: the whole sheet fits, Leave included', (
+      t,
+    ) async {
+      final c = _container(_active(_essayQ).copyWith(questionIndex: 1));
+      await _pumpPages(t, c, size: const Size(915, 412));
+      await t.binding.handlePopRoute();
+      await _settle(t);
+      expect(t.takeException(), isNull, reason: 'no overflow');
+      final leave = t.getRect(find.byKey(const ValueKey('quiz_leave_leave')));
+      expect(leave.bottom, lessThanOrEqualTo(412));
+      await t.tap(find.byKey(const ValueKey('quiz_leave_leave')));
+      await _settle(t);
+      expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.idle);
     });
 
     testWidgets('back + "Leave" ends the quiz', (t) async {

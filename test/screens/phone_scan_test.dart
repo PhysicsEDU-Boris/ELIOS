@@ -107,6 +107,11 @@ void main() {
       ),
       isTrue,
     );
+    // The zoom pill keeps its own height (it stretched to the screen once).
+    expect(
+      t.getSize(find.byKey(const ValueKey('scan_zoom_3'))).height,
+      lessThan(80),
+    );
   });
 
   testWidgets('a camera without zoom shows no zoom steps', (t) async {

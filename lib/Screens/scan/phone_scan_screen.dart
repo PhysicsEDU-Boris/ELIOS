@@ -401,10 +401,13 @@ class _PhoneScanScreenState extends ConsumerState<PhoneScanScreen> {
                                 ),
                               ),
                             ),
+                            // Bottom only: the pill keeps its own height.
                             if (zoomSteps != null)
-                              Align(
-                                alignment: Alignment.bottomCenter,
-                                child: zoomSteps,
+                              Positioned(
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                child: Center(child: zoomSteps),
                               ),
                           ],
                         );

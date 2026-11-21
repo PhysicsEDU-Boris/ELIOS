@@ -348,6 +348,7 @@ class _HubContentState extends ConsumerState<_HubContent> {
     final lessonsLoaded = videos != null && guides != null;
     final firstLaunch = isFirstLaunch(progress);
     final clovers = ref.watch(cloverTallyProvider);
+    ref.watch(learningSyncProvider); // sends videos and clovers to the Insights dashboard
     final overall = clovers.fraction;
     final values = [
       for (final m in modules) moduleProgress(m.id, lessons, progress),

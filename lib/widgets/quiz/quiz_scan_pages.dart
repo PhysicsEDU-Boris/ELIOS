@@ -94,8 +94,11 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
       context: context,
       backgroundColor: p.surface,
       showDragHandle: true,
+      // Not capped at 9/16 of the screen: in phone landscape that cut off
+      // Leave (found on the phone, 21 Nov).
+      isScrollControlled: true,
       builder: (sheet) => SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
           child: Column(
             key: const ValueKey('quiz_leave_sheet'),
