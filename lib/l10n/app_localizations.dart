@@ -11488,19 +11488,19 @@ abstract class AppLocalizations {
   /// No description provided for @tipModuleB.
   ///
   /// In en, this message translates to:
-  /// **'Lessons open in order. Finish one to unlock the next and fill the module ring.'**
+  /// **'Tap a lesson to watch or read it. Every lesson you finish fills the module ring.'**
   String get tipModuleB;
 
   /// No description provided for @tipLessonT.
   ///
   /// In en, this message translates to:
-  /// **'Watch, then check'**
+  /// **'Watch or read'**
   String get tipLessonT;
 
   /// No description provided for @tipLessonB.
   ///
   /// In en, this message translates to:
-  /// **'Watch the short video, then tap the button to answer and earn XP.'**
+  /// **'Tap the button below to play the video or open the guide. Finished lessons fill your module ring.'**
   String get tipLessonB;
 
   /// No description provided for @tipSimT.
@@ -11512,7 +11512,7 @@ abstract class AppLocalizations {
   /// No description provided for @tipSimB.
   ///
   /// In en, this message translates to:
-  /// **'Read Materi first, then open the simulation tab and change the values. There is no wrong move here.'**
+  /// **'Read Theory first, then open Simulations and change the values. There is no wrong move here.'**
   String get tipSimB;
 
   /// No description provided for @tipQuizT.
@@ -11584,7 +11584,7 @@ abstract class AppLocalizations {
   /// No description provided for @tipQq1B.
   ///
   /// In en, this message translates to:
-  /// **'One dot per question. Green means answered.'**
+  /// **'One chip per question. Green means answered.'**
   String get tipQq1B;
 
   /// No description provided for @tipQq2T.
@@ -11596,7 +11596,7 @@ abstract class AppLocalizations {
   /// No description provided for @tipQq2B.
   ///
   /// In en, this message translates to:
-  /// **'Choose an answer, then tap Check. Swipe for the next card.'**
+  /// **'Choose an answer, tap Check, then go on to the next card.'**
   String get tipQq2B;
 
   /// No description provided for @tipQq3T.
@@ -11620,7 +11620,7 @@ abstract class AppLocalizations {
   /// No description provided for @tipLabB.
   ///
   /// In en, this message translates to:
-  /// **'Try the small experiment at home and add a photo. ELIOS checks it and gives you a badge.'**
+  /// **'Try the small experiment at home, then record a short video or take 3 photos. ELIOS checks it and gives you a badge.'**
   String get tipLabB;
 
   /// No description provided for @tipCamT.

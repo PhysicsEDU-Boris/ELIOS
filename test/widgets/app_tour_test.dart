@@ -160,4 +160,17 @@ void main() {
     await t.pump(const Duration(seconds: 4));
     expect(up, 1);
   });
+
+  test(
+    'landscape, wide target, no full gap: the card sits in the bigger gap',
+    () {
+      const screen = Size(915, 412);
+      // A wide quest-map row: 140 px above it, 152 px below, card is 176 tall.
+      const hole = Rect.fromLTRB(160, 140, 896, 260);
+      final p = tourCardBeside(screen, hole, const SizedBox()) as Positioned;
+      expect(p.top, isNotNull);
+      expect(p.top! + 176, lessThanOrEqualTo(412 - 12), reason: 'on screen');
+      expect(p.top!, greaterThan(hole.center.dy), reason: 'below, not on top');
+    },
+  );
 }

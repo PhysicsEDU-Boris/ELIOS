@@ -6683,21 +6683,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tipModuleB =>
-      'Lessons open in order. Finish one to unlock the next and fill the module ring.';
+      'Tap a lesson to watch or read it. Every lesson you finish fills the module ring.';
 
   @override
-  String get tipLessonT => 'Watch, then check';
+  String get tipLessonT => 'Watch or read';
 
   @override
   String get tipLessonB =>
-      'Watch the short video, then tap the button to answer and earn XP.';
+      'Tap the button below to play the video or open the guide. Finished lessons fill your module ring.';
 
   @override
   String get tipSimT => 'Theory, then play';
 
   @override
   String get tipSimB =>
-      'Read Materi first, then open the simulation tab and change the values. There is no wrong move here.';
+      'Read Theory first, then open Simulations and change the values. There is no wrong move here.';
 
   @override
   String get tipQuizT => 'Answer for XP';
@@ -6738,14 +6738,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tipQq1T => 'Your cards';
 
   @override
-  String get tipQq1B => 'One dot per question. Green means answered.';
+  String get tipQq1B => 'One chip per question. Green means answered.';
 
   @override
   String get tipQq2T => 'Pick, then check';
 
   @override
   String get tipQq2B =>
-      'Choose an answer, then tap Check. Swipe for the next card.';
+      'Choose an answer, tap Check, then go on to the next card.';
 
   @override
   String get tipQq3T => 'Your result';
@@ -6759,7 +6759,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tipLabB =>
-      'Try the small experiment at home and add a photo. ELIOS checks it and gives you a badge.';
+      'Try the small experiment at home, then record a short video or take 3 photos. ELIOS checks it and gives you a badge.';
 
   @override
   String get tipCamT => 'Fill the frame';

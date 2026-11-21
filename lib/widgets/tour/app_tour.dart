@@ -323,10 +323,13 @@ Widget tourCardBeside(
       child: card,
     );
   }
-  // Huge target: the card sits over its lower part.
+  // No full gap (short landscape screen, big target): the bigger gap, kept on
+  // screen, so the card covers as little of the target as it can.
   return Positioned(
     left: clampX(hole.center.dx - w / 2),
-    bottom: edge + 72,
+    top: below
+        ? math.min(hole.bottom + gap, screen.height - h - edge)
+        : math.max(edge, hole.top - gap - h),
     width: w,
     child: card,
   );

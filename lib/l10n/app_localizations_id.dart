@@ -6586,21 +6586,21 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get tipModuleB =>
-      'Pelajaran terbuka berurutan. Selesaikan satu untuk membuka berikutnya dan mengisi cincin modul.';
+      'Ketuk pelajaran untuk menonton atau membacanya. Setiap pelajaran yang selesai mengisi cincin modul.';
 
   @override
-  String get tipLessonT => 'Tonton, lalu cek';
+  String get tipLessonT => 'Tonton atau baca';
 
   @override
   String get tipLessonB =>
-      'Tonton video singkatnya, lalu ketuk tombol untuk menjawab dan dapat XP.';
+      'Ketuk tombol di bawah untuk memutar video atau membuka panduan. Pelajaran yang selesai mengisi cincin modul.';
 
   @override
   String get tipSimT => 'Teori, lalu bermain';
 
   @override
   String get tipSimB =>
-      'Baca Materi dulu, lalu buka tab simulasi dan ubah nilainya. Tidak ada langkah yang salah di sini.';
+      'Baca Materi dulu, lalu buka Simulasi dan ubah nilainya. Tidak ada langkah yang salah di sini.';
 
   @override
   String get tipQuizT => 'Jawab untuk XP';
@@ -6641,14 +6641,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get tipQq1T => 'Kartumu';
 
   @override
-  String get tipQq1B => 'Satu titik per soal. Hijau berarti sudah dijawab.';
+  String get tipQq1B => 'Satu chip per soal. Hijau berarti sudah dijawab.';
 
   @override
   String get tipQq2T => 'Pilih, lalu cek';
 
   @override
   String get tipQq2B =>
-      'Pilih jawaban, lalu ketuk Cek. Geser untuk kartu berikutnya.';
+      'Pilih jawaban, ketuk Cek, lalu lanjut ke kartu berikutnya.';
 
   @override
   String get tipQq3T => 'Hasilmu';
@@ -6662,7 +6662,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get tipLabB =>
-      'Coba eksperimen kecil di rumah dan tambahkan foto. ELIOS memeriksanya dan memberimu lencana.';
+      'Coba eksperimen kecil di rumah, lalu rekam video singkat atau ambil 3 foto. ELIOS memeriksanya dan memberimu lencana.';
 
   @override
   String get tipCamT => 'Penuhi bingkai';
