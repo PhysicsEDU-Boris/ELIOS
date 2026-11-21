@@ -1,3 +1,6 @@
+## App onboarding tour — `feat/app-onboarding-tour` (0238, 21 Nov, from `feature/live-scan` 806dcdf)
+`lib/widgets/tour/app_tour.dart` (engine: `AppTour.run`, `TourTip`, `TourKeys`; Control guide reuses its card + painter) and `main_tour.dart` (Welcome, `mainTourParts`). Shell shows Welcome once (`tour_welcome_seen`) and runs parts on `AppTour.request`. 20 screens wrapped in `TourTip` (`tour_tip_<id>`); scan pages skip robot screens (STOP). Profile ▸ App tour section. Quiz countdown waits while a tour shows. Figma ELIOS 3 · 18 (933:31650).
+Landscape fixes: camera controls column (`phone_scan_screen.dart`), Leave sheet `isScrollControlled`, tour lists `scrollCacheExtent: tourCacheExtent`, card in the bigger gap. Tests: `app_tour_test.dart` (6), landscape tests in `phone_scan_test` + `quiz_review_bugs_test` (all break-checked); 2104 passed. Phone APK `46af29f`: main tour, Learn + History + scan tours checked (build notes). Open: physics quiz tip not run (one-attempt quizzes). Also: `RecordQuestion.placeholderIn` shows "(waktu habis)" / "(dilewati)" in the app language (`localized()`), test `test/models/answer_placeholder_test.dart`.
 ## MaixCAM2 Arduino drive — `feat/maixcam2-arduino-drive` (0237, 19 Nov, from `feature/live-scan` 806dcdf)
 `main.py`: `UART2_SLAVE="arduino"`, `drive_char()` maps app `motor` left/right → `F/B/L/R/S` on `/dev/ttyS2` 9600; last client gone → `S`; arm frames not written while the Arduino owns UART2. Deployed over SSH (root@10.136.181.84) 19 Nov, ping sha `16bbc99e…` verified (3rd deploy: 500 ms drive watchdog, live `[Drive]` log on changes; 2nd deploy: WASD-style mapping + deadband after the wheels only nudged; Arduino lines logged as `[Drive] Arduino:`); old main.py in `/root/backup/elios_clean_m2c_v1_2026-11-19_predrive/`.
 Tests: `firmware/maixcam2/test_drive_char.py` + arm bridge 21 passed. Open: wheels not seen moving yet (owner to drive from the phone), arm off until wheels move to UART1, no speed control.
@@ -57,4 +60,3 @@ Merged build: `flutter analyze` clean, full suite 1949 passed / 20 skipped, secr
 | Essay explanation | pass | not run (needs a real essay quiz) | not run |
 | Bin check right + wrong, STOP | pass | n/a (robot only) | not run |
 | Sound + haptics on new taps | cues asserted in tests | not heard / felt | not run |
-| Reduce motion on new animations | pass | not run | not run |

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import '../../../widgets/tour/app_tour.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -248,10 +249,18 @@ class _ModuleBodyState extends ConsumerState<ModuleBody> {
               else if (list.isEmpty)
                 LearnHintCard(text: l10n.lnNothingModule)
               else
-                _LessonGrid(
-                  lessons: list,
-                  progress: progress,
-                  onOpen: (l) => _push(LessonPage(lesson: l)),
+                TourTip(
+                  id: 'module',
+                  label: () => l10n.tourLblModule,
+                  steps: (k) => [
+                    TourStep(k[0], l10n.tipModuleT, l10n.tipModuleB),
+                  ],
+                  builder: (context, k) => _LessonGrid(
+                    key: k[0],
+                    lessons: list,
+                    progress: progress,
+                    onOpen: (l) => _push(LessonPage(lesson: l)),
+                  ),
                 ),
               const SizedBox(height: 32),
               L3SectionTitle(title: l10n.lnSimulation),
@@ -619,6 +628,7 @@ class _Tags extends StatelessWidget {
 /// Two-column grid of small pop cards; rows pop in 60 ms apart (max 6).
 class _LessonGrid extends StatelessWidget {
   const _LessonGrid({
+    super.key,
     required this.lessons,
     required this.progress,
     required this.onOpen,

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/clovers.dart';
@@ -43,4 +46,45 @@ final cloverTallyProvider = Provider<CloverTally>((ref) {
           ),
     ],
   );
+});
+
+/// Sends the learning snapshot (videos started/watched, clovers) to the guides backend for the
+/// ELIOS Insights dashboard, a few seconds after it changes. Best effort: a failed send is
+/// retried on the next change or app start. Kept alive by the Learn tab.
+final learningSyncProvider = Provider<void>((ref) {
+  Timer? timer;
+  String? sent;
+  ref.onDispose(() => timer?.cancel());
+  void schedule() {
+    final call = ref.read(guidesCallProvider);
+    final progress = ref.read(learningProgressProvider).valueOrNull;
+    final tally = ref.read(cloverTallyProvider);
+    // possible == 0 means the catalogue has not loaded yet; never overwrite real numbers with 0/0.
+    if (call == null || progress == null || tally.possible == 0) return;
+    final body = <String, dynamic>{
+      'op': 'learning',
+      'started_video_ids': progress.videoWatchProgress.keys.toList()..sort(),
+      'watched_video_ids': progress.completedVideoIds.toList()..sort(),
+      'clovers_earned': tally.earned,
+      'clovers_possible': tally.possible,
+    };
+    final key = jsonEncode(body);
+    if (key == sent) return;
+    timer?.cancel();
+    timer = Timer(const Duration(seconds: 5), () async {
+      try {
+        await call(body);
+        sent = key;
+      } catch (_) {
+        // Offline or backend down: the next change sends it again.
+      }
+    });
+  }
+
+  ref.listen(guidesCallProvider, (_, _) {
+    sent = null; // another account: its row needs its own snapshot
+    schedule();
+  });
+  ref.listen(cloverTallyProvider, (_, _) => schedule());
+  ref.listen(learningProgressProvider, (_, _) => schedule(), fireImmediately: true);
 });

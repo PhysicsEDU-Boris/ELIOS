@@ -2977,6 +2977,8 @@ class _QuizCountdownState extends State<QuizCountdown> {
   void initState() {
     super.initState();
     _tick = Timer.periodic(const Duration(seconds: 1), (t) {
+      // Paused while a first-visit tour card is on screen (0238).
+      if (AppTour.running) return;
       setState(() => _left--);
       // Figma 13 · 28: a tick per second in the last 3 s, no haptics.
       if (_left > 0 && _left <= 3) {

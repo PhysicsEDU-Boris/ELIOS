@@ -10,8 +10,8 @@ hashes updated after the history rewrite on 2026-10-08. The old-to-new map is
 kept outside the repo.
 
 ## [Unreleased]
-
-### Added
+- Fixed: a skipped or timed-out question in History (and its PDF) showed "(waktu habis)" / "(dilewati)" in the English app. The placeholder now follows the app language.
+- App tour (0238): new users see three Welcome pages, then a short tour of Home, Learn, Scan, History and Profile. The first time you open a screen inside the app (a lesson, the daily guide, the camera, a scan result, the answer review with ELIOS AI, the PDF export, the scan timeline and more) a short tour shows what each part does. Profile has a new App tour section: replay the whole tour or one tab, and turn the screen tours off. Tours never show on robot pages, so STOP stays reachable. Works in light and dark, English and Bahasa Indonesia.
 - MaixCAM2 drives the wheels: `motor` → Arduino `codeMotorSlave.ino` on UART2 (`F/B/L/R/S`), stop when the app disconnects; arm frames off UART2 while the Arduino owns it (0237).
 - Smoother arm sliders (0236): dragging the gripper, Height or Reach slider now sends the arm at most 10 moves a second instead of one for every finger movement (about 60 per drag before). The arm still ends exactly where the slider stops, and STOP drops any move that was waiting.
 - Robot arm bridge (0235): the robot's camera board now passes the arm moves from the app to the arm's controller, so HOME, the gripper, Height, Reach and the base joystick will move the real arm once the new camera firmware is installed. It checks every move again so the arm never swings into the tank, holds the arm if the app goes quiet for a second, and only drops an item into a bin after it has seen that bin's tag. Picking stays manual with the gripper slider.

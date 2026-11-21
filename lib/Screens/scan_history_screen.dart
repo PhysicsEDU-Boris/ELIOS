@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../widgets/tour/app_tour.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/scan_record.dart';
@@ -480,6 +481,7 @@ class ScanDetailScreen extends StatefulWidget {
 }
 
 class _ScanDetailScreenState extends State<ScanDetailScreen> {
+  final _exportKey = GlobalKey();
   ScanRecord get _saved =>
       widget.store.records.where((r) => r.id == widget.record.id).firstOrNull ??
       widget.record;
@@ -598,6 +600,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
   Widget build(BuildContext context) {
     final p = authPalette(context), t = context.l10n;
     final bar = _DetailBar(
+      exportKey: _exportKey,
       showBack: !embedded,
       onExport: () {
         elioFeedback(ElioSfx.pop, ElioHaptics.light);
@@ -624,176 +627,184 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
       curve: pop ? ElioMotion.pop : ElioMotion.emphasized,
       child: child,
     );
-    return Scaffold(
-      backgroundColor: p.background,
-      appBar: bar,
-      body: ListView(
-        key: const ValueKey('detail_list_view'),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
-          // The saved text shows at once; its translation fills in place.
-          if (_original || _translating)
-            HistoryOriginalNote(
-              lang: _saved.lang,
-              busy: _translating,
-              onRetry: () => unawaited(_translate()),
-            ),
-          // Polaroid (629:99667): tilted 2°, the photo morphs in (Hero), the
-          // date sticker drops onto its top edge.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 22, 4, 0),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Transform.rotate(
-                  angle: 2 * math.pi / 180,
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 2),
-                    decoration: BoxDecoration(
-                      color: p.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x29000000),
-                          blurRadius: 8,
-                          offset: Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        HistoryPhotoFrame(
-                          record,
-                          height: 163,
-                          radius: 18,
-                          onOpen: historyHasPhoto(record)
-                              ? () {
-                                  elioFeedback(ElioSfx.pop, ElioHaptics.light);
-                                  HistoryPhotoViewer.open(context, record);
-                                }
-                              : null,
-                        ),
-                        const SizedBox(height: 55),
-                        Text(
-                          '${record.itemName} · ${historyDay(t, record.time)}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: homeCaption(p),
-                        ),
-                      ],
+    return TourTip(
+      id: 'scan_detail',
+      label: () => l10n.tourLblDetail,
+      steps: (_) => [TourStep(_exportKey, l10n.tipDetailT, l10n.tipDetailB)],
+      builder: (context, _) => Scaffold(
+        backgroundColor: p.background,
+        appBar: bar,
+        body: ListView(
+          key: const ValueKey('detail_list_view'),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          children: [
+            // The saved text shows at once; its translation fills in place.
+            if (_original || _translating)
+              HistoryOriginalNote(
+                lang: _saved.lang,
+                busy: _translating,
+                onRetry: () => unawaited(_translate()),
+              ),
+            // Polaroid (629:99667): tilted 2°, the photo morphs in (Hero), the
+            // date sticker drops onto its top edge.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 22, 4, 0),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Transform.rotate(
+                    angle: 2 * math.pi / 180,
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 2),
+                      decoration: BoxDecoration(
+                        color: p.surface,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x29000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          HistoryPhotoFrame(
+                            record,
+                            height: 163,
+                            radius: 18,
+                            onOpen: historyHasPhoto(record)
+                                ? () {
+                                    elioFeedback(
+                                      ElioSfx.pop,
+                                      ElioHaptics.light,
+                                    );
+                                    HistoryPhotoViewer.open(context, record);
+                                  }
+                                : null,
+                          ),
+                          const SizedBox(height: 55),
+                          Text(
+                            '${record.itemName} · ${historyDay(t, record.time)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: homeCaption(p),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                Positioned(
-                  right: 44,
-                  top: -22,
-                  child: ElioPopIn(
-                    delay: const Duration(milliseconds: 320),
-                    rise: -24,
-                    scale: 0.4,
-                    curve: ElioMotion.pop,
-                    child: HomeBoing(
-                      turn: 0.12,
-                      sfx: ElioSfx.tick,
-                      haptic: ElioHaptics.select,
-                      child: Transform.rotate(
-                        angle: -8 * math.pi / 180,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: ShapeDecoration(
-                            color: p.secondaryText,
-                            shape: const StadiumBorder(),
-                            shadows: const [
-                              BoxShadow(
-                                color: Color(0x24000000),
-                                blurRadius: 4,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.calendar_today_outlined,
-                                size: 13,
-                                color: p.onPrimary,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                historyDay(t, record.time),
-                                style: homeCaption(
-                                  p,
-                                  color: p.onPrimary,
-                                  weight: 700,
+                  Positioned(
+                    right: 44,
+                    top: -22,
+                    child: ElioPopIn(
+                      delay: const Duration(milliseconds: 320),
+                      rise: -24,
+                      scale: 0.4,
+                      curve: ElioMotion.pop,
+                      child: HomeBoing(
+                        turn: 0.12,
+                        sfx: ElioSfx.tick,
+                        haptic: ElioHaptics.select,
+                        child: Transform.rotate(
+                          angle: -8 * math.pi / 180,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: ShapeDecoration(
+                              color: p.secondaryText,
+                              shape: const StadiumBorder(),
+                              shadows: const [
+                                BoxShadow(
+                                  color: Color(0x24000000),
+                                  blurRadius: 4,
+                                  offset: Offset(0, 3),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.calendar_today_outlined,
+                                  size: 13,
+                                  color: p.onPrimary,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  historyDay(t, record.time),
+                                  style: homeCaption(
+                                    p,
+                                    color: p.onPrimary,
+                                    weight: 700,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          enter(
-            Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    record.itemName,
-                    style: ElioTokens.headline.copyWith(color: p.textPrimary),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                _categoryChip(p, t),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          HistoryResultStats(record),
-          const SizedBox(height: 16),
-          enter(HistoryDifficultyTabs(record)),
-          const SizedBox(height: 24),
-          HomeReveal(
-            id: 'questions',
-            seen: _seen,
-            delay: const Duration(milliseconds: 300),
-            builder: (context, a) =>
-                HomeHead(a: a, title: t.h3Questions, squiggle: 84),
-          ),
-          const SizedBox(height: 6),
-          for (var i = 0; i < record.questions.length; i++)
-            enter(
-              HistoryQuestionCard(
-                record.questions[i],
-                i,
-                onExplain: () {
-                  elioFeedback(ElioSfx.pop, ElioHaptics.light);
-                  final theme = Theme.of(context);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => Theme(
-                        data: theme,
-                        child: QuestionExplanationScreen(
-                          record: _saved,
-                          questionIndex: i,
-                          store: store,
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                ],
               ),
             ),
-        ],
+            const SizedBox(height: 18),
+            enter(
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      record.itemName,
+                      style: ElioTokens.headline.copyWith(color: p.textPrimary),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _categoryChip(p, t),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            HistoryResultStats(record),
+            const SizedBox(height: 16),
+            enter(HistoryDifficultyTabs(record)),
+            const SizedBox(height: 24),
+            HomeReveal(
+              id: 'questions',
+              seen: _seen,
+              delay: const Duration(milliseconds: 300),
+              builder: (context, a) =>
+                  HomeHead(a: a, title: t.h3Questions, squiggle: 84),
+            ),
+            const SizedBox(height: 6),
+            for (var i = 0; i < record.questions.length; i++)
+              enter(
+                HistoryQuestionCard(
+                  record.questions[i],
+                  i,
+                  onExplain: () {
+                    elioFeedback(ElioSfx.pop, ElioHaptics.light);
+                    final theme = Theme.of(context);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => Theme(
+                          data: theme,
+                          child: QuestionExplanationScreen(
+                            record: _saved,
+                            questionIndex: i,
+                            store: store,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -806,8 +817,15 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
 
 /// Scan detail top bar (629:99655-66): round Back, title, Export PDF pill.
 class _DetailBar extends StatelessWidget implements PreferredSizeWidget {
-  const _DetailBar({required this.showBack, required this.onExport});
+  const _DetailBar({
+    required this.showBack,
+    required this.onExport,
+    this.exportKey,
+  });
   final bool showBack;
+
+  /// Spotlight target of the first-visit tour (Figma 18 · H).
+  final Key? exportKey;
   final VoidCallback onExport;
 
   @override
@@ -864,6 +882,7 @@ class _DetailBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
                 const SizedBox(width: 8),
                 ElioPress(
+                  key: exportKey,
                   child: Tooltip(
                     message: t.h3ExportPdf,
                     child: Material(

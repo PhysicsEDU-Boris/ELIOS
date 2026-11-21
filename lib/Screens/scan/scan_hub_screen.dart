@@ -1,6 +1,7 @@
 // ELIOS 3 Scan hub, the centre tab (Figma 629:90675): Scan & quiz with the
 // phone, Robot scan (Select vehicle → ELIOS setup → Control), Scan to
 // contribute.
+import '../../widgets/tour/app_tour.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -43,6 +44,7 @@ class ScanHubScreen extends StatelessWidget {
                     index: 0,
                     stagger: const Duration(milliseconds: 60),
                     rise: 24,
+                    key: TourKeys.scanPhone,
                     child: ElioPress(
                       child: _PhoneCard(
                         onOpen: () {
@@ -61,6 +63,7 @@ class ScanHubScreen extends StatelessWidget {
                     index: 1,
                     stagger: const Duration(milliseconds: 60),
                     rise: 24,
+                    key: TourKeys.scanRobot,
                     child: ElioPress(
                       child: _RobotCard(
                         onOpen: () {
@@ -79,6 +82,7 @@ class ScanHubScreen extends StatelessWidget {
                     index: 2,
                     stagger: const Duration(milliseconds: 60),
                     rise: 24,
+                    key: TourKeys.scanContribute,
                     child: ElioPress(
                       child: _ContributeCard(
                         onOpen: () {
