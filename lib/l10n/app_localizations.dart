@@ -10980,6 +10980,936 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get advCancel;
+
+  /// No description provided for @tourGotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get tourGotIt;
+
+  /// No description provided for @tourAppTour.
+  ///
+  /// In en, this message translates to:
+  /// **'App tour'**
+  String get tourAppTour;
+
+  /// No description provided for @tourTakeTour.
+  ///
+  /// In en, this message translates to:
+  /// **'Take the tour'**
+  String get tourTakeTour;
+
+  /// No description provided for @tourTakeTourSub.
+  ///
+  /// In en, this message translates to:
+  /// **'See every tab in about 2 minutes'**
+  String get tourTakeTourSub;
+
+  /// No description provided for @tourStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get tourStart;
+
+  /// No description provided for @tourReplayOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay one screen'**
+  String get tourReplayOne;
+
+  /// No description provided for @tourTips.
+  ///
+  /// In en, this message translates to:
+  /// **'Show tips on new screens'**
+  String get tourTips;
+
+  /// No description provided for @tourTipsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'A short tip the first time you open a screen'**
+  String get tourTipsSub;
+
+  /// No description provided for @tourRobotControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot control'**
+  String get tourRobotControl;
+
+  /// No description provided for @tourRobotNext.
+  ///
+  /// In en, this message translates to:
+  /// **'The robot guide opens next time you open robot control.'**
+  String get tourRobotNext;
+
+  /// No description provided for @tourW1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi! I\'m ELIOS'**
+  String get tourW1Title;
+
+  /// No description provided for @tourW1Body.
+  ///
+  /// In en, this message translates to:
+  /// **'I help you sort waste, learn the science behind it, and earn XP while you do it.'**
+  String get tourW1Body;
+
+  /// No description provided for @tourW2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Three ways to play'**
+  String get tourW2Title;
+
+  /// No description provided for @tourW2Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the one you like. You can switch any time.'**
+  String get tourW2Body;
+
+  /// No description provided for @tourWayLearn.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn'**
+  String get tourWayLearn;
+
+  /// No description provided for @tourWayScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan'**
+  String get tourWayScan;
+
+  /// No description provided for @tourWayRobot.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot'**
+  String get tourWayRobot;
+
+  /// No description provided for @tourW3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a quick tour?'**
+  String get tourW3Title;
+
+  /// No description provided for @tourW3Body.
+  ///
+  /// In en, this message translates to:
+  /// **'About 2 minutes. You can replay it any time in Profile ▸ App tour.'**
+  String get tourW3Body;
+
+  /// No description provided for @tourStartTour.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the tour'**
+  String get tourStartTour;
+
+  /// No description provided for @tourMaybeLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Maybe later'**
+  String get tourMaybeLater;
+
+  /// No description provided for @tourDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re ready, Eco Explorer!'**
+  String get tourDoneTitle;
+
+  /// No description provided for @tourDoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan your first item to earn XP. Replay this tour any time in Profile ▸ App tour.'**
+  String get tourDoneBody;
+
+  /// No description provided for @tourLblHome.
+  ///
+  /// In en, this message translates to:
+  /// **'HOME'**
+  String get tourLblHome;
+
+  /// No description provided for @tourLblLearn.
+  ///
+  /// In en, this message translates to:
+  /// **'LEARN'**
+  String get tourLblLearn;
+
+  /// No description provided for @tourLblScan.
+  ///
+  /// In en, this message translates to:
+  /// **'SCAN'**
+  String get tourLblScan;
+
+  /// No description provided for @tourLblHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'HISTORY'**
+  String get tourLblHistory;
+
+  /// No description provided for @tourLblProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'PROFILE'**
+  String get tourLblProfile;
+
+  /// No description provided for @tourHome1T.
+  ///
+  /// In en, this message translates to:
+  /// **'Your eco tree'**
+  String get tourHome1T;
+
+  /// No description provided for @tourHome1B.
+  ///
+  /// In en, this message translates to:
+  /// **'Every scan and right answer earns XP. The ring fills and your tree grows a level.'**
+  String get tourHome1B;
+
+  /// No description provided for @tourHome2T.
+  ///
+  /// In en, this message translates to:
+  /// **'Your stats'**
+  String get tourHome2T;
+
+  /// No description provided for @tourHome2B.
+  ///
+  /// In en, this message translates to:
+  /// **'Scans, quiz accuracy and your day streak. Come back every day to keep the flame alive.'**
+  String get tourHome2B;
+
+  /// No description provided for @tourHome3T.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily quests'**
+  String get tourHome3T;
+
+  /// No description provided for @tourHome3B.
+  ///
+  /// In en, this message translates to:
+  /// **'Three small goals each day. Finish them for bonus XP. They reset at midnight.'**
+  String get tourHome3B;
+
+  /// No description provided for @tourHome4T.
+  ///
+  /// In en, this message translates to:
+  /// **'Bin buddies'**
+  String get tourHome4T;
+
+  /// No description provided for @tourHome4B.
+  ///
+  /// In en, this message translates to:
+  /// **'Organik, Anorganik and B3. Each scan feeds the right bin, so you learn where waste goes.'**
+  String get tourHome4B;
+
+  /// No description provided for @tourHome5T.
+  ///
+  /// In en, this message translates to:
+  /// **'Search and alerts'**
+  String get tourHome5T;
+
+  /// No description provided for @tourHome5B.
+  ///
+  /// In en, this message translates to:
+  /// **'Find lessons, simulations and old scans. The bell shows robot and quiz alerts.'**
+  String get tourHome5B;
+
+  /// No description provided for @tourHome6T.
+  ///
+  /// In en, this message translates to:
+  /// **'Five tabs, one big button'**
+  String get tourHome6T;
+
+  /// No description provided for @tourHome6B.
+  ///
+  /// In en, this message translates to:
+  /// **'Home, Learn, Scan, History and Profile. The green button starts a scan from anywhere.'**
+  String get tourHome6B;
+
+  /// No description provided for @tourLearn1T.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Learn progress'**
+  String get tourLearn1T;
+
+  /// No description provided for @tourLearn1B.
+  ///
+  /// In en, this message translates to:
+  /// **'The ring fills as you finish modules. Clovers come from Daily Guides.'**
+  String get tourLearn1B;
+
+  /// No description provided for @tourLearn2T.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s guide'**
+  String get tourLearn2T;
+
+  /// No description provided for @tourLearn2B.
+  ///
+  /// In en, this message translates to:
+  /// **'A new short guide every day: read it, take a quick quiz, try the mini lab. Up to +60 XP.'**
+  String get tourLearn2B;
+
+  /// No description provided for @tourLearn3T.
+  ///
+  /// In en, this message translates to:
+  /// **'From the archive'**
+  String get tourLearn3T;
+
+  /// No description provided for @tourLearn3B.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed a day? Your last 3 guides wait here. Swipe the photos.'**
+  String get tourLearn3B;
+
+  /// No description provided for @tourLearn4T.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortcuts'**
+  String get tourLearn4T;
+
+  /// No description provided for @tourLearn4B.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz, Mini lab, Archive and Progress, one tap away.'**
+  String get tourLearn4B;
+
+  /// No description provided for @tourLearn5T.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore modules'**
+  String get tourLearn5T;
+
+  /// No description provided for @tourLearn5B.
+  ///
+  /// In en, this message translates to:
+  /// **'Organik, Anorganik and B3 modules, each with lessons, videos and a simulation.'**
+  String get tourLearn5B;
+
+  /// No description provided for @tourScan1T.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan & quiz'**
+  String get tourScan1T;
+
+  /// No description provided for @tourScan1B.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your phone camera. ELIOS names the item and makes a quiz about it.'**
+  String get tourScan1B;
+
+  /// No description provided for @tourScan2T.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot scan'**
+  String get tourScan2T;
+
+  /// No description provided for @tourScan2B.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a vehicle, connect the ELIOS robot and drive it to sort real waste.'**
+  String get tourScan2B;
+
+  /// No description provided for @tourScan3T.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to contribute'**
+  String get tourScan3T;
+
+  /// No description provided for @tourScan3B.
+  ///
+  /// In en, this message translates to:
+  /// **'Film yourself putting waste in the right bin. You earn XP and help train ELIOS.'**
+  String get tourScan3B;
+
+  /// No description provided for @tourHist1T.
+  ///
+  /// In en, this message translates to:
+  /// **'Your bins'**
+  String get tourHist1T;
+
+  /// No description provided for @tourHist1B.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a bin to see only those scans.'**
+  String get tourHist1B;
+
+  /// No description provided for @tourHist2T.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent scans'**
+  String get tourHist2T;
+
+  /// No description provided for @tourHist2B.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a scan to see its photo, questions and score. See timeline shows them all.'**
+  String get tourHist2B;
+
+  /// No description provided for @tourHist3T.
+  ///
+  /// In en, this message translates to:
+  /// **'Review missed questions'**
+  String get tourHist3T;
+
+  /// No description provided for @tourHist3B.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice the questions you got wrong until they stick.'**
+  String get tourHist3B;
+
+  /// No description provided for @tourProf1T.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay any time'**
+  String get tourProf1T;
+
+  /// No description provided for @tourProf1B.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch the whole tour again, or just one screen. You can turn the first-visit tips off here too.'**
+  String get tourProf1B;
+
+  /// No description provided for @tourLblModule.
+  ///
+  /// In en, this message translates to:
+  /// **'MODULE'**
+  String get tourLblModule;
+
+  /// No description provided for @tourLblLesson.
+  ///
+  /// In en, this message translates to:
+  /// **'LESSON'**
+  String get tourLblLesson;
+
+  /// No description provided for @tourLblSim.
+  ///
+  /// In en, this message translates to:
+  /// **'SIMULATION'**
+  String get tourLblSim;
+
+  /// No description provided for @tourLblQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'QUIZ'**
+  String get tourLblQuiz;
+
+  /// No description provided for @tourLblGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'GUIDE ISSUE'**
+  String get tourLblGuide;
+
+  /// No description provided for @tourLblQuickQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'QUICK QUIZ'**
+  String get tourLblQuickQuiz;
+
+  /// No description provided for @tourLblMiniLab.
+  ///
+  /// In en, this message translates to:
+  /// **'MINI LAB'**
+  String get tourLblMiniLab;
+
+  /// No description provided for @tourLblCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'CAMERA'**
+  String get tourLblCamera;
+
+  /// No description provided for @tourLblResult.
+  ///
+  /// In en, this message translates to:
+  /// **'SCAN RESULT'**
+  String get tourLblResult;
+
+  /// No description provided for @tourLblQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'QUESTION'**
+  String get tourLblQuestion;
+
+  /// No description provided for @tourLblContribute.
+  ///
+  /// In en, this message translates to:
+  /// **'CONTRIBUTE'**
+  String get tourLblContribute;
+
+  /// No description provided for @tourLblVehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'SELECT VEHICLE'**
+  String get tourLblVehicle;
+
+  /// No description provided for @tourLblSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS SETUP'**
+  String get tourLblSetup;
+
+  /// No description provided for @tourLblWifiQr.
+  ///
+  /// In en, this message translates to:
+  /// **'WI-FI QR'**
+  String get tourLblWifiQr;
+
+  /// No description provided for @tourLblDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'SCAN DETAIL'**
+  String get tourLblDetail;
+
+  /// No description provided for @tourLblExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'EXPLANATION'**
+  String get tourLblExplain;
+
+  /// No description provided for @tourLblAi.
+  ///
+  /// In en, this message translates to:
+  /// **'ELIOS AI'**
+  String get tourLblAi;
+
+  /// No description provided for @tourLblPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'EXPORT PDF'**
+  String get tourLblPdf;
+
+  /// No description provided for @tourLblTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'TIMELINE'**
+  String get tourLblTimeline;
+
+  /// No description provided for @tipModuleT.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a lesson'**
+  String get tipModuleT;
+
+  /// No description provided for @tipModuleB.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a lesson to watch or read it. Every lesson you finish fills the module ring.'**
+  String get tipModuleB;
+
+  /// No description provided for @tipLessonT.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch or read'**
+  String get tipLessonT;
+
+  /// No description provided for @tipLessonB.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the button below to play the video or open the guide. Finished lessons fill your module ring.'**
+  String get tipLessonB;
+
+  /// No description provided for @tipSimT.
+  ///
+  /// In en, this message translates to:
+  /// **'Theory, then play'**
+  String get tipSimT;
+
+  /// No description provided for @tipSimB.
+  ///
+  /// In en, this message translates to:
+  /// **'Read Theory first, then open Simulations and change the values. There is no wrong move here.'**
+  String get tipSimB;
+
+  /// No description provided for @tipQuizT.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer for XP'**
+  String get tipQuizT;
+
+  /// No description provided for @tipQuizB.
+  ///
+  /// In en, this message translates to:
+  /// **'+10 XP for a right answer. Wrong? ELIOS explains why.'**
+  String get tipQuizB;
+
+  /// No description provided for @tipGuide1T.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s story'**
+  String get tipGuide1T;
+
+  /// No description provided for @tipGuide1B.
+  ///
+  /// In en, this message translates to:
+  /// **'A short real-world story with photos. Read it first: the quiz and mini lab are about it.'**
+  String get tipGuide1B;
+
+  /// No description provided for @tipGuide2T.
+  ///
+  /// In en, this message translates to:
+  /// **'Your language, or a PDF'**
+  String get tipGuide2T;
+
+  /// No description provided for @tipGuide2B.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch between English and Bahasa Indonesia, or save the guide as a PDF.'**
+  String get tipGuide2B;
+
+  /// No description provided for @tipGuide3T.
+  ///
+  /// In en, this message translates to:
+  /// **'Your quest map'**
+  String get tipGuide3T;
+
+  /// No description provided for @tipGuide3B.
+  ///
+  /// In en, this message translates to:
+  /// **'Three stops: the story, the physics, your mission. Each stop gives XP.'**
+  String get tipGuide3B;
+
+  /// No description provided for @tipGuide4T.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get tipGuide4T;
+
+  /// No description provided for @tipGuide4B.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Continue to go to the next stop. You can come back any time today.'**
+  String get tipGuide4B;
+
+  /// No description provided for @tipQq1T.
+  ///
+  /// In en, this message translates to:
+  /// **'Your cards'**
+  String get tipQq1T;
+
+  /// No description provided for @tipQq1B.
+  ///
+  /// In en, this message translates to:
+  /// **'One chip per question. Green means answered.'**
+  String get tipQq1B;
+
+  /// No description provided for @tipQq2T.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick, then check'**
+  String get tipQq2T;
+
+  /// No description provided for @tipQq2B.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an answer, tap Check, then go on to the next card.'**
+  String get tipQq2B;
+
+  /// No description provided for @tipQq3T.
+  ///
+  /// In en, this message translates to:
+  /// **'Your result'**
+  String get tipQq3T;
+
+  /// No description provided for @tipQq3B.
+  ///
+  /// In en, this message translates to:
+  /// **'See your score and XP. Missed one? Try again, there is no limit.'**
+  String get tipQq3B;
+
+  /// No description provided for @tipLabT.
+  ///
+  /// In en, this message translates to:
+  /// **'Mini lab'**
+  String get tipLabT;
+
+  /// No description provided for @tipLabB.
+  ///
+  /// In en, this message translates to:
+  /// **'Try the small experiment at home, then record a short video or take 3 photos. ELIOS checks it and gives you a badge.'**
+  String get tipLabB;
+
+  /// No description provided for @tipCamT.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill the frame'**
+  String get tipCamT;
+
+  /// No description provided for @tipCamB.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold one item inside the green corners, then tap the shutter.'**
+  String get tipCamB;
+
+  /// No description provided for @tipRes1T.
+  ///
+  /// In en, this message translates to:
+  /// **'What ELIOS saw'**
+  String get tipRes1T;
+
+  /// No description provided for @tipRes1B.
+  ///
+  /// In en, this message translates to:
+  /// **'The photo of your item. The bin buddy shows where it goes.'**
+  String get tipRes1B;
+
+  /// No description provided for @tipRes2T.
+  ///
+  /// In en, this message translates to:
+  /// **'Which bin and why'**
+  String get tipRes2T;
+
+  /// No description provided for @tipRes2B.
+  ///
+  /// In en, this message translates to:
+  /// **'The item name, its bin and how sure ELIOS is.'**
+  String get tipRes2B;
+
+  /// No description provided for @tipRes3T.
+  ///
+  /// In en, this message translates to:
+  /// **'Start your quiz'**
+  String get tipRes3T;
+
+  /// No description provided for @tipRes3B.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions about this exact item. Right answers earn XP.'**
+  String get tipRes3B;
+
+  /// No description provided for @tipQuestionT.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your answer'**
+  String get tipQuestionT;
+
+  /// No description provided for @tipQuestionB.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap one answer before the timer runs out. Right answers earn XP.'**
+  String get tipQuestionB;
+
+  /// No description provided for @tipContribT.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get tipContribT;
+
+  /// No description provided for @tipContribB.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to start. Keep the bin label in view while you drop the item in.'**
+  String get tipContribB;
+
+  /// No description provided for @tipVehicleT.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a vehicle'**
+  String get tipVehicleT;
+
+  /// No description provided for @tipVehicleB.
+  ///
+  /// In en, this message translates to:
+  /// **'The ELIOS ground robot is ready. The drone is coming soon.'**
+  String get tipVehicleB;
+
+  /// No description provided for @tipSetupT.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect step by step'**
+  String get tipSetupT;
+
+  /// No description provided for @tipSetupB.
+  ///
+  /// In en, this message translates to:
+  /// **'Power on the robot, scan its Wi-Fi QR, then tap Connect. The steps turn green as you go.'**
+  String get tipSetupB;
+
+  /// No description provided for @tipQr1T.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot Wi-Fi QR'**
+  String get tipQr1T;
+
+  /// No description provided for @tipQr1B.
+  ///
+  /// In en, this message translates to:
+  /// **'This QR holds your Wi-Fi name and password, so you never type them on the robot.'**
+  String get tipQr1B;
+
+  /// No description provided for @tipQr2T.
+  ///
+  /// In en, this message translates to:
+  /// **'Show it to the robot'**
+  String get tipQr2T;
+
+  /// No description provided for @tipQr2B.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold the phone in front of the robot camera. When it beeps, it joins your Wi-Fi.'**
+  String get tipQr2B;
+
+  /// No description provided for @tipDetailT.
+  ///
+  /// In en, this message translates to:
+  /// **'Export PDF'**
+  String get tipDetailT;
+
+  /// No description provided for @tipDetailB.
+  ///
+  /// In en, this message translates to:
+  /// **'Save this quiz report as a PDF to share with your teacher.'**
+  String get tipDetailB;
+
+  /// No description provided for @tipExp1T.
+  ///
+  /// In en, this message translates to:
+  /// **'Your verdict'**
+  String get tipExp1T;
+
+  /// No description provided for @tipExp1B.
+  ///
+  /// In en, this message translates to:
+  /// **'Right or wrong, and the XP you earned.'**
+  String get tipExp1B;
+
+  /// No description provided for @tipExp2T.
+  ///
+  /// In en, this message translates to:
+  /// **'The why'**
+  String get tipExp2T;
+
+  /// No description provided for @tipExp2B.
+  ///
+  /// In en, this message translates to:
+  /// **'The physics behind the answer, in short steps.'**
+  String get tipExp2B;
+
+  /// No description provided for @tipExp3T.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get tipExp3T;
+
+  /// No description provided for @tipExp3B.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to hear the explanation read aloud.'**
+  String get tipExp3B;
+
+  /// No description provided for @tipExp4T.
+  ///
+  /// In en, this message translates to:
+  /// **'Export or go on'**
+  String get tipExp4T;
+
+  /// No description provided for @tipExp4B.
+  ///
+  /// In en, this message translates to:
+  /// **'Save this explanation as a PDF, or move to the next question.'**
+  String get tipExp4B;
+
+  /// No description provided for @tipAi1T.
+  ///
+  /// In en, this message translates to:
+  /// **'Why it is right or wrong'**
+  String get tipAi1T;
+
+  /// No description provided for @tipAi1B.
+  ///
+  /// In en, this message translates to:
+  /// **'Every answer gets a short explanation you can read before moving on.'**
+  String get tipAi1B;
+
+  /// No description provided for @tipAi2T.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask ELIOS AI'**
+  String get tipAi2T;
+
+  /// No description provided for @tipAi2B.
+  ///
+  /// In en, this message translates to:
+  /// **'Still unsure? ELIOS AI explains it another way. Type or tap a suggested question.'**
+  String get tipAi2B;
+
+  /// No description provided for @tipAi3T.
+  ///
+  /// In en, this message translates to:
+  /// **'Next question'**
+  String get tipAi3T;
+
+  /// No description provided for @tipAi3B.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready? Move on to the next question.'**
+  String get tipAi3B;
+
+  /// No description provided for @tipPdf1T.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get tipPdf1T;
+
+  /// No description provided for @tipPdf1B.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the file you will get: an A4 report with your answers.'**
+  String get tipPdf1B;
+
+  /// No description provided for @tipPdf2T.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what goes in'**
+  String get tipPdf2T;
+
+  /// No description provided for @tipPdf2B.
+  ///
+  /// In en, this message translates to:
+  /// **'Tick what to include, like the explanation, the scan photo or space for notes.'**
+  String get tipPdf2B;
+
+  /// No description provided for @tipPdf3T.
+  ///
+  /// In en, this message translates to:
+  /// **'Save or share'**
+  String get tipPdf3T;
+
+  /// No description provided for @tipPdf3B.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to your phone or share it with your teacher.'**
+  String get tipPdf3B;
+
+  /// No description provided for @tipTl1T.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a device'**
+  String get tipTl1T;
+
+  /// No description provided for @tipTl1B.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone and the ELIOS robot each have their own timeline.'**
+  String get tipTl1B;
+
+  /// No description provided for @tipTl2T.
+  ///
+  /// In en, this message translates to:
+  /// **'Device summary'**
+  String get tipTl2T;
+
+  /// No description provided for @tipTl2B.
+  ///
+  /// In en, this message translates to:
+  /// **'How many scans this device made and when it last scanned.'**
+  String get tipTl2B;
+
+  /// No description provided for @tipTl3T.
+  ///
+  /// In en, this message translates to:
+  /// **'Every scan, newest first'**
+  String get tipTl3T;
+
+  /// No description provided for @tipTl3B.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a scan to open its photo, questions and score.'**
+  String get tipTl3B;
 }
 
 class _AppLocalizationsDelegate

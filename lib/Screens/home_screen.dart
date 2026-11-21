@@ -10,6 +10,7 @@
 // pop quest cards, Scan activity leaf panel, Recent scans polaroid fan, Bin
 // shelf, This week / Quiz accuracy leaves and the Medal ribbon. Opening Home
 // plays one entrance timeline; lower sections play as they scroll into view.
+import '../widgets/tour/app_tour.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -705,25 +706,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             // ELIOS 3: the greeting scrolls with Home; no top bar.
-                            _HomeGreeting(
-                              a: _intro,
-                              name: homeDisplayName(user),
-                              onOpenLearning: widget.onOpenLearning,
-                            ),
-                            const SizedBox(height: 8),
-                            HomeRise(
-                              _intro,
-                              _ms(160),
-                              _ms(520),
-                              rise: 12,
-                              child: HomeSearchField(
-                                controller: _search,
-                                focusNode: _searchFocus,
-                                scope: _scope,
-                                onScope: (s) => setState(() => _scope = s),
-                                resultCount: _search.text.isEmpty
-                                    ? null
-                                    : results.length,
+                            KeyedSubtree(
+                              key: TourKeys.homeTop,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _HomeGreeting(
+                                    a: _intro,
+                                    name: homeDisplayName(user),
+                                    onOpenLearning: widget.onOpenLearning,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  HomeRise(
+                                    _intro,
+                                    _ms(160),
+                                    _ms(520),
+                                    rise: 12,
+                                    child: HomeSearchField(
+                                      controller: _search,
+                                      focusNode: _searchFocus,
+                                      scope: _scope,
+                                      onScope: (s) =>
+                                          setState(() => _scope = s),
+                                      resultCount: _search.text.isEmpty
+                                          ? null
+                                          : results.length,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -854,10 +864,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
         const SizedBox(height: 16),
       ],
-      _Hero(stats: stats, a: _intro),
-      _StatsRow(stats: stats, a: _intro),
+      KeyedSubtree(
+        key: TourKeys.homeHero,
+        child: _Hero(stats: stats, a: _intro),
+      ),
+      KeyedSubtree(
+        key: TourKeys.homeStats,
+        child: _StatsRow(stats: stats, a: _intro),
+      ),
       const SizedBox(height: 34),
-      _Quests(stats: stats, seen: _seen),
+      KeyedSubtree(
+        key: TourKeys.homeQuests,
+        child: _Quests(stats: stats, seen: _seen),
+      ),
       const SizedBox(height: 38),
       _reveal(
         'activity',
@@ -895,7 +914,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       const SizedBox(height: 34),
       _reveal(
         'bins',
-        (a) => _BinBuddies(stats: stats, a: a),
+        (a) => KeyedSubtree(
+          key: TourKeys.homeBins,
+          child: _BinBuddies(stats: stats, a: a),
+        ),
         ms: 1200,
         // The bins hit the shelf.
         cues: [(0.42, () => _cue(ElioSfx.pop, ElioHaptics.light))],

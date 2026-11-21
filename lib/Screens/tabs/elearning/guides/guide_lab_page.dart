@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../../widgets/tour/app_tour.dart';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -275,26 +276,34 @@ class _GuideLabPageState extends ConsumerState<GuideLabPage> {
         },
       ),
       bottomNavigationBar: switch (_step) {
-        _Step.brief => _bottom([
-          L3Button(
-            label: l10n.g4Record,
-            height: 52,
-            feedback: false,
-            onPressed: content == null || content.mustShow.isEmpty
-                ? null
-                : () => _openCamera(_Step.recording),
+        _Step.brief => TourTip(
+          id: 'guide_lab',
+          label: () => l10n.tourLblMiniLab,
+          steps: (k) => [TourStep(k[0], l10n.tipLabT, l10n.tipLabB)],
+          builder: (context, k) => KeyedSubtree(
+            key: k[0],
+            child: _bottom([
+              L3Button(
+                label: l10n.g4Record,
+                height: 52,
+                feedback: false,
+                onPressed: content == null || content.mustShow.isEmpty
+                    ? null
+                    : () => _openCamera(_Step.recording),
+              ),
+              L3Button(
+                label: l10n.g4ThreePhotos,
+                secondary: true,
+                chevron: false,
+                height: 52,
+                feedback: false,
+                onPressed: content == null || content.mustShow.isEmpty
+                    ? null
+                    : () => _openCamera(_Step.photos),
+              ),
+            ]),
           ),
-          L3Button(
-            label: l10n.g4ThreePhotos,
-            secondary: true,
-            chevron: false,
-            height: 52,
-            feedback: false,
-            onPressed: content == null || content.mustShow.isEmpty
-                ? null
-                : () => _openCamera(_Step.photos),
-          ),
-        ]),
+        ),
         _Step.review => _bottom([
           L3Button(
             label: l10n.g4Send,
