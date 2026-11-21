@@ -1,5 +1,9 @@
 # Local build notes
 
+## 21 Nov 2026 — App onboarding tour phone check (0238, `feat/app-onboarding-tour`)
+- APP_COMMIT `347b7b5`, then `def11ee` (fixes); arm64 debug APK (LIVE_SCAN/TESTER_BUILD/DARK_MODE_OPTION); `adb install -r` on the Edge 60 Fusion, no data clear (app data tar backup in the session scratchpad first). Android only: no Mac bundle, model or signing change.
+- Checked (phone in dark mode, Guest): Welcome 1–3, main tour Home 6 → Learn 5 → Scan 3 → History 3 → Profile 1 → finish card, Profile ▸ App tour chips and tips switch, camera tip, scan result tour, question tip. Found and fixed: "Got it" between parts (now Next), question timer ran under the tip (now waits). One real scan added a "Plastic cup" record to Guest History. Not seen on the phone: answer review / ELIOS AI tour, Learn and History inner screen tours. Left on the Scan tab.
+
 ## 12 Nov 2026 — Setup + Wi-Fi QR merged into base, phone check (`feat/elios3-setup-wifi`)
 - APP_COMMIT `e85c30e` (`feature/live-scan` b0ea1fa + setup 0205 + Wi-Fi QR 0204), arm64 debug APK; `adb install -r` on the Edge 60 Fusion, no data clear; History md5 unchanged; no Flutter errors.
 - Checked: Scan hub → Pilih kendaraan → Pakai ELIOS → new ELIOS setup (robot stage, Offline/MaixCAM2 pills, 3-step stepper) → "Tampilkan QR Wi-Fi robot" opens the ELIOS 3 QR sheet. Robot itself not connected. Left on Home.
