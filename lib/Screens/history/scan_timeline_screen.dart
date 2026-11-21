@@ -121,6 +121,7 @@ class _ScanTimelineScreenState extends State<ScanTimelineScreen> {
               backgroundColor: p.background,
               body: SafeArea(
                 child: ListView(
+                  scrollCacheExtent: tourCacheExtent,
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                   children: [
                     // Header (629:99559-64): round Back, title, subtitle under it.

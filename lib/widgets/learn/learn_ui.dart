@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../tour/app_tour.dart' show tourCacheExtent;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -1170,6 +1171,8 @@ class LearnListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final list = ListView(
+      // Built ahead so a tour can spotlight parts below the fold (0238).
+      scrollCacheExtent: tourCacheExtent,
       // In the Learn tab (no top bar since ELIOS 3) this clears the status
       // bar; under an AppBar the inset is already 0.
       padding: EdgeInsets.fromLTRB(
@@ -1462,13 +1465,23 @@ class QuizAnswerOption extends StatelessWidget {
     final p = context.elio;
     final revealCorrect = answered && isCorrect;
     final revealWrong = answered && selected && !isCorrect;
-    Color tint(Color c, double a) => Color.alphaBlend(c.withValues(alpha: a), p.surface);
+    Color tint(Color c, double a) =>
+        Color.alphaBlend(c.withValues(alpha: a), p.surface);
     final (fill, side) = revealCorrect
-        ? (tint(p.primaryText, 0.10), BorderSide(color: p.primaryText.withValues(alpha: 0.35), width: 2))
+        ? (
+            tint(p.primaryText, 0.10),
+            BorderSide(color: p.primaryText.withValues(alpha: 0.35), width: 2),
+          )
         : revealWrong
-        ? (tint(p.errorText, 0.10), BorderSide(color: p.errorText.withValues(alpha: 0.35), width: 2))
+        ? (
+            tint(p.errorText, 0.10),
+            BorderSide(color: p.errorText.withValues(alpha: 0.35), width: 2),
+          )
         : selected
-        ? (tint(p.tertiaryText, 0.10), BorderSide(color: p.tertiaryText, width: 2.5))
+        ? (
+            tint(p.tertiaryText, 0.10),
+            BorderSide(color: p.tertiaryText, width: 2.5),
+          )
         : (p.surface, BorderSide(color: p.borderSubtle, width: 1.5));
     final letter = String.fromCharCode(65 + index);
     final shape = RoundedRectangleBorder(
@@ -1509,58 +1522,58 @@ class QuizAnswerOption extends StatelessWidget {
             curve: ElioMotion.soft,
             decoration: ShapeDecoration(color: fill, shape: shape),
             child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              onTap: answered ? null : onTap,
-              customBorder: shape,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: minHeight),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: _fills[index % 4],
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          letter,
-                          style: context.text.labelLarge?.copyWith(
-                            color: _onFills[index % 4],
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: answered ? null : onTap,
+                customBorder: shape,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: minHeight),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: _fills[index % 4],
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            letter,
+                            style: context.text.labelLarge?.copyWith(
+                              color: _onFills[index % 4],
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(label, style: context.text.bodyMedium),
-                      ),
-                      if (revealCorrect)
-                        TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0.4, end: 1),
-                          duration: reduced ? Duration.zero : ElioMotion.slow,
-                          curve: ElioMotion.pop,
-                          builder: (context, s, child) =>
-                              Transform.scale(scale: s, child: child),
-                          child: Icon(
-                            Icons.check_rounded,
-                            color: p.primaryText,
-                          ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(label, style: context.text.bodyMedium),
                         ),
-                      if (revealWrong)
-                        Icon(Icons.close_rounded, color: p.errorText),
-                    ],
+                        if (revealCorrect)
+                          TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0.4, end: 1),
+                            duration: reduced ? Duration.zero : ElioMotion.slow,
+                            curve: ElioMotion.pop,
+                            builder: (context, s, child) =>
+                                Transform.scale(scale: s, child: child),
+                            child: Icon(
+                              Icons.check_rounded,
+                              color: p.primaryText,
+                            ),
+                          ),
+                        if (revealWrong)
+                          Icon(Icons.close_rounded, color: p.errorText),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           ),
         ),
       ),

@@ -348,7 +348,9 @@ class _HubContentState extends ConsumerState<_HubContent> {
     final lessonsLoaded = videos != null && guides != null;
     final firstLaunch = isFirstLaunch(progress);
     final clovers = ref.watch(cloverTallyProvider);
-    ref.watch(learningSyncProvider); // sends videos and clovers to the Insights dashboard
+    ref.watch(
+      learningSyncProvider,
+    ); // sends videos and clovers to the Insights dashboard
     final overall = clovers.fraction;
     final values = [
       for (final m in modules) moduleProgress(m.id, lessons, progress),
@@ -462,6 +464,7 @@ class _HubContentState extends ConsumerState<_HubContent> {
     // The Learn entrance plays on every open, once the hub has its data.
     return LearnIntroHost(
       child: ListView(
+        scrollCacheExtent: tourCacheExtent,
         padding: const EdgeInsets.only(bottom: 32),
         children: [
           LearnCurvedHeader(

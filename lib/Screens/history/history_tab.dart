@@ -150,6 +150,7 @@ class _HistoryTabState extends State<HistoryTab>
         all.where((r) => historyDeviceOf(r) == d).firstOrNull;
     final list = ListView(
       key: const ValueKey('history_list'),
+      scrollCacheExtent: tourCacheExtent,
       controller: _scroll,
       padding: const EdgeInsets.only(bottom: 28),
       children: [

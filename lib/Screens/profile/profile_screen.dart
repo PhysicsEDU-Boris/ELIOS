@@ -73,6 +73,7 @@ class ProfileScreen extends ConsumerWidget {
               bottom: false,
               child: _StatusBarScrim(
                 child: ListView(
+                  scrollCacheExtent: tourCacheExtent,
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 48),
                   children: _staggered([
                     _ProfileHeader(user: user, onSignOut: onSignOut),

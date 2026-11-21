@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -35,6 +36,10 @@ abstract final class TourKeys {
   static final historyReview = GlobalKey(debugLabel: 'tour_history_review');
   static final profileTour = GlobalKey(debugLabel: 'tour_profile_tour');
 }
+
+/// Lists a tour runs over build this far past the screen, so a step's widget
+/// exists on a short (landscape) screen and the tour can scroll to it.
+const tourCacheExtent = ScrollCacheExtent.pixels(2400);
 
 class TourStep {
   const TourStep(this.target, this.title, this.body, {this.round = false});
