@@ -138,7 +138,7 @@ export async function handleGuides(request, env, deps = {}) {
   } catch { return reply({ error: 'Invalid JSON' }, 400); }
   if (!body || typeof body !== 'object') return reply({ error: 'Invalid request' }, 400);
   const { op, id, date } = body;
-  if (!['progress', 'event', 'quiz', 'lab', 'review', 'import'].includes(op)) return reply({ error: 'Unknown operation' }, 400);
+  if (!['progress', 'event', 'quiz', 'lab', 'review', 'import', 'learning'].includes(op)) return reply({ error: 'Unknown operation' }, 400);
   if (['event', 'quiz', 'lab', 'review'].includes(op)
       && (!ID.test(id ?? '') || !DAY.test(date ?? '') || !Number.isFinite(Date.parse(date)))) {
     return reply({ error: 'Invalid id or date' }, 400);
@@ -190,6 +190,24 @@ export async function handleGuides(request, env, deps = {}) {
 
   try {
     if (op === 'progress') return reply(await summary());
+
+    // Snapshot of the learning tab (videos and clovers) for the Insights dashboard; the latest one wins.
+    if (op === 'learning') {
+      const ids = (v) => Array.isArray(v) && v.length <= 1000 && v.every((x) => typeof x === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(x));
+      const count = (v) => Number.isInteger(v) && v >= 0 && v <= 100000;
+      const { started_video_ids: started, watched_video_ids: watched, clovers_earned: earned, clovers_possible: possible } = body;
+      if (!ids(started) || !ids(watched) || !count(earned) || !count(possible) || earned > possible) {
+        return reply({ error: 'Invalid learning snapshot' }, 400);
+      }
+      // ponytail: a guest who later signs in keeps a separate row, so the dashboard may count them twice.
+      await db('learning_snapshots?on_conflict=owner_id', {
+        method: 'POST', headers: { prefer: 'resolution=merge-duplicates' },
+        body: JSON.stringify({ owner_id: owner, started_video_ids: [...new Set([...started, ...watched])],
+          watched_video_ids: [...new Set(watched)], clovers_earned: earned, clovers_possible: possible,
+          updated_at: new Date(now()).toISOString() }),
+      });
+      return reply({ ok: true });
+    }
 
     if (op === 'import') {
       const guest = body.guest_uid;
