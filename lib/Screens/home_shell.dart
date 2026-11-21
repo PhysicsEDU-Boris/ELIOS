@@ -125,6 +125,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         context,
         part.steps(),
         label: part.label(),
+        // Mid-tour the last card of a part leads on to the next tab.
+        doneLabel: which == 'all' && part != mainTourParts.last
+            ? l10n.guideNext
+            : null,
       );
       if (!finished || !mounted) return;
     }

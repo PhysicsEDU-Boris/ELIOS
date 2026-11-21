@@ -2,6 +2,7 @@
 import 'package:elio/l10n/app_localizations.dart';
 import 'package:elio/widgets/tour/app_tour.dart';
 import 'package:elio/widgets/tour/main_tour.dart';
+import 'package:elio/widgets/waste_quiz_popup.dart' show QuizCountdown;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -143,5 +144,20 @@ void main() {
     await t.tap(find.byKey(const ValueKey('welcome_next')));
     await t.pumpAndSettle();
     expect(result, isTrue);
+  });
+
+  testWidgets('the quiz countdown waits while a tour card is on screen', (
+    t,
+  ) async {
+    var up = 0;
+    await t.pumpWidget(
+      _app(Scaffold(body: QuizCountdown(seconds: 3, onTimeUp: () => up++))),
+    );
+    AppTour.running = true;
+    await t.pump(const Duration(seconds: 6));
+    expect(up, 0, reason: 'no time lost while the tour shows');
+    AppTour.running = false;
+    await t.pump(const Duration(seconds: 4));
+    expect(up, 1);
   });
 }
