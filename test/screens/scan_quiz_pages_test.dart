@@ -736,18 +736,16 @@ void main() {
       });
     }
 
-    for (final (cue, text) in const [
-      (BinRunCue.needGrip, 'Pick it up first: close the gripper (AMBIL). 3 s later the arm takes it to the Anorganik bin.'),
-      (BinRunCue.ready, 'After Got it, the arm waits 3 s, then takes it to the Anorganik bin.'),
-    ]) {
-      testWidgets('0240: the ticket says what the arm does after Got it ($cue)', (t) async {
-        await open(t, binCue: cue);
-        await t.tap(find.byKey(const ValueKey('answer_0'))); // Organik: wrong, the right bin is Anorganik
-        await _settle(t);
-        expect(t.takeException(), isNull);
-        expect((t.widget(find.byKey(const ValueKey('bin_run_cue'))) as Text).data, text);
-      });
-    }
+    testWidgets('0241: the ticket says the arm sorts after the quiz; no PICK UP step', (t) async {
+      await open(t, binCue: BinRunCue.ready);
+      await t.tap(find.byKey(const ValueKey('answer_0'))); // Organik: wrong, the right bin is Anorganik
+      await _settle(t);
+      expect(t.takeException(), isNull);
+      expect(
+        (t.widget(find.byKey(const ValueKey('bin_run_cue'))) as Text).data,
+        'When the quiz is done, the arm waits 3 s, then takes it to the Anorganik bin.',
+      );
+    });
 
     testWidgets('0240: no arm line when the Control screen has no robot run', (t) async {
       await open(t);
@@ -802,6 +800,30 @@ void main() {
     await t.tap(find.byKey(const Key('result_card_rescan_button')));
     await _settle(t);
     expect(quiz.state.phase, WasteQuizPhase.idle);
+  });
+
+  for (final (cue, key, text) in const [
+    (BinRunCue.done, 'result_card_sorted', 'Done: the robot put it in the bin and went home.'),
+    (BinRunCue.failed, 'result_card_sort_failed', 'The robot could not finish sorting and went back home.'),
+  ]) {
+    testWidgets('0241: the result page says how the robot sorting ended ($cue)', (t) async {
+      await _pump(
+        t,
+        WasteQuizUiState(phase: WasteQuizPhase.finished, scan: _scan, correctCount: 1),
+        robot: true,
+        size: const Size(915, 412),
+        binCue: cue,
+      );
+      expect(t.takeException(), isNull);
+      expect(find.descendant(of: find.byKey(Key(key)), matching: find.text(text)), findsOneWidget);
+    });
+  }
+
+  testWidgets('0241: no robot result line off the robot or while the run is still waiting', (t) async {
+    await _pump(t, WasteQuizUiState(phase: WasteQuizPhase.finished, scan: _scan), binCue: BinRunCue.done);
+    expect(find.byKey(const Key('result_card_sorted')), findsNothing, reason: 'phone scan, not the robot');
+    await _pump(t, WasteQuizUiState(phase: WasteQuizPhase.finished, scan: _scan), robot: true, binCue: BinRunCue.ready);
+    expect(find.byKey(const Key('result_card_sorted')), findsNothing);
   });
 
   final states = {

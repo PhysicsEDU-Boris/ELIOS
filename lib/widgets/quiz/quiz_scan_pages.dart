@@ -1256,17 +1256,16 @@ class _BinTicket extends StatelessWidget {
                           Consumer(
                             builder: (context, ref, _) {
                               final cue = ref.watch(binRunCueProvider);
-                              if (cue == BinRunCue.none) return const SizedBox.shrink();
-                              final need = cue == BinRunCue.needGrip;
+                              if (cue != BinRunCue.ready) return const SizedBox.shrink();
                               return Padding(
                                 padding: const EdgeInsets.only(top: 4),
                                 child: Text(
-                                  need ? l10n.binRunNeedGrip(_short(correct)) : l10n.binRunReady(_short(correct)),
+                                  l10n.binRunReady(_short(correct)),
                                   key: const ValueKey('bin_run_cue'),
                                   style: _sq(
                                     ElioTokens.bodySmall,
                                     700,
-                                    need ? historyTint(p, HistoryTone.warning).fg : p.primaryText,
+                                    p.primaryText,
                                   ),
                                 ),
                               );
@@ -3685,6 +3684,13 @@ class _ScanDonePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                 ],
+                // 0241: the arm's result, after it finished (sorted, or could not and went home).
+                if (!dropping && _isRobot(context))
+                  switch (ref.watch(binRunCueProvider)) {
+                    BinRunCue.done => _robotNotice(p, l10n.robotSorted, HistoryTone.success, Icons.check_circle_rounded, 'result_card_sorted'),
+                    BinRunCue.failed => _robotNotice(p, l10n.robotSortFailed, HistoryTone.error, Icons.error_outline_rounded, 'result_card_sort_failed'),
+                    _ => const SizedBox.shrink(),
+                  },
                 IgnorePointer(
                   ignoring: dropping,
                   child: Opacity(
@@ -3828,3 +3834,16 @@ Future<void> _exportQuizPdf(
   // Theme choice, then Share (decision 0228).
   await showQuizReportSheet(context, record);
 }
+
+/// A one-line robot result on the result page (0241): sorted, or could not.
+Widget _robotNotice(ElioPalette p, String text, HistoryTone tone, IconData icon, String key) => Container(
+      key: Key(key),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(color: historyTint(p, tone).bg, borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        Icon(icon, size: 16, color: historyTint(p, tone).fg),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, style: _sq(ElioTokens.caption, 600, p.textPrimary))),
+      ]),
+    );

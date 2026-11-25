@@ -39,7 +39,8 @@ enum BinRunState {
 }
 
 /// What the bin check ticket says about the arm while it shows.
-enum BinRunCue { none, needGrip, ready }
+/// What the quiz pages say about the arm (0241): it will sort after the quiz, it sorted, it could not.
+enum BinRunCue { none, ready, done, failed }
 
 class BinRun {
   BinRun({

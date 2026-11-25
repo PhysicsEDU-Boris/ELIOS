@@ -5716,14 +5716,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get binGotIt => 'Got it';
 
   @override
-  String binRunNeedGrip(String bin) {
-    return 'Pick it up first: close the gripper (AMBIL). 3 s later the arm takes it to the $bin bin.';
+  String binRunReady(String bin) {
+    return 'When the quiz is done, the arm waits 3 s, then takes it to the $bin bin.';
   }
 
   @override
-  String binRunReady(String bin) {
-    return 'After Got it, the arm waits 3 s, then takes it to the $bin bin.';
-  }
+  String get robotSorted => 'Done: the robot put it in the bin and went home.';
+
+  @override
+  String get robotSortFailed =>
+      'The robot could not finish sorting and went back home.';
 
   @override
   String binRunFailed(String reason) {

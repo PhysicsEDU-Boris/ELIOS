@@ -3525,15 +3525,7 @@
   "@binWhyB3": {"placeholders": {"item": {}}},
   "binQuizNext": "Your quiz is next",
   "binGotIt": "Got it",
-  "binRunNeedGrip": "Pick it up first: close the gripper (AMBIL). 3 s later the arm takes it to the {bin} bin.",
-  "@binRunNeedGrip": {
-    "placeholders": {
-      "bin": {
-        "type": "String"
-      }
-    }
-  },
-  "binRunReady": "After Got it, the arm waits 3 s, then takes it to the {bin} bin.",
+  "binRunReady": "When the quiz is done, the arm waits 3 s, then takes it to the {bin} bin.",
   "@binRunReady": {
     "placeholders": {
       "bin": {
@@ -3541,6 +3533,8 @@
       }
     }
   },
+  "robotSorted": "Done: the robot put it in the bin and went home.",
+  "robotSortFailed": "The robot could not finish sorting and went back home.",
   "binRunFailed": "The arm could not finish sorting ({reason}). It is going home.",
   "@binRunFailed": {
     "placeholders": {

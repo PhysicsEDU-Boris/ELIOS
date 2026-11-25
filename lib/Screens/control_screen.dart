@@ -260,10 +260,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       }
       if (reply != null) {
         _binRun?.onReply(reply);
-        // The student closed the gripper (AMBIL) after Got it: now the arm may go to the bin.
-        if (reply.kind == ReplyKind.motionDone && _binRun?.state == BinRunState.waitGrip && _arm.gripperWidth >= 50) {
-          _binRun!.onGripClosed();
-        }
         if (_gate.pendingHomeSeq != null && reply.seq == _gate.pendingHomeSeq) {
           if (reply.kind == ReplyKind.motionDone) {
             final homeSuccess = _gate.onHomeReply(reply);
@@ -335,9 +331,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       _binRunTicker = Timer.periodic(const Duration(milliseconds: 250), (_) {
         _binRun!.tick();
         if (_binRun!.wantsTags) _syncArmTags(DateTime.now());
-        final cue = !_gate.linkUp || _gate.stopped
-            ? BinRunCue.none
-            : (_arm.gripperWidth >= 50 ? BinRunCue.ready : BinRunCue.needGrip);
+        final cue = switch (_binRun!.state) {
+          BinRunState.done => BinRunCue.done,
+          BinRunState.failed => BinRunCue.failed,
+          _ when !_gate.linkUp || _gate.stopped => BinRunCue.none,
+          _ => BinRunCue.ready,
+        };
         if (_binCue.state != cue) _binCue.state = cue;
       });
     }
@@ -614,9 +613,14 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     // tracking and the preview current.
     ref.listen<WasteQuizUiState>(wasteQuizProvider, (prev, next) {
       if (prev?.phase != next.phase) _liveScan?.onQuizPhase(next.phase);
-      // Got it on the bin check ticket (or the check skipped): the arm takes the item to the RIGHT
-      // bin, the AI's, whatever the student picked (0240 "bin run"). Never before the reveal.
-      if (!(prev?.binAcked ?? false) && next.binAcked) _startBinRun(next);
+      // 0241 (owner): the quiz is finished (last question answered): 3 s later the arm takes the item to
+      // the RIGHT bin, the AI's, whatever the student picked, while the result page shows it. No PICK UP
+      // wait: the student picked the item up before the quiz.
+      if (prev?.phase != WasteQuizPhase.finished && next.phase == WasteQuizPhase.finished) _startBinRun(next);
+      // A new quiz: last run's "sorted" / "could not" is not this item's.
+      if (prev?.phase == WasteQuizPhase.idle && next.phase != WasteQuizPhase.idle && !(_binRun?.pending ?? true)) {
+        _binRun!.reset();
+      }
     });
 
     // Resend resolution to the device whenever the user changes it mid-session.
@@ -1107,7 +1111,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     if (_binRun == null || bin == null || !_gate.linkUp || _gate.stopped) return;
     _binRun!
       ..reset()
-      ..start(bin, holding: _arm.gripperWidth >= 50);
+      ..start(bin, holding: true);
   }
 
   void _onBinRun(BinRunState state) {

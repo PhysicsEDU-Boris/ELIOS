@@ -9751,17 +9751,23 @@ abstract class AppLocalizations {
   /// **'Got it'**
   String get binGotIt;
 
-  /// No description provided for @binRunNeedGrip.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick it up first: close the gripper (AMBIL). 3 s later the arm takes it to the {bin} bin.'**
-  String binRunNeedGrip(String bin);
-
   /// No description provided for @binRunReady.
   ///
   /// In en, this message translates to:
-  /// **'After Got it, the arm waits 3 s, then takes it to the {bin} bin.'**
+  /// **'When the quiz is done, the arm waits 3 s, then takes it to the {bin} bin.'**
   String binRunReady(String bin);
+
+  /// No description provided for @robotSorted.
+  ///
+  /// In en, this message translates to:
+  /// **'Done: the robot put it in the bin and went home.'**
+  String get robotSorted;
+
+  /// No description provided for @robotSortFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The robot could not finish sorting and went back home.'**
+  String get robotSortFailed;
 
   /// No description provided for @binRunFailed.
   ///

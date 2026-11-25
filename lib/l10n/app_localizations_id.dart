@@ -5621,14 +5621,17 @@ class AppLocalizationsId extends AppLocalizations {
   String get binGotIt => 'Mengerti';
 
   @override
-  String binRunNeedGrip(String bin) {
-    return 'Ambil sampahnya dulu: tutup penjepit (AMBIL). 3 detik kemudian lengan membawanya ke tempat sampah $bin.';
+  String binRunReady(String bin) {
+    return 'Setelah kuis selesai, lengan menunggu 3 detik lalu membawanya ke tempat sampah $bin.';
   }
 
   @override
-  String binRunReady(String bin) {
-    return 'Setelah Mengerti, lengan menunggu 3 detik lalu membawanya ke tempat sampah $bin.';
-  }
+  String get robotSorted =>
+      'Selesai: robot sudah memasukkannya ke tempat sampah dan kembali ke posisi awal.';
+
+  @override
+  String get robotSortFailed =>
+      'Robot tidak bisa menyelesaikan pemilahan dan kembali ke posisi awal.';
 
   @override
   String binRunFailed(String reason) {
