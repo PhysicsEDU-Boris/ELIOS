@@ -40,6 +40,23 @@ void main() {
   }
 
   for (final size in phoneSizes) {
+    for (final linked in [null, true, false]) {
+      testWidgets('ARM card ESP32 chip (0240) linked=$linked $size', (t) async {
+        final chip = find.byKey(const ValueKey('esp32_chip'));
+        await pumpPhone(t, size, esp32Linked: linked);
+        expect(t.takeException(), isNull);
+        if (linked == null) {
+          expect(chip, findsNothing, reason: 'unknown (older firmware): no chip');
+          return;
+        }
+        final text = linked ? l10n.ctlEsp32On : l10n.ctlEsp32Off;
+        expect(find.descendant(of: chip, matching: find.text(text)), findsOneWidget);
+        expectOnScreen(t, chip, size, 'ESP32 chip');
+      });
+    }
+  }
+
+  for (final size in phoneSizes) {
     for (final dark in [false, true]) {
       testWidgets('Indonesian arm captions fit $size dark=$dark', (t) async {
         debugSetL10n(const Locale('id'));

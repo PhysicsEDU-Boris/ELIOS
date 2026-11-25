@@ -396,3 +396,10 @@ STATUS again until it is heard. Package 1.4.1. Tests: `test_arm_bridge.py`
 `test_a_silent_esp32_is_reported_and_logged_once`, `arm_pose_test.dart`. Checked on the phone over the
 robot's Wi-Fi (172.20.157.84): the warning shows on a Height drag; the stream ran at 49 fps in brighter
 light (43/s sent over Wi-Fi, the rest skipped).
+
+**ESP32 chip (owner, 25 Nov):** the ARM card header on the phone Control screen shows `● ESP32` (green) when
+the MaixCAM2 heard the ESP32 in the last 3 s, `● ESP32 off` (red) when not, nothing while offline or with
+firmware older than m2c-arm-v3. The Control screen sends STATUS every 2 s while connected to keep it live
+(STATUS is allowed while STOPPED). Test: `phone_control_test.dart` "ARM card ESP32 chip" (break-checked).
+After the owner rewired: still no byte on UART4 (A22 idle high, no edges, 0 bytes at 9600 and 115200,
+and 0 bytes during a 2-minute listen; an ESP32 reset during it was asked for but not confirmed).

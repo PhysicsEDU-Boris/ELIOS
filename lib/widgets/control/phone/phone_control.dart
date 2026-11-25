@@ -65,6 +65,7 @@ class PhoneControlLayout extends StatelessWidget {
     required this.onBack,
     required this.onGuide,
     this.onAdvanced,
+    this.esp32Linked,
     this.photoUrl,
     this.overlays = const [],
     this.onLock,
@@ -113,6 +114,10 @@ class PhoneControlLayout extends StatelessWidget {
 
   /// Advanced settings (0232), beside Guide; hidden when null.
   final VoidCallback? onAdvanced;
+
+  /// The arm's ESP32 as the MaixCAM2 hears it (0240): true heard in the last 3 s, false silent,
+  /// null unknown (offline, or firmware older than m2c-arm-v3): no chip.
+  final bool? esp32Linked;
   final String? photoUrl;
 
   /// Where the Guide's spotlight points (steps 1-4).
@@ -800,6 +805,13 @@ class PhoneControlLayout extends StatelessWidget {
           _CardHeader(
             icon: Icons.precision_manufacturing_outlined,
             title: l10n.ctlArm,
+            trailing: esp32Linked == null
+                ? null
+                : _InfoChip(
+                    key: const ValueKey('esp32_chip'),
+                    dot: esp32Linked! ? p.primary : p.error,
+                    text: esp32Linked! ? l10n.ctlEsp32On : l10n.ctlEsp32Off,
+                  ),
           ),
           const SizedBox(height: 8),
           Expanded(
@@ -1123,9 +1135,10 @@ class TrophyCount extends StatelessWidget {
 
 /// Card title only: the link status lives in the camera row (0229).
 class _CardHeader extends StatelessWidget {
-  const _CardHeader({required this.icon, required this.title});
+  const _CardHeader({required this.icon, required this.title, this.trailing});
   final IconData icon;
   final String title;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -1133,12 +1146,13 @@ class _CardHeader extends StatelessWidget {
       Icon(icon, size: 16, color: context.elio.primaryText),
       const SizedBox(width: 6),
       ControlCaps(title),
+      if (trailing != null) ...[const Spacer(), trailing!],
     ],
   );
 }
 
 class _InfoChip extends StatelessWidget {
-  const _InfoChip({required this.dot, required this.text});
+  const _InfoChip({super.key, required this.dot, required this.text});
   final Color dot;
   final String text;
 

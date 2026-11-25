@@ -5215,6 +5215,18 @@ abstract class AppLocalizations {
   /// **'The arm\'s position is unknown after a stop or a sort. Press HOME first.'**
   String get armRefusedUnknown;
 
+  /// No description provided for @ctlEsp32On.
+  ///
+  /// In en, this message translates to:
+  /// **'ESP32'**
+  String get ctlEsp32On;
+
+  /// No description provided for @ctlEsp32Off.
+  ///
+  /// In en, this message translates to:
+  /// **'ESP32 off'**
+  String get ctlEsp32Off;
+
   /// No description provided for @armEsp32Silent.
   ///
   /// In en, this message translates to:

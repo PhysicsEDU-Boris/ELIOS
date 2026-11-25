@@ -121,8 +121,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   final _arm = ArmPose();
   DateTime? _armRefusedAt;
 
-  /// The MaixCAM2 hears nothing from the arm's ESP32 (STATUS `esp32_age_s`, 0240): arm keys say so.
-  bool _esp32Silent = false;
+  /// The arm's ESP32 as the MaixCAM2 hears it (STATUS `esp32_age_s`, 0240): the ARM card's chip, and
+  /// arm keys warn while it is false. Null: offline or older firmware. Polled every 2 s while connected.
+  bool? _esp32Linked;
+  Timer? _esp32Poll;
   final _fader = FaderThrottle(); // gripper, height, reach drags (0236)
 
   /// Set only with R1 (see [_r1Enabled]).
@@ -278,7 +280,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           }
         }
         if (reply.seq == robot.lastStatusSeq) {
-          _esp32Silent = ArmPose.esp32SilentFrom(msg) ?? _esp32Silent;
+          final silent = ArmPose.esp32SilentFrom(msg);
+          if (silent != null && _esp32Linked != !silent && mounted) setState(() => _esp32Linked = !silent);
           ref.read(robotControlProvider.notifier).updateStatus(
                 eeMm: reply.eeMm,
                 clearEeMm: reply.eeMm == null,
@@ -335,6 +338,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         if (_binCue.state != cue) _binCue.state = cue;
       });
     }
+
+    // The ARM card's ESP32 chip (0240): STATUS every 2 s carries `esp32_age_s`.
+    _esp32Poll = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (_gate.linkUp) _gate.status();
+    });
 
     // Subscribe to robot frames outside of build to avoid re-registering
     // the listener on every rebuild.
@@ -412,6 +420,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         if (_streamStartedForCurrentConnection) _r1?.linkDown();
         _binRun?.cancel('link_lost');
         _gate.linkLost(); // STOPPED (link_lost) until "Lanjutkan" (0026)
+        _esp32Linked = null; // unknown until the next STATUS
         _arm.movingSeq = null; // that move's reply will not come
         _streamStartedForCurrentConnection = false;
         ref.read(robotControlProvider.notifier).updateStatus(
@@ -552,6 +561,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _statusSubscription?.close();
     _r1Ticker?.cancel();
     _binRunTicker?.cancel();
+    _esp32Poll?.cancel();
     _robotReplies?.cancel();
     _statusDebounceTimer?.cancel();
     _skeletonTimer?.cancel();
@@ -998,6 +1008,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onBack: () => Navigator.of(context).pop(),
       onGuide: () => setState(() => _guideOpen = true),
       onAdvanced: _openAdvanced,
+      esp32Linked: link == ControlLink.connected ? _esp32Linked : null,
       photoUrl: user?.photoURL,
       // The box stays locked from SCAN until the quiz is over and the arm has dropped the item (0240).
       onLock: _scanHeld(quizOpen)
@@ -1234,7 +1245,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     }
     if (!_gate.armPose(m.path!, m.duration)) return false;
     _arm.commit(m, _gate.robot.lastArmSeq);
-    if (_esp32Silent) {
+    if (_esp32Linked == false) {
       _showArmNote(l10n.armEsp32Silent); // sent, but nothing on the cable is listening
       _scheduleStatusRequest(); // clears as soon as the ESP32 is heard
     }

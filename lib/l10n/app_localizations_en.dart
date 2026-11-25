@@ -2951,6 +2951,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'The arm\'s position is unknown after a stop or a sort. Press HOME first.';
 
   @override
+  String get ctlEsp32On => 'ESP32';
+
+  @override
+  String get ctlEsp32Off => 'ESP32 off';
+
+  @override
   String get armEsp32Silent =>
       'The arm controller (ESP32) is not answering the robot, so the arm can\'t move. Check its cable to the MaixCAM2 (UART4: TX0/RX0 crossed, GND), its power, and that no computer is using its USB.';
 

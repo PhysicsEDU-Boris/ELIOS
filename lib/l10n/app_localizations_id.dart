@@ -2907,6 +2907,12 @@ class AppLocalizationsId extends AppLocalizations {
       'Posisi lengan tidak diketahui setelah berhenti atau menyortir. Tekan HOME dulu.';
 
   @override
+  String get ctlEsp32On => 'ESP32';
+
+  @override
+  String get ctlEsp32Off => 'ESP32 mati';
+
+  @override
   String get armEsp32Silent =>
       'Pengendali lengan (ESP32) tidak menjawab robot, jadi lengan tidak bisa bergerak. Periksa kabelnya ke MaixCAM2 (UART4: TX0/RX0 disilang, GND), dayanya, dan pastikan USB-nya tidak dipakai komputer.';
 
