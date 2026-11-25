@@ -374,3 +374,25 @@ Linux-only: tested on the board, stubbed on the Mac.
 Restarting the app without the touchscreen: `python3 -c 'from maix import app; app.switch_app("elios_clean_m2c_v1")'`
 (writes `/tmp/run_app.txt`), then stop the running app, or the launcher UI if it is in front; the
 `launcher_daemon` starts the queued app. Do not `pkill -f` a pattern that is also in your own SSH command.
+
+## 10. Arm does not move with the ESP32 on UART4 (25 Nov)
+
+Owner: ESP32 wired to UART4, Arduino to UART2; drive works, Height / Reach / Base do not. The ESP32
+works from a laptop with robotic_hand_sim over USB. Found on the MaixCAM2 (m2c-arm-v3):
+
+- The app and bridge work: every ARM_POSE is acked and the board's commanded pose follows the sliders,
+  and the bridge's frames are byte-identical to `hil/link.py` `make_frame` at the same 9600 baud.
+- The ESP32 has never sent a byte to the MaixCAM2: no `BOOT`, no `STAT` (it sends one every second).
+  Pins A21 / A22 are `UART4_TX` / `UART4_RX`; a raw 3.5 s listen on `/dev/ttyS4` got 0 bytes; A22 sampled as
+  a GPIO (pull-down) stayed high with 0 edges in 5 s. So nothing transmits on the ESP32 → MaixCAM2 wire.
+- Most likely wiring: the ESP32 firmware talks on `Serial` (UART0: GPIO1 = TX0, GPIO3 = RX0), the same
+  pins as its USB-serial chip. Wire MaixCAM2 A21 → ESP32 GPIO3, ESP32 GPIO1 → MaixCAM2 A22, GND ↔ GND (not
+  GPIO16/17), and do not have its USB on a computer at the same time (the USB chip drives RX0).
+
+Change: the bridge reports `esp32_age_s` in STATUS (seconds since the ESP32's last line; null = never)
+and logs once "ESP32 silent on its UART" while it streams with nothing coming back; the app
+(`ArmPose.esp32SilentFrom`) shows "The arm controller (ESP32) is not answering…" on arm keys and asks for
+STATUS again until it is heard. Package 1.4.1. Tests: `test_arm_bridge.py`
+`test_a_silent_esp32_is_reported_and_logged_once`, `arm_pose_test.dart`. Checked on the phone over the
+robot's Wi-Fi (172.20.157.84): the warning shows on a Height drag; the stream ran at 49 fps in brighter
+light (43/s sent over Wi-Fi, the rest skipped).

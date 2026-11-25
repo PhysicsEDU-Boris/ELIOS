@@ -255,6 +255,18 @@ class Safety(unittest.TestCase):
         out = run(arm, clock, ab.WATCHDOG_S + 0.2, heartbeat=False)
         self.assertEqual([r.get("reason") for _, r in out], ["watchdog"])
 
+    def test_a_silent_esp32_is_reported_and_logged_once(self):
+        arm, clock, _, logs = rig()
+        self.assertIsNone(arm.handle({"cmd": "STATUS", "seq": 1})[0]["esp32_age_s"], "never heard")
+        arm.handle({"cmd": "ARM_POSE", "seq": 2, "path": [RAISED]})
+        run(arm, clock, ab.ESP32_SILENT_S + 1)
+        self.assertEqual(sum("ESP32 silent" in l for l in logs), 1)
+        arm.on_line("STAT rx=1 bad=0 i2c=0 fix=0 reinit=0 spike=0 out=-")
+        run(arm, clock, 0.5)
+        self.assertEqual(arm.handle({"cmd": "STATUS", "seq": 3})[0]["esp32_age_s"], 0.5)
+        run(arm, clock, ab.ESP32_SILENT_S + 1)
+        self.assertEqual(sum("ESP32 silent" in l for l in logs), 2, "silent again after it had spoken")
+
     def test_hold_and_stop_freeze(self):
         arm, clock, frames, _ = rig()
         arm.handle({"cmd": "ARM_POSE", "seq": 1, "path": [RAISED]}, "app")

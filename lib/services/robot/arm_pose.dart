@@ -127,6 +127,15 @@ class ArmPose {
     return true;
   }
 
+  /// From a STATUS reply (0240): true when the MaixCAM2 has heard nothing from the arm's ESP32 for
+  /// over 3 s (it sends STAT every second), so arm moves go out but reach no servo; null when the
+  /// firmware does not say (older than m2c-arm-v3).
+  static bool? esp32SilentFrom(Map<String, dynamic> msg) {
+    if (!msg.containsKey('esp32_age_s')) return null;
+    final age = msg['esp32_age_s'];
+    return age is! num || age > 3;
+  }
+
   /// [sync]'s input from a reply's `servo` field, or null when it has none (old firmware, ESP32 reset).
   static ServoPose? servoFrom(Object? raw) =>
       raw is List && raw.length == armAxes.length && raw.every((v) => v is num)

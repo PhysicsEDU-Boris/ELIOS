@@ -5215,6 +5215,12 @@ abstract class AppLocalizations {
   /// **'The arm\'s position is unknown after a stop or a sort. Press HOME first.'**
   String get armRefusedUnknown;
 
+  /// No description provided for @armEsp32Silent.
+  ///
+  /// In en, this message translates to:
+  /// **'The arm controller (ESP32) is not answering the robot, so the arm can\'t move. Check its cable to the MaixCAM2 (UART4: TX0/RX0 crossed, GND), its power, and that no computer is using its USB.'**
+  String get armEsp32Silent;
+
   /// No description provided for @r1Done.
   ///
   /// In en, this message translates to:

@@ -120,6 +120,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// The commanded arm pose and its planner (0234): every manual arm key goes through it.
   final _arm = ArmPose();
   DateTime? _armRefusedAt;
+
+  /// The MaixCAM2 hears nothing from the arm's ESP32 (STATUS `esp32_age_s`, 0240): arm keys say so.
+  bool _esp32Silent = false;
   final _fader = FaderThrottle(); // gripper, height, reach drags (0236)
 
   /// Set only with R1 (see [_r1Enabled]).
@@ -275,6 +278,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           }
         }
         if (reply.seq == robot.lastStatusSeq) {
+          _esp32Silent = ArmPose.esp32SilentFrom(msg) ?? _esp32Silent;
           ref.read(robotControlProvider.notifier).updateStatus(
                 eeMm: reply.eeMm,
                 clearEeMm: reply.eeMm == null,
@@ -1230,6 +1234,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     }
     if (!_gate.armPose(m.path!, m.duration)) return false;
     _arm.commit(m, _gate.robot.lastArmSeq);
+    if (_esp32Silent) {
+      _showArmNote(l10n.armEsp32Silent); // sent, but nothing on the cable is listening
+      _scheduleStatusRequest(); // clears as soon as the ESP32 is heard
+    }
     _syncArmState();
     return true;
   }
@@ -1260,20 +1268,22 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     if (_gate.home(path: m.path, motion: m.duration)) _arm.commit(m, _gate.robot.lastArmSeq);
   }
 
-  void _showArmRefusal(ArmRefusal r) {
-    final now = DateTime.now();
-    if (!mounted || (_armRefusedAt != null && now.difference(_armRefusedAt!) < const Duration(seconds: 2))) return;
-    _armRefusedAt = now;
-    ScaffoldMessenger.of(context)
-      ..removeCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-          content: Text(switch (r) {
+  void _showArmRefusal(ArmRefusal r) => _showArmNote(switch (r) {
         ArmRefusal.tank => l10n.armRefusedTank,
         ArmRefusal.tankPath => l10n.armRefusedTankPath,
         ArmRefusal.outOfReach => l10n.armRefusedReach,
         ArmRefusal.jointLimits || ArmRefusal.baseLimit => l10n.armRefusedLimits,
         ArmRefusal.unknownPose => l10n.armRefusedUnknown,
-      })));
+      });
+
+  /// One arm message at a time, at most every 2 s (a fader drag would repeat it).
+  void _showArmNote(String text) {
+    final now = DateTime.now();
+    if (!mounted || (_armRefusedAt != null && now.difference(_armRefusedAt!) < const Duration(seconds: 2))) return;
+    _armRefusedAt = now;
+    ScaffoldMessenger.of(context)
+      ..removeCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(text)));
   }
 }
 

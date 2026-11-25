@@ -852,6 +852,7 @@
   "armRefusedReach": "Lengan tidak bisa menjangkau sejauh itu.",
   "armRefusedLimits": "Itu melewati batas sendi lengan.",
   "armRefusedUnknown": "Posisi lengan tidak diketahui setelah berhenti atau menyortir. Tekan HOME dulu.",
+  "armEsp32Silent": "Pengendali lengan (ESP32) tidak menjawab robot, jadi lengan tidak bisa bergerak. Periksa kabelnya ke MaixCAM2 (UART4: TX0/RX0 disilang, GND), dayanya, dan pastikan USB-nya tidak dipakai komputer.",
   "r1Done": "Selesai! Robot boleh jalan lagi.",
   "r1ConfirmFirst": "Konfirmasi dulu",
   "r1WhichBin": "Masuk tempat sampah mana?",

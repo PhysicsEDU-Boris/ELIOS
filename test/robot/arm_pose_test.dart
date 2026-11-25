@@ -7,6 +7,13 @@ import 'package:flutter_test/flutter_test.dart';
 ArmPose _arm() => ArmPose();
 
 void main() {
+  test('STATUS says whether the arm\'s ESP32 is heard (0240)', () {
+    expect(ArmPose.esp32SilentFrom({'event': 'ack'}), isNull, reason: 'older firmware: no warning');
+    expect(ArmPose.esp32SilentFrom({'esp32_age_s': null}), isTrue, reason: 'never heard');
+    expect(ArmPose.esp32SilentFrom({'esp32_age_s': 7.5}), isTrue);
+    expect(ArmPose.esp32SilentFrom({'esp32_age_s': 0.4}), isFalse);
+  });
+
   group('replies while a fader is dragged (0240: the slider moved on its own)', () {
     test('an older move\'s motion_done or a STATUS mid-move does not pull the goal back', () {
       final arm = _arm();

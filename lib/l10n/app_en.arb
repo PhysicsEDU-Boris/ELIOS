@@ -1934,6 +1934,7 @@
   "armRefusedReach": "The arm can't reach that far.",
   "armRefusedLimits": "That is past the arm's joint limits.",
   "armRefusedUnknown": "The arm's position is unknown after a stop or a sort. Press HOME first.",
+  "armEsp32Silent": "The arm controller (ESP32) is not answering the robot, so the arm can't move. Check its cable to the MaixCAM2 (UART4: TX0/RX0 crossed, GND), its power, and that no computer is using its USB.",
   "r1Done": "Done! The robot can drive again.",
   "r1ConfirmFirst": "Confirm first",
   "r1WhichBin": "Which bin does it go in?",

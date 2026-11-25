@@ -36,6 +36,7 @@ WATCHDOG_S = 1.0              # 0026: no app message this long -> arm holds
 # the old watchdog (freeze, error). Below the app's own 8 s stale-link timeout. Manual moves keep 1 s.
 SEQ_GRACE_S = 5.0
 SEQ_KINDS = ("MOVE_TO_BIN", "DROP", "HOME")
+ESP32_SILENT_S = 3.0          # the ESP32 sends STAT every second: nothing for this long = not on the cable
 BIN_TAG_FRESH_S = 2.0         # DROP guard
 UNKNOWN_HOME_S = 6.0          # HOME after an ESP32 reset: the slowest full travel
 TANK_Z_MM = 167.0
@@ -290,7 +291,10 @@ class ArmBridge:
         self.paused_at = None         # lag guard: when a sequence paused for a quiet app
         self.paused_s = 0.0           # how long this motion has been paused in all
         self.last_app = clock()
+        self.started = clock()
         self.boot, self.stat = None, None
+        self.esp32_at = None          # when the ESP32 last sent a line (BOOT, STAT, anything)
+        self.silent_logged = False
         self._load_config()
 
     # -- app commands --
@@ -311,7 +315,7 @@ class ArmBridge:
     def _cmd_status(self, data, owner):
         return [self._reply("ack", data, at_home=self.known and self._at(HOME),
                             servo=self.cmd if self.known else None, esp32_boot=self.boot, esp32_stat=self.stat,
-                            profile=self.profile, base_corr=round(self.base_corr, 2))]
+                            profile=self.profile, base_corr=round(self.base_corr, 2), esp32_age_s=self.esp32_age())]
 
     def _cmd_lock_drive(self, data, owner):
         return [self._reply("ack", data)]   # ponytail: wheels are a later task; only the 0023 ack
@@ -573,7 +577,17 @@ class ArmBridge:
                         out.append((owner, self._reply("motion_done", data, servo=self.cmd, **extra)))
         if self.streaming:
             self.write(make_frame(to_wire(self.cmd, self.trims, self.inverted)))
+            age = self.esp32_age()
+            if (age is None or age > ESP32_SILENT_S) and not self.silent_logged and now - self.started > ESP32_SILENT_S:
+                self.silent_logged = True
+                self.log("[Arm] ESP32 silent on its UART ({}): arm frames go out, nothing comes back. "
+                         "Check ESP32 TX0/RX0 to the MaixCAM2, GND, power, and that no PC holds its USB.".format(
+                             "never heard" if age is None else "{:.0f} s".format(age)))
         return out
+
+    def esp32_age(self):
+        """Seconds since the ESP32's last line, or None if it never sent one."""
+        return None if self.esp32_at is None else round(self.clock() - self.esp32_at, 1)
 
     # -- inputs --
 
@@ -593,6 +607,8 @@ class ArmBridge:
 
     def on_line(self, line):
         line = line.strip()
+        if line:
+            self.esp32_at, self.silent_logged = self.clock(), False
         if line.startswith("BOOT"):
             # The ESP32 restarted: its servos are released until the next frame and the arm may have
             # dropped. Stop streaming; only HOME moves it again.
