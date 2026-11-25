@@ -1,3 +1,6 @@
+## HIL toolkit parity — `claude/hil-toolkit-controls-cc2972` (0241, 25 Nov, from `feat/sim-control-settings` 955372e)
+HOME/ARM_POSE ack `motion_s` → app HOME timeout = motion_s + 5 s; HOME and ARM_POSE replace each other on the bridge (no `busy`), manual move ends the HOME wait; bridge replans from its pose when the app's path crosses the tank; CONFIG `gripInverted` applied, STATUS `trims`/`inverted`; `MotionGate.config` keeps CONFIG saved while STOPPED/offline and sends it on connect/GO; closed gripper follows a new close offset. Firmware 1.4.2. Kept: STOP holds (toolkit releases), no gripper trim.
+Tests: analyze clean, 2145 passed / 20 skipped, secrets clean, firmware 77 OK, fake 44 + same 2 old failures; 7 new tests break-checked. APK `0d490aa` installed. Robot check: see build notes (pending MaixCAM2 USB). Not pushed, no PR.
 ## Sim control settings — `feat/sim-control-settings` (0240, 25 Nov, from `feat/app-onboarding-tour` 895fe04)
 Per-joint speed + ramps (`arm_profile.dart`, Advanced ▸ Speed & ramps, `CONFIG.profile`), bins Left-Tank-New = B3, Mid-Tank = Anorganik, Right-Tank-New = Organik with step profiles. `BinRun` (`bin_run.dart`): Got it → 3 s countdown (after AMBIL if the gripper is open) → MOVE_TO_BIN → 1 s look → DROP. Bridge AprilTag base centring on tagged steps (`base_corr`, cleared by HOME / ESP32 BOOT), tags searched during sorts. Slider fix: `ArmPose.movingSeq`/`onServo` ignore stale `servo` replies; `ControlFader` follows the finger. Robot LOCK prompt ignores the robot's arm/gripper (`identifyItem(robot: true)`). Firmware m2c-arm-v2 (1.3.0): arm ESP32 UART4 (Maix Comm listener removed in-app), wheels Arduino UART2 (board's drive patch merged).
 Tests: analyze clean, 2128 passed / 20 skipped, secret scan clean; firmware 67 OK; fake 44 + same 2 old failures. New tests break-checked. Deployed + verified on the MaixCAM2 (sha `568a467b…`) and phone APK `7e0dca1` (gripper drag, RELEASE; build notes). Open: ESP32 (UART4) and Arduino (UART2) not wired to the MaixCAM2 yet (owner, 25 Nov), so no BOOT/STAT and no wheel test; bin run + centring not run on the robot, CAM_HFOV 83° placeholder, no Zero slip button, wheels watchdog only on the MaixCAM2. Not pushed, no PR. macOS pbxproj/Podfile.lock, 0239 dataset files left uncommitted.
@@ -49,11 +52,3 @@ Tests: `test/quiz_review_bugs_test.dart` (14, each break-checked). Not checked o
 ## Final QA, 16 Nov 2026 — `chore/final-qa` (merge of the 7 task branches on `feat/control-l4-figma`)
 PRs: #127 language switch (0218) · #128 essay switch (0219) · #129 XP icons (0220) · #130 profile header (0221) → base `feature/live-scan`; #131 hazard page (0222) · #132 essay explanation (0223) · #133 bin check (0224) → stacked on #126. Decision docs hold the details.
 Merged build: `flutter analyze` clean, full suite 1949 passed / 20 skipped, secret scan clean. Phone: Edge 60 Fusion, debug APK `d5ef58a` (LIVE_SCAN / TESTER_BUILD / DARK_MODE_OPTION), `adb install -r`, data kept, left light / English on Home (16 scans, 445 XP as found).
-
-| Check | Widget tests | Phone | Robot |
-|---|---|---|---|
-| Language switch EN↔ID on changed screens | pass | pass: Profile, Learn (Today's Guide follows), History, scan detail | not run |
-| History reopen after a language switch | pass (network held) | pass: content in under 1 s, both ways (records had both languages cached; the "Translating…" note was not seen live) | not run |
-| Dark mode on changed screens | pass | pass: Profile header + settings | not run |
-| Essay switch on / off | pass | row shown below Difficulty (EN, ID, dark); quiz with it off not played | not run |
-| XP icons | pass | pass: Home hero, History rows | not run |
