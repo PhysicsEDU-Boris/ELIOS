@@ -403,3 +403,17 @@ firmware older than m2c-arm-v3. The Control screen sends STATUS every 2 s while 
 (STATUS is allowed while STOPPED). Test: `phone_control_test.dart` "ARM card ESP32 chip" (break-checked).
 After the owner rewired: still no byte on UART4 (A22 idle high, no edges, 0 bytes at 9600 and 115200,
 and 0 bytes during a 2-minute listen; an ESP32 reset during it was asked for but not confirmed).
+
+**Cause found (owner, 25 Nov): the MaixCAM2 was wired to the ESP32's RX2/TX2 (GPIO16/17)**, but
+`6-axis-esp32-twoway-tmc2208.ino` only used `Serial` (UART0, GPIO1/3, the USB port). Owner chose a firmware
+change over moving wires: robotic_hand_sim branch `feat/esp32-serial2-link` (`eb11518`, local, not pushed)
+reads commands from USB `Serial` and `Serial2` (RX2 GPIO16 ← MaixCAM2 A21, TX2 GPIO17 → A22), each with its
+own line buffer, and sends every report to both. Built with esp32 core 3.3.8 + FastAccelStepper 2.0.1
+(installed on this Mac with the owner's OK), flashed from this Mac over USB (CP2102, MAC 70:4b:ca:49:d4:64).
+Right after the flash the ESP32 reported `STAT rx=8 … out=179.8,90.1,59.3,129.7,80.8,90.0`: frames from the
+MaixCAM2 arrived on RX2 and the servos took the board's pose. Then the MaixCAM2 dropped off USB (rebooted or
+lost power, possibly when the servos switched on).
+After the owner power-cycled the MaixCAM2 it came back on Wi-Fi (172.20.157.84) and the phone's ARM card
+shows the green `ESP32` chip: the MaixCAM2 hears the ESP32's STAT on RX2/TX2. The owner saw the arm move.
+The app was STOPPED by the link loss (GO to resume). Not read: the board log of the reset (the Mac had no
+USB/Wi-Fi path to it), so the reset cause (likely servo inrush on a shared supply) is unconfirmed.
