@@ -399,7 +399,10 @@ ARM_CMDS = {"STATUS", "LOCK_DRIVE", "UNLOCK_DRIVE", "HOME", "PICK", "MOVE_TO_BIN
 arm_lock = threading.Lock()
 arm_uart = drive_uart = None
 try:
-    from maix import uart
+    from maix import uart, comm
+    # maix_comm_method=uart (/boot/configs) makes MaixPy listen on UART4 for the Maix Comm Protocol at
+    # import; the arm needs that port, so this app drops the listener (the system setting is unchanged).
+    print("[Arm] Maix Comm Protocol listener removed:", comm.rm_default_comm_listener())
     try:
         from maix.peripheral import pinmap
         for pin, func in ARM_PINS:
