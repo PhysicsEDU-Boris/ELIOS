@@ -61,7 +61,7 @@ BIN_TAG_IDS = {"anorganik": 2, "organik": 3, "b3": 4}
 BASE = 5                      # Arm Base in AXES
 
 # Tag centring, robotic_hand_sim arm-hil-toolkit-2.py fce805d (0240 section 5).
-CAM_HFOV_DEG = 83.0           # ponytail: the sim's placeholder; measure the MaixCAM2's real FOV
+CAM_HFOV_DEG = 81.1           # robotic_hand_sim calibration/camera_model.json (958b185): 2*atan(644 / fx 752.9)
 AZ_SIGN = -1.0                # tag left of its line -> Arm Base plus
 TAG_MAX_AGE_S = 1.0           # detection at most this old
 TAG_SETTLE_S = 0.4            # ...and taken this long after the arm stopped
