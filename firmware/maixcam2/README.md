@@ -1,4 +1,9 @@
-# MaixCAM2 firmware (m2c-arm-v1)
+# MaixCAM2 firmware (m2c-arm-v2)
+
+v2 (0240, package 1.3.0): arm ESP32 on UART4 (`/dev/ttyS4`, A21/A22), wheels Arduino on UART2
+(`/dev/ttyS2`, one char F/B/L/R/S), AprilTag base centring in bin sequences. Console prints
+`[Arm] UART /dev/ttyS4 9600 open` and `[Drive] UART /dev/ttyS2 9600 open`.
+
 
 Deployed on the MaixCAM2 19 Nov 2026 (over USB, `/maixapp/apps/elios_clean_m2c_v1`, v1.2.0):
 `{"cmd":"ping"}` returns `m2c-arm-v1` and `firmware_sha256`

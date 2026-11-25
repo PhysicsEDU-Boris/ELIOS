@@ -4,7 +4,8 @@
 # WiFi (AP or STA) is set up by the OS; only the "Wi-Fi setup" QR screen changes it.
 
 from maix import image, display, camera, touchscreen, nn, app, network, time as mtime
-import json, asyncio, websockets, base64, math, hashlib, os, subprocess, threading, textwrap
+import json, asyncio, websockets, base64, math, hashlib, os, subprocess, threading, textwrap, sys
+sys.stdout.reconfigure(line_buffering=True)  # last_run.log shows each line as it happens (drive debugging)
 
 # vision_protocol 1 is kept, so older apps still pair clean_image (decision 0182).
 FIRMWARE_VERSION = "m2c-arm-v2"
@@ -387,7 +388,7 @@ def find_arm_tags(frame):
 # ── Arm bridge (decision 0235): app ARM_POSE / HOME / MOVE_TO_BIN / DROP -> ESP32 on UART4 ──
 # ESP32: robotic_hand_sim slave_code/6-axis-esp32-twoway-tmc2208 in stream mode, 9600 baud.
 # Owner, 25 Nov: UART4 (A21 TX / A22 RX, 1.25 mm 6-pin) = ESP32 servos, UART2 (B0/B1) = Arduino
-# wheels. ponytail: the wheels' Arduino protocol is not defined yet, so "motor" still only logs.
+# wheels (codeMotorSlave.ino, L298N; the board's 19 Nov drive patch, now on its own UART).
 import arm_bridge
 ARM_UART = "/dev/ttyS4"
 ARM_PINS = (("A21", "UART4_TX"), ("A22", "UART4_RX"))
@@ -396,7 +397,7 @@ ARM_CONFIG = "/root/elios_arm_config.json"
 ARM_CMDS = {"STATUS", "LOCK_DRIVE", "UNLOCK_DRIVE", "HOME", "PICK", "MOVE_TO_BIN", "DROP", "HOLD", "STOP",
             "ARM_POSE", "CONFIG", "HEARTBEAT"}
 arm_lock = threading.Lock()
-arm_uart = None
+arm_uart = drive_uart = None
 try:
     from maix import uart
     try:
@@ -409,6 +410,41 @@ try:
     print("[Arm] UART", ARM_UART, ARM_BAUD, "open")
 except Exception as e:
     print("[Arm] UART unavailable, arm commands answer but nothing reaches the ESP32:", e)
+
+DRIVE_UART = "/dev/ttyS2"
+DRIVE_BAUD = 9600
+try:
+    from maix import uart
+    drive_uart = uart.UART(DRIVE_UART, DRIVE_BAUD)
+    print("[Drive] UART", DRIVE_UART, DRIVE_BAUD, "open")
+except Exception as e:
+    print("[Drive] UART unavailable, motor commands only log:", e)
+
+DRIVE_DEADBAND = 10  # app PWM units: ramp tails and stick jitter (3,-3) must not flip the wheels
+
+def drive_char(left, right):
+    """App `motor` left/right (signed PWM) -> codeMotorSlave.ino command (one char F/B/L/R/S), like
+    WASD: the bigger of forward (l+r)/2 and turn (l-r)/2 wins; both under the deadband -> S."""
+    v, w = (left + right) / 2, (left - right) / 2
+    if max(abs(v), abs(w)) < DRIVE_DEADBAND: return "S"
+    if abs(v) >= abs(w): return "F" if v > 0 else "B"
+    return "R" if w > 0 else "L"
+
+DRIVE_TIMEOUT_MS = 500  # the app resends every 50 ms while the stick is held (joystick tick)
+drive_state = {"c": "S", "t": 0}
+drive_lock = threading.Lock()
+
+def drive_expired(c, t, now):
+    """The Arduino latches its last command: a moving one with no app message for the timeout -> stop."""
+    return c != "S" and now - t > DRIVE_TIMEOUT_MS
+
+def _drive_write(c, why=""):
+    if c != drive_state["c"]:
+        print("[Drive]", drive_state["c"], "->", c, why)  # changes only, not 20 lines a second
+    drive_state.update(c=c, t=mtime.ticks_ms())
+    if drive_uart is not None:
+        with drive_lock:
+            drive_uart.write_str(c)
 
 def _arm_write(text):
     if arm_uart is not None:
@@ -426,8 +462,9 @@ def _arm_send(owner, reply):
         asyncio.run_coroutine_threadsafe(owner.send(json.dumps(reply)), _ws_loop)
 
 def arm_loop():
-    """20 Hz: advance the arm, one frame to the ESP32, read its BOOT / STAT lines."""
-    buf = b""
+    """20 Hz: advance the arm, one frame to the ESP32, read its BOOT / STAT lines; the wheels' watchdog
+    and the Arduino's lines (READY = it reset)."""
+    buf = dbuf = b""
     while not app.need_exit():
         t0 = mtime.ticks_ms()
         try:
@@ -440,6 +477,16 @@ def arm_loop():
                         *lines, buf = buf.split(b"\n")
                         for line in lines:
                             arm.on_line(line.decode("ascii", "replace"))
+            if drive_uart is not None:
+                with drive_lock:
+                    chunk = drive_uart.read(-1, 0)
+                if chunk:
+                    dbuf += chunk
+                    *lines, dbuf = dbuf.split(b"\n")
+                    for line in lines:
+                        print("[Drive] Arduino:", line.decode("ascii", "replace").strip())
+            if drive_expired(drive_state["c"], drive_state["t"], mtime.ticks_ms()):
+                _drive_write("S", "(watchdog: no motor message for {} ms)".format(DRIVE_TIMEOUT_MS))
             for owner, reply in out:
                 _arm_send(owner, reply)
         except Exception as e:
@@ -653,7 +700,7 @@ async def ws_handler(websocket):
                 elif cmd == "motor":
                     left  = data.get("left", 0)
                     right = data.get("right", 0)
-                    print("[WS] motor left={} right={}".format(left, right))
+                    _drive_write(drive_char(left, right), "left={} right={}".format(left, right))
 
                 elif cmd == "servo":
                     part = data.get("part", "")
@@ -699,6 +746,7 @@ async def ws_handler(websocket):
         ws_status = "Client connected" if ws_clients else "Serving"
         if not ws_clients:
             ws_streaming = False
+            _drive_write("S", "(no client)")  # the Arduino latches the last command: no app, no wheels
             with arm_lock:
                 arm.client_gone()
         print("[WS] clients remaining:", len(ws_clients))

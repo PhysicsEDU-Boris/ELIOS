@@ -11,7 +11,8 @@ from types import SimpleNamespace
 
 NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE', 'GROW_MIN', 'median_box', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'HAND_GROWTH', 'HAND_MEMORY_MS', 'recent_hands', 'overlaps', 'size_ok', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'CAMERA_FX', 'STREAM_RESOLUTION', 'track', 'parse_track_box', 'box_det', 'track_frame',
-         'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'tags', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS'}
+         'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'tags', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS',
+         'DRIVE_DEADBAND', 'drive_char', 'DRIVE_TIMEOUT_MS', 'drive_expired'}
 
 
 class EndStream(BaseException):
@@ -352,6 +353,21 @@ class StreamTest(unittest.TestCase):
             asyncio.run(M['ws_frame_pusher']())
         self.assertEqual(searched, [])  # tags off by default: ~40 ms saved per detection frame
         self.assertTrue(all(m['arm_tags'] == [] for m in messages))
+
+
+class DriveTest(unittest.TestCase):
+    """Wheels' Arduino on UART2 (codeMotorSlave.ino, owner 25 Nov): app motor -> one char, and a stop."""
+
+    def test_motor_to_char_and_watchdog(self):
+        M = load()
+        char = M['drive_char']
+        self.assertEqual([char(80, 80), char(-80, -80), char(80, -80), char(-80, 80)], ['F', 'B', 'R', 'L'])
+        self.assertEqual(char(3, -3), 'S', 'stick jitter under the deadband')
+        self.assertEqual(char(60, 20), 'F', 'forward outweighs the turn')
+        expired = M['drive_expired']
+        self.assertTrue(expired('F', 0, M['DRIVE_TIMEOUT_MS'] + 1))
+        self.assertFalse(expired('F', 0, M['DRIVE_TIMEOUT_MS']))
+        self.assertFalse(expired('S', 0, 10 ** 6), 'already stopped')
 
 
 if __name__ == '__main__':

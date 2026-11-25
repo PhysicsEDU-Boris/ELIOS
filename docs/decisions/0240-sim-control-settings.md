@@ -322,6 +322,10 @@ display (HOME clears it); the fake MaixCAM2 does not centre. A tagged step with 
   in the gripper is. Same JSON, same image size; no timing measured.
 - **UART.** Owner: UART4 = ESP32 (servos), UART2 = Arduino (wheels). `main.py` opens `/dev/ttyS4` for the
   arm after `pinmap` A21 → UART4_TX, A22 → UART4_RX (0230's pin table; a failed pinmap is logged, not
-  fatal). The wheels' Arduino protocol is not defined, so `motor` still only logs.
+  fatal). The wheels: the board carried an on-device patch (19 Nov, not in git; backed up on the board)
+  driving the Arduino (`codeMotorSlave.ino`, L298N, one char F/B/L/R/S) on UART2 instead of the arm.
+  It is merged into `main.py` on its own UART (`/dev/ttyS2`, 9600): `drive_char` (deadband 10, forward vs
+  turn), 500 ms watchdog to `S`, `S` when the last client leaves; Arduino lines are logged. Test:
+  `test_clean_stream.py` `DriveTest`.
 - Picking stays manual: AMBIL closes the gripper, LEPAS opens it, and LOCK / SCAN work before or after the
   item is picked up.
