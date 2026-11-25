@@ -38,6 +38,7 @@ class RobotReply {
     this.eeMm,
     this.atHome,
     this.hasEeMm = false,
+    this.motionS,
   });
 
   final ReplyKind kind;
@@ -46,6 +47,9 @@ class RobotReply {
   final List<double>? eeMm;
   final bool? atHome;
   final bool hasEeMm;
+
+  /// ARM_POSE / HOME ack (0241): seconds the MaixCAM2 planned for the move, holds included.
+  final double? motionS;
 
   /// Null when [msg] is not a command reply (frames, pong, old firmware's messages).
   static RobotReply? fromJson(Map<String, dynamic> msg) {
@@ -70,6 +74,7 @@ class RobotReply {
       if (list.length == eeRaw.length) eeMm = list;
     }
     final atHome = msg['at_home'] is bool ? msg['at_home'] as bool : null;
+    final motionS = msg['motion_s'];
     return RobotReply(
       kind,
       seq,
@@ -77,6 +82,7 @@ class RobotReply {
       eeMm: eeMm,
       atHome: atHome,
       hasEeMm: hasEe,
+      motionS: motionS is num && motionS.isFinite && motionS >= 0 ? motionS.toDouble() : null,
     );
   }
 

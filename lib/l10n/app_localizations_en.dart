@@ -6146,7 +6146,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get advSavedLocal =>
-      'Saved on this phone. Connect the robot to send it.';
+      'Saved on this phone. It goes to the robot as soon as it is connected and not stopped.';
 
   @override
   String get advDiscardTitle => 'Discard changes?';

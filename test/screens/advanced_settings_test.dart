@@ -130,7 +130,7 @@ void main() {
     await t.pump();
     expect(c.read(robotSettingsProvider).inverted[0], isTrue);
     expect(sent, isEmpty);
-    expect(find.text('Saved on this phone. Connect the robot to send it.'), findsOneWidget);
+    expect(find.text('Saved on this phone. It goes to the robot as soon as it is connected and not stopped.'), findsOneWidget);
   });
 
   testWidgets('back with unsaved changes asks first; Discard drops them', (t) async {

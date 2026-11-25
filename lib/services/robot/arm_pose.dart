@@ -149,6 +149,14 @@ class ArmPose {
 
   double get gripClosedServo => 75 + gripClosedOffset;
 
+  /// New closed offset (Advanced settings). True when the gripper was closed and should close to the
+  /// new angle: the sim's _set_close_offset keeps a closed gripper closed (0241).
+  bool setGripClosedOffset(double offset) {
+    final wasClosed = _known && offset != gripClosedOffset && (_goal[_gripper] - gripClosedServo).abs() < 0.05;
+    gripClosedOffset = offset;
+    return wasClosed;
+  }
+
   /// Plans a move to [servoGoal] (clamped to each axis' range). Nothing changes until [commit].
   ArmMove plan(ServoPose servoGoal) {
     if (!_known) return const ArmMove.refused(ArmRefusal.unknownPose);

@@ -1738,7 +1738,7 @@
   "advTeacherMode": "Mode guru · kalibrasi & setelan robot",
   "advSave": "Simpan ke robot",
   "advSavedSent": "Tersimpan dan dikirim ke robot",
-  "advSavedLocal": "Tersimpan di ponsel ini. Hubungkan robot untuk mengirimnya.",
+  "advSavedLocal": "Tersimpan di ponsel ini. Dikirim ke robot begitu robot terhubung dan tidak sedang STOP.",
   "advDiscardTitle": "Buang perubahan?",
   "advDiscardBody": "Perubahan belum disimpan.",
   "advDiscard": "Buang",

@@ -10468,7 +10468,7 @@ abstract class AppLocalizations {
   /// No description provided for @advSavedLocal.
   ///
   /// In en, this message translates to:
-  /// **'Saved on this phone. Connect the robot to send it.'**
+  /// **'Saved on this phone. It goes to the robot as soon as it is connected and not stopped.'**
   String get advSavedLocal;
 
   /// No description provided for @advDiscardTitle.

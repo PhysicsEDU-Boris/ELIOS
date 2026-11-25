@@ -36,6 +36,7 @@ WATCHDOG_S = 1.0              # 0026: no app message this long -> arm holds
 # the old watchdog (freeze, error). Below the app's own 8 s stale-link timeout. Manual moves keep 1 s.
 SEQ_GRACE_S = 5.0
 SEQ_KINDS = ("MOVE_TO_BIN", "DROP", "HOME")
+MANUAL_KINDS = ("ARM_POSE", "HOME")   # 0241: like the sim's go_home / _set_axis, each replaces the other
 ESP32_SILENT_S = 3.0          # the ESP32 sends STAT every second: nothing for this long = not on the cable
 BIN_TAG_FRESH_S = 2.0         # DROP guard
 UNKNOWN_HOME_S = 6.0          # HOME after an ESP32 reset: the slowest full travel
@@ -315,6 +316,7 @@ class ArmBridge:
     def _cmd_status(self, data, owner):
         return [self._reply("ack", data, at_home=self.known and self._at(HOME),
                             servo=self.cmd if self.known else None, esp32_boot=self.boot, esp32_stat=self.stat,
+                            trims=self.trims, inverted=self.inverted,
                             profile=self.profile, base_corr=round(self.base_corr, 2), esp32_age_s=self.esp32_age())]
 
     def _cmd_lock_drive(self, data, owner):
@@ -335,6 +337,7 @@ class ArmBridge:
         self.trims, self.inverted = [0.0] * 6, [False] * 6
         for k, field in enumerate(CONFIG_FIELDS):
             self.trims[field], self.inverted[field] = trims[k], inverted[k]
+        self.inverted[0] = data.get("gripInverted") is True   # 0241: the gripper's own switch (sim: invert per axis)
         # 0240: clamped per axis; missing or bad axes get the defaults, never a rejected CONFIG.
         # The leg already playing keeps its profile; the next leg uses this one.
         self.profile = complete_profile(data.get("profile"))
@@ -359,7 +362,7 @@ class ArmBridge:
             return [self._reply("error", data, reason="invalid_path")]
         if not self.known:
             return [self._reply("error", data, reason="pose_unknown")]
-        if self.motion is not None and self.motion[2] != "ARM_POSE":
+        if self.motion is not None and self.motion[2] not in MANUAL_KINDS:
             return [self._reply("error", data, reason="busy")]
         for p in path:
             if any(not (servo_range(i)[0] - 1e-6 <= v <= servo_range(i)[1] + 1e-6) for i, v in enumerate(p)):
@@ -367,13 +370,18 @@ class ArmBridge:
         at = to_sim(self.cmd)
         for p in path:
             if path_unsafe(at, to_sim(p)):
-                return [self._reply("error", data, reason="tank")]
+                # 0241: the app planned from its last goal while the arm is still on its way there; the sim's
+                # _request plans from where the arm is now, so do that before refusing.
+                way = plan(to_sim(self.cmd), to_sim(path[-1]))
+                if way is None:
+                    return [self._reply("error", data, reason="tank")]
+                path = [from_sim(w, path[-1][0]) for w in way]
+                break
             at = to_sim(p)
-        self._start(owner, data, "ARM_POSE", [(p, 0.0) for p in path])
-        return [self._reply("ack", data)]
+        return [self._reply("ack", data, motion_s=self._start(owner, data, "ARM_POSE", [(p, 0.0) for p in path]))]
 
     def _cmd_home(self, data, owner):
-        if self.motion is not None and self.motion[2] != "ARM_POSE":
+        if self.motion is not None and self.motion[2] not in MANUAL_KINDS:
             return [self._reply("error", data, reason="busy")]
         self.base_corr = 0.0   # home is the base's reference again (the sim's Zero slip)
         if not self.known:
@@ -381,13 +389,12 @@ class ArmBridge:
             self.cmd = list(HOME)
             self.known = True
             # ponytail: motion_done after the slowest full travel (Arm B 180 deg at 30 deg/s), not a measured arrival.
-            self._start(owner, data, "HOME", [(list(HOME), UNKNOWN_HOME_S)])
-            return [self._reply("ack", data)]
+            return [self._reply("ack", data, motion_s=self._start(owner, data, "HOME", [(list(HOME), UNKNOWN_HOME_S)]))]
         way = plan(to_sim(self.cmd), to_sim(HOME))
         if way is None:
             return [self._reply("error", data, reason="tank")]
-        self._start(owner, data, "HOME", [(from_sim(w, HOME[0]), 0.0) for w in way])
-        return [self._reply("ack", data)]
+        # motion_s: the app waits that long (+5 s) for motion_done before calling HOME failed (0241)
+        return [self._reply("ack", data, motion_s=self._start(owner, data, "HOME", [(from_sim(w, HOME[0]), 0.0) for w in way]))]
 
     def _cmd_move_to_bin(self, data, owner):
         name = data.get("bin")
@@ -429,6 +436,11 @@ class ArmBridge:
     # -- motion --
 
     def _start(self, owner, data, kind, legs):
+        """Plays [legs]; returns their planned seconds (moves + holds, no centring or pauses)."""
+        total, at = 0.0, self.cmd
+        for goal, hold, *rest in legs:
+            total += leg_seconds(at, goal, rest[0] if rest else self.profile) + hold
+            at = goal
         self.at_bin = self.tag_seen = None
         self.pending_bin = None
         self.motion = (owner, data, kind)
@@ -438,6 +450,7 @@ class ArmBridge:
         self.leg = None
         self.streaming = True
         self._next_leg(self.clock())
+        return round(total, 2)
 
     def _next_leg(self, now):
         goal, hold, *rest = self.legs.pop(0)   # a sequence step's own profile, else the live one

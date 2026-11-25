@@ -97,9 +97,9 @@ class ArmPose(unittest.TestCase):
 
     def test_plays_the_path_together_and_answers_motion_done_with_the_pose(self):
         arm, clock, frames, _ = rig()
-        self.assertEqual(arm.handle({"cmd": "ARM_POSE", "seq": 7, "path": [RAISED]}, "app"),
-                         [{"event": "ack", "seq": 7}])
         dur = ab.leg_seconds(ab.HOME, RAISED)
+        self.assertEqual(arm.handle({"cmd": "ARM_POSE", "seq": 7, "path": [RAISED]}, "app"),
+                         [{"event": "ack", "seq": 7, "motion_s": round(dur, 2)}])
         out = run(arm, clock, dur / 2)
         self.assertEqual(out, [])
         mid = wire(frames[-1])
@@ -139,6 +139,47 @@ class ArmPose(unittest.TestCase):
         out = run(arm, clock, 40)
         self.assertEqual(out[-1][1]["event"], "motion_done")
         self.assertEqual(wire(frames[-1]), ab.HOME)
+        for f in frames:
+            self.assertFalse(ab.unsafe(ab.to_sim(wire(f))), f)
+
+    def test_home_ack_says_how_long_and_home_or_a_move_replaces_home(self):
+        """0241: the app's HOME timeout comes from motion_s; HOME twice or a slider during HOME replans
+        (the sim's go_home / _set_axis) instead of answering busy."""
+        arm, clock, frames, _ = rig()
+        turned = [75.0, 90.0, 0.0, 60.0, 60.0, 260.0]
+        arm.handle({"cmd": "ARM_POSE", "seq": 1, "path": [turned]}, "app")
+        run(arm, clock, 20)
+        ack = arm.handle({"cmd": "HOME", "seq": 2}, "app")[0]
+        self.assertEqual(ack["event"], "ack")
+        way = ab.plan(ab.to_sim(turned), ab.to_sim(ab.HOME))
+        legs = [turned] + [ab.from_sim(w, ab.HOME[0]) for w in way]
+        self.assertAlmostEqual(ack["motion_s"], sum(ab.leg_seconds(a, b) for a, b in zip(legs, legs[1:])), places=1)
+        self.assertGreater(ack["motion_s"], 5, "longer than the app's old fixed 5 s HOME timeout")
+        run(arm, clock, 1)
+        self.assertEqual(arm.handle({"cmd": "HOME", "seq": 3}, "app")[0]["event"], "ack")
+        self.assertEqual(arm.handle({"cmd": "ARM_POSE", "seq": 4, "path": [RAISED]}, "app")[0]["event"], "ack")
+        self.assertEqual(arm.handle({"cmd": "HOME", "seq": 5}, "app")[0]["event"], "ack")
+        out = run(arm, clock, 20)
+        self.assertEqual([(r["event"], r["seq"]) for _, r in out], [("motion_done", 5)])
+        self.assertEqual(wire(frames[-1]), ab.HOME)
+        arm.on_line("BOOT reason=poweron")
+        self.assertEqual(arm.handle({"cmd": "HOME", "seq": 6}, "app")[0]["motion_s"], ab.UNKNOWN_HOME_S)
+
+    def test_a_path_planned_from_the_apps_goal_is_replanned_from_where_the_arm_is(self):
+        """0241, the sim's _request plans from the command now, not from the last goal."""
+        arm, clock, frames, _ = rig()
+        low = [75.0, 90.0, 0.0, 180.0, 140.0, 90.0]   # leaning forward, low
+        up = [75.0, 90.0, 0.0, 60.0, 60.0, 90.0]
+        turned = up[:5] + [260.0]                       # high, behind the base over the tank
+        arm.handle({"cmd": "ARM_POSE", "seq": 1, "path": [low]}, "app")
+        run(arm, clock, 5)
+        arm.handle({"cmd": "ARM_POSE", "seq": 2, "path": [up]}, "app")
+        run(arm, clock, 0.1)                          # the app's goal is up; the arm is still low
+        self.assertFalse(ab.path_unsafe(ab.to_sim(up), ab.to_sim(turned)), "the app's straight path from its goal")
+        self.assertTrue(ab.path_unsafe(ab.to_sim(arm.cmd), ab.to_sim(turned)), "straight from here hits the tank")
+        self.assertEqual(arm.handle({"cmd": "ARM_POSE", "seq": 3, "path": [turned]}, "app")[0]["event"], "ack")
+        out = run(arm, clock, 30)
+        self.assertEqual(out[-1][1]["servo"], turned)
         for f in frames:
             self.assertFalse(ab.unsafe(ab.to_sim(wire(f))), f)
 
@@ -314,6 +355,19 @@ class Config(unittest.TestCase):
             self.assertEqual((again.trims, again.inverted), (arm.trims, arm.inverted))
             self.assertEqual(arm.handle({"cmd": "CONFIG", "seq": 2, "trims": [99, 0, 0, 0, 0],
                                          "inverted": [False] * 5})[0]["reason"], "invalid_config")
+
+    def test_config_inverts_the_gripper_and_status_reports_the_config(self):
+        """0241: Advanced settings' gripper invert reaches the wire; STATUS shows what the board uses."""
+        arm, clock, frames, _ = rig()
+        arm.handle({"cmd": "CONFIG", "seq": 1, "trims": [0, 0, 0, 0, 2], "inverted": [False] * 5, "gripInverted": True})
+        st = arm.handle({"cmd": "STATUS", "seq": 2})[0]
+        self.assertEqual((st["trims"], st["inverted"]), ([0, 2, 0, 0, 0, 0], [True] + [False] * 5))
+        arm.handle({"cmd": "ARM_POSE", "seq": 3, "path": [ab.HOME]}, "app")
+        run(arm, clock, 0.1)
+        self.assertEqual(wire(frames[-1])[:2], [0, 92], "gripper 180 inverted, wrist yaw 90 + trim 2")
+        arm.handle({"cmd": "CONFIG", "seq": 4, "trims": [0] * 5, "inverted": [False] * 5})
+        run(arm, clock, 0.1)
+        self.assertEqual(wire(frames[-1])[:2], [180, 90], "a trim change shows on the next frame, no move needed")
 
     def test_config_profile_is_applied_saved_and_reported(self):
         """0240: CONFIG.profile drives manual moves; bad values are clamped, not rejected."""

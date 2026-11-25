@@ -138,4 +138,16 @@ void main() {
     expect(arm.goal, [75, 90, 30.5, 120, 100, 90]);
     expect(arm.home().refusal, isNull, reason: 'HOME is planned from the reported pose');
   });
+
+  test('0241: a new close offset re-closes a closed gripper (the sim keeps it closed), not an open one', () {
+    final arm = _arm();
+    arm.commit(arm.close());
+    expect(arm.setGripClosedOffset(4), isTrue, reason: 'closed at 75: follow to 79');
+    expect(arm.close().goal![0], 79);
+    arm.commit(arm.close());
+    expect(arm.setGripClosedOffset(4), isFalse, reason: 'same offset: nothing to do');
+    arm.commit(arm.open());
+    expect(arm.setGripClosedOffset(-2), isFalse, reason: 'open stays open');
+    expect(arm.gripClosedServo, 73);
+  });
 }

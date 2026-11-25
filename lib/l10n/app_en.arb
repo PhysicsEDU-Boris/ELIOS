@@ -3696,7 +3696,7 @@
   "advTeacherMode": "Teacher mode · robot calibration & settings",
   "advSave": "Save to robot",
   "advSavedSent": "Saved and sent to the robot",
-  "advSavedLocal": "Saved on this phone. Connect the robot to send it.",
+  "advSavedLocal": "Saved on this phone. It goes to the robot as soon as it is connected and not stopped.",
   "advDiscardTitle": "Discard changes?",
   "advDiscardBody": "Your changes are not saved yet.",
   "advDiscard": "Discard",

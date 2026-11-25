@@ -620,9 +620,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     // Advanced settings: new joystick constants from the next tick (0232).
     ref.listen<RobotSettings>(robotSettingsProvider, (_, s) {
       _joystick.config = s.joystick;
-      _arm
-        ..gripClosedOffset = s.gripClosedOffset
-        ..profile = s.profile;
+      _arm.profile = s.profile;
+      if (_arm.setGripClosedOffset(s.gripClosedOffset)) _armMove(_arm.close()); // a closed gripper stays closed
     });
     ref.listen<AsyncValue<EspConfig>>(espConfigProvider, (previous, next) {
       final prevPreset = previous?.valueOrNull?.resolutionPreset;
@@ -1223,11 +1222,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       builder: (_) => AdvancedSettingsScreen(
         linkUp: _gate.linkUp,
         address: '${esp?.esp32IpAddress ?? '—'}:${EspConfig.maixCamPort}',
-        onSend: (config) {
-          if (!_gate.linkUp || _gate.stopped) return false;
-          _gate.robot.send('CONFIG', config);
-          return true;
-        },
+        onSend: _gate.config,
       ),
     ));
   }

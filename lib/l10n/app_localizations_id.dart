@@ -6051,7 +6051,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get advSavedLocal =>
-      'Tersimpan di ponsel ini. Hubungkan robot untuk mengirimnya.';
+      'Tersimpan di ponsel ini. Dikirim ke robot begitu robot terhubung dan tidak sedang STOP.';
 
   @override
   String get advDiscardTitle => 'Buang perubahan?';
