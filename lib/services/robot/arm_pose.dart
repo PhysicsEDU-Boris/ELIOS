@@ -34,7 +34,7 @@ const armAxes = [
   ArmAxis('Arm Base', 0, 90, -90, 270, 40),
 ];
 
-const _gripper = 0, _base = 5;
+const _gripper = 0, _yaw = 1, _pitch = 2, _base = 5;
 const gripOpenServo = 180.0;
 final ServoPose armHome = [for (final a in armAxes) a.home];
 
@@ -200,6 +200,13 @@ class ArmPose {
       ((gripOpenServo - _goal[_gripper]) / (gripOpenServo - gripClosedServo) * 100).clamp(0, 100).toDouble();
 
   ArmMove home() => plan(armHome);
+
+  /// Wrist yaw / pitch faders (0241): the servo itself across its range, like the sim's Joints tab
+  /// sliders. Height and Reach then keep the tool angle these leave.
+  ArmMove yaw(double fraction) => _with(_yaw, _lerp(_servoRange(_yaw), fraction));
+  ArmMove pitch(double fraction) => _with(_pitch, _lerp(_servoRange(_pitch), fraction));
+  double get yawFraction => _fraction(_goal[_yaw], _servoRange(_yaw));
+  double get pitchFraction => _fraction(_goal[_pitch], _servoRange(_pitch));
 
   // Height and reach: the end effector straight up/down or along the arm's heading, the tool's
   // angle to the floor kept (the sim's "Go to point" with keep pitch).

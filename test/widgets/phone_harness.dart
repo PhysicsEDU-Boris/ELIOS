@@ -270,6 +270,10 @@ Future<Rig> pumpPhone(
                             tap('reach');
                             gate.servo('reach', (v * 180).toInt());
                           },
+                          yaw: 0.5,
+                          onYaw: (_) => tap('yaw'),
+                          pitch: 0,
+                          onPitch: (_) => tap('pitch'),
                           onBaseStick: (x) {
                             tap(x == 0 ? 'base stop' : 'base');
                             joystick.setArmStick(x);

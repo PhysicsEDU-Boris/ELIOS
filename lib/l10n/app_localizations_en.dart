@@ -1186,6 +1186,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ctlFwdBack => 'Fwd / Back';
 
   @override
+  String get ctlYaw => 'YAW';
+
+  @override
+  String get ctlPitch => 'PITCH';
+
+  @override
   String get ctlArmHint =>
       'Slide up to lift, slide forward to reach. The arm only moves when the robot is not STOPPED.';
 

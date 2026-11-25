@@ -158,4 +158,20 @@ void main() {
     expect(ArmPose.poseUnknownFrom({'event': 'ack', 'seq': 4}), isFalse, reason: 'an ack without a servo field says nothing');
     expect(ArmPose.poseUnknownFrom({'event': 'error', 'seq': 5, 'reason': 'tank'}), isFalse);
   });
+
+  test('0241: YAW and PITCH move only their own servo across its range', () {
+    final arm = _arm();
+    expect(arm.yawFraction, 0.5, reason: 'yaw home 90 of 0..180');
+    expect(arm.pitchFraction, 0, reason: 'pitch home 0');
+    final y = arm.yaw(0.75);
+    expect(y.goal, [180, 135, 0, 180, 90, 90]);
+    arm.commit(y);
+    final p = arm.pitch(0.5);
+    expect(p.goal, [180, 135, 90, 180, 90, 90]);
+    arm.commit(p);
+    expect((arm.yawFraction, arm.pitchFraction), (0.75, 0.5));
+    expect(arm.yaw(2).goal![1], 180, reason: 'clamped to the range');
+    arm.markUnknown();
+    expect(arm.pitch(0.2).refusal, ArmRefusal.unknownPose);
+  });
 }

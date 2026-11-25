@@ -50,6 +50,10 @@ class PhoneControlLayout extends StatelessWidget {
     required this.onHeight,
     required this.reach,
     required this.onReach,
+    this.yaw = 0.5,
+    this.onYaw,
+    this.pitch = 0,
+    this.onPitch,
     required this.onBaseStick,
     required this.onPower,
     required this.onConnect,
@@ -99,6 +103,10 @@ class PhoneControlLayout extends StatelessWidget {
   final VoidCallback onHome, onPickUp, onReleaseGripper;
   final double gripper, height, reach;
   final ValueChanged<double> onGripper, onHeight, onReach;
+
+  /// Wrist yaw and pitch faders, 0..1 of each servo's range (0241); hidden without a callback.
+  final double yaw, pitch;
+  final ValueChanged<double>? onYaw, onPitch;
 
   /// BASIS joystick (0229, 0231): the knob's x in [-1, 1] on every move; 0 on let go.
   final ValueChanged<double> onBaseStick;
@@ -794,7 +802,8 @@ class PhoneControlLayout extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              ControlCaps(label),
+              // Four faders share the card (0241): a long caption (JANGKAU) shrinks a little instead of cutting off.
+              FittedBox(fit: BoxFit.scaleDown, child: ControlCaps(label)),
             ],
           ),
         );
@@ -820,8 +829,16 @@ class PhoneControlLayout extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   fader(l10n.ctlHeight, (height / 180).clamp(0.0, 1.0), onHeight),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   fader(l10n.ctlReach, (reach / 180).clamp(0.0, 1.0), onReach),
+                  if (onYaw != null) ...[
+                    const SizedBox(width: 6),
+                    KeyedSubtree(key: const ValueKey('arm_yaw'), child: fader(l10n.ctlYaw, yaw.clamp(0.0, 1.0), onYaw!)),
+                  ],
+                  if (onPitch != null) ...[
+                    const SizedBox(width: 6),
+                    KeyedSubtree(key: const ValueKey('arm_pitch'), child: fader(l10n.ctlPitch, pitch.clamp(0.0, 1.0), onPitch!)),
+                  ],
                 ],
               ),
             ),

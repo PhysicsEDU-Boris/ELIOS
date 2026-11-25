@@ -985,6 +985,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onReach: (value) {
         _fader(() { if (_armMove(_arm.reach(value))) _scheduleStatusRequest(); });
       },
+      yaw: _arm.yawFraction,
+      onYaw: (value) => _fader(() => _armMove(_arm.yaw(value))),
+      pitch: _arm.pitchFraction,
+      onPitch: (value) => _fader(() => _armMove(_arm.pitch(value))),
       onBaseStick: _joystick.setArmStick,
       onPower: link == ControlLink.disconnected
           ? reconnect

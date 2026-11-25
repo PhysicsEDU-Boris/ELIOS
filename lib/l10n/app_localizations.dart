@@ -2192,6 +2192,18 @@ abstract class AppLocalizations {
   /// **'Fwd / Back'**
   String get ctlFwdBack;
 
+  /// No description provided for @ctlYaw.
+  ///
+  /// In en, this message translates to:
+  /// **'YAW'**
+  String get ctlYaw;
+
+  /// No description provided for @ctlPitch.
+  ///
+  /// In en, this message translates to:
+  /// **'PITCH'**
+  String get ctlPitch;
+
   /// No description provided for @ctlArmHint.
   ///
   /// In en, this message translates to:

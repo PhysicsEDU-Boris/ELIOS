@@ -349,6 +349,8 @@
   "ctlUpDown": "Naik / Turun",
   "ctlReach": "JANGKAU",
   "ctlFwdBack": "Maju / Mundur",
+  "ctlYaw": "YAW",
+  "ctlPitch": "PITCH",
   "ctlArmHint": "Geser ke atas untuk mengangkat, ke depan untuk menjangkau. Lengan hanya bergerak saat robot tidak BERHENTI.",
   "ctlArmLocked": "Kontrol lengan aktif saat robot terhubung. STOP selalu berfungsi.",
   "ctlAiBusy": "ELIOS AI sedang sibuk. Coba LOCK lagi sebentar lagi.",

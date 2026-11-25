@@ -1163,6 +1163,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get ctlFwdBack => 'Maju / Mundur';
 
   @override
+  String get ctlYaw => 'YAW';
+
+  @override
+  String get ctlPitch => 'PITCH';
+
+  @override
   String get ctlArmHint =>
       'Geser ke atas untuk mengangkat, ke depan untuk menjangkau. Lengan hanya bergerak saat robot tidak BERHENTI.';
 

@@ -735,6 +735,8 @@
   "ctlUpDown": "Up / Down",
   "ctlReach": "REACH",
   "ctlFwdBack": "Fwd / Back",
+  "ctlYaw": "YAW",
+  "ctlPitch": "PITCH",
   "ctlArmHint": "Slide up to lift, slide forward to reach. The arm only moves when the robot is not STOPPED.",
   "ctlArmLocked": "Arm controls unlock when the robot is connected. STOP always works.",
   "ctlAiBusy": "ELIOS AI is busy. Try LOCK again in a moment.",
