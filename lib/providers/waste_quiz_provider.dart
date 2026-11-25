@@ -461,6 +461,7 @@ class WasteQuizNotifier extends Notifier<WasteQuizUiState> {
     final result = await AiQuizService.instance.identifyItem(
       bytes,
       wholeFrame: true,
+      robot: true, // the gripper and arm are often in the hand camera's view (0240)
     );
     if (result.item == null) return (lock: null, failure: result.failure);
     final box = result.box;

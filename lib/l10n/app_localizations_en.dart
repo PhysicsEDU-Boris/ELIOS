@@ -5700,6 +5700,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get binGotIt => 'Got it';
 
   @override
+  String binRunNeedGrip(String bin) {
+    return 'Pick it up first: close the gripper (AMBIL). 3 s later the arm takes it to the $bin bin.';
+  }
+
+  @override
+  String binRunReady(String bin) {
+    return 'After Got it, the arm waits 3 s, then takes it to the $bin bin.';
+  }
+
+  @override
+  String binRunFailed(String reason) {
+    return 'The arm could not finish sorting ($reason). It is going home.';
+  }
+
+  @override
   String get qzMute => 'Mute voice and sounds';
 
   @override
@@ -6331,6 +6346,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get advReadOnly => 'Read only';
+
+  @override
+  String get advSecSpeed => 'Speed & ramps';
+
+  @override
+  String get advSpeedSub =>
+      'Top speed per joint, and how gently it starts and stops.';
+
+  @override
+  String get advColTopSpeed => 'TOP SPEED';
+
+  @override
+  String get advSpeedUp => 'Speed up';
+
+  @override
+  String get advSlowDown => 'Slow down';
+
+  @override
+  String get advSpeedReset => 'Reset';
+
+  @override
+  String advSpeedMove(String seconds) {
+    return '30° in $seconds s';
+  }
+
+  @override
+  String get advSpeedTip =>
+      'All joints arrive together, so the slowest one sets the move time. Short ramps are snappier, long ones gentler. Bin sequences use the speeds saved in each step.';
 
   @override
   String get advArmTimeout => 'One arm move, max';

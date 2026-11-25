@@ -3520,6 +3520,30 @@
   "@binWhyB3": {"placeholders": {"item": {}}},
   "binQuizNext": "Your quiz is next",
   "binGotIt": "Got it",
+  "binRunNeedGrip": "Pick it up first: close the gripper (AMBIL). 3 s later the arm takes it to the {bin} bin.",
+  "@binRunNeedGrip": {
+    "placeholders": {
+      "bin": {
+        "type": "String"
+      }
+    }
+  },
+  "binRunReady": "After Got it, the arm waits 3 s, then takes it to the {bin} bin.",
+  "@binRunReady": {
+    "placeholders": {
+      "bin": {
+        "type": "String"
+      }
+    }
+  },
+  "binRunFailed": "The arm could not finish sorting ({reason}). It is going home.",
+  "@binRunFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "qzMute": "Mute voice and sounds",
   "qzUnmute": "Turn voice and sounds on",
   "quizLeaveTitle": "Leave the quiz?",
@@ -3737,6 +3761,21 @@
   "advLinkTip": "ESP32 health and firmware versions will show here once the MaixCAM2 forwards them.",
   "advSafetySub": "Built-in limits that protect the robot and students.",
   "advReadOnly": "Read only",
+  "advSecSpeed": "Speed & ramps",
+  "advSpeedSub": "Top speed per joint, and how gently it starts and stops.",
+  "advColTopSpeed": "TOP SPEED",
+  "advSpeedUp": "Speed up",
+  "advSlowDown": "Slow down",
+  "advSpeedReset": "Reset",
+  "advSpeedMove": "30° in {seconds} s",
+  "@advSpeedMove": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "advSpeedTip": "All joints arrive together, so the slowest one sets the move time. Short ramps are snappier, long ones gentler. Bin sequences use the speeds saved in each step.",
   "advArmTimeout": "One arm move, max",
   "advSortCap": "One sort, max",
   "advHeartbeat": "App heartbeat",

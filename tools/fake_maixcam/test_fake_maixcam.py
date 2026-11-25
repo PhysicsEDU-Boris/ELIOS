@@ -312,7 +312,8 @@ def test_r1_pick_bin_drop_and_drive_servo(tmp_path):
 
             async def command(cmd, seq, replies=1):
                 await ws.send(json.dumps({**cmd, "seq": seq}))
-                return [json.loads(await asyncio.wait_for(ws.recv(), 10)) for _ in range(replies)]
+                # 0240: bin moves take the robot's real time (ramps and holds), ~15 s for organik
+                return [json.loads(await asyncio.wait_for(ws.recv(), 40)) for _ in range(replies)]
 
             async def motion(cmd, seq):
                 result = await command(cmd, seq, 2)
@@ -332,7 +333,7 @@ def test_r1_pick_bin_drop_and_drive_servo(tmp_path):
             assert fake.held_item is None and not fake.items["bottle"]["on"]
 
             await ws.send(json.dumps({"cmd": "servo", "part": "base", "val": 120}))
-            await asyncio.sleep(1)
+            await asyncio.sleep(1.5)   # organik's DROP ends with the base at -14.7 deg: 45 deg at 40 deg/s
             assert fake.world.angles[0] == pytest.approx(30, abs=1)
             await ws.send(json.dumps({"cmd": "servo", "part": "elbow", "val": 60}))
             await asyncio.sleep(0.1)
@@ -352,12 +353,16 @@ def test_r1_pick_bin_drop_and_drive_servo(tmp_path):
 
 
 def test_bin_paths_from_owner_sequences():
-    """0233: Left-Tank-Throw is the B3 bin; MOVE_TO_BIN stops at Pose 4, DROP is Poses 5-7."""
+    """0240: b3 = Left-Tank-New, anorganik = Mid-Tank, organik = Right-Tank-New. MOVE_TO_BIN stops at
+    the state point with the gripper closed; DROP opens it and ends at home."""
     paths = fm.bin_paths()
-    assert set(paths) == {"b3"}, "organik and anorganik have no sequence yet"
-    move, drop = paths["b3"]
-    assert [m["Arm Base"] for m in move] == [145.65, 197.8, 185.15, 213.15]
-    assert [d["Gripper"] for d in drop] == [180.0, 85.0, 180.0]
+    assert set(paths) == {"b3", "anorganik", "organik"}
+    assert [m["Arm Base"] for m in paths["b3"][0]] == [167.01, 243.0]
+    assert [m["Arm Base"] for m in paths["anorganik"][0]] == [167.01, 249.0, 270.0]
+    assert [m["Arm Base"] for m in paths["organik"][0]] == [12.99, -82.0]
+    for name, (move, drop) in paths.items():
+        assert all(m["Gripper"] == 75.0 for m in move), name
+        assert all(d["Gripper"] == 180.0 for d in drop), name
 
 
 @needs_sim
@@ -793,3 +798,71 @@ def test_every_command_logs_a_line(tmp_path):
     beats = [l for l in out if l.startswith("[WS] heartbeat")]
     assert 1 <= len(beats) <= 3, "once a second at most"
     assert all(l in ("[WS] heartbeat x4/s", "[WS] heartbeat x3/s", "[WS] heartbeat x5/s") for l in beats), beats
+
+
+# ── 0240: the fake moves like the robot (arm_bridge's profile maths, pinned to the sim) ──
+
+def _fake(tmp_path):
+    labels = fm.load_labels()
+    sc = fm.load_scenario(_scenario(tmp_path), labels)
+    world = fm.SimWorld(SIM, sc, images_dir=tmp_path / "x", log=lambda *_: None)
+    return world, fm.FakeMaixCam(world, sc, labels, log=lambda *_: None)
+
+
+@needs_sim
+def test_legs_take_the_robots_time_with_ramps_and_hold(tmp_path):
+    world, _ = _fake(tmp_path)
+    try:
+        base = {**fm.ab.DEFAULT_PROFILE, "Arm Base": {"vmax": 32.0, "accel": 0.72, "decel": 0.18}}
+        goal = world.servo6(np.array([60.0, 0, 0, 0, 0]), 75.0)   # base +60 and the gripper closes together
+        want = fm.ab.leg_seconds(world.servo6(), goal, base)
+        world.start_leg(goal, base, hold=0.5)
+        t, dt, mid = 0.0, 0.01, None
+        while not world.step(dt):
+            t += dt
+            if mid is None and t >= want / 2:
+                mid = world.angles[0]
+        assert t + dt == pytest.approx(want + 0.5, abs=0.02)
+        assert world.angles == pytest.approx([60, 0, 0, 0, 0], abs=1e-6)
+        assert world.grip_servo == 75.0 and world.gripper_closed, "the gripper is a timed axis"
+        # 72 % speed-up / 18 % slow-down: half way in time is well under half way in angle
+        u = 0.5
+        assert mid == pytest.approx(60 * fm.ab.ramp(u, 0.72, 0.18), abs=1.0)
+    finally:
+        world.close()
+
+
+@needs_sim
+def test_closing_the_gripper_at_an_item_grips_it_manually(tmp_path):
+    world, fake = _fake(tmp_path)
+    try:
+        at = world.solve_ik(world.pick_point("bottle"))
+        assert at is not None
+        world.angles[:] = world.target[:] = at
+        names = [a.name for a in world.hil_config.AXES]
+        fake._set_grip(dict(zip(names, world.servo6(at, 75.0))))
+        assert fake.held_item == "bottle" and world.held_item == "bottle"
+        fake._set_grip(dict(zip(names, world.servo6(at, 180.0))))
+        assert fake.held_item is None and fake.items["bottle"]["on"], "let go on the floor, not in a bin"
+        world.angles[:] = 0
+        fake._set_grip(dict(zip(names, world.servo6(np.zeros(5), 75.0))))
+        assert fake.held_item is None, "closing far from the item grips nothing"
+    finally:
+        world.close()
+
+
+@needs_sim
+def test_config_profile_drives_manual_moves(tmp_path):
+    async def body(url, fake):
+        async with websockets.connect(url) as ws:
+            await ws.recv()
+            prof = {"Arm Base": {"vmax": 10, "accel": 0.5, "decel": 0.5}}
+            await ws.send(json.dumps({"cmd": "CONFIG", "seq": 1, "trims": [0] * 5, "inverted": [False] * 5, "profile": prof}))
+            assert json.loads(await ws.recv()) == {"event": "ack", "seq": 1}
+            assert fake.profile["Arm Base"] == {"vmax": 10.0, "accel": 0.5, "decel": 0.5}
+            await ws.send(json.dumps({"cmd": "ARM_POSE", "seq": 2, "path": [[180, 90, 0, 180, 90, 100]]}))
+            assert json.loads(await ws.recv())["event"] == "ack"
+            return fake.world.leg["dur"]
+
+    dur = run(tmp_path, {"items": [BOTTLE]}, body)
+    assert dur == pytest.approx(10 / (1 - 0.5) / 10)   # 10 deg at 10 deg/s, peak = 2x mean

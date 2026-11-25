@@ -3,8 +3,8 @@ off the board in test_arm_bridge.py.
 
 The app plans manual moves (0234) and sends ARM_POSE paths in servo degrees. This module checks
 each path again (joint ranges and the tank, a last line of defence), plays it like
-robotic_hand_sim hil/motion.py (all joints start and arrive together, smoothstep, 80 % of each
-axis' speed) and streams one frame per tick to the ESP32 running
+robotic_hand_sim arm-hil-toolkit-2.py ProfiledMotion (all joints start and arrive together; each
+axis ramps up, cruises at its max speed and ramps down, 0240) and streams one frame per tick to the ESP32 running
 slave_code/6-axis-esp32-twoway-tmc2208 in stream mode:
 
     "F0,F1,F2,F3,F4,F5,CC\\n"  Gripper, Wrist Yaw, Wrist Pitch, Arm B, Arm A, Base (wire degrees,
@@ -12,6 +12,12 @@ slave_code/6-axis-esp32-twoway-tmc2208 in stream mode:
 
 It also plays the owner's bin sequences (bin_sequences.json, 0233) and guards DROP: only at the
 bin's state point with that bin's AprilTag seen in the last BIN_TAG_FRESH_S.
+
+AprilTag centring (0240 section 5, the sim's _align_done / _slipped): the MaixCAM2 is the hand
+camera (rides on Arm A, turns with Arm Base). When a sequence step saved with a tag arrives, Arm
+Base alone steers the live tag back onto its saved vertical line, then the step's hold starts. The
+correction found is kept in base_corr (the open-loop base slipped) and added to every later step
+until HOME or an ESP32 reset.
 
 Every field is always filled: an empty field releases (limps) that servo.
 """
@@ -44,6 +50,20 @@ SIM_LIMITS = ((-180.0, 180.0), (-50.0, 50.0), (-180.0, 0.0), (0.0, 180.0), (-90.
 # The app's CONFIG lists trims / inverted as Base, Arm A, Arm B, Wrist Pitch, Wrist Yaw (0232).
 CONFIG_FIELDS = (5, 4, 3, 2, 1)
 BIN_TAG_IDS = {"anorganik": 2, "organik": 3, "b3": 4}
+BASE = 5                      # Arm Base in AXES
+
+# Tag centring, robotic_hand_sim arm-hil-toolkit-2.py fce805d (0240 section 5).
+CAM_HFOV_DEG = 83.0           # ponytail: the sim's placeholder; measure the MaixCAM2's real FOV
+AZ_SIGN = -1.0                # tag left of its line -> Arm Base plus
+TAG_MAX_AGE_S = 1.0           # detection at most this old
+TAG_SETTLE_S = 0.4            # ...and taken this long after the arm stopped
+ALIGN_TOL_DEG = 1.0
+ALIGN_GAIN = 0.8
+ALIGN_MAX_STEP_DEG = 10.0
+ALIGN_MAX_MOVES = 8
+ALIGN_WAIT_S = 4.0            # no usable tag this long -> carry on uncentred
+ALIGN_RETRIGGER_DEG = 2.0     # a centred step drifting this far while it holds is centred again
+ALIGN_MAX_CORR_DEG = 30.0
 _D = ((0.0, 5.0, 35.5), (0.0, -47.5, 194.5), (0.0, 0.0, -140.0), (0.0, -24.5, 0.0))
 
 
@@ -136,13 +156,91 @@ def plan(a, b):
     return None
 
 
-def leg_seconds(a, b):
-    t = max(1.5 * abs(y - x) / (AXES[i][5] * SPEED_MARGIN) for i, (x, y) in enumerate(zip(a, b)))
+# ── Per-joint speed profile (0240 section 1, robotic_hand_sim arm-hil-toolkit-2.py) ──
+# {axis name: {"vmax": deg/s, "accel": 0..1, "decel": 0..1}}: speed ramps up over the first `accel`
+# share of a leg, cruises at `vmax`, ramps down over the last `decel` share. The same dict is a
+# sequence step's "motion". Only the defaults are used for now; CONFIG and steps come later (0240).
+FRAC_MIN, FRAC_MAX, FRAC_DEFAULT = 0.05, 0.95, 0.33
+
+
+def vmax_cap(i):
+    """Fastest allowed peak speed of axis i: firmware limit x SPEED_MARGIN."""
+    return math.floor(AXES[i][5] * SPEED_MARGIN * 10) / 10
+
+
+def clean_axis(i, vmax, accel, decel):
+    vmax, accel, decel = float(vmax), float(accel), float(decel)
+    if not all(math.isfinite(v) for v in (vmax, accel, decel)):
+        raise ValueError("not a number")
+    vmax = min(max(vmax, 1.0), vmax_cap(i))
+    accel = min(max(accel, FRAC_MIN), FRAC_MAX)
+    decel = min(max(decel, FRAC_MIN), FRAC_MAX)
+    if accel + decel > 1.0:                # the ramps cannot overlap
+        k = 1.0 / (accel + decel)
+        accel, decel = accel * k, decel * k
+    return {"vmax": round(vmax, 1), "accel": round(accel, 3), "decel": round(decel, 3)}
+
+
+def complete_profile(d=None):
+    """Any stored / partial / bad profile -> a full, clamped one (missing or bad axes get defaults)."""
+    out = {}
+    for i, a in enumerate(AXES):
+        g = d.get(a[0]) if isinstance(d, dict) else None
+        try:
+            out[a[0]] = clean_axis(i, g["vmax"], g["accel"], g["decel"])
+        except (TypeError, KeyError, ValueError):
+            out[a[0]] = clean_axis(i, vmax_cap(i), FRAC_DEFAULT, FRAC_DEFAULT)
+    return out
+
+
+DEFAULT_PROFILE = complete_profile()
+
+
+def _axes(profile):
+    p = complete_profile(profile)
+    return [(p[a[0]]["vmax"], p[a[0]]["accel"], p[a[0]]["decel"]) for a in AXES]
+
+
+def leg_seconds(a, b, profile=None):
+    """Leg time: the slowest axis at its own peak speed (peak = mean / (1 - (accel + decel) / 2))."""
+    t = max(abs(y - x) / (1.0 - (ta + td) / 2.0) / vmax
+            for (x, y, (vmax, ta, td)) in zip(a, b, _axes(profile)))
     return max(t, MIN_LEG_S) if t > 1e-9 else 0.0
 
 
+def ramp(u, ta, td):
+    """Share of the leg done at time share u (0..1) for one axis: trapezoid speed, ramps ta and td."""
+    vp = 1.0 / (1.0 - (ta + td) / 2.0)
+    if u < ta:
+        return vp * u * u / (2.0 * ta)
+    if u > 1.0 - td:
+        return 1.0 - vp * (1.0 - u) ** 2 / (2.0 * td)
+    return vp * (ta / 2.0 + u - ta)
+
+
+def h_angle(u, w):
+    """Horizontal angle (deg) of image column u off the vertical centre line, + = right (pinhole)."""
+    return math.degrees(math.atan2(u - w / 2.0, (w / 2.0) / math.tan(math.radians(CAM_HFOV_DEG) / 2.0)))
+
+
+def saved_offset_deg(norm):
+    """A step's saved tag offset_norm as an angle with today's CAM_HFOV_DEG (the sim's saved_offset_deg)."""
+    return math.degrees(math.atan(norm * math.tan(math.radians(CAM_HFOV_DEG) / 2.0)))
+
+
+def _step_tag(s):
+    """(tag id, offset_norm) a step was saved with, or None."""
+    try:
+        t = s["tag"]["tags"][0]
+        return int(t["id"]), float(t["offset_norm"])
+    except (KeyError, IndexError, TypeError, ValueError):
+        return None
+
+
 def load_sequences(path):
-    """{bin: (move legs, drop legs)}; a leg is (servo pose, hold s). Bins without a sequence are left out."""
+    """{bin: (move legs, drop legs)}; a leg is (servo pose, hold s, speed profile, tag). The profile is
+    the step's saved "motion", completed; a step without one plays at the defaults, as in the sim (0240).
+    tag is (id, offset_norm) for steps saved with one, else None. Bins without a sequence are left out."""
     with open(path) as f:
         data = json.load(f)
     seqs = {q["name"]: q["steps"] for q in data["sequences"]}
@@ -153,7 +251,8 @@ def load_sequences(path):
         steps = seqs[b["sequence"]]
         names = [s["name"] for s in steps]
         at, rel = names.index(b["state_point"]), names.index(b["release"])
-        legs = [([float(s["servo"][a[0]]) for a in AXES], float(s.get("hold", 0.5))) for s in steps]
+        legs = [([float(s["servo"][a[0]]) for a in AXES], float(s.get("hold", 0.5)),
+                 complete_profile(s.get("motion")), _step_tag(s)) for s in steps]
         out[name] = (legs[:at + 1], legs[rel:])
     return out
 
@@ -171,12 +270,17 @@ class ArmBridge:
         self.known = True             # False after an ESP32 BOOT: only HOME until home again
         self.streaming = False        # nothing is sent before the first move (the servos stay as they boot)
         self.trims, self.inverted = [0.0] * 6, [False] * 6
-        self.legs = []                # [(goal, hold)] still to play after the current one
-        self.leg = None               # (start, goal, t0, dur, hold)
+        self.legs = []                # [(goal, hold[, profile])] still to play after the current one
+        self.leg = None               # (start, goal, t0, dur, hold, per-axis (vmax, accel, decel))
+        self.profile = DEFAULT_PROFILE  # speed profile for the next legs (0240)
         self.motion = None            # (owner, data, kind)
         self.pending_bin = None       # the bin MOVE_TO_BIN is going to
         self.at_bin = None            # bin whose state point the arm is at (MOVE_TO_BIN done, no move since)
         self.tag_seen = None          # when that bin's tag was last seen
+        self.tag_frame = None         # (time, {id: cx px}, frame width) of the last tag search
+        self.base_corr = 0.0          # Arm Base slip correction (servo deg) found by tag centring
+        self.align = None             # centring state of the tagged step the arm is at
+        self.align_log = []           # what centring did in this motion, for motion_done
         self.last_app = clock()
         self.boot, self.stat = None, None
         self._load_config()
@@ -198,7 +302,8 @@ class ArmBridge:
 
     def _cmd_status(self, data, owner):
         return [self._reply("ack", data, at_home=self.known and self._at(HOME),
-                            servo=self.cmd if self.known else None, esp32_boot=self.boot, esp32_stat=self.stat)]
+                            servo=self.cmd if self.known else None, esp32_boot=self.boot, esp32_stat=self.stat,
+                            profile=self.profile, base_corr=round(self.base_corr, 2))]
 
     def _cmd_lock_drive(self, data, owner):
         return [self._reply("ack", data)]   # ponytail: wheels are a later task; only the 0023 ack
@@ -218,8 +323,11 @@ class ArmBridge:
         self.trims, self.inverted = [0.0] * 6, [False] * 6
         for k, field in enumerate(CONFIG_FIELDS):
             self.trims[field], self.inverted[field] = trims[k], inverted[k]
+        # 0240: clamped per axis; missing or bad axes get the defaults, never a rejected CONFIG.
+        # The leg already playing keeps its profile; the next leg uses this one.
+        self.profile = complete_profile(data.get("profile"))
         self._save_config()
-        self.log("[Arm] CONFIG trims={} inverted={}".format(self.trims, self.inverted))
+        self.log("[Arm] CONFIG trims={} inverted={} profile={}".format(self.trims, self.inverted, self.profile))
         return [self._reply("ack", data)]
 
     def _cmd_hold(self, data, owner):
@@ -255,6 +363,7 @@ class ArmBridge:
     def _cmd_home(self, data, owner):
         if self.motion is not None and self.motion[2] != "ARM_POSE":
             return [self._reply("error", data, reason="busy")]
+        self.base_corr = 0.0   # home is the base's reference again (the sim's Zero slip)
         if not self.known:
             # After an ESP32 reset the arm's pose is unknown: home directly; the ESP32 limits the speed.
             self.cmd = list(HOME)
@@ -291,11 +400,15 @@ class ArmBridge:
         if self.motion is not None and self.motion[2] != "ARM_POSE":
             return [self._reply("error", data, reason="busy")]
         legs, at = [], to_sim(self.cmd)
-        for goal, hold in steps:   # each step through the planner, as the sim plays a sequence
+        lo, hi = servo_range(BASE)
+        for goal, hold, prof, tag in steps:   # each step through the planner, as the sim plays a sequence
+            goal = list(goal)
+            goal[BASE] = min(hi, max(lo, goal[BASE] + self.base_corr))   # every later step keeps the slip correction
             way = plan(at, to_sim(goal))
             if way is None:
                 return [self._reply("error", data, reason="tank")]
-            legs += [(from_sim(w, goal[0]), 0.0) for w in way[:-1]] + [(goal, hold)]
+            # the planner's extra legs (arm first / base first) move at the step's profile too
+            legs += [(from_sim(w, goal[0]), 0.0, prof, None) for w in way[:-1]] + [(goal, hold, prof, tag)]
             at = to_sim(goal)
         self._start(owner, data, kind, legs)
         self.pending_bin = at_bin
@@ -307,18 +420,94 @@ class ArmBridge:
         self.at_bin = self.tag_seen = None
         self.pending_bin = None
         self.motion = (owner, data, kind)
+        self.align_log = []
         self.legs = list(legs)
         self.leg = None
         self.streaming = True
         self._next_leg(self.clock())
 
     def _next_leg(self, now):
-        goal, hold = self.legs.pop(0)
-        self.leg = (list(self.cmd), list(goal), now, leg_seconds(self.cmd, goal), hold)
+        goal, hold, *rest = self.legs.pop(0)   # a sequence step's own profile, else the live one
+        prof = rest[0] if rest else self.profile
+        tag = rest[1] if len(rest) > 1 else None
+        self.align = None if tag is None else {"tag": tag, "moves": 0, "deadline": None, "done": False}
+        self._leg_to(goal, hold, prof, now)
+
+    def _leg_to(self, goal, hold, prof, now):
+        # (start, goal, t0, duration, hold, per-axis ramps, profile, hold starts at; None until it arrives)
+        self.leg = (list(self.cmd), list(goal), now, leg_seconds(self.cmd, goal, prof), hold, _axes(prof), prof, None)
 
     def _freeze(self):
-        self.legs, self.leg, self.motion = [], None, None
+        self.legs, self.leg, self.motion, self.align = [], None, None, None
         self.at_bin = self.tag_seen = None
+
+    # -- tag centring (0240 section 5) --
+
+    def _tag_err(self, tag, arrived, now):
+        """Live horizontal error (deg) of the step's tag, AZ_SIGN applied; None when not usable yet."""
+        f = self.tag_frame
+        if f is None or f[0] < arrived + TAG_SETTLE_S or now - f[0] > TAG_MAX_AGE_S or tag[0] not in f[1]:
+            return None
+        return AZ_SIGN * (h_angle(f[1][tag[0]], f[2]) - saved_offset_deg(tag[1]))
+
+    def _shift(self, delta, now):
+        """Turn the step being held (and every later leg) by delta on Arm Base; False if it can't go."""
+        _, goal, _, _, hold, _, prof, _ = self.leg
+        lo, hi = servo_range(BASE)
+        moved = [list(goal)] + [list(l[0]) for l in self.legs]
+        for p in moved:
+            p[BASE] += delta
+            if not lo <= p[BASE] <= hi:
+                return False
+        at = to_sim(self.cmd)
+        for p in moved:   # base turns over the tank are re-checked like any move
+            if path_unsafe(at, to_sim(p)):
+                return False
+            at = to_sim(p)
+        self.base_corr += delta
+        self.legs = [(p,) + tuple(l[1:]) for p, l in zip(moved[1:], self.legs)]
+        self._leg_to(moved[0], hold, prof, now)
+        return True
+
+    def _align_end(self, a, note, err=None):
+        a["done"] = True
+        self.align_log.append({"tag": a["tag"][0], "note": note, "err_deg": None if err is None else round(err, 2),
+                               "base_corr": round(self.base_corr, 2)})
+        self.log("[Arm] tag {} {} (err {}), base slip correction {:+.1f}".format(
+            a["tag"][0], note, "-" if err is None else "{:+.1f}".format(err), self.base_corr))
+        return True
+
+    def _aligned(self, arrived, now):
+        """One centring tick for a tagged step that has arrived. True when its hold may run."""
+        a = self.align
+        if a["deadline"] is None:
+            a["deadline"] = now + ALIGN_WAIT_S
+        err = self._tag_err(a["tag"], arrived, now)
+        if a["done"]:
+            if a.get("centred") and err is not None and abs(err) > ALIGN_RETRIGGER_DEG:
+                self.log("[Arm] tag {} drifted {:+.1f}, centring again".format(a["tag"][0], err))
+                a.update(done=False, centred=False, moves=0, deadline=now + ALIGN_WAIT_S)
+                return False
+            return True
+        if err is None:
+            return self._align_end(a, "no_tag") if now > a["deadline"] else False
+        if abs(err) <= ALIGN_TOL_DEG:
+            a["centred"] = True
+            return self._align_end(a, "centred", err)
+        if a["moves"] and abs(err) > abs(a["last_err"]) + ALIGN_TOL_DEG:
+            self._shift(-a["last_step"], now)   # the turn pushed the tag further off: undo it (AZ_SIGN / FOV wrong)
+            return self._align_end(a, "diverged", err)
+        if a["moves"] >= ALIGN_MAX_MOVES:
+            return self._align_end(a, "max_moves", err)
+        step = max(-ALIGN_MAX_STEP_DEG, min(ALIGN_MAX_STEP_DEG, ALIGN_GAIN * err))
+        new = max(-ALIGN_MAX_CORR_DEG, min(ALIGN_MAX_CORR_DEG, self.base_corr + step))
+        if abs(new - self.base_corr) < 0.05:
+            return self._align_end(a, "corr_limit", err)
+        old = self.base_corr
+        if not self._shift(new - old, now):
+            return self._align_end(a, "blocked", err)
+        a.update(moves=a["moves"] + 1, last_err=err, last_step=new - old, deadline=now + ALIGN_WAIT_S)
+        return False
 
     def _at(self, pose):
         return all(abs(a - b) < 0.05 for a, b in zip(self.cmd, pose))
@@ -332,14 +521,20 @@ class ArmBridge:
             self._freeze()
             out.append((owner, self._reply("error", data, reason="watchdog")))
         if self.leg is not None:
-            start, goal, t0, dur, hold = self.leg
-            s = 1.0 if dur <= 0 else (now - t0) / dur
-            if s < 1.0:
-                s = s * s * (3.0 - 2.0 * s)
-                self.cmd = [a + (b - a) * s for a, b in zip(start, goal)]
+            start, goal, t0, dur, hold, axes, _, hold_from = self.leg
+            u = 1.0 if dur <= 0 else (now - t0) / dur
+            if u < 1.0:
+                self.cmd = [a + (b - a) * ramp(u, ta, td) for a, b, (_, ta, td) in zip(start, goal, axes)]
             else:
                 self.cmd = list(goal)
-                if now - t0 >= dur + hold:
+                arrived = t0 + dur
+                if self.align is not None and not self._aligned(arrived, now):
+                    hold_from = None   # centring (or re-centring): the hold waits
+                elif hold_from is None:
+                    hold_from = arrived if self.align is None else now
+                if self.leg[1] == goal:   # still the same leg (a correction starts a new one)
+                    self.leg = self.leg[:7] + (hold_from,)
+                if hold_from is not None and now - hold_from >= hold:
                     if self.legs:
                         self._next_leg(now)
                     else:
@@ -347,17 +542,27 @@ class ArmBridge:
                         self.leg, self.motion = None, None
                         if kind == "MOVE_TO_BIN":
                             self.at_bin = self.pending_bin
-                        out.append((owner, self._reply("motion_done", data, servo=self.cmd)))
+                        extra = {"base_corr": round(self.base_corr, 2), "align": self.align_log} if self.align_log else {}
+                        out.append((owner, self._reply("motion_done", data, servo=self.cmd, **extra)))
         if self.streaming:
             self.write(make_frame(to_wire(self.cmd, self.trims, self.inverted)))
         return out
 
     # -- inputs --
 
-    def on_tags(self, ids, now=None):
-        """This frame's AprilTag ids (tag search on). Feeds the DROP guard."""
+    @property
+    def wants_tags(self):
+        """main.py searches for tags while a bin sequence plays: centring and the DROP guard need them."""
+        return self.motion is not None and self.motion[2] in ("MOVE_TO_BIN", "DROP") or self.at_bin is not None
+
+    def on_tags(self, tags, width=640, now=None):
+        """One tag search: main.py arm_tags dicts (id, cx) on a [width]-px frame, or bare ids. An empty
+        list counts too (the tag is out of view). Feeds the DROP guard and the centring."""
+        now = self.clock() if now is None else now
+        self.tag_frame = (now, {t["id"]: t["cx"] for t in tags if isinstance(t, dict)}, float(width))
+        ids = [t["id"] if isinstance(t, dict) else t for t in tags]
         if self.at_bin is not None and BIN_TAG_IDS[self.at_bin] in ids:
-            self.tag_seen = self.clock() if now is None else now
+            self.tag_seen = now
 
     def on_line(self, line):
         line = line.strip()
@@ -369,6 +574,7 @@ class ArmBridge:
             self._freeze()
             self.streaming = False
             self.known = False
+            self.base_corr = 0.0
         elif line.startswith("STAT"):
             self.stat = line[5:]
 
@@ -387,6 +593,7 @@ class ArmBridge:
             self.trims = [float(v) for v in c["trims"]]
             self.inverted = [v is True for v in c["inverted"]]
             assert len(self.trims) == len(self.inverted) == 6
+            self.profile = complete_profile(c.get("profile"))   # files from before 0240 have none
         except (OSError, ValueError, KeyError, TypeError, AssertionError):
             self.trims, self.inverted = [0.0] * 6, [False] * 6
 
@@ -395,5 +602,5 @@ class ArmBridge:
             return
         tmp = self.config_path + ".tmp"
         with open(tmp, "w") as f:
-            json.dump({"trims": self.trims, "inverted": self.inverted}, f)
+            json.dump({"trims": self.trims, "inverted": self.inverted, "profile": self.profile}, f)
         os.replace(tmp, self.config_path)

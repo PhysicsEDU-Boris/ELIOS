@@ -6,7 +6,9 @@ import 'package:elio/l10n/l10n.dart';
 import 'package:elio/models/quiz_explanation.dart';
 import 'package:elio/models/scan_record.dart';
 import 'package:elio/models/scanned_waste.dart';
+import 'package:elio/providers/robot_provider.dart' show binRunCueProvider;
 import 'package:elio/providers/waste_quiz_provider.dart';
+import 'package:elio/services/robot/bin_run.dart' show BinRunCue;
 import 'package:elio/services/ai_quiz_service.dart';
 import 'package:elio/services/elio_feedback.dart';
 import 'package:elio/theme/elio_dark_theme.dart';
@@ -122,6 +124,7 @@ Future<_Quiz> _pump(
   Size size = const Size(390, 844),
   bool dark = false,
   String lang = 'en',
+  BinRunCue binCue = BinRunCue.none,
 }) async {
   t.view.devicePixelRatio = 1;
   t.view.physicalSize = size;
@@ -134,7 +137,10 @@ Future<_Quiz> _pump(
     RepaintBoundary(
       key: shotKey,
       child: ProviderScope(
-        overrides: [wasteQuizProvider.overrideWith(() => quiz)],
+        overrides: [
+          wasteQuizProvider.overrideWith(() => quiz),
+          binRunCueProvider.overrideWith((ref) => binCue),
+        ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           locale: Locale(lang),
@@ -621,6 +627,7 @@ void main() {
       String lang = 'en',
       bool dark = false,
       VoidCallback? onStop,
+      BinRunCue binCue = BinRunCue.none,
     }) => _pump(
       t,
       seed ?? _ready,
@@ -628,6 +635,7 @@ void main() {
       robot: true,
       lang: lang,
       dark: dark,
+      binCue: binCue,
       onStop: onStop ?? () {},
     );
 
@@ -727,6 +735,26 @@ void main() {
         expect(find.text(got), findsOneWidget);
       });
     }
+
+    for (final (cue, text) in const [
+      (BinRunCue.needGrip, 'Pick it up first: close the gripper (AMBIL). 3 s later the arm takes it to the Anorganik bin.'),
+      (BinRunCue.ready, 'After Got it, the arm waits 3 s, then takes it to the Anorganik bin.'),
+    ]) {
+      testWidgets('0240: the ticket says what the arm does after Got it ($cue)', (t) async {
+        await open(t, binCue: cue);
+        await t.tap(find.byKey(const ValueKey('answer_0'))); // Organik: wrong, the right bin is Anorganik
+        await _settle(t);
+        expect(t.takeException(), isNull);
+        expect((t.widget(find.byKey(const ValueKey('bin_run_cue'))) as Text).data, text);
+      });
+    }
+
+    testWidgets('0240: no arm line when the Control screen has no robot run', (t) async {
+      await open(t);
+      await t.tap(find.byKey(const ValueKey('answer_0')));
+      await _settle(t);
+      expect(find.byKey(const ValueKey('bin_run_cue')), findsNothing);
+    });
 
     testWidgets('skip ends the check without a ticket or XP', (t) async {
       final quiz = await open(t);

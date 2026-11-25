@@ -5605,6 +5605,21 @@ class AppLocalizationsId extends AppLocalizations {
   String get binGotIt => 'Mengerti';
 
   @override
+  String binRunNeedGrip(String bin) {
+    return 'Ambil sampahnya dulu: tutup penjepit (AMBIL). 3 detik kemudian lengan membawanya ke tempat sampah $bin.';
+  }
+
+  @override
+  String binRunReady(String bin) {
+    return 'Setelah Mengerti, lengan menunggu 3 detik lalu membawanya ke tempat sampah $bin.';
+  }
+
+  @override
+  String binRunFailed(String reason) {
+    return 'Lengan tidak bisa menyelesaikan pemilahan ($reason). Lengan kembali ke posisi awal.';
+  }
+
+  @override
   String get qzMute => 'Matikan suara';
 
   @override
@@ -6234,6 +6249,34 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get advReadOnly => 'Hanya baca';
+
+  @override
+  String get advSecSpeed => 'Kecepatan';
+
+  @override
+  String get advSpeedSub =>
+      'Kecepatan maksimum tiap sendi, dan seberapa halus ia mulai dan berhenti.';
+
+  @override
+  String get advColTopSpeed => 'LAJU MAKS';
+
+  @override
+  String get advSpeedUp => 'Percepatan';
+
+  @override
+  String get advSlowDown => 'Perlambatan';
+
+  @override
+  String get advSpeedReset => 'Atur ulang';
+
+  @override
+  String advSpeedMove(String seconds) {
+    return '30° dalam $seconds dtk';
+  }
+
+  @override
+  String get advSpeedTip =>
+      'Semua sendi tiba bersamaan, jadi sendi paling lambat menentukan lama gerakan. Ramp pendek lebih cepat, ramp panjang lebih halus. Urutan ke tempat sampah memakai kecepatan yang tersimpan di tiap langkah.';
 
   @override
   String get advArmTimeout => 'Batas satu gerak lengan';

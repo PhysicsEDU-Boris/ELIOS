@@ -1252,6 +1252,26 @@ class _BinTicket extends StatelessWidget {
                               color: p.textSecondary,
                             ),
                           ),
+                          // Control screen (0240 "bin run"): what the arm does after Got it.
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final cue = ref.watch(binRunCueProvider);
+                              if (cue == BinRunCue.none) return const SizedBox.shrink();
+                              final need = cue == BinRunCue.needGrip;
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  need ? l10n.binRunNeedGrip(_short(correct)) : l10n.binRunReady(_short(correct)),
+                                  key: const ValueKey('bin_run_cue'),
+                                  style: _sq(
+                                    ElioTokens.bodySmall,
+                                    700,
+                                    need ? historyTint(p, HistoryTone.warning).fg : p.primaryText,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -3624,14 +3644,12 @@ class _ScanDonePage extends StatelessWidget {
     final actions = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Robot (R1): no new scan while the arm is still dropping the item.
+        // Robot (R1, or the bin run after the bin check, 0240): no new scan while the arm is
+        // still taking the item to its bin.
         Consumer(
           builder: (context, ref, _) {
             final dropping =
-                _isRobot(context) &&
-                (_ResultCard.r1EnabledOverride ||
-                    const bool.fromEnvironment('R1')) &&
-                ref.watch(r1DropPendingProvider);
+                _isRobot(context) && ref.watch(r1DropPendingProvider);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

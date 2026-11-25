@@ -269,7 +269,7 @@ class StreamTest(unittest.TestCase):
         M = load(asyncio=asyncio, json=json, base64=base64, print=lambda *a: None,
                  stream_cam=Camera(), ws_streaming=True, ws_clients={Client()},
                  cam_lock=threading.Lock(), setup={'stage': None},
-                 arm_lock=threading.Lock(), arm=SimpleNamespace(on_tags=arm_tags_seen.append),
+                 arm_lock=threading.Lock(), arm=SimpleNamespace(on_tags=lambda tags, w: arm_tags_seen.append(tags), wants_tags=False),
                  FIRMWARE_SHA256='test-hash',
                  mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)),
                  tracker=FakeTracker([0.9, 0.9, 0.9]),

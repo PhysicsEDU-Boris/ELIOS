@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
+import '../services/robot/arm_pose.dart' show armAxes;
+import '../services/robot/arm_profile.dart';
 import '../services/robot/motion_gate.dart' show heartbeatInterval, stopRepeatInterval, stopRepeats;
 import '../services/robot/r1_constants.dart' show armTimeout, nudgeMaxPwm, waitCap;
 import '../services/robot/robot_settings.dart';
@@ -227,6 +229,7 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
     Icons.wifi_rounded,
     Icons.shield_outlined,
     Icons.inventory_2_outlined,
+    Icons.speed_rounded,
   ];
   static const _tones = [
     HistoryTone.success,
@@ -235,6 +238,7 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
     HistoryTone.info,
     HistoryTone.error,
     HistoryTone.success,
+    HistoryTone.info,
   ];
 
   List<String> get _titles => [
@@ -244,14 +248,18 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
     l10n.advSecLink,
     l10n.advSecSafety,
     l10n.advSecBackup,
+    l10n.advSecSpeed,
   ];
+
+  /// Rail order. Section ids (and their adv_tab_ keys) stay put; Speed & ramps (6, 0240) sits under the axes.
+  static const _order = [0, 6, 1, 2, 3, 4, 5];
 
   Widget _rail(BuildContext context) {
     final p = context.elio;
     return ListView(
       padding: const EdgeInsets.only(top: 4),
       children: [
-        for (var i = 0; i < 6; i++)
+        for (final i in _order)
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: _RailItem(
@@ -275,6 +283,15 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
       2 => (l10n.advDriveSub, null),
       3 => (l10n.advLinkSub, null),
       4 => (l10n.advSafetySub, _Chip(label: l10n.advReadOnly)),
+      6 => (
+        l10n.advSpeedSub,
+        TextButton.icon(
+          key: const ValueKey('adv_speed_reset'),
+          onPressed: () => _edit((s) => s.copyWith(profile: defaultArmProfile)),
+          icon: const Icon(Icons.restart_alt_rounded, size: 16),
+          label: Text(l10n.advSpeedReset),
+        ),
+      ),
       _ => (l10n.advBackupSub, null),
     };
     return Container(
@@ -331,6 +348,7 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
                 2 => _driveBody(context),
                 3 => _linkBody(context),
                 4 => _safetyBody(context),
+                6 => _speedBody(context),
                 _ => _backupBody(context),
               },
             ),
@@ -426,6 +444,130 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
           ),
         const SizedBox(height: 8),
         _Ticket(tone: HistoryTone.warning, title: l10n.advTips, text: l10n.advAxesTip),
+      ],
+    );
+  }
+
+  /// Speed & ramps (0240): robotic_hand_sim's per-joint "max" and Detail (accel / decel), Base first.
+  Widget _speedBody(BuildContext context) {
+    final p = context.elio;
+    final names = {
+      'Arm Base': l10n.advAxisBase,
+      'Arm A': l10n.advAxisArmA,
+      'Arm B': l10n.advAxisArmB,
+      'Wrist Pitch': l10n.advAxisPitch,
+      'Wrist Yaw': l10n.advAxisYaw,
+      'Gripper': l10n.advSecGripper,
+    };
+    TextStyle cap = TextStyle(color: p.textTertiary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1);
+    TextStyle small = TextStyle(color: p.textSecondary, fontSize: 11, fontWeight: FontWeight.w600);
+    String pct(double v) => '${(v * 100).round()} %';
+
+    // One ramp changed: the other gives way so they never overlap (the sim's _edit_profile).
+    void set(int i, {double? vmax, double? accel, double? decel}) => _edit((s) {
+      final g = s.profile[armAxes[i].name]!;
+      final a = accel ?? (decel != null ? math.min(g.accel, 1 - decel) : g.accel);
+      final d = decel ?? (accel != null ? math.min(g.decel, 1 - accel) : g.decel);
+      return s.copyWith(profile: {...s.profile, armAxes[i].name: cleanAxis(i, vmax ?? g.vmax, a, d)});
+    });
+
+    Widget ramp(int i, String id, String label, double v, void Function(double) on) => Expanded(
+      child: Row(
+        children: [
+          SizedBox(width: 78, child: Text(label, style: small)),
+          Expanded(
+            child: _Stepper(
+              key: ValueKey('adv_${id}_$i'),
+              value: (v * 100).roundToDouble().clamp(5, 95).toDouble(),
+              min: 5,
+              max: 95,
+              step: 1,
+              label: pct(v),
+              onChanged: (x) => on(x / 100),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            SizedBox(width: 132, child: Text(l10n.advColAxis, style: cap)),
+            Expanded(child: Text(l10n.advColTopSpeed, style: cap)),
+            const SizedBox(width: 96),
+          ],
+        ),
+        for (final i in [5, 4, 3, 2, 1, 0])
+          Builder(
+            builder: (context) {
+              final g = _draft.profile[armAxes[i].name]!;
+              final seconds = (30 * peakOverMean(g.accel, g.decel) / g.vmax).toStringAsFixed(1);
+              return Container(
+                key: ValueKey('adv_speed_$i'),
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(border: Border(top: BorderSide(color: p.borderSubtle))),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 132,
+                                child: Text(
+                                  names[armAxes[i].name]!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: p.textPrimary, fontSize: 12, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                              Expanded(
+                                child: _Stepper(
+                                  key: ValueKey('adv_vmax_$i'),
+                                  value: g.vmax,
+                                  min: 1,
+                                  max: vmaxCap(i),
+                                  step: 1,
+                                  label: '${g.vmax.toStringAsFixed(g.vmax % 1 == 0 ? 0 : 1)}°/s',
+                                  onChanged: (v) => set(i, vmax: v),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              ramp(i, 'accel', l10n.advSpeedUp, g.accel, (v) => set(i, accel: v)),
+                              const SizedBox(width: 12),
+                              ramp(i, 'decel', l10n.advSlowDown, g.decel, (v) => set(i, decel: v)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      width: 84,
+                      child: Column(
+                        children: [
+                          CustomPaint(
+                            size: const Size(84, 30),
+                            painter: _RampGraph(g.accel, g.decel, p.primary, p.borderMedium),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(l10n.advSpeedMove(seconds), style: TextStyle(color: p.textTertiary, fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        const SizedBox(height: 8),
+        _Ticket(tone: HistoryTone.info, title: l10n.advTips, text: l10n.advSpeedTip),
       ],
     );
   }
@@ -1265,6 +1407,36 @@ class _Ticket extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Speed over time of one joint's move (0240, the sim's ProfilePlot): up, cruise, down.
+class _RampGraph extends CustomPainter {
+  const _RampGraph(this.accel, this.decel, this.color, this.base);
+  final double accel, decel;
+  final Color color, base;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final line = Path()
+      ..moveTo(0, h)
+      ..lineTo(accel * w, 2)
+      ..lineTo((1 - decel) * w, 2)
+      ..lineTo(w, h);
+    canvas.drawPath(Path.from(line)..close(), Paint()..color = color.withValues(alpha: .15));
+    canvas.drawLine(Offset(0, h), Offset(w, h), Paint()..color = base..strokeWidth = 1);
+    canvas.drawPath(
+      line,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_RampGraph old) => old.accel != accel || old.decel != decel || old.color != color;
 }
 
 class _Dashes extends CustomPainter {

@@ -1,11 +1,38 @@
 // The manual arm keys as sim-style planned moves (decision 0234).
 import 'package:elio/services/robot/arm_kinematics.dart';
 import 'package:elio/services/robot/arm_pose.dart';
+import 'package:elio/services/robot/arm_profile.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 ArmPose _arm() => ArmPose();
 
 void main() {
+  group('replies while a fader is dragged (0240: the slider moved on its own)', () {
+    test('an older move\'s motion_done or a STATUS mid-move does not pull the goal back', () {
+      final arm = _arm();
+      final first = arm.gripper(30);
+      arm.commit(first, 7);
+      final second = arm.gripper(80);
+      arm.commit(second, 8);
+      expect(arm.onServo(first.goal!, seq: 7, done: true), isFalse, reason: 'superseded move');
+      expect(arm.onServo([...armHome], seq: 9, done: false), isFalse, reason: 'STATUS mid-move');
+      expect(arm.gripperWidth, closeTo(80, 1e-9));
+      expect(arm.onServo(second.goal!, seq: 8, done: true), isTrue, reason: 'the latest move ended');
+      expect(arm.movingSeq, isNull);
+      expect(arm.onServo([...armHome], seq: 10, done: false), isTrue, reason: 'at rest: STATUS is the truth');
+      expect(arm.gripperWidth, 0);
+    });
+
+    test('STOP and HOME forget the move on its way', () {
+      final arm = _arm()..commit(_arm().gripper(50), 3);
+      arm.markUnknown();
+      expect(arm.onServo([...armHome], seq: 4, done: false), isTrue);
+      arm.commit(arm.gripper(50), 5);
+      arm.markHome();
+      expect(arm.movingSeq, isNull);
+    });
+  });
+
   test('home: the sim home pose, safe, already there', () {
     final m = _arm().home();
     expect(m.path, [armHome]);
@@ -82,9 +109,16 @@ void main() {
     expect(arm.base(120).refusal, isNull);
   });
 
-  test('move time follows the sim: Arm B 180 deg takes 1.5 * 180 / (30 * 0.8) s', () {
+  test('move time follows the sim (0240): Arm B 180 deg at 24 deg/s with 33 % ramps takes 180 / 0.67 / 24 s', () {
     final to = [...armHome]..[3] = 0;
-    expect(legSeconds(armHome, to), closeTo(11.25, 1e-9));
+    expect(legSeconds(armHome, to), closeTo(180 / 0.67 / 24, 1e-9));
+  });
+
+  test("ArmPose times its moves with the settings' profile", () {
+    final arm = _arm();
+    final fast = arm.base(120).duration;
+    arm.profile = {...defaultArmProfile, 'Arm Base': const ArmAxisProfile(8, 0.33, 0.33)};
+    expect(arm.base(120).duration.inMilliseconds, closeTo(fast.inMilliseconds * 4, 2));
   });
 
   test('the pose the MaixCAM2 reports makes the arm known again (0235)', () {

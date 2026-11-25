@@ -9721,6 +9721,24 @@ abstract class AppLocalizations {
   /// **'Got it'**
   String get binGotIt;
 
+  /// No description provided for @binRunNeedGrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick it up first: close the gripper (AMBIL). 3 s later the arm takes it to the {bin} bin.'**
+  String binRunNeedGrip(String bin);
+
+  /// No description provided for @binRunReady.
+  ///
+  /// In en, this message translates to:
+  /// **'After Got it, the arm waits 3 s, then takes it to the {bin} bin.'**
+  String binRunReady(String bin);
+
+  /// No description provided for @binRunFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The arm could not finish sorting ({reason}). It is going home.'**
+  String binRunFailed(String reason);
+
   /// No description provided for @qzMute.
   ///
   /// In en, this message translates to:
@@ -10836,6 +10854,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Read only'**
   String get advReadOnly;
+
+  /// No description provided for @advSecSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed & ramps'**
+  String get advSecSpeed;
+
+  /// No description provided for @advSpeedSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Top speed per joint, and how gently it starts and stops.'**
+  String get advSpeedSub;
+
+  /// No description provided for @advColTopSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'TOP SPEED'**
+  String get advColTopSpeed;
+
+  /// No description provided for @advSpeedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed up'**
+  String get advSpeedUp;
+
+  /// No description provided for @advSlowDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow down'**
+  String get advSlowDown;
+
+  /// No description provided for @advSpeedReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get advSpeedReset;
+
+  /// No description provided for @advSpeedMove.
+  ///
+  /// In en, this message translates to:
+  /// **'30° in {seconds} s'**
+  String advSpeedMove(String seconds);
+
+  /// No description provided for @advSpeedTip.
+  ///
+  /// In en, this message translates to:
+  /// **'All joints arrive together, so the slowest one sets the move time. Short ramps are snappier, long ones gentler. Bin sequences use the speeds saved in each step.'**
+  String get advSpeedTip;
 
   /// No description provided for @advArmTimeout.
   ///

@@ -7,7 +7,7 @@ from maix import image, display, camera, touchscreen, nn, app, network, time as 
 import json, asyncio, websockets, base64, math, hashlib, os, subprocess, threading, textwrap
 
 # vision_protocol 1 is kept, so older apps still pair clean_image (decision 0182).
-FIRMWARE_VERSION = "m2c-arm-v1"
+FIRMWARE_VERSION = "m2c-arm-v2"
 with open(__file__, "rb") as source:
     FIRMWARE_SHA256 = hashlib.sha256(source.read()).hexdigest()
 print("[Firmware]", FIRMWARE_VERSION, FIRMWARE_SHA256)
@@ -384,11 +384,13 @@ def find_arm_tags(frame):
     small = frame.resize(frame.width() // TAG_SCALE, frame.height() // TAG_SCALE)
     return arm_tags(small.find_apriltags(families=image.ApriltagFamilies.TAG36H11), TAG_SCALE)
 
-# ── Arm bridge (decision 0235): app ARM_POSE / HOME / MOVE_TO_BIN / DROP -> ESP32 on UART2 ──
-# ESP32: robotic_hand_sim slave_code/6-axis-esp32-twoway-tmc2208 in stream mode, 9600 baud,
-# MaixCAM2 B0 TX / B1 RX (owner, 19 Nov). Wheels (UART1) are a later task.
+# ── Arm bridge (decision 0235): app ARM_POSE / HOME / MOVE_TO_BIN / DROP -> ESP32 on UART4 ──
+# ESP32: robotic_hand_sim slave_code/6-axis-esp32-twoway-tmc2208 in stream mode, 9600 baud.
+# Owner, 25 Nov: UART4 (A21 TX / A22 RX, 1.25 mm 6-pin) = ESP32 servos, UART2 (B0/B1) = Arduino
+# wheels. ponytail: the wheels' Arduino protocol is not defined yet, so "motor" still only logs.
 import arm_bridge
-ARM_UART = "/dev/ttyS2"
+ARM_UART = "/dev/ttyS4"
+ARM_PINS = (("A21", "UART4_TX"), ("A22", "UART4_RX"))
 ARM_BAUD = 9600
 ARM_CONFIG = "/root/elios_arm_config.json"
 ARM_CMDS = {"STATUS", "LOCK_DRIVE", "UNLOCK_DRIVE", "HOME", "PICK", "MOVE_TO_BIN", "DROP", "HOLD", "STOP",
@@ -397,6 +399,12 @@ arm_lock = threading.Lock()
 arm_uart = None
 try:
     from maix import uart
+    try:
+        from maix.peripheral import pinmap
+        for pin, func in ARM_PINS:
+            pinmap.set_pin_function(pin, func)
+    except Exception as e:   # some images already route these pins; the UART open below says if not
+        print("[Arm] pinmap for UART4 not set:", e)
     arm_uart = uart.UART(ARM_UART, ARM_BAUD)
     print("[Arm] UART", ARM_UART, ARM_BAUD, "open")
 except Exception as e:
@@ -729,10 +737,12 @@ async def ws_frame_pusher():
                     det_frame_count = 0
                     try:
                         last_hands = hand_dets(frame) if hands is not None else []
-                        last_tags = find_arm_tags(frame) if tags["on"] else []
-                        if last_tags:
+                        # 0240: the bridge also wants tags while a bin sequence plays (centring, DROP guard).
+                        searching = tags["on"] or arm.wants_tags
+                        last_tags = find_arm_tags(frame) if searching else []
+                        if searching:
                             with arm_lock:
-                                arm.on_tags([t["id"] for t in last_tags])
+                                arm.on_tags(last_tags, cam_w)
                         detection_frame_id = frame_id
                     except Exception as de:
                         print("[AI] detect error:", de)

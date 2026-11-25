@@ -8,6 +8,7 @@ library;
 import 'dart:math' as math;
 
 import 'arm_kinematics.dart';
+import 'arm_profile.dart';
 
 /// Six servo angles in the firmware's field order F0..F5 (hil/config.py AXES).
 typedef ServoPose = List<double>;
@@ -42,8 +43,8 @@ final ServoPose armHome = [for (final a in armAxes) a.home];
 const reachRangeMm = (40.0, 320.0);
 const heightRangeMm = (40.0, 370.0);
 
-/// hil/config.py SPEED_MARGIN: moves are timed at 80 % of each axis' speed limit.
-const _speedMargin = 0.8;
+/// hil/config.py SPEED_MARGIN: no joint is asked for more than 80 % of its speed limit.
+const armSpeedMargin = 0.8;
 
 Joints armToSim(ServoPose s) {
   final j = List<double>.filled(5, 0);
@@ -64,11 +65,13 @@ ServoPose armFromSim(Joints j, double gripper) =>
   return j == null ? (a.servoLo, a.servoHi) : (a.home + armJointLimits[j].$1, a.home + armJointLimits[j].$2);
 }
 
-/// Seconds one leg takes (hil/motion.py leg_time).
-double legSeconds(ServoPose a, ServoPose b) {
+/// Seconds one leg takes with speed [profile] (0240; the sim's ProfiledMotion and the MaixCAM2's
+/// leg_seconds): the slowest joint at its own top speed.
+double legSeconds(ServoPose a, ServoPose b, [ArmProfile profile = defaultArmProfile]) {
   var t = 0.0;
   for (var i = 0; i < armAxes.length; i++) {
-    t = math.max(t, 1.5 * (b[i] - a[i]).abs() / (armAxes[i].speed * _speedMargin));
+    final g = profile[armAxes[i].name] ?? defaultArmProfile[armAxes[i].name]!;
+    t = math.max(t, (b[i] - a[i]).abs() * peakOverMean(g.accel, g.decel) / g.vmax);
   }
   return t > 1e-9 ? math.max(t, 0.15) : 0.0;
 }
@@ -87,6 +90,9 @@ class ArmPose {
   /// Gripper closed angle offset (Advanced settings, 0232): closed = 75 + offset.
   double gripClosedOffset = 0;
 
+  /// Speed profile the MaixCAM2 plays manual moves with (Advanced settings, 0240): times [plan].
+  ArmProfile profile = defaultArmProfile;
+
   ServoPose _goal = [...armHome];
   bool _known = true;
 
@@ -96,12 +102,29 @@ class ArmPose {
   /// False after a STOP or an R1 sort: where the arm stopped is unknown, so only HOME (the
   /// firmware's own) is allowed until the arm is home again.
   bool get known => _known;
-  void markUnknown() => _known = false;
+  void markUnknown() {
+    _known = false;
+    movingSeq = null;
+  }
+
+  /// Seq of the manual ARM_POSE still on its way. A reply to an older, superseded command, or a
+  /// STATUS mid-move, carries a pose the arm is only passing through: taking it as the goal pulled
+  /// the sliders back while the student dragged them ("moves on its own", 0240).
+  int? movingSeq;
 
   /// The MaixCAM2 reported the pose it last sent to the ESP32 (0235: motion_done, STATUS).
   void sync(ServoPose servo) {
     _goal = [...servo];
     _known = true;
+    movingSeq = null;
+  }
+
+  /// A reply's `servo`: taken while no manual move is on its way, or as that move's own end.
+  /// True when it was taken.
+  bool onServo(ServoPose servo, {required int? seq, required bool done}) {
+    if (movingSeq != null && !(done && seq == movingSeq)) return false;
+    sync(servo);
+    return true;
   }
 
   /// [sync]'s input from a reply's `servo` field, or null when it has none (old firmware, ESP32 reset).
@@ -112,6 +135,7 @@ class ArmPose {
   void markHome() {
     _goal = [...armHome];
     _known = true;
+    movingSeq = null;
   }
 
   double get gripClosedServo => 75 + gripClosedOffset;
@@ -127,14 +151,17 @@ class ArmPose {
     final path = [for (final w in p.path!) armFromSim(w, g[_gripper])];
     var s = 0.0, from = _goal;
     for (final leg in path) {
-      s += legSeconds(from, leg);
+      s += legSeconds(from, leg, profile);
       from = leg;
     }
     return ArmMove._(path, null, Duration(milliseconds: (s * 1000).round()));
   }
 
-  /// The move was sent: it is the new goal.
-  void commit(ArmMove m) => _goal = [...m.goal!];
+  /// The move was sent (as [seq]): it is the new goal.
+  void commit(ArmMove m, [int? seq]) {
+    _goal = [...m.goal!];
+    movingSeq = seq;
+  }
 
   ArmMove _with(int axis, double servo) => plan([..._goal]..[axis] = servo);
 
