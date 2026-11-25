@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE', 'GROW_MIN', 'median_box', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'HAND_GROWTH', 'HAND_MEMORY_MS', 'recent_hands', 'overlaps', 'size_ok', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'CAMERA_FX', 'STREAM_RESOLUTION', 'track', 'parse_track_box', 'box_det', 'track_frame',
-         'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'tags', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS',
+         'hand_dets', 'arm_tags', 'find_arm_tags', '_CvTag', 'cv_tags', 'BinTagSearch', 'TAG_SCALE', 'tags', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS',
          'DRIVE_DEADBAND', 'drive_char', 'DRIVE_TIMEOUT_MS', 'drive_expired',
          'client_behind', 'read_frame_nowait', 'CAM_POLL_S', 'uart_read_ready',
          'unacked_bytes', 'WS_BEHIND_BYTES'}
@@ -273,6 +273,7 @@ class StreamTest(unittest.TestCase):
                  stream_cam=Camera(), ws_streaming=True, ws_clients={Client()},
                  cam_lock=threading.Lock(), setup={'stage': None},
                  arm_lock=threading.Lock(), arm=SimpleNamespace(on_tags=lambda tags, w: arm_tags_seen.append(tags), wants_tags=False),
+                 bin_tags=None, frame_gray=None,
                  FIRMWARE_SHA256='test-hash',
                  mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)),
                  tracker=FakeTracker([0.9, 0.9, 0.9]),
@@ -456,3 +457,96 @@ class DriveTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class BinTagSearchTest(unittest.TestCase):
+    """0241: the bin tags during a sort come from OpenCV in a thread; find_apriltags crashed the app."""
+
+    def test_cv_tags_like_arm_tags(self):
+        M = load(threading=threading)
+        sq = [[[100, 50], [120, 50], [120, 70], [100, 70]]]   # cv2.aruco corners, shape (1, 4, 2)
+        tags = M['cv_tags']([sq, sq], [[4], [9]])             # id 9 is not one of ours
+        self.assertEqual([(t['id'], t['cx'], t['cy']) for t in tags], [(4, 110, 60)])
+        self.assertIn('dist_mm', tags[0])
+        self.assertEqual(M['cv_tags']([], None), [])
+
+    def test_worker_gives_each_result_once_and_survives_a_detector_error(self):
+        M = load(threading=threading, print=lambda *a: None)
+        calls = []
+
+        def detect(gray):
+            calls.append(gray)
+            if gray == 'bad':
+                raise RuntimeError('cv2 hiccup')
+            return [[[[0, 0], [20, 0], [20, 20], [0, 20]]]], [[2]]
+
+        w = M['BinTagSearch'](detect)
+        for gray, stamp in (('ok', 5.0), ('bad', 6.0)):
+            w.submit(gray, stamp)
+            got = None
+            for _ in range(200):
+                got = w.take()
+                if got is not None:
+                    break
+                threading.Event().wait(0.005)
+            self.assertIsNotNone(got, gray)
+            self.assertEqual(got[0], stamp, 'stamped with its frame, for the settle check')
+            self.assertEqual([t['id'] for t in got[1]], [2] if gray == 'ok' else [])
+        self.assertIsNone(w.take(), 'each result once')
+
+    def test_stream_uses_the_worker_during_a_sort_never_find_apriltags(self):
+        fed, submitted, messages = [], [], []
+
+        class Frame:
+            def __init__(self, n):
+                self.number = n
+
+            def to_jpeg(self, quality):
+                return SimpleNamespace(to_bytes=lambda: b'x')
+
+            def width(self):
+                return 640
+
+            def height(self):
+                return 360
+
+            def find_apriltags(self, families):
+                raise AssertionError('find_apriltags crashed the app mid-sort (0241)')
+
+            resize = lambda self, w, h: self
+
+        frames = []
+
+        class Camera:
+            def read(self, block=True):
+                frames.append(Frame(len(frames) + 1))
+                return frames[-1]
+
+        class Client:
+            async def send(self, payload):
+                messages.append(json.loads(payload))
+                if len(messages) == 6:
+                    raise EndStream()
+
+        class Worker:
+            def submit(self, gray, stamp):
+                submitted.append((gray, stamp))
+
+            def take(self):
+                return (submitted[-1][1], [{'id': 2, 'cx': 300, 'cy': 100}]) if submitted else None
+
+        ticks = iter(range(0, 10 ** 6, 7))
+        arm = SimpleNamespace(wants_tags=True, clock=lambda: 42.0,
+                              on_tags=lambda tags, w, now=None: fed.append((tags, w, now)))
+        M = load(asyncio=asyncio, json=json, base64=base64, print=lambda *a: None,
+                 stream_cam=Camera(), ws_streaming=True, ws_clients={Client()},
+                 cam_lock=threading.Lock(), setup={'stage': None}, arm_lock=threading.Lock(), arm=arm,
+                 bin_tags=Worker(), frame_gray=lambda f: ('gray', f.number), FIRMWARE_SHA256='t',
+                 mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)), tracker=None, hands=None,
+                 image=SimpleNamespace(Format=SimpleNamespace(FMT_JPEG=1), ApriltagFamilies=SimpleNamespace(TAG36H11=16)))
+        with self.assertRaises(EndStream):
+            asyncio.run(M['ws_frame_pusher']())
+        self.assertTrue(submitted and fed)
+        self.assertEqual(fed[0], ([{'id': 2, 'cx': 300, 'cy': 100}], 640, 42.0))
+        self.assertTrue(any(m.get('arm_tags') for m in messages), 'the app still sees the bin tags')
+

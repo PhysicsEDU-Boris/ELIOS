@@ -425,6 +425,82 @@ def find_arm_tags(frame):
     small = frame.resize(frame.width() // TAG_SCALE, frame.height() // TAG_SCALE)
     return arm_tags(small.find_apriltags(families=image.ApriltagFamilies.TAG36H11), TAG_SCALE)
 
+# 0241: find_apriltags killed this app mid-sort on the robot (25 Nov, no Python error, even at 320x180),
+# so the sort ended "not done". While a bin sequence plays, the bin tags come from OpenCV's AprilTag
+# 36h11 detector instead: full frame (finds ~18 px tags, ~30 ms on the board), in its own thread
+# (OpenCV lets go of the GIL), newest frame only. Grip tags (PICK UP, R1) keep find_apriltags.
+class _CvTag:
+    def __init__(self, tag_id, corners):
+        self._id, self._c = tag_id, corners
+
+    def id(self):
+        return self._id
+
+    def corners(self):
+        return self._c
+
+    def cx(self):
+        return sum(p[0] for p in self._c) / 4
+
+    def cy(self):
+        return sum(p[1] for p in self._c) / 4
+
+def cv_tags(corners, ids):
+    """arm_tags from cv2.aruco detectMarkers output (corners [(1, 4, 2)], ids (N, 1) or None)."""
+    if ids is None:
+        return []
+    return arm_tags([_CvTag(int(i[0]), [(float(p[0]), float(p[1])) for p in c[0]]) for c, i in zip(corners, ids)])
+
+class BinTagSearch:
+    """submit(gray, stamp) from the stream loop; take() gives each finished (stamp, tags) once."""
+
+    def __init__(self, detect):
+        self.detect = detect          # gray image -> (corners, ids)
+        self.lock = threading.Lock()
+        self.job = self.result = None
+        self.wake = threading.Event()
+        threading.Thread(target=self._run, daemon=True).start()
+
+    def submit(self, gray, stamp):
+        with self.lock:
+            self.job = (stamp, gray)
+        self.wake.set()
+
+    def take(self):
+        with self.lock:
+            r, self.result = self.result, None
+        return r
+
+    def _run(self):
+        while True:
+            self.wake.wait()
+            self.wake.clear()
+            with self.lock:
+                job, self.job = self.job, None
+            if job is None:
+                continue
+            try:
+                found = cv_tags(*self.detect(job[1]))
+            except Exception as e:   # never fatal: no tag this frame (the DROP guard then waits)
+                print("[Tags] cv search error:", e)
+                found = []
+            with self.lock:
+                self.result = (job[0], found)
+
+def _cv_bin_tags():
+    """(BinTagSearch, frame -> gray) or (None, None) without cv2.aruco (then find_apriltags as before)."""
+    try:
+        import cv2
+        det = cv2.aruco.ArucoDetector(cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_36h11),
+                                      cv2.aruco.DetectorParameters())
+        return (BinTagSearch(lambda gray: det.detectMarkers(gray)[:2]),
+                lambda frame: cv2.cvtColor(image.image2cv(frame, ensure_bgr=True, copy=True), cv2.COLOR_BGR2GRAY))
+    except Exception as e:
+        print("[Tags] OpenCV AprilTag unavailable, bin tags use find_apriltags:", e)
+        return None, None
+
+bin_tags, frame_gray = _cv_bin_tags()
+
 # ── Arm bridge (decision 0235): app ARM_POSE / HOME / MOVE_TO_BIN / DROP -> ESP32 on UART4 ──
 # ESP32: robotic_hand_sim slave_code/6-axis-esp32-twoway-tmc2208 in stream mode, 9600 baud.
 # Owner, 25 Nov: UART4 (A21 TX / A22 RX, 1.25 mm 6-pin) = ESP32 servos, UART2 (B0/B1) = Arduino
@@ -843,11 +919,20 @@ async def ws_frame_pusher():
                     try:
                         last_hands = hand_dets(frame) if hands is not None else []
                         # 0240: the bridge also wants tags while a bin sequence plays (centring, DROP guard).
-                        searching = tags["on"] or arm.wants_tags
-                        last_tags = find_arm_tags(frame) if searching else []
-                        if searching:
-                            with arm_lock:
-                                arm.on_tags(last_tags, cam_w)
+                        if arm.wants_tags and bin_tags is not None:
+                            # 0241: OpenCV in its thread; each result fed once, stamped with its frame's time.
+                            bin_tags.submit(frame_gray(frame), arm.clock())
+                            got = bin_tags.take()
+                            if got is not None:
+                                last_tags = got[1]
+                                with arm_lock:
+                                    arm.on_tags(got[1], cam_w, now=got[0])
+                        else:
+                            searching = tags["on"] or arm.wants_tags
+                            last_tags = find_arm_tags(frame) if searching else []
+                            if searching:
+                                with arm_lock:
+                                    arm.on_tags(last_tags, cam_w)
                         detection_frame_id = frame_id
                     except Exception as de:
                         print("[AI] detect error:", de)
