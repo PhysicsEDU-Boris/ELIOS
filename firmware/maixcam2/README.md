@@ -1,4 +1,9 @@
-# MaixCAM2 firmware (m2c-arm-v2)
+# MaixCAM2 firmware (m2c-arm-v3)
+
+v3 (0240 section 9, package 1.4.0): ~20 fps stream, video lag guard (frames skipped, never queued),
+UART reads only when bytes are waiting, bin sequences pause on a briefly quiet app. Restart without the
+touchscreen: `app.switch_app("elios_clean_m2c_v1")` in a separate python3, then stop the running app (or
+the launcher UI); the launcher daemon starts it.
 
 v2 (0240, package 1.3.0): arm ESP32 on UART4 (`/dev/ttyS4`, A21/A22), wheels Arduino on UART2
 (`/dev/ttyS2`, one char F/B/L/R/S), AprilTag base centring in bin sequences. Console prints

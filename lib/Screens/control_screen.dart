@@ -318,6 +318,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       _binRun = BinRun(
         moveToBin: (bin) => _gate.linkUp && !_gate.stopped ? _gate.robot.moveToBin(bin) : null,
         drop: () => _gate.linkUp && !_gate.stopped ? _gate.robot.drop() : null,
+        // The run's own HOME (the gate's would wait: the arm still belongs to the run).
+        home: () => _gate.linkUp && !_gate.stopped ? _gate.robot.home() : null,
         onChanged: _onBinRun,
       );
       _binRunTicker = Timer.periodic(const Duration(milliseconds: 250), (_) {
@@ -1093,11 +1095,19 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     if (_dropPending.state != pending) _dropPending.state = pending;
     if (state == BinRunState.moving) _arm.markUnknown(); // the saved sequence moves the arm; motion_done says where to
     if (state == BinRunState.moving) _armTagsFor('bin run');
-    if (state == BinRunState.done && _locked != null) _lockOrUnlock(); // dropped: the box is free again
+    if (state == BinRunState.done) {
+      ref.read(robotControlProvider.notifier).resetToHome(); // dropped and back home
+      _arm.markHome();
+      _syncArmState();
+      if (_locked != null) _lockOrUnlock(); // the box is free again
+    }
     if (state == BinRunState.failed) {
       final why = _binRun!.failure ?? 'error';
       if (why != 'stopped' && why != 'link_lost') {
-        _gate.home(); // like R1's bin_check_failed: no DROP, the arm goes home by the gated path
+        // 0240: HOLD ends whatever the robot may still be playing (a lost reply, a timeout), then
+        // HOME by the gated path, like R1's bin_check_failed. STOP and a lost link stay where they are.
+        _gate.robot.hold();
+        _gate.home();
         ScaffoldMessenger.of(context)
           ..removeCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text(l10n.binRunFailed(why))));

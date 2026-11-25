@@ -28,6 +28,68 @@ void main() {
 
   RobotReply done() => RobotReply(ReplyKind.motionDone, seq);
 
+  group('lag guard and home (0240)', () {
+    late BinRun r;
+    int? Function()? homeSend;
+    setUp(() {
+      homeSend = () {
+        sent.add('HOME');
+        return ++seq;
+      };
+      r = BinRun(
+        clock: () => now,
+        delay: Duration.zero,
+        moveToBin: (b) {
+          sent.add('MOVE_TO_BIN ${b.wire}');
+          return ++seq;
+        },
+        drop: () {
+          sent.add('DROP');
+          return ++seq;
+        },
+        home: () => homeSend!(),
+      );
+    });
+
+    void toDropped() {
+      r.start(Bin.organik, holding: true);
+      r.onReply(RobotReply(ReplyKind.motionDone, seq));
+      now = now.add(const Duration(seconds: 1));
+      r.tick();
+      r.onReply(RobotReply(ReplyKind.motionDone, seq));
+    }
+
+    test('after the drop the arm goes HOME; the run ends there', () {
+      toDropped();
+      expect(sent, ['MOVE_TO_BIN organik', 'DROP', 'HOME']);
+      expect((r.state, r.busy, r.pending), (BinRunState.homing, true, true));
+      r.onReply(RobotReply(ReplyKind.motionDone, seq));
+      expect(r.state, BinRunState.done);
+    });
+
+    test('a reply that never comes ends the run (timeout), at any step', () {
+      r.start(Bin.b3, holding: true);
+      now = now.add(const Duration(seconds: 59));
+      r.tick();
+      expect(r.state, BinRunState.moving, reason: 'a slow sequence is still fine');
+      now = now.add(const Duration(seconds: 2));
+      r.tick();
+      expect((r.state, r.failure), (BinRunState.failed, 'timeout'));
+
+      r.reset();
+      toDropped();
+      now = now.add(const Duration(seconds: 61));
+      r.tick();
+      expect((r.state, r.failure), (BinRunState.failed, 'timeout'), reason: 'the HOME after the drop too');
+    });
+
+    test('HOME refused by the gate: failed, not stuck', () {
+      homeSend = () => null;
+      toDropped();
+      expect((r.state, r.failure), (BinRunState.failed, 'not_sent'));
+    });
+  });
+
   group('3 s after the quiz (owner, 25 Nov)', () {
     late BinRun slow;
     setUp(() => slow = BinRun(

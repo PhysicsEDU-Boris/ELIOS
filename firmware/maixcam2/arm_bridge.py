@@ -30,6 +30,12 @@ TICK_S = 0.05                 # hil/config.py TICK_MS: one frame per tick (20 Hz
 SPEED_MARGIN = 0.8            # hil/config.py: moves timed at 80 % of each axis' limit
 MIN_LEG_S = 0.15
 WATCHDOG_S = 1.0              # 0026: no app message this long -> arm holds
+# 0240 lag guard: a bin sequence or HOME carrying on when the app is only late (video lag, Wi-Fi) is
+# better than an arm frozen over the tank with the item. Silent > WATCHDOG_S: the sequence PAUSES where
+# it is (same pose streamed); app back within SEQ_GRACE_S: it carries on from the same point; longer:
+# the old watchdog (freeze, error). Below the app's own 8 s stale-link timeout. Manual moves keep 1 s.
+SEQ_GRACE_S = 5.0
+SEQ_KINDS = ("MOVE_TO_BIN", "DROP", "HOME")
 BIN_TAG_FRESH_S = 2.0         # DROP guard
 UNKNOWN_HOME_S = 6.0          # HOME after an ESP32 reset: the slowest full travel
 TANK_Z_MM = 167.0
@@ -281,6 +287,8 @@ class ArmBridge:
         self.base_corr = 0.0          # Arm Base slip correction (servo deg) found by tag centring
         self.align = None             # centring state of the tagged step the arm is at
         self.align_log = []           # what centring did in this motion, for motion_done
+        self.paused_at = None         # lag guard: when a sequence paused for a quiet app
+        self.paused_s = 0.0           # how long this motion has been paused in all
         self.last_app = clock()
         self.boot, self.stat = None, None
         self._load_config()
@@ -421,6 +429,7 @@ class ArmBridge:
         self.pending_bin = None
         self.motion = (owner, data, kind)
         self.align_log = []
+        self.paused_at, self.paused_s = None, 0.0
         self.legs = list(legs)
         self.leg = None
         self.streaming = True
@@ -439,6 +448,7 @@ class ArmBridge:
 
     def _freeze(self):
         self.legs, self.leg, self.motion, self.align = [], None, None, None
+        self.paused_at = None
         self.at_bin = self.tag_seen = None
 
     # -- tag centring (0240 section 5) --
@@ -515,12 +525,27 @@ class ArmBridge:
     def tick(self):
         now = self.clock()
         out = []
-        if self.leg is not None and now - self.last_app > WATCHDOG_S:
-            owner, data, _ = self.motion
-            self.log("[Arm] watchdog: no app message for {:.1f} s, arm holds".format(now - self.last_app))
-            self._freeze()
-            out.append((owner, self._reply("error", data, reason="watchdog")))
-        if self.leg is not None:
+        silent = now - self.last_app
+        if self.leg is not None and silent > WATCHDOG_S:
+            owner, data, kind = self.motion
+            if kind in SEQ_KINDS and silent <= SEQ_GRACE_S:
+                if self.paused_at is None:
+                    self.paused_at = now
+                    self.log("[Arm] app quiet {:.1f} s: {} paused where it is".format(silent, kind))
+            else:
+                self.log("[Arm] watchdog: no app message for {:.1f} s, arm holds".format(silent))
+                self._freeze()
+                out.append((owner, self._reply("error", data, reason="watchdog")))
+        elif self.paused_at is not None:
+            # the app is back: carry on from the same point (the leg's clock skips the pause)
+            gap = now - self.paused_at
+            start, goal, t0, dur, hold, axes, prof, hold_from = self.leg
+            self.leg = (start, goal, t0 + gap, dur, hold, axes, prof, None if hold_from is None else hold_from + gap)
+            if self.align is not None and self.align.get("deadline") is not None:
+                self.align["deadline"] += gap
+            self.paused_at, self.paused_s = None, self.paused_s + gap
+            self.log("[Arm] app back after {:.1f} s: {} carries on".format(gap, self.motion[2]))
+        if self.leg is not None and self.paused_at is None:
             start, goal, t0, dur, hold, axes, _, hold_from = self.leg
             u = 1.0 if dur <= 0 else (now - t0) / dur
             if u < 1.0:
@@ -543,6 +568,8 @@ class ArmBridge:
                         if kind == "MOVE_TO_BIN":
                             self.at_bin = self.pending_bin
                         extra = {"base_corr": round(self.base_corr, 2), "align": self.align_log} if self.align_log else {}
+                        if self.paused_s:
+                            extra["paused_s"] = round(self.paused_s, 2)
                         out.append((owner, self._reply("motion_done", data, servo=self.cmd, **extra)))
         if self.streaming:
             self.write(make_frame(to_wire(self.cmd, self.trims, self.inverted)))

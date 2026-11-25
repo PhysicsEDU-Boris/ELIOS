@@ -4,11 +4,12 @@
 # WiFi (AP or STA) is set up by the OS; only the "Wi-Fi setup" QR screen changes it.
 
 from maix import image, display, camera, touchscreen, nn, app, network, time as mtime
-import json, asyncio, websockets, base64, math, hashlib, os, subprocess, threading, textwrap, sys
+import json, asyncio, websockets, base64, math, hashlib, os, socket, subprocess, threading, textwrap, sys
+import fcntl, struct, termios
 sys.stdout.reconfigure(line_buffering=True)  # last_run.log shows each line as it happens (drive debugging)
 
 # vision_protocol 1 is kept, so older apps still pair clean_image (decision 0182).
-FIRMWARE_VERSION = "m2c-arm-v2"
+FIRMWARE_VERSION = "m2c-arm-v3"
 with open(__file__, "rb") as source:
     FIRMWARE_SHA256 = hashlib.sha256(source.read()).hexdigest()
 print("[Firmware]", FIRMWARE_VERSION, FIRMWARE_SHA256)
@@ -186,6 +187,45 @@ DET_EVERY_N_FRAMES = 2
 PREVIEW_QUALITY = 60
 CLEAN_QUALITY   = 80
 CLEAN_EVERY_MS  = 700
+
+# Video lag guard (0240): a frame never waits for the network and never queues behind older ones.
+# A client whose last frame is still unsent skips this one (so it always gets the newest), the
+# socket's kernel buffer is kept small (lag stays about one frame), and websockets' send() must not
+# wait for a drain (its default 32 KiB write limit is smaller than one frame, so every send waited
+# ~100 ms for the link and the stream ran at ~8 fps). Arm replies share the socket, so they never sit
+# behind a pile of frames either.
+WS_WRITE_LIMIT = 256 * 1024
+WS_SNDBUF_BYTES = 32 * 1024
+WS_BEHIND_BYTES = 16 * 1024   # still unacknowledged in the kernel (SIOCOUTQ): the link has not taken the last frame
+CAM_POLL_S = 0.004   # camera.read(block=False) poll: a blocking read holds the GIL ~60 ms (arm thread, WS)
+
+def unacked_bytes(sock):
+    """Bytes the kernel holds for this TCP socket that the other side has not acknowledged (Linux SIOCOUTQ)."""
+    return struct.unpack("i", fcntl.ioctl(sock.fileno(), termios.TIOCOUTQ, b"\0\0\0\0"))[0]
+
+def client_behind(client):
+    """True while this client's previous frame has not gone over the link yet (slow Wi-Fi, a busy phone):
+    still in asyncio's buffer, or more than WS_BEHIND_BYTES of it unacknowledged in the kernel. Frames
+    queued there would make the video lag and every arm reply wait behind them."""
+    t = getattr(client, "transport", None)
+    if t is None:
+        return False
+    try:
+        if t.get_write_buffer_size() > 0:
+            return True
+        sock = t.get_extra_info("socket")
+        return sock is not None and unacked_bytes(sock) > WS_BEHIND_BYTES
+    except Exception:
+        return False
+
+def read_frame_nowait(cam):
+    """The next camera frame, or None when none is ready yet (MaixPy may raise "Buffer empty")."""
+    try:
+        return cam.read(block=False)
+    except RuntimeError as e:
+        if "empty" in str(e).lower():
+            return None
+        raise
 TRACK_TH       = 0.5   # MixFormerV2 score below this: the box is not sent that frame
 # MixFormerV2 searches 4.5x the box around its last good position; after this many low-score
 # calls it searches the whole frame once (MaixCDK maix_nn_mixformer_v2.hpp). The default 60 was
@@ -449,6 +489,13 @@ def _drive_write(c, why=""):
         with drive_lock:
             drive_uart.write_str(c)
 
+def uart_read_ready(u):
+    """What the UART has received, without waiting. MaixPy's read(-1, 0) blocks ~35 ms holding the GIL
+    even when nothing came; polling two UARTs at 20 Hz that way halved the video rate and delayed every
+    WS reply (0240). available() is instant."""
+    n = u.available()
+    return u.read(n, 0) if n > 0 else b""
+
 def _arm_write(text):
     if arm_uart is not None:
         arm_uart.write_str(text)
@@ -474,7 +521,7 @@ def arm_loop():
             with arm_lock:
                 out = arm.tick()
                 if arm_uart is not None:
-                    chunk = arm_uart.read(-1, 0)
+                    chunk = uart_read_ready(arm_uart)
                     if chunk:
                         buf += chunk
                         *lines, buf = buf.split(b"\n")
@@ -482,7 +529,7 @@ def arm_loop():
                             arm.on_line(line.decode("ascii", "replace"))
             if drive_uart is not None:
                 with drive_lock:
-                    chunk = drive_uart.read(-1, 0)
+                    chunk = uart_read_ready(drive_uart)
                 if chunk:
                     dbuf += chunk
                     *lines, dbuf = dbuf.split(b"\n")
@@ -655,6 +702,10 @@ async def ws_handler(websocket):
     ws_clients.add(websocket)
     ws_status = "Client connected"
     print("[WS] Client connected:", websocket.remote_address)
+    try:   # lag guard: a small kernel buffer, so a slow link drops frames instead of queueing seconds of them
+        websocket.transport.get_extra_info("socket").setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, WS_SNDBUF_BYTES)
+    except Exception as e:
+        print("[WS] SO_SNDBUF not set:", e)
 
     # Tell Flutter websocket_service.dart: status=Connected
     try:
@@ -769,7 +820,7 @@ async def ws_frame_pusher():
     frame_id = 0
     last_tracked, last_hands, last_tags = None, [], []
     hands_seen = []
-    stats = dict(t0=mtime.ticks_ms(), n=0, track=0, det=0, send=0)
+    stats = dict(t0=mtime.ticks_ms(), n=0, track=0, det=0, send=0, jpeg=0, enc=0, sent=0, skipped=0)
     clean_at = None
 
     while True:
@@ -778,7 +829,10 @@ async def ws_frame_pusher():
                 with cam_lock:
                     if stream_cam is None:
                         stream_cam, cam_w, cam_h = _open_stream_camera(*STREAM_RESOLUTION)
-                    frame = stream_cam.read()
+                    frame = read_frame_nowait(stream_cam)
+                if frame is None:
+                    await asyncio.sleep(CAM_POLL_S)   # the GIL is free for the arm thread and WS handlers
+                    continue
                 frame_id += 1
                 detection_frame_id = None
                 t0 = t1 = mtime.ticks_ms()
@@ -812,7 +866,9 @@ async def ws_frame_pusher():
                 if not (track["on"] or track["pending"]):
                     last_tracked = None  # track_stop shows at once, not at the next detection frame
                 dets = ([last_tracked] if last_tracked else []) + last_hands
-                b64 = base64.b64encode(frame.to_jpeg(quality=PREVIEW_QUALITY).to_bytes()).decode()
+                jpg = frame.to_jpeg(quality=PREVIEW_QUALITY).to_bytes()
+                stats["jpeg"] += mtime.ticks_ms() - t2
+                b64 = base64.b64encode(jpg).decode()
                 message = {
                     "vision_protocol": 1,
                     "firmware_sha256": FIRMWARE_SHA256,
@@ -831,11 +887,17 @@ async def ws_frame_pusher():
                         message["clean_image"] = base64.b64encode(
                             frame.to_jpeg(quality=CLEAN_QUALITY).to_bytes()).decode()
                 payload = json.dumps(message)
+                t_enc = mtime.ticks_ms()
+                stats["enc"] += t_enc - t2
 
                 dead = set()
                 for client in ws_clients.copy():
+                    if client_behind(client):
+                        stats["skipped"] += 1
+                        continue
                     try:
                         await client.send(payload)
+                        stats["sent"] += 1
                     except Exception:
                         dead.add(client)
                 for d in dead:
@@ -846,12 +908,14 @@ async def ws_frame_pusher():
                 stats["n"] += 1
                 stats["det"] += t1 - t0     # hands + tags
                 stats["track"] += t2 - t1   # tracker
-                stats["send"] += t3 - t2
+                stats["send"] += t3 - t_enc
                 if t3 - stats["t0"] >= 5000:
                     n = stats["n"]
-                    print("[FPS] {:.1f} fps | ms/frame track {:.0f}, hands+tags {:.0f}, jpeg+send {:.0f}".format(
-                        n * 1000 / (t3 - stats["t0"]), stats["track"] / n, stats["det"] / n, stats["send"] / n))
-                    stats.update(t0=t3, n=0, track=0, det=0, send=0)
+                    print("[FPS] {:.1f} fps | ms/frame track {:.0f}, hands+tags {:.0f}, jpeg {:.0f}, encode {:.0f}, send {:.0f} | sent {:.1f}/s, skipped {} (link behind)".format(
+                        n * 1000 / (t3 - stats["t0"]), stats["track"] / n, stats["det"] / n, stats["jpeg"] / n,
+                        (stats["enc"] - stats["jpeg"]) / n, stats["send"] / n, stats["sent"] * 1000 / (t3 - stats["t0"]),
+                        stats["skipped"]))
+                    stats.update(t0=t3, n=0, track=0, det=0, send=0, jpeg=0, enc=0, sent=0, skipped=0)
 
             except Exception as fe:
                 print("[WS] frame push error:", fe)
@@ -876,7 +940,8 @@ async def run_ws_server(port):
     ws_status = "Serving"
     server = await websockets.serve(
         ws_handler, "0.0.0.0", port,
-        reuse_address=True
+        reuse_address=True, write_limit=WS_WRITE_LIMIT,
+        compression=None,   # per-message deflate cost ~50 ms a frame on this CPU and JPEG barely shrinks (0240)
     )
     _ws_server = server
     print("[WS] Server listening on port {}".format(port))

@@ -12,7 +12,9 @@ from types import SimpleNamespace
 NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE', 'GROW_MIN', 'median_box', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'HAND_GROWTH', 'HAND_MEMORY_MS', 'recent_hands', 'overlaps', 'size_ok', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'CAMERA_FX', 'STREAM_RESOLUTION', 'track', 'parse_track_box', 'box_det', 'track_frame',
          'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'tags', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS',
-         'DRIVE_DEADBAND', 'drive_char', 'DRIVE_TIMEOUT_MS', 'drive_expired'}
+         'DRIVE_DEADBAND', 'drive_char', 'DRIVE_TIMEOUT_MS', 'drive_expired',
+         'client_behind', 'read_frame_nowait', 'CAM_POLL_S', 'uart_read_ready',
+         'unacked_bytes', 'WS_BEHIND_BYTES'}
 
 
 class EndStream(BaseException):
@@ -253,7 +255,7 @@ class StreamTest(unittest.TestCase):
                 return [Tag(0, 20)] if self.number == 2 else []
 
         class Camera:
-            def read(self):
+            def read(self, block=True):
                 frames.append(Frame(len(frames) + 1))
                 return frames[-1]
 
@@ -342,9 +344,9 @@ class StreamTest(unittest.TestCase):
 
         ticks = iter(range(0, 10 ** 6, 7))
         M = load(asyncio=asyncio, json=json, base64=base64, print=lambda *a: None,
-                 stream_cam=SimpleNamespace(read=Frame), ws_streaming=True, ws_clients={Client()},
+                 stream_cam=SimpleNamespace(read=lambda block=True: Frame()), ws_streaming=True, ws_clients={Client()},
                  cam_lock=threading.Lock(), setup={'stage': None},
-                 arm_lock=threading.Lock(), arm=SimpleNamespace(on_tags=lambda ids: None),
+                 arm_lock=threading.Lock(), arm=SimpleNamespace(on_tags=lambda tags, w: None, wants_tags=False),
                  FIRMWARE_SHA256='test-hash',
                  mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)),
                  tracker=None, hands=None,
@@ -353,6 +355,88 @@ class StreamTest(unittest.TestCase):
             asyncio.run(M['ws_frame_pusher']())
         self.assertEqual(searched, [])  # tags off by default: ~40 ms saved per detection frame
         self.assertTrue(all(m['arm_tags'] == [] for m in messages))
+
+
+class LagGuardTest(unittest.TestCase):
+    """0240: video never waits for the network or the camera, and never queues behind old frames."""
+
+    def test_a_client_behind_skips_frames_and_reads_never_block(self):
+        reads, fast, slow, sleeps = [], [], [], []
+
+        class Frame:
+            def to_jpeg(self, quality):
+                return SimpleNamespace(to_bytes=lambda: b'x')
+
+        def read(block=True):
+            self.assertFalse(block, 'a blocking read holds the GIL ~60 ms')
+            reads.append(1)
+            if len(reads) % 2:
+                raise RuntimeError(': Buffer empty: read camera failed')   # no new frame yet
+            return Frame()
+
+        class Fast:
+            transport = SimpleNamespace(get_write_buffer_size=lambda: 0)
+
+            async def send(self, payload):
+                fast.append(payload)
+                if len(fast) == 5:
+                    raise EndStream()
+
+        class Slow:   # its first frame never leaves the buffer: a stalled link
+            transport = SimpleNamespace(get_write_buffer_size=lambda: 0 if not slow else 90_000)
+
+            async def send(self, payload):
+                slow.append(payload)
+
+        async def sleep(t):
+            sleeps.append(t)
+
+        ticks = iter(range(0, 10 ** 6, 7))
+        M = load(asyncio=SimpleNamespace(sleep=sleep), json=json, base64=base64, print=lambda *a: None,
+                 stream_cam=SimpleNamespace(read=read), ws_streaming=True, ws_clients={Slow(), Fast()},
+                 cam_lock=threading.Lock(), setup={'stage': None},
+                 arm_lock=threading.Lock(), arm=SimpleNamespace(on_tags=lambda tags, w: None, wants_tags=False),
+                 FIRMWARE_SHA256='test-hash', mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)),
+                 tracker=None, hands=None, image=None)
+        with self.assertRaises(EndStream):
+            asyncio.run(M['ws_frame_pusher']())
+        self.assertEqual(len(fast), 5, 'the fast client gets every frame')
+        self.assertEqual(len(slow), 1, 'the stalled client is skipped, nothing queues for it')
+        self.assertIn(M['CAM_POLL_S'], sleeps, 'no frame ready: yield instead of blocking')
+
+    def test_behind_also_counts_bytes_the_link_has_not_acknowledged(self):
+        # SIOCOUTQ is Linux-only; checked on the MaixCAM2 itself (0240 notes). Here the decision.
+        M = load()
+        unacked = [0]
+        M['unacked_bytes'] = lambda sock: unacked[0]
+        client = SimpleNamespace(transport=SimpleNamespace(get_write_buffer_size=lambda: 0,
+                                                           get_extra_info=lambda k: object()))
+        self.assertFalse(M['client_behind'](client))
+        unacked[0] = M['WS_BEHIND_BYTES'] + 1
+        self.assertTrue(M['client_behind'](client), 'the kernel still holds the last frame: skip')
+        M['unacked_bytes'] = lambda sock: 1 / 0
+        self.assertFalse(M['client_behind'](client), 'an ioctl error never stops the stream')
+
+class UartPollTest(unittest.TestCase):
+    def test_reads_only_what_is_there(self):
+        calls = []
+
+        class Uart:
+            def __init__(self, n):
+                self.n = n
+
+            def available(self):
+                return self.n
+
+            def read(self, n, timeout):
+                calls.append((n, timeout))
+                return b'x' * n
+
+        read = load()['uart_read_ready']
+        self.assertEqual(read(Uart(0)), b'')
+        self.assertEqual(calls, [], 'nothing waiting: no read (a read blocks ~35 ms holding the GIL)')
+        self.assertEqual(read(Uart(5)), b'xxxxx')
+        self.assertEqual(calls, [(5, 0)])
 
 
 class DriveTest(unittest.TestCase):

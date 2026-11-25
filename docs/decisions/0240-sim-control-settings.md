@@ -329,3 +329,48 @@ display (HOME clears it); the fake MaixCAM2 does not centre. A tagged step with 
   `test_clean_stream.py` `DriveTest`.
 - Picking stays manual: AMBIL closes the gripper, LEPAS opens it, and LOCK / SCAN work before or after the
   item is picked up.
+
+## 9. FPS and the video lag guard (owner, 25 Nov)
+
+Measured on the MaixCAM2 over USB (Mac client; the phone path adds `adb reverse` + an SSH tunnel):
+
+| | Before (v2) | After (v3) |
+|---|---|---|
+| Stream | 6–8 fps (`jpeg+send` ~100 ms a frame) | 19.9 fps (camera's own rate; bare pipeline also 19.8) |
+| STATUS reply while streaming | median 240–450 ms | median 2 ms, p90 4 ms |
+| Reader taking 4 frames/s (no read-ahead) | frames queue, reply up to 4.3 s | board sends 4/s and skips the rest, reply max 0.76 s |
+
+Causes, in order of size:
+
+1. **`uart.read(-1, 0)` blocks ~35 ms holding the GIL** even with nothing received. The arm thread polled
+   UART4 and UART2 every 50 ms, so the video pusher and the WS handlers waited for the GIL most of the time.
+   Fix: `uart_read_ready` reads only `available()` bytes.
+2. **websockets' per-message deflate** on every ~44 KB frame (JPEG does not shrink): `compression=None`.
+3. **Blocking `camera.read()`** holds the GIL while it waits for the next frame: `read_frame_nowait`
+   (`block=False`) and `await asyncio.sleep(CAM_POLL_S)` in between.
+4. A frame bigger than websockets' 32 KiB `write_limit` made every `send` wait for the link:
+   `write_limit=256 KiB`.
+
+**Lag guard** (`client_behind`): a client is skipped for this frame while its last frame is still in
+asyncio's buffer or more than `WS_BEHIND_BYTES` (16 KB) of it is unacknowledged in the kernel (`SIOCOUTQ`),
+and its socket send buffer is 32 KB. So a slow link or busy phone gets the newest frame instead of a queue,
+and arm replies (`motion_done`, errors) never wait behind seconds of video. The `[FPS]` line now shows
+jpeg / encode / send and `sent N/s, skipped M (link behind)`.
+
+**Sequence pause, not abort** (`arm_bridge.py`, `SEQ_GRACE_S` 5 s): during MOVE_TO_BIN, DROP or HOME, no
+app message for over 1 s pauses the sequence where it is (same pose streamed); if the app is back within
+5 s it carries on from the same point (the leg's clock skips the pause; `motion_done` gets `paused_s`);
+after 5 s the old watchdog (freeze, error `watchdog`). Below the app's 8 s stale-link reconnect. Manual
+ARM_POSE keeps the 1 s rule; a disconnected app still freezes at once (the app is STOPPED on link loss).
+
+**App bin run** (`BinRun`): after DROP the arm goes HOME (Right-Tank-New ends off home), so the run ends at
+home; every command (MOVE_TO_BIN, DROP, HOME) has a 60 s `replyTimeout`; any failure that is not STOP or a
+lost link sends HOLD (ends whatever the robot may still play) then HOME, and says why.
+
+Tests: `test_clean_stream.py` `LagGuardTest` (2) and `UartPollTest`, `test_arm_bridge.py` (3 lag tests),
+`bin_run_test.dart` (3); the skip, pause, timeout and home steps were break-checked. `SIOCOUTQ` is
+Linux-only: tested on the board, stubbed on the Mac.
+
+Restarting the app without the touchscreen: `python3 -c 'from maix import app; app.switch_app("elios_clean_m2c_v1")'`
+(writes `/tmp/run_app.txt`), then stop the running app, or the launcher UI if it is in front; the
+`launcher_daemon` starts the queued app. Do not `pkill -f` a pattern that is also in your own SSH command.

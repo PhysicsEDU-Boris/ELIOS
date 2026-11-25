@@ -223,6 +223,38 @@ class Safety(unittest.TestCase):
         self.assertEqual(wire(frames[-1]), held, "holds, never releases")
         self.assertNotEqual(held, RAISED)
 
+    def test_a_late_app_pauses_a_bin_sequence_which_then_carries_on(self):
+        """0240 lag guard: 3 s of silence mid MOVE_TO_BIN pauses it in place; it ends as without the gap."""
+        ref, rclock, rframes, _ = rig()
+        ref.handle({"cmd": "MOVE_TO_BIN", "seq": 1, "bin": "b3"}, "app")
+        ref_out = run(ref, rclock, 60)
+        arm, clock, frames, logs = rig()
+        arm.handle({"cmd": "MOVE_TO_BIN", "seq": 1, "bin": "b3"}, "app")
+        run(arm, clock, 2.0)
+        self.assertEqual(run(arm, clock, 3.0, heartbeat=False), [], "no error inside the grace")
+        self.assertIsNotNone(arm.paused_at)
+        still = [wire(f) for f in frames[-10:]]
+        self.assertTrue(all(f == still[0] for f in still), "paused: the same pose streamed")
+        out = run(arm, clock, 60)
+        self.assertEqual([r["event"] for _, r in out], ["motion_done"])
+        self.assertEqual(out[0][1]["servo"], ref_out[0][1]["servo"], "same end point as without the pause")
+        self.assertGreaterEqual(out[0][1]["paused_s"], 1.9)
+        self.assertTrue(any("paused" in l for l in logs) and any("carries on" in l for l in logs))
+
+    def test_a_long_silence_still_stops_the_sequence(self):
+        arm, clock, _, _ = rig()
+        arm.handle({"cmd": "MOVE_TO_BIN", "seq": 1, "bin": "b3"}, "app")
+        run(arm, clock, 1.0)
+        out = run(arm, clock, ab.SEQ_GRACE_S + 0.2, heartbeat=False)
+        self.assertEqual([(r["event"], r.get("reason")) for _, r in out], [("error", "watchdog")])
+        self.assertIsNone(arm.motion)
+
+    def test_a_manual_move_keeps_the_one_second_watchdog(self):
+        arm, clock, _, _ = rig()
+        arm.handle({"cmd": "ARM_POSE", "seq": 1, "path": [RAISED]}, "app")
+        out = run(arm, clock, ab.WATCHDOG_S + 0.2, heartbeat=False)
+        self.assertEqual([r.get("reason") for _, r in out], ["watchdog"])
+
     def test_hold_and_stop_freeze(self):
         arm, clock, frames, _ = rig()
         arm.handle({"cmd": "ARM_POSE", "seq": 1, "path": [RAISED]}, "app")
