@@ -454,8 +454,10 @@ def cv_tags(corners, ids):
 class BinTagSearch:
     """submit(gray, stamp) from the stream loop; take() gives each finished (stamp, tags) once."""
 
-    def __init__(self, detect):
+    def __init__(self, detect, save=None):
         self.detect = detect          # gray image -> (corners, ids)
+        self.save = save              # ponytail: diagnosis (0241): the searched view, about once a second
+        self.seen, self.saved_at = None, None
         self.lock = threading.Lock()
         self.job = self.result = None
         self.wake = threading.Event()
@@ -484,6 +486,16 @@ class BinTagSearch:
             except Exception as e:   # never fatal: no tag this frame (the DROP guard then waits)
                 print("[Tags] cv search error:", e)
                 found = []
+            ids = sorted(t["id"] for t in found)
+            if ids != self.seen:
+                print("[Tags] bin search sees", ids)
+                self.seen = ids
+            if self.save is not None and (self.saved_at is None or job[0] - self.saved_at >= 1.0):
+                self.saved_at = job[0]
+                try:
+                    self.save(job[1])
+                except Exception as e:
+                    print("[Tags] view not saved:", e)
             with self.lock:
                 self.result = (job[0], found)
 
@@ -493,7 +505,8 @@ def _cv_bin_tags():
         import cv2
         det = cv2.aruco.ArucoDetector(cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_36h11),
                                       cv2.aruco.DetectorParameters())
-        return (BinTagSearch(lambda gray: det.detectMarkers(gray)[:2]),
+        return (BinTagSearch(lambda gray: det.detectMarkers(gray)[:2],
+                             save=lambda gray: cv2.imwrite("/root/elios_sort_view.jpg", gray)),
                 lambda frame: cv2.cvtColor(image.image2cv(frame, ensure_bgr=True, copy=True), cv2.COLOR_BGR2GRAY))
     except Exception as e:
         print("[Tags] OpenCV AprilTag unavailable, bin tags use find_apriltags:", e)
