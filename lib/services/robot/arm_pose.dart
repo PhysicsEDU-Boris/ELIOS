@@ -136,6 +136,12 @@ class ArmPose {
     return age is! num || age > 3;
   }
 
+  /// The MaixCAM2 does not know where the arm is (its ESP32 reset, 0235): a STATUS ack with
+  /// `servo: null`, or a move refused with `pose_unknown`. Only its own HOME moves the arm then (0241).
+  static bool poseUnknownFrom(Map<String, dynamic> msg) =>
+      (msg['event'] == 'ack' && msg.containsKey('servo') && msg['servo'] == null) ||
+      (msg['event'] == 'error' && msg['reason'] == 'pose_unknown');
+
   /// [sync]'s input from a reply's `servo` field, or null when it has none (old firmware, ESP32 reset).
   static ServoPose? servoFrom(Object? raw) =>
       raw is List && raw.length == armAxes.length && raw.every((v) => v is num)

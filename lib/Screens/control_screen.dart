@@ -254,6 +254,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         _arm.movingSeq = null; // the board refused the move: its next STATUS says where the arm is
         _gate.status();
       }
+      if (ArmPose.poseUnknownFrom(msg)) _arm.markUnknown(); // ESP32 reset: arm keys ask for HOME first (0241)
       if (servo != null && msg['event'] != 'error') {
         if (_arm.onServo(servo, seq: reply?.seq, done: reply?.kind == ReplyKind.motionDone)) _syncArmState();
       }
@@ -274,6 +275,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           } else if (reply.kind == ReplyKind.error) {
             _gate.onHomeReply(reply);
             ref.read(robotControlProvider.notifier).updateStatus(atHome: false);
+            // The planned way home was refused because the robot lost the pose (ESP32 reset): its own HOME.
+            if (reply.reason == 'pose_unknown') _gate.home();
           } else if (reply.kind == ReplyKind.ack) {
             _gate.onHomeReply(reply);
             // Ack alone means accepted; do not mark successful or reset slider cache.

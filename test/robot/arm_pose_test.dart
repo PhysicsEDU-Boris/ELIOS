@@ -150,4 +150,12 @@ void main() {
     expect(arm.setGripClosedOffset(-2), isFalse, reason: 'open stays open');
     expect(arm.gripClosedServo, 73);
   });
+
+  test('0241: STATUS without a pose or a pose_unknown refusal means the robot lost the arm (ESP32 reset)', () {
+    expect(ArmPose.poseUnknownFrom({'event': 'ack', 'seq': 1, 'servo': null, 'esp32_boot': 'reason=POWERON'}), isTrue);
+    expect(ArmPose.poseUnknownFrom({'event': 'error', 'seq': 2, 'reason': 'pose_unknown'}), isTrue);
+    expect(ArmPose.poseUnknownFrom({'event': 'ack', 'seq': 3, 'servo': [180, 90, 0, 180, 90, 90]}), isFalse);
+    expect(ArmPose.poseUnknownFrom({'event': 'ack', 'seq': 4}), isFalse, reason: 'an ack without a servo field says nothing');
+    expect(ArmPose.poseUnknownFrom({'event': 'error', 'seq': 5, 'reason': 'tank'}), isFalse);
+  });
 }
