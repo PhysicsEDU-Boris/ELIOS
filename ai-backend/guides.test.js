@@ -99,6 +99,8 @@ test('quiz is graded from the published JSON with explanations; XP only on the f
     answers: [{ qid: 'p1', choice: 'a' }, { qid: 'p2', choice: 'b' }, { qid: 'p3', choice: 'c' }] })).json();
   assert.equal(fail.score, 1);
   assert.equal(fail.xp_awarded, 0);
+  // the first attempt keeps the chosen option too, so the question dashboard can show the most common wrong answer
+  assert.deepEqual(world.tables.guide_progress[0].quiz.first.answers.map((x) => x.choice), ['a', 'b', 'c']);
   assert.deepEqual(fail.results[0], { qid: 'p1', correct: false, answer: 'b', explanation: 'Speed is distance over time.', wrong: 'That multiplies.' });
   const pass = await (await call(world, { op: 'quiz', id: 'quiz-0002', date: '2026-11-08', lang: 'en',
     answers: [{ qid: 'pool-0', choice: 'b' }, { qid: 'pool-1', choice: 'd' }, { qid: 'pool-2', choice: 'b' }] })).json();
