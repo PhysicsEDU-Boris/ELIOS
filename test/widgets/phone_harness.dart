@@ -172,6 +172,7 @@ Future<Rig> pumpPhone(
   double frameAspect = 4 / 3,
   bool locked = false,
   bool locking = false,
+  Widget? sortBubble,
   bool? esp32Linked,
 }) async {
   tester.view.devicePixelRatio = 1;
@@ -303,6 +304,7 @@ Future<Rig> pumpPhone(
                           onLock: () => tap('lock'),
                           locked: locked,
                           locking: locking,
+                          sortBubble: sortBubble,
                           onScan: () => tap('scan'),
                           lockBox: lockBox,
                           lockLabel: lockBox == null ? null : 'Kardus',

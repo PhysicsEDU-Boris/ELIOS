@@ -5624,8 +5624,26 @@ class AppLocalizationsId extends AppLocalizations {
   String get binGotIt => 'Mengerti';
 
   @override
+  String sortCountdown(String bin, int seconds) {
+    return 'Memilah ke tempat $bin dalam $seconds dtk';
+  }
+
+  @override
+  String sortInProgress(String bin) {
+    return 'Sedang memilah · tempat $bin';
+  }
+
+  @override
+  String sortCheckHand(String bin) {
+    return 'Pastikan tangan robot di atas tempat $bin. Atur, lalu tekan LEPAS.';
+  }
+
+  @override
+  String get sortSuccess => 'Pemilahan berhasil';
+
+  @override
   String binRunReady(String bin) {
-    return 'Setelah kuis selesai, lengan menunggu 3 detik lalu membawanya ke tempat sampah $bin.';
+    return 'Tekan Selesai setelah kuis: lengan menunggu 3 detik lalu membawanya ke tempat sampah $bin.';
   }
 
   @override

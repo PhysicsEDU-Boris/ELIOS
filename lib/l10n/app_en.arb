@@ -3526,7 +3526,35 @@
   "@binWhyB3": {"placeholders": {"item": {}}},
   "binQuizNext": "Your quiz is next",
   "binGotIt": "Got it",
-  "binRunReady": "When the quiz is done, the arm waits 3 s, then takes it to the {bin} bin.",
+  "sortCountdown": "Sorting into the {bin} bin in {seconds} s",
+  "@sortCountdown": {
+    "placeholders": {
+      "bin": {
+        "type": "String"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "sortInProgress": "Sorting in progress · {bin} bin",
+  "@sortInProgress": {
+    "placeholders": {
+      "bin": {
+        "type": "String"
+      }
+    }
+  },
+  "sortCheckHand": "Check the hand is over the {bin} bin. Adjust it, then press RELEASE.",
+  "@sortCheckHand": {
+    "placeholders": {
+      "bin": {
+        "type": "String"
+      }
+    }
+  },
+  "sortSuccess": "Sorting successful",
+  "binRunReady": "Press Done when you finish: the arm waits 3 s, then takes it to the {bin} bin.",
   "@binRunReady": {
     "placeholders": {
       "bin": {
