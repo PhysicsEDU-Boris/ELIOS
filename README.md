@@ -10,19 +10,98 @@ AI is **Google Gemini**, called through a small backend so the API key never
 ships in the app.
 
 <p align="center">
-  <img src="docs/readme/scan-hub.png" width="220" alt="Scan hub">
-  <img src="docs/readme/scan-camera.png" width="220" alt="Scan and quiz: camera">
-  <img src="docs/readme/scan-identified.png" width="220" alt="Scan result: Plastic bottle, anorganik bin">
-  <img src="docs/readme/scan-question.png" width="220" alt="Quiz question">
+  <img src="docs/readme/robot-organic.jpg" width="820" alt="The ELIOS robot: a 5-DOF arm on a wheeled base with a three-part bin">
 </p>
 
 <p align="center">
-  <img src="docs/readme/control-light.png" width="600" alt="Robot control screen (light)">
-  <img src="docs/readme/control-dark.png" width="600" alt="Robot control screen (dark)">
+  <a href="#the-robot">The robot</a> ·
+  <a href="#the-app">The app</a> ·
+  <a href="#robot-sim">Robot Sim</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#how-to-run">How to run</a>
 </p>
 
-Screens are from the [Figma file](https://www.figma.com/design/J2jSbARJSyJCStNFeWkWDj/)
-(pages L4 and R3). The app follows them; small differences can exist.
+## The robot
+
+A 5-DOF arm (6 servos with the gripper) on a wheeled base, with a three-part
+bin behind it: **B3** (left), **Anorganik** (middle), **Organik** (right). The
+MaixCAM2 on the arm streams video to the app and reads the AprilTag on each bin.
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/readme/pick-organic.gif" alt="Picking up a lettuce leaf"><br><b>Organik</b>: lettuce leaf</td>
+    <td align="center" width="33%"><img src="docs/readme/pick-inorganic.gif" alt="Picking up a tissue"><br><b>Anorganik</b>: tissue</td>
+    <td align="center" width="33%"><img src="docs/readme/pick-b3.gif" alt="Picking up a used AA battery"><br><b>B3</b>: used AA battery</td>
+  </tr>
+</table>
+
+<sub>Time-lapse (4–6×) from real runs, filmed with an iPhone, operator driving from the app.</sub>
+
+**Robot and app, on the same clock.** Left: the robot. Right: the phone's
+screen recording, aligned by audio cross-correlation. The B3 run, real time:
+
+<p align="center">
+  <img src="docs/readme/sync-robot-app.gif" width="820" alt="Robot carrying the battery to the B3 bin, next to the app's quiz result screen">
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/readme/robot-gripper.jpg" alt="Gripper closing on a leaf"></td>
+    <td width="50%"><img src="docs/readme/robot-b3.jpg" alt="Gripper on a battery next to the robot"></td>
+  </tr>
+  <tr>
+    <td align="center">Gripper closing on a leaf</td>
+    <td align="center">Picking up a battery (B3)</td>
+  </tr>
+</table>
+
+> **Known issue:** at the bin, the item in the gripper can cover the bin's
+> AprilTag from the camera, so the drop is not confirmed and the arm goes HOME.
+> The bin choice itself is right; the tag view is being fixed.
+
+## The app
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/readme/scan-hub.png" width="190" alt="Scan hub"><br>Scan hub</td>
+    <td align="center"><img src="docs/readme/scan-camera.png" width="190" alt="Scan and quiz: camera"><br>Camera</td>
+    <td align="center"><img src="docs/readme/scan-identified.png" width="190" alt="Scan result: Plastic bottle, anorganik bin"><br>AI result + bin</td>
+    <td align="center"><img src="docs/readme/scan-question.png" width="190" alt="Quiz question"><br>Quiz</td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/readme/control-light.png" alt="Robot control screen (light)"></td>
+    <td width="50%"><img src="docs/readme/control-dark.png" alt="Robot control screen (dark)"></td>
+  </tr>
+  <tr>
+    <td align="center">Robot control (light)</td>
+    <td align="center">Robot control (dark)</td>
+  </tr>
+</table>
+
+<sub>App screens are from the [Figma file](https://www.figma.com/design/J2jSbARJSyJCStNFeWkWDj/)
+(pages L4 and R3). The app follows them; small differences can exist.</sub>
+
+## Robot Sim
+
+Arm motions and bin sequences are planned and tested first in
+[Robot Sim](https://github.com/3dbore/robotic_hand_sim), a 3D kinematic
+simulator and hardware-in-the-loop toolkit for the same arm. It checks joint
+limits and keeps the arm clear of the bin, then plays the sequence on the real
+ESP32 (decision [0230](docs/decisions/0230-sync-robotic-hand-sim.md)).
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/readme/sim-sequence.jpg" alt="Robot Sim: sequence editor with 3D arm view and camera views"></td>
+    <td width="50%"><img src="docs/readme/sim-manual-control.jpg" alt="Robot Sim: manual servo control, top and side views, board link"></td>
+  </tr>
+  <tr>
+    <td align="center">Sequence editor: steps, 3D arm, real and simulated camera</td>
+    <td align="center">Manual control: per-servo sliders, top / side reach views, board link</td>
+  </tr>
+</table>
 
 ## Current status (19 Nov 2026)
 
