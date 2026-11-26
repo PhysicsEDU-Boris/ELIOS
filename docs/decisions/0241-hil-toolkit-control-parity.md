@@ -58,7 +58,7 @@ After trying it, the owner asked for the sim's way of tuning:
 - `ARM_POSE` / `HOME` ack: `{"event":"ack","seq":n,"motion_s":7.93}`. Older apps ignore it.
 - `STATUS` ack: `+ "trims": [6], "inverted": [6]`.
 - `CONFIG`: `gripInverted` (bool) is now read; the rest is unchanged.
-- Firmware package 1.4.2 (still m2c-arm-v3).
+- Firmware package 1.4.3 (still m2c-arm-v3).
 
 ## Tests
 
@@ -91,3 +91,32 @@ After trying it, the owner asked for the sim's way of tuning:
   under servo load. Open: separate supply for the servos.
 
 Build details: `docs/local-build-notes.md` (25 Nov, 0241).
+
+## Sorting after the quiz and the bin tags (26 Nov, owner present)
+
+- **Sort starts by itself** (owner): the bin run waited for PICK UP behind the result page while
+  it said "dropping". It now starts when the quiz is finished; after 3 s the arm takes the item
+  to the AI's bin. The result page says "sorting…", then "Done: …" or "could not finish". The
+  bin-check ticket says it happens after the quiz (`BinRunCue` ready / done / failed).
+- **Calibration from robotic_hand_sim `958b185`** (`calibration/hil_settings.json`): Arm Base
+  **inverted**, Wrist Yaw +8.5°, Arm B +15°, close offset 0. Set on the phone (Advanced) with the
+  owner's OK. `camera_model.json` (fx 752.9 px on 1289 px) gives `CAM_HFOV_DEG` 81.1° (was the
+  83° placeholder). The three bin sequences in that push are identical to `bin_sequences.json`.
+- **MaixCAM2 app crash mid-sort**: the log showed `[Tags] on` after MOVE_TO_BIN, then a fresh
+  start with no Python error: MaixPy's `find_apriltags` (already known to kill the app on a
+  640x480 frame) also died at 320x180 on the real tank view. During a bin sequence the bin tags
+  now come from OpenCV `cv2.aruco` AprilTag 36h11 on the full 640x360 frame in a worker thread
+  (`BinTagSearch`, ~30 ms on the board, OpenCV releases the GIL; each result stamped with its
+  frame time for the settle check; a detector error = no tag). Grip tags keep `find_apriltags`.
+  No crash in the runs after it.
+- Diagnostics (kept, `ponytail:`): during a sort the board logs `[Tags] bin search sees [...]` on
+  each change and saves the searched view to `/root/elios_sort_view.jpg` once a second.
+- **Robot runs**: Mid-Tank saw tag 4 on the way and tag 2 at its state point (OpenCV works on the
+  real tags, ~40 px each). An Organik run stopped over a tank rim carrying **tags 2 and 4**, no
+  tag 3, so DROP was refused (correct) and the arm went home. **Open**: the tank tags must match
+  the sequences (Right = 3, Middle = 2, Left = 4, one per tank, where the recorded steps saw
+  them), and the base invert from the PC calibration is not yet confirmed against the tanks.
+- Tests: `test_clean_stream.py` (OpenCV result conversion, worker once-only + survives a detector
+  error, stream uses the worker and never `find_apriltags` during a sort: fails on the old loop),
+  `scan_quiz_pages_test.dart` (result page sorted / could not; ticket text).
+

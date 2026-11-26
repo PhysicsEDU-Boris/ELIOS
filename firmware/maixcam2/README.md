@@ -1,5 +1,10 @@
 # MaixCAM2 firmware (m2c-arm-v3)
 
+1.4.3 (0241): during a bin sequence the bin tags come from OpenCV `cv2.aruco` (AprilTag 36h11, full
+frame, worker thread); MaixPy `find_apriltags` killed the app mid-sort. `[Tags] bin search sees` and
+`/root/elios_sort_view.jpg` show what the sort saw. Bridge: HOME/ARM_POSE ack `motion_s`, HOME and
+ARM_POSE replace each other, CONFIG `gripInverted`, STATUS `trims`/`inverted`, camera FOV 81.1°.
+
 v3 (0240 section 9, package 1.4.0): ~20 fps stream, video lag guard (frames skipped, never queued),
 UART reads only when bytes are waiting, bin sequences pause on a briefly quiet app. Restart without the
 touchscreen: `app.switch_app("elios_clean_m2c_v1")` in a separate python3, then stop the running app (or
