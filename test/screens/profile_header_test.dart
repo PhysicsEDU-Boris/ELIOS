@@ -52,7 +52,7 @@ final _signedIn = MockUser(
   isAnonymous: false,
   uid: 'u1',
   displayName: 'Boris Agung',
-  email: 'zazzikun@gmail.com',
+  email: 'test@example.com',
 );
 
 Future<void> _setUp(

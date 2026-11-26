@@ -49,14 +49,14 @@ final _signedIn = MockUser(
   isAnonymous: false,
   uid: 'u1',
   displayName: 'Boris Agung',
-  email: 'zazzikun@gmail.com',
+  email: 'test@example.com',
 );
 
 void main() {
   tearDown(() => debugSetL10n(const Locale('en')));
 
   test('email is masked and initials come from the name', () {
-    expect(maskEmail('zazzikun@gmail.com'), 'z•••@gmail.com');
+    expect(maskEmail('test@example.com'), 't•••@example.com');
     expect(maskEmail('bad'), 'bad');
     expect(initialsOf(_signedIn), 'BA');
     expect(initialsOf(MockUser(isAnonymous: false, email: 'sam@x.id')), 'SX');
@@ -134,7 +134,7 @@ void main() {
     var signedOut = 0;
     await _pump(t, _app(_signedIn, onSignOut: () => signedOut++));
     expect(find.text('Boris Agung'), findsOneWidget);
-    expect(find.text('z•••@gmail.com'), findsOneWidget);
+    expect(find.text('t•••@example.com'), findsOneWidget);
     expect(find.text('Google account · history synced'), findsOneWidget);
 
     await t.tap(find.byKey(const Key('profile-avatar')));
