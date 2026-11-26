@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import '../../../widgets/tour/app_tour.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -98,9 +99,15 @@ class _LessonPageState extends ConsumerState<LessonPage> {
 
     return Scaffold(
       backgroundColor: p.background,
-      bottomNavigationBar: _BottomAction(
-        label: buttonLabel,
-        onPressed: () => _open(lesson),
+      bottomNavigationBar: TourTip(
+        id: 'lesson',
+        label: () => l10n.tourLblLesson,
+        steps: (k) => [TourStep(k[0], l10n.tipLessonT, l10n.tipLessonB)],
+        builder: (context, k) => _BottomAction(
+          key: k[0],
+          label: buttonLabel,
+          onPressed: () => _open(lesson),
+        ),
       ),
       body: StreamBuilder<List<ElearningModule>>(
         stream: _modules,
@@ -692,7 +699,11 @@ class _PlaylistRow extends StatelessWidget {
 
 /// Bottom action bar (surface, top corners 28); slides up on enter.
 class _BottomAction extends StatelessWidget {
-  const _BottomAction({required this.label, required this.onPressed});
+  const _BottomAction({
+    super.key,
+    required this.label,
+    required this.onPressed,
+  });
   final String label;
   final VoidCallback onPressed;
 

@@ -27,6 +27,8 @@ import yaml
 import websockets
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[1] / "firmware" / "maixcam2"))
+import arm_bridge as ab  # noqa: E402  the robot's own leg timing, ramps and bin sequence loader (0240)
 VERSION = "1"
 FIRMWARE_VERSION = f"fake-sim-{VERSION}"
 FIRMWARE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
@@ -56,6 +58,9 @@ BIN_TARGETS = {
 # DROP from its release step to the end. Bins without a sequence use BIN_TARGETS above.
 BIN_SEQUENCES_FILE = HERE.parents[1] / "firmware" / "maixcam2" / "bin_sequences.json"
 GRIP_HALFWAY = (180.0 + 75.0) / 2  # hil/config.py GRIP_OPEN, GRIP_CLOSED: above = open
+GRIP_OPEN_SERVO, GRIP_CLOSED_SERVO = 180.0, 75.0
+# Manual pick-up (owner, 24 Nov): closing the gripper with its tip this close to an item's card grips it.
+GRIP_REACH_MM = 60.0
 
 
 def bin_paths(path=BIN_SEQUENCES_FILE):
@@ -239,6 +244,8 @@ class SimWorld:
         self.held_item = None
         self.gripper_closed = False
         self.gripper_width = 0
+        self.grip_servo = GRIP_OPEN_SERVO
+        self.leg = None  # a profiled leg in progress (start_leg), else the linear target mover below
         self.hand_values = {"reach": 90, "height": 90}
         for it in scenario["items"]:
             texture = texture_for(it, seed, images_dir, log)
@@ -270,6 +277,47 @@ class SimWorld:
         if now:
             self.angles[0] = deg
 
+    def servo6(self, angles=None, grip=None):
+        """Six servo degrees F0..F5 (hil/config.py AXES) for sim [angles] and gripper servo [grip]."""
+        angles = self.angles if angles is None else angles
+        return [float(self.grip_servo if grip is None else grip) if ax.joint is None
+                else float(ax.to_servo(angles[ax.joint])) for ax in self.hil_config.AXES]
+
+    def set_grip_servo(self, servo):
+        self.grip_servo = float(servo)
+        span = GRIP_OPEN_SERVO - GRIP_CLOSED_SERVO
+        self.gripper_width = int(round(max(0.0, min(100.0, (GRIP_OPEN_SERVO - self.grip_servo) / span * 100))))
+        self.gripper_closed = self.grip_servo < GRIP_HALFWAY
+        self._sync_gripper()
+
+    def start_leg(self, goal, profile, hold=0.0):
+        """0240: move to six servo degrees [goal] the way the robot does (firmware/maixcam2 arm_bridge.py,
+        pinned to robotic_hand_sim's ProfiledMotion): every joint, gripper included, ramps up, cruises
+        at its own top speed and ramps down; all arrive together; then [hold] seconds still."""
+        start = self.servo6()
+        self.leg = {"start": start, "goal": list(goal), "t": 0.0, "hold": float(hold),
+                    "dur": ab.leg_seconds(start, goal, profile), "axes": ab._axes(profile)}
+        self.target[:] = self.servo_pose(dict(zip([a.name for a in self.hil_config.AXES], goal)))
+
+    def halt(self):
+        """Stop where the arm is (STOP, HOLD, watchdog): no leg, target = here."""
+        self.leg = None
+        self.target[:] = self.angles
+
+    def _step_leg(self, dt):
+        leg = self.leg
+        leg["t"] += dt
+        u = 1.0 if leg["dur"] <= 0 else min(leg["t"] / leg["dur"], 1.0)
+        cmd = leg["goal"] if u >= 1.0 else [a + (b - a) * ab.ramp(u, ta, td)
+                                             for a, b, (_, ta, td) in zip(leg["start"], leg["goal"], leg["axes"])]
+        names = [a.name for a in self.hil_config.AXES]
+        self.angles[:] = self.servo_pose(dict(zip(names, cmd)))
+        self.set_grip_servo(cmd[names.index("Gripper")])
+        if leg["t"] >= leg["dur"] + leg["hold"]:
+            self.leg = None
+            return True
+        return False
+
     def step(self, dt):
         """Advance arm joints and differential-drive motion; return arm arrival state."""
         dt = max(0.0, dt)
@@ -279,7 +327,11 @@ class SimWorld:
         distance = (left + right) / 2 * DRIVE_MM_PER_PWM_S * dt
         self.robot_xy += distance * np.array([math.sin(heading), -math.cos(heading)])
         self.robot_yaw += turn
-        # All joints start and arrive together (a straight joint-space move), as the sim's planner assumes.
+        if self.leg is not None:
+            arrived = self._step_leg(dt)
+            self._sync_cards()
+            return arrived
+        # Debug moves (servo / base keys, J1 sweep): a straight joint-space move at the firmware speeds.
         left = self.target - self.angles
         need = float(np.max(np.abs(left) / np.array(JOINT_SPEED_DPS)))
         self.angles += left if need <= dt else left * (dt / need)
@@ -412,7 +464,8 @@ class SimWorld:
 
     def hold_item(self, item_id):
         self.held_item = item_id
-        self.gripper_closed = True
+        if not self.gripper_closed:  # the fake-only auto PICK grips without a gripper leg
+            self.set_grip_servo(GRIP_CLOSED_SERVO)
         self._sync_cards()
 
     def release_item(self):
@@ -420,7 +473,8 @@ class SimWorld:
         if item_id is not None:
             self.world_corners[item_id] = self._local_to_world(self.corners[item_id])
         self.held_item = None
-        self.gripper_closed = False
+        if self.gripper_closed:
+            self.set_grip_servo(GRIP_OPEN_SERVO)
         self._sync_cards()
         return item_id
 
@@ -518,6 +572,10 @@ class FakeMaixCam:
         self.world, self.scenario, self.labels = world, scenario, labels
         self.bin_tag = bin_tag
         self.bin_paths = bin_paths()
+        self.bin_legs = ab.load_sequences(BIN_SEQUENCES_FILE)  # {bin: ([(pose6, hold, profile, tag)], [...])}
+        self.profile = ab.DEFAULT_PROFILE  # manual moves (ARM_POSE, HOME); CONFIG sets it (0240)
+        self.view = None  # --show: the arm window's stdin
+        self._last_view = None
         self.fps = fps
         self.p1 = scenario["p1"] if p1 is None else p1
         self.noise = dict(scenario["noise"])
@@ -552,6 +610,7 @@ class FakeMaixCam:
             "MOVE_TO_BIN": self._cmd_move_to_bin,
             "ARM_POSE": self._cmd_arm_pose,
             "DROP": self._cmd_drop,
+            "CONFIG": self._cmd_config,
         }
 
     def _set_visible(self, item, visible):
@@ -689,7 +748,7 @@ class FakeMaixCam:
             if not self.clients:
                 self.streaming = False
                 self.world.set_motor(0, 0)
-                self.world.target[:] = self.world.angles
+                self.world.halt()
                 self.motion = None
             self.log(f"[WS] clients remaining: {len(self.clients)}")
 
@@ -705,7 +764,7 @@ class FakeMaixCam:
         if self.clients and not self.watchdog_fired and now - self.last_app_message > WATCHDOG_S:
             self.watchdog_fired = True
             self.world.set_motor(0, 0)
-            self.world.target[:] = self.world.angles  # arm hold: stop where it is, never detach
+            self.world.halt()  # arm hold: stop where it is, never detach
             self.motion = None
             self.log(f"[Watchdog] no app message for {WATCHDOG_S:g} s: wheels 0 / arm hold")
 
@@ -722,12 +781,18 @@ class FakeMaixCam:
                           ee_mm=[round(float(v), 1) for v in ee], at_home=at_home)
 
     async def _cmd_home(self, ws, data):
-        started = await self._begin_motion(ws, data, np.zeros(5))
+        # The gripper opens on the way, as the robot's HOME does (home = gripper 180).
+        home = self.world.servo6(np.zeros(5), GRIP_OPEN_SERVO)
+        started = await self._begin_motion(ws, data, [(home, 0.0, self.profile, None)])
         if started:
             self.world.hand_values.update(reach=90, height=90)
-            self.world.gripper_width = 0
-            self.world.gripper_closed = False
-            self.world._sync_gripper()
+
+    async def _cmd_config(self, ws, data):
+        """0240: the app's speed profile for manual moves, clamped like the robot (bad axes -> default)."""
+        self.profile = ab.complete_profile(data.get("profile"))
+        self.log("[R1] CONFIG profile " + ", ".join(f"{k} {v['vmax']:g}°/s {v['accel']:.0%}/{v['decel']:.0%}"
+                                                     for k, v in self.profile.items()))
+        await self._reply(ws, "ack", data)
 
     async def _cmd_drive_lock(self, ws, data):
         self.drive_locked = data["cmd"] == "LOCK_DRIVE"
@@ -748,7 +813,7 @@ class FakeMaixCam:
     async def _cmd_stop(self, ws, data):
         self.log(f"[WS] STOP seq={data['seq']} -> wheels 0, arm hold")
         self.world.set_motor(0, 0)
-        self.world.target[:] = self.world.angles
+        self.world.halt()
         self.motion = None
         await self._reply(ws, "ack", data)
 
@@ -759,45 +824,72 @@ class FakeMaixCam:
             return
         target = self.world.angles.copy()
         target[0] = float(value)
-        await self._begin_motion(ws, data, target)
+        await self._begin_motion(ws, data, [(self.world.servo6(target), 0.0, self.profile, None)])
 
     async def _cmd_hold(self, ws, data):
-        self.world.target[:] = self.world.angles
+        self.world.halt()
         self.motion = None
         await self._reply(ws, "ack", data)
         await self._reply(ws, "motion_done", data)
 
-    async def _begin_motion(self, ws, data, target, on_arrival=None, rest=()):
-        """rest: further (target, on_arrival) legs; motion_done after the last."""
+    async def _begin_motion(self, ws, data, legs):
+        """legs: [(six servo degrees, hold s, profile, on_arrival or None)], played like the robot
+        (World.start_leg); motion_done after the last leg's hold."""
         if self.motion is not None:
             await self._reply(ws, "error", data, reason="busy")
             return False
-        self.world.target[:] = target
+        (goal, hold, prof, first), *rest = legs
+        self.world.start_leg(goal, prof, hold)
         await self._reply(ws, "ack", data)
-        self.motion = (ws, data, on_arrival, list(rest))
+        self.motion = (ws, data, first, list(rest))
         return True
 
     async def _play(self, ws, data, legs, on_step, on_done):
-        """Plays planned legs; on_step(servo) at each saved step, on_done() at the end.
-        ponytail: a step's hold time is not waited; add it if a test needs the timing."""
-        calls = [(t, (lambda sv=sv: on_step(sv)) if sv is not None else None) for t, sv in legs]
-        last_target, last_call = calls[-1]
-        calls[-1] = (last_target, lambda: (last_call and last_call(), on_done()))
-        (target, first), *rest = calls
-        await self._begin_motion(ws, data, target, first, rest)
+        """Plays [(six servo degrees, hold, profile, saved step's servo dict or None)];
+        on_step(servo) as each saved step arrives, on_done() at the end."""
+        calls = [(g, h, p, (lambda sv=sv: on_step(sv)) if sv is not None else None) for g, h, p, sv in legs]
+        g, h, p, last_call = calls[-1]
+        calls[-1] = (g, h, p, lambda: (last_call and last_call(), on_done()))
+        await self._begin_motion(ws, data, calls)
+
+    def _plan_bin(self, steps):
+        """A bin's saved steps [(pose6, hold, profile)] through the sim's tank-aware planner, as the
+        robot plays them (arm_bridge _play_steps): the planner's extra legs keep the step's profile."""
+        names = [a.name for a in self.world.hil_config.AXES]
+        legs, at = [], self.world.target.copy()
+        for pose, hold, prof, _tag in steps:   # ponytail: the fake does not centre on tags (0240 sec. 5 is bridge-only)
+            sv = dict(zip(names, pose))
+            way, why = self.world.kinematics.plan(at, self.world.servo_pose(sv))
+            if way is None:
+                return None
+            legs += [(self.world.servo6(w, pose[0]), 0.0, prof, None) for w in way[:-1]] + [(list(pose), hold, prof, sv)]
+            at = self.world.servo_pose(sv)
+        return legs
 
     def _set_grip(self, servo):
-        """A saved step's gripper: opening at a bin drops the held item into it."""
-        closed = servo["Gripper"] < GRIP_HALFWAY
-        self.world.gripper_width = 100 if closed else 0
-        self.world.gripper_closed = closed
-        self.world._sync_gripper()
-        if not closed and self.held_item is not None and self.held_bin is not None:
+        """A step's gripper on arrival: opening at a bin drops the held item into it; elsewhere it
+        lets go on the floor. Closing with the tip at an item grips it: the manual pick-up (AMBIL,
+        the Penjepit slider), as on the robot, where PICK is manual (owner, 19 and 24 Nov)."""
+        self.world.set_grip_servo(servo["Gripper"])
+        closed = self.world.gripper_closed
+        if not closed and self.held_item is not None:
             item_id = self.held_item
             self.world.release_item()
-            self._set_visible(self.items[item_id], False)
             self.held_item = None
-            self.log(f"[R1] dropped {item_id} in {self.held_bin}")
+            if self.held_bin is not None:
+                self._set_visible(self.items[item_id], False)
+                self.log(f"[R1] dropped {item_id} in {self.held_bin}")
+            else:
+                self.log(f"[R1] let go of {item_id}")
+        elif closed and self.held_item is None:
+            tip = np.asarray(self.world.cc.ase.forward_kinematics(self.world.angles)[2], float)
+            near = [(float(np.linalg.norm(self.world.pick_point(k) - tip)), k)
+                    for k, it in self.items.items() if it["on"]]
+            if near and min(near)[0] <= GRIP_REACH_MM:
+                item_id = min(near)[1]
+                self.held_item, self.held_bin = item_id, None
+                self.world.hold_item(item_id)
+                self.log(f"[R1] gripped {item_id} (manual)")
 
     async def _cmd_pick(self, ws, data):
         if self.motion is not None or self.held_item is not None:
@@ -832,7 +924,7 @@ class FakeMaixCam:
             self.world.hold_item(item_id)
             self.log(f"[R1] picked {item_id}")
 
-        await self._begin_motion(ws, data, target, picked)
+        await self._begin_motion(ws, data, [(self.world.servo6(target), 0.0, self.profile, picked)])
 
     async def _cmd_move_to_bin(self, ws, data):
         bin_name = data.get("bin")
@@ -845,8 +937,8 @@ class FakeMaixCam:
         if not isinstance(bin_name, str) or bin_name not in BIN_TARGETS:
             await self._reply(ws, "error", data, reason="invalid_bin")
             return
-        if bin_name in self.bin_paths:
-            legs = self.world.plan_steps(self.bin_paths[bin_name][0])
+        if bin_name in self.bin_legs:
+            legs = self._plan_bin(self.bin_legs[bin_name][0])
             if legs is None:
                 await self._reply(ws, "error", data, reason="unreachable")
                 return
@@ -856,7 +948,8 @@ class FakeMaixCam:
         if target is None:
             await self._reply(ws, "error", data, reason="unreachable")
             return
-        await self._begin_motion(ws, data, target, lambda: setattr(self, "held_bin", bin_name))
+        await self._begin_motion(ws, data, [(self.world.servo6(target), 0.0, self.profile,
+                                             lambda: setattr(self, "held_bin", bin_name))])
 
     async def _cmd_arm_pose(self, ws, data):
         """0234: the app's planned manual move, one six-servo pose per leg (F0..F5, servo degrees)."""
@@ -871,12 +964,13 @@ class FakeMaixCam:
         if self.motion is not None and self.motion[1].get("cmd") == "ARM_POSE":
             self.motion = None  # a newer manual move replaces the one in flight, like the sim's go_path
         names = [a.name for a in self.world.hil_config.AXES]
-        legs = [(self.world.servo_pose(dict(zip(names, p))), dict(zip(names, p))) for p in path]
         at = self.world.target.copy()
-        for target, _ in legs:  # the app plans; the fake only reports a path the sim would refuse
+        for p in path:  # the app plans; the fake only reports a path the sim would refuse
+            target = self.world.servo_pose(dict(zip(names, p)))
             if self.world.kinematics.path_unsafe(at, target):
                 self.log(f"[R1] WARNING ARM_POSE seq={data.get('seq')} passes over the tank")
             at = target
+        legs = [([float(v) for v in p], 0.0, self.profile, dict(zip(names, p))) for p in path]
         await self._play(ws, data, legs, self._set_grip, lambda: None)
 
     def bin_tags(self):
@@ -895,8 +989,8 @@ class FakeMaixCam:
         if self.held_item is None or self.held_bin is None:
             await self._reply(ws, "error", data, reason="not_at_bin")
             return
-        if self.held_bin in self.bin_paths:
-            legs = self.world.plan_steps(self.bin_paths[self.held_bin][1])
+        if self.held_bin in self.bin_legs:
+            legs = self._plan_bin(self.bin_legs[self.held_bin][1])
             if legs is None:
                 await self._reply(ws, "error", data, reason="unreachable")
                 return
@@ -910,6 +1004,27 @@ class FakeMaixCam:
         self.log(f"[R1] dropped {item_id} in {bin_name}")
         await self._reply(ws, "motion_done", data)
 
+    # -- --show: the sim's 3D arm window (arm_view.py) --
+
+    def open_view(self, sim_path, python):
+        import subprocess
+        cmd = [python, str(HERE / "arm_view.py"), "--sim-path", str(sim_path)]
+        self.view = subprocess.Popen(cmd, stdin=subprocess.PIPE, text=True, bufsize=1)
+        self.log(f"[Show] arm window: {' '.join(cmd)}")
+
+    def _push_view(self):
+        if self.view is None:
+            return
+        pose = [round(v, 2) for v in self.world.servo6()]
+        if pose == self._last_view:
+            return
+        try:
+            self.view.stdin.write(json.dumps({"servo": pose}) + "\n")
+            self._last_view = pose
+        except (BrokenPipeError, OSError):
+            self.log("[Show] arm window closed")
+            self.view = None
+
     # -- frame pusher (main.py ws_frame_pusher) --
 
     async def frame_pusher(self):
@@ -922,6 +1037,7 @@ class FakeMaixCam:
                 self.apply_events()
             arrived = self.world.step(started - last)
             last = started
+            self._push_view()
             self._watchdog(started)
             if arrived and self.motion is not None:
                 ws, data, on_arrival, rest = self.motion
@@ -930,8 +1046,8 @@ class FakeMaixCam:
                     if on_arrival is not None:
                         on_arrival()
                     if rest:
-                        (target, nxt), *more = rest
-                        self.world.target[:] = target
+                        (goal, hold, prof, nxt), *more = rest
+                        self.world.start_leg(goal, prof, hold)
                         self.motion = (ws, data, nxt, more)
                     else:
                         try:
@@ -939,7 +1055,7 @@ class FakeMaixCam:
                         except websockets.ConnectionClosed:
                             pass
                 else:
-                    self.world.target[:] = self.world.angles
+                    self.world.halt()
             if self.streaming and self.clients and not self.link_down():
                 frame_id += 1
                 det_count += 1
@@ -1032,6 +1148,9 @@ def main():
                     help="bin AprilTag seen at the bin state point (0233)")
     ap.add_argument("--seed", type=int, default=0, help="photo choice and noise; the same seed repeats a run")
     ap.add_argument("--check-labels", action="store_true", help="compare labels.yaml, main.py and the app, then exit")
+    ap.add_argument("--show", action="store_true",
+                    help="open robotic_hand_sim's 3D arm view (arm-hil-toolkit-2.py's Scene) and follow the arm")
+    ap.add_argument("--show-python", help="Python with PyQt5 + pyvistaqt for --show (default: <sim>/.venv/bin/python)")
     args = ap.parse_args()
     sys.stdout.reconfigure(line_buffering=True)  # logs show up when piped (tee, CI)
     if args.check_labels:
@@ -1047,6 +1166,10 @@ def main():
     world = SimWorld(args.sim_path, scenario, seed=args.seed)
     fake = FakeMaixCam(world, scenario, labels, fps=args.fps or scenario.get("fps", 10.0),
                        p1=False if args.old_firmware else None, seed=args.seed, bin_tag=args.bin_tag)
+    if args.show:
+        sim_python = Path(args.sim_path).expanduser() / ".venv" / "bin" / "python"
+        fake.open_view(Path(args.sim_path).expanduser(),
+                       args.show_python or (str(sim_python) if sim_python.exists() else sys.executable))
     print(f"[Fake] {FIRMWARE_VERSION} scenario {scenario['name']} on ws://{args.host}:{args.port}")
     try:
         asyncio.run(fake.serve(args.host, args.port))

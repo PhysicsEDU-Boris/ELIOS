@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../widgets/tour/app_tour.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -36,6 +37,8 @@ class QuestionExplanationScreen extends StatefulWidget {
 
 class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
     with WidgetsBindingObserver {
+  final _tour = List.generate(4, (_) => GlobalKey());
+
   late int _index = widget.questionIndex;
   QuizExplanation? _explanation;
   bool _loading = true, _whole = false, _cued = false;
@@ -289,130 +292,147 @@ class _QuestionExplanationScreenState extends State<QuestionExplanationScreen>
             ? const HistorySkeleton(HistoryLoadingLayout.explanation)
             // Not lazy: a card scrolled away and back keeps its state, so no
             // entrance, count-up or bounce plays twice.
-            : SingleChildScrollView(
-                controller: _scroll,
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (q.isEssay)
-                      EssayReview(
-                        key: ValueKey('essay-$_index'),
-                        question: q.question,
-                        answer: q.yourAnswer,
-                        reference: q.rightAnswer == '-' ? '' : q.rightAnswer,
-                        explanation: _explanation,
-                        score: q.essayScore,
-                        index: _index,
-                        total: _record.questions.length,
-                        playing: _whole ? 'question' : _playing,
-                        onListen: _tapListen,
-                      )
-                    else ...[
-                      if (_original ||
-                          (_loading && _record.needsTranslation(_lang!)))
-                        HistoryOriginalNote(
-                          lang: _record.lang,
-                          busy: _loading,
-                          onRetry: () => unawaited(_load()),
-                        ),
-                      // Sections rise in one after another, again per question.
-                      enter(
-                        HistoryResultHero(
-                          correct: q.isCorrect,
+            : TourTip(
+                id: 'explanation',
+                label: () => l10n.tourLblExplain,
+                steps: (_) => [
+                  TourStep(_tour[0], l10n.tipExp1T, l10n.tipExp1B),
+                  TourStep(_tour[1], l10n.tipExp2T, l10n.tipExp2B),
+                  TourStep(_tour[2], l10n.tipExp3T, l10n.tipExp3B, round: true),
+                  TourStep(_tour[3], l10n.tipExp4T, l10n.tipExp4B),
+                ],
+                builder: (context, _) => SingleChildScrollView(
+                  controller: _scroll,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (q.isEssay)
+                        EssayReview(
+                          key: ValueKey('essay-$_index'),
+                          question: q.question,
+                          answer: q.yourAnswer,
+                          reference: q.rightAnswer == '-' ? '' : q.rightAnswer,
+                          explanation: _explanation,
+                          score: q.essayScore,
                           index: _index,
                           total: _record.questions.length,
-                          trophies: q.trophies,
-                          animate: true,
-                        ),
-                        pop: true,
-                      ),
-                      const SizedBox(height: 16),
-                      enter(
-                        HistoryQuestionPanel(
-                          question: q.question,
-                          listen: _listenButton('question', q.question),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      if (q.isCorrect)
-                        HistoryAnswerTile(
-                          '${context.l10n.h3YourAnswer} · ${context.l10n.h3Correct}',
-                          q.yourAnswer,
+                          playing: _whole ? 'question' : _playing,
+                          onListen: _tapListen,
                         )
                       else ...[
-                        HistoryAnswerTile(
-                          context.l10n.h3YourAnswer,
-                          q.yourAnswer,
-                          tone: HistoryTone.error,
-                        ),
-                        const SizedBox(height: 8),
-                        HistoryAnswerTile(
-                          context.l10n.h3CorrectAnswer,
-                          q.rightAnswer,
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          HistorySparkle(18, p.secondaryText),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Semantics(
-                              header: true,
-                              child: Text(
-                                context.l10n.h3LearnWhy,
-                                style: ElioTokens.subhead.copyWith(
-                                  color: p.textPrimary,
-                                ),
-                              ),
-                            ),
+                        if (_original ||
+                            (_loading && _record.needsTranslation(_lang!)))
+                          HistoryOriginalNote(
+                            lang: _record.lang,
+                            busy: _loading,
+                            onRetry: () => unawaited(_load()),
                           ),
-                        ],
-                      ),
-                      for (final s in sections.where(
-                        (s) => s.$1 != 'idea' && s.$1 != 'steps',
-                      )) ...[
-                        const SizedBox(height: 12),
+                        // Sections rise in one after another, again per question.
                         enter(
-                          HistoryLearnCard(
-                            art: _learnArt(p, s.$1),
-                            title: s.$2,
-                            body: s.$3,
-                            active: _playing == s.$1,
-                            onListen: () => _tapListen(s.$1, s.$3),
-                          ),
-                        ),
-                      ],
-                      if (idea != null) ...[
-                        const SizedBox(height: 16),
-                        enter(
-                          HistoryKeyIdea(
-                            active: _playing == 'idea',
-                            text: idea,
+                          HistoryResultHero(
+                            key: _tour[0],
+                            correct: q.isCorrect,
+                            index: _index,
+                            total: _record.questions.length,
+                            trophies: q.trophies,
+                            animate: true,
                           ),
                           pop: true,
                         ),
-                      ],
-                      if (body('steps') != null) ...[
                         const SizedBox(height: 16),
                         enter(
-                          HistoryMission(
-                            steps: steps,
-                            active: _playing == 'steps',
-                            onListen: () => _tapListen('steps', body('steps')!),
+                          HistoryQuestionPanel(
+                            question: q.question,
+                            listen: KeyedSubtree(
+                              key: _tour[2],
+                              child: _listenButton('question', q.question),
+                            ),
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        if (q.isCorrect)
+                          HistoryAnswerTile(
+                            '${context.l10n.h3YourAnswer} · ${context.l10n.h3Correct}',
+                            q.yourAnswer,
+                          )
+                        else ...[
+                          HistoryAnswerTile(
+                            context.l10n.h3YourAnswer,
+                            q.yourAnswer,
+                            tone: HistoryTone.error,
+                          ),
+                          const SizedBox(height: 8),
+                          HistoryAnswerTile(
+                            context.l10n.h3CorrectAnswer,
+                            q.rightAnswer,
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        Row(
+                          key: _tour[1],
+                          children: [
+                            HistorySparkle(18, p.secondaryText),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Semantics(
+                                header: true,
+                                child: Text(
+                                  context.l10n.h3LearnWhy,
+                                  style: ElioTokens.subhead.copyWith(
+                                    color: p.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        for (final s in sections.where(
+                          (s) => s.$1 != 'idea' && s.$1 != 'steps',
+                        )) ...[
+                          const SizedBox(height: 12),
+                          enter(
+                            HistoryLearnCard(
+                              art: _learnArt(p, s.$1),
+                              title: s.$2,
+                              body: s.$3,
+                              active: _playing == s.$1,
+                              onListen: () => _tapListen(s.$1, s.$3),
+                            ),
+                          ),
+                        ],
+                        if (idea != null) ...[
+                          const SizedBox(height: 16),
+                          enter(
+                            HistoryKeyIdea(
+                              active: _playing == 'idea',
+                              text: idea,
+                            ),
+                            pop: true,
+                          ),
+                        ],
+                        if (body('steps') != null) ...[
+                          const SizedBox(height: 16),
+                          enter(
+                            HistoryMission(
+                              steps: steps,
+                              active: _playing == 'steps',
+                              onListen: () =>
+                                  _tapListen('steps', body('steps')!),
+                            ),
+                          ),
+                        ],
                       ],
+                      if (_explanation == null ||
+                          (!_explanation!.isComplete && !q.isEssay) ||
+                          _explanation!.isUnavailable)
+                        HistoryError(onRetry: () => _load(retry: true)),
                     ],
-                    if (_explanation == null ||
-                        (!_explanation!.isComplete && !q.isEssay) ||
-                        _explanation!.isUnavailable)
-                      HistoryError(onRetry: () => _load(retry: true)),
-                  ],
+                  ),
                 ),
               ),
         bottomNavigationBar: HistoryActionsBar(
+          key: _tour[3],
           children: [
             OutlinedButton.icon(
               style: historyOutlineStyle(p),
@@ -515,171 +535,187 @@ class _QuestionExportSheetState extends State<QuestionExportSheet> {
         ? ElioTokens.dark
         : ElioTokens.light;
     final inset = MediaQuery.viewPaddingOf(context).bottom;
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(16, 12, 16, math.max(28, inset + 12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Center(
-            child: Container(
-              width: 32,
-              height: 4,
+    return TourTip(
+      id: 'export_pdf',
+      label: () => l10n.tourLblPdf,
+      steps: (k) => [
+        TourStep(k[0], l10n.tipPdf1T, l10n.tipPdf1B),
+        TourStep(k[1], l10n.tipPdf2T, l10n.tipPdf2B),
+        TourStep(k[2], l10n.tipPdf3T, l10n.tipPdf3B),
+      ],
+      builder: (context, k) => SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(16, 12, 16, math.max(28, inset + 12)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 32,
+                height: 4,
+                decoration: ShapeDecoration(
+                  color: p.borderMedium,
+                  shape: const StadiumBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              context.l10n.h3ExportQuestion,
+              style: ElioTokens.subhead.copyWith(color: p.textPrimary),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              context.l10n.h3ExportOnly(
+                widget.questionIndex + 1,
+                widget.record.itemName,
+              ),
+              style: ElioTokens.caption.copyWith(color: p.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              key: k[0],
+              padding: const EdgeInsets.all(12),
               decoration: ShapeDecoration(
-                color: p.borderMedium,
-                shape: const StadiumBorder(),
+                color: p.surfaceRaised,
+                shape: RoundedSuperellipseBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            context.l10n.h3ExportQuestion,
-            style: ElioTokens.subhead.copyWith(color: p.textPrimary),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            context.l10n.h3ExportOnly(
-              widget.questionIndex + 1,
-              widget.record.itemName,
-            ),
-            style: ElioTokens.caption.copyWith(color: p.textSecondary),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: ShapeDecoration(
-              color: p.surfaceRaised,
-              shape: RoundedSuperellipseBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 52,
-                  height: 72,
-                  padding: const EdgeInsets.fromLTRB(7, 9, 5, 0),
-                  decoration: BoxDecoration(
-                    color: paper.background,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: paper.borderSubtle),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final (w, c) in [
-                        (18.0, paper.error),
-                        (36.0, paper.textPrimary),
-                        (30.0, paper.textPrimary),
-                        (40.0, paper.borderMedium),
-                        (34.0, paper.borderMedium),
-                        (40.0, paper.borderMedium),
-                        (22.0, paper.primaryText),
-                      ])
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Container(
-                            width: w,
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: c,
-                              borderRadius: BorderRadius.circular(2),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 72,
+                    padding: const EdgeInsets.fromLTRB(7, 9, 5, 0),
+                    decoration: BoxDecoration(
+                      color: paper.background,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: paper.borderSubtle),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final (w, c) in [
+                          (18.0, paper.error),
+                          (36.0, paper.textPrimary),
+                          (30.0, paper.textPrimary),
+                          (40.0, paper.borderMedium),
+                          (34.0, paper.borderMedium),
+                          (40.0, paper.borderMedium),
+                          (22.0, paper.primaryText),
+                        ])
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Container(
+                              width: w,
+                              height: 3,
+                              decoration: BoxDecoration(
+                                color: c,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
                           ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          QuizPdfService.questionFilename(
+                            widget.record,
+                            widget.questionIndex,
+                          ),
+                          style: ElioTokens.body.copyWith(color: p.textPrimary),
                         ),
-                    ],
+                        const SizedBox(height: 2),
+                        Text(
+                          context.l10n.h3A4Pdf,
+                          style: ElioTokens.caption.copyWith(
+                            color: p.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              context.l10n.h3Include,
+              style: ElioTokens.overline.copyWith(color: p.textTertiary),
+            ),
+            const SizedBox(height: 16),
+            Column(
+              key: k[1],
+              children: [
+                for (var i = 0; i < 4; i++)
+                  CheckboxListTile(
+                    contentPadding: const EdgeInsets.only(left: 4),
+                    minTileHeight: 48,
+                    minVerticalPadding: 0,
+                    dense: true,
+                    horizontalTitleGap: 12,
+                    checkboxScaleFactor: 24 / 18,
+                    checkboxShape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    visualDensity: const VisualDensity(vertical: -4),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    value: _include[i],
+                    onChanged: _busy
+                        ? null
+                        : (value) => setState(() => _include[i] = value!),
+                    title: Text(
+                      [
+                        context.l10n.h3IncAnswers,
+                        context.l10n.h3IncExplanation,
+                        context.l10n.h3IncPhoto,
+                        context.l10n.h3IncNotes,
+                      ][i],
+                      style: ElioTokens.body.copyWith(color: p.textPrimary),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            PdfThemeChoice(enabled: !_busy, onChanged: () => setState(() {})),
+            if (_error != null)
+              Text(
+                _error!,
+                style: ElioTokens.bodySmall.copyWith(color: p.errorText),
+              ),
+            const SizedBox(height: 16),
+            Row(
+              key: k[2],
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: historyOutlineStyle(p),
+                    onPressed: _busy ? null : () => _export(true),
+                    icon: const Icon(Icons.share_outlined),
+                    label: Text(context.l10n.h3Share),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        QuizPdfService.questionFilename(
-                          widget.record,
-                          widget.questionIndex,
-                        ),
-                        style: ElioTokens.body.copyWith(color: p.textPrimary),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        context.l10n.h3A4Pdf,
-                        style: ElioTokens.caption.copyWith(
-                          color: p.textSecondary,
-                        ),
-                      ),
-                    ],
+                  child: FilledButton.icon(
+                    style: historyPrimaryStyle(p),
+                    onPressed: _busy ? null : () => _export(false),
+                    icon: const Icon(Icons.description_outlined),
+                    label: Text(
+                      _busy ? context.l10n.h3Saving : context.l10n.h3SavePdf,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            context.l10n.h3Include,
-            style: ElioTokens.overline.copyWith(color: p.textTertiary),
-          ),
-          const SizedBox(height: 16),
-          for (var i = 0; i < 4; i++)
-            CheckboxListTile(
-              contentPadding: const EdgeInsets.only(left: 4),
-              minTileHeight: 48,
-              minVerticalPadding: 0,
-              dense: true,
-              horizontalTitleGap: 12,
-              checkboxScaleFactor: 24 / 18,
-              checkboxShape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(3),
-              ),
-              visualDensity: const VisualDensity(vertical: -4),
-              controlAffinity: ListTileControlAffinity.leading,
-              value: _include[i],
-              onChanged: _busy
-                  ? null
-                  : (value) => setState(() => _include[i] = value!),
-              title: Text(
-                [
-                  context.l10n.h3IncAnswers,
-                  context.l10n.h3IncExplanation,
-                  context.l10n.h3IncPhoto,
-                  context.l10n.h3IncNotes,
-                ][i],
-                style: ElioTokens.body.copyWith(color: p.textPrimary),
-              ),
-            ),
-          const SizedBox(height: 8),
-          PdfThemeChoice(enabled: !_busy, onChanged: () => setState(() {})),
-          if (_error != null)
-            Text(
-              _error!,
-              style: ElioTokens.bodySmall.copyWith(color: p.errorText),
-            ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  style: historyOutlineStyle(p),
-                  onPressed: _busy ? null : () => _export(true),
-                  icon: const Icon(Icons.share_outlined),
-                  label: Text(context.l10n.h3Share),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton.icon(
-                  style: historyPrimaryStyle(p),
-                  onPressed: _busy ? null : () => _export(false),
-                  icon: const Icon(Icons.description_outlined),
-                  label: Text(
-                    _busy ? context.l10n.h3Saving : context.l10n.h3SavePdf,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1163,6 +1163,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get ctlFwdBack => 'Maju / Mundur';
 
   @override
+  String get ctlYaw => 'YAW';
+
+  @override
+  String get ctlPitch => 'PITCH';
+
+  @override
   String get ctlArmHint =>
       'Geser ke atas untuk mengangkat, ke depan untuk menjangkau. Lengan hanya bergerak saat robot tidak BERHENTI.';
 
@@ -1226,6 +1232,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get ctlLock => 'KUNCI';
 
   @override
+  String get ctlLocking => 'MENGUNCI…';
+
+  @override
   String get ctlScan => 'SCAN';
 
   @override
@@ -1238,7 +1247,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get ctlGuide => 'Panduan';
 
   @override
-  String get ctlStoppedPaused => 'Robot berhenti · scan dijeda';
+  String get ctlStoppedPaused => 'Robot berhenti';
 
   @override
   String get ctlRobotOffline => 'Robot offline';
@@ -2905,6 +2914,16 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get armRefusedUnknown =>
       'Posisi lengan tidak diketahui setelah berhenti atau menyortir. Tekan HOME dulu.';
+
+  @override
+  String get ctlEsp32On => 'ESP32';
+
+  @override
+  String get ctlEsp32Off => 'ESP32 mati';
+
+  @override
+  String get armEsp32Silent =>
+      'Pengendali lengan (ESP32) tidak menjawab robot, jadi lengan tidak bisa bergerak. Periksa kabelnya ke MaixCAM2 (UART4: TX0/RX0 disilang, GND), dayanya, dan pastikan USB-nya tidak dipakai komputer.';
 
   @override
   String get r1Done => 'Selesai! Robot boleh jalan lagi.';
@@ -5605,6 +5624,42 @@ class AppLocalizationsId extends AppLocalizations {
   String get binGotIt => 'Mengerti';
 
   @override
+  String sortCountdown(String bin, int seconds) {
+    return 'Memilah ke tempat $bin dalam $seconds dtk';
+  }
+
+  @override
+  String sortInProgress(String bin) {
+    return 'Sedang memilah · tempat $bin';
+  }
+
+  @override
+  String sortCheckHand(String bin) {
+    return 'Pastikan tangan robot di atas tempat $bin. Atur, lalu tekan LEPAS.';
+  }
+
+  @override
+  String get sortSuccess => 'Pemilahan berhasil';
+
+  @override
+  String binRunReady(String bin) {
+    return 'Tekan Selesai setelah kuis: lengan menunggu 3 detik lalu membawanya ke tempat sampah $bin.';
+  }
+
+  @override
+  String get robotSorted =>
+      'Selesai: robot sudah memasukkannya ke tempat sampah dan kembali ke posisi awal.';
+
+  @override
+  String get robotSortFailed =>
+      'Robot tidak bisa menyelesaikan pemilahan dan kembali ke posisi awal.';
+
+  @override
+  String binRunFailed(String reason) {
+    return 'Lengan tidak bisa menyelesaikan pemilahan ($reason). Lengan kembali ke posisi awal.';
+  }
+
+  @override
   String get qzMute => 'Matikan suara';
 
   @override
@@ -6026,7 +6081,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get advSavedLocal =>
-      'Tersimpan di ponsel ini. Hubungkan robot untuk mengirimnya.';
+      'Tersimpan di ponsel ini. Dikirim ke robot begitu robot terhubung dan tidak sedang STOP.';
 
   @override
   String get advDiscardTitle => 'Buang perubahan?';
@@ -6236,6 +6291,34 @@ class AppLocalizationsId extends AppLocalizations {
   String get advReadOnly => 'Hanya baca';
 
   @override
+  String get advSecSpeed => 'Kecepatan';
+
+  @override
+  String get advSpeedSub =>
+      'Kecepatan maksimum tiap sendi, dan seberapa halus ia mulai dan berhenti.';
+
+  @override
+  String get advColTopSpeed => 'LAJU MAKS';
+
+  @override
+  String get advSpeedUp => 'Percepatan';
+
+  @override
+  String get advSlowDown => 'Perlambatan';
+
+  @override
+  String get advSpeedReset => 'Atur ulang';
+
+  @override
+  String advSpeedMove(String seconds) {
+    return '30° dalam $seconds dtk';
+  }
+
+  @override
+  String get advSpeedTip =>
+      'Semua sendi tiba bersamaan, jadi sendi paling lambat menentukan lama gerakan. Ramp pendek lebih cepat, ramp panjang lebih halus. Urutan ke tempat sampah memakai kecepatan yang tersimpan di tiap langkah.';
+
+  @override
   String get advArmTimeout => 'Batas satu gerak lengan';
 
   @override
@@ -6310,4 +6393,517 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get advCancel => 'Batal';
+
+  @override
+  String get tourGotIt => 'Oke';
+
+  @override
+  String get tourAppTour => 'Tur aplikasi';
+
+  @override
+  String get tourTakeTour => 'Ikuti tur';
+
+  @override
+  String get tourTakeTourSub => 'Lihat semua tab dalam sekitar 2 menit';
+
+  @override
+  String get tourStart => 'Mulai';
+
+  @override
+  String get tourReplayOne => 'Ulangi satu layar';
+
+  @override
+  String get tourTips => 'Tampilkan tips di layar baru';
+
+  @override
+  String get tourTipsSub => 'Tips singkat saat pertama kali membuka layar';
+
+  @override
+  String get tourRobotControl => 'Kontrol robot';
+
+  @override
+  String get tourRobotNext =>
+      'Panduan robot terbuka saat kamu membuka kontrol robot lagi.';
+
+  @override
+  String get tourW1Title => 'Hai! Aku ELIOS';
+
+  @override
+  String get tourW1Body =>
+      'Aku membantumu memilah sampah, belajar sains di baliknya, dan dapat XP sambil melakukannya.';
+
+  @override
+  String get tourW2Title => 'Tiga cara bermain';
+
+  @override
+  String get tourW2Body => 'Pilih yang kamu suka. Kamu bisa ganti kapan saja.';
+
+  @override
+  String get tourWayLearn => 'Belajar';
+
+  @override
+  String get tourWayScan => 'Pindai';
+
+  @override
+  String get tourWayRobot => 'Robot';
+
+  @override
+  String get tourW3Title => 'Ikut tur singkat?';
+
+  @override
+  String get tourW3Body =>
+      'Sekitar 2 menit. Kamu bisa mengulanginya kapan saja di Profil ▸ Tur aplikasi.';
+
+  @override
+  String get tourStartTour => 'Mulai tur';
+
+  @override
+  String get tourMaybeLater => 'Nanti saja';
+
+  @override
+  String get tourDoneTitle => 'Kamu siap, Penjelajah Eco!';
+
+  @override
+  String get tourDoneBody =>
+      'Pindai barang pertamamu untuk dapat XP. Ulangi tur ini kapan saja di Profil ▸ Tur aplikasi.';
+
+  @override
+  String get tourLblHome => 'BERANDA';
+
+  @override
+  String get tourLblLearn => 'BELAJAR';
+
+  @override
+  String get tourLblScan => 'PINDAI';
+
+  @override
+  String get tourLblHistory => 'RIWAYAT';
+
+  @override
+  String get tourLblProfile => 'PROFIL';
+
+  @override
+  String get tourHome1T => 'Pohon eco-mu';
+
+  @override
+  String get tourHome1B =>
+      'Setiap pindaian dan jawaban benar memberi XP. Cincin terisi dan pohonmu naik level.';
+
+  @override
+  String get tourHome2T => 'Statistikmu';
+
+  @override
+  String get tourHome2B =>
+      'Pindaian, akurasi kuis, dan streak harianmu. Kembali setiap hari agar apinya tetap menyala.';
+
+  @override
+  String get tourHome3T => 'Misi harian';
+
+  @override
+  String get tourHome3B =>
+      'Tiga target kecil setiap hari. Selesaikan untuk bonus XP. Direset tengah malam.';
+
+  @override
+  String get tourHome4T => 'Teman tempat sampah';
+
+  @override
+  String get tourHome4B =>
+      'Organik, Anorganik, dan B3. Setiap pindaian mengisi tempat yang tepat, jadi kamu tahu ke mana sampah pergi.';
+
+  @override
+  String get tourHome5T => 'Cari dan notifikasi';
+
+  @override
+  String get tourHome5B =>
+      'Cari pelajaran, simulasi, dan pindaian lama. Lonceng menampilkan notifikasi robot dan kuis.';
+
+  @override
+  String get tourHome6T => 'Lima tab, satu tombol besar';
+
+  @override
+  String get tourHome6B =>
+      'Beranda, Belajar, Pindai, Riwayat, dan Profil. Tombol hijau memulai pindaian dari mana saja.';
+
+  @override
+  String get tourLearn1T => 'Progres belajarmu';
+
+  @override
+  String get tourLearn1B =>
+      'Cincin terisi saat kamu menyelesaikan modul. Semanggi didapat dari Panduan Harian.';
+
+  @override
+  String get tourLearn2T => 'Panduan hari ini';
+
+  @override
+  String get tourLearn2B =>
+      'Panduan singkat baru setiap hari: baca, ikuti kuis cepat, coba lab mini. Hingga +60 XP.';
+
+  @override
+  String get tourLearn3T => 'Dari arsip';
+
+  @override
+  String get tourLearn3B =>
+      'Terlewat sehari? 3 panduan terakhirmu ada di sini. Geser fotonya.';
+
+  @override
+  String get tourLearn4T => 'Pintasan';
+
+  @override
+  String get tourLearn4B =>
+      'Kuis, Lab mini, Arsip, dan Progres, cukup sekali ketuk.';
+
+  @override
+  String get tourLearn5T => 'Jelajahi modul';
+
+  @override
+  String get tourLearn5B =>
+      'Modul Organik, Anorganik, dan B3, masing-masing dengan pelajaran, video, dan simulasi.';
+
+  @override
+  String get tourScan1T => 'Pindai & kuis';
+
+  @override
+  String get tourScan1B =>
+      'Pakai kamera ponselmu. ELIOS mengenali barangnya dan membuat kuis tentangnya.';
+
+  @override
+  String get tourScan2T => 'Pindai robot';
+
+  @override
+  String get tourScan2B =>
+      'Pilih kendaraan, hubungkan robot ELIOS, dan kemudikan untuk memilah sampah sungguhan.';
+
+  @override
+  String get tourScan3T => 'Pindai untuk berkontribusi';
+
+  @override
+  String get tourScan3B =>
+      'Rekam dirimu membuang sampah ke tempat yang tepat. Kamu dapat XP dan membantu melatih ELIOS.';
+
+  @override
+  String get tourHist1T => 'Tempat sampahmu';
+
+  @override
+  String get tourHist1B =>
+      'Ketuk tempat sampah untuk melihat pindaiannya saja.';
+
+  @override
+  String get tourHist2T => 'Pindaian terbaru';
+
+  @override
+  String get tourHist2B =>
+      'Buka pindaian untuk melihat foto, soal, dan skornya. Lihat linimasa menampilkan semuanya.';
+
+  @override
+  String get tourHist3T => 'Ulas soal yang salah';
+
+  @override
+  String get tourHist3B => 'Latih soal yang salah sampai kamu ingat.';
+
+  @override
+  String get tourProf1T => 'Ulangi kapan saja';
+
+  @override
+  String get tourProf1B =>
+      'Tonton seluruh tur lagi, atau satu layar saja. Kamu juga bisa mematikan tips kunjungan pertama di sini.';
+
+  @override
+  String get tourLblModule => 'MODUL';
+
+  @override
+  String get tourLblLesson => 'PELAJARAN';
+
+  @override
+  String get tourLblSim => 'SIMULASI';
+
+  @override
+  String get tourLblQuiz => 'KUIS';
+
+  @override
+  String get tourLblGuide => 'EDISI PANDUAN';
+
+  @override
+  String get tourLblQuickQuiz => 'KUIS CEPAT';
+
+  @override
+  String get tourLblMiniLab => 'LAB MINI';
+
+  @override
+  String get tourLblCamera => 'KAMERA';
+
+  @override
+  String get tourLblResult => 'HASIL PINDAI';
+
+  @override
+  String get tourLblQuestion => 'SOAL';
+
+  @override
+  String get tourLblContribute => 'KONTRIBUSI';
+
+  @override
+  String get tourLblVehicle => 'PILIH KENDARAAN';
+
+  @override
+  String get tourLblSetup => 'PENGATURAN ELIOS';
+
+  @override
+  String get tourLblWifiQr => 'QR WI-FI';
+
+  @override
+  String get tourLblDetail => 'DETAIL PINDAI';
+
+  @override
+  String get tourLblExplain => 'PENJELASAN';
+
+  @override
+  String get tourLblAi => 'ELIOS AI';
+
+  @override
+  String get tourLblPdf => 'EKSPOR PDF';
+
+  @override
+  String get tourLblTimeline => 'LINIMASA';
+
+  @override
+  String get tipModuleT => 'Pilih pelajaran';
+
+  @override
+  String get tipModuleB =>
+      'Ketuk pelajaran untuk menonton atau membacanya. Setiap pelajaran yang selesai mengisi cincin modul.';
+
+  @override
+  String get tipLessonT => 'Tonton atau baca';
+
+  @override
+  String get tipLessonB =>
+      'Ketuk tombol di bawah untuk memutar video atau membuka panduan. Pelajaran yang selesai mengisi cincin modul.';
+
+  @override
+  String get tipSimT => 'Teori, lalu bermain';
+
+  @override
+  String get tipSimB =>
+      'Baca Materi dulu, lalu buka Simulasi dan ubah nilainya. Tidak ada langkah yang salah di sini.';
+
+  @override
+  String get tipQuizT => 'Jawab untuk XP';
+
+  @override
+  String get tipQuizB =>
+      '+10 XP untuk jawaban benar. Salah? ELIOS menjelaskan alasannya.';
+
+  @override
+  String get tipGuide1T => 'Cerita hari ini';
+
+  @override
+  String get tipGuide1B =>
+      'Cerita nyata singkat dengan foto. Baca dulu: kuis dan lab mini membahasnya.';
+
+  @override
+  String get tipGuide2T => 'Bahasamu, atau PDF';
+
+  @override
+  String get tipGuide2B =>
+      'Ganti antara English dan Bahasa Indonesia, atau simpan panduan sebagai PDF.';
+
+  @override
+  String get tipGuide3T => 'Peta misimu';
+
+  @override
+  String get tipGuide3B =>
+      'Tiga perhentian: cerita, fisika, misimu. Setiap perhentian memberi XP.';
+
+  @override
+  String get tipGuide4T => 'Lanjutkan';
+
+  @override
+  String get tipGuide4B =>
+      'Ketuk Lanjutkan untuk ke perhentian berikutnya. Kamu bisa kembali kapan saja hari ini.';
+
+  @override
+  String get tipQq1T => 'Kartumu';
+
+  @override
+  String get tipQq1B => 'Satu chip per soal. Hijau berarti sudah dijawab.';
+
+  @override
+  String get tipQq2T => 'Pilih, lalu cek';
+
+  @override
+  String get tipQq2B =>
+      'Pilih jawaban, ketuk Cek, lalu lanjut ke kartu berikutnya.';
+
+  @override
+  String get tipQq3T => 'Hasilmu';
+
+  @override
+  String get tipQq3B =>
+      'Lihat skor dan XP-mu. Ada yang salah? Coba lagi, tanpa batas.';
+
+  @override
+  String get tipLabT => 'Lab mini';
+
+  @override
+  String get tipLabB =>
+      'Coba eksperimen kecil di rumah, lalu rekam video singkat atau ambil 3 foto. ELIOS memeriksanya dan memberimu lencana.';
+
+  @override
+  String get tipCamT => 'Penuhi bingkai';
+
+  @override
+  String get tipCamB =>
+      'Pegang satu barang di dalam sudut hijau, lalu ketuk tombol rana.';
+
+  @override
+  String get tipRes1T => 'Yang dilihat ELIOS';
+
+  @override
+  String get tipRes1B =>
+      'Foto barangmu. Teman tempat sampah menunjukkan ke mana barang itu dibuang.';
+
+  @override
+  String get tipRes2T => 'Tempat yang mana dan kenapa';
+
+  @override
+  String get tipRes2B =>
+      'Nama barang, tempat sampahnya, dan seberapa yakin ELIOS.';
+
+  @override
+  String get tipRes3T => 'Mulai kuismu';
+
+  @override
+  String get tipRes3B => 'Soal tentang barang ini. Jawaban benar memberi XP.';
+
+  @override
+  String get tipQuestionT => 'Pilih jawabanmu';
+
+  @override
+  String get tipQuestionB =>
+      'Ketuk satu jawaban sebelum waktu habis. Jawaban benar memberi XP.';
+
+  @override
+  String get tipContribT => 'Rekam';
+
+  @override
+  String get tipContribB =>
+      'Ketuk untuk mulai. Pastikan label tempat sampah terlihat saat kamu membuang barangnya.';
+
+  @override
+  String get tipVehicleT => 'Pilih kendaraan';
+
+  @override
+  String get tipVehicleB => 'Robot darat ELIOS sudah siap. Drone segera hadir.';
+
+  @override
+  String get tipSetupT => 'Hubungkan langkah demi langkah';
+
+  @override
+  String get tipSetupB =>
+      'Nyalakan robot, pindai QR Wi-Fi-nya, lalu ketuk Hubungkan. Langkahnya berubah hijau satu per satu.';
+
+  @override
+  String get tipQr1T => 'QR Wi-Fi robot';
+
+  @override
+  String get tipQr1B =>
+      'QR ini berisi nama dan sandi Wi-Fi, jadi kamu tidak perlu mengetiknya di robot.';
+
+  @override
+  String get tipQr2T => 'Tunjukkan ke robot';
+
+  @override
+  String get tipQr2B =>
+      'Pegang ponsel di depan kamera robot. Saat berbunyi, robot tersambung ke Wi-Fi-mu.';
+
+  @override
+  String get tipDetailT => 'Ekspor PDF';
+
+  @override
+  String get tipDetailB =>
+      'Simpan laporan kuis ini sebagai PDF untuk dibagikan ke gurumu.';
+
+  @override
+  String get tipExp1T => 'Hasilmu';
+
+  @override
+  String get tipExp1B => 'Benar atau salah, dan XP yang kamu dapat.';
+
+  @override
+  String get tipExp2T => 'Alasannya';
+
+  @override
+  String get tipExp2B => 'Fisika di balik jawabannya, dalam langkah singkat.';
+
+  @override
+  String get tipExp3T => 'Dengarkan';
+
+  @override
+  String get tipExp3B => 'Ketuk untuk mendengar penjelasannya dibacakan.';
+
+  @override
+  String get tipExp4T => 'Ekspor atau lanjut';
+
+  @override
+  String get tipExp4B =>
+      'Simpan penjelasan ini sebagai PDF, atau lanjut ke soal berikutnya.';
+
+  @override
+  String get tipAi1T => 'Kenapa benar atau salah';
+
+  @override
+  String get tipAi1B =>
+      'Setiap jawaban punya penjelasan singkat yang bisa kamu baca sebelum lanjut.';
+
+  @override
+  String get tipAi2T => 'Tanya ELIOS AI';
+
+  @override
+  String get tipAi2B =>
+      'Masih ragu? ELIOS AI menjelaskannya dengan cara lain. Ketik atau ketuk pertanyaan yang disarankan.';
+
+  @override
+  String get tipAi3T => 'Soal berikutnya';
+
+  @override
+  String get tipAi3B => 'Siap? Lanjut ke soal berikutnya.';
+
+  @override
+  String get tipPdf1T => 'Pratinjau';
+
+  @override
+  String get tipPdf1B =>
+      'Ini file yang akan kamu dapat: laporan A4 berisi jawabanmu.';
+
+  @override
+  String get tipPdf2T => 'Pilih isinya';
+
+  @override
+  String get tipPdf2B =>
+      'Centang yang ingin dimasukkan, seperti penjelasan, foto pindaian, atau ruang catatan.';
+
+  @override
+  String get tipPdf3T => 'Simpan atau bagikan';
+
+  @override
+  String get tipPdf3B => 'Simpan ke ponselmu atau bagikan ke gurumu.';
+
+  @override
+  String get tipTl1T => 'Pilih perangkat';
+
+  @override
+  String get tipTl1B =>
+      'Ponselmu dan robot ELIOS masing-masing punya linimasa sendiri.';
+
+  @override
+  String get tipTl2T => 'Ringkasan perangkat';
+
+  @override
+  String get tipTl2B =>
+      'Berapa banyak pindaian perangkat ini dan kapan terakhir memindai.';
+
+  @override
+  String get tipTl3T => 'Semua pindaian, terbaru dulu';
+
+  @override
+  String get tipTl3B => 'Ketuk pindaian untuk membuka foto, soal, dan skornya.';
 }

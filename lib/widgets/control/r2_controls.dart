@@ -316,7 +316,10 @@ class _DriveJoystickState extends State<DriveJoystick> {
 
 /// Fader (358:2360 vertical, 358:2380 horizontal): a Material [Slider] in
 /// the R2 skin, so taps and drags behave exactly as the old sliders did.
-class ControlFader extends StatelessWidget {
+/// While dragged, the thumb follows the finger; otherwise it shows [value]. Arm faders feed [value]
+/// from the commanded pose, which changes only every 100 ms (0236) and not at all for a refused
+/// move, so a controlled thumb lagged and stuck under the finger (0240).
+class ControlFader extends StatefulWidget {
   const ControlFader({
     super.key,
     required this.value,
@@ -333,8 +336,16 @@ class ControlFader extends StatelessWidget {
   final String? semanticLabel;
 
   @override
+  State<ControlFader> createState() => _ControlFaderState();
+}
+
+class _ControlFaderState extends State<ControlFader> {
+  double? _drag;
+
+  @override
   Widget build(BuildContext context) {
     final p = context.elio;
+    final max = widget.max, onChanged = widget.onChanged, semanticLabel = widget.semanticLabel;
     final slider = SliderTheme(
       data: SliderThemeData(
         trackHeight: 10,
@@ -349,10 +360,21 @@ class ControlFader extends StatelessWidget {
         trackShape: const RoundedRectSliderTrackShape(),
       ),
       child: Slider(
-        value: value.clamp(0, max),
+        value: (_drag ?? widget.value).clamp(0, max),
         max: max,
-        onChanged: onChanged,
-        onChangeStart: onChanged == null ? null : (_) => controlFeedback(),
+        onChanged: onChanged == null
+            ? null
+            : (v) {
+                setState(() => _drag = v);
+                onChanged(v);
+              },
+        onChangeStart: onChanged == null
+            ? null
+            : (v) {
+                _drag = v;
+                controlFeedback();
+              },
+        onChangeEnd: onChanged == null ? null : (_) => setState(() => _drag = null),
         semanticFormatterCallback: (v) => '${(v / max * 100).round()}%',
       ),
     );
@@ -362,7 +384,7 @@ class ControlFader extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: p.borderSubtle),
       ),
-      child: vertical ? RotatedBox(quarterTurns: 3, child: slider) : slider,
+      child: widget.vertical ? RotatedBox(quarterTurns: 3, child: slider) : slider,
     );
     return semanticLabel == null ? track : Semantics(label: semanticLabel, child: track);
   }
@@ -489,6 +511,7 @@ class TransportKey extends StatelessWidget {
     this.primary = false,
     this.size = 60,
     this.progress = 0,
+    this.busy = false,
     this.showLabel = true,
   });
 
@@ -500,6 +523,9 @@ class TransportKey extends StatelessWidget {
 
   /// Hold-to-confirm fill (HOME), 0..1.
   final double progress;
+
+  /// A spinning ring while the key's work runs (LOCK waits ~2 s for the AI).
+  final bool busy;
 
   /// False draws the circle only (short screens); screen readers still get [label].
   final bool showLabel;
@@ -534,9 +560,9 @@ class TransportKey extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  if (progress > 0)
+                  if (busy || progress > 0)
                     Positioned.fill(
-                      child: CircularProgressIndicator(value: progress, strokeWidth: 4, color: p.primaryText),
+                      child: CircularProgressIndicator(value: busy ? null : progress, strokeWidth: 4, color: p.primaryText),
                     ),
                   Icon(icon, size: size * 0.42, color: primary ? p.onPrimary : p.textPrimary),
                 ],

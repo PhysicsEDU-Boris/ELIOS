@@ -95,6 +95,21 @@ void main() {
     expect(calls, feel);
   });
 
+  testWidgets('slider: the thumb follows the finger while the owner\'s value lags (0240)', (t) async {
+    final sent = <double>[];
+    // The arm faders feed back a throttled / refused commanded value: here it never changes.
+    await pump(t, SizedBox(width: 300, child: ControlFader(value: 0.2, onChanged: sent.add)));
+    double thumb() => t.widget<Slider>(find.byType(Slider)).value;
+    final g = await t.startGesture(t.getCenter(find.byType(Slider)));
+    await g.moveBy(const Offset(60, 0));
+    await t.pump();
+    expect(thumb(), sent.last, reason: 'under the finger, not stuck at the owner value');
+    expect(thumb(), isNot(0.2));
+    await g.up();
+    await t.pump();
+    expect(thumb(), 0.2, reason: 'released: back to what the owner says the arm has');
+  });
+
   testWidgets('joystick: once per new direction', (t) async {
     final dirs = <DriveDir>[];
     await pump(

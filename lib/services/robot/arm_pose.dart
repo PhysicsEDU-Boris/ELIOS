@@ -8,6 +8,7 @@ library;
 import 'dart:math' as math;
 
 import 'arm_kinematics.dart';
+import 'arm_profile.dart';
 
 /// Six servo angles in the firmware's field order F0..F5 (hil/config.py AXES).
 typedef ServoPose = List<double>;
@@ -33,7 +34,7 @@ const armAxes = [
   ArmAxis('Arm Base', 0, 90, -90, 270, 40),
 ];
 
-const _gripper = 0, _base = 5;
+const _gripper = 0, _yaw = 1, _pitch = 2, _base = 5;
 const gripOpenServo = 180.0;
 final ServoPose armHome = [for (final a in armAxes) a.home];
 
@@ -42,8 +43,8 @@ final ServoPose armHome = [for (final a in armAxes) a.home];
 const reachRangeMm = (40.0, 320.0);
 const heightRangeMm = (40.0, 370.0);
 
-/// hil/config.py SPEED_MARGIN: moves are timed at 80 % of each axis' speed limit.
-const _speedMargin = 0.8;
+/// hil/config.py SPEED_MARGIN: no joint is asked for more than 80 % of its speed limit.
+const armSpeedMargin = 0.8;
 
 Joints armToSim(ServoPose s) {
   final j = List<double>.filled(5, 0);
@@ -64,11 +65,13 @@ ServoPose armFromSim(Joints j, double gripper) =>
   return j == null ? (a.servoLo, a.servoHi) : (a.home + armJointLimits[j].$1, a.home + armJointLimits[j].$2);
 }
 
-/// Seconds one leg takes (hil/motion.py leg_time).
-double legSeconds(ServoPose a, ServoPose b) {
+/// Seconds one leg takes with speed [profile] (0240; the sim's ProfiledMotion and the MaixCAM2's
+/// leg_seconds): the slowest joint at its own top speed.
+double legSeconds(ServoPose a, ServoPose b, [ArmProfile profile = defaultArmProfile]) {
   var t = 0.0;
   for (var i = 0; i < armAxes.length; i++) {
-    t = math.max(t, 1.5 * (b[i] - a[i]).abs() / (armAxes[i].speed * _speedMargin));
+    final g = profile[armAxes[i].name] ?? defaultArmProfile[armAxes[i].name]!;
+    t = math.max(t, (b[i] - a[i]).abs() * peakOverMean(g.accel, g.decel) / g.vmax);
   }
   return t > 1e-9 ? math.max(t, 0.15) : 0.0;
 }
@@ -87,6 +90,9 @@ class ArmPose {
   /// Gripper closed angle offset (Advanced settings, 0232): closed = 75 + offset.
   double gripClosedOffset = 0;
 
+  /// Speed profile the MaixCAM2 plays manual moves with (Advanced settings, 0240): times [plan].
+  ArmProfile profile = defaultArmProfile;
+
   ServoPose _goal = [...armHome];
   bool _known = true;
 
@@ -96,13 +102,45 @@ class ArmPose {
   /// False after a STOP or an R1 sort: where the arm stopped is unknown, so only HOME (the
   /// firmware's own) is allowed until the arm is home again.
   bool get known => _known;
-  void markUnknown() => _known = false;
+  void markUnknown() {
+    _known = false;
+    movingSeq = null;
+  }
+
+  /// Seq of the manual ARM_POSE still on its way. A reply to an older, superseded command, or a
+  /// STATUS mid-move, carries a pose the arm is only passing through: taking it as the goal pulled
+  /// the sliders back while the student dragged them ("moves on its own", 0240).
+  int? movingSeq;
 
   /// The MaixCAM2 reported the pose it last sent to the ESP32 (0235: motion_done, STATUS).
   void sync(ServoPose servo) {
     _goal = [...servo];
     _known = true;
+    movingSeq = null;
   }
+
+  /// A reply's `servo`: taken while no manual move is on its way, or as that move's own end.
+  /// True when it was taken.
+  bool onServo(ServoPose servo, {required int? seq, required bool done}) {
+    if (movingSeq != null && !(done && seq == movingSeq)) return false;
+    sync(servo);
+    return true;
+  }
+
+  /// From a STATUS reply (0240): true when the MaixCAM2 has heard nothing from the arm's ESP32 for
+  /// over 3 s (it sends STAT every second), so arm moves go out but reach no servo; null when the
+  /// firmware does not say (older than m2c-arm-v3).
+  static bool? esp32SilentFrom(Map<String, dynamic> msg) {
+    if (!msg.containsKey('esp32_age_s')) return null;
+    final age = msg['esp32_age_s'];
+    return age is! num || age > 3;
+  }
+
+  /// The MaixCAM2 does not know where the arm is (its ESP32 reset, 0235): a STATUS ack with
+  /// `servo: null`, or a move refused with `pose_unknown`. Only its own HOME moves the arm then (0241).
+  static bool poseUnknownFrom(Map<String, dynamic> msg) =>
+      (msg['event'] == 'ack' && msg.containsKey('servo') && msg['servo'] == null) ||
+      (msg['event'] == 'error' && msg['reason'] == 'pose_unknown');
 
   /// [sync]'s input from a reply's `servo` field, or null when it has none (old firmware, ESP32 reset).
   static ServoPose? servoFrom(Object? raw) =>
@@ -112,9 +150,18 @@ class ArmPose {
   void markHome() {
     _goal = [...armHome];
     _known = true;
+    movingSeq = null;
   }
 
   double get gripClosedServo => 75 + gripClosedOffset;
+
+  /// New closed offset (Advanced settings). True when the gripper was closed and should close to the
+  /// new angle: the sim's _set_close_offset keeps a closed gripper closed (0241).
+  bool setGripClosedOffset(double offset) {
+    final wasClosed = _known && offset != gripClosedOffset && (_goal[_gripper] - gripClosedServo).abs() < 0.05;
+    gripClosedOffset = offset;
+    return wasClosed;
+  }
 
   /// Plans a move to [servoGoal] (clamped to each axis' range). Nothing changes until [commit].
   ArmMove plan(ServoPose servoGoal) {
@@ -127,14 +174,17 @@ class ArmPose {
     final path = [for (final w in p.path!) armFromSim(w, g[_gripper])];
     var s = 0.0, from = _goal;
     for (final leg in path) {
-      s += legSeconds(from, leg);
+      s += legSeconds(from, leg, profile);
       from = leg;
     }
     return ArmMove._(path, null, Duration(milliseconds: (s * 1000).round()));
   }
 
-  /// The move was sent: it is the new goal.
-  void commit(ArmMove m) => _goal = [...m.goal!];
+  /// The move was sent (as [seq]): it is the new goal.
+  void commit(ArmMove m, [int? seq]) {
+    _goal = [...m.goal!];
+    movingSeq = seq;
+  }
 
   ArmMove _with(int axis, double servo) => plan([..._goal]..[axis] = servo);
 
@@ -150,6 +200,13 @@ class ArmPose {
       ((gripOpenServo - _goal[_gripper]) / (gripOpenServo - gripClosedServo) * 100).clamp(0, 100).toDouble();
 
   ArmMove home() => plan(armHome);
+
+  /// Wrist yaw / pitch faders (0241): the servo itself across its range, like the sim's Joints tab
+  /// sliders. Height and Reach then keep the tool angle these leave.
+  ArmMove yaw(double fraction) => _with(_yaw, _lerp(_servoRange(_yaw), fraction));
+  ArmMove pitch(double fraction) => _with(_pitch, _lerp(_servoRange(_pitch), fraction));
+  double get yawFraction => _fraction(_goal[_yaw], _servoRange(_yaw));
+  double get pitchFraction => _fraction(_goal[_pitch], _servoRange(_pitch));
 
   // Height and reach: the end effector straight up/down or along the arm's heading, the tool's
   // angle to the floor kept (the sim's "Go to point" with keep pitch).

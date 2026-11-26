@@ -1,5 +1,6 @@
 import 'package:elio/Screens/question_explanation_screen.dart'
     show QuestionExportSheet, showQuizReportSheet;
+import 'tour/app_tour.dart';
 import 'package:elio/widgets/quiz/essay_review.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -19,6 +20,7 @@ import '../models/scanned_waste.dart';
 import '../models/trophy_rules.dart';
 import '../providers/app_preferences_provider.dart';
 import '../providers/robot_provider.dart';
+import '../services/robot/bin_run.dart' show BinRunCue;
 import '../providers/waste_quiz_provider.dart';
 import '../services/ai_quiz_service.dart';
 import '../services/question_bank.dart';
@@ -304,8 +306,9 @@ class _ResultCard extends ConsumerWidget {
     final userLevel = store.userLevel;
     final levelProgress = store.levelProgress;
 
-    final isR1 = r1EnabledOverride || const bool.fromEnvironment('R1');
-    final r1Pending = isR1 && ref.watch(r1DropPendingProvider);
+    // R1, or the Control screen's bin run (0240): the robot is still taking the item to its bin.
+    // Only those two ever set the provider, so no build flag is needed here.
+    final r1Pending = ref.watch(r1DropPendingProvider);
 
     return _CardBox(
       child: Column(

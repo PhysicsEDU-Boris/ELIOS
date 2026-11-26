@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import '../../../../widgets/tour/app_tour.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -200,134 +201,142 @@ class _PhysicsQuestionViewState extends State<_PhysicsQuestionView> {
         ? RobotMood.excited
         : RobotMood.sad;
     // Each question slides in from the right (base 220, emphasized).
-    return ElioSlideIn(
-      child: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      constraints: const BoxConstraints(minHeight: 200),
-                      padding: const EdgeInsets.fromLTRB(21, 19, 21, 56),
-                      decoration: ShapeDecoration(
-                        color: p.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: leafL,
-                          side: BorderSide(color: p.borderSubtle),
+    return TourTip(
+      id: 'physics_quiz',
+      label: () => l10n.tourLblQuiz,
+      steps: (k) => [TourStep(k[0], l10n.tipQuizT, l10n.tipQuizB)],
+      builder: (context, k) => ElioSlideIn(
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                children: [
+                  Stack(
+                    key: k[0],
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        constraints: const BoxConstraints(minHeight: 200),
+                        padding: const EdgeInsets.fromLTRB(21, 19, 21, 56),
+                        decoration: ShapeDecoration(
+                          color: p.surface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: leafL,
+                            side: BorderSide(color: p.borderSubtle),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _overline().toUpperCase(),
+                              style: context.text.labelSmall?.copyWith(
+                                color: p.primaryText,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              widget.question.prompt(widget.questionData),
+                              style: context.text.titleLarge,
+                            ),
+                          ],
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _overline().toUpperCase(),
-                            style: context.text.labelSmall?.copyWith(
-                              color: p.primaryText,
-                            ),
+                      Positioned(
+                        right: 16,
+                        bottom: -20,
+                        child: ElioPopIn(
+                          curve: ElioMotion.pop,
+                          scale: 0.4,
+                          delay: ElioMotion.fast,
+                          child: Transform.rotate(
+                            angle: -8 * _deg,
+                            child: RobotBuddy(mood: mood, height: 80),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            widget.question.prompt(widget.questionData),
-                            style: context.text.titleLarge,
-                          ),
-                        ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  for (var i = 0; i < _options.length; i++) ...[
+                    QuizAnswerOption(
+                      index: i,
+                      label: _options[i],
+                      selected: _selected == i,
+                      isCorrect: i == widget.question.correctIndex,
+                      answered: _checked,
+                      minHeight: 64,
+                      onTap: () => _pick(i),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  if (_checked) ...[
+                    const SizedBox(height: 4),
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        _right ? l10n.qzCorrect : l10n.pqWrong,
+                        style: context.text.titleSmall?.copyWith(
+                          color: _right ? p.primaryText : p.errorText,
+                        ),
                       ),
                     ),
-                    Positioned(
-                      right: 16,
-                      bottom: -20,
-                      child: ElioPopIn(
-                        curve: ElioMotion.pop,
-                        scale: 0.4,
-                        delay: ElioMotion.fast,
-                        child: Transform.rotate(
-                          angle: -8 * _deg,
-                          child: RobotBuddy(mood: mood, height: 80),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: ShapeDecoration(
+                        color: p.surfaceRaised,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: leafS,
                         ),
+                      ),
+                      child: Text(
+                        widget.question.workedSolution(widget.questionData),
+                        style: context.text.bodySmall,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    L3Button(
+                      // Check plays its own chime / knock.
+                      feedback: _checked,
+                      label: !_checked
+                          ? l10n.lnCheckAnswer
+                          : widget.isLast
+                          ? l10n.pqSeeResults
+                          : l10n.pqNext,
+                      onPressed: _selected == null
+                          ? null
+                          : _checked
+                          ? () => widget.onNext(_selected!)
+                          : _check,
+                    ),
+                    const SizedBox(height: 10),
+                    AnimatedOpacity(
+                      duration: ElioMotion.fast,
+                      opacity: _selected == null ? 1 : 0,
+                      child: Text(
+                        l10n.lnPickToContinue,
+                        style: captionStyle(context),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                for (var i = 0; i < _options.length; i++) ...[
-                  QuizAnswerOption(
-                    index: i,
-                    label: _options[i],
-                    selected: _selected == i,
-                    isCorrect: i == widget.question.correctIndex,
-                    answered: _checked,
-                    minHeight: 64,
-                    onTap: () => _pick(i),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-                if (_checked) ...[
-                  const SizedBox(height: 4),
-                  Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      _right ? l10n.qzCorrect : l10n.pqWrong,
-                      style: context.text.titleSmall?.copyWith(
-                        color: _right ? p.primaryText : p.errorText,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: ShapeDecoration(
-                      color: p.surfaceRaised,
-                      shape: const RoundedRectangleBorder(borderRadius: leafS),
-                    ),
-                    child: Text(
-                      widget.question.workedSolution(widget.questionData),
-                      style: context.text.bodySmall,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  L3Button(
-                    // Check plays its own chime / knock.
-                    feedback: _checked,
-                    label: !_checked
-                        ? l10n.lnCheckAnswer
-                        : widget.isLast
-                        ? l10n.pqSeeResults
-                        : l10n.pqNext,
-                    onPressed: _selected == null
-                        ? null
-                        : _checked
-                        ? () => widget.onNext(_selected!)
-                        : _check,
-                  ),
-                  const SizedBox(height: 10),
-                  AnimatedOpacity(
-                    duration: ElioMotion.fast,
-                    opacity: _selected == null ? 1 : 0,
-                    child: Text(
-                      l10n.lnPickToContinue,
-                      style: captionStyle(context),
-                    ),
-                  ),
-                ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

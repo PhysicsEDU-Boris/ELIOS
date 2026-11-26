@@ -1,8 +1,26 @@
-# MaixCAM2 firmware (m2c-arm-v1)
+# MaixCAM2 firmware (m2c-arm-v3)
+
+1.4.4 (0242): `STOP {"limp": true}` (the app's STOP button) sends one all-empty frame: the ESP32
+releases every servo and the base driver. Streaming stops; pose unknown, HOME first. Plain STOP still holds.
+
+1.4.3 (0241): during a bin sequence the bin tags come from OpenCV `cv2.aruco` (AprilTag 36h11, full
+frame, worker thread); MaixPy `find_apriltags` killed the app mid-sort. `[Tags] bin search sees` and
+`/root/elios_sort_view.jpg` show what the sort saw. Bridge: HOME/ARM_POSE ack `motion_s`, HOME and
+ARM_POSE replace each other, CONFIG `gripInverted`, STATUS `trims`/`inverted`, camera FOV 81.1°.
+
+v3 (0240 section 9, package 1.4.0): ~20 fps stream, video lag guard (frames skipped, never queued),
+UART reads only when bytes are waiting, bin sequences pause on a briefly quiet app. Restart without the
+touchscreen: `app.switch_app("elios_clean_m2c_v1")` in a separate python3, then stop the running app (or
+the launcher UI); the launcher daemon starts it.
+
+v2 (0240, package 1.3.0): arm ESP32 on UART4 (`/dev/ttyS4`, A21/A22), wheels Arduino on UART2
+(`/dev/ttyS2`, one char F/B/L/R/S), AprilTag base centring in bin sequences. Console prints
+`[Arm] UART /dev/ttyS4 9600 open` and `[Drive] UART /dev/ttyS2 9600 open`.
+
 
 Deployed on the MaixCAM2 19 Nov 2026 (over USB, `/maixapp/apps/elios_clean_m2c_v1`, v1.2.0):
 `{"cmd":"ping"}` returns `m2c-arm-v1` and `firmware_sha256`
-`17c1204f758f14e41687f3652a06f3e0adf93e98f0741e8928d5032d2a8d2230`, matching
+`16bbc99eb61902237ae2b133ab4c768bbd08e8a8c43294accb9c6e9079fe5411` (Arduino drive, 0237, deployed over SSH 19 Nov), matching
 `shasum -a 256 main.py`. ESP32 not wired yet, so no `STAT` line seen. The board ran the
 floor-distance-guides build (0192, v1.1.0, sha256 `2149d09f…`, not on this branch; its tag id 2
 is the 80 mm floor tag). It is backed up on the board in
@@ -68,6 +86,10 @@ verified byte-for-byte against the robot's currently installed script.
   A lost item is not dropped: after `TRACK_REFIND_AFTER` low-score calls the tracker searches
   the whole frame, and the box comes back with the same `track_id` when it finds the item.
 - A `[FPS]` line every 5 s on the console gives fps and ms per stage.
+
+## Wheels (decision 0237)
+
+- `UART2_SLAVE = "arduino"`: app `motor` → Arduino `codeMotorSlave.ino` on UART2 as one char `F/B/L/R/S` (bigger of forward/turn wins, deadband 10); last client gone or no `motor` for 500 ms → `S`; console `[Drive] F -> S …` on changes. Arm frames are not sent while the Arduino owns UART2 (set `esp32` for the arm).
 
 ## Arm bridge (m2c-arm-v1, decision 0235)
 

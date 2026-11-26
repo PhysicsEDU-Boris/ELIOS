@@ -1,6 +1,7 @@
 /// Advanced settings (decision 0232): the robot tuning a teacher can change on the phone.
 /// Saved per phone in SharedPreferences. The joystick values apply in the app at once; the arm
-/// values travel to the MaixCAM2 as a CONFIG command, which the firmware does not apply yet.
+/// values travel to the MaixCAM2 as a CONFIG command. The MaixCAM2 applies the trims, invert and
+/// the speed profile (0235, 0240).
 library;
 
 import 'dart:convert';
@@ -9,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'arm_profile.dart';
 import 'joystick_math.dart';
 
 /// The five arm joints in the order the table shows them: base, Arm A, Arm B, pitch, yaw.
@@ -34,6 +36,7 @@ class RobotSettings {
     this.baseLimit = 90,
     this.flipTurn = false,
     this.flipBase = false,
+    this.profile = defaultArmProfile,
     this.teacherPin,
   });
 
@@ -44,6 +47,9 @@ class RobotSettings {
   final double deadzone, quadraticShare, turnGain, slewUp, slewDown, minDriveOutput;
   final double baseRate, baseLimit;
   final bool flipTurn, flipBase;
+
+  /// Top speed and ramps per arm joint (0240), robotic_hand_sim's Joints tab "max" and Detail.
+  final ArmProfile profile;
 
   /// Four digits; null until a teacher sets one.
   final String? teacherPin;
@@ -77,6 +83,7 @@ class RobotSettings {
     double? baseLimit,
     bool? flipTurn,
     bool? flipBase,
+    ArmProfile? profile,
     String? teacherPin,
   }) => RobotSettings(
     trims: trims ?? this.trims,
@@ -93,6 +100,7 @@ class RobotSettings {
     baseLimit: baseLimit ?? this.baseLimit,
     flipTurn: flipTurn ?? this.flipTurn,
     flipBase: flipBase ?? this.flipBase,
+    profile: profile ?? this.profile,
     teacherPin: teacherPin ?? this.teacherPin,
   );
 
@@ -112,6 +120,7 @@ class RobotSettings {
     'baseLimit': baseLimit,
     'flipTurn': flipTurn,
     'flipBase': flipBase,
+    'profile': armProfileToMap(profile),
   };
 
   /// Unknown, missing or out-of-range values fall back to the default (pasted text is untrusted).
@@ -145,6 +154,7 @@ class RobotSettings {
       baseLimit: n('baseLimit', d.baseLimit, 30, 90),
       flipTurn: b('flipTurn', d.flipTurn),
       flipBase: b('flipBase', d.flipBase),
+      profile: completeArmProfile(m['profile']), // clamped per axis like the sim; bad axes -> default
       teacherPin: pin,
     );
   }

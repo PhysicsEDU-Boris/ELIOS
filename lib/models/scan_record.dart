@@ -69,6 +69,20 @@ class RecordQuestion {
     ],
   ].contains(yourAnswer.trim());
 
+  /// [answer] with a skipped / time's-up placeholder (saved in the
+  /// question's language) put in [lang]; any other answer as it is.
+  static String placeholderIn(String answer, String lang) {
+    // Old records may carry no language; only the app's own two are known.
+    if (lang != 'en' && lang != 'id') return answer;
+    final to = lookupAppLocalizations(Locale(lang));
+    for (final l in const ['en', 'id']) {
+      final from = lookupAppLocalizations(Locale(l));
+      if (answer.trim() == from.quizTimeUpAnswer) return to.quizTimeUpAnswer;
+      if (answer.trim() == from.quizSkippedAnswer) return to.quizSkippedAnswer;
+    }
+    return answer;
+  }
+
   /// Optional structured explanation saved alongside the answer (schema v2+).
   /// Null for old records or when explanation generation failed.
   final QuizExplanation? explanation;
@@ -241,7 +255,10 @@ class ScanRecord {
           final explanation = e == null ? null : explanationIn(i, target) ?? e;
           return RecordQuestion(
             question: t?.question ?? q.question,
-            yourAnswer: t?.yourAnswer ?? q.yourAnswer,
+            yourAnswer: RecordQuestion.placeholderIn(
+              t?.yourAnswer ?? q.yourAnswer,
+              target,
+            ),
             rightAnswer: t?.rightAnswer ?? q.rightAnswer,
             isCorrect: q.isCorrect,
             trophies: q.trophies,

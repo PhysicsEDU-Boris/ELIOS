@@ -32,6 +32,10 @@ class _Robot extends InheritedWidget {
 
 bool _isRobot(BuildContext context) => _Robot.of(context)?.robot ?? false;
 
+/// [_isRobot] without a dependency, safe in initState (tour guards).
+bool _onRobot(BuildContext context) =>
+    context.getInheritedWidgetOfExactType<_Robot>()?.robot ?? false;
+
 /// The compact STOP of the robot pages; nothing on the phone.
 List<Widget> _stopPill(BuildContext context) {
   final stop = _Robot.of(context)?.onStop;
@@ -46,12 +50,16 @@ class ScanQuizPages extends ConsumerStatefulWidget {
     this.robot = false,
     this.onStop,
     this.onRescan,
+    this.onDone,
   });
 
   /// Robot control: see [_Robot].
   final bool robot;
   final VoidCallback? onStop;
   final VoidCallback? onRescan;
+
+  /// The result page's Done, before the pages close (robot: the arm starts sorting, 0243).
+  final VoidCallback? onDone;
 
   @override
   ConsumerState<ScanQuizPages> createState() => _ScanQuizPagesState();
@@ -90,8 +98,11 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
       context: context,
       backgroundColor: p.surface,
       showDragHandle: true,
+      // Not capped at 9/16 of the screen: in phone landscape that cut off
+      // Leave (found on the phone, 21 Nov).
+      isScrollControlled: true,
       builder: (sheet) => SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
           child: Column(
             key: const ValueKey('quiz_leave_sheet'),
@@ -301,7 +312,7 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
       ),
       WasteQuizPhase.finished => (
         'done',
-        _ScanDonePage(state: s, onClose: n.dismiss, onRescan: rescan),
+        _ScanDonePage(state: s, onClose: n.dismiss, onRescan: rescan, onDone: widget.onDone),
       ),
       WasteQuizPhase.explaining when q != null => (
         'review-${s.questionIndex}',
@@ -607,8 +618,25 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
     }
   }
 
+  final _tour = List.generate(3, (_) => GlobalKey());
+
   // Figma 13 · 27: S2 when the buddy pops, H-light when the result shows.
-  void _cue() => quizFeedback(ElioSfx.pop, ElioHaptics.light);
+  void _cue() {
+    quizFeedback(ElioSfx.pop, ElioHaptics.light);
+    // First identified item: what ELIOS saw, which bin, start the quiz (18 · M).
+    // Never on the robot: the overlay would cover STOP.
+    if (_onRobot(context)) return;
+    AppTour.tipOnce(
+      context,
+      'scan_result',
+      l10n.tourLblResult,
+      () => [
+        TourStep(_tour[0], l10n.tipRes1T, l10n.tipRes1B),
+        TourStep(_tour[1], l10n.tipRes2T, l10n.tipRes2B),
+        TourStep(_tour[2], l10n.tipRes3T, l10n.tipRes3B),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -680,6 +708,7 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
     );
 
     final photo = SizedBox(
+      key: _tour[0],
       width: 358,
       height: 280,
       child: Stack(
@@ -741,179 +770,187 @@ class _IdentifiedPageState extends State<_IdentifiedPage> {
               ],
             ),
           )
-        : ElioPopIn(
-            key: const ValueKey('scan_identified'),
-            rise: 8,
-            scale: 1,
-            duration: ElioMotion.base,
-            delay: const Duration(milliseconds: 260),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  (widget.hazard
-                          ? l10n.scanHazardOverline
-                          : l10n.scanIdentified)
-                      .toUpperCase(),
-                  style: _sq(
-                    ElioTokens.overline,
-                    600,
-                    widget.hazard ? p.errorText : p.primaryText,
-                  ).copyWith(letterSpacing: 1.1),
-                ),
-                const SizedBox(height: 10),
-                Semantics(
-                  header: true,
-                  child: Padding(
-                    padding: EdgeInsets.only(right: titleInset),
-                    child: Text(
-                      s.scan?.displayName ?? l10n.wasteGeneric,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: _sq(ElioTokens.display, 700, p.textPrimary),
+        : KeyedSubtree(
+            key: _tour[1],
+            child: ElioPopIn(
+              key: const ValueKey('scan_identified'),
+              rise: 8,
+              scale: 1,
+              duration: ElioMotion.base,
+              delay: const Duration(milliseconds: 260),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (widget.hazard
+                            ? l10n.scanHazardOverline
+                            : l10n.scanIdentified)
+                        .toUpperCase(),
+                    style: _sq(
+                      ElioTokens.overline,
+                      600,
+                      widget.hazard ? p.errorText : p.primaryText,
+                    ).copyWith(letterSpacing: 1.1),
+                  ),
+                  const SizedBox(height: 10),
+                  Semantics(
+                    header: true,
+                    child: Padding(
+                      padding: EdgeInsets.only(right: titleInset),
+                      child: Text(
+                        s.scan?.displayName ?? l10n.wasteGeneric,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: _sq(ElioTokens.display, 700, p.textPrimary),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 8,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(6, 6, 14, 6),
-                      decoration: ShapeDecoration(
-                        color: tint.bg,
-                        shape: StadiumBorder(
-                          side: BorderSide(
-                            color: tint.border ?? p.borderSubtle,
-                          ),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              color: p.surface,
-                              shape: BoxShape.circle,
-                            ),
-                            child: homeArt(_binAsset(category)),
-                          ),
-                          const SizedBox(width: 10),
-                          Flexible(
-                            child: Text(
-                              switch (category) {
-                                ScanCategory.b3 => l10n.scanBinB3,
-                                ScanCategory.organic => l10n.scanBinOrganic,
-                                ScanCategory.recyclable =>
-                                  l10n.scanBinRecyclable,
-                                _ => l10n.scanBinResidu,
-                              },
-                              style: _sq(
-                                ElioTokens.bodySmall,
-                                600,
-                                tint.fg,
-                              ).copyWith(height: 1.4),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Caution note (852:28634): error tint, warning icon.
-                    if (widget.hazard)
+                  const SizedBox(height: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 8,
+                    children: [
                       Container(
-                        key: const ValueKey('scan_hazard_note'),
-                        padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
-                        decoration: BoxDecoration(
+                        padding: const EdgeInsets.fromLTRB(6, 6, 14, 6),
+                        decoration: ShapeDecoration(
                           color: tint.bg,
-                          borderRadius: BorderRadius.circular(16),
+                          shape: StadiumBorder(
+                            side: BorderSide(
+                              color: tint.border ?? p.borderSubtle,
+                            ),
+                          ),
                         ),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              Icons.warning_rounded,
-                              size: 22,
-                              color: p.error,
+                            Container(
+                              width: 32,
+                              height: 32,
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: p.surface,
+                                shape: BoxShape.circle,
+                              ),
+                              child: homeArt(_binAsset(category)),
                             ),
                             const SizedBox(width: 10),
-                            Expanded(
+                            Flexible(
                               child: Text(
-                                l10n.scanHazardNote,
+                                switch (category) {
+                                  ScanCategory.b3 => l10n.scanBinB3,
+                                  ScanCategory.organic => l10n.scanBinOrganic,
+                                  ScanCategory.recyclable =>
+                                    l10n.scanBinRecyclable,
+                                  _ => l10n.scanBinResidu,
+                                },
                                 style: _sq(
                                   ElioTokens.bodySmall,
-                                  400,
-                                  p.textSecondary,
-                                ).copyWith(height: 20 / 14),
+                                  600,
+                                  tint.fg,
+                                ).copyWith(height: 1.4),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    // _InfoChip is flexible: it needs a Row around it.
-                    // After a bin check the item is settled (its XP was given).
-                    if (s.canCorrectItem && !widget.hazard && s.binPick == null)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ?_notThisChip(
-                            context,
-                            s,
-                            ProviderScope.containerOf(
-                              context,
-                            ).read(wasteQuizProvider.notifier),
+                      // Caution note (852:28634): error tint, warning icon.
+                      if (widget.hazard)
+                        Container(
+                          key: const ValueKey('scan_hazard_note'),
+                          padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
+                          decoration: BoxDecoration(
+                            color: tint.bg,
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                        ],
-                      ),
-                  ],
-                ),
-              ],
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.warning_rounded,
+                                size: 22,
+                                color: p.error,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  l10n.scanHazardNote,
+                                  style: _sq(
+                                    ElioTokens.bodySmall,
+                                    400,
+                                    p.textSecondary,
+                                  ).copyWith(height: 20 / 14),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      // _InfoChip is flexible: it needs a Row around it.
+                      // After a bin check the item is settled (its XP was given).
+                      if (s.canCorrectItem &&
+                          !widget.hazard &&
+                          s.binPick == null)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ?_notThisChip(
+                              context,
+                              s,
+                              ProviderScope.containerOf(
+                                context,
+                              ).read(wasteQuizProvider.notifier),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           );
 
     final ticket = !_known
         ? const SizedBox(height: 150)
-        : ElioPopIn(
-            key: const ValueKey('scan_ticket'),
-            rise: 40,
-            scale: 1,
-            delay: const Duration(milliseconds: 320),
-            // "Got it" flips the result ticket to the quiz ticket in place.
-            child: AnimatedSwitcher(
-              duration: reduced ? Duration.zero : ElioMotion.base,
-              switchInCurve: ElioMotion.emphasized,
-              switchOutCurve: ElioMotion.exit,
-              layoutBuilder: (current, previous) => Stack(
-                alignment: Alignment.topCenter,
-                children: [...previous, ?current],
-              ),
-              transitionBuilder: (child, a) => FadeTransition(
-                opacity: a,
-                child: AnimatedBuilder(
-                  animation: a,
-                  builder: (context, c) => Transform(
-                    alignment: Alignment.center,
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.001)
-                      ..rotateX((1 - a.value) * math.pi / 2),
-                    child: c,
-                  ),
-                  child: child,
+        : KeyedSubtree(
+            key: _tour[2],
+            child: ElioPopIn(
+              key: const ValueKey('scan_ticket'),
+              rise: 40,
+              scale: 1,
+              delay: const Duration(milliseconds: 320),
+              // "Got it" flips the result ticket to the quiz ticket in place.
+              child: AnimatedSwitcher(
+                duration: reduced ? Duration.zero : ElioMotion.base,
+                switchInCurve: ElioMotion.emphasized,
+                switchOutCurve: ElioMotion.exit,
+                layoutBuilder: (current, previous) => Stack(
+                  alignment: Alignment.topCenter,
+                  children: [...previous, ?current],
                 ),
-              ),
-              child: SizedBox(
-                key: ValueKey(widget.onGotIt != null),
-                width: double.infinity,
-                child: widget.onGotIt != null
-                    ? _BinTicket(state: s, onGotIt: widget.onGotIt!)
-                    : _QuizTicket(
-                        state: s,
-                        onRetake: widget.onRetake,
-                        onStart: widget.onStart,
-                        hazard: widget.hazard,
-                      ),
+                transitionBuilder: (child, a) => FadeTransition(
+                  opacity: a,
+                  child: AnimatedBuilder(
+                    animation: a,
+                    builder: (context, c) => Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.identity()
+                        ..setEntry(3, 2, 0.001)
+                        ..rotateX((1 - a.value) * math.pi / 2),
+                      child: c,
+                    ),
+                    child: child,
+                  ),
+                ),
+                child: SizedBox(
+                  key: ValueKey(widget.onGotIt != null),
+                  width: double.infinity,
+                  child: widget.onGotIt != null
+                      ? _BinTicket(state: s, onGotIt: widget.onGotIt!)
+                      : _QuizTicket(
+                          state: s,
+                          onRetake: widget.onRetake,
+                          onStart: widget.onStart,
+                          hazard: widget.hazard,
+                        ),
+                ),
               ),
             ),
           );
@@ -1218,6 +1255,25 @@ class _BinTicket extends StatelessWidget {
                             style: ElioTokens.bodySmall.copyWith(
                               color: p.textSecondary,
                             ),
+                          ),
+                          // Control screen (0240 "bin run"): what the arm does after Got it.
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final cue = ref.watch(binRunCueProvider);
+                              if (cue != BinRunCue.ready) return const SizedBox.shrink();
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  l10n.binRunReady(_short(correct)),
+                                  key: const ValueKey('bin_run_cue'),
+                                  style: _sq(
+                                    ElioTokens.bodySmall,
+                                    700,
+                                    p.primaryText,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -2155,86 +2211,95 @@ class _ScanQuestionPage extends ConsumerWidget {
             ],
           );
 
-    return SafeArea(
-      child: LayoutBuilder(
-        builder: (context, box) {
-          // Keyboard open on a short screen: the question in one line and
-          // the answer field, nothing else to scroll past.
-          if (essay && box.maxHeight < 250) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (box.maxHeight > 120)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        q!.question,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: _sq(ElioTokens.bodySmall, 600, p.textPrimary),
+    return TourTip(
+      id: 'scan_question',
+      label: () => l10n.tourLblQuestion,
+      show: !_isRobot(context),
+      steps: (k) => [TourStep(k[0], l10n.tipQuestionT, l10n.tipQuestionB)],
+      builder: (context, k) => SafeArea(
+        child: LayoutBuilder(
+          builder: (context, box) {
+            // Keyboard open on a short screen: the question in one line and
+            // the answer field, nothing else to scroll past.
+            if (essay && box.maxHeight < 250) {
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (box.maxHeight > 120)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          q!.question,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: _sq(ElioTokens.bodySmall, 600, p.textPrimary),
+                        ),
+                      ),
+                    Expanded(
+                      child: _EssayAnswer(
+                        key: _essayKeys.putIfAbsent(
+                          state.questionIndex,
+                          GlobalKey.new,
+                        ),
+                        state: state,
+                        skip: false,
+                        compact: true,
                       ),
                     ),
-                  Expanded(
-                    child: _EssayAnswer(
-                      key: _essayKeys.putIfAbsent(
-                        state.questionIndex,
-                        GlobalKey.new,
+                  ],
+                ),
+              );
+            }
+            if (box.maxWidth > box.maxHeight) {
+              // Landscape (659:25857): question left, answers right.
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Column(
+                  children: [
+                    header,
+                    const SizedBox(height: 6),
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 9,
+                            child: SingleChildScrollView(child: card),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            flex: 11,
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.only(
+                                top: 20,
+                                bottom: 6,
+                              ),
+                              child: KeyedSubtree(key: k[0], child: answers),
+                            ),
+                          ),
+                        ],
                       ),
-                      state: state,
-                      skip: false,
-                      compact: true,
                     ),
-                  ),
-                ],
-              ),
-            );
-          }
-          if (box.maxWidth > box.maxHeight) {
-            // Landscape (659:25857): question left, answers right.
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  ],
+                ),
+              );
+            }
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               child: Column(
                 children: [
                   header,
-                  const SizedBox(height: 6),
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 9,
-                          child: SingleChildScrollView(child: card),
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          flex: 11,
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.only(top: 20, bottom: 6),
-                            child: answers,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  const SizedBox(height: 14),
+                  card,
+                  const SizedBox(height: 24),
+                  KeyedSubtree(key: k[0], child: answers),
                 ],
               ),
             );
-          }
-          return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            child: Column(
-              children: [
-                header,
-                const SizedBox(height: 14),
-                card,
-                const SizedBox(height: 24),
-                answers,
-              ],
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }
@@ -2509,6 +2574,7 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
   /// The chat keeps its ask field (focus, so the keyboard) wherever the
   /// page puts it: beside the review, on its own page, or over the keyboard.
   final _chatKey = GlobalKey();
+  final _tour = List.generate(4, (_) => GlobalKey());
   String? _speaking;
   bool _chat = false;
 
@@ -2521,6 +2587,21 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
   @override
   void initState() {
     super.initState();
+    // First answer review: verdict, the why, ELIOS AI, next (18 · Q and R).
+    // Never on the robot: the overlay would cover STOP.
+    if (!_onRobot(context)) {
+      AppTour.tipOnce(
+        context,
+        'scan_review',
+        l10n.tourLblAi,
+        () => [
+          TourStep(_tour[0], l10n.tipExp1T, l10n.tipExp1B),
+          TourStep(_tour[1], l10n.tipAi1T, l10n.tipAi1B),
+          TourStep(_tour[2], l10n.tipAi2T, l10n.tipAi2B),
+          TourStep(_tour[3], l10n.tipAi3T, l10n.tipAi3B),
+        ],
+      );
+    }
     QuizTtsService.instance.status.addListener(_onTts);
   }
 
@@ -2742,195 +2823,201 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
       correct ? HistoryTone.success : HistoryTone.error,
     );
     // Verdict leaf (661:25901): buddy, the right answer, your pick, points.
-    final verdict = Container(
-      key: const ValueKey('scan_verdict'),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: tone.bg,
-        border: Border.all(color: tone.border ?? p.borderSubtle, width: 1.5),
-        borderRadius: leaf,
-      ),
-      child: Row(
-        children: [
-          // The buddy hops in: excited when right, sad when wrong.
-          ElioPopIn(
-            rise: 0,
-            scale: 0.6,
-            curve: ElioMotion.bounce,
-            duration: const Duration(milliseconds: 600),
-            child: RobotBuddy(
-              mood: correct ? RobotMood.excited : RobotMood.sad,
-              height: 50,
+    final verdict = KeyedSubtree(
+      key: _tour[0],
+      child: Container(
+        key: const ValueKey('scan_verdict'),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: tone.bg,
+          border: Border.all(color: tone.border ?? p.borderSubtle, width: 1.5),
+          borderRadius: leaf,
+        ),
+        child: Row(
+          children: [
+            // The buddy hops in: excited when right, sad when wrong.
+            ElioPopIn(
+              rise: 0,
+              scale: 0.6,
+              curve: ElioMotion.bounce,
+              duration: const Duration(milliseconds: 600),
+              child: RobotBuddy(
+                mood: correct ? RobotMood.excited : RobotMood.sad,
+                height: 50,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  (essay
-                          ? (score == null
-                                ? l10n.qzWaitingGrading
-                                : correct
-                                ? l10n.qzGoodThinking
-                                : l10n.qzNotQuite)
-                          : correct
-                          ? l10n.qzCorrect
-                          : l10n.qzNotQuite)
-                      .toUpperCase(),
-                  style: _sq(
-                    ElioTokens.overline,
-                    600,
-                    tone.fg,
-                  ).copyWith(letterSpacing: 1.1),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  answerText,
-                  style: _sq(
-                    essay && score == null
-                        ? ElioTokens.bodySmall
-                        : ElioTokens.subhead,
-                    600,
-                    p.textPrimary,
-                  ),
-                ),
-                if (essay && score != null)
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    l10n.qzCheckedByAi,
-                    style: ElioTokens.bodySmall.copyWith(
-                      color: p.textSecondary,
-                    ),
+                    (essay
+                            ? (score == null
+                                  ? l10n.qzWaitingGrading
+                                  : correct
+                                  ? l10n.qzGoodThinking
+                                  : l10n.qzNotQuite)
+                            : correct
+                            ? l10n.qzCorrect
+                            : l10n.qzNotQuite)
+                        .toUpperCase(),
+                    style: _sq(
+                      ElioTokens.overline,
+                      600,
+                      tone.fg,
+                    ).copyWith(letterSpacing: 1.1),
                   ),
-                if (!essay && picked != null && !correct) ...[
                   const SizedBox(height: 2),
                   Text(
-                    l10n.qzYouChose(q.options[picked]),
-                    style: ElioTokens.bodySmall.copyWith(
-                      color: p.textSecondary,
+                    answerText,
+                    style: _sq(
+                      essay && score == null
+                          ? ElioTokens.bodySmall
+                          : ElioTokens.subhead,
+                      600,
+                      p.textPrimary,
                     ),
                   ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Points pop last (spring/pop, delay 300).
-          ElioPopIn(
-            rise: 0,
-            scale: 0.6,
-            curve: ElioMotion.pop,
-            delay: const Duration(milliseconds: 300),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(10, 6, 12, 6),
-              decoration: ShapeDecoration(
-                color: p.surface,
-                shape: const StadiumBorder(),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SvgPicture.asset(
-                    'assets/illustrations/history/icon_xp.svg',
-                    width: 20,
-                    height: 20,
-                    excludeFromSemantics: true,
-                  ),
-                  const SizedBox(width: 4),
-                  ElioCountUp(
-                    value: essay ? (score ?? 0) : (correct ? 10 : 0),
-                    builder: (context, v) => Text(
-                      l10n.trophiesEarned(v),
-                      style: _sq(
-                        ElioTokens.subhead,
-                        600,
-                        correct ? p.secondaryText : p.textSecondary,
+                  if (essay && score != null)
+                    Text(
+                      l10n.qzCheckedByAi,
+                      style: ElioTokens.bodySmall.copyWith(
+                        color: p.textSecondary,
                       ),
                     ),
-                  ),
+                  if (!essay && picked != null && !correct) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.qzYouChose(q.options[picked]),
+                      style: ElioTokens.bodySmall.copyWith(
+                        color: p.textSecondary,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            // Points pop last (spring/pop, delay 300).
+            ElioPopIn(
+              rise: 0,
+              scale: 0.6,
+              curve: ElioMotion.pop,
+              delay: const Duration(milliseconds: 300),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(10, 6, 12, 6),
+                decoration: ShapeDecoration(
+                  color: p.surface,
+                  shape: const StadiumBorder(),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SvgPicture.asset(
+                      'assets/illustrations/history/icon_xp.svg',
+                      width: 20,
+                      height: 20,
+                      excludeFromSemantics: true,
+                    ),
+                    const SizedBox(width: 4),
+                    ElioCountUp(
+                      value: essay ? (score ?? 0) : (correct ? 10 : 0),
+                      builder: (context, v) => Text(
+                        l10n.trophiesEarned(v),
+                        style: _sq(
+                          ElioTokens.subhead,
+                          600,
+                          correct ? p.secondaryText : p.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
 
     // Essay (853:28786, 853:28792): the student's words in a card, then the
     // model answer in a green leaf. The grader's rubric stays under the
     // answer; it returns no key points, so that Figma section is not shown.
-    final whyBlock = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          l10n.scanWhyWorks,
-          style: _sq(ElioTokens.subhead, 600, p.textPrimary),
-        ),
-        const SizedBox(height: 6),
-        SvgPicture.asset(
-          'assets/illustrations/scan/squiggle.svg',
-          width: 150,
-          height: 9,
-          fit: BoxFit.fill,
-          excludeFromSemantics: true,
-          colorFilter: ColorFilter.mode(p.primary, BlendMode.srcIn),
-        ),
-        const SizedBox(height: 6),
-        if (s.explanationLoading)
-          ElioShimmer(
-            child: Column(
-              key: const ValueKey('scan_review_loading'),
+    final whyBlock = KeyedSubtree(
+      key: _tour[1],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.scanWhyWorks,
+            style: _sq(ElioTokens.subhead, 600, p.textPrimary),
+          ),
+          const SizedBox(height: 6),
+          SvgPicture.asset(
+            'assets/illustrations/scan/squiggle.svg',
+            width: 150,
+            height: 9,
+            fit: BoxFit.fill,
+            excludeFromSemantics: true,
+            colorFilter: ColorFilter.mode(p.primary, BlendMode.srcIn),
+          ),
+          const SizedBox(height: 6),
+          if (s.explanationLoading)
+            ElioShimmer(
+              child: Column(
+                key: const ValueKey('scan_review_loading'),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final w in const [330.0, 300.0, 220.0])
+                    Container(
+                      width: w,
+                      height: 14,
+                      margin: const EdgeInsets.only(top: 10),
+                      decoration: BoxDecoration(
+                        color: p.surfaceRaised,
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                    ),
+                ],
+              ),
+            )
+          else if (why.isEmpty)
+            // AI failed and the question has no explanation of its own.
+            Column(
+              key: const ValueKey('scan_review_unavailable'),
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (final w in const [330.0, 300.0, 220.0])
-                  Container(
-                    width: w,
-                    height: 14,
-                    margin: const EdgeInsets.only(top: 10),
-                    decoration: BoxDecoration(
-                      color: p.surfaceRaised,
-                      borderRadius: BorderRadius.circular(7),
-                    ),
-                  ),
+                Text(
+                  l10n.qzExplanationUnavailable,
+                  style: ElioTokens.body.copyWith(color: p.textSecondary),
+                ),
+                TextButton.icon(
+                  key: const ValueKey('scan_review_retry'),
+                  onPressed: n.retryExplanation,
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: Text(l10n.cfgRetry),
+                ),
               ],
-            ),
-          )
-        else if (why.isEmpty)
-          // AI failed and the question has no explanation of its own.
-          Column(
-            key: const ValueKey('scan_review_unavailable'),
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.qzExplanationUnavailable,
+            )
+          else
+            // As tall as the loading block at least, so the page below it
+            // does not jump when the text arrives.
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 72),
+              child: Text(
+                essay
+                    ? [
+                        why,
+                        ex?.learningTakeaway ?? '',
+                      ].where((t) => t.isNotEmpty).join('\n\n')
+                    : why,
+                key: essay ? const ValueKey('scan_essay_why') : null,
                 style: ElioTokens.body.copyWith(color: p.textSecondary),
               ),
-              TextButton.icon(
-                key: const ValueKey('scan_review_retry'),
-                onPressed: n.retryExplanation,
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: Text(l10n.cfgRetry),
-              ),
-            ],
-          )
-        else
-          // As tall as the loading block at least, so the page below it
-          // does not jump when the text arrives.
-          ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 72),
-            child: Text(
-              essay
-                  ? [
-                      why,
-                      ex?.learningTakeaway ?? '',
-                    ].where((t) => t.isNotEmpty).join('\n\n')
-                  : why,
-              key: essay ? const ValueKey('scan_essay_why') : null,
-              style: ElioTokens.body.copyWith(color: p.textSecondary),
             ),
-          ),
-      ],
+        ],
+      ),
     );
 
     Widget binTile(ScanCategory c, String name) {
@@ -3016,56 +3103,67 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
     );
 
     // Coach entry (661:26040): opens the full-page ELIOS AI chat.
-    final coach = Semantics(
-      button: true,
-      label: '${l10n.scanAskCoach}. ${l10n.scanAskCoachSub}',
-      excludeSemantics: true,
-      child: ElioPress(
-        child: Material(
-          key: const ValueKey('scan_coach_entry'),
-          color: historyTint(p, HistoryTone.info).bg,
-          shape: const RoundedRectangleBorder(borderRadius: leaf),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () {
-              quizFeedback(ElioSfx.pop, ElioHaptics.light);
-              setState(() => _chat = true);
-            },
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
-              child: Row(
-                children: [
-                  const EliosAiBadge(size: 44),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.scanAskCoach,
-                          style: _sq(ElioTokens.bodySmall, 600, p.textPrimary),
-                        ),
-                        Text(
-                          l10n.scanAskCoachSub,
-                          style: _sq(ElioTokens.caption, 500, p.textSecondary),
-                        ),
-                      ],
+    final coach = KeyedSubtree(
+      key: _tour[2],
+      child: Semantics(
+        button: true,
+        label: '${l10n.scanAskCoach}. ${l10n.scanAskCoachSub}',
+        excludeSemantics: true,
+        child: ElioPress(
+          child: Material(
+            key: const ValueKey('scan_coach_entry'),
+            color: historyTint(p, HistoryTone.info).bg,
+            shape: const RoundedRectangleBorder(borderRadius: leaf),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () {
+                quizFeedback(ElioSfx.pop, ElioHaptics.light);
+                setState(() => _chat = true);
+              },
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+                child: Row(
+                  children: [
+                    const EliosAiBadge(size: 44),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.scanAskCoach,
+                            style: _sq(
+                              ElioTokens.bodySmall,
+                              600,
+                              p.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            l10n.scanAskCoachSub,
+                            style: _sq(
+                              ElioTokens.caption,
+                              500,
+                              p.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: p.primary,
-                      shape: BoxShape.circle,
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: p.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        size: 22,
+                        color: p.onPrimary,
+                      ),
                     ),
-                    child: Icon(
-                      Icons.chevron_right_rounded,
-                      size: 22,
-                      color: p.onPrimary,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -3073,38 +3171,41 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
       ),
     );
 
-    final next = ElioPress(
-      pressed: 0.97,
-      child: SizedBox(
-        height: 56,
-        width: double.infinity,
-        child: FilledButton(
-          key: const ValueKey('quiz_next'),
-          onPressed: s.sendingChat
-              ? null
-              : () {
-                  quizFeedback(ElioSfx.pop, ElioHaptics.light);
-                  n.nextQuestion();
-                },
-          style: FilledButton.styleFrom(
-            backgroundColor: p.primary,
-            foregroundColor: p.onPrimary,
-            shape: const StadiumBorder(),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: Text(
-                  s.isLastQuestion ? l10n.qzFinish : l10n.qzNextQuestion,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: _sq(ElioTokens.subhead, 600, p.onPrimary),
+    final next = KeyedSubtree(
+      key: _tour[3],
+      child: ElioPress(
+        pressed: 0.97,
+        child: SizedBox(
+          height: 56,
+          width: double.infinity,
+          child: FilledButton(
+            key: const ValueKey('quiz_next'),
+            onPressed: s.sendingChat
+                ? null
+                : () {
+                    quizFeedback(ElioSfx.pop, ElioHaptics.light);
+                    n.nextQuestion();
+                  },
+            style: FilledButton.styleFrom(
+              backgroundColor: p.primary,
+              foregroundColor: p.onPrimary,
+              shape: const StadiumBorder(),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    s.isLastQuestion ? l10n.qzFinish : l10n.qzNextQuestion,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: _sq(ElioTokens.subhead, 600, p.onPrimary),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              const Icon(Icons.chevron_right_rounded, size: 20),
-            ],
+                const SizedBox(width: 6),
+                const Icon(Icons.chevron_right_rounded, size: 20),
+              ],
+            ),
           ),
         ),
       ),
@@ -3228,7 +3329,10 @@ class _ScanReviewPageState extends ConsumerState<_ScanReviewPage> {
                                           key: const ValueKey(
                                             'scan_coach_inline',
                                           ),
-                                          child: enter(3, chat),
+                                          child: KeyedSubtree(
+                                            key: _tour[2],
+                                            child: enter(3, chat),
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(height: 8),
@@ -3365,10 +3469,12 @@ class _ScanDonePage extends StatelessWidget {
     required this.state,
     required this.onClose,
     required this.onRescan,
+    this.onDone,
   });
   final WasteQuizUiState state;
   final VoidCallback onClose;
   final VoidCallback onRescan;
+  final VoidCallback? onDone;
 
   @override
   Widget build(BuildContext context) {
@@ -3543,14 +3649,12 @@ class _ScanDonePage extends StatelessWidget {
     final actions = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Robot (R1): no new scan while the arm is still dropping the item.
+        // Robot (R1, or the bin run after the bin check, 0240): no new scan while the arm is
+        // still taking the item to its bin.
         Consumer(
           builder: (context, ref, _) {
             final dropping =
-                _isRobot(context) &&
-                (_ResultCard.r1EnabledOverride ||
-                    const bool.fromEnvironment('R1')) &&
-                ref.watch(r1DropPendingProvider);
+                _isRobot(context) && ref.watch(r1DropPendingProvider);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -3586,6 +3690,13 @@ class _ScanDonePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                 ],
+                // 0241: the arm's result, after it finished (sorted, or could not and went home).
+                if (!dropping && _isRobot(context))
+                  switch (ref.watch(binRunCueProvider)) {
+                    BinRunCue.done => _robotNotice(p, l10n.robotSorted, HistoryTone.success, Icons.check_circle_rounded, 'result_card_sorted'),
+                    BinRunCue.failed => _robotNotice(p, l10n.robotSortFailed, HistoryTone.error, Icons.error_outline_rounded, 'result_card_sort_failed'),
+                    _ => const SizedBox.shrink(),
+                  },
                 IgnorePointer(
                   ignoring: dropping,
                   child: Opacity(
@@ -3617,12 +3728,13 @@ class _ScanDonePage extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: button(l10n.notifDone, Icons.check_rounded, () {
+                onDone?.call();
                 onClose();
                 // Phone: back to the hub. Robot: stay on the control screen.
                 if (!_isRobot(context)) {
                   Navigator.of(context).maybePop();
                 }
-              }),
+              }, key: const Key('result_card_done_button')),
             ),
           ],
         ),
@@ -3729,3 +3841,16 @@ Future<void> _exportQuizPdf(
   // Theme choice, then Share (decision 0228).
   await showQuizReportSheet(context, record);
 }
+
+/// A one-line robot result on the result page (0241): sorted, or could not.
+Widget _robotNotice(ElioPalette p, String text, HistoryTone tone, IconData icon, String key) => Container(
+      key: Key(key),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(color: historyTint(p, tone).bg, borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        Icon(icon, size: 16, color: historyTint(p, tone).fg),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, style: _sq(ElioTokens.caption, 600, p.textPrimary))),
+      ]),
+    );

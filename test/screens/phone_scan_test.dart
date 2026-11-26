@@ -44,9 +44,14 @@ class _Quiz extends WasteQuizNotifier {
   void dismiss() {}
 }
 
-Future<void> _pump(WidgetTester t, Widget screen, [_Quiz? quiz]) async {
+Future<void> _pump(
+  WidgetTester t,
+  Widget screen, [
+  _Quiz? quiz,
+  Size size = const Size(390, 844),
+]) async {
   t.view.devicePixelRatio = 1;
-  t.view.physicalSize = const Size(390, 844);
+  t.view.physicalSize = size;
   addTearDown(t.view.reset);
   await t.pumpWidget(
     ProviderScope(
@@ -76,6 +81,37 @@ void main() {
     await t.pump(const Duration(milliseconds: 300));
     expect(camera.zoom, 2);
     expect(t.takeException(), isNull);
+  });
+
+  testWidgets('phone landscape: every camera control fits on screen', (
+    t,
+  ) async {
+    await _pump(
+      t,
+      PhoneScanScreen(source: _Camera()..maxZoom = 3),
+      _Quiz(),
+      const Size(915, 412),
+    );
+    expect(t.takeException(), isNull, reason: 'no overflow');
+    final screen = Offset.zero & const Size(915, 412);
+    for (final key in ['scan_gallery', 'scan_zoom_3', 'scan_flash']) {
+      expect(
+        screen.contains(t.getRect(find.byKey(ValueKey(key))).bottomRight),
+        isTrue,
+        reason: key,
+      );
+    }
+    expect(
+      screen.contains(
+        t.getRect(find.bySemanticsLabel('Take photo and identify')).bottomRight,
+      ),
+      isTrue,
+    );
+    // The zoom pill keeps its own height (it stretched to the screen once).
+    expect(
+      t.getSize(find.byKey(const ValueKey('scan_zoom_3'))).height,
+      lessThan(80),
+    );
   });
 
   testWidgets('a camera without zoom shows no zoom steps', (t) async {

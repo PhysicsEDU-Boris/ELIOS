@@ -51,6 +51,7 @@ void main() {
     final before = w.sent.length;
     w.gate.emergencyStop('button');
     expect(w.since(before).take(2), ['STOP', 'motor 0,0'], reason: 'immediately, in this order');
+    expect(w.messages.last['limp'], isTrue, reason: 'the STOP button releases the arm (owner, 26 Nov)');
     expect(w.stops, ['button'], reason: "R1's safe exit");
     expect(w.events.last.$1, 'emergency_stop');
     expect(w.events.last.$2, {'reason': 'button', 'linkUp': true});
@@ -105,12 +106,29 @@ void main() {
     final before = w.sent.length;
     w.gate.linkRestored();
     expect(w.since(before).take(2), ['STOP', 'motor 0,0'], reason: 'before anything else');
+    expect(w.messages.last.containsKey('limp'), isFalse, reason: 'a reconnect keeps the arm holding');
     expect(w.gate.stopped, isTrue, reason: 'still STOPPED after the reconnect');
     expect(w.gate.motor(75, 75), isFalse);
     w.gate.resume();
     expect(w.gate.motor(75, 75), isTrue);
     w.gate.dispose();
     await tester.pump(const Duration(seconds: 1)); // the stop repeats run out
+  });
+
+  testWidgets('owner 26 Nov: Offline pressed by the student needs no GO when Online again', (tester) async {
+    final w = _Wire()..gate.linkRestored();
+    w.gate.linkLost();
+    expect(w.gate.stopReason, 'link_lost');
+    final before = w.sent.length;
+    w.gate.linkRestored(userOffline: true);
+    expect(w.since(before).take(2), ['STOP', 'motor 0,0'], reason: 'still STOP + 0,0 first');
+    expect(w.gate.stopped, isFalse);
+    w.gate.emergencyStop('button');
+    w.gate.linkLost();
+    w.gate.linkRestored(userOffline: true);
+    expect(w.gate.stopped, isTrue, reason: 'a STOP button press still needs GO');
+    await tester.pump(const Duration(seconds: 1)); // the 0,0 repeats
+    w.gate.dispose();
   });
 
   testWidgets('heartbeat ~4 Hz while connected, also while STOPPED, none without a link', (tester) async {
@@ -300,6 +318,51 @@ void main() {
       expect(w.gate.armPose(path, Duration.zero), isFalse);
       expect(w.sent.length, n);
       w.gate.dispose();
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets("0241: the firmware HOME's ack says how long it takes; the timeout waits that long", (tester) async {
+      final w = _Wire()..gate.linkRestored();
+      expect(w.gate.home(), isTrue);
+      final seq = w.messages.last['seq'] as int;
+      final ack = RobotReply.fromJson({'event': 'ack', 'seq': seq, 'motion_s': 11.2})!;
+      expect(ack.motionS, 11.2);
+      w.gate.onHomeReply(ack);
+      await tester.pump(w.gate.homeTimeoutDuration + const Duration(seconds: 11));
+      expect(w.gate.isHoming, isTrue, reason: 'an 11 s HOME is not failed after 5 s');
+      expect(w.gate.onHomeReply(RobotReply(ReplyKind.motionDone, seq)), isTrue);
+      w.gate.dispose();
+      await tester.pump(const Duration(seconds: 20));
+    });
+
+    testWidgets('0241: a manual move during HOME ends the HOME wait (the robot replaces it too)', (tester) async {
+      final w = _Wire()..gate.linkRestored();
+      expect(w.gate.home(), isTrue);
+      expect(w.gate.armPose(path, Duration.zero), isTrue);
+      expect(w.gate.isHoming, isFalse);
+      expect(w.events.map((e) => e.$1), contains('home_interrupted'));
+      w.gate.dispose();
+      await tester.pump(const Duration(seconds: 10));
+    });
+
+    testWidgets('0241: CONFIG saved while STOPPED or offline goes out on GO / the next connection', (tester) async {
+      final w = _Wire()..gate.linkRestored();
+      expect(w.gate.config({'trims': [1, 0, 0, 0, 0]}), isTrue);
+      expect(w.messages.last['cmd'], 'CONFIG');
+      w.gate.emergencyStop('button');
+      expect(w.gate.config({'trims': [2, 0, 0, 0, 0]}), isFalse, reason: 'a trim would move the held arm');
+      expect(w.gate.configPending, isTrue);
+      w.gate.resume();
+      expect(w.messages.last['cmd'], 'CONFIG');
+      expect(w.messages.last['trims'], [2, 0, 0, 0, 0]);
+      expect(w.gate.configPending, isFalse);
+      final fresh = _Wire();
+      expect(fresh.gate.config({'trims': [3, 0, 0, 0, 0]}), isFalse, reason: 'no link yet');
+      fresh.gate.linkRestored();
+      expect(fresh.sent.where((c) => c == 'CONFIG').length, 1, reason: 'sent once the link is up');
+      expect(fresh.sent.indexOf('STOP') < fresh.sent.indexOf('CONFIG'), isTrue, reason: 'STOP first (0026)');
+      w.gate.dispose();
+      fresh.gate.dispose();
       await tester.pump(const Duration(seconds: 1));
     });
 

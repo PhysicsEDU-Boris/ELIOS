@@ -171,6 +171,9 @@ Future<Rig> pumpPhone(
   Rect? lockBox,
   double frameAspect = 4 / 3,
   bool locked = false,
+  bool locking = false,
+  Widget? sortBubble,
+  bool? esp32Linked,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -224,6 +227,7 @@ Future<Rig> pumpPhone(
                       builder: (context, _) => Scaffold(
                         body: PhoneControlLayout(
                           link: link,
+                          esp32Linked: esp32Linked,
                           stopped: gate.stopped,
                           stopReason: gate.stopReason,
                           skeleton: skeleton,
@@ -268,6 +272,10 @@ Future<Rig> pumpPhone(
                             tap('reach');
                             gate.servo('reach', (v * 180).toInt());
                           },
+                          yaw: 0.5,
+                          onYaw: (_) => tap('yaw'),
+                          pitch: 0,
+                          onPitch: (_) => tap('pitch'),
                           onBaseStick: (x) {
                             tap(x == 0 ? 'base stop' : 'base');
                             joystick.setArmStick(x);
@@ -295,6 +303,8 @@ Future<Rig> pumpPhone(
                           quizKey: keys[3],
                           onLock: () => tap('lock'),
                           locked: locked,
+                          locking: locking,
+                          sortBubble: sortBubble,
                           onScan: () => tap('scan'),
                           lockBox: lockBox,
                           lockLabel: lockBox == null ? null : 'Kardus',

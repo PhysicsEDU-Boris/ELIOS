@@ -6,7 +6,8 @@ import 'package:elio/models/control_session.dart';
 import 'package:elio/l10n/l10n.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/widgets/waste_quiz_popup.dart' show EliosAiBadge;
-import 'package:elio/widgets/control/r2_controls.dart' show ControlStatusChip;
+import 'package:elio/widgets/control/r2_controls.dart' show ControlFader, ControlStatusChip;
+import 'package:elio/widgets/control/sort_bubble.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -40,13 +41,30 @@ void main() {
   }
 
   for (final size in phoneSizes) {
+    for (final linked in [null, true, false]) {
+      testWidgets('ARM card ESP32 chip (0240) linked=$linked $size', (t) async {
+        final chip = find.byKey(const ValueKey('esp32_chip'));
+        await pumpPhone(t, size, esp32Linked: linked);
+        expect(t.takeException(), isNull);
+        if (linked == null) {
+          expect(chip, findsNothing, reason: 'unknown (older firmware): no chip');
+          return;
+        }
+        final text = linked ? l10n.ctlEsp32On : l10n.ctlEsp32Off;
+        expect(find.descendant(of: chip, matching: find.text(text)), findsOneWidget);
+        expectOnScreen(t, chip, size, 'ESP32 chip');
+      });
+    }
+  }
+
+  for (final size in phoneSizes) {
     for (final dark in [false, true]) {
       testWidgets('Indonesian arm captions fit $size dark=$dark', (t) async {
         debugSetL10n(const Locale('id'));
         addTearDown(() => debugSetL10n(const Locale('en')));
         await pumpPhone(t, size, dark: dark);
         expect(t.takeException(), isNull);
-        for (final label in [l10n.ctlHeight, l10n.ctlReach]) {
+        for (final label in [l10n.ctlHeight, l10n.ctlReach, l10n.ctlYaw, l10n.ctlPitch]) {
           final paragraph = t.renderObject<RenderParagraph>(find.text(label));
           expect(paragraph.didExceedMaxLines, isFalse, reason: label);
         }
@@ -97,7 +115,7 @@ void main() {
         expect(t.takeException(), isNull);
         expect(find.byKey(const ValueKey('phone_go')), findsOneWidget);
         expect(find.byKey(const ValueKey('phone_stop')), findsNothing);
-        expect(find.text('Robot stopped · scanning paused'), findsOneWidget);
+        expect(find.text('Robot stopped'), findsOneWidget);
         expectOnScreen(t, find.byKey(const ValueKey('phone_go')), size, 'GO');
         await shot(t, 'stopped', size, dark);
       });
@@ -274,6 +292,20 @@ void main() {
       expectOnScreen(t, find.byKey(const ValueKey('base_knob')), size, 'BASIS knob');
     });
 
+    testWidgets('0241: YAW and PITCH faders sit beside HEIGHT and REACH, on screen, and report drags', (t) async {
+      await pumpPhone(t, size);
+      expect(t.takeException(), isNull);
+      for (final k in ['arm_yaw', 'arm_pitch']) {
+        expectOnScreen(t, find.byKey(ValueKey(k)), size, k);
+        await t.drag(find.descendant(of: find.byKey(ValueKey(k)), matching: find.byType(ControlFader)), const Offset(0, -30));
+        await t.pump();
+      }
+      expect(taps['yaw'], greaterThanOrEqualTo(1));
+      expect(taps['pitch'], greaterThanOrEqualTo(1));
+      final reach = t.getTopRight(find.text(l10n.ctlReach)).dx;
+      expect(t.getTopLeft(find.text(l10n.ctlYaw)).dx, greaterThan(reach), reason: 'to the right of REACH');
+    });
+
     testWidgets('0232: Advanced sits beside Guide, on screen, and taps through', (t) async {
       await pumpPhone(t, size);
       final adv = find.byKey(const ValueKey('phone_advanced'));
@@ -300,6 +332,23 @@ void main() {
       await t.tap(find.byKey(const ValueKey('phone_scan')));
       expect(taps.keys, containsAll(['lock', 'scan']));
       expect(find.text('LOCK'), findsOneWidget);
+    });
+
+    testWidgets('0243: the sort bubble sits over the bottom of the video, on screen', (t) async {
+      final frame = Uint8List.fromList(img.encodePng(img.Image(width: 64, height: 48)));
+      await pumpPhone(t, size,
+          frame: frame,
+          sortBubble: const SortBubble(
+              text: 'Check the hand is over the Organik bin. Adjust it, then press RELEASE.', kind: SortBubbleKind.help));
+      expectOnScreen(t, find.byKey(const ValueKey('sort_bubble')), size, 'sort bubble');
+      expect(find.byIcon(Icons.front_hand_outlined), findsWidgets);
+    });
+
+    testWidgets('owner 26 Nov: after LOCK the key spins and reads LOCKING until the AI answers', (t) async {
+      await pumpPhone(t, size, locking: true);
+      expect(find.text('LOCKING…'), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const ValueKey('phone_lock')), matching: find.byType(CircularProgressIndicator)),
+          findsOneWidget);
     });
 
     testWidgets('0181: a locked item reads UNLOCK and its box is drawn over the video', (t) async {

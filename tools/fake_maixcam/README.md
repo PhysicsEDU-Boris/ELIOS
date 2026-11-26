@@ -53,7 +53,21 @@ Options:
 
 `ARM_POSE` (0234) plays the app's planned legs; a leg over the tank is logged as a warning.
 `MOVE_TO_BIN` / `DROP` play the bin's saved sequence from `firmware/maixcam2/bin_sequences.json`
-(B3 for now) through the sim's tank planner; other bins use the placeholder `BIN_TARGETS`.
+(b3 = Left-Tank-New, anorganik = Mid-Tank, organik = Right-Tank-New) through the sim's tank planner.
+
+Motion follows the robot (decision 0240): every leg uses the MaixCAM2 bridge's own maths
+(`firmware/maixcam2/arm_bridge.py`, pinned to robotic_hand_sim's `ProfiledMotion`). Each joint,
+the gripper included, ramps up, cruises at its top speed and ramps down; all arrive together; each
+saved step's `hold` is waited. Bin steps use their saved `motion` block; manual moves (`ARM_POSE`,
+`HOME`) use the profile from `CONFIG` (Advanced settings › Speed & ramps), else the defaults.
+
+Picking up is manual, as on the robot: closing the gripper (AMBIL, the Penjepit slider) with the
+end effector within 60 mm of an item grips it; opening it at a bin's state point drops the item
+in the bin, elsewhere on the floor. `PICK` still works for the R1 tests.
+
+- `--show`: opens robotic_hand_sim's own 3D view (`hil/scene.py` `Scene`, the one
+  `arm-hil-toolkit-2.py` shows) in its own window (`arm_view.py`) and follows the arm. It runs with
+  the sim's Python (`<sim>/.venv/bin/python`, PyQt5 + pyvistaqt); `--show-python` picks another.
 - `--seed` (sets the photo choice and the noise; the same seed repeats a run)
 - `--check-labels`: compares `labels.yaml` with `main.py`'s `LABELS` and the app's
   `ScannedWaste.detectorLabels`, then exits. Exit code 1 means a mismatch.

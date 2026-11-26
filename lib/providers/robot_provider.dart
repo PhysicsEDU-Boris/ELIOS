@@ -3,6 +3,7 @@ import 'dart:ui' show Size;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../services/robot/bin_run.dart' show BinRunCue;
 import '../services/websocket_service.dart';
 
 // ---------------------------------------------------------------------------
@@ -168,3 +169,7 @@ final resolutionAckProvider = StreamProvider<Size>((ref) {
 /// the Result Card shows "Robot sedang membuang ke tempat sampah..." and keeps
 /// "Scan lagi" disabled until DROP finishes.
 final r1DropPendingProvider = StateProvider<bool>((ref) => false);
+
+/// Bin check ticket on the Control screen (decision 0240 "bin run"): what the arm will do after
+/// Got it. needGrip: the gripper is open, so the ticket asks the student to close it (AMBIL) first.
+final binRunCueProvider = StateProvider<BinRunCue>((ref) => BinRunCue.none);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/tour/app_tour.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/elearning_module.dart';
@@ -347,6 +348,9 @@ class _HubContentState extends ConsumerState<_HubContent> {
     final lessonsLoaded = videos != null && guides != null;
     final firstLaunch = isFirstLaunch(progress);
     final clovers = ref.watch(cloverTallyProvider);
+    ref.watch(
+      learningSyncProvider,
+    ); // sends videos and clovers to the Insights dashboard
     final overall = clovers.fraction;
     final values = [
       for (final m in modules) moduleProgress(m.id, lessons, progress),
@@ -460,6 +464,7 @@ class _HubContentState extends ConsumerState<_HubContent> {
     // The Learn entrance plays on every open, once the hub has its data.
     return LearnIntroHost(
       child: ListView(
+        scrollCacheExtent: tourCacheExtent,
         padding: const EdgeInsets.only(bottom: 32),
         children: [
           LearnCurvedHeader(
@@ -478,13 +483,17 @@ class _HubContentState extends ConsumerState<_HubContent> {
             ),
             ticket: today == null
                 ? null
-                : GuideTicket(
-                    guide: today,
-                    onOpen: () => openGuideIssue(context, today),
+                : KeyedSubtree(
+                    key: TourKeys.learnTicket,
+                    child: GuideTicket(
+                      guide: today,
+                      onOpen: () => openGuideIssue(context, today),
+                    ),
                   ),
           ),
           if ((feed?.guides.length ?? 0) > 1)
             ArchiveStack(
+              key: TourKeys.learnArchive,
               // Last 3 guides, newest older one on top; today's joins at the
               // back while the feed has fewer than 3 older guides.
               guides: [
@@ -495,6 +504,7 @@ class _HubContentState extends ConsumerState<_HubContent> {
               onSeeAll: () => _push(const DailyGuidesPage()),
             ),
           LearnBubbles(
+            key: TourKeys.learnBubbles,
             items: [
               LearnBubble(
                 label: l10n.lnQuizShort,
@@ -528,6 +538,7 @@ class _HubContentState extends ConsumerState<_HubContent> {
           KeyedSubtree(
             key: _exploreKey,
             child: ExploreSection(
+              key: TourKeys.learnExplore,
               subtitle: l10n.lnExploreSub(lessons.length, modules.length),
               counts: {
                 LearnExploreTab.modules: modules.length,

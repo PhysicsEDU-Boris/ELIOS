@@ -1,6 +1,7 @@
 // Decision 0232: robot settings model, persistence and the joystick mapping.
 import 'dart:convert';
 
+import 'package:elio/services/robot/arm_profile.dart';
 import 'package:elio/services/robot/joystick_controller.dart';
 import 'package:elio/services/robot/robot_settings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  test('0240: the speed profile survives JSON and goes out in CONFIG', () {
+    final s = RobotSettings(profile: {...defaultArmProfile, 'Arm Base': const ArmAxisProfile(20, 0.72, 0.18)});
+    final m = jsonDecode(jsonEncode(s.toMap())) as Map<String, dynamic>;
+    expect(m['profile']['Arm Base'], {'vmax': 20.0, 'accel': 0.72, 'decel': 0.18});
+    expect(RobotSettings.fromMap(m), s);
+    expect(const RobotSettings().profile, defaultArmProfile);
+  });
+
+  test('0240: a pasted profile is clamped per axis, never rejected', () {
+    final s = RobotSettings.fromMap({
+      'profile': {
+        'Arm Base': {'vmax': 500, 'accel': 0.9, 'decel': 0.9}, // over the cap, ramps overlap
+        'Arm A': {'vmax': 'x'},
+      },
+    });
+    expect(s.profile['Arm Base'], const ArmAxisProfile(32, 0.5, 0.5));
+    expect(s.profile['Arm A'], defaultArmProfile['Arm A']);
+  });
+
   test('defaults match the 0231 joystick constants', () {
     final j = const RobotSettings().joystick;
     expect((j.deadzone, j.quadraticShare, j.turnGain, j.slewUp, j.slewDown), (0.08, 0.7, 0.6, 2.0, 6.0));

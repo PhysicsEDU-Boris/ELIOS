@@ -1,5 +1,7 @@
 /// Advanced settings (decision 0232, Figma "R3 / Light / Advanced settings — 1..6"): the teacher's
-/// robot tuning page, opened from "Advanced" beside Guide on the phone Control screen.
+/// robot tuning page, opened from "Advanced" beside Guide on the phone Control screen. Like
+/// robotic_hand_sim's Joints tab (0241): no PIN, no Save; every change is stored and sent to the
+/// robot as it is made (at most 10 CONFIG a second while a slider is dragged).
 library;
 
 import 'dart:convert';
@@ -10,6 +12,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
+import '../services/robot/arm_pose.dart' show armAxes;
+import '../services/robot/arm_profile.dart';
+import '../services/robot/fader_throttle.dart';
 import '../services/robot/motion_gate.dart' show heartbeatInterval, stopRepeatInterval, stopRepeats;
 import '../services/robot/r1_constants.dart' show armTimeout, nudgeMaxPwm, waitCap;
 import '../services/robot/robot_settings.dart';
@@ -43,38 +48,50 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
   late RobotSettings _draft = ref.read(robotSettingsProvider);
   int _section = 0;
 
-  /// The teacher PIN pad shows until the right PIN (or a new one) is entered (0232).
-  bool _unlocked = false;
-  bool _changingPin = false;
+  RobotSettings get _saved => ref.read(robotSettingsProvider);
+  final _live = FaderThrottle();
+  late final RobotSettingsNotifier _store;
+  late RobotSettings _applied;
+  bool _toldNotSent = false;
 
-  bool get _creatingPin => _changingPin || _saved.teacherPin == null;
-
-  /// True when [pin] opens the settings; a new PIN is saved first.
-  bool _submitPin(String pin) {
-    if (_creatingPin) {
-      ref.read(robotSettingsProvider.notifier).save(_saved.copyWith(teacherPin: pin));
-    } else if (pin != _saved.teacherPin) {
-      return false;
-    }
-    setState(() => _unlocked = true);
-    _changingPin = false;
-    return true;
+  @override
+  void initState() {
+    super.initState();
+    _store = ref.read(robotSettingsProvider.notifier); // dispose may still store the last step (no ref there)
+    _applied = _draft;
   }
 
-  RobotSettings get _saved => ref.read(robotSettingsProvider);
-  bool get _dirty => _draft.copyWith(teacherPin: _saved.teacherPin) != _saved;
+  /// Every change applies at once (0241, the sim's Joints tab): stored on the phone and sent as CONFIG.
+  void _edit(RobotSettings Function(RobotSettings) f) {
+    setState(() => _draft = f(_draft));
+    _live(_apply);
+  }
 
-  void _edit(RobotSettings Function(RobotSettings) f) => setState(() => _draft = f(_draft));
+  void _apply() {
+    if (_draft == _applied) return;
+    _applied = _draft;
+    _store.save(_draft);
+    // No link or STOPPED: the gate sends it on the next connection or GO; say so once per visit.
+    if (!widget.onSend(_draft.toMap()) && !_toldNotSent && mounted) {
+      _toldNotSent = true;
+      _toast(l10n.advSavedLocal);
+    }
+  }
+
+  @override
+  void dispose() {
+    _live.cancel();
+    final last = _draft, send = widget.onSend; // the last drag step still waiting in the throttle
+    if (last != _applied) {
+      Future.microtask(() {
+        _store.save(last);
+        send(last.toMap());
+      });
+    }
+    super.dispose();
+  }
 
   void _toast(String s) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s)));
-
-  void _save() {
-    if (!_dirty) return;
-    final s = _draft.copyWith(teacherPin: _saved.teacherPin);
-    ref.read(robotSettingsProvider.notifier).save(s);
-    setState(() => _draft = s);
-    _toast(widget.onSend(s.toMap()) ? l10n.advSavedSent : l10n.advSavedLocal);
-  }
 
   Future<bool> _confirm(String title, String body, String yes) async =>
       await showDialog<bool>(
@@ -93,65 +110,40 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
   @override
   Widget build(BuildContext context) {
     final p = context.elio;
-    return PopScope(
-      canPop: !_dirty,
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        if (await _confirm(l10n.advDiscardTitle, l10n.advDiscardBody, l10n.advDiscard) && context.mounted) {
-          setState(() => _draft = _saved);
-          Navigator.pop(context);
-        }
-      },
-      child: Scaffold(
-        backgroundColor: p.background,
-        body: Stack(
-          children: [
-            // Curved green header (L2 v3): one wide ellipse and two light bubbles.
-            Positioned(
-              left: -300,
-              top: -336,
-              child: ClipOval(child: Container(width: 1500, height: 420, color: p.primary)),
-            ),
-            Positioned(right: -60, top: -110, child: _Circle(size: 170, color: p.primaryHover)),
-            Positioned(left: -14, top: 40, child: _Circle(size: 44, color: p.primaryHover)),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-                child: Column(
-                  children: [
-                    _topBar(context),
-                    const SizedBox(height: 14),
-                    Expanded(
-                      child: _unlocked
-                          ? Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(width: 176, child: _rail(context)),
-                                const SizedBox(width: 8),
-                                Expanded(child: _card(context)),
-                              ],
-                            )
-                          : Center(
-                              child: _PinPad(
-                                // A new key per mode resets the typed digits.
-                                key: ValueKey('adv_pin_pad_$_creatingPin'),
-                                create: _creatingPin,
-                                onSubmit: _submitPin,
-                                onCancel: _changingPin
-                                    ? () => setState(() {
-                                        _unlocked = true;
-                                        _changingPin = false;
-                                      })
-                                    : null,
-                              ),
-                            ),
+    return Scaffold(
+      backgroundColor: p.background,
+      body: Stack(
+        children: [
+          // Curved green header (L2 v3): one wide ellipse and two light bubbles.
+          Positioned(
+            left: -300,
+            top: -336,
+            child: ClipOval(child: Container(width: 1500, height: 420, color: p.primary)),
+          ),
+          Positioned(right: -60, top: -110, child: _Circle(size: 170, color: p.primaryHover)),
+          Positioned(left: -14, top: 40, child: _Circle(size: 44, color: p.primaryHover)),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+              child: Column(
+                children: [
+                  _topBar(context),
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(width: 176, child: _rail(context)),
+                        const SizedBox(width: 8),
+                        Expanded(child: _card(context)),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -178,44 +170,12 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: onGreen, fontSize: 19, fontWeight: FontWeight.w700),
               ),
-              Opacity(
-                opacity: 0.8,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.lock_outline_rounded, size: 12, color: onGreen),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        l10n.advTeacherMode,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: onGreen, fontSize: 11, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
         const SizedBox(width: 12),
         const Spacer(),
         _StatusStrip(linkUp: widget.linkUp, address: widget.address),
-        const SizedBox(width: 8),
-        if (_unlocked)
-          Opacity(
-            opacity: _dirty ? 1 : 0.6,
-            child: _Pill(
-              key: const ValueKey('adv_save'),
-              icon: Icons.check_rounded,
-              label: l10n.advSave,
-              onTap: _save,
-              fill: p.surface,
-              fg: p.primaryText,
-              shadow: true,
-            ),
-          ),
       ],
     );
   }
@@ -227,6 +187,7 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
     Icons.wifi_rounded,
     Icons.shield_outlined,
     Icons.inventory_2_outlined,
+    Icons.speed_rounded,
   ];
   static const _tones = [
     HistoryTone.success,
@@ -235,6 +196,7 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
     HistoryTone.info,
     HistoryTone.error,
     HistoryTone.success,
+    HistoryTone.info,
   ];
 
   List<String> get _titles => [
@@ -244,14 +206,18 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
     l10n.advSecLink,
     l10n.advSecSafety,
     l10n.advSecBackup,
+    l10n.advSecSpeed,
   ];
+
+  /// Rail order. Section ids (and their adv_tab_ keys) stay put; Speed & ramps (6, 0240) sits under the axes.
+  static const _order = [0, 6, 1, 2, 3, 4, 5];
 
   Widget _rail(BuildContext context) {
     final p = context.elio;
     return ListView(
       padding: const EdgeInsets.only(top: 4),
       children: [
-        for (var i = 0; i < 6; i++)
+        for (final i in _order)
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: _RailItem(
@@ -275,6 +241,15 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
       2 => (l10n.advDriveSub, null),
       3 => (l10n.advLinkSub, null),
       4 => (l10n.advSafetySub, _Chip(label: l10n.advReadOnly)),
+      6 => (
+        l10n.advSpeedSub,
+        TextButton.icon(
+          key: const ValueKey('adv_speed_reset'),
+          onPressed: () => _edit((s) => s.copyWith(profile: defaultArmProfile)),
+          icon: const Icon(Icons.restart_alt_rounded, size: 16),
+          label: Text(l10n.advSpeedReset),
+        ),
+      ),
       _ => (l10n.advBackupSub, null),
     };
     return Container(
@@ -331,6 +306,7 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
                 2 => _driveBody(context),
                 3 => _linkBody(context),
                 4 => _safetyBody(context),
+                6 => _speedBody(context),
                 _ => _backupBody(context),
               },
             ),
@@ -426,6 +402,132 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
           ),
         const SizedBox(height: 8),
         _Ticket(tone: HistoryTone.warning, title: l10n.advTips, text: l10n.advAxesTip),
+      ],
+    );
+  }
+
+  /// Speed & ramps (0240): robotic_hand_sim's per-joint "max" and Detail (accel / decel), Base first.
+  Widget _speedBody(BuildContext context) {
+    final p = context.elio;
+    final names = {
+      'Arm Base': l10n.advAxisBase,
+      'Arm A': l10n.advAxisArmA,
+      'Arm B': l10n.advAxisArmB,
+      'Wrist Pitch': l10n.advAxisPitch,
+      'Wrist Yaw': l10n.advAxisYaw,
+      'Gripper': l10n.advSecGripper,
+    };
+    TextStyle cap = TextStyle(color: p.textTertiary, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1);
+    TextStyle small = TextStyle(color: p.textSecondary, fontSize: 11, fontWeight: FontWeight.w600);
+    String pct(double v) => '${(v * 100).round()} %';
+
+    // One ramp changed: the other gives way so they never overlap (the sim's _edit_profile).
+    void set(int i, {double? vmax, double? accel, double? decel}) => _edit((s) {
+      final g = s.profile[armAxes[i].name]!;
+      final a = accel ?? (decel != null ? math.min(g.accel, 1 - decel) : g.accel);
+      final d = decel ?? (accel != null ? math.min(g.decel, 1 - accel) : g.decel);
+      return s.copyWith(profile: {...s.profile, armAxes[i].name: cleanAxis(i, vmax ?? g.vmax, a, d)});
+    });
+
+    Widget ramp(int i, String id, String label, double v, void Function(double) on) => Expanded(
+      child: Row(
+        children: [
+          SizedBox(width: 78, child: Text(label, style: small)),
+          Expanded(
+            child: _Stepper(
+              key: ValueKey('adv_${id}_$i'),
+              value: (v * 100).roundToDouble().clamp(5, 95).toDouble(),
+              min: 5,
+              max: 95,
+              step: 1,
+              label: pct(v),
+              onChanged: (x) => on(x / 100),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            SizedBox(width: 132, child: Text(l10n.advColAxis, style: cap)),
+            Expanded(child: Text(l10n.advColTopSpeed, style: cap)),
+            const SizedBox(width: 96),
+          ],
+        ),
+        for (final i in [5, 4, 3, 2, 1, 0])
+          Builder(
+            builder: (context) {
+              final g = _draft.profile[armAxes[i].name]!;
+              final seconds = (30 * peakOverMean(g.accel, g.decel) / g.vmax).toStringAsFixed(1);
+              return Container(
+                key: ValueKey('adv_speed_$i'),
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: p.borderSubtle)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 132,
+                                child: Text(
+                                  names[armAxes[i].name]!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: p.textPrimary, fontSize: 12, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                              Expanded(
+                                child: _Stepper(
+                                  key: ValueKey('adv_vmax_$i'),
+                                  value: g.vmax,
+                                  min: 1,
+                                  max: vmaxCap(i),
+                                  step: 1,
+                                  label: '${g.vmax.toStringAsFixed(g.vmax % 1 == 0 ? 0 : 1)}°/s',
+                                  onChanged: (v) => set(i, vmax: v),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              ramp(i, 'accel', l10n.advSpeedUp, g.accel, (v) => set(i, accel: v)),
+                              const SizedBox(width: 12),
+                              ramp(i, 'decel', l10n.advSlowDown, g.decel, (v) => set(i, decel: v)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      width: 84,
+                      child: Column(
+                        children: [
+                          CustomPaint(
+                            size: const Size(84, 30),
+                            painter: _RampGraph(g.accel, g.decel, p.primary, p.borderMedium),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(l10n.advSpeedMove(seconds), style: TextStyle(color: p.textTertiary, fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        const SizedBox(height: 8),
+        _Ticket(tone: HistoryTone.info, title: l10n.advTips, text: l10n.advSpeedTip),
       ],
     );
   }
@@ -684,18 +786,6 @@ class _AdvancedSettingsScreenState extends ConsumerState<AdvancedSettingsScreen>
                 }
               },
             ),
-            _Pill(
-              key: const ValueKey('adv_change_pin'),
-              icon: Icons.lock_reset_rounded,
-              label: l10n.advChangePin,
-              fill: p.surface,
-              fg: p.textPrimary,
-              border: p.borderMedium,
-              onTap: () => setState(() {
-                _unlocked = false;
-                _changingPin = true;
-              }),
-            ),
           ],
         ),
         const SizedBox(height: 14),
@@ -797,19 +887,17 @@ class _Pill extends StatelessWidget {
     required this.fg,
     this.icon,
     this.border,
-    this.shadow = false,
   });
   final String label;
   final VoidCallback onTap;
   final Color fill, fg;
   final Color? border;
   final IconData? icon;
-  final bool shadow;
 
   @override
   Widget build(BuildContext context) => Material(
     color: fill,
-    elevation: shadow ? 2 : 0,
+    elevation: 0,
     shape: StadiumBorder(side: border == null ? BorderSide.none : BorderSide(color: border!, width: 1.5)),
     child: InkWell(
       customBorder: const StadiumBorder(),
@@ -1267,6 +1355,42 @@ class _Ticket extends StatelessWidget {
   }
 }
 
+/// Speed over time of one joint's move (0240, the sim's ProfilePlot): up, cruise, down.
+class _RampGraph extends CustomPainter {
+  const _RampGraph(this.accel, this.decel, this.color, this.base);
+  final double accel, decel;
+  final Color color, base;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final line = Path()
+      ..moveTo(0, h)
+      ..lineTo(accel * w, 2)
+      ..lineTo((1 - decel) * w, 2)
+      ..lineTo(w, h);
+    canvas.drawPath(Path.from(line)..close(), Paint()..color = color.withValues(alpha: .15));
+    canvas.drawLine(
+      Offset(0, h),
+      Offset(w, h),
+      Paint()
+        ..color = base
+        ..strokeWidth = 1,
+    );
+    canvas.drawPath(
+      line,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_RampGraph old) => old.accel != accel || old.decel != decel || old.color != color;
+}
+
 class _Dashes extends CustomPainter {
   _Dashes(this.color);
   final Color color;
@@ -1282,168 +1406,4 @@ class _Dashes extends CustomPainter {
 
   @override
   bool shouldRepaint(_Dashes old) => old.color != color;
-}
-
-/// The teacher PIN on its own keypad (no system keyboard: in landscape it would cover the page).
-/// [create]: any 4 digits become the new PIN. [onSubmit] returns false for a wrong PIN.
-class _PinPad extends StatefulWidget {
-  const _PinPad({super.key, required this.create, required this.onSubmit, this.onCancel});
-  final bool create;
-  final bool Function(String pin) onSubmit;
-  final VoidCallback? onCancel;
-  @override
-  State<_PinPad> createState() => _PinPadState();
-}
-
-class _PinPadState extends State<_PinPad> {
-  String _pin = '';
-  bool _wrong = false;
-
-  void _press(String d) {
-    if (_pin.length >= 4) return;
-    setState(() {
-      _wrong = false;
-      _pin += d;
-    });
-    if (_pin.length < 4) return;
-    if (!widget.onSubmit(_pin)) {
-      HapticFeedback.heavyImpact();
-      setState(() {
-        _wrong = true;
-        _pin = '';
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.elio;
-    Widget key(String label, {IconData? icon, VoidCallback? onTap, Key? k}) => Padding(
-      padding: const EdgeInsets.all(4),
-      child: Material(
-        key: k,
-        color: onTap == null ? Colors.transparent : p.surfaceRaised,
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: SizedBox(
-            width: 46,
-            height: 46,
-            child: Center(
-              child: icon != null
-                  ? Icon(icon, size: 20, color: p.textPrimary)
-                  : Text(
-                      label,
-                      style: TextStyle(color: p.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
-                    ),
-            ),
-          ),
-        ),
-      ),
-    );
-    final digits = [
-      for (final d in ['1', '2', '3', '4', '5', '6', '7', '8', '9'])
-        key(d, k: ValueKey('adv_pin_$d'), onTap: () => _press(d)),
-      key(
-        '',
-        icon: widget.onCancel == null ? null : Icons.close_rounded,
-        k: const ValueKey('adv_pin_cancel'),
-        onTap: widget.onCancel,
-      ),
-      key('0', k: const ValueKey('adv_pin_0'), onTap: () => _press('0')),
-      key(
-        '',
-        icon: Icons.backspace_outlined,
-        k: const ValueKey('adv_pin_back'),
-        onTap: _pin.isEmpty ? null : () => setState(() => _pin = _pin.substring(0, _pin.length - 1)),
-      ),
-    ];
-    return Container(
-      padding: const EdgeInsets.fromLTRB(28, 18, 20, 18),
-      decoration: BoxDecoration(
-        color: p.surface,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(10),
-          bottomRight: Radius.circular(30),
-          bottomLeft: Radius.circular(10),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: p.isDark ? .3 : .08),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 240,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(color: historyTint(p, HistoryTone.warning).bg, shape: BoxShape.circle),
-                  child: Icon(Icons.lock_outline_rounded, size: 20, color: p.secondaryText),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  widget.create ? l10n.advPinCreate : l10n.advPinEnter,
-                  style: TextStyle(color: p.textPrimary, fontSize: 17, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 2),
-                const LearnSquiggle(width: 70),
-                const SizedBox(height: 6),
-                if (widget.create)
-                  Text(
-                    l10n.advPinCreateBody,
-                    style: TextStyle(color: p.textSecondary, fontSize: 11, fontWeight: FontWeight.w500),
-                  ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    for (var i = 0; i < 4; i++)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 120),
-                        margin: const EdgeInsets.only(right: 12),
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: i < _pin.length ? p.primary : Colors.transparent,
-                          border: Border.all(
-                            color: _wrong ? p.error : (i < _pin.length ? p.primary : p.borderStrong),
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                SizedBox(
-                  height: 20,
-                  child: _wrong
-                      ? Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(
-                            l10n.advPinWrong,
-                            style: TextStyle(color: p.errorText, fontSize: 12, fontWeight: FontWeight.w700),
-                          ),
-                        )
-                      : null,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          SizedBox(width: 162, child: Wrap(children: digits)),
-        ],
-      ),
-    );
-  }
 }
