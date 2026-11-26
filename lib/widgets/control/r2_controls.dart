@@ -511,6 +511,7 @@ class TransportKey extends StatelessWidget {
     this.primary = false,
     this.size = 60,
     this.progress = 0,
+    this.busy = false,
     this.showLabel = true,
   });
 
@@ -522,6 +523,9 @@ class TransportKey extends StatelessWidget {
 
   /// Hold-to-confirm fill (HOME), 0..1.
   final double progress;
+
+  /// A spinning ring while the key's work runs (LOCK waits ~2 s for the AI).
+  final bool busy;
 
   /// False draws the circle only (short screens); screen readers still get [label].
   final bool showLabel;
@@ -556,9 +560,9 @@ class TransportKey extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  if (progress > 0)
+                  if (busy || progress > 0)
                     Positioned.fill(
-                      child: CircularProgressIndicator(value: progress, strokeWidth: 4, color: p.primaryText),
+                      child: CircularProgressIndicator(value: busy ? null : progress, strokeWidth: 4, color: p.primaryText),
                     ),
                   Icon(icon, size: size * 0.42, color: primary ? p.onPrimary : p.textPrimary),
                 ],

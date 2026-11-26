@@ -317,6 +317,25 @@ class Safety(unittest.TestCase):
         run(arm, clock, 2)
         self.assertEqual(wire(frames[-1]), held)
 
+    def test_plain_stop_holds_but_limp_stop_releases_until_home(self):
+        arm, clock, frames, _ = rig()
+        arm.handle({"cmd": "ARM_POSE", "seq": 1, "path": [RAISED]}, "app")
+        run(arm, clock, 0.5)
+        arm.handle({"cmd": "STOP", "seq": 2})   # a reconnect's STOP: the arm keeps holding
+        held = wire(frames[-1])
+        run(arm, clock, 1)
+        self.assertEqual(wire(frames[-1]), held)
+        self.assertEqual(arm.handle({"cmd": "STOP", "seq": 3, "limp": True})[0]["event"], "ack")
+        payload = ",,,,,"
+        self.assertEqual(frames[-1], "{},{:02X}\n".format(payload, ab.crc8(payload)), "every field empty")
+        n = len(frames)
+        run(arm, clock, 1)
+        self.assertEqual(len(frames), n, "nothing streamed over the released arm")
+        self.assertEqual(arm.handle({"cmd": "ARM_POSE", "seq": 4, "path": [RAISED]})[0]["reason"], "pose_unknown")
+        arm.handle({"cmd": "HOME", "seq": 5}, "app")
+        run(arm, clock, ab.UNKNOWN_HOME_S + 0.2)
+        self.assertEqual(wire(frames[-1]), ab.HOME)
+
     def test_esp32_reset_stops_streaming_until_home(self):
         arm, clock, frames, logs = rig()
         arm.handle({"cmd": "ARM_POSE", "seq": 1, "path": [RAISED]}, "app")

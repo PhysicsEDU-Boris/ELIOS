@@ -1254,6 +1254,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ctlLock => 'LOCK';
 
   @override
+  String get ctlLocking => 'LOCKING…';
+
+  @override
   String get ctlScan => 'SCAN';
 
   @override
@@ -1266,7 +1269,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ctlGuide => 'Guide';
 
   @override
-  String get ctlStoppedPaused => 'Robot stopped · scanning paused';
+  String get ctlStoppedPaused => 'Robot stopped';
 
   @override
   String get ctlRobotOffline => 'Robot offline';

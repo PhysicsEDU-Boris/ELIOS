@@ -1232,6 +1232,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get ctlLock => 'KUNCI';
 
   @override
+  String get ctlLocking => 'MENGUNCI…';
+
+  @override
   String get ctlScan => 'SCAN';
 
   @override
@@ -1244,7 +1247,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get ctlGuide => 'Panduan';
 
   @override
-  String get ctlStoppedPaused => 'Robot berhenti · scan dijeda';
+  String get ctlStoppedPaused => 'Robot berhenti';
 
   @override
   String get ctlRobotOffline => 'Robot offline';

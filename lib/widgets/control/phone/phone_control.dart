@@ -74,6 +74,7 @@ class PhoneControlLayout extends StatelessWidget {
     this.overlays = const [],
     this.onLock,
     this.locked = false,
+    this.locking = false,
     this.onScan,
     this.lockBox,
     this.lockLabel,
@@ -138,6 +139,9 @@ class PhoneControlLayout extends StatelessWidget {
   /// With [locked] the same key reads UNLOCK and clears the box.
   final VoidCallback? onLock;
   final bool locked;
+
+  /// LOCK was pressed and the AI is still looking: the key spins and reads LOCKING.
+  final bool locking;
 
   /// SCAN (0181): opens the quiz popup for the locked item; null greys the key out.
   final VoidCallback? onScan;
@@ -517,7 +521,8 @@ class PhoneControlLayout extends StatelessWidget {
         slot(TransportKey(
           key: const ValueKey('phone_lock'),
           icon: locked ? Icons.center_focus_weak : Icons.center_focus_strong,
-          label: locked ? l10n.ctlUnlock : l10n.ctlLock,
+          label: locking ? l10n.ctlLocking : (locked ? l10n.ctlUnlock : l10n.ctlLock),
+          busy: locking,
           size: size,
           showLabel: !shortScreen,
           onTap: onLock,
@@ -553,7 +558,7 @@ class PhoneControlLayout extends StatelessWidget {
     final p = context.elio;
     final live = link == ControlLink.connected && frame != null;
     final liveText = live
-        ? (stopped ? l10n.ctlLiveScanPaused : l10n.ctlLiveFps(fps.round()))
+        ? l10n.ctlLiveFps(fps.round())
         : l10n.ctlNoVideo;
     final (connText, connColor) = switch (link) {
       ControlLink.connected => (l10n.cfgConnected, p.primary),

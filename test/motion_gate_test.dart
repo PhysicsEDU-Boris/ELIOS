@@ -51,6 +51,7 @@ void main() {
     final before = w.sent.length;
     w.gate.emergencyStop('button');
     expect(w.since(before).take(2), ['STOP', 'motor 0,0'], reason: 'immediately, in this order');
+    expect(w.messages.last['limp'], isTrue, reason: 'the STOP button releases the arm (owner, 26 Nov)');
     expect(w.stops, ['button'], reason: "R1's safe exit");
     expect(w.events.last.$1, 'emergency_stop');
     expect(w.events.last.$2, {'reason': 'button', 'linkUp': true});
@@ -105,12 +106,29 @@ void main() {
     final before = w.sent.length;
     w.gate.linkRestored();
     expect(w.since(before).take(2), ['STOP', 'motor 0,0'], reason: 'before anything else');
+    expect(w.messages.last.containsKey('limp'), isFalse, reason: 'a reconnect keeps the arm holding');
     expect(w.gate.stopped, isTrue, reason: 'still STOPPED after the reconnect');
     expect(w.gate.motor(75, 75), isFalse);
     w.gate.resume();
     expect(w.gate.motor(75, 75), isTrue);
     w.gate.dispose();
     await tester.pump(const Duration(seconds: 1)); // the stop repeats run out
+  });
+
+  testWidgets('owner 26 Nov: Offline pressed by the student needs no GO when Online again', (tester) async {
+    final w = _Wire()..gate.linkRestored();
+    w.gate.linkLost();
+    expect(w.gate.stopReason, 'link_lost');
+    final before = w.sent.length;
+    w.gate.linkRestored(userOffline: true);
+    expect(w.since(before).take(2), ['STOP', 'motor 0,0'], reason: 'still STOP + 0,0 first');
+    expect(w.gate.stopped, isFalse);
+    w.gate.emergencyStop('button');
+    w.gate.linkLost();
+    w.gate.linkRestored(userOffline: true);
+    expect(w.gate.stopped, isTrue, reason: 'a STOP button press still needs GO');
+    await tester.pump(const Duration(seconds: 1)); // the 0,0 repeats
+    w.gate.dispose();
   });
 
   testWidgets('heartbeat ~4 Hz while connected, also while STOPPED, none without a link', (tester) async {

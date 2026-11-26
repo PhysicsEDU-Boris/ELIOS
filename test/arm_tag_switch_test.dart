@@ -13,20 +13,14 @@ void main() {
     tags = ArmTagSwitch();
   });
 
-  test('without R1, PICK UP or HOME turns tags on for 5 s, then off', () {
+  test('off without an R1 grip or bin run: PICK UP and HOME no longer search (owner, 26 Nov)', () {
     at(0);
-    expect(sent, [{'cmd': 'arm_tags', 'on': false}]);
-    tags.press(t0.add(const Duration(seconds: 1)));
     at(1000);
-    at(1250);
-    at(5900);
-    expect(sent.skip(1), [{'cmd': 'arm_tags', 'on': true}]); // once, not every frame
-    at(6000);
-    expect(sent.last, {'cmd': 'arm_tags', 'on': false});
+    expect(sent, [{'cmd': 'arm_tags', 'on': false}]); // once, not every frame
+    expect(tags.wanted(t0), isFalse);
   });
 
-  test('an R1 grip keeps tags on past the manual window', () {
-    tags.press(t0);
+  test('an R1 grip or bin run turns tags on, then off when it ends', () {
     at(0, r1: true);
     at(9000, r1: true);
     expect(sent, [{'cmd': 'arm_tags', 'on': true}]);
@@ -35,12 +29,11 @@ void main() {
   });
 
   test('nothing is sent while disconnected; a new link says it again', () {
-    tags.press(t0);
-    at(0, connected: false);
+    at(0, connected: false, r1: true);
     expect(sent, isEmpty);
-    at(100);
+    at(100, r1: true);
     tags.linkUp();
-    at(200);
+    at(200, r1: true);
     expect(sent, [{'cmd': 'arm_tags', 'on': true}, {'cmd': 'arm_tags', 'on': true}]);
   });
 }

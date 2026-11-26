@@ -107,3 +107,4 @@ their status changed.
 - [0238](0238-app-onboarding-tour.md) App onboarding tour: Welcome, main tour across the tabs, first-visit screen tours, Profile ▸ App tour
 - [0240](0240-sim-control-settings.md) Sim control settings: per-joint speed and ramps, new bin sequences, bin run after the bin check (3 s wait), AprilTag base centring, slider fix, arm on UART4
 - [0241](0241-hil-toolkit-control-parity.md) Arm controls like the HIL toolkit: live Advanced settings (no PIN, no Save), YAW/PITCH faders, HOME waits for the planned time and works after an ESP32 reset, moves replace HOME and are replanned from the arm's pose, gripper invert, sim calibration on the robot
+- [0242](0242-robot-buttons-and-indicators.md) Robot buttons and indicators: Offline needs no GO, STOP goes limp and no longer pauses the scan, no tag search on HOME/PICK UP, LOCKING spinner, top notifications, unlock when the quiz ends

@@ -280,14 +280,14 @@ class MotionGate extends ChangeNotifier {
     _stopReason = reason;
     cancelHome(reason: reason);
     onEvent?.call('emergency_stop', {'reason': reason, 'linkUp': _linkUp});
-    _sendStop();
+    _sendStop(limp: reason == 'button'); // only the STOP button goes limp (owner, 26 Nov)
     onStop?.call(reason);
     notifyListeners();
   }
 
-  void _sendStop() {
+  void _sendStop({bool limp = false}) {
     if (!_linkUp) return;
-    robot.stop();
+    robot.stop(limp: limp);
     robot.transmitMotor(0, 0);
     for (var i = 1; i <= stopRepeats; i++) {
       Timer(stopRepeatInterval * i, stopWheels);
@@ -317,10 +317,13 @@ class MotionGate extends ChangeNotifier {
   }
 
   /// A (re)connection: STOP and motor 0,0 before anything else (the last
-  /// command may still be in force), then the heartbeat. STOPPED stays until [resume].
-  void linkRestored() {
+  /// command may still be in force), then the heartbeat. STOPPED stays until [resume], except
+  /// [userOffline]: the student pressed Offline themselves, so the link_lost stop it caused ends here
+  /// (owner, 26 Nov: Online/Offline is the camera link, Go/Stop the robot).
+  void linkRestored({bool userOffline = false}) {
     _linkUp = true;
     _sendStop();
+    if (userOffline && _stopReason == 'link_lost') resume();
     _heartbeat?.cancel();
     _heartbeat = Timer.periodic(heartbeatInterval, (_) {
       if (_linkUp) robot.heartbeat();

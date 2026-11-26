@@ -2318,6 +2318,12 @@ abstract class AppLocalizations {
   /// **'LOCK'**
   String get ctlLock;
 
+  /// No description provided for @ctlLocking.
+  ///
+  /// In en, this message translates to:
+  /// **'LOCKING…'**
+  String get ctlLocking;
+
   /// No description provided for @ctlScan.
   ///
   /// In en, this message translates to:
@@ -2345,7 +2351,7 @@ abstract class AppLocalizations {
   /// No description provided for @ctlStoppedPaused.
   ///
   /// In en, this message translates to:
-  /// **'Robot stopped · scanning paused'**
+  /// **'Robot stopped'**
   String get ctlStoppedPaused;
 
   /// No description provided for @ctlRobotOffline.

@@ -155,7 +155,8 @@ abstract class RobotController {
 
   /// Resend the current angles (freeze the arm where it is); never detaches a servo.
   int hold() => send('HOLD');
-  int stop() => send('STOP');
+  /// [limp]: the student's STOP button also releases every servo (the arm may sag; HOME next).
+  int stop({bool limp = false}) => send('STOP', limp ? const {'limp': true} : const {});
 
   /// The app is alive (decision 0026): no seq, no reply; the MaixCAM2's watchdog
   /// stops the wheels and holds the arm when these stop coming.
