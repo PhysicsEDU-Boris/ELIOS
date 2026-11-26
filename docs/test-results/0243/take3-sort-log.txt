@@ -1,0 +1,10 @@
+# Take 3, 26 Nov 2026, phone APK 2967067, MaixCAM2 firmware 1.4.3. Key [Sort] lines (full logcat was lost with the session scratchpad).
+# Outcome (owner): tissue landed between Anorganik and B3, fell into B3.
+11-26 10:37:42.039 [Sort] bin run countdown bin=anorganik failure=null
+11-26 10:37:45.060 [Sort] bin run moving bin=anorganik failure=null
+11-26 10:38:02.813 [Sort] align_log [{"tag":4,"note":"no_tag","err_deg":null,"base_corr":0.0},{"tag":2,"note":"diverged","err_deg":-29.71,"base_corr":0.0}] base_corr 0.0
+11-26 10:38:02.814 [Sort] bin run looking bin=anorganik failure=null
+11-26 10:38:04.064 [Sort] bin run dropping bin=anorganik failure=null
+11-26 10:38:34.924 [Sort] align_log [{"tag":2,"note":"diverged","err_deg":-29.63,"base_corr":0.0},{"tag":4,"note":"no_tag","err_deg":null,"base_corr":0.0}] base_corr 0.0
+11-26 10:38:34.925 [Sort] bin run homing bin=anorganik failure=null
+11-26 10:38:35.090 [Sort] bin run done bin=anorganik failure=null

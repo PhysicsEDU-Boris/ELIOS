@@ -105,20 +105,38 @@ DriveOutput mixDrive(double v, double w, JoystickConfig c) {
 
 /// Rate control for the arm base: the stick sets the speed, this integrates it into an angle
 /// (degrees from centre, kept as a float; rounded only for the servo value).
+///
+/// Near home the teacher's base limit (±[JoystickConfig.armBaseMaxDeg]) holds. From a pose outside it
+/// (the bins sit at servo 243..270 and -82) the stick turns from where the base is, both ways, within
+/// the stepper's full range [baseServoMin]..[baseServoMax] (owner, 26 Nov: before, it clamped the bin
+/// pose back to the limit, so any push swung the base towards the centre and "right" never worked).
+/// The arm planner still refuses a turn into the tank (0234).
 class ArmBaseIntegrator {
   ArmBaseIntegrator(this.config, {double initialDeg = 0.0}) : _deg = initialDeg;
   final JoystickConfig config;
   double _deg;
+  bool _free = false;
+
+  /// The stepper base's servo range (0240; arm_bridge AXES "Arm Base").
+  static const baseServoMin = -90, baseServoMax = 270;
 
   double get angleDeg => _deg;
 
-  void syncTo(double deg) => _deg = deg.clamp(config.armBaseMinDeg, config.armBaseMaxDeg).toDouble();
+  double _clamp(double deg) => _free
+      ? deg.clamp(baseServoMin - config.armBaseCenterServo, baseServoMax - config.armBaseCenterServo).toDouble()
+      : deg.clamp(config.armBaseMinDeg, config.armBaseMaxDeg).toDouble();
+
+  /// The base's real angle (degrees from centre): outside the teacher limit the stick works freely.
+  void syncTo(double deg) {
+    _free = deg < config.armBaseMinDeg || deg > config.armBaseMaxDeg;
+    _deg = _clamp(deg);
+  }
 
   /// [rateFraction] in [-1, 1]. Returns the servo value.
   int update(double rateFraction, double dt) {
-    syncTo(_deg + rateFraction * config.armDirection * config.armMaxRateDegPerSec * dt);
+    _deg = _clamp(_deg + rateFraction * config.armDirection * config.armMaxRateDegPerSec * dt);
     return servo;
   }
 
-  int get servo => (_deg + config.armBaseCenterServo).round().clamp(0, 180);
+  int get servo => (_deg + config.armBaseCenterServo).round().clamp(baseServoMin, baseServoMax);
 }

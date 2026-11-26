@@ -108,6 +108,27 @@ void main() {
     expect(b.servo, 93);
   });
 
+  test('owner 26 Nov: at a bin pose outside the limit the stick turns both ways from there', () {
+    for (final (binServo, label) in const [(243.0, 'Left-Tank / Mid-Tank Pose 2'), (-82.0, 'Right-Tank')]) {
+      final a = ArmBaseIntegrator(c)..syncTo(binServo - 90);
+      expect(a.servo, binServo.round(), reason: '$label: no jump back to the limit');
+      a.update(1.0, 0.05);
+      expect(a.servo, binServo.round() + 2, reason: '$label: right');
+      a
+        ..update(-1.0, 0.05)
+        ..update(-1.0, 0.05);
+      expect(a.servo, binServo.round() - 2, reason: '$label: left');
+    }
+    final top = ArmBaseIntegrator(c)..syncTo(270 - 90);
+    top.update(1.0, 0.05);
+    expect(top.servo, 270, reason: "Mid-Tank Pose 3 is the base's end stop: right has no room");
+    final home = ArmBaseIntegrator(c)..syncTo(0);
+    for (var i = 0; i < 400; i++) {
+      home.update(1.0, 0.05);
+    }
+    expect(home.servo, 180, reason: 'from home the teacher limit still holds');
+  });
+
   test('arm base: full push is 2 deg per tick and never exceeds the 40 deg/s firmware limit', () {
     final a = ArmBaseIntegrator(c);
     var last = a.angleDeg;
