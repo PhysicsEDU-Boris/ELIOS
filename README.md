@@ -103,7 +103,7 @@ ESP32 (decision [0230](docs/decisions/0230-sync-robotic-hand-sim.md)).
   </tr>
 </table>
 
-## Current status (19 Nov 2026)
+## Current status (26 Nov 2026)
 
 | Area | Status |
 |---|---|
@@ -111,13 +111,14 @@ ESP32 (decision [0230](docs/decisions/0230-sync-robotic-hand-sim.md)).
 | Quiz types | Multiple choice, essay (graded by Gemini with per-criterion feedback), bin check. EN and ID. |
 | Offline fallback | Working. With no internet or all Gemini models capped, questions come from the built-in question bank. |
 | History, Learn hub, daily Guides, PDF export, dark mode | Working on the phone. |
-| Robot driving (joystick, speed fader, STOP) | Built and tested against the fake MaixCAM2. Joystick constants not tuned on the real robot. |
-| Robot arm keys (BASIS, Height, Reach, gripper, PICK, RELEASE, HOME) | App ↔ MaixCAM2 checked over USB on 19 Nov. The MaixCAM2 → ESP32 serial link is **not wired yet**, so the arm does not physically move. |
-| Automatic sort (R1: lock → pick → bin → bin-tag check → drop) | Built and unit tested on the simulator. B3 bin sequence saved; organik/anorganik sequences still open. Not run on the robot. |
-| Wheels | Command path exists (`motor`); wheel watchdog not built. |
+| Robot camera stream | MaixCAM2 → app at about 20 fps (firmware 1.4.x); frames are skipped for a phone that falls behind. |
+| Robot driving (joystick, speed fader, STOP) | Wheels Arduino on the MaixCAM2's UART2 (`F/B/L/R/S`, 500 ms drive watchdog). Joystick constants not tuned on the real robot. |
+| Robot arm keys (BASIS, Height, Reach, Yaw, Pitch, gripper, PICK, RELEASE, HOME) | **Working on the robot.** The ESP32 is linked to the MaixCAM2 (UART4) and the arm moves from the app; the ARM card shows a green `ESP32` chip. Moves are planned in the app with joint limits and tank keep-out. |
+| Automatic sort (scan → quiz → bin → bin-tag check → drop) | **Run on the robot** with all three bins (B3 left, Anorganik middle, Organik right): after the quiz the arm carries the item to the right bin. **Open:** the item in the gripper can cover the bin's AprilTag, so the drop is not confirmed and the arm goes HOME; tank tags must match their bins. |
+| Power | The ESP32 / MaixCAM2 can reset when the servos come on under load; a separate servo supply is planned. |
 | macOS build | Debug / visualisation only. Currently blocked by code signing on the owner's Mac. |
 
-Tests: about 2,095 Flutter tests pass (20 skipped), plus firmware and fake-robot
+Tests: about 2,130 Flutter tests pass (20 skipped), plus firmware and fake-robot
 Python tests. Known issues and next steps: [`docs/HANDOFF.md`](docs/HANDOFF.md).
 
 ## How it works
