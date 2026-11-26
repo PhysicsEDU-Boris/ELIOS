@@ -5719,8 +5719,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get binGotIt => 'Got it';
 
   @override
+  String sortCountdown(String bin, int seconds) {
+    return 'Sorting into the $bin bin in $seconds s';
+  }
+
+  @override
+  String sortInProgress(String bin) {
+    return 'Sorting in progress · $bin bin';
+  }
+
+  @override
+  String sortCheckHand(String bin) {
+    return 'Check the hand is over the $bin bin. Adjust it, then press RELEASE.';
+  }
+
+  @override
+  String get sortSuccess => 'Sorting successful';
+
+  @override
   String binRunReady(String bin) {
-    return 'When the quiz is done, the arm waits 3 s, then takes it to the $bin bin.';
+    return 'Press Done when you finish: the arm waits 3 s, then takes it to the $bin bin.';
   }
 
   @override

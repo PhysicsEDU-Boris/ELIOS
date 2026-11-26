@@ -79,6 +79,7 @@ class PhoneControlLayout extends StatelessWidget {
     this.lockBox,
     this.lockLabel,
     this.tagText,
+    this.sortBubble,
     this.frameAspect = 4 / 3,
     this.driveKey,
     this.stopKey,
@@ -152,6 +153,9 @@ class PhoneControlLayout extends StatelessWidget {
 
   /// Debug builds: the arm-tag search's reading while it is on, shown at the top of the video.
   final String? tagText;
+
+  /// The arm's sort over the bottom of the video (0243): in progress, check the hand, done.
+  final Widget? sortBubble;
 
   /// The camera frame's width / height, for placing [lockBox] (MaixCAM2 streams 640x480).
   final double frameAspect;
@@ -654,6 +658,12 @@ class PhoneControlLayout extends StatelessWidget {
           style: TextStyle(color: p.textSecondary, fontSize: 13),
         ),
       );
+    }
+    if (sortBubble != null) {
+      body = Stack(fit: StackFit.expand, children: [
+        body,
+        Positioned(left: 8, right: 8, bottom: 10, child: Center(child: sortBubble!)),
+      ]);
     }
     return Container(
       key: const ValueKey('phone_video'),

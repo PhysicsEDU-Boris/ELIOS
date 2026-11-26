@@ -50,12 +50,16 @@ class ScanQuizPages extends ConsumerStatefulWidget {
     this.robot = false,
     this.onStop,
     this.onRescan,
+    this.onDone,
   });
 
   /// Robot control: see [_Robot].
   final bool robot;
   final VoidCallback? onStop;
   final VoidCallback? onRescan;
+
+  /// The result page's Done, before the pages close (robot: the arm starts sorting, 0243).
+  final VoidCallback? onDone;
 
   @override
   ConsumerState<ScanQuizPages> createState() => _ScanQuizPagesState();
@@ -308,7 +312,7 @@ class _ScanQuizPagesState extends ConsumerState<ScanQuizPages> {
       ),
       WasteQuizPhase.finished => (
         'done',
-        _ScanDonePage(state: s, onClose: n.dismiss, onRescan: rescan),
+        _ScanDonePage(state: s, onClose: n.dismiss, onRescan: rescan, onDone: widget.onDone),
       ),
       WasteQuizPhase.explaining when q != null => (
         'review-${s.questionIndex}',
@@ -3465,10 +3469,12 @@ class _ScanDonePage extends StatelessWidget {
     required this.state,
     required this.onClose,
     required this.onRescan,
+    this.onDone,
   });
   final WasteQuizUiState state;
   final VoidCallback onClose;
   final VoidCallback onRescan;
+  final VoidCallback? onDone;
 
   @override
   Widget build(BuildContext context) {
@@ -3722,12 +3728,13 @@ class _ScanDonePage extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: button(l10n.notifDone, Icons.check_rounded, () {
+                onDone?.call();
                 onClose();
                 // Phone: back to the hub. Robot: stay on the control screen.
                 if (!_isRobot(context)) {
                   Navigator.of(context).maybePop();
                 }
-              }),
+              }, key: const Key('result_card_done_button')),
             ),
           ],
         ),

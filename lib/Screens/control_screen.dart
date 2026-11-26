@@ -40,6 +40,7 @@ import '../widgets/control/control_panels.dart';
 import '../widgets/control/phone/phone_control.dart';
 import '../widgets/control/phone/phone_guide.dart';
 import '../widgets/control/r2_controls.dart';
+import '../widgets/control/sort_bubble.dart';
 import 'scan_history_screen.dart';
 import '../widgets/debug_phone_camera_sheet.dart';
 import '../widgets/control_layout.dart';
@@ -124,6 +125,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// The commanded arm pose and its planner (0234): every manual arm key goes through it.
   final _arm = ArmPose();
   DateTime? _armRefusedAt;
+
+  /// When the last bin run ended (done or failed): its bubble shows for 5 s (0243).
+  DateTime? _binRunEndedAt;
 
   /// The arm's ESP32 as the MaixCAM2 hears it (STATUS `esp32_age_s`, 0240): the ARM card's chip, and
   /// arm keys warn while it is false. Null: offline or older firmware. Polled every 2 s while connected.
@@ -341,6 +345,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           _ => BinRunCue.ready,
         };
         if (_binCue.state != cue) _binCue.state = cue;
+        // The countdown and the 5 s result bubble change without a state change.
+        final ended = _binRunEndedAt;
+        if (mounted &&
+            (_binRun!.state == BinRunState.countdown ||
+                (ended != null && DateTime.now().difference(ended) < const Duration(seconds: 6)))) {
+          setState(() {});
+        }
       });
     }
 
@@ -616,10 +627,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     // tracking and the preview current.
     ref.listen<WasteQuizUiState>(wasteQuizProvider, (prev, next) {
       if (prev?.phase != next.phase) _liveScan?.onQuizPhase(next.phase);
-      // 0241 (owner): the quiz is finished (last question answered): 3 s later the arm takes the item to
-      // the RIGHT bin, the AI's, whatever the student picked, while the result page shows it. No PICK UP
-      // wait: the student picked the item up before the quiz.
-      if (prev?.phase != WasteQuizPhase.finished && next.phase == WasteQuizPhase.finished) _startBinRun(next);
+      // 0243 (owner, 26 Nov): the arm sorts when the student taps Done on the result page (onDone), no
+      // longer as soon as the last question is answered.
       // Owner, 26 Nov: the lock ends with its quiz (finished or closed), so the next scan starts unlocked.
       if (_locked != null && prev?.phase != next.phase && const {WasteQuizPhase.finished, WasteQuizPhase.idle}.contains(next.phase)) {
         _lockOrUnlock();
@@ -820,29 +829,33 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                     GearChips(speed: speed, onSelect: isOperational ? notifier.setPwmSpeed : null),
                   ]),
                 ),
-                camera: _LandscapeCameraPanel(
-                  currentFrame: _latestFrame?.bytes,
-                  link: link,
-                  streamFps: _streamFps,
-                  frameCount: _frameCount,
-                  lastFrameAt: _lastFrameAt,
-                  lastFrameBytes: _lastFrameBytes,
-                  detections: detections,
-                  detectionImageSize: Size(
-                    _latestFrame?.width.toDouble() ?? 0,
-                    _latestFrame?.height.toDouble() ?? 0,
+                camera: Stack(fit: StackFit.expand, children: [
+                  _LandscapeCameraPanel(
+                    currentFrame: _latestFrame?.bytes,
+                    link: link,
+                    streamFps: _streamFps,
+                    frameCount: _frameCount,
+                    lastFrameAt: _lastFrameAt,
+                    lastFrameBytes: _lastFrameBytes,
+                    detections: detections,
+                    detectionImageSize: Size(
+                      _latestFrame?.width.toDouble() ?? 0,
+                      _latestFrame?.height.toDouble() ?? 0,
+                    ),
+                    retry: RetryInfo(
+                      attempt: ws.retryCount,
+                      maxAttempts: ws.maxRetries,
+                      nextRetryAt: ws.nextRetryAt,
+                      autoReconnect: ws.autoReconnectEnabled,
+                    ),
+                    onReconnect: reconnect,
+                    onWifiSettings: defaultTargetPlatform == TargetPlatform.android
+                        ? () => const MethodChannel('elio/device_health').invokeMethod<void>('wifiSettings')
+                        : null,
                   ),
-                  retry: RetryInfo(
-                    attempt: ws.retryCount,
-                    maxAttempts: ws.maxRetries,
-                    nextRetryAt: ws.nextRetryAt,
-                    autoReconnect: ws.autoReconnectEnabled,
-                  ),
-                  onReconnect: reconnect,
-                  onWifiSettings: defaultTargetPlatform == TargetPlatform.android
-                      ? () => const MethodChannel('elio/device_health').invokeMethod<void>('wifiSettings')
-                      : null,
-                ),
+                  if (_sortBubble() case final bubble?)
+                    Positioned(left: 8, right: 8, bottom: 10, child: Center(child: bubble)),
+                ]),
                 actions: controlEnabled(
                   isOperational,
                   LayoutBuilder(builder: (context, c) {
@@ -867,9 +880,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                         icon: Icons.front_hand_outlined,
                         label: l10n.ctlRelease,
                         size: key,
-                        onTap: isOperational
-                            ? () => _armMove(_arm.open())
-                            : null,
+                        onTap: isOperational ? _releaseGripper : null,
                       ),
                       VerticalDivider(width: 24, color: p.borderSubtle),
                       Expanded(
@@ -952,6 +963,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
                       _liveScan?.logEvent('rescan_tapped', {});
                       _liveScan?.rescan();
                     },
+                    onDone: () => _startBinRun(ref.read(wasteQuizProvider)),
                   ),
                 ),
               ),
@@ -995,7 +1007,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onVoice: (_) => ref.read(wasteQuizProvider.notifier).toggleVoice(),
       onHome: _armHome,
       onPickUp: _pickUp,
-      onReleaseGripper: () => _armMove(_arm.open()),
+      onReleaseGripper: _releaseGripper,
       gripper: robotState.gripperVal,
       onGripper: (value) => _fader(() => _armMove(_arm.gripper(value))),
       height: robotState.heightValue,
@@ -1049,6 +1061,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           : lockOverlayBox(aiBox: _locked!.box, trackBox: _trackBox, trackSeenAt: _trackSeenAt, now: DateTime.now()),
       lockLabel: _locked == null ? null : ScannedWaste.fromLabel(_locked!.result.item!).displayName,
       tagText: _tagLine(),
+      sortBubble: _sortBubble(),
       frameAspect: _latestFrame == null || _latestFrame!.height == 0 ? 4 / 3 : _latestFrame!.width / _latestFrame!.height,
       driveKey: _driveKey,
       stopKey: _stopKey,
@@ -1063,6 +1076,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
               _liveScan?.logEvent('rescan_tapped', {});
               _liveScan?.rescan();
             },
+            onDone: () => _startBinRun(ref.read(wasteQuizProvider)),
           ),
         ),
         if (_guideOpen)
@@ -1135,6 +1149,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   void _onBinRun(BinRunState state) {
     if (!mounted) return;
     final pending = _binRun!.pending;
+    if (state == BinRunState.done || state == BinRunState.failed) _binRunEndedAt = DateTime.now();
     if (_dropPending.state != pending) _dropPending.state = pending;
     if (state == BinRunState.moving) _arm.markUnknown(); // the saved sequence moves the arm; motion_done says where to
     if (state == BinRunState.moving) _syncArmTags(DateTime.now());
@@ -1287,6 +1302,37 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   void _pickUp() {
     if (!_armMove(_arm.close())) return;
     if (_pickUpQuizFlow) _liveScan?.onPickUpPressed();
+  }
+
+  /// RELEASE opens the gripper; when a sort is waiting for the student (0243) this is its drop.
+  void _releaseGripper() {
+    if (_armMove(_arm.open())) _binRun?.released(_gate.robot.lastArmSeq);
+  }
+
+  /// The arm's sort over the camera (0243): countdown, in progress, check the hand, then 5 s of success
+  /// (a failure keeps its top notification).
+  Widget? _sortBubble() {
+    final run = _binRun;
+    final bin = run?.bin;
+    if (run == null || bin == null) return null;
+    final name = switch (bin) {
+      Bin.organik => 'Organik',
+      Bin.anorganik => 'Anorganik',
+      Bin.b3 => 'B3',
+    };
+    final ended = _binRunEndedAt;
+    final recent = ended != null && DateTime.now().difference(ended) < const Duration(seconds: 5);
+    final (String, SortBubbleKind)? b = switch (run.state) {
+      BinRunState.countdown => (
+          l10n.sortCountdown(name, (run.countdownLeft!.inMilliseconds / 1000).ceil().clamp(0, 99)),
+          SortBubbleKind.busy
+        ),
+      BinRunState.needsRelease => (l10n.sortCheckHand(name), SortBubbleKind.help),
+      BinRunState.done when recent => (l10n.sortSuccess, SortBubbleKind.success),
+      _ when run.busy => (l10n.sortInProgress(name), SortBubbleKind.busy),
+      _ => null,
+    };
+    return b == null ? null : SortBubble(text: b.$1, kind: b.$2);
   }
 
   /// HOME by the planned safe path; the firmware's own HOME when the arm's pose is unknown.

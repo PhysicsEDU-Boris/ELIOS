@@ -12,6 +12,11 @@
 /// Errors (0240 lag guard): every command has [replyTimeout]; a missing reply, an error reply or a
 /// refused send ends the run as failed, and the Control screen then sends HOLD and HOME.
 ///
+/// Owner, 26 Nov (0243): the run starts on the quiz's Done. A DROP that fails at the bin (refused, the
+/// bin tag not seen, or no reply) asks the student instead: check the hand is over the bin, adjust it,
+/// press RELEASE; the gripper opens, the arm goes HOME, "Sorting successful". At most [maxHelps] sorts
+/// in a row ask; after that a failed DROP ends as failed again, so the student is not asked every time.
+///
 /// Pure logic: commands go out through [send]; replies come in through [onReply]. R1 builds keep
 /// their own orchestrator (0023) and do not use this.
 library;
@@ -32,6 +37,12 @@ enum BinRunState {
   looking,
   dropping,
 
+  /// DROP failed at the bin: the student aligns the hand and presses RELEASE (0243).
+  needsRelease,
+
+  /// RELEASE sent: the gripper is opening.
+  releasing,
+
   /// Dropped: the arm goes home.
   homing,
   done,
@@ -51,6 +62,7 @@ class BinRun {
     this.lookFor = const Duration(seconds: 1),
     this.delay = const Duration(seconds: 3),
     this.replyTimeout = const Duration(seconds: 60),
+    this.maxHelps = 2,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now;
 
@@ -77,6 +89,13 @@ class BinRun {
   final Duration replyTimeout;
   DateTime? _replyBy;
 
+  /// Sorts in a row that may ask the student to release by hand (owner: 2).
+  final int maxHelps;
+  int _helps = 0;
+
+  /// This run was finished by the student's RELEASE.
+  bool helped = false;
+
   BinRunState _state = BinRunState.idle;
   BinRunState get state => _state;
   Bin? bin;
@@ -88,10 +107,15 @@ class BinRun {
   /// The arm belongs to the run: manual arm keys and KUNCI wait.
   bool get busy =>
       const {BinRunState.countdown, BinRunState.moving, BinRunState.looking, BinRunState.dropping, BinRunState.homing}
-          .contains(_state);
+          .contains(_state) ||
+      _state == BinRunState.releasing;
 
-  /// The item is on its way and not dropped yet ("Scan lagi" waits).
-  bool get pending => busy || _state == BinRunState.waitGrip;
+  /// The item is on its way and not dropped yet ("Scan lagi" waits). While it waits for RELEASE the arm
+  /// keys work (not [busy]) so the student can line the hand up with the bin.
+  bool get pending => busy || _state == BinRunState.waitGrip || _state == BinRunState.needsRelease;
+
+  /// Time left before the arm moves, while counting down.
+  Duration? get countdownLeft => _state == BinRunState.countdown ? _moveAt!.difference(_clock()) : null;
 
   /// The camera should search for AprilTags (the bin's tag before DROP).
   bool get wantsTags => _state == BinRunState.looking || _state == BinRunState.dropping;
@@ -106,6 +130,7 @@ class BinRun {
     if (busy) return;
     bin = target;
     failure = null;
+    helped = false;
     _dropRetried = false;
     holding ? _countdown() : _set(BinRunState.waitGrip);
   }
@@ -140,12 +165,13 @@ class BinRun {
         _set(BinRunState.looking);
         return;
       }
-      _fail(r.reason ?? 'error');
+      _failAtBin(r.reason ?? 'error');
     } else if (r.kind == ReplyKind.motionDone) {
       if (_state == BinRunState.moving) {
         _lookUntil = _clock().add(lookFor);
         _set(BinRunState.looking);
-      } else if (_state == BinRunState.dropping) {
+      } else if (_state == BinRunState.dropping || _state == BinRunState.releasing) {
+        if (_state == BinRunState.dropping) _helps = 0; // sorted by itself: the next failures may ask again
         home == null ? _set(BinRunState.done) : _send(home!(), BinRunState.homing);
       } else if (_state == BinRunState.homing) {
         _set(BinRunState.done);
@@ -158,12 +184,29 @@ class BinRun {
   void tick() {
     final now = _clock();
     if (_state == BinRunState.countdown && !now.isBefore(_moveAt!)) return _move();
-    if (const {BinRunState.moving, BinRunState.dropping, BinRunState.homing}.contains(_state) &&
+    if (const {BinRunState.moving, BinRunState.dropping, BinRunState.releasing, BinRunState.homing}.contains(_state) &&
         now.isAfter(_replyBy!)) {
-      return _fail('timeout'); // the reply never came (lost, or the robot is stuck)
+      return _failAtBin('timeout'); // the reply never came (lost, or the robot is stuck)
     }
     if (_state != BinRunState.looking || now.isBefore(_lookUntil!)) return;
     _send(drop(), BinRunState.dropping);
+  }
+
+  /// RELEASE pressed: [seq] is the gripper-open ARM_POSE (null: the gate refused it, keep asking).
+  void released(int? seq) {
+    if (_state != BinRunState.needsRelease || seq == null) return;
+    helped = true;
+    _send(seq, BinRunState.releasing);
+  }
+
+  /// A failed DROP with the item over the bin asks the student, up to [maxHelps] sorts in a row.
+  void _failAtBin(String reason) {
+    if ((_state == BinRunState.dropping || _state == BinRunState.looking) && _helps < maxHelps) {
+      _helps++;
+      failure = reason;
+      return _set(BinRunState.needsRelease);
+    }
+    _fail(reason);
   }
 
   /// STOP, link lost or a new scan: the run ends where it is.

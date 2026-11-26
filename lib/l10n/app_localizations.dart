@@ -9757,10 +9757,34 @@ abstract class AppLocalizations {
   /// **'Got it'**
   String get binGotIt;
 
+  /// No description provided for @sortCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorting into the {bin} bin in {seconds} s'**
+  String sortCountdown(String bin, int seconds);
+
+  /// No description provided for @sortInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorting in progress · {bin} bin'**
+  String sortInProgress(String bin);
+
+  /// No description provided for @sortCheckHand.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the hand is over the {bin} bin. Adjust it, then press RELEASE.'**
+  String sortCheckHand(String bin);
+
+  /// No description provided for @sortSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorting successful'**
+  String get sortSuccess;
+
   /// No description provided for @binRunReady.
   ///
   /// In en, this message translates to:
-  /// **'When the quiz is done, the arm waits 3 s, then takes it to the {bin} bin.'**
+  /// **'Press Done when you finish: the arm waits 3 s, then takes it to the {bin} bin.'**
   String binRunReady(String bin);
 
   /// No description provided for @robotSorted.

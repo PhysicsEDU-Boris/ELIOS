@@ -160,7 +160,7 @@ void main() {
     expect(sent, ['MOVE_TO_BIN b3']);
   });
 
-  test('a missed bin tag gets one more look, then the run fails without dropping', () {
+  test('a missed bin tag gets one more look, then asks the student to RELEASE (0243)', () {
     run.start(Bin.anorganik, holding: true);
     run.onReply(done());
     now = now.add(const Duration(seconds: 1));
@@ -170,8 +170,98 @@ void main() {
     now = now.add(const Duration(seconds: 1));
     run.tick();
     run.onReply(RobotReply(ReplyKind.error, seq, reason: 'bin_not_confirmed'));
-    expect((run.state, run.failure), (BinRunState.failed, 'bin_not_confirmed'));
+    expect((run.state, run.failure), (BinRunState.needsRelease, 'bin_not_confirmed'));
+    expect((run.busy, run.pending), (false, true), reason: 'arm keys work to line up the hand; no new scan');
     expect(sent.where((s) => s == 'DROP'), hasLength(2));
+  });
+
+  group('the student releases by hand (owner, 26 Nov; 0243)', () {
+    late BinRun r;
+    setUp(() {
+      r = BinRun(
+        clock: () => now,
+        delay: Duration.zero,
+        moveToBin: (b) {
+          sent.add('MOVE_TO_BIN ${b.wire}');
+          return ++seq;
+        },
+        drop: () {
+          sent.add('DROP');
+          return ++seq;
+        },
+        home: () {
+          sent.add('HOME');
+          return ++seq;
+        },
+      );
+    });
+
+    /// One sort whose DROP is refused at the bin (twice: the extra look too).
+    void refusedSort() {
+      r
+        ..reset()
+        ..start(Bin.organik, holding: true)
+        ..onReply(RobotReply(ReplyKind.motionDone, seq));
+      for (var i = 0; i < 2; i++) {
+        now = now.add(const Duration(seconds: 1));
+        r
+          ..tick()
+          ..onReply(RobotReply(ReplyKind.error, seq, reason: 'bin_not_confirmed'));
+      }
+    }
+
+    test('RELEASE opens the gripper, then HOME, then done (Sorting successful)', () {
+      refusedSort();
+      expect(r.state, BinRunState.needsRelease);
+      r.released(null);
+      expect(r.state, BinRunState.needsRelease, reason: 'the gate refused the open: keep asking');
+      r.released(++seq); // the gripper-open ARM_POSE
+      expect((r.state, r.busy, r.helped), (BinRunState.releasing, true, true));
+      r.onReply(RobotReply(ReplyKind.motionDone, seq));
+      expect(sent.last, 'HOME');
+      r.onReply(RobotReply(ReplyKind.motionDone, seq));
+      expect(r.state, BinRunState.done);
+    });
+
+    test('a DROP with no reply asks too (not released)', () {
+      r
+        ..start(Bin.b3, holding: true)
+        ..onReply(RobotReply(ReplyKind.motionDone, seq));
+      now = now.add(const Duration(seconds: 1));
+      r.tick();
+      now = now.add(const Duration(seconds: 61));
+      r.tick();
+      expect((r.state, r.failure), (BinRunState.needsRelease, 'timeout'));
+    });
+
+    test('at most 2 sorts in a row ask; a sort that drops by itself resets the count', () {
+      for (var i = 0; i < 2; i++) {
+        refusedSort();
+        expect(r.state, BinRunState.needsRelease);
+      }
+      refusedSort();
+      expect((r.state, r.failure), (BinRunState.failed, 'bin_not_confirmed'), reason: 'third in a row: not asked');
+
+      r
+        ..reset()
+        ..start(Bin.organik, holding: true)
+        ..onReply(RobotReply(ReplyKind.motionDone, seq));
+      now = now.add(const Duration(seconds: 1));
+      r
+        ..tick()
+        ..onReply(RobotReply(ReplyKind.motionDone, seq)) // dropped by itself
+        ..onReply(RobotReply(ReplyKind.motionDone, seq)); // home
+      expect(r.state, BinRunState.done);
+      refusedSort();
+      expect(r.state, BinRunState.needsRelease, reason: 'the count starts again');
+    });
+
+    test('a failure on the way to the bin still ends as failed (the item is not over a bin)', () {
+      r
+        ..start(Bin.organik, holding: true)
+        ..onReply(RobotReply(ReplyKind.error, seq, reason: 'tank'));
+      expect((r.state, r.failure), (BinRunState.failed, 'tank'));
+    });
   });
 
   test('a refused command, an error or STOP ends the run; old replies are ignored', () {

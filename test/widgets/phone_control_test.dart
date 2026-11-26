@@ -7,6 +7,7 @@ import 'package:elio/l10n/l10n.dart';
 import 'package:elio/providers/waste_quiz_provider.dart';
 import 'package:elio/widgets/waste_quiz_popup.dart' show EliosAiBadge;
 import 'package:elio/widgets/control/r2_controls.dart' show ControlFader, ControlStatusChip;
+import 'package:elio/widgets/control/sort_bubble.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -331,6 +332,16 @@ void main() {
       await t.tap(find.byKey(const ValueKey('phone_scan')));
       expect(taps.keys, containsAll(['lock', 'scan']));
       expect(find.text('LOCK'), findsOneWidget);
+    });
+
+    testWidgets('0243: the sort bubble sits over the bottom of the video, on screen', (t) async {
+      final frame = Uint8List.fromList(img.encodePng(img.Image(width: 64, height: 48)));
+      await pumpPhone(t, size,
+          frame: frame,
+          sortBubble: const SortBubble(
+              text: 'Check the hand is over the Organik bin. Adjust it, then press RELEASE.', kind: SortBubbleKind.help));
+      expectOnScreen(t, find.byKey(const ValueKey('sort_bubble')), size, 'sort bubble');
+      expect(find.byIcon(Icons.front_hand_outlined), findsWidgets);
     });
 
     testWidgets('owner 26 Nov: after LOCK the key spins and reads LOCKING until the AI answers', (t) async {

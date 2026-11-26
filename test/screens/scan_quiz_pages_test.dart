@@ -120,6 +120,7 @@ Future<_Quiz> _pump(
   bool robot = false,
   VoidCallback? onStop,
   VoidCallback? onRescan,
+  VoidCallback? onDone,
   double keyboard = 0,
   Size size = const Size(390, 844),
   bool dark = false,
@@ -154,6 +155,7 @@ Future<_Quiz> _pump(
                   robot: robot,
                   onStop: onStop,
                   onRescan: onRescan,
+                  onDone: onDone,
                 ),
               ),
             ),
@@ -743,7 +745,7 @@ void main() {
       expect(t.takeException(), isNull);
       expect(
         (t.widget(find.byKey(const ValueKey('bin_run_cue'))) as Text).data,
-        'When the quiz is done, the arm waits 3 s, then takes it to the Anorganik bin.',
+        'Press Done when you finish: the arm waits 3 s, then takes it to the Anorganik bin.',
       );
     });
 
@@ -799,6 +801,22 @@ void main() {
     expect(find.text('+20 XP'), findsOneWidget);
     await t.tap(find.byKey(const Key('result_card_rescan_button')));
     await _settle(t);
+    expect(quiz.state.phase, WasteQuizPhase.idle);
+  });
+
+  testWidgets('0243: Done on the result page starts the sort (onDone) before the pages close', (t) async {
+    final phaseAtDone = <WasteQuizPhase>[];
+    late _Quiz quiz;
+    quiz = await _pump(
+      t,
+      WasteQuizUiState(phase: WasteQuizPhase.finished, scan: _scan, correctCount: 2),
+      robot: true,
+      onDone: () => phaseAtDone.add(quiz.state.phase),
+    );
+    await t.ensureVisible(find.byKey(const Key('result_card_done_button')));
+    await t.tap(find.byKey(const Key('result_card_done_button')));
+    await _settle(t);
+    expect(phaseAtDone, [WasteQuizPhase.finished], reason: 'once, while the scan is still there');
     expect(quiz.state.phase, WasteQuizPhase.idle);
   });
 
