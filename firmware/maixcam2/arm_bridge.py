@@ -351,6 +351,15 @@ class ArmBridge:
 
     def _cmd_stop(self, data, owner):
         self._freeze()
+        if data.get("limp") is True:
+            # The student's STOP button (owner, 26 Nov): every field empty releases every servo and the
+            # base driver (ESP32 EMPTY_MEANS_NO_SIGNAL). The arm may sag: pose unknown, HOME first, as after BOOT.
+            payload = "," * (len(AXES) - 1)
+            self.write("{},{:02X}\n".format(payload, crc8(payload)))
+            self.streaming = False
+            self.known = False
+            self.base_corr = 0.0
+            self.log("[Arm] STOP: arm released (limp), HOME first")
         return [self._reply("ack", data)]
 
     def _cmd_arm_pose(self, data, owner):

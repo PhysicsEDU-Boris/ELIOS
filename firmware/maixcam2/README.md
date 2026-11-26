@@ -1,5 +1,8 @@
 # MaixCAM2 firmware (m2c-arm-v3)
 
+1.4.4 (0242): `STOP {"limp": true}` (the app's STOP button) sends one all-empty frame: the ESP32
+releases every servo and the base driver. Streaming stops; pose unknown, HOME first. Plain STOP still holds.
+
 1.4.3 (0241): during a bin sequence the bin tags come from OpenCV `cv2.aruco` (AprilTag 36h11, full
 frame, worker thread); MaixPy `find_apriltags` killed the app mid-sort. `[Tags] bin search sees` and
 `/root/elios_sort_view.jpg` show what the sort saw. Bridge: HOME/ARM_POSE ack `motion_s`, HOME and

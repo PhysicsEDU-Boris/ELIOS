@@ -114,7 +114,7 @@ void main() {
         expect(t.takeException(), isNull);
         expect(find.byKey(const ValueKey('phone_go')), findsOneWidget);
         expect(find.byKey(const ValueKey('phone_stop')), findsNothing);
-        expect(find.text('Robot stopped · scanning paused'), findsOneWidget);
+        expect(find.text('Robot stopped'), findsOneWidget);
         expectOnScreen(t, find.byKey(const ValueKey('phone_go')), size, 'GO');
         await shot(t, 'stopped', size, dark);
       });
@@ -331,6 +331,13 @@ void main() {
       await t.tap(find.byKey(const ValueKey('phone_scan')));
       expect(taps.keys, containsAll(['lock', 'scan']));
       expect(find.text('LOCK'), findsOneWidget);
+    });
+
+    testWidgets('owner 26 Nov: after LOCK the key spins and reads LOCKING until the AI answers', (t) async {
+      await pumpPhone(t, size, locking: true);
+      expect(find.text('LOCKING…'), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const ValueKey('phone_lock')), matching: find.byType(CircularProgressIndicator)),
+          findsOneWidget);
     });
 
     testWidgets('0181: a locked item reads UNLOCK and its box is drawn over the video', (t) async {
