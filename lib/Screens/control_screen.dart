@@ -1,6 +1,7 @@
 // Copyright (c) Boris Agung, Irham Fajar
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -266,6 +267,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         if (_arm.onServo(servo, seq: reply?.seq, done: reply?.kind == ReplyKind.motionDone)) _syncArmState();
       }
       if (reply != null) {
+        // Step 4 (owner, 26 Nov): what the sort really did, in logcat. The bridge's motion_done carries the
+        // tag centring result (`align`: tag, note, err_deg, base_corr per tagged step).
+        if (_binRun?.pending ?? false) debugPrint('[Sort] reply ${reply.kind.name} #${reply.seq} ${reply.reason ?? ''}');
+        if (msg['align'] != null) debugPrint('[Sort] align_log ${jsonEncode(msg['align'])} base_corr ${msg['base_corr']}');
         _binRun?.onReply(reply);
         if (_gate.pendingHomeSeq != null && reply.seq == _gate.pendingHomeSeq) {
           if (reply.kind == ReplyKind.motionDone) {
@@ -1149,6 +1154,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   void _onBinRun(BinRunState state) {
     if (!mounted) return;
     final pending = _binRun!.pending;
+    debugPrint('[Sort] bin run ${state.name} bin=${_binRun!.bin?.wire} failure=${_binRun!.failure}');
     if (state == BinRunState.done || state == BinRunState.failed) _binRunEndedAt = DateTime.now();
     if (_dropPending.state != pending) _dropPending.state = pending;
     if (state == BinRunState.moving) _arm.markUnknown(); // the saved sequence moves the arm; motion_done says where to
