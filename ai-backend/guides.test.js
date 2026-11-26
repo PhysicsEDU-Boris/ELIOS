@@ -23,7 +23,7 @@ const JPEG = Buffer.from([255, 216, 255, 224, 0, 16, 74, 70]).toString('base64')
 
 /** In-memory stand-in for the few PostgREST calls guides.js makes, plus the Pages files. */
 function fakeWorld({ now = Date.parse('2026-11-09T03:00:00Z') } = {}) {
-  const tables = { guide_progress: [], guide_events: [], lab_reviews: [] };
+  const tables = { guide_progress: [], guide_events: [], lab_reviews: [], learning_snapshots: [] };
   const calls = { pages: 0 };
   const fetch = async (input, options = {}) => {
     const url = new URL(String(input));
@@ -51,6 +51,10 @@ function fakeWorld({ now = Date.parse('2026-11-09T03:00:00Z') } = {}) {
       const i = tables.guide_progress.findIndex((r) => r.owner_id === body.owner_id && r.date === body.date);
       if (i >= 0) tables.guide_progress[i] = { ...tables.guide_progress[i], ...body };
       else tables.guide_progress.push(body);
+      return new Response('');
+    }
+    if (table === 'learning_snapshots') {
+      tables.learning_snapshots = [...tables.learning_snapshots.filter((r) => r.owner_id !== body.owner_id), body];
       return new Response('');
     }
     tables[table].push(body);
@@ -106,6 +110,8 @@ test('quiz is graded from the published JSON with explanations; XP only on the f
   assert.equal(again.score, 3);
   assert.equal(again.xp_awarded, 0);
   assert.equal(again.progress.total_xp, 10);
+  // The first attempt keeps the picked option so the Insights dashboard can show the A-D split.
+  assert.deepEqual(world.tables.guide_progress[0].quiz.first.answers.map((a) => a.choice), ['a', 'b', 'c']);
   assert.equal(world.calls.pages, 2, 'manifest and content are cached by revision');
   const bad = await call(world, { op: 'quiz', id: 'quiz-0004', date: '2026-11-08', answers: [{ qid: 'pool-9', choice: 'a' }, { qid: 'p1', choice: 'a' }, { qid: 'p2', choice: 'a' }] });
   assert.equal(bad.status, 400);
@@ -201,4 +207,20 @@ test('import needs the server-signed guest claim and keeps earliest stop times',
   assert.equal(res.progress.total_xp, 10);
   const again = await (await call(world, { op: 'import', guest_uid: 'G', guest_claim: guest.progress.guest_claim })).json();
   assert.equal(again.progress.total_xp, 10);
+});
+
+test('a learning snapshot is stored per student, latest wins, and bad input is refused', async () => {
+  const world = fakeWorld();
+  const snap = { op: 'learning', started_video_ids: ['v1', 'v2'], watched_video_ids: ['v1', 'v3'], clovers_earned: 4, clovers_possible: 20 };
+  assert.equal((await call(world, snap)).status, 200);
+  assert.equal((await call(world, { ...snap, clovers_earned: 5 })).status, 200);
+  assert.equal(world.tables.learning_snapshots.length, 1);
+  const row = world.tables.learning_snapshots[0];
+  assert.equal(row.owner_id, 'A');
+  assert.equal(row.clovers_earned, 5);
+  assert.deepEqual(row.started_video_ids, ['v1', 'v2', 'v3'], 'a watched video also counts as started');
+  for (const bad of [{ clovers_earned: 21 }, { clovers_possible: -1 }, { watched_video_ids: ['../x'] }, { started_video_ids: 'v1' }]) {
+    assert.equal((await call(world, { ...snap, ...bad })).status, 400);
+  }
+  assert.equal((await call(world, snap, { token: null })).status, 401);
 });
