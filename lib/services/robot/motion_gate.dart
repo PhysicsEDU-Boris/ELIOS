@@ -117,6 +117,7 @@ class MotionGate extends ChangeNotifier {
       robot.hold();
       return _block('arm_pose', {'reason': 'hand_paused'});
     }
+    cancelHome(reason: 'manual_move'); // a manual move replaces HOME on the robot too (0241, the sim's _set_axis)
     onArmCommand?.call(motion);
     robot.armPose(path);
     return true;
@@ -140,7 +141,13 @@ class MotionGate extends ChangeNotifier {
     _pendingHomeSeq = seq;
     _homeAcked = false;
     robot.atHome = false;
-    _homeTimeoutTimer = Timer(homeTimeoutDuration + (path == null ? Duration.zero : motion), () {
+    _armHomeTimer(seq, homeTimeoutDuration + (path == null ? Duration.zero : motion));
+    return true;
+  }
+
+  void _armHomeTimer(int seq, Duration after) {
+    _homeTimeoutTimer?.cancel();
+    _homeTimeoutTimer = Timer(after, () {
       if (_pendingHomeSeq == seq) {
         _pendingHomeSeq = null;
         _homeAcked = false;
@@ -150,7 +157,6 @@ class MotionGate extends ChangeNotifier {
         notifyListeners();
       }
     });
-    return true;
   }
 
   /// Handles command replies relevant to HOME.
@@ -161,6 +167,10 @@ class MotionGate extends ChangeNotifier {
     }
     if (reply.kind == ReplyKind.ack) {
       _homeAcked = true;
+      // 0241: the firmware's own HOME (unknown pose, after a failed run) can take ~12 s; its ack says
+      // how long it planned, so the wait is that + the margin, like the app's planned HOME.
+      final s = reply.motionS;
+      if (s != null) _armHomeTimer(reply.seq, homeTimeoutDuration + Duration(milliseconds: (s * 1000).round()));
       // ack means accepted by controller; motion is underway. Do NOT reset cache or mark done.
       return false;
     }
@@ -198,6 +208,25 @@ class MotionGate extends ChangeNotifier {
     _lastAngle['reach'] = 90;
     _lastAngle['height'] = 90;
     _lastAngle['gripper'] = 0;
+  }
+
+  /// Advanced settings (0232) as CONFIG. True when sent now; otherwise kept and sent when the link is
+  /// up and not STOPPED (a trim moves the held servos, so not during a stop), at the next
+  /// connection or GO (0241): the robot never keeps settings the phone has replaced.
+  bool config(Map<String, Object?> settings) {
+    _pendingConfig = settings;
+    return _sendPendingConfig();
+  }
+
+  Map<String, Object?>? _pendingConfig;
+  bool get configPending => _pendingConfig != null;
+
+  bool _sendPendingConfig() {
+    final c = _pendingConfig;
+    if (c == null || _stopped || !_linkUp) return false;
+    _pendingConfig = null;
+    robot.send('CONFIG', c);
+    return true;
   }
 
   /// Sends STATUS query through to robot (allowed while stopped).
@@ -271,6 +300,7 @@ class MotionGate extends ChangeNotifier {
     onEvent?.call('emergency_resume', {'reason': _stopReason});
     _stopped = false;
     _stopReason = null;
+    _sendPendingConfig();
     notifyListeners();
   }
 
@@ -295,6 +325,7 @@ class MotionGate extends ChangeNotifier {
     _heartbeat = Timer.periodic(heartbeatInterval, (_) {
       if (_linkUp) robot.heartbeat();
     });
+    _sendPendingConfig();
     notifyListeners();
   }
 

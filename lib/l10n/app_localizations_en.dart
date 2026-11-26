@@ -1186,6 +1186,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ctlFwdBack => 'Fwd / Back';
 
   @override
+  String get ctlYaw => 'YAW';
+
+  @override
+  String get ctlPitch => 'PITCH';
+
+  @override
   String get ctlArmHint =>
       'Slide up to lift, slide forward to reach. The arm only moves when the robot is not STOPPED.';
 
@@ -2949,6 +2955,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get armRefusedUnknown =>
       'The arm\'s position is unknown after a stop or a sort. Press HOME first.';
+
+  @override
+  String get ctlEsp32On => 'ESP32';
+
+  @override
+  String get ctlEsp32Off => 'ESP32 off';
+
+  @override
+  String get armEsp32Silent =>
+      'The arm controller (ESP32) is not answering the robot, so the arm can\'t move. Check its cable to the MaixCAM2 (UART4: TX0/RX0 crossed, GND), its power, and that no computer is using its USB.';
 
   @override
   String get r1Done => 'Done! The robot can drive again.';
@@ -5700,6 +5716,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get binGotIt => 'Got it';
 
   @override
+  String binRunReady(String bin) {
+    return 'When the quiz is done, the arm waits 3 s, then takes it to the $bin bin.';
+  }
+
+  @override
+  String get robotSorted => 'Done: the robot put it in the bin and went home.';
+
+  @override
+  String get robotSortFailed =>
+      'The robot could not finish sorting and went back home.';
+
+  @override
+  String binRunFailed(String reason) {
+    return 'The arm could not finish sorting ($reason). It is going home.';
+  }
+
+  @override
   String get qzMute => 'Mute voice and sounds';
 
   @override
@@ -6121,7 +6154,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get advSavedLocal =>
-      'Saved on this phone. Connect the robot to send it.';
+      'Saved on this phone. It goes to the robot as soon as it is connected and not stopped.';
 
   @override
   String get advDiscardTitle => 'Discard changes?';
@@ -6331,6 +6364,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get advReadOnly => 'Read only';
+
+  @override
+  String get advSecSpeed => 'Speed & ramps';
+
+  @override
+  String get advSpeedSub =>
+      'Top speed per joint, and how gently it starts and stops.';
+
+  @override
+  String get advColTopSpeed => 'TOP SPEED';
+
+  @override
+  String get advSpeedUp => 'Speed up';
+
+  @override
+  String get advSlowDown => 'Slow down';
+
+  @override
+  String get advSpeedReset => 'Reset';
+
+  @override
+  String advSpeedMove(String seconds) {
+    return '30° in $seconds s';
+  }
+
+  @override
+  String get advSpeedTip =>
+      'All joints arrive together, so the slowest one sets the move time. Short ramps are snappier, long ones gentler. Bin sequences use the speeds saved in each step.';
 
   @override
   String get advArmTimeout => 'One arm move, max';

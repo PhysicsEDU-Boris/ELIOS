@@ -1,11 +1,11 @@
 id: elios_clean_m2c_v1
 name: ELIOS Clean Vision
-version: 1.2.0
+version: 1.4.3
 author: ELIOS
 icon: ''
 desc: >-
-  Firmware m2c-arm-v1 - clean frames on WS 8765, MixFormerV2 tracks the
-  app's LOCK box, hand detection for the arm pause, AprilTag arm_tags, arm bridge to the ESP32 on UART2
+  Firmware m2c-arm-v3 - clean frames on WS 8765, MixFormerV2 tracks the
+  app's LOCK box, hand detection for the arm pause, AprilTag arm_tags, arm bridge to the ESP32 on UART4, wheels Arduino on UART2, AprilTag base centring in bin sequences, video lag guard
 files:
   - main.py
   - arm_bridge.py

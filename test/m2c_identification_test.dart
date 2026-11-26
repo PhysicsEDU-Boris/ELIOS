@@ -261,6 +261,7 @@ void main() {
       await _until(() => images.isNotEmpty);
       expect(images.single, orderedEquals(clean), reason: 'the paired clean image, not the preview');
       expect(prompt, contains('tidak ada sampah'));
+      expect(prompt, contains('penjepit robot'), reason: 'the arm and gripper in view are not the item (0240)');
       identify.complete('{"item":"botol plastik","category":"anorganik","box_2d":[0,0,500,500]}');
       final answer = await pending;
       expect(c.read(wasteQuizProvider).phase, WasteQuizPhase.idle, reason: 'LOCK opens no quiz');

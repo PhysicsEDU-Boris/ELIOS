@@ -105,3 +105,5 @@ their status changed.
 - [0235](0235-maixcam2-arm-bridge.md) MaixCAM2 arm bridge to the ESP32 (stream mode) with the DROP guard
 - [0236](0236-arm-fader-throttle.md) Arm fader drags send ARM_POSE at most every 100 ms
 - [0238](0238-app-onboarding-tour.md) App onboarding tour: Welcome, main tour across the tabs, first-visit screen tours, Profile ▸ App tour
+- [0240](0240-sim-control-settings.md) Sim control settings: per-joint speed and ramps, new bin sequences, bin run after the bin check (3 s wait), AprilTag base centring, slider fix, arm on UART4
+- [0241](0241-hil-toolkit-control-parity.md) Arm controls like the HIL toolkit: live Advanced settings (no PIN, no Save), YAW/PITCH faders, HOME waits for the planned time and works after an ESP32 reset, moves replace HOME and are replanned from the arm's pose, gripper invert, sim calibration on the robot

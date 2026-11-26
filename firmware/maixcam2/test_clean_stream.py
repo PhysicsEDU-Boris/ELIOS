@@ -11,7 +11,10 @@ from types import SimpleNamespace
 
 NAMES = {'HOLD_SHIFT', 'HOLD_SIZE', 'SETTLE_CALLS', 'SETTLE', 'GROW_MIN', 'median_box', 'moved', 'hold', 'TRACK_TH', 'TRACK_MAX_GROWTH', 'HAND_GROWTH', 'HAND_MEMORY_MS', 'recent_hands', 'overlaps', 'size_ok', 'TRACK_REFIND_AFTER', 'TRACK_MIN_SIDE', 'HAND_CONF_TH', 'HAND_LABEL',
          'TAG_SIZES_MM', 'CAMERA_FX', 'STREAM_RESOLUTION', 'track', 'parse_track_box', 'box_det', 'track_frame',
-         'hand_dets', 'arm_tags', 'find_arm_tags', 'TAG_SCALE', 'tags', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS'}
+         'hand_dets', 'arm_tags', 'find_arm_tags', '_CvTag', 'cv_tags', 'BinTagSearch', 'TAG_SCALE', 'tags', 'ws_frame_pusher', 'DET_EVERY_N_FRAMES', 'PREVIEW_QUALITY', 'CLEAN_QUALITY', 'CLEAN_EVERY_MS',
+         'DRIVE_DEADBAND', 'drive_char', 'DRIVE_TIMEOUT_MS', 'drive_expired',
+         'client_behind', 'read_frame_nowait', 'CAM_POLL_S', 'uart_read_ready',
+         'unacked_bytes', 'WS_BEHIND_BYTES'}
 
 
 class EndStream(BaseException):
@@ -252,7 +255,7 @@ class StreamTest(unittest.TestCase):
                 return [Tag(0, 20)] if self.number == 2 else []
 
         class Camera:
-            def read(self):
+            def read(self, block=True):
                 frames.append(Frame(len(frames) + 1))
                 return frames[-1]
 
@@ -269,7 +272,8 @@ class StreamTest(unittest.TestCase):
         M = load(asyncio=asyncio, json=json, base64=base64, print=lambda *a: None,
                  stream_cam=Camera(), ws_streaming=True, ws_clients={Client()},
                  cam_lock=threading.Lock(), setup={'stage': None},
-                 arm_lock=threading.Lock(), arm=SimpleNamespace(on_tags=arm_tags_seen.append),
+                 arm_lock=threading.Lock(), arm=SimpleNamespace(on_tags=lambda tags, w: arm_tags_seen.append(tags), wants_tags=False),
+                 bin_tags=None, frame_gray=None,
                  FIRMWARE_SHA256='test-hash',
                  mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)),
                  tracker=FakeTracker([0.9, 0.9, 0.9]),
@@ -341,9 +345,9 @@ class StreamTest(unittest.TestCase):
 
         ticks = iter(range(0, 10 ** 6, 7))
         M = load(asyncio=asyncio, json=json, base64=base64, print=lambda *a: None,
-                 stream_cam=SimpleNamespace(read=Frame), ws_streaming=True, ws_clients={Client()},
+                 stream_cam=SimpleNamespace(read=lambda block=True: Frame()), ws_streaming=True, ws_clients={Client()},
                  cam_lock=threading.Lock(), setup={'stage': None},
-                 arm_lock=threading.Lock(), arm=SimpleNamespace(on_tags=lambda ids: None),
+                 arm_lock=threading.Lock(), arm=SimpleNamespace(on_tags=lambda tags, w: None, wants_tags=False),
                  FIRMWARE_SHA256='test-hash',
                  mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)),
                  tracker=None, hands=None,
@@ -354,5 +358,195 @@ class StreamTest(unittest.TestCase):
         self.assertTrue(all(m['arm_tags'] == [] for m in messages))
 
 
+class LagGuardTest(unittest.TestCase):
+    """0240: video never waits for the network or the camera, and never queues behind old frames."""
+
+    def test_a_client_behind_skips_frames_and_reads_never_block(self):
+        reads, fast, slow, sleeps = [], [], [], []
+
+        class Frame:
+            def to_jpeg(self, quality):
+                return SimpleNamespace(to_bytes=lambda: b'x')
+
+        def read(block=True):
+            self.assertFalse(block, 'a blocking read holds the GIL ~60 ms')
+            reads.append(1)
+            if len(reads) % 2:
+                raise RuntimeError(': Buffer empty: read camera failed')   # no new frame yet
+            return Frame()
+
+        class Fast:
+            transport = SimpleNamespace(get_write_buffer_size=lambda: 0)
+
+            async def send(self, payload):
+                fast.append(payload)
+                if len(fast) == 5:
+                    raise EndStream()
+
+        class Slow:   # its first frame never leaves the buffer: a stalled link
+            transport = SimpleNamespace(get_write_buffer_size=lambda: 0 if not slow else 90_000)
+
+            async def send(self, payload):
+                slow.append(payload)
+
+        async def sleep(t):
+            sleeps.append(t)
+
+        ticks = iter(range(0, 10 ** 6, 7))
+        M = load(asyncio=SimpleNamespace(sleep=sleep), json=json, base64=base64, print=lambda *a: None,
+                 stream_cam=SimpleNamespace(read=read), ws_streaming=True, ws_clients={Slow(), Fast()},
+                 cam_lock=threading.Lock(), setup={'stage': None},
+                 arm_lock=threading.Lock(), arm=SimpleNamespace(on_tags=lambda tags, w: None, wants_tags=False),
+                 FIRMWARE_SHA256='test-hash', mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)),
+                 tracker=None, hands=None, image=None)
+        with self.assertRaises(EndStream):
+            asyncio.run(M['ws_frame_pusher']())
+        self.assertEqual(len(fast), 5, 'the fast client gets every frame')
+        self.assertEqual(len(slow), 1, 'the stalled client is skipped, nothing queues for it')
+        self.assertIn(M['CAM_POLL_S'], sleeps, 'no frame ready: yield instead of blocking')
+
+    def test_behind_also_counts_bytes_the_link_has_not_acknowledged(self):
+        # SIOCOUTQ is Linux-only; checked on the MaixCAM2 itself (0240 notes). Here the decision.
+        M = load()
+        unacked = [0]
+        M['unacked_bytes'] = lambda sock: unacked[0]
+        client = SimpleNamespace(transport=SimpleNamespace(get_write_buffer_size=lambda: 0,
+                                                           get_extra_info=lambda k: object()))
+        self.assertFalse(M['client_behind'](client))
+        unacked[0] = M['WS_BEHIND_BYTES'] + 1
+        self.assertTrue(M['client_behind'](client), 'the kernel still holds the last frame: skip')
+        M['unacked_bytes'] = lambda sock: 1 / 0
+        self.assertFalse(M['client_behind'](client), 'an ioctl error never stops the stream')
+
+class UartPollTest(unittest.TestCase):
+    def test_reads_only_what_is_there(self):
+        calls = []
+
+        class Uart:
+            def __init__(self, n):
+                self.n = n
+
+            def available(self):
+                return self.n
+
+            def read(self, n, timeout):
+                calls.append((n, timeout))
+                return b'x' * n
+
+        read = load()['uart_read_ready']
+        self.assertEqual(read(Uart(0)), b'')
+        self.assertEqual(calls, [], 'nothing waiting: no read (a read blocks ~35 ms holding the GIL)')
+        self.assertEqual(read(Uart(5)), b'xxxxx')
+        self.assertEqual(calls, [(5, 0)])
+
+
+class DriveTest(unittest.TestCase):
+    """Wheels' Arduino on UART2 (codeMotorSlave.ino, owner 25 Nov): app motor -> one char, and a stop."""
+
+    def test_motor_to_char_and_watchdog(self):
+        M = load()
+        char = M['drive_char']
+        self.assertEqual([char(80, 80), char(-80, -80), char(80, -80), char(-80, 80)], ['F', 'B', 'R', 'L'])
+        self.assertEqual(char(3, -3), 'S', 'stick jitter under the deadband')
+        self.assertEqual(char(60, 20), 'F', 'forward outweighs the turn')
+        expired = M['drive_expired']
+        self.assertTrue(expired('F', 0, M['DRIVE_TIMEOUT_MS'] + 1))
+        self.assertFalse(expired('F', 0, M['DRIVE_TIMEOUT_MS']))
+        self.assertFalse(expired('S', 0, 10 ** 6), 'already stopped')
+
+
 if __name__ == '__main__':
     unittest.main()
+
+
+class BinTagSearchTest(unittest.TestCase):
+    """0241: the bin tags during a sort come from OpenCV in a thread; find_apriltags crashed the app."""
+
+    def test_cv_tags_like_arm_tags(self):
+        M = load(threading=threading)
+        sq = [[[100, 50], [120, 50], [120, 70], [100, 70]]]   # cv2.aruco corners, shape (1, 4, 2)
+        tags = M['cv_tags']([sq, sq], [[4], [9]])             # id 9 is not one of ours
+        self.assertEqual([(t['id'], t['cx'], t['cy']) for t in tags], [(4, 110, 60)])
+        self.assertIn('dist_mm', tags[0])
+        self.assertEqual(M['cv_tags']([], None), [])
+
+    def test_worker_gives_each_result_once_and_survives_a_detector_error(self):
+        M = load(threading=threading, print=lambda *a: None)
+        calls = []
+
+        def detect(gray):
+            calls.append(gray)
+            if gray == 'bad':
+                raise RuntimeError('cv2 hiccup')
+            return [[[[0, 0], [20, 0], [20, 20], [0, 20]]]], [[2]]
+
+        w = M['BinTagSearch'](detect)
+        for gray, stamp in (('ok', 5.0), ('bad', 6.0)):
+            w.submit(gray, stamp)
+            got = None
+            for _ in range(200):
+                got = w.take()
+                if got is not None:
+                    break
+                threading.Event().wait(0.005)
+            self.assertIsNotNone(got, gray)
+            self.assertEqual(got[0], stamp, 'stamped with its frame, for the settle check')
+            self.assertEqual([t['id'] for t in got[1]], [2] if gray == 'ok' else [])
+        self.assertIsNone(w.take(), 'each result once')
+
+    def test_stream_uses_the_worker_during_a_sort_never_find_apriltags(self):
+        fed, submitted, messages = [], [], []
+
+        class Frame:
+            def __init__(self, n):
+                self.number = n
+
+            def to_jpeg(self, quality):
+                return SimpleNamespace(to_bytes=lambda: b'x')
+
+            def width(self):
+                return 640
+
+            def height(self):
+                return 360
+
+            def find_apriltags(self, families):
+                raise AssertionError('find_apriltags crashed the app mid-sort (0241)')
+
+            resize = lambda self, w, h: self
+
+        frames = []
+
+        class Camera:
+            def read(self, block=True):
+                frames.append(Frame(len(frames) + 1))
+                return frames[-1]
+
+        class Client:
+            async def send(self, payload):
+                messages.append(json.loads(payload))
+                if len(messages) == 6:
+                    raise EndStream()
+
+        class Worker:
+            def submit(self, gray, stamp):
+                submitted.append((gray, stamp))
+
+            def take(self):
+                return (submitted[-1][1], [{'id': 2, 'cx': 300, 'cy': 100}]) if submitted else None
+
+        ticks = iter(range(0, 10 ** 6, 7))
+        arm = SimpleNamespace(wants_tags=True, clock=lambda: 42.0,
+                              on_tags=lambda tags, w, now=None: fed.append((tags, w, now)))
+        M = load(asyncio=asyncio, json=json, base64=base64, print=lambda *a: None,
+                 stream_cam=Camera(), ws_streaming=True, ws_clients={Client()},
+                 cam_lock=threading.Lock(), setup={'stage': None}, arm_lock=threading.Lock(), arm=arm,
+                 bin_tags=Worker(), frame_gray=lambda f: ('gray', f.number), FIRMWARE_SHA256='t',
+                 mtime=SimpleNamespace(ticks_ms=lambda: next(ticks)), tracker=None, hands=None,
+                 image=SimpleNamespace(Format=SimpleNamespace(FMT_JPEG=1), ApriltagFamilies=SimpleNamespace(TAG36H11=16)))
+        with self.assertRaises(EndStream):
+            asyncio.run(M['ws_frame_pusher']())
+        self.assertTrue(submitted and fed)
+        self.assertEqual(fed[0], ([{'id': 2, 'cx': 300, 'cy': 100}], 640, 42.0))
+        self.assertTrue(any(m.get('arm_tags') for m in messages), 'the app still sees the bin tags')
+

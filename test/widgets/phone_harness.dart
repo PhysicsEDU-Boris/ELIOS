@@ -171,6 +171,7 @@ Future<Rig> pumpPhone(
   Rect? lockBox,
   double frameAspect = 4 / 3,
   bool locked = false,
+  bool? esp32Linked,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -224,6 +225,7 @@ Future<Rig> pumpPhone(
                       builder: (context, _) => Scaffold(
                         body: PhoneControlLayout(
                           link: link,
+                          esp32Linked: esp32Linked,
                           stopped: gate.stopped,
                           stopReason: gate.stopReason,
                           skeleton: skeleton,
@@ -268,6 +270,10 @@ Future<Rig> pumpPhone(
                             tap('reach');
                             gate.servo('reach', (v * 180).toInt());
                           },
+                          yaw: 0.5,
+                          onYaw: (_) => tap('yaw'),
+                          pitch: 0,
+                          onPitch: (_) => tap('pitch'),
                           onBaseStick: (x) {
                             tap(x == 0 ? 'base stop' : 'base');
                             joystick.setArmStick(x);

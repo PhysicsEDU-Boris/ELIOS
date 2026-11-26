@@ -1163,6 +1163,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get ctlFwdBack => 'Maju / Mundur';
 
   @override
+  String get ctlYaw => 'YAW';
+
+  @override
+  String get ctlPitch => 'PITCH';
+
+  @override
   String get ctlArmHint =>
       'Geser ke atas untuk mengangkat, ke depan untuk menjangkau. Lengan hanya bergerak saat robot tidak BERHENTI.';
 
@@ -2905,6 +2911,16 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get armRefusedUnknown =>
       'Posisi lengan tidak diketahui setelah berhenti atau menyortir. Tekan HOME dulu.';
+
+  @override
+  String get ctlEsp32On => 'ESP32';
+
+  @override
+  String get ctlEsp32Off => 'ESP32 mati';
+
+  @override
+  String get armEsp32Silent =>
+      'Pengendali lengan (ESP32) tidak menjawab robot, jadi lengan tidak bisa bergerak. Periksa kabelnya ke MaixCAM2 (UART4: TX0/RX0 disilang, GND), dayanya, dan pastikan USB-nya tidak dipakai komputer.';
 
   @override
   String get r1Done => 'Selesai! Robot boleh jalan lagi.';
@@ -5605,6 +5621,24 @@ class AppLocalizationsId extends AppLocalizations {
   String get binGotIt => 'Mengerti';
 
   @override
+  String binRunReady(String bin) {
+    return 'Setelah kuis selesai, lengan menunggu 3 detik lalu membawanya ke tempat sampah $bin.';
+  }
+
+  @override
+  String get robotSorted =>
+      'Selesai: robot sudah memasukkannya ke tempat sampah dan kembali ke posisi awal.';
+
+  @override
+  String get robotSortFailed =>
+      'Robot tidak bisa menyelesaikan pemilahan dan kembali ke posisi awal.';
+
+  @override
+  String binRunFailed(String reason) {
+    return 'Lengan tidak bisa menyelesaikan pemilahan ($reason). Lengan kembali ke posisi awal.';
+  }
+
+  @override
   String get qzMute => 'Matikan suara';
 
   @override
@@ -6026,7 +6060,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get advSavedLocal =>
-      'Tersimpan di ponsel ini. Hubungkan robot untuk mengirimnya.';
+      'Tersimpan di ponsel ini. Dikirim ke robot begitu robot terhubung dan tidak sedang STOP.';
 
   @override
   String get advDiscardTitle => 'Buang perubahan?';
@@ -6234,6 +6268,34 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get advReadOnly => 'Hanya baca';
+
+  @override
+  String get advSecSpeed => 'Kecepatan';
+
+  @override
+  String get advSpeedSub =>
+      'Kecepatan maksimum tiap sendi, dan seberapa halus ia mulai dan berhenti.';
+
+  @override
+  String get advColTopSpeed => 'LAJU MAKS';
+
+  @override
+  String get advSpeedUp => 'Percepatan';
+
+  @override
+  String get advSlowDown => 'Perlambatan';
+
+  @override
+  String get advSpeedReset => 'Atur ulang';
+
+  @override
+  String advSpeedMove(String seconds) {
+    return '30° dalam $seconds dtk';
+  }
+
+  @override
+  String get advSpeedTip =>
+      'Semua sendi tiba bersamaan, jadi sendi paling lambat menentukan lama gerakan. Ramp pendek lebih cepat, ramp panjang lebih halus. Urutan ke tempat sampah memakai kecepatan yang tersimpan di tiap langkah.';
 
   @override
   String get advArmTimeout => 'Batas satu gerak lengan';

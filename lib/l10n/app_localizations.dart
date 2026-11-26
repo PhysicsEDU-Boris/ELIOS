@@ -2192,6 +2192,18 @@ abstract class AppLocalizations {
   /// **'Fwd / Back'**
   String get ctlFwdBack;
 
+  /// No description provided for @ctlYaw.
+  ///
+  /// In en, this message translates to:
+  /// **'YAW'**
+  String get ctlYaw;
+
+  /// No description provided for @ctlPitch.
+  ///
+  /// In en, this message translates to:
+  /// **'PITCH'**
+  String get ctlPitch;
+
   /// No description provided for @ctlArmHint.
   ///
   /// In en, this message translates to:
@@ -5214,6 +5226,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The arm\'s position is unknown after a stop or a sort. Press HOME first.'**
   String get armRefusedUnknown;
+
+  /// No description provided for @ctlEsp32On.
+  ///
+  /// In en, this message translates to:
+  /// **'ESP32'**
+  String get ctlEsp32On;
+
+  /// No description provided for @ctlEsp32Off.
+  ///
+  /// In en, this message translates to:
+  /// **'ESP32 off'**
+  String get ctlEsp32Off;
+
+  /// No description provided for @armEsp32Silent.
+  ///
+  /// In en, this message translates to:
+  /// **'The arm controller (ESP32) is not answering the robot, so the arm can\'t move. Check its cable to the MaixCAM2 (UART4: TX0/RX0 crossed, GND), its power, and that no computer is using its USB.'**
+  String get armEsp32Silent;
 
   /// No description provided for @r1Done.
   ///
@@ -9721,6 +9751,30 @@ abstract class AppLocalizations {
   /// **'Got it'**
   String get binGotIt;
 
+  /// No description provided for @binRunReady.
+  ///
+  /// In en, this message translates to:
+  /// **'When the quiz is done, the arm waits 3 s, then takes it to the {bin} bin.'**
+  String binRunReady(String bin);
+
+  /// No description provided for @robotSorted.
+  ///
+  /// In en, this message translates to:
+  /// **'Done: the robot put it in the bin and went home.'**
+  String get robotSorted;
+
+  /// No description provided for @robotSortFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The robot could not finish sorting and went back home.'**
+  String get robotSortFailed;
+
+  /// No description provided for @binRunFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The arm could not finish sorting ({reason}). It is going home.'**
+  String binRunFailed(String reason);
+
   /// No description provided for @qzMute.
   ///
   /// In en, this message translates to:
@@ -10432,7 +10486,7 @@ abstract class AppLocalizations {
   /// No description provided for @advSavedLocal.
   ///
   /// In en, this message translates to:
-  /// **'Saved on this phone. Connect the robot to send it.'**
+  /// **'Saved on this phone. It goes to the robot as soon as it is connected and not stopped.'**
   String get advSavedLocal;
 
   /// No description provided for @advDiscardTitle.
@@ -10836,6 +10890,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Read only'**
   String get advReadOnly;
+
+  /// No description provided for @advSecSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed & ramps'**
+  String get advSecSpeed;
+
+  /// No description provided for @advSpeedSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Top speed per joint, and how gently it starts and stops.'**
+  String get advSpeedSub;
+
+  /// No description provided for @advColTopSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'TOP SPEED'**
+  String get advColTopSpeed;
+
+  /// No description provided for @advSpeedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed up'**
+  String get advSpeedUp;
+
+  /// No description provided for @advSlowDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow down'**
+  String get advSlowDown;
+
+  /// No description provided for @advSpeedReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get advSpeedReset;
+
+  /// No description provided for @advSpeedMove.
+  ///
+  /// In en, this message translates to:
+  /// **'30° in {seconds} s'**
+  String advSpeedMove(String seconds);
+
+  /// No description provided for @advSpeedTip.
+  ///
+  /// In en, this message translates to:
+  /// **'All joints arrive together, so the slowest one sets the move time. Short ramps are snappier, long ones gentler. Bin sequences use the speeds saved in each step.'**
+  String get advSpeedTip;
 
   /// No description provided for @advArmTimeout.
   ///

@@ -57,6 +57,7 @@ import '../services/frame_source/frame_source.dart';
 import '../services/robot/arm_kinematics.dart' show ArmRefusal;
 import '../services/robot/arm_pose.dart';
 import '../services/robot/arm_tag_switch.dart';
+import '../services/robot/bin_run.dart';
 import 'login_screen.dart';
 import 'package:elio/l10n/l10n.dart';
 
@@ -119,6 +120,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   /// The commanded arm pose and its planner (0234): every manual arm key goes through it.
   final _arm = ArmPose();
   DateTime? _armRefusedAt;
+
+  /// The arm's ESP32 as the MaixCAM2 hears it (STATUS `esp32_age_s`, 0240): the ARM card's chip, and
+  /// arm keys warn while it is false. Null: offline or older firmware. Polled every 2 s while connected.
+  bool? _esp32Linked;
+  Timer? _esp32Poll;
   final _fader = FaderThrottle(); // gripper, height, reach drags (0236)
 
   /// Set only with R1 (see [_r1Enabled]).
@@ -126,6 +132,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
   StreamSubscription<Map<String, dynamic>>? _robotReplies;
   Timer? _statusDebounceTimer;
   Timer? _r1Ticker;
+
+  /// After the bin check (Got it): the arm carries the held item to the right bin (0240 "bin run").
+  /// Not in R1 builds, which sort with their own orchestrator.
+  BinRun? _binRun;
+  Timer? _binRunTicker;
+  late final StateController<BinRunCue> _binCue;
   String? _r1Status;
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -158,6 +170,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _quizNotifier = ref.read(wasteQuizProvider.notifier);
     ref.read(appPreferencesProvider); // loads Sound effects before the first click
     _dropPending = ref.read(r1DropPendingProvider.notifier);
+    _binCue = ref.read(binRunCueProvider.notifier);
 
     setDesktopLandscape(true);
 
@@ -194,6 +207,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         _fader.cancel();
         _arm.markUnknown(); // the arm holds wherever the STOP caught it
         _r1?.emergencyStop(reason);
+        _binRun?.cancel('stopped');
         _gate.status(); // the MaixCAM2 answers with the pose it froze at (0235)
       },
       onArmCommand: (motion) => _liveScan?.onArmCommand(motion),
@@ -202,7 +216,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           ref.read(robotControlProvider.notifier).updateStatus(atHome: false);
         }
       },
-      armBusy: () => _r1?.ignoresLiveScanLocks ?? false,
+      armBusy: () => (_r1?.ignoresLiveScanLocks ?? false) || (_binRun?.busy ?? false),
       handPaused: () => _r1?.handInView ?? false,
     )..addListener(() {
         _applyScanPause(); // no lock, identify or new quiz while STOPPED (0026)
@@ -226,19 +240,26 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       baseServo: () => ref.read(robotControlProvider).baseAngle,
       config: ref.read(robotSettingsProvider).joystick,
     )..start();
-    _arm.gripClosedOffset = ref.read(robotSettingsProvider).gripClosedOffset;
+    _arm
+      ..gripClosedOffset = ref.read(robotSettingsProvider).gripClosedOffset
+      ..profile = ref.read(robotSettingsProvider).profile;
     WidgetsBinding.instance.addObserver(this);
     HardwareKeyboard.instance.addHandler(_onKey);
 
     _robotReplies = ws.robotReplies.listen((msg) {
       robot.handleMessage(msg);
       final servo = ArmPose.servoFrom(msg['servo']);
-      if (servo != null && msg['event'] != 'error') {
-        _arm.sync(servo);
-        _syncArmState();
-      }
       final reply = RobotReply.fromJson(msg);
+      if (reply?.kind == ReplyKind.error && reply!.seq == _arm.movingSeq) {
+        _arm.movingSeq = null; // the board refused the move: its next STATUS says where the arm is
+        _gate.status();
+      }
+      if (ArmPose.poseUnknownFrom(msg)) _arm.markUnknown(); // ESP32 reset: arm keys ask for HOME first (0241)
+      if (servo != null && msg['event'] != 'error') {
+        if (_arm.onServo(servo, seq: reply?.seq, done: reply?.kind == ReplyKind.motionDone)) _syncArmState();
+      }
       if (reply != null) {
+        _binRun?.onReply(reply);
         if (_gate.pendingHomeSeq != null && reply.seq == _gate.pendingHomeSeq) {
           if (reply.kind == ReplyKind.motionDone) {
             final homeSuccess = _gate.onHomeReply(reply);
@@ -250,12 +271,16 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           } else if (reply.kind == ReplyKind.error) {
             _gate.onHomeReply(reply);
             ref.read(robotControlProvider.notifier).updateStatus(atHome: false);
+            // The planned way home was refused because the robot lost the pose (ESP32 reset): its own HOME.
+            if (reply.reason == 'pose_unknown') _gate.home();
           } else if (reply.kind == ReplyKind.ack) {
             _gate.onHomeReply(reply);
             // Ack alone means accepted; do not mark successful or reset slider cache.
           }
         }
         if (reply.seq == robot.lastStatusSeq) {
+          final silent = ArmPose.esp32SilentFrom(msg);
+          if (silent != null && _esp32Linked != !silent && mounted) setState(() => _esp32Linked = !silent);
           ref.read(robotControlProvider.notifier).updateStatus(
                 eeMm: reply.eeMm,
                 clearEeMm: reply.eeMm == null,
@@ -294,6 +319,32 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
         }
       });
     }
+
+    if (!_r1Enabled) {
+      _binRun = BinRun(
+        moveToBin: (bin) => _gate.linkUp && !_gate.stopped ? _gate.robot.moveToBin(bin) : null,
+        drop: () => _gate.linkUp && !_gate.stopped ? _gate.robot.drop() : null,
+        // The run's own HOME (the gate's would wait: the arm still belongs to the run).
+        home: () => _gate.linkUp && !_gate.stopped ? _gate.robot.home() : null,
+        onChanged: _onBinRun,
+      );
+      _binRunTicker = Timer.periodic(const Duration(milliseconds: 250), (_) {
+        _binRun!.tick();
+        if (_binRun!.wantsTags) _syncArmTags(DateTime.now());
+        final cue = switch (_binRun!.state) {
+          BinRunState.done => BinRunCue.done,
+          BinRunState.failed => BinRunCue.failed,
+          _ when !_gate.linkUp || _gate.stopped => BinRunCue.none,
+          _ => BinRunCue.ready,
+        };
+        if (_binCue.state != cue) _binCue.state = cue;
+      });
+    }
+
+    // The ARM card's ESP32 chip (0240): STATUS every 2 s carries `esp32_age_s`.
+    _esp32Poll = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (_gate.linkUp) _gate.status();
+    });
 
     // Subscribe to robot frames outside of build to avoid re-registering
     // the listener on every rebuild.
@@ -369,7 +420,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
           status == 'Reconnecting...' ||
           status == 'Connecting...') {
         if (_streamStartedForCurrentConnection) _r1?.linkDown();
+        _binRun?.cancel('link_lost');
         _gate.linkLost(); // STOPPED (link_lost) until "Lanjutkan" (0026)
+        _esp32Linked = null; // unknown until the next STATUS
+        _arm.movingSeq = null; // that move's reply will not come
         _streamStartedForCurrentConnection = false;
         ref.read(robotControlProvider.notifier).updateStatus(
               clearEeMm: true,
@@ -425,7 +479,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
   void _syncArmTags(DateTime now) => _tagSwitch.sync(now,
       connected: WebSocketService().isConnected,
-      r1Grips: _r1?.wantsArmTags ?? false,
+      r1Grips: (_r1?.wantsArmTags ?? false) || (_binRun?.wantsTags ?? false),
       send: WebSocketService().sendRobotCommand);
 
   /// PICK UP or HOME: the arm moves, so the camera looks for its tags for a while.
@@ -437,7 +491,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
 
   /// Debug builds: what the tag search sees while it is on (0183), over the video.
   String? _tagLine() {
-    if (!kDebugMode || !_tagSwitch.wanted(DateTime.now(), r1Grips: _r1?.wantsArmTags ?? false)) return null;
+    final grips = (_r1?.wantsArmTags ?? false) || (_binRun?.wantsTags ?? false);
+    if (!kDebugMode || !_tagSwitch.wanted(DateTime.now(), r1Grips: grips)) return null;
     final tags = WebSocketService().armTags ?? const [];
     return tags.isEmpty ? 'Tags: searching...' : 'Tags: ${tags.map((t) => 'id ${t.id} · ${t.distMm.round()} mm').join('   ')}';
   }
@@ -507,6 +562,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     _frameSubscription?.cancel();
     _statusSubscription?.close();
     _r1Ticker?.cancel();
+    _binRunTicker?.cancel();
+    _esp32Poll?.cancel();
     _robotReplies?.cancel();
     _statusDebounceTimer?.cancel();
     _skeletonTimer?.cancel();
@@ -536,8 +593,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     // (so it doesn't block future scans) once the tree is unlocked.
     final quiz = _quizNotifier;
     final dropPending = _dropPending;
+    final binCue = _binCue; // no "close the gripper" cue on the ticket outside Control (0240)
     Future.microtask(() {
       dropPending.state = false;
+      binCue.state = BinRunCue.none;
       quiz.dismiss();
     });
     super.dispose();
@@ -554,13 +613,22 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     // tracking and the preview current.
     ref.listen<WasteQuizUiState>(wasteQuizProvider, (prev, next) {
       if (prev?.phase != next.phase) _liveScan?.onQuizPhase(next.phase);
+      // 0241 (owner): the quiz is finished (last question answered): 3 s later the arm takes the item to
+      // the RIGHT bin, the AI's, whatever the student picked, while the result page shows it. No PICK UP
+      // wait: the student picked the item up before the quiz.
+      if (prev?.phase != WasteQuizPhase.finished && next.phase == WasteQuizPhase.finished) _startBinRun(next);
+      // A new quiz: last run's "sorted" / "could not" is not this item's.
+      if (prev?.phase == WasteQuizPhase.idle && next.phase != WasteQuizPhase.idle && !(_binRun?.pending ?? true)) {
+        _binRun!.reset();
+      }
     });
 
     // Resend resolution to the device whenever the user changes it mid-session.
     // Advanced settings: new joystick constants from the next tick (0232).
     ref.listen<RobotSettings>(robotSettingsProvider, (_, s) {
       _joystick.config = s.joystick;
-      _arm.gripClosedOffset = s.gripClosedOffset;
+      _arm.profile = s.profile;
+      if (_arm.setGripClosedOffset(s.gripClosedOffset)) _armMove(_arm.close()); // a closed gripper stays closed
     });
     ref.listen<AsyncValue<EspConfig>>(espConfigProvider, (previous, next) {
       final prevPreset = previous?.valueOrNull?.resolutionPreset;
@@ -921,6 +989,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onReach: (value) {
         _fader(() { if (_armMove(_arm.reach(value))) _scheduleStatusRequest(); });
       },
+      yaw: _arm.yawFraction,
+      onYaw: (value) => _fader(() => _armMove(_arm.yaw(value))),
+      pitch: _arm.pitchFraction,
+      onPitch: (value) => _fader(() => _armMove(_arm.pitch(value))),
       onBaseStick: _joystick.setArmStick,
       onPower: link == ControlLink.disconnected
           ? reconnect
@@ -946,10 +1018,14 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       onBack: () => Navigator.of(context).pop(),
       onGuide: () => setState(() => _guideOpen = true),
       onAdvanced: _openAdvanced,
+      esp32Linked: link == ControlLink.connected ? _esp32Linked : null,
       photoUrl: user?.photoURL,
-      onLock: _locked != null || (link == ControlLink.connected && _latestFrame != null && !_locking) ? _lockOrUnlock : null,
+      // The box stays locked from SCAN until the quiz is over and the arm has dropped the item (0240).
+      onLock: _scanHeld(quizOpen)
+          ? null
+          : _locked != null || (link == ControlLink.connected && _latestFrame != null && !_locking) ? _lockOrUnlock : null,
       locked: _locked != null,
-      onScan: !quizOpen && !_locking && (_locked != null || (link == ControlLink.connected && _latestFrame != null)) ? _scan : null,
+      onScan: !_scanHeld(quizOpen) && !_locking && (_locked != null || (link == ControlLink.connected && _latestFrame != null)) ? _scan : null,
       lockBox: _locked == null
           ? null
           : lockOverlayBox(aiBox: _locked!.box, trackBox: _trackBox, trackSeenAt: _trackSeenAt, now: DateTime.now()),
@@ -1024,6 +1100,45 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
             : answer.failure ?? l10n.ctlNoItem)));
     }
     return answer.lock;
+  }
+
+  /// KUNCI and SCAN wait while the quiz is open and while the arm is taking the item to its bin.
+  bool _scanHeld(bool quizOpen) => quizOpen || (_binRun?.pending ?? false);
+
+  /// Got it on the bin check: the bin run starts, or waits for the gripper (0240).
+  void _startBinRun(WasteQuizUiState s) {
+    final bin = Bin.fromCategoryId(s.scan?.category?.id);
+    if (_binRun == null || bin == null || !_gate.linkUp || _gate.stopped) return;
+    _binRun!
+      ..reset()
+      ..start(bin, holding: true);
+  }
+
+  void _onBinRun(BinRunState state) {
+    if (!mounted) return;
+    final pending = _binRun!.pending;
+    if (_dropPending.state != pending) _dropPending.state = pending;
+    if (state == BinRunState.moving) _arm.markUnknown(); // the saved sequence moves the arm; motion_done says where to
+    if (state == BinRunState.moving) _armTagsFor('bin run');
+    if (state == BinRunState.done) {
+      ref.read(robotControlProvider.notifier).resetToHome(); // dropped and back home
+      _arm.markHome();
+      _syncArmState();
+      if (_locked != null) _lockOrUnlock(); // the box is free again
+    }
+    if (state == BinRunState.failed) {
+      final why = _binRun!.failure ?? 'error';
+      if (why != 'stopped' && why != 'link_lost') {
+        // 0240: HOLD ends whatever the robot may still be playing (a lost reply, a timeout), then
+        // HOME by the gated path, like R1's bin_check_failed. STOP and a lost link stay where they are.
+        _gate.robot.hold();
+        _gate.home();
+        ScaffoldMessenger.of(context)
+          ..removeCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l10n.binRunFailed(why))));
+      }
+    }
+    setState(() {});
   }
 
   /// SCAN (0181): the quiz popup for the locked item; with nothing locked, LOCK first.
@@ -1118,11 +1233,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       builder: (_) => AdvancedSettingsScreen(
         linkUp: _gate.linkUp,
         address: '${esp?.esp32IpAddress ?? '—'}:${EspConfig.maixCamPort}',
-        onSend: (config) {
-          if (!_gate.linkUp || _gate.stopped) return false;
-          _gate.robot.send('CONFIG', config);
-          return true;
-        },
+        onSend: _gate.config,
       ),
     ));
   }
@@ -1139,7 +1250,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
       return false;
     }
     if (!_gate.armPose(m.path!, m.duration)) return false;
-    _arm.commit(m);
+    _arm.commit(m, _gate.robot.lastArmSeq);
+    if (_esp32Linked == false) {
+      _showArmNote(l10n.armEsp32Silent); // sent, but nothing on the cable is listening
+      _scheduleStatusRequest(); // clears as soon as the ESP32 is heard
+    }
     _syncArmState();
     return true;
   }
@@ -1167,23 +1282,25 @@ class _ControlScreenState extends ConsumerState<ControlScreen> with WidgetsBindi
     }
     final m = _arm.home();
     if (m.refusal != null) return _showArmRefusal(m.refusal!);
-    if (_gate.home(path: m.path, motion: m.duration)) _arm.commit(m);
+    if (_gate.home(path: m.path, motion: m.duration)) _arm.commit(m, _gate.robot.lastArmSeq);
   }
 
-  void _showArmRefusal(ArmRefusal r) {
-    final now = DateTime.now();
-    if (!mounted || (_armRefusedAt != null && now.difference(_armRefusedAt!) < const Duration(seconds: 2))) return;
-    _armRefusedAt = now;
-    ScaffoldMessenger.of(context)
-      ..removeCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-          content: Text(switch (r) {
+  void _showArmRefusal(ArmRefusal r) => _showArmNote(switch (r) {
         ArmRefusal.tank => l10n.armRefusedTank,
         ArmRefusal.tankPath => l10n.armRefusedTankPath,
         ArmRefusal.outOfReach => l10n.armRefusedReach,
         ArmRefusal.jointLimits || ArmRefusal.baseLimit => l10n.armRefusedLimits,
         ArmRefusal.unknownPose => l10n.armRefusedUnknown,
-      })));
+      });
+
+  /// One arm message at a time, at most every 2 s (a fader drag would repeat it).
+  void _showArmNote(String text) {
+    final now = DateTime.now();
+    if (!mounted || (_armRefusedAt != null && now.difference(_armRefusedAt!) < const Duration(seconds: 2))) return;
+    _armRefusedAt = now;
+    ScaffoldMessenger.of(context)
+      ..removeCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(text)));
   }
 }
 

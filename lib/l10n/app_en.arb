@@ -735,6 +735,8 @@
   "ctlUpDown": "Up / Down",
   "ctlReach": "REACH",
   "ctlFwdBack": "Fwd / Back",
+  "ctlYaw": "YAW",
+  "ctlPitch": "PITCH",
   "ctlArmHint": "Slide up to lift, slide forward to reach. The arm only moves when the robot is not STOPPED.",
   "ctlArmLocked": "Arm controls unlock when the robot is connected. STOP always works.",
   "ctlAiBusy": "ELIOS AI is busy. Try LOCK again in a moment.",
@@ -1934,6 +1936,9 @@
   "armRefusedReach": "The arm can't reach that far.",
   "armRefusedLimits": "That is past the arm's joint limits.",
   "armRefusedUnknown": "The arm's position is unknown after a stop or a sort. Press HOME first.",
+  "ctlEsp32On": "ESP32",
+  "ctlEsp32Off": "ESP32 off",
+  "armEsp32Silent": "The arm controller (ESP32) is not answering the robot, so the arm can't move. Check its cable to the MaixCAM2 (UART4: TX0/RX0 crossed, GND), its power, and that no computer is using its USB.",
   "r1Done": "Done! The robot can drive again.",
   "r1ConfirmFirst": "Confirm first",
   "r1WhichBin": "Which bin does it go in?",
@@ -3520,6 +3525,24 @@
   "@binWhyB3": {"placeholders": {"item": {}}},
   "binQuizNext": "Your quiz is next",
   "binGotIt": "Got it",
+  "binRunReady": "When the quiz is done, the arm waits 3 s, then takes it to the {bin} bin.",
+  "@binRunReady": {
+    "placeholders": {
+      "bin": {
+        "type": "String"
+      }
+    }
+  },
+  "robotSorted": "Done: the robot put it in the bin and went home.",
+  "robotSortFailed": "The robot could not finish sorting and went back home.",
+  "binRunFailed": "The arm could not finish sorting ({reason}). It is going home.",
+  "@binRunFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "qzMute": "Mute voice and sounds",
   "qzUnmute": "Turn voice and sounds on",
   "quizLeaveTitle": "Leave the quiz?",
@@ -3669,7 +3692,7 @@
   "advTeacherMode": "Teacher mode · robot calibration & settings",
   "advSave": "Save to robot",
   "advSavedSent": "Saved and sent to the robot",
-  "advSavedLocal": "Saved on this phone. Connect the robot to send it.",
+  "advSavedLocal": "Saved on this phone. It goes to the robot as soon as it is connected and not stopped.",
   "advDiscardTitle": "Discard changes?",
   "advDiscardBody": "Your changes are not saved yet.",
   "advDiscard": "Discard",
@@ -3737,6 +3760,21 @@
   "advLinkTip": "ESP32 health and firmware versions will show here once the MaixCAM2 forwards them.",
   "advSafetySub": "Built-in limits that protect the robot and students.",
   "advReadOnly": "Read only",
+  "advSecSpeed": "Speed & ramps",
+  "advSpeedSub": "Top speed per joint, and how gently it starts and stops.",
+  "advColTopSpeed": "TOP SPEED",
+  "advSpeedUp": "Speed up",
+  "advSlowDown": "Slow down",
+  "advSpeedReset": "Reset",
+  "advSpeedMove": "30° in {seconds} s",
+  "@advSpeedMove": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "advSpeedTip": "All joints arrive together, so the slowest one sets the move time. Short ramps are snappier, long ones gentler. Bin sequences use the speeds saved in each step.",
   "advArmTimeout": "One arm move, max",
   "advSortCap": "One sort, max",
   "advHeartbeat": "App heartbeat",

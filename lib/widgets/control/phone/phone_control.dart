@@ -50,6 +50,10 @@ class PhoneControlLayout extends StatelessWidget {
     required this.onHeight,
     required this.reach,
     required this.onReach,
+    this.yaw = 0.5,
+    this.onYaw,
+    this.pitch = 0,
+    this.onPitch,
     required this.onBaseStick,
     required this.onPower,
     required this.onConnect,
@@ -65,6 +69,7 @@ class PhoneControlLayout extends StatelessWidget {
     required this.onBack,
     required this.onGuide,
     this.onAdvanced,
+    this.esp32Linked,
     this.photoUrl,
     this.overlays = const [],
     this.onLock,
@@ -99,6 +104,10 @@ class PhoneControlLayout extends StatelessWidget {
   final double gripper, height, reach;
   final ValueChanged<double> onGripper, onHeight, onReach;
 
+  /// Wrist yaw and pitch faders, 0..1 of each servo's range (0241); hidden without a callback.
+  final double yaw, pitch;
+  final ValueChanged<double>? onYaw, onPitch;
+
   /// BASIS joystick (0229, 0231): the knob's x in [-1, 1] on every move; 0 on let go.
   final ValueChanged<double> onBaseStick;
   final VoidCallback onPower, onConnect, onStop, onGo;
@@ -113,6 +122,10 @@ class PhoneControlLayout extends StatelessWidget {
 
   /// Advanced settings (0232), beside Guide; hidden when null.
   final VoidCallback? onAdvanced;
+
+  /// The arm's ESP32 as the MaixCAM2 hears it (0240): true heard in the last 3 s, false silent,
+  /// null unknown (offline, or firmware older than m2c-arm-v3): no chip.
+  final bool? esp32Linked;
   final String? photoUrl;
 
   /// Where the Guide's spotlight points (steps 1-4).
@@ -789,7 +802,8 @@ class PhoneControlLayout extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              ControlCaps(label),
+              // Four faders share the card (0241): a long caption (JANGKAU) shrinks a little instead of cutting off.
+              FittedBox(fit: BoxFit.scaleDown, child: ControlCaps(label)),
             ],
           ),
         );
@@ -800,6 +814,13 @@ class PhoneControlLayout extends StatelessWidget {
           _CardHeader(
             icon: Icons.precision_manufacturing_outlined,
             title: l10n.ctlArm,
+            trailing: esp32Linked == null
+                ? null
+                : _InfoChip(
+                    key: const ValueKey('esp32_chip'),
+                    dot: esp32Linked! ? p.primary : p.error,
+                    text: esp32Linked! ? l10n.ctlEsp32On : l10n.ctlEsp32Off,
+                  ),
           ),
           const SizedBox(height: 8),
           Expanded(
@@ -808,8 +829,16 @@ class PhoneControlLayout extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   fader(l10n.ctlHeight, (height / 180).clamp(0.0, 1.0), onHeight),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   fader(l10n.ctlReach, (reach / 180).clamp(0.0, 1.0), onReach),
+                  if (onYaw != null) ...[
+                    const SizedBox(width: 6),
+                    KeyedSubtree(key: const ValueKey('arm_yaw'), child: fader(l10n.ctlYaw, yaw.clamp(0.0, 1.0), onYaw!)),
+                  ],
+                  if (onPitch != null) ...[
+                    const SizedBox(width: 6),
+                    KeyedSubtree(key: const ValueKey('arm_pitch'), child: fader(l10n.ctlPitch, pitch.clamp(0.0, 1.0), onPitch!)),
+                  ],
                 ],
               ),
             ),
@@ -1123,9 +1152,10 @@ class TrophyCount extends StatelessWidget {
 
 /// Card title only: the link status lives in the camera row (0229).
 class _CardHeader extends StatelessWidget {
-  const _CardHeader({required this.icon, required this.title});
+  const _CardHeader({required this.icon, required this.title, this.trailing});
   final IconData icon;
   final String title;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -1133,12 +1163,13 @@ class _CardHeader extends StatelessWidget {
       Icon(icon, size: 16, color: context.elio.primaryText),
       const SizedBox(width: 6),
       ControlCaps(title),
+      if (trailing != null) ...[const Spacer(), trailing!],
     ],
   );
 }
 
 class _InfoChip extends StatelessWidget {
-  const _InfoChip({required this.dot, required this.text});
+  const _InfoChip({super.key, required this.dot, required this.text});
   final Color dot;
   final String text;
 
